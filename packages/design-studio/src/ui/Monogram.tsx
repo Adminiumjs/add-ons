@@ -1,0 +1,16 @@
+/**
+ * The add-on's mark: two letters in a neutral tile (24 D12).
+ *
+ * NEVER a company logo, drawn, traced, approximated or embedded — and for this
+ * add-on there is not even a company to name. The tile stays neutral anyway,
+ * because a shelf of twenty add-ons has to read as one system rather than as
+ * twenty logos, and an add-on that gave itself a brand colour would be the
+ * first crack in that.
+ */
+export function Monogram({ large = false }: { large?: boolean }) {
+  return (
+    <span className={large ? "ds-monogram ds-monogram--lg" : "ds-monogram"} aria-hidden="true">
+      DS
+    </span>
+  );
+}

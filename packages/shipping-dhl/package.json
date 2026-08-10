@@ -1,0 +1,20 @@
+{
+  "name": "@adminium/add-on-shipping-dhl",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "DHL Shipping — a delivery-carrier add-on for Adminium example apps. Books parcel collections, nothing else.",
+  "license": "AGPL-3.0-only",
+  "scripts": {
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b --force",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "lucide-react": "^0.462.0",
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@adminium/add-on-host": "*"
+  }
+}
