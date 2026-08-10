@@ -1,0 +1,26 @@
+{
+  "name": "@adminium/add-on-host",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "The one mirror of the Adminium add-on host seam and the implementation contracts — shared by every add-on in this repo.",
+  "license": "AGPL-3.0-only",
+  "exports": {
+    ".": "./src/index.ts",
+    "./contracts": "./src/contracts/index.ts",
+    "./testing": "./src/testing/index.ts"
+  },
+  "scripts": {
+    "build": "echo 'packages/host publishes TypeScript sources; there is nothing to build' >&2",
+    "typecheck": "tsc -b",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  }
+}

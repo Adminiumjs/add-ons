@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en-US" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Design Studio — harness</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* The host's tokens, so the add-on is seen in the colours it inherits. */
+      :root {
+        color-scheme: light;
+        --bg: #f6f6f8; --surface: #ffffff; --surface-2: #fafafa; --surface-3: #f1f1f4;
+        --border: #ececef; --border-strong: #e2e2e8;
+        --fg: #191920; --fg-muted: #4a4a54; --fg-subtle: #5a5a65;
+        --pos: #0b7d59; --pos-soft: #e6f5ee; --warn: #a95800; --warn-soft: #fbf0e2;
+        --danger: #cf273c; --danger-soft: #fdecec; --info: #1c59e0; --info-soft: #e7edfd;
+        --shadow: 0 1px 2px rgba(20,20,35,.04), 0 1px 3px rgba(20,20,35,.05);
+        --shadow-md: 0 4px 14px rgba(20,20,35,.09);
+        --shadow-lg: 0 12px 34px rgba(20,20,35,.13);
+        --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+        --font-mono: "JetBrains Mono", ui-monospace, monospace;
+        --accent: #db2777; --accent-fg: #ffffff;
+        --accent-soft: color-mix(in srgb, var(--accent) 10%, transparent);
+        --tint-card: linear-gradient(135deg, #db2777 0%, #9d174d 100%);
+        --tint-paper: linear-gradient(135deg, #4f46e5 0%, #312e81 100%);
+        --tint-mail: linear-gradient(135deg, #0e7490 0%, #134e4a 100%);
+        --tint-label: linear-gradient(135deg, #b25e09 0%, #7c2d12 100%);
+        --tint-large: linear-gradient(135deg, #0f766e 0%, #134e4a 100%);
+      }
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --bg: #0a0a0d; --surface: #141419; --surface-2: #1a1a20; --surface-3: #24242c;
+        --border: rgba(255,255,255,.07); --border-strong: rgba(255,255,255,.13);
+        --fg: #f4f4f6; --fg-muted: #b7b7c3; --fg-subtle: #a1a1ad;
+        --pos: #3ecf8e; --pos-soft: rgba(62,207,142,.14);
+        --warn: #e0a458; --warn-soft: rgba(224,164,88,.14);
+        --danger: #ff6b6b; --danger-soft: rgba(255,107,107,.14);
+        --info: #6ea8ff; --info-soft: rgba(110,168,255,.14);
+        --shadow: 0 1px 2px rgba(0,0,0,.4);
+        --shadow-md: 0 6px 20px rgba(0,0,0,.5);
+        --shadow-lg: 0 16px 40px rgba(0,0,0,.6);
+        --accent: #f9a8d4; --accent-fg: #0f0f14;
+        --accent-soft: color-mix(in srgb, var(--accent) 20%, transparent);
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-sans); }
+      button { cursor: pointer; font: inherit; color: inherit; }
+      .harness { max-inline-size: 760px; margin-inline: auto; padding: 28px 20px; }
+      .harness-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-block-end: 20px; }
+      .harness-bar button, .harness-bar select {
+        border: 1px solid var(--border-strong); background: var(--surface);
+        border-radius: 9px; padding: 7px 12px; font-size: 13px; font-weight: 700;
+      }
+      .harness h1 { font-size: 20px; letter-spacing: -0.02em; margin: 0 0 4px; }
+      .harness p.sub { color: var(--fg-muted); font-size: 13.5px; margin: 0 0 18px; }
+      .panel { border: 1px solid var(--border); background: var(--surface);
+        border-radius: 14px; padding: 18px; }
+      .panel h2 { font-size: 12px; letter-spacing: .05em; text-transform: uppercase;
+        color: var(--fg-subtle); margin: 0 0 12px; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/main.tsx"></script>
+  </body>
+</html>

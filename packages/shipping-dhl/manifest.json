@@ -1,0 +1,116 @@
+{
+  "kind": "add-on",
+  "manifestVersion": 1,
+  "key": "shipping-dhl",
+  "name": "DHL Shipping",
+  "version": "1.0.0",
+  "publisher": {
+    "id": "adminium",
+    "name": "Adminium",
+    "url": "https://adminium.dev"
+  },
+  "license": "AGPL-3.0-only",
+  "description": {
+    "key": "addon.shipping-dhl.line",
+    "fallback": "Books a parcel collection from a job that is ready, and brings back a label and a tracking reference."
+  },
+  "categories": ["delivery"],
+  "compatibility": {
+    "minAdminiumVersion": "1.0.0",
+    "requires": ["outbound-http", "file-storage"]
+  },
+  "capabilities": ["outbound-http", "file-storage"],
+  "addOn": {
+    "attaches": [{ "app": "printing", "range": "^1.0.0" }],
+    "provides": [
+      { "contract": "shipping-carrier", "version": 1, "server": "dist/server.js" }
+    ],
+    "consumes": [],
+    "slots": [
+      { "slot": "order.dispatch.actions", "client": "dist/client.js", "order": 10 },
+      { "slot": "checkout.delivery.methods", "client": "dist/client.js", "order": 10 },
+      { "slot": "order.dispatch.panel", "client": "dist/client.js", "order": 10 },
+      { "slot": "settings.add-on.panel", "client": "dist/client.js", "order": 10 }
+    ],
+    "events": [],
+    "connect": { "kind": "api-key" },
+    "scopes": ["records:jobs:read", "records:shipments:write", "files:write"],
+    "network": { "allow": ["express.api.dhl.com"] },
+    "publicSettings": ["demo_transport", "collection_cutoff"],
+    "demoTransport": "dist/server.js"
+  },
+  "requiredSchema": {
+    "tables": [
+      {
+        "ref": "shipments",
+        "columns": [
+          { "ref": "id", "type": "id", "role": "pk" },
+          { "ref": "job_id", "type": "fk", "references": "jobs" },
+          { "ref": "carrier", "type": "text" },
+          { "ref": "service", "type": "text" },
+          { "ref": "tracking", "type": "text" },
+          { "ref": "label_file", "type": "text", "nullable": true },
+          { "ref": "amount", "type": "money", "semantic": "money" },
+          { "ref": "currency", "type": "text" },
+          { "ref": "collection_from", "type": "timestamptz" },
+          { "ref": "collection_to", "type": "timestamptz" },
+          {
+            "ref": "status",
+            "type": "enum",
+            "enum": ["booked", "collected", "in-transit", "delivered", "cancelled", "refused"]
+          },
+          { "ref": "created_at", "type": "timestamptz", "role": "created_at" }
+        ]
+      },
+      {
+        "ref": "shipment_events",
+        "columns": [
+          { "ref": "id", "type": "id", "role": "pk" },
+          { "ref": "shipment_id", "type": "fk", "references": "shipments" },
+          { "ref": "at", "type": "timestamptz" },
+          { "ref": "place", "type": "text" },
+          { "ref": "status", "type": "text" },
+          { "ref": "description", "type": "text" }
+        ]
+      }
+    ]
+  },
+  "settings": [
+    {
+      "key": "api_key",
+      "type": "string",
+      "secret": true,
+      "label": {
+        "key": "addon.shipping-dhl.setting.apiKey",
+        "fallback": "API key"
+      }
+    },
+    {
+      "key": "account_number",
+      "type": "string",
+      "secret": true,
+      "label": {
+        "key": "addon.shipping-dhl.setting.accountNumber",
+        "fallback": "Account number"
+      }
+    },
+    {
+      "key": "demo_transport",
+      "type": "boolean",
+      "default": true,
+      "label": {
+        "key": "addon.shipping-dhl.setting.demo",
+        "fallback": "Use the demo carrier instead"
+      }
+    },
+    {
+      "key": "collection_cutoff",
+      "type": "string",
+      "default": "15:00",
+      "label": {
+        "key": "addon.shipping-dhl.setting.cutoff",
+        "fallback": "Collection cut-off"
+      }
+    }
+  ]
+}

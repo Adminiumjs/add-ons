@@ -1,0 +1,40 @@
+{
+  /*
+   * The compiler settings all four packages used to duplicate.
+   *
+   * The three add-ons arrived here as three standalone repos, each with a
+   * `tsconfig.app.json` and a `tsconfig.node.json` that agreed on every line
+   * that mattered and differed on two that did not — one had
+   * `resolveJsonModule` because its manifest suite reads the manifest as data,
+   * another did not and would have needed it the moment it grew one. Settings
+   * that drift silently are the same problem as contracts that drift silently,
+   * one order of magnitude less dangerous. There is one file now.
+   *
+   * A package still overrides what is genuinely its own: `include`, and the
+   * `lib`/`target` a Node-side config wants. Nothing else should need to.
+   */
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    /* So a manifest suite can read `manifest.json` as data and assert that
+       what an installer is told matches what `register()` actually returns. */
+    "resolveJsonModule": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+  }
+}
