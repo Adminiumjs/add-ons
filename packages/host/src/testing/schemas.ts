@@ -97,3 +97,72 @@ export const addressSchema = z
     country: z.string().min(1),
   })
   .strict();
+
+// ── product-personalizer@1 ──────────────────────────────────────────────────
+
+export const zoneSchema = z
+  .object({
+    id: z.string().min(1),
+    name: z.string().min(1),
+    kind: z.enum(['text-line', 'text-block', 'image', 'colour']),
+    shape: z
+      .object({
+        type: z.enum(['rect', 'ellipse']),
+        xMm: z.number(),
+        yMm: z.number(),
+        wMm: z.number().positive(),
+        hMm: z.number().positive(),
+      })
+      .strict(),
+    constraints: z
+      .object({
+        maxChars: z.number().int().positive().optional(),
+        fonts: z.array(z.string().min(1)).optional(),
+        minSizeMm: z.number().positive().optional(),
+        maxSizeMm: z.number().positive().optional(),
+        palette: z.array(z.string().min(1)).optional(),
+      })
+      .strict(),
+    finish: z.enum(['engraved', 'raised', 'printed', 'painted']),
+    perAngle: z.record(
+      z.string(),
+      z
+        .object({
+          xPct: z.number(),
+          yPct: z.number(),
+          wPct: z.number(),
+          hPct: z.number(),
+          skewDeg: z.number().optional(),
+        })
+        .strict(),
+    ),
+  })
+  .strict();
+
+export const templateSchema = z
+  .object({
+    productKey: z.string().min(1),
+    angles: z
+      .array(
+        z
+          .object({
+            id: z.string().min(1),
+            label: z.string().min(1),
+            fileId: z.string().min(1),
+          })
+          .strict(),
+      )
+      .min(1),
+    zones: z.array(zoneSchema),
+  })
+  .strict();
+
+export const personalizationSchema = z
+  .object({
+    templateId: z.string().min(1),
+    values: z.record(z.string(), z.string()),
+    font: z.string().min(1).optional(),
+    sizeMm: z.number().positive().optional(),
+    finish: z.enum(['engraved', 'raised', 'printed', 'painted']).optional(),
+  })
+  .strict();
