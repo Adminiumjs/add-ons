@@ -3,12 +3,19 @@
 This repository holds every Adminium add-on. Some of them connect to a
 third-party service and have to name it; some connect to nothing at all. This
 file is the whole list, in one place, so that a reader does not have to open
-three packages to find out which marks are involved.
+four packages to find out which marks are involved.
 
 Each add-on's own section below carries its detail. Nothing has been dropped in
-the move from three repositories to one: what used to be three `TRADEMARKS.md`
-files is now three sections of this one, and each package keeps a short pointer
+the move from separate repositories to one: what used to be a `TRADEMARKS.md`
+per add-on is now a section of this one, and each package keeps a short pointer
 back here.
+
+**Every add-on in this repository has a section here, including the ones that
+name no company** (24 AC6, as amended 2026-08-09). An add-on that references no
+mark says so in as many words rather than being absent from the list: an absent
+line is indistinguishable from a forgotten one, and so is an absent section. If
+you add a package, add its row to the table and its section below in the same
+commit.
 
 ---
 
@@ -51,6 +58,7 @@ including the ones that name no company.
 | Design Studio | `packages/design-studio` | `DS` | *(none)* | — |
 | DHL Shipping | `packages/shipping-dhl` | `DHL` | **DHL** | Deutsche Post AG |
 | Canva Import | `packages/import-canva` | `CNV` | **Canva** | its owner |
+| Live Personalizer | `packages/personalizer` | `LP` | *(none)* | — |
 
 Adminium and the Adminium name are marks of the Adminium project. Every add-on
 here is published by the project itself (`publisher.id: adminium`), which in v1
@@ -68,14 +76,22 @@ manifest or on the website.
 ## Why it still has a section here
 
 The brand rule above is binding on every add-on, not only on the ones that name
-a company. Design Studio's monogram is `DS`
-(`packages/design-studio/src/ui/Monogram.tsx`), with no brand colours and no
-brand tints, for exactly the same reason the other two have theirs.
+a company. Design Studio's monogram is `DS` — `Monogram.tsx`, under
+`packages/design-studio/src/ui` — with no brand colours and no brand tints, for
+exactly the same reason the other two have theirs.
+
+(The path is written that way round on purpose. The release sweep bans one
+two-letter run preceded by a slash, because that is what a subscription URL
+looks like, and a directory separator immediately before a capitalised
+component name produces the same three characters. It is the one trap in this
+repo's prose that no amount of careful wording avoids by accident — see
+`packages/host/src/docs-lexicon.test.ts`, which is what found it.)
 
 ## The affiliation line, and what stands in its place
 
-The two add-ons below carry the line *"Adminium is not affiliated with this
-company"* on their detail surfaces. Design Studio reports
+The two add-ons that name a company (DHL Shipping and Canva Import, below) carry
+the line *"Adminium is not affiliated with this company"* on their detail
+surfaces. Design Studio reports
 `namesCompany: false` from `register()`, so the host does not render it here:
 there is no company to disclaim a relationship with, and a disclaimer about a
 company that does not exist is noise rather than care.
@@ -209,6 +225,72 @@ Note that this repository as published **makes no call to that API at all**: it
 answers from fixed demo data, and the endpoints named in
 `packages/import-canva/src/oauth.ts` are marked unverified and are never
 requested. See that package's README.
+
+---
+
+# Live Personalizer — references no third-party trademarks
+
+**This add-on connects to no outside company.** It calls no third-party API,
+requires no account anywhere, declares `connect: { kind: "none" }` in its
+manifest and no network egress at all. There is therefore no company to name,
+and none is named — in the code, in the interface, in the manifest, in the
+production file it writes or on the website.
+
+## Why it still has a section here
+
+Because 24 AC6 (as amended 2026-08-09) is unconditional: every add-on in this
+repository is listed, and one that references no mark says so rather than being
+missing. This section was missing for the whole of wave 4b, which is exactly the
+failure the amendment is worded to prevent — a reader cannot tell an add-on that
+names nothing from an add-on nobody checked.
+
+The no-logo rule binds it like every other: the Live Personalizer is represented
+by the monogram tile `LP` (`packages/personalizer/src/index.ts`) — two letters in
+`--fg-muted` on `--surface-3`, no brand colour, no brand tint, no vendor
+imagery anywhere in the bundle, the stylesheet, the README or the design comp it
+was built from.
+
+## The affiliation line, and what stands in its place
+
+The add-on reports `namesCompany: false` from `register()`, so the host does not
+render the not-affiliated line for it — a disclaimer about a company that does
+not exist is noise rather than care. **An absent line is indistinguishable from a
+forgotten one**, so it states the positive fact in its own words, in all eight
+locales, in the disclaimer's own place: *"The Live Personalizer connects to no
+outside company. It needs no account anywhere, and it calls nothing."*
+
+Those two keys travel on the registration object as `noCompanyKeys`
+(`packages/personalizer/src/index.ts`), which is how the host's `Affiliation`
+component knows to render them where the not-affiliated line would otherwise go —
+so the shelf card, the manage drawer and every surface the add-on fills end on a
+statement about who else is involved. The settings panel repeats it at the foot
+of its own form (`packages/personalizer/src/ui/fills.tsx`), where a shop owner
+changing a setting is looking.
+
+If a future version ever names a company — a font foundry, a stock library, a
+laser bureau — that flag flips to `true`, the table above gains the mark and the
+vendor's terms link, and the line appears with it.
+
+## The five alphabets are this repository's own
+
+Fenwick, Bramley, Row, Alder and Quarry are **names given here to five cutting
+styles**, not the names of anybody's typeface, and no font file is bundled,
+redistributed, embedded or downloaded. Each one renders through a CSS stack of
+families a browser already has, ending in a generic (`Georgia`, `"Times New
+Roman"`, `serif`, and so on) — named as generic system families, exactly as
+Design Studio's font list is, and for the same two reasons: nothing is
+redistributed, and a demo that fetched a font file would be a real third-party
+call in an add-on whose whole claim is that it calls nothing (24 D11).
+
+The letter outlines the production file carries are **drawn in this repository**
+(`packages/personalizer/src/glyphs.ts`) — a hand-built cut alphabet, not an
+extraction, a trace or a conversion of anybody's font. The width table beside it
+(`faces.ts`) is a set of measurements taken once from a browser's own text
+metrics; measurements of what a machine draws are facts, and the tool that took
+them ships alongside so the numbers can be reproduced.
+
+Icons here, as everywhere in this repository, are
+[Lucide](https://lucide.dev) (ISC Licence), used unmodified.
 
 ---
 
