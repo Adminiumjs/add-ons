@@ -80,6 +80,15 @@ export const ALLOWED_TOKENS: readonly string[] = [
   "processed",
   /** `Promise` — the JavaScript built-in, in the booked-and-tracked await. */
   "promise",
+
+  // ── French ────────────────────────────────────────────────────────────────
+  /**
+   * "tarifs" — French, "rates": what a carrier charges to carry a parcel, and
+   * the plural of tarif. The GERMAN `Tarif` is a plan and is banned; this exact
+   * plural is not a German word, so the singular, `Tarife` and `Tarifwechsel`
+   * all still fail.
+   */
+  "tarifs",
 ];
 
 const ALLOWED = new Set(ALLOWED_TOKENS.map((word) => word.toLowerCase()));
@@ -98,25 +107,24 @@ function maskAllowed(value: string): string {
 }
 
 /**
- * Per-locale words for the tiering IDEA, in the languages where it would not be
- * spelled with any of the ASCII fragments above.
+ * THE TIERING IDEA, SPELT PER LANGUAGE — and it is NOT written out here.
  *
- * Czech "prémiový" contains no banned substring at all, and neither does
- * "高级版" — so the substring list cannot see them and this table is what does.
- * It is a SUPPLEMENT to `SUBSTRING_BANNED`, not a softer stand-in for it: both
- * run over the locale bundles, and `TIERING_PATTERNS` runs the union of them
- * over the built bytes, where all eight locales end up in one file anyway.
+ * [Rewritten 2026-08-11, wave 4b round 4.] This was a table of one word per
+ * language ("premium", and its spellings), and it was a FINGERPRINT: planting
+ * "الترقية إلى الباقة المدفوعة" and "Jetzt auf den bezahlten Tarif wechseln"
+ * in two locale bundles left every gate in this repo green. The rule D12 and
+ * 17 §2 state is about a set of IDEAS — pricing, plan, tier, billing, upgrade,
+ * free, premium — and each of them is spelt differently in each of the eight
+ * languages.
+ *
+ * The whole `idea × language` table now lives in
+ * `@adminium/add-on-host/testing`, once, because there were SIX divergent
+ * copies of the one-word version and a shelf where the host forbids a word and
+ * an add-on advertises it is not a shelf with a rule. Read it there.
  */
-export const TIERING_WORDS: Readonly<Record<string, readonly RegExp[]>> = {
-  "en-US": [/\bpro\b/i, /premium/i],
-  "de-DE": [/\bprofi/i, /premium/i],
-  "fr-FR": [/\bpro\b/i, /premium/i],
-  "cs-CZ": [/prémiov/i, /profesionál/i],
-  "da-DK": [/\bpro-/i, /premium/i],
-  "zh-CN": [/高级版/, /专业版/],
-  "zh-TW": [/高級版/, /專業版/],
-  "ar-EG": [/احترافي/, /مميز/],
-};
+import { TIERING_WORDS } from "@adminium/add-on-host/testing";
+
+export { TIERING_WORDS };
 
 /** Every tiering pattern from every locale, for a grep over one built file. */
 export const TIERING_PATTERNS: readonly RegExp[] = Object.values(TIERING_WORDS).flat();
@@ -142,10 +150,22 @@ export function bannedHitsIn(value: string): { word: string; at: number }[] {
   }));
 }
 
-/** Every locale's tiering word that appears in `value`. */
+/**
+ * Every locale's tiering word that appears in `value`.
+ *
+ * MASKED FIRST, like `bannedHitsIn`, and it was not — which only started
+ * mattering when the tiering table stopped being one word per language. The
+ * union of eight languages is where German's `Tarif` (a PLAN, and the word one
+ * of the plants used) meets French's `tarifs` (what a carrier charges to carry
+ * a parcel, which is this add-on's whole subject). One is banned; the other is
+ * on the screen in front of a customer. `ALLOWED_TOKENS` is the mechanism this
+ * file already has for exactly that, and the mask leaves offsets untouched so
+ * the reported neighbourhood is still the real one.
+ */
 export function tieringHitsIn(value: string): { pattern: string; at: number }[] {
-  return TIERING_PATTERNS.filter((re) => re.test(value)).map((re) => ({
+  const masked = maskAllowed(value);
+  return TIERING_PATTERNS.filter((re) => re.test(masked)).map((re) => ({
     pattern: re.source,
-    at: value.search(re),
+    at: masked.search(re),
   }));
 }
