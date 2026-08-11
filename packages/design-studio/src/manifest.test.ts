@@ -7,6 +7,8 @@ import { FILLED_SLOTS } from "./slots.ts";
 import { designStudioStrings } from "./i18n/strings.ts";
 import { emittedFiles } from "./testing/dist.ts";
 
+import { INERT_ORIGINS, NEVER_IN_A_BROWSER } from "./add-on-facts.ts";
+
 /**
  * The manifest's cross-block rules, checked here rather than by importing
  * `@adminium/manifest`.
@@ -219,5 +221,90 @@ describe("manifest.json", () => {
     expect(registered.name).toBe(manifest.name);
     expect(registered.category).toBe(manifest.categories[0]);
     expect(registered.lineKey).toBe(manifest.description.key);
+  });
+});
+
+/**
+ * WHAT THIS ADD-ON TELLS ITS HOSTS TO GREP FOR, CHECKED AGAINST WHAT IT
+ * DECLARES.
+ *
+ * `add-on-facts.ts` carries `NEVER_IN_A_BROWSER` — the strings a host's D15
+ * bundle gate looks for in every emitted file — and it exists because that list
+ * used to be written out inside each HOST. A host cannot look for a needle
+ * nobody told it about, so a credentialled add-on vendored into a shop that had
+ * never heard of it shipped its secret setting keys with the gate fully green.
+ *
+ * Moving the list is only half a repair: a hand-kept list beside a manifest
+ * drifts from the manifest. This is the other half. Everything the manifest
+ * already STATES about what is server-only — every `secret: true` setting key,
+ * every `network.allow` hostname — has to be in the declaration, and this is
+ * the one repo that holds both files and can say so.
+ */
+describe("the facts this add-on hands its hosts cover what it declares", () => {
+  it("accounts for every secret setting key and every allowed hostname", () => {
+    const needles = new Set(NEVER_IN_A_BROWSER.map((n) => n.text));
+    const inert = new Set(INERT_ORIGINS.map((o) => o.origin.replace(/^[a-z]+:\/\//, "")));
+    /*
+     * Read through one cast: each package's `manifest.json` is typed by
+     * inference from its own contents, so a package with no `settings` block
+     * has no such property to reach for and `tsc` says so. The QUESTION is the
+     * same for all four — what does this manifest declare as server-only — and
+     * the answer for a manifest that declares none of it is the empty list.
+     */
+    const spec = manifest as unknown as {
+      settings?: { key: string; secret?: boolean }[];
+      addOn?: { network?: { allow?: string[] } };
+    };
+    /*
+     * A SECRET KEY IS ALWAYS A NEEDLE. The name a credential would be SAVED
+     * under has no reading in which a browser should carry it.
+     */
+    const secrets = (spec.settings ?? [])
+      .filter((setting) => setting.secret === true)
+      .map((setting) => setting.key);
+    const unnamed = secrets.filter((key) => !needles.has(key));
+    expect(
+      unnamed,
+      "manifest.json declares these `secret: true` and add-on-facts.ts does not name them, " +
+        "so no host would grep its bundle for them: " + unnamed.join(", "),
+    ).toEqual([]);
+
+    /*
+     * A HOSTNAME IS ONE OR THE OTHER, AND THE ADD-ON HAS TO SAY WHICH.
+     *
+     * An allow-listed host is somewhere a SERVER half may call. Whether the
+     * CLIENT half may name it is a separate question with two honest answers —
+     * banned outright, or written down as an inert constant with a reason — and
+     * the hosts' old lists gave both answers about the same hostname at once.
+     * So: accounted for, exactly once.
+     */
+    const hosts = spec.addOn?.network?.allow ?? [];
+    const unaccounted = hosts.filter((host) => !needles.has(host) && !inert.has(host));
+    expect(
+      unaccounted,
+      "manifest.json allows calls to these and add-on-facts.ts says nothing about them: " +
+        unaccounted.join(", "),
+    ).toEqual([]);
+    const both = hosts.filter((host) => needles.has(host) && inert.has(host));
+    expect(
+      both,
+      "declared inert AND banned from a browser; a host reading both would be told " +
+        "two things: " + both.join(", "),
+    ).toEqual([]);
+  });
+
+  it("says why, for every needle and every inert origin", () => {
+    for (const entry of NEVER_IN_A_BROWSER) {
+      expect({ text: entry.text, explained: entry.why.length > 30 }).toEqual({
+        text: entry.text,
+        explained: true,
+      });
+    }
+    for (const entry of INERT_ORIGINS) {
+      expect({ origin: entry.origin, explained: entry.why.length > 30 }).toEqual({
+        origin: entry.origin,
+        explained: true,
+      });
+    }
   });
 });

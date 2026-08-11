@@ -20,6 +20,8 @@ import { buildForReal, ROOT } from "./testing/build.ts";
 import { DEFAULT_SETTINGS } from "./settings.ts";
 import { FILLED_SLOTS } from "./slots.ts";
 
+import { INERT_ORIGINS, NEVER_IN_A_BROWSER } from "./add-on-facts.ts";
+
 /** The closed slot registry of 24 §5.4 — never invent an id. */
 const SLOT_IDS = new Set([
   "artwork.sources",
@@ -131,21 +133,58 @@ describe("the manifest", () => {
     expect(cutoff.default).toBe(DEFAULT_SETTINGS.collection_cutoff);
   });
 
-  it("asks only for the scopes it uses", () => {
-    expect(manifest.addOn.scopes).toEqual([
-      "records:jobs:read",
-      "records:shipments:write",
-      "files:write",
-    ]);
+  /**
+   * ── ASKING FOR A TABLE IT NEVER READS, IN A WORD ONLY ONE HOST KNOWS ──────
+   *
+   * [Amended 2026-08-11, wave 4b round 4.] The list used to open with
+   * `records:jobs:read`. Three things were wrong with it at once, and the third
+   * is the one that had consequences:
+   *
+   *   1. Nothing in this package reads a job. `shipping-carrier@1` takes a
+   *      parcel, two addresses and an `OrderRef` — the host's own reference
+   *      string — and has no operation that takes a record id.
+   *   2. `jobs` is the PRINT WORKS' word. The maker studio's equivalent record
+   *      is an `order`, and a scope naming one host's table is a scope that
+   *      cannot be granted in the other.
+   *   3. So the manifest could not claim the second host. Adding
+   *      `{ app: "maker" }` and running the product's own validator returned
+   *      SCOPE_OUT_OF_RANGE — for a permission this add-on did not want. The
+   *      cross-app claim of 24 D21 was demonstrated in the running app and
+   *      contradicted by the artefact that describes it.
+   *
+   * A scope is a request for power. The honest length of the list is the length
+   * that matches what the code does, which is its own two.
+   */
+  it("asks only for the scopes it uses, and names no host's own table", () => {
+    expect(manifest.addOn.scopes).toEqual(["records:shipments:write", "files:write"]);
+
+    const own = new Set(manifest.requiredSchema.tables.map((t) => t.ref));
+    for (const scope of manifest.addOn.scopes) {
+      const [domain, table] = scope.split(":");
+      if (domain !== "records") continue;
+      expect(
+        own.has(table!),
+        `${scope} names "${table}", which is a HOST's table — this add-on attaches to ` +
+          `${manifest.addOn.attaches.map((a) => a.app).join(" and ")} and cannot assume both ` +
+          "spell it the same way",
+      ).toBe(true);
+    }
   });
 
   it("brings the two tables the works keeps after a disconnect (D16)", () => {
     const tables = manifest.requiredSchema.tables.map((t) => t.ref);
     expect(tables).toEqual(["shipments", "shipment_events"]);
     const shipments = manifest.requiredSchema.tables[0]!;
+    /*
+     * `order_reference`, TEXT, and not `job_id` as an fk into `jobs`. A foreign
+     * key into a host's table is a column that only installs in hosts that have
+     * that table under that name — half of this add-on's two. What actually
+     * crosses the seam is `OrderRef.reference`, a string the host mints and the
+     * label is printed with, so that is what the shipment keeps.
+     */
     expect(shipments.columns.map((c) => c.ref)).toEqual([
       "id",
-      "job_id",
+      "order_reference",
       "carrier",
       "service",
       "tracking",
@@ -166,8 +205,24 @@ describe("the manifest", () => {
     }
   });
 
-  it("attaches to a host, because an add-on cannot stand alone", () => {
-    expect(manifest.addOn.attaches).toEqual([{ app: "printing", range: "^1.0.0" }]);
+  /**
+   * THE CROSS-APP CLAIM, IN THE ARTEFACT AND NOT ONLY IN THE DEMO (24 AC20, D21).
+   *
+   * This add-on has been vendored, registered and demonstrably working in the
+   * maker studio since wave 4b, and the manifest went on naming one app. An
+   * installer reads the manifest, not the demo: `attaches` was the one place
+   * where "it runs in both shops" was checkable, and it said otherwise.
+   *
+   * Neither entry is `"*"`. `"*"` claims every app that will ever exist, and
+   * `packages/host/src/manifest-schema.test.ts` can only check the hosts that
+   * are checked out — so a `"*"` here would be an unfalsifiable claim replacing
+   * a false one.
+   */
+  it("attaches to both hosts that mount its slots, and to no app it has not been run in", () => {
+    expect(manifest.addOn.attaches).toEqual([
+      { app: "printing", range: "^1.0.0" },
+      { app: "maker", range: "^1.0.0" },
+    ]);
   });
 });
 
@@ -242,5 +297,90 @@ describe("the manifest's entry points are the files the build writes", () => {
     // A single bundle serving both halves would put the credential-reading
     // transport in a page (D15), which is the whole reason there are two.
     expect(OUTPUT.client).not.toBe(OUTPUT.server);
+  });
+});
+
+/**
+ * WHAT THIS ADD-ON TELLS ITS HOSTS TO GREP FOR, CHECKED AGAINST WHAT IT
+ * DECLARES.
+ *
+ * `add-on-facts.ts` carries `NEVER_IN_A_BROWSER` — the strings a host's D15
+ * bundle gate looks for in every emitted file — and it exists because that list
+ * used to be written out inside each HOST. A host cannot look for a needle
+ * nobody told it about, so a credentialled add-on vendored into a shop that had
+ * never heard of it shipped its secret setting keys with the gate fully green.
+ *
+ * Moving the list is only half a repair: a hand-kept list beside a manifest
+ * drifts from the manifest. This is the other half. Everything the manifest
+ * already STATES about what is server-only — every `secret: true` setting key,
+ * every `network.allow` hostname — has to be in the declaration, and this is
+ * the one repo that holds both files and can say so.
+ */
+describe("the facts this add-on hands its hosts cover what it declares", () => {
+  it("accounts for every secret setting key and every allowed hostname", () => {
+    const needles = new Set(NEVER_IN_A_BROWSER.map((n) => n.text));
+    const inert = new Set(INERT_ORIGINS.map((o) => o.origin.replace(/^[a-z]+:\/\//, "")));
+    /*
+     * Read through one cast: each package's `manifest.json` is typed by
+     * inference from its own contents, so a package with no `settings` block
+     * has no such property to reach for and `tsc` says so. The QUESTION is the
+     * same for all four — what does this manifest declare as server-only — and
+     * the answer for a manifest that declares none of it is the empty list.
+     */
+    const spec = manifest as unknown as {
+      settings?: { key: string; secret?: boolean }[];
+      addOn?: { network?: { allow?: string[] } };
+    };
+    /*
+     * A SECRET KEY IS ALWAYS A NEEDLE. The name a credential would be SAVED
+     * under has no reading in which a browser should carry it.
+     */
+    const secrets = (spec.settings ?? [])
+      .filter((setting) => setting.secret === true)
+      .map((setting) => setting.key);
+    const unnamed = secrets.filter((key) => !needles.has(key));
+    expect(
+      unnamed,
+      "manifest.json declares these `secret: true` and add-on-facts.ts does not name them, " +
+        "so no host would grep its bundle for them: " + unnamed.join(", "),
+    ).toEqual([]);
+
+    /*
+     * A HOSTNAME IS ONE OR THE OTHER, AND THE ADD-ON HAS TO SAY WHICH.
+     *
+     * An allow-listed host is somewhere a SERVER half may call. Whether the
+     * CLIENT half may name it is a separate question with two honest answers —
+     * banned outright, or written down as an inert constant with a reason — and
+     * the hosts' old lists gave both answers about the same hostname at once.
+     * So: accounted for, exactly once.
+     */
+    const hosts = spec.addOn?.network?.allow ?? [];
+    const unaccounted = hosts.filter((host) => !needles.has(host) && !inert.has(host));
+    expect(
+      unaccounted,
+      "manifest.json allows calls to these and add-on-facts.ts says nothing about them: " +
+        unaccounted.join(", "),
+    ).toEqual([]);
+    const both = hosts.filter((host) => needles.has(host) && inert.has(host));
+    expect(
+      both,
+      "declared inert AND banned from a browser; a host reading both would be told " +
+        "two things: " + both.join(", "),
+    ).toEqual([]);
+  });
+
+  it("says why, for every needle and every inert origin", () => {
+    for (const entry of NEVER_IN_A_BROWSER) {
+      expect({ text: entry.text, explained: entry.why.length > 30 }).toEqual({
+        text: entry.text,
+        explained: true,
+      });
+    }
+    for (const entry of INERT_ORIGINS) {
+      expect({ origin: entry.origin, explained: entry.why.length > 30 }).toEqual({
+        origin: entry.origin,
+        explained: true,
+      });
+    }
   });
 });
