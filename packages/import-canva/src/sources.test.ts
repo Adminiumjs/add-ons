@@ -17,6 +17,16 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import {
+  foreignImportsIn,
+  impuritiesIn,
+  offendingAddresses,
+  sendersIn,
+  type InertOrigin,
+} from "@adminium/add-on-host/testing";
+
+import { INERT_ORIGINS } from "./add-on-facts.ts";
+
 const SRC = new URL(".", import.meta.url).pathname;
 
 function walk(dir: string): string[] {
@@ -51,18 +61,57 @@ const codeOf = (file: string): string =>
     .replace(/(^|[^:])\/\/.*$/gm, "$1");
 const relative = (file: string): string => file.slice(SRC.length);
 
+/**
+ * THE ADDRESSES THIS ADD-ON IS ALLOWED TO NAME, AND WHY NAMING THEM IS SAFE.
+ *
+ * This is the one add-on in the wave that declares a third party at all, so it
+ * is the one where the distinction has to be written down rather than assumed.
+ * `oauth.ts` holds the vendor's authorize and token endpoints as CONSTANTS the
+ * host reads: 24 §5.6 gives the authorization-code exchange to the host, this
+ * package has no client secret, performs no exchange, and — see the case below
+ * — carries nothing that could issue a request if it wanted to. The manifest's
+ * `network.allow` pins the same hostname and the host refuses and audits
+ * anything else.
+ *
+ * Declaring an endpoint and being able to reach one are different things, and
+ * the two nets are what keep them different. Anything not on this list is
+ * reported, including a second path on a host already here.
+ */
+/**
+ * READ OFF THE ADD-ON'S OWN DECLARATION, never written out here.
+ *
+ * `add-on-facts.ts` carries the reasoning: an address this package names is a
+ * fact about this package, and both hosts discover it by vendoring the file
+ * rather than by keeping a copy of it in an exemption list of their own.
+ * Declaring it there and asserting it here is what keeps the two in step —
+ * this suite is the one that fails if an origin is declared and then named
+ * nowhere, or named and not declared.
+ */
+const INERT: readonly InertOrigin[] = INERT_ORIGINS;
+
 describe("no real third-party call (24 D11)", () => {
-  it("has no fetch, no XHR, no WebSocket and no beacon anywhere in the shipped sources", () => {
-    // The ONLY way out of an add-on is the `AuthorizedHttpClient` the host
-    // injects, bound to the manifest's `network.allow`. A `fetch` here would be
-    // an egress hole that the allow-list never sees, and a demo that posted to
-    // a real account on every visitor's click would be a defect, not a feature.
-    const offenders = SHIPPED.filter((file) =>
-      /\bfetch\s*\(|XMLHttpRequest|new WebSocket|navigator\.sendBeacon|EventSource/.test(
-        codeOf(file),
-      ),
+  /*
+   * D11 AS A RULE, NOT A WORD LIST. This was a grep for five spellings until a
+   * verifier put `new Image(); img.src = "https://…"` into a sibling package
+   * and every gate in three repos stayed green — an image beacon is a request
+   * and none of the five words appear in one. See `egress.ts` in
+   * `@adminium/add-on-host/testing`.
+   */
+  it("names no address outside the ones declared inert", () => {
+    const offenders = [...SHIPPED, ...STYLES].flatMap((file) =>
+      offendingAddresses(codeOf(file), INERT).map((url) => `${relative(file)} → ${url}`),
     );
-    expect(offenders.map(relative)).toEqual([]);
+    expect(offenders).toEqual([]);
+  });
+
+  it("carries nothing that can issue a request", () => {
+    // Which is what makes the two declared URLs above harmless: an address with
+    // no way to send is a string.
+    const offenders = SHIPPED.flatMap((file) => [
+      ...sendersIn(codeOf(file)).map((means) => `${relative(file)} → ${means}`),
+      ...foreignImportsIn(codeOf(file)).map((spec) => `${relative(file)} → ${spec}`),
+    ]);
+    expect(offenders).toEqual([]);
   });
 
   it("declares an authorized client rather than building one", () => {
@@ -74,16 +123,22 @@ describe("no real third-party call (24 D11)", () => {
 });
 
 describe("no real clock, no dice (24 D6/D11)", () => {
+  /*
+   * THE RULE IS `@adminium/add-on-host/testing` NOW, not a pattern written out
+   * here. There was one of these per package and none of the four checked
+   * `crypto.getRandomValues` — see that package's `testing/purity.ts` for the
+   * mutant that walked past all of them, and `host/src/shared-rule.test.ts` for
+   * the guard that fails if this line ever turns back into a regex.
+   */
   it("reads no wall clock and rolls no random number", () => {
-    // `new Date(iso)` and `Date.UTC(…)` are fine and both are used: it is
-    // `Date.now()` and an argument-less `new Date()` that would make a pinned
-    // demo drift, so those are what the pattern names.
-    const offenders = SHIPPED.filter((file) =>
-      /Date\.now\s*\(|Math\.random\s*\(|new Date\s*\(\s*\)|performance\.now\s*\(|crypto\.randomUUID/.test(
-        codeOf(file),
-      ),
+    // `new Date(iso)` and `Date.UTC(…)` are fine and both are used here: the
+    // shared rule bans the argument-less call and leaves arithmetic over a
+    // value the caller passed in alone, which is exactly the line this add-on
+    // needs drawn.
+    const offenders = SHIPPED.flatMap((file) =>
+      impuritiesIn(codeOf(file)).map((means) => `${relative(file)} → ${means}`),
     );
-    expect(offenders.map(relative)).toEqual([]);
+    expect(offenders).toEqual([]);
   });
 
   it("has exactly one pinned clock, and it is the host's moment", () => {

@@ -19,7 +19,17 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
+import {
+  foreignImportsIn,
+  impuritiesIn,
+  offendingAddresses,
+  sendersIn,
+  type InertOrigin,
+} from "@adminium/add-on-host/testing";
+
 import manifest from "../manifest.json";
+
+import { INERT_ORIGINS } from "./add-on-facts.ts";
 
 const SRC = fileURLToPath(new URL(".", import.meta.url));
 
@@ -55,18 +65,48 @@ const codeOf = (file: string) =>
     .replace(/\/\*[\s\S]*?\*\//g, " ")
     .replace(/(^|[^:])\/\/.*$/gm, "$1");
 
+/**
+ * Addresses this add-on is allowed to name — none.
+ *
+ * It declares NO egress at all (`manifest.json` has no `network` block and no
+ * `outbound-http` capability), so unlike the carrier there is not even a
+ * host-injected client to reach for. A URL here would be a hole with nothing on
+ * the other side of it.
+ */
+/**
+ * READ OFF THE ADD-ON'S OWN DECLARATION, never written out here.
+ *
+ * `add-on-facts.ts` carries the reasoning: an address this package names is a
+ * fact about this package, and both hosts discover it by vendoring the file
+ * rather than by keeping a copy of it in an exemption list of their own.
+ * Declaring it there and asserting it here is what keeps the two in step —
+ * this suite is the one that fails if an origin is declared and then named
+ * nowhere, or named and not declared.
+ */
+const INERT: readonly InertOrigin[] = INERT_ORIGINS;
+
 describe("no real third-party call, no real clock (24 D11)", () => {
-  it("has no fetch, no XHR and no WebSocket anywhere in the shipped sources", () => {
-    // This add-on declares NO egress at all (`manifest.json` has no `network`
-    // block and no `outbound-http` capability), so unlike the carrier there is
-    // not even a host-injected client to reach for. Any call here would be a
-    // hole with nothing on the other side of it.
-    const offenders = SHIPPED.filter((file) =>
-      /\bfetch\s*\(|XMLHttpRequest|new WebSocket|navigator\.sendBeacon|EventSource/.test(
-        codeOf(file),
-      ),
+  /*
+   * D11 AS A RULE, NOT A WORD LIST. This was a grep for five spellings until a
+   * verifier put `new Image(); img.src = "https://…"` into a sibling package
+   * and every gate in three repos stayed green. `egress.ts` in
+   * `@adminium/add-on-host/testing` carries the argument; the two nets below
+   * are an ADDRESS nobody declared inert and an API whose only purpose is to
+   * issue a request, and the third — the value, at run time — is in the hosts.
+   */
+  it("names no address outside the ones declared inert", () => {
+    const offenders = [...SHIPPED, ...STYLES].flatMap((file) =>
+      offendingAddresses(codeOf(file), INERT).map((url) => `${relative(file)} → ${url}`),
     );
-    expect(offenders.map(relative)).toEqual([]);
+    expect(offenders).toEqual([]);
+  });
+
+  it("carries nothing that can issue a request", () => {
+    const offenders = SHIPPED.flatMap((file) => [
+      ...sendersIn(codeOf(file)).map((means) => `${relative(file)} → ${means}`),
+      ...foreignImportsIn(codeOf(file)).map((spec) => `${relative(file)} → ${spec}`),
+    ]);
+    expect(offenders).toEqual([]);
   });
 
   it("agrees with the manifest, which asks for no egress", () => {
@@ -77,16 +117,21 @@ describe("no real third-party call, no real clock (24 D11)", () => {
     expect(manifest.addOn).not.toHaveProperty("demoTransport");
   });
 
+  /*
+   * THE RULE IS `@adminium/add-on-host/testing` NOW, not a pattern written out
+   * here. There was one of these per package and none of the four checked
+   * `crypto.getRandomValues` — see that package's `testing/purity.ts` for the
+   * mutant that walked past all of them, and `host/src/shared-rule.test.ts` for
+   * the guard that fails if this line ever turns back into a regex.
+   */
   it("reads no real clock and rolls no dice", () => {
     // The whole editor is deterministic: ids come from a counter on the
     // document, the seeded activity carries its own pinned dates, and two runs
     // of the same demo produce byte-identical output a year apart (21 D6).
-    const offenders = SHIPPED.filter((file) =>
-      /Date\.now\s*\(|Math\.random\s*\(|new Date\s*\(\s*\)|performance\.now\s*\(|crypto\.randomUUID/.test(
-        codeOf(file),
-      ),
+    const offenders = SHIPPED.flatMap((file) =>
+      impuritiesIn(codeOf(file)).map((means) => `${relative(file)} → ${means}`),
     );
-    expect(offenders.map(relative)).toEqual([]);
+    expect(offenders).toEqual([]);
   });
 
   it("pulls in no Node built-in, because the client half runs in a browser", () => {
