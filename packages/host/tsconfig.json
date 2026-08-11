@@ -2,7 +2,13 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
-    "types": ["node"]
+    /*
+     * `vite/client` is here for `import.meta.glob` alone — the copy ledger in
+     * `app-neutral.test.ts` imports every add-on's string bundle rather than
+     * parsing it, and vitest resolves the glob the same way Vite does. Nothing
+     * this package SHIPS depends on Vite; it publishes TypeScript sources.
+     */
+    "types": ["node", "vite/client"]
   },
   "include": ["src"]
 }
