@@ -66,7 +66,7 @@
 
 import type { ReactNode } from 'react';
 
-import type { PayloadFor } from './payloads.ts';
+import type { PayloadFor, ShopClock } from './payloads.ts';
 import { SLOT_FILL, type SlotId } from './slots.ts';
 
 /** Add-on categories — the closed vocabulary of 24 D2. */
@@ -101,21 +101,91 @@ export interface AddOnSetting {
 export type AddOnSettingValues = Readonly<Record<string, unknown>>;
 
 /**
- * A seeded line in the manage drawer's activity list, and the shelf's
- * "last used".
+ * WHAT THE HOST TELLS AN ADD-ON ABOUT ITS OWN PAST, so a seeded line can be
+ * true in the shop that renders it.
  *
- * The add-on supplies these rather than the host: they are what THIS add-on
- * did, phrased in its own words (`messageKey` resolves in its own bundle). A
- * real install reads the same list out of `adminium_audit_log` (24 §5.7,
- * category `add-on`) and this demo has no server to read; what a host must
- * never do is keep a hand-written history of one particular add-on, because
- * that is a host that knows which add-ons exist.
+ * Both members are HOST FACTS and neither has an honest add-on-side answer.
+ * `now` is the same `ShopClock` every dated surface already takes, for the same
+ * reason (see `payloads.ts`). `refs` is the shop's OWN paperwork references,
+ * newest first — `MP-4119`, `BR-2284`, an invoice number, whatever a shop
+ * prints on its own documents — because a reference is the string BOTH sides
+ * already use to find the same record, and an add-on that made one up would be
+ * naming a record that does not exist.
+ *
+ * `refs` may be empty and that is ordinary: a host with no records to point at
+ * seeds nothing, and an entry naming a reference it has not got is dropped
+ * rather than rendered against a blank.
+ */
+export interface ActivityContext {
+  now: ShopClock;
+  /** The shop's own references, newest first. May be empty. */
+  refs: readonly string[];
+}
+
+/**
+ * A SEEDED LINE, AS THE ADD-ON DECLARES IT — relative, and referring rather
+ * than naming.
+ *
+ * ── WHY THIS SHAPE, AND WHAT THE OLD ONE DID ────────────────────────────────
+ *
+ * [Amended 2026-08-10, wave 4b.] This used to be the shape `ActivityEntry`
+ * below still is — `iso`, `hour`, `minute`, `ref` — AUTHORED BY THE ADD-ON.
+ * That is precisely the defect `ShopClock` was added to kill, surviving in the
+ * one place nothing had looked at: the members read like neutral data, and
+ * every one of them is a fact about a HOST. An add-on picked an instant and a
+ * paperwork reference out of the air, the host printed both verbatim, and
+ * nothing anywhere compared them with the shop doing the printing.
+ *
+ * It was not theoretical. With the personalizer registered in Marlow Press —
+ * pinned to Wednesday 5 August, 10:20 — the Add-ons drawer listed Birch Row's
+ * Thursday the 6th against Birch Row's `BR-2284`, in a shop that has never
+ * issued a reference beginning `BR` and does not think it is Thursday. Nothing
+ * threw. It was simply somebody else's history, on this shop's screen.
+ *
+ * So an add-on says WHEN RELATIVE TO NOW and WHICH OF YOUR REFERENCES, and the
+ * host turns that into an instant and a string it can stand behind. An add-on
+ * cannot invent either, in the same way and for the same reason it can no
+ * longer invent a clock.
+ *
+ * `minutesAgo` rather than a day offset because the two facts a seeded line
+ * carries are "how long ago" and "in what order", and minutes give both at any
+ * granularity. `refIndex` rather than a reference because the add-on knows it
+ * wants THE MOST RECENT ORDER, not what that order is called here.
+ */
+export interface SeededActivityEntry {
+  /** How long before the host's `now` this happened. */
+  minutesAgo: number;
+  /**
+   * Which of `ActivityContext.refs` this line names, newest first — 0 is the
+   * most recent. Leave it undefined for a line about nothing in particular
+   * ("design saved for later"), and the resolved `ref` is empty.
+   *
+   * An index the host has no reference for DROPS the line. That is deliberate:
+   * a shop with two orders should not be shown a third line pointing at a
+   * blank, and an add-on cannot know how much history a host has.
+   */
+  refIndex?: number;
+  /** i18n key in the add-on's own bundle, taking `{when}` and `{ref}`. */
+  messageKey: string;
+}
+
+/**
+ * A seeded line in the manage drawer's activity list, and the shelf's
+ * "last used" — AS THE HOST RENDERS IT, after `resolveActivity` has dated it
+ * against the shop's own clock and paperwork.
+ *
+ * The words are still the add-on's: `messageKey` resolves in its own bundle,
+ * because what an add-on did is phrased by the add-on. A real install reads the
+ * same list out of `adminium_audit_log` (24 §5.7, category `add-on`) and this
+ * demo has no server to read; what a host must never do is keep a hand-written
+ * history of one particular add-on, because that is a host that knows which
+ * add-ons exist.
  */
 export interface ActivityEntry {
   iso: string;
   hour: number;
   minute: number;
-  /** The works reference the line names, or empty where there is none. */
+  /** The shop's own reference the line names, or empty where there is none. */
   ref: string;
   /** i18n key in the add-on's own bundle, taking `{when}` and `{ref}`. */
   messageKey: string;
@@ -245,8 +315,11 @@ export interface AddOn {
   messages?: Readonly<Record<string, Readonly<Record<string, string>>>>;
   /** i18n keys naming exactly what a disconnect removes and what it keeps (24 D16). */
   disconnect?: { goesKey: string; staysKey: string };
-  /** Seeded "what it last did", newest first. */
-  activity?: readonly ActivityEntry[];
+  /**
+   * Seeded "what it last did", newest first — RELATIVE, and resolved against
+   * the host's own clock and references by `resolveActivity`.
+   */
+  activity?: readonly SeededActivityEntry[];
   /** For a credentialled add-on: the setting that means "use the demo transport". */
   demoSwitch?: DemoSwitch;
   /** The account an `oauth2` add-on is signed in to, for the dialog's confirmation row. */
@@ -397,3 +470,108 @@ export function applyAddOnSettings(addOns: readonly AddOn[], settings: AddOnSett
 /** An empty registry — what a build with no add-ons compiled in gets. */
 export const EMPTY_REGISTRY: AddOnRegistry = createRegistry([]);
 
+// ── seeded activity, dated by the host ──────────────────────────────────────
+
+/*
+ * CIVIL DATES WITHOUT A `Date`.
+ *
+ * `purity.test.ts` bans `new Date(` in everything this package ships, and it is
+ * right to: a bare `new Date('2026-08-05')` is UTC midnight, the same literal
+ * with a time is LOCAL, and a seeded line that slid a day depending on which
+ * side of Greenwich the shop's laptop was standing would be the same class of
+ * bug this whole file exists to close. So the two conversions are the
+ * days-from-civil pair — integer arithmetic, no timezone anywhere near it.
+ */
+
+function daysFromCivil(y: number, m: number, d: number): number {
+  const shifted = y - (m <= 2 ? 1 : 0);
+  const era = Math.floor(shifted / 400);
+  const yearOfEra = shifted - era * 400;
+  const dayOfYear = Math.floor((153 * (m + (m > 2 ? -3 : 9)) + 2) / 5) + d - 1;
+  const dayOfEra =
+    yearOfEra * 365 + Math.floor(yearOfEra / 4) - Math.floor(yearOfEra / 100) + dayOfYear;
+  return era * 146097 + dayOfEra - 719468;
+}
+
+function civilFromDays(days: number): { y: number; m: number; d: number } {
+  const shifted = days + 719468;
+  const era = Math.floor(shifted / 146097);
+  const dayOfEra = shifted - era * 146097;
+  const yearOfEra = Math.floor(
+    (dayOfEra -
+      Math.floor(dayOfEra / 1460) +
+      Math.floor(dayOfEra / 36524) -
+      Math.floor(dayOfEra / 146096)) /
+      365,
+  );
+  const year = yearOfEra + era * 400;
+  const dayOfYear =
+    dayOfEra - (365 * yearOfEra + Math.floor(yearOfEra / 4) - Math.floor(yearOfEra / 100));
+  const mp = Math.floor((5 * dayOfYear + 2) / 153);
+  const d = dayOfYear - Math.floor((153 * mp + 2) / 5) + 1;
+  const m = mp + (mp < 10 ? 3 : -9);
+  return { y: year + (m <= 2 ? 1 : 0), m, d };
+}
+
+const pad = (n: number): string => String(n).padStart(2, '0');
+
+/** `2026-08-05` shifted by whole days, both directions. */
+function shiftIso(iso: string, days: number): string {
+  const [y, m, d] = iso.split('-').map((part) => Number.parseInt(part, 10));
+  const { y: yy, m: mm, d: dd } = civilFromDays(daysFromCivil(y!, m!, d!) + days);
+  return `${String(yy).padStart(4, '0')}-${pad(mm)}-${pad(dd)}`;
+}
+
+/**
+ * TURN AN ADD-ON'S "FORTY MINUTES AGO" INTO A DAY AND A TIME THIS SHOP AGREES
+ * WITH.
+ *
+ * The host calls this everywhere it used to read `entry.iso` — the manage
+ * drawer's list and the shelf's "last used" are the two — passing its own
+ * pinned clock and its own recent references. It is the mirror of what
+ * `<AddOnSlot>` already does with `now`: the add-on says what it wants
+ * expressed, the host says what it is true of.
+ *
+ * PURE, and deterministic to the minute: no clock is read here either. A demo
+ * whose seeded history moved would be a demo nobody can screenshot, which is
+ * the whole reason `ShopClock` crosses the seam rather than being sampled.
+ *
+ * Entries naming a reference the host has not got are DROPPED (see
+ * `SeededActivityEntry.refIndex`), so the resolved list can be shorter than the
+ * declared one and callers must read its length rather than the add-on's.
+ */
+export function resolveActivity(
+  entries: readonly SeededActivityEntry[] | undefined,
+  context: ActivityContext,
+): readonly ActivityEntry[] {
+  if (entries === undefined) return [];
+  const dayMinutes = 1440;
+  const out: ActivityEntry[] = [];
+
+  for (const entry of entries) {
+    let ref = '';
+    if (entry.refIndex !== undefined) {
+      const found = context.refs[entry.refIndex];
+      // The host has fewer records than this add-on assumed. A line pointing at
+      // a blank is worse than no line.
+      if (found === undefined) continue;
+      ref = found;
+    }
+
+    const total = context.now.hour * 60 + context.now.minute - entry.minutesAgo;
+    // `Math.floor` and not a truncation: going back past midnight has to move
+    // the date to the day BEFORE, and `-1 / 1440 | 0` is zero.
+    const dayShift = Math.floor(total / dayMinutes);
+    const inDay = total - dayShift * dayMinutes;
+
+    out.push({
+      iso: shiftIso(context.now.iso, dayShift),
+      hour: Math.floor(inDay / 60),
+      minute: inDay % 60,
+      ref,
+      messageKey: entry.messageKey,
+    });
+  }
+
+  return out;
+}
