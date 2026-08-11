@@ -252,6 +252,14 @@
   line-height: 1.5;
   color: var(--fg-subtle);
 }
+/*
+ * The same line under the action tile, where the company is first named (AC6).
+ * A little air above it so it reads as a footnote to the tile rather than as a
+ * second line of the tile's own body.
+ */
+.cvi-tile-fine {
+  margin-block-start: 6px;
+}
 
 /*
  * The simulation label (24 D11 / AC7).
