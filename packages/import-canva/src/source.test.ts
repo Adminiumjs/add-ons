@@ -107,8 +107,16 @@ describe("availability", () => {
     const verdict = source.available(BANNER);
     expect(verdict.ok).toBe(false);
     if (!verdict.ok) {
+      /*
+       * `2,000` and not `2000`. The reason is COPY — it is shown to the
+       * customer who asked for the banner — so it goes through the same `t`
+       * seam as everything else, and that seam now formats a number instead of
+       * `String()`ing it (`i18n/numerals.test.ts`). A grouped thousand is what
+       * en-US does with 2000, and an Arabic reader gets ٢٬٠٠٠, which is the
+       * whole point of the change.
+       */
       expect(verdict.reason).toContain("850");
-      expect(verdict.reason).toContain("2000");
+      expect(verdict.reason).toContain("2,000");
     }
   });
 
