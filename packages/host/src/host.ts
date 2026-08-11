@@ -36,27 +36,37 @@
  * the three disagreeing copies, and an optional member costs an add-on that
  * ignores it precisely nothing.
  *
- * ── WHAT IS DELIBERATELY *NOT* HERE ─────────────────────────────────────────
+ * ── WHERE THE PAYLOADS LIVE, AND WHY THIS PARAGRAPH CHANGED ─────────────────
  *
- * The per-slot PAYLOADS an add-on only reads. The host hands
- * `artwork.sources` its own configured job and `order.dispatch.*` its own job
- * record; each add-on states the subset of those it reads, next to the engine
- * that reads them, because a narrowing a consumer chooses is safe and a shared
- * narrowing nobody owns is not. The rule this repo works to:
+ * [Amended 2026-08-10, wave 4b.] This file used to say the per-slot payloads
+ * were deliberately NOT here, under a rule that read:
  *
- *   a type the add-on CONSTRUCTS and hands back to the host must match the
- *   host exactly, so it lives here;
+ *   a type the add-on CONSTRUCTS and hands back must match the host exactly,
+ *   so it lives here;
  *   a type the add-on only READS may be narrowed, so it lives with the add-on.
  *
- * `DemoSwitch` and `AddOnSetting` are constructed and handed over — here.
- * `HostJob`, `DispatchPayload`, `HostBasketLine`, `CheckoutPayload` and each
- * add-on's `ArtworkSlotPayload` are read — with their add-on. `DeliveryChoice`
- * travels BOTH ways (the fill builds one, the host stores it, the host hands it
- * back), so it is here, in `delivery.ts`.
+ * That rule is sound about OWNERSHIP and silent about SHAPE, and the shape is
+ * what a second host changes. Each add-on duly wrote down "the fields I read",
+ * which in practice was "the fields the one host I was built against happened
+ * to send" — `HostJob` was a print works' job record, `HostBasketLine` a maker
+ * studio's basket line, and `AddOnFill<never>` erased both so nothing compared
+ * them. See `payloads.ts` for the whole account.
+ *
+ * So the payloads are HERE NOW, one per slot id, named for the SURFACE rather
+ * than for a shop: `payloads.ts`, keyed by `SlotId`, reached through
+ * `PayloadFor<S>`. An add-on may still narrow what it reads — `render` is
+ * contravariant in its parameter — but it narrows against a shape both hosts
+ * promise instead of against one host's memory.
+ *
+ * `DemoSwitch` and `AddOnSetting` are constructed by the add-on and handed
+ * over, so they are here. `DeliveryChoice` travels BOTH ways (the fill builds
+ * one, the host stores it, the host hands it back), so it is here too, in
+ * `delivery.ts`.
  */
 
 import type { ReactNode } from 'react';
 
+import type { PayloadFor } from './payloads.ts';
 import { SLOT_FILL, type SlotId } from './slots.ts';
 
 /** Add-on categories — the closed vocabulary of 24 D2. */
@@ -89,45 +99,6 @@ export interface AddOnSetting {
 
 /** One add-on's saved values, under its own machine keys. Opaque to the host. */
 export type AddOnSettingValues = Readonly<Record<string, unknown>>;
-
-/**
- * Every fill is handed the shop's saved values FOR ITS OWN ADD-ON under
- * `settings`, injected by the host's `<AddOnSlot>`. A screen therefore never
- * looks a settings document up by add-on key to pass it along — which is how
- * `settings['design-studio']` used to appear in a customer-facing screen.
- */
-export interface SlotPayload {
-  settings?: AddOnSettingValues;
-}
-
-/**
- * One representative job per family, already labelled in the reader's language,
- * handed to `settings.add-on.panel`.
- *
- * It exists so an add-on that has something to say about the shop's catalogue
- * can say it without the host guessing what that is. The carrier turns these
- * into default parcel weights with its own engine; an add-on that has no
- * opinion about them ignores the field. THE HOST DOES NOT COMPUTE A WEIGHT —
- * it does not know what a job weighs, and a weight table here that disagreed
- * with the one the dispatch screen quotes would be worse than no table at all.
- */
-export interface SampleJob {
-  /** The family's name, already translated by the host. */
-  label: string;
-  productKey: string;
-  materialKey: string;
-  quantity: number;
-  trimWidthMm: number;
-  trimHeightMm: number;
-  packagingKey: string;
-}
-
-/** What `settings.add-on.panel` is handed. */
-export interface SettingsPanelPayload extends SlotPayload {
-  /** Save a partial change to this add-on's own values. */
-  patch: (values: Record<string, unknown>) => void;
-  samples: readonly SampleJob[];
-}
 
 /**
  * A seeded line in the manage drawer's activity list, and the shelf's
@@ -168,21 +139,48 @@ export interface DemoSwitch {
 }
 
 /**
- * One registered fill.
+ * ONE REGISTERED FILL, AND ITS PAYLOAD IS DECIDED BY THE SLOT IT NAMES.
  *
- * `S` narrows `slot` to the ids ONE add-on fills. The three separate repos got
- * that narrowing by re-declaring `SlotId` itself, which is precisely how one of
- * them kept filling a slot the host had stopped hosting: its private union
- * still named it. Here the union is the host's, and an add-on narrows it with
- * `Extract`, so an id the host drops narrows to `never` and every fill naming
- * it fails to compile.
+ * This used to read `AddOnFill<P = unknown, S extends SlotId = SlotId>`, with
+ * `AddOn.fills` typed `readonly AddOnFill<never>[]`, and that pair of
+ * declarations is the whole architectural defect 24 D21 tripped over. `never`
+ * erased the payload: a fill could declare `render: (p: anything) => …` and be
+ * assignable, so nothing anywhere compared what a HOST passes with what a FILL
+ * reads. The seam type-checked perfectly and threw three times on the first
+ * screen of the second host.
+ *
+ * Now `S` is the only parameter and the payload is derived from it. A fill for
+ * `order.dispatch.panel` receives `SLOT_PAYLOADS['order.dispatch.panel']` and
+ * nothing else; an add-on may still NARROW what it reads — `render` is
+ * contravariant in its parameter, so a component asking for fewer fields is
+ * assignable and one asking for a field the payload does not carry is not —
+ * which is exactly the guarantee wanted in both directions:
+ *
+ *   the add-on reads a field no host promises  → red in the ADD-ON's repo
+ *   the host passes a shape the slot does not  → red in the HOST's repo
+ *
+ * `SlotId` is still the host's union rather than a private one, so an id the
+ * registry drops turns every fill naming it red. An add-on narrows to the ids
+ * it fills with `satisfies readonly SlotId[]` in its own `slots.ts`.
  */
-export interface AddOnFill<P = unknown, S extends SlotId = SlotId> {
+export interface AddOnFill<S extends SlotId = SlotId> {
   slot: S;
   /** Ties are broken by `order` then by add-on key, so the result is stable. */
   order: number;
-  render: (payload: P) => ReactNode;
+  render: (payload: PayloadFor<S>) => ReactNode;
 }
+
+/**
+ * A fill for SOME slot — the union over the registry, never `AddOnFill<SlotId>`.
+ *
+ * The difference is the point. `AddOnFill<SlotId>` would type `render` as
+ * taking the UNION of every payload, which no real component accepts, so every
+ * add-on would have to cast and the guarantee would be back where it started.
+ * The distributed union pairs each `slot` literal with its own payload, so a
+ * list of fills for different slots is well-typed and each entry still knows
+ * which shape it gets.
+ */
+export type AnyAddOnFill = { [S in SlotId]: AddOnFill<S> }[SlotId];
 
 export interface AddOn {
   key: string;
@@ -288,7 +286,7 @@ export interface AddOn {
    * omit it from their COPIES of this interface, which is a different thing.
    */
   inDemo?: boolean;
-  fills: readonly AddOnFill<never>[];
+  fills: readonly AnyAddOnFill[];
 }
 
 /** Whether an add-on can actually be switched on here. */
@@ -296,10 +294,16 @@ export function isConnectable(addOn: AddOn): boolean {
   return addOn.inDemo !== false;
 }
 
-/** A fill with the key of the add-on that supplied it, so a caller can scope. */
-export interface ResolvedFill {
+/**
+ * A fill with the key of the add-on that supplied it, so a caller can scope.
+ *
+ * Parameterised by the slot it was resolved FOR, so the mount site gets a
+ * `render` it can call with that slot's payload rather than a union it would
+ * have to cast its way out of.
+ */
+export interface ResolvedFill<S extends SlotId = SlotId> {
   addOn: string;
-  fill: AddOnFill<never>;
+  fill: AddOnFill<S>;
 }
 
 export interface AddOnRegistry {
@@ -315,7 +319,11 @@ export interface AddOnRegistry {
    * slot means: the manage drawer asks for the panel of the add-on it is
    * managing and gets that one or nothing.
    */
-  fillsFor: (slot: SlotId, enabled: ReadonlySet<string>, forAddOn?: string) => ResolvedFill[];
+  fillsFor: <S extends SlotId>(
+    slot: S,
+    enabled: ReadonlySet<string>,
+    forAddOn?: string,
+  ) => ResolvedFill<S>[];
 }
 
 /**
@@ -336,12 +344,23 @@ export function createRegistry(addOns: readonly AddOn[]): AddOnRegistry {
   return {
     all,
     byKey: (key) => index.get(key),
-    fillsFor(slot, enabled, forAddOn) {
+    fillsFor<S extends SlotId>(slot: S, enabled: ReadonlySet<string>, forAddOn?: string) {
       const fills = all
         .filter((addOn) => enabled.has(addOn.key))
         .filter((addOn) => forAddOn === undefined || addOn.key === forAddOn)
         .flatMap((addOn) =>
-          addOn.fills.filter((f) => f.slot === slot).map((f) => ({ addOn: addOn.key, fill: f })),
+          addOn.fills
+            .filter((f) => f.slot === slot)
+            /*
+             * THE ONE CAST IN THE SEAM, and the runtime check on the line above
+             * is what earns it. `fills` is the union over every id, and a
+             * `.filter()` predicate does not narrow a generic `S` for the
+             * compiler however obvious it is to a reader. Everything either
+             * side of this line is checked: the add-on declared `slot` and
+             * `render` together (`AnyAddOnFill` pairs them), and the caller
+             * asked for one id and gets that id's payload type back.
+             */
+            .map((f) => ({ addOn: addOn.key, fill: f as unknown as AddOnFill<S> })),
         )
         .sort((a, b) => a.fill.order - b.fill.order || a.addOn.localeCompare(b.addOn));
 
@@ -377,3 +396,4 @@ export function applyAddOnSettings(addOns: readonly AddOn[], settings: AddOnSett
 
 /** An empty registry — what a build with no add-ons compiled in gets. */
 export const EMPTY_REGISTRY: AddOnRegistry = createRegistry([]);
+
