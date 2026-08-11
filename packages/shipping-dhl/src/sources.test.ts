@@ -12,9 +12,19 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import {
+  foreignImportsIn,
+  impuritiesIn,
+  offendingAddresses,
+  sendersIn,
+  type InertOrigin,
+} from "@adminium/add-on-host/testing";
+
 import { strings } from "./i18n/strings.ts";
 import { renderLabelPdf } from "./label.ts";
 import { bannedSubstringsIn, TIERING_WORDS } from "./testing/lexicon.ts";
+
+import { INERT_ORIGINS } from "./add-on-facts.ts";
 
 const SRC = new URL(".", import.meta.url).pathname;
 
@@ -46,21 +56,61 @@ const codeOf = (file: string) =>
     .replace(/(^|[^:])\/\/.*$/gm, "$1");
 const relative = (file: string) => file.slice(SRC.length);
 
+/**
+ * Addresses this add-on is allowed to name. There are none, and that is right:
+ * it declares no `network` block, and the only way out of an add-on is the
+ * `HttpClient` the host injects, bound to the manifest's allow-list. A URL here
+ * would be a hostname reaching a browser with nothing checking it.
+ */
+/**
+ * READ OFF THE ADD-ON'S OWN DECLARATION, never written out here.
+ *
+ * `add-on-facts.ts` carries the reasoning: an address this package names is a
+ * fact about this package, and both hosts discover it by vendoring the file
+ * rather than by keeping a copy of it in an exemption list of their own.
+ * Declaring it there and asserting it here is what keeps the two in step —
+ * this suite is the one that fails if an origin is declared and then named
+ * nowhere, or named and not declared.
+ */
+const INERT: readonly InertOrigin[] = INERT_ORIGINS;
+
 describe("no real third-party call, no real clock (24 D11)", () => {
-  it("has no fetch, no XHR and no WebSocket anywhere in the shipped sources", () => {
-    const offenders = SHIPPED.filter((file) =>
-      /\bfetch\s*\(|XMLHttpRequest|new WebSocket|navigator\.sendBeacon/.test(codeOf(file)),
+  /*
+   * D11 AS A RULE, NOT A WORD LIST. This was a grep for four spellings until a
+   * verifier put `new Image(); img.src = "https://…"` inside this package's own
+   * `ui/DispatchAction.tsx` and every gate in three repos stayed green. See
+   * `@adminium/add-on-host/testing`'s `egress.ts` for the two nets below and
+   * the third one that runs in the host apps.
+   */
+  it("names no address outside the ones declared inert", () => {
+    const offenders = SHIPPED.flatMap((file) =>
+      offendingAddresses(codeOf(file), INERT).map((url) => `${relative(file)} → ${url}`),
     );
-    // The ONLY way out is the `HttpClient` the host injects, bound to the
-    // manifest's allow-list. A `fetch` here would be an egress hole.
-    expect(offenders.map(relative)).toEqual([]);
+    expect(offenders).toEqual([]);
   });
 
+  it("carries nothing that can issue a request", () => {
+    const offenders = SHIPPED.flatMap((file) => [
+      ...sendersIn(codeOf(file)).map((means) => `${relative(file)} → ${means}`),
+      ...foreignImportsIn(codeOf(file)).map((spec) => `${relative(file)} → ${spec}`),
+    ]);
+    expect(offenders).toEqual([]);
+  });
+
+  /*
+   * THE RULE IS `@adminium/add-on-host/testing` NOW, not a pattern written out
+   * here. This was the shortest of the four private copies — four spellings,
+   * neither `crypto.randomUUID` nor `crypto.getRandomValues` among them — and
+   * it is the add-on that ships into BOTH hosts, so a die here would have been
+   * a die in two apps. See that package's `testing/purity.ts`, and
+   * `host/src/shared-rule.test.ts` for the guard that fails if this line ever
+   * turns back into a regex.
+   */
   it("reads no real clock and rolls no dice", () => {
-    const offenders = SHIPPED.filter((file) =>
-      /Date\.now\s*\(|Math\.random\s*\(|new Date\s*\(\s*\)|performance\.now\s*\(/.test(codeOf(file)),
+    const offenders = SHIPPED.flatMap((file) =>
+      impuritiesIn(codeOf(file)).map((means) => `${relative(file)} → ${means}`),
     );
-    expect(offenders.map(relative)).toEqual([]);
+    expect(offenders).toEqual([]);
   });
 });
 
@@ -260,6 +310,59 @@ describe("every simulated result is labelled as one (24 D11 / AC7)", () => {
       }
     }
   });
+
+  /**
+   * ── THE ONE SCREEN THAT SAID THE OPPOSITE ─────────────────────────────────
+   *
+   * [Added 2026-08-11, wave 4b round 4.] Every result card carries its chip and
+   * every chip is behind `isDemo()`. The DEMO SWITCH's own note was not a
+   * result card, so nothing above covered it — and with the switch off it read
+   * "Calls go to the carrier with the account details you entered. Switch this
+   * back on to stop that."
+   *
+   * No call is ever made. `runtime.test.ts` proves it in the exact state the
+   * note describes: with the switch off and no connected transport injected —
+   * which is EVERY demo build, because only a self-hosting shop injects one —
+   * `usingDemo()` is still true, the seeded stand-in still answers, and the
+   * chip stays on the screen. So the sentence a shop read in the connect dialog
+   * and in the settings panel contradicted both the transport underneath it and
+   * the panel three rows below it.
+   *
+   * The note says what the switch would mean in a real shop AND what this build
+   * does, and this is the guard that keeps the second half there.
+   *
+   * ── WHY A WORD PER LOCALE ─────────────────────────────────────────────────
+   *
+   * "Discloses that nothing is sent" is a claim about MEANING, and the only
+   * mechanical proxy for it is the word each locale's own copy uses for the
+   * stand-in. The table is explicit and reviewed rather than derived, for the
+   * same reason the homograph carve-outs in the hosts' lexicons are: a
+   * translator changing the word is expected to change it here too, and a note
+   * rewritten into a sentence that no longer mentions the demo at all is
+   * exactly what this is watching for.
+   */
+  const DEMO_WORD: Readonly<Record<string, string>> = {
+    "en-US": "demo",
+    "de-DE": "Demo",
+    "fr-FR": "démo",
+    "cs-CZ": "ukázky",
+    "da-DK": "demo",
+    "zh-CN": "演示",
+    "zh-TW": "示範",
+    "ar-EG": "العرض التوضيحي",
+  };
+
+  it("says the demo is still answering in the note shown when the switch is OFF", () => {
+    expect(Object.keys(DEMO_WORD).sort()).toEqual(Object.keys(strings).sort());
+    for (const [locale, bundle] of Object.entries(strings)) {
+      const note = bundle["addon.shipping-dhl.set.demoOff"]!;
+      expect(
+        note,
+        `${locale}'s switch-off note promises live calls with no word for the stand-in ` +
+          "that is in fact still answering",
+      ).toContain(DEMO_WORD[locale]!);
+    }
+  });
 });
 
 describe("all eight locales carry all the keys", () => {
@@ -283,12 +386,24 @@ describe("all eight locales carry all the keys", () => {
     // is an untranslated bundle. Short shared tokens are exempt — "Service",
     // "DHL" and "API" are the same word in more than one of these languages.
     const exempt = new Set(["addon.shipping-dhl.booked.service"]);
+
+    /*
+     * AND SO IS A STRING THAT IS NOTHING BUT PLACEHOLDERS. `"{quantity} × {what}"`
+     * is the same eight bytes in every language because there is no language in
+     * it: the words arrive already translated, inside the placeholders. Marking
+     * such a key "untranslated" would push a translator into inventing a
+     * connective their language does not need, which is a worse bundle than the
+     * one this check is defending.
+     */
+    const hasWords = (text: string) => /\p{L}/u.test(text.replace(/\{[^}]*\}/g, ""));
+
     const offenders: string[] = [];
     for (const [locale, bundle] of Object.entries(strings)) {
       if (locale === "en-US") continue;
       for (const [key, value] of Object.entries(bundle)) {
         if (exempt.has(key)) continue;
         const english = strings["en-US"][key as keyof (typeof strings)["en-US"]];
+        if (!hasWords(english)) continue;
         if (value === english && english.length > 12) offenders.push(`${locale} · ${key}`);
       }
     }
