@@ -1,0 +1,22 @@
+{
+  "name": "@adminium/add-on-personalizer",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Live Personalizer — the maker draws the areas a customer may change, and the customer watches their own words appear on the piece.",
+  "license": "AGPL-3.0-only",
+  "scripts": {
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "peerDependencies": {
+    "lucide-react": "^0.462.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@adminium/add-on-host": "*"
+  }
+}

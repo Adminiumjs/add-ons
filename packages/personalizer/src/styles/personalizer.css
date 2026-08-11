@@ -1,0 +1,590 @@
+/*
+ * The Live Personalizer's own styles.
+ *
+ * EVERY COLOUR IS ONE OF THE HOST'S TOKENS, never a literal, so the add-on
+ * arrives in whatever accent and theme the shop is already wearing and follows
+ * it when the reader flips to dark. The one exception is the preview's inside,
+ * and that is comp L's own critical rule rather than an oversight: what is
+ * drawn ON the piece uses the PIECE's colours — the material, the cut, the
+ * paint — and the only tokens allowed near it are the guides. Those literals
+ * live in `pieces.ts` and `template.ts`, with the geometry, and none of them is
+ * in this file.
+ *
+ * LOGICAL PROPERTIES ONLY. `inline-start`, `block-end`, `margin-inline`: the
+ * whole surface mirrors for Arabic with no RTL stylesheet, which is the rule
+ * both host apps hold and which `sources.test.ts` greps this file for.
+ *
+ * Prefixed `lp-` so nothing here can collide with a host's own class names —
+ * Birch Row's are `br-`, the print works' are `mp-`, and an add-on that shipped
+ * a bare `.panel` would restyle whichever host mounted it.
+ */
+
+.lp {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── the preview ────────────────────────────────────────────────────────── */
+
+.lp-stage {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-2);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  /* The picture must not move the page as it redraws (comp L, rule 1): the
+     canvas keeps its box whatever the words do. */
+  contain: layout paint;
+}
+
+.lp-canvas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 220px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.lp-canvas svg {
+  max-inline-size: 100%;
+  block-size: auto;
+  display: block;
+}
+
+.lp-angles {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.lp-angle {
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  border-radius: 99px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--fg-muted);
+}
+
+.lp-angle[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--fg);
+}
+
+.lp-angle:active {
+  transform: scale(0.97);
+}
+
+.lp-zoom {
+  margin-inline-start: auto;
+}
+
+.lp-honest {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--fg-subtle);
+  text-wrap: pretty;
+}
+
+/* ── the inputs ─────────────────────────────────────────────────────────── */
+
+.lp-zones {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lp-zone {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  padding: 12px 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lp-zone[data-state='bad'] {
+  border-color: var(--danger);
+}
+
+.lp-zone[data-state='warn'] {
+  border-color: var(--warn);
+}
+
+.lp-zone-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.lp-count {
+  margin-inline-start: auto;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--fg-subtle);
+}
+
+.lp-count[data-tone='warn'] {
+  color: var(--warn);
+}
+
+.lp-count[data-tone='bad'] {
+  color: var(--danger);
+}
+
+.lp-input {
+  inline-size: 100%;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--fg);
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 15px;
+}
+
+/*
+ * THE FOCUS RING COMES FROM THE HOST, AND IT IS SOLID.
+ *
+ * [Corrected 2026-08-11, wave 4b round 5.] This drew `3px solid
+ * var(--accent-soft)` — the host's accent at 10% (20% in dark) over whatever is
+ * behind it, which measures 1.15-1.56:1 against the surfaces it lands on. A
+ * keyboard user could not see where they were. `--accent-soft` is a FILL token,
+ * for selected rows and hover states; it was reached for here because it had
+ * "soft" in its name and it was to hand.
+ *
+ * `--focus-ring` is the host's accent at full strength (4.08:1 at worst, across
+ * both shops, both themes and every surface token; both hosts measure it in
+ * their own `focus.test.ts`). The FALLBACK matters: an add-on must not go blind
+ * in a host that has not defined the token, and `currentColor` is the text
+ * colour of the very thing being focused, which contrasts with its own
+ * background by construction.
+ */
+.lp-input:focus-visible {
+  outline: 3px solid var(--focus-ring, currentColor);
+  outline-offset: 2px;
+  border-color: var(--accent);
+}
+
+.lp-note {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  border-radius: 10px;
+  padding: 9px 11px;
+}
+
+.lp-note[data-tone='bad'] {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.lp-note[data-tone='warn'] {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+.lp-note[data-tone='info'] {
+  background: var(--info-soft);
+  color: var(--info);
+}
+
+/* THE REMEDIES, AS BUTTONS. A verdict that carried no number could not be
+   drawn here at all, which is the point of the contract carrying them. */
+.lp-remedies {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-block-start: 8px;
+}
+
+.lp-remedy {
+  border: 1px solid currentColor;
+  background: var(--surface);
+  border-radius: 99px;
+  padding: 6px 13px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: inherit;
+}
+
+.lp-remedy:active {
+  transform: scale(0.97);
+}
+
+/* ── the controls under the inputs ──────────────────────────────────────── */
+
+.lp-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lp-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.lp-control-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--fg-muted);
+  min-inline-size: 76px;
+}
+
+.lp-chip {
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  border-radius: 99px;
+  padding: 7px 13px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--fg-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.lp-chip[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--fg);
+  font-weight: 700;
+}
+
+.lp-chip:active {
+  transform: scale(0.97);
+}
+
+.lp-swatch {
+  inline-size: 12px;
+  block-size: 12px;
+  border-radius: 3px;
+  border: 1px solid var(--border-strong);
+}
+
+.lp-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 3px;
+}
+
+.lp-stepper button {
+  border: 0;
+  background: transparent;
+  border-radius: 7px;
+  padding: 5px 9px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--fg-muted);
+}
+
+.lp-stepper button:hover {
+  background: var(--surface-3);
+}
+
+.lp-stepper-value {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  min-inline-size: 58px;
+  text-align: center;
+}
+
+/* ── the basket / order line ────────────────────────────────────────────── */
+
+.lp-line {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-block-start: 8px;
+}
+
+.lp-line-pic {
+  inline-size: 92px;
+  flex: 0 0 auto;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.lp-line-pic svg {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+}
+
+.lp-line-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-inline-size: 0;
+}
+
+.lp-line-row {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  align-items: baseline;
+}
+
+.lp-line-k {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--fg-subtle);
+  min-inline-size: 66px;
+}
+
+.lp-line-v {
+  color: var(--fg);
+  overflow-wrap: anywhere;
+}
+
+/*
+ * THE MAKER'S ORDER LINE — the same picture the customer approved, then the
+ * way through to the machine file.
+ *
+ * It used to be the button alone, which is why the order line was showing a
+ * picture nobody had ever approved: the file's own geometry, in the studio's
+ * cut alphabet. The picture comes first now and the button sits under it, so
+ * the two are read in that order. Tighter than the shopper's surfaces because
+ * it lives inside a row of an order rather than on a page of its own.
+ */
+.lp-orderline {
+  gap: 8px;
+  inline-size: 100%;
+}
+
+.lp-orderline .lp-line {
+  margin-block-start: 0;
+}
+
+/* ── the maker's surfaces ───────────────────────────────────────────────── */
+
+.lp-panel {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lp-panel-title {
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.lp-sub {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--fg-muted);
+  text-wrap: pretty;
+}
+
+.lp-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 760px) {
+  .lp-grid {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  }
+}
+
+.lp-thumbs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.lp-thumb {
+  inline-size: 96px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+
+.lp-thumb svg {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+}
+
+.lp-thumb-label {
+  display: block;
+  padding: 5px 7px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--fg-subtle);
+  border-block-start: 1px solid var(--border);
+}
+
+/* ── the production file ────────────────────────────────────────────────── */
+
+.lp-layers {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lp-layer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 11px;
+  background: var(--surface-2);
+  font-size: 12.5px;
+}
+
+.lp-layer-swatch {
+  inline-size: 10px;
+  block-size: 10px;
+  border-radius: 2px;
+  flex: 0 0 auto;
+}
+
+.lp-layer-name {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+}
+
+.lp-layer-figures {
+  margin-inline-start: auto;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--fg-muted);
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.lp-file {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-3);
+  padding: 10px;
+}
+
+.lp-file svg {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+  max-block-size: 300px;
+}
+
+/* ── shared bits ────────────────────────────────────────────────────────── */
+
+.lp-mono {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.lp-button {
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  border-radius: 11px;
+  padding: 10px 15px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--fg);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lp-button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.lp-button:active {
+  transform: scale(0.97);
+}
+
+.lp-button--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+
+.lp-button--primary:hover {
+  color: var(--accent-fg);
+  filter: brightness(1.06);
+}
+
+.lp-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.lp-empty {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--fg-subtle);
+}
+
+/*
+ * The host's own sentences, carried through this fill unchanged (`hostSays`).
+ * A shade darker than `.lp-empty`, because they are the shop talking about the
+ * piece rather than the add-on talking about itself.
+ */
+.lp-host-says {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--fg-muted);
+}
+
+/*
+ * On a narrow viewport the picture pins to the top and the inputs scroll under
+ * it, so a shopper can always see what they are typing (comp L, rule 2).
+ */
+@media (max-width: 759px) {
+  .lp-stage {
+    position: sticky;
+    inset-block-start: 8px;
+    z-index: 2;
+    background: var(--surface-2);
+  }
+
+  .lp-canvas {
+    min-block-size: 160px;
+  }
+}
