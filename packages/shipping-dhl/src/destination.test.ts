@@ -3,119 +3,139 @@
  *
  * This suite exists because of a real defect, and it is worth naming precisely
  * so it cannot come back under a different spelling. `destinationFor()` took a
- * customer KEY and ended in `?? DESTINATIONS.harbour`. The print shop resolves
- * its own customer keys to display NAMES before it hands a job to a slot, so
- * every lookup missed and every miss fell through to the same seeded address —
- * the staff dispatch screen pre-filled Harbour Bakery's street, city and
- * postcode for every job in the works, in the same quiet grey box a correct
- * address uses, one click away from being printed onto a label.
+ * customer key, looked it up in an address book THIS ADD-ON SHIPPED, and ended
+ * in `?? DESTINATIONS.harbour`. The print shop resolves its own customer keys
+ * to display names before it hands a job to a slot, so every lookup missed and
+ * every miss fell through to the same seeded address — the staff dispatch screen
+ * pre-filled one bakery's street, city and postcode for every job in the works,
+ * in the same quiet grey box a correct address uses, one click from being
+ * printed onto a label.
  *
- * Two properties are asserted here, and both are load-bearing:
+ * ── AND THE SECOND DEFECT, WHICH THE FIRST ONE HID ──────────────────────────
  *
- *   1. resolution works for the host as it actually is (by name) and for the
- *      host as the contract prefers (by key);
- *   2. when neither matches, the result is an UNRESOLVED STATE THE WORKS CAN
- *      SEE — never another customer's address.
+ * The address book itself. It was keyed by ONE host's customers, so in any
+ * other shop it resolved nothing at all — which the fallback then papered over.
+ * A shop knows where its customer lives; an add-on does not, and should not
+ * carry a directory of somebody else's trade. `OutboundOrder.destination` is
+ * the host's to supply, and this module now READS it rather than guessing.
+ *
+ * Three properties are asserted here, and all three are load-bearing:
+ *
+ *   1. what the host supplied is what gets used, unchanged;
+ *   2. when the host supplied nothing — or half of something — the result is an
+ *      UNRESOLVED STATE THE WORKS CAN SEE, never an address of any kind;
+ *   3. the unresolved surface renders as an obviously-empty form, and carries
+ *      no trace of any other order's address.
  */
 
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
+import type { OutboundOrder, PostalAddress } from "@adminium/add-on-host";
 import {
   addressIsUsable,
   blankAddress,
-  DESTINATIONS,
-  DISPATCH_READY,
+  DEMO_ORIGIN,
+  originOf,
   resolveDestination,
-  WORKS_ADDRESS,
+  SAMPLE_ORDER,
 } from "./seed.ts";
 import { UnresolvedDestination } from "./ui/DispatchAction.tsx";
 import { strings } from "./i18n/strings.ts";
 
-/** Every postcode the seed knows — none of them may stand in for another. */
-const SEEDED_POSTCODES = Object.values(DESTINATIONS).map((a) => a.postcode);
+/** Somebody else's parcel, whose address must never stand in for this one's. */
+const OTHER: PostalAddress = {
+  name: "Harbour Bakery",
+  lines: ["12 Quay Street"],
+  city: "Marlow",
+  postcode: "ML7 1AA",
+  country: "GB",
+};
 
-describe("resolving a host job to a destination", () => {
-  it("matches on the display name the print shop actually passes", () => {
-    // `Job.customer` is a display name in the host (`src/data/source.ts`
-    // resolves the key before the slot ever sees the job).
-    const found = resolveDestination({ customer: "Kestrel Joinery" });
+const order = (over: Partial<OutboundOrder> = {}): OutboundOrder => ({
+  ...SAMPLE_ORDER,
+  ...over,
+});
+
+describe("reading the destination the host supplied", () => {
+  it("uses it exactly as it arrived", () => {
+    const found = resolveDestination(order({ destination: OTHER }));
     expect(found).toEqual({
       status: "resolved",
-      address: DESTINATIONS.kestrel,
-      matchedOn: "name",
+      address: {
+        name: OTHER.name,
+        lines: [...OTHER.lines],
+        city: OTHER.city,
+        postcode: OTHER.postcode,
+        country: OTHER.country,
+      },
     });
   });
 
-  it("matches on the key when a host has one to give, and prefers it", () => {
-    const byField = resolveDestination({ customer: "Kestrel Joinery", customerKey: "harbour" });
-    expect(byField).toMatchObject({ status: "resolved", matchedOn: "key" });
-    expect(byField).toMatchObject({ address: DESTINATIONS.harbour });
-
-    // A host that still puts the key in `customer` is matched too, and the
-    // result says which spelling won.
-    expect(resolveDestination({ customer: "tworivers" })).toMatchObject({
-      status: "resolved",
-      matchedOn: "key",
-      address: DESTINATIONS.tworivers,
-    });
+  it("works for a host whose customers this add-on has never heard of", () => {
+    // The whole point of moving the address to the payload: a maker studio's
+    // private customers are not in anybody's directory, and never were.
+    const found = resolveDestination(
+      order({
+        recipient: { name: "Bex T." },
+        destination: {
+          name: "Bex T.",
+          lines: ["4 Marine Parade"],
+          city: "Saltburn",
+          postcode: "TS12 1DP",
+          country: "GB",
+        },
+      }),
+    );
+    expect(found.status).toBe("resolved");
   });
 
-  it("is not fooled by case or stray whitespace in a name", () => {
-    expect(resolveDestination({ customer: "  two rivers cycles " })).toMatchObject({
-      status: "resolved",
-      address: DESTINATIONS.tworivers,
-    });
-  });
-
-  it("places every job the works can dispatch", () => {
-    // The two seeded jobs, and the seven customers the print shop ships with:
-    // a works can move any job to *ready*, so an address book covering only the
-    // comp's two jobs would leave the rest looking broken.
-    for (const job of DISPATCH_READY) {
-      expect(resolveDestination(job).status, job.ref).toBe("resolved");
-    }
-    for (const name of Object.values(DESTINATIONS).map((a) => a.name)) {
-      expect(resolveDestination({ customer: name }).status, name).toBe("resolved");
-    }
+  it("hands the collection address over as the carrier contract wants it", () => {
+    expect(originOf(order())).toEqual(DEMO_ORIGIN);
   });
 });
 
-describe("a customer nobody can place", () => {
+describe("an order nobody can place", () => {
   const STRANGER = "Ashcombe Bindery";
 
   it("comes back unresolved rather than as somebody else's address", () => {
-    const found = resolveDestination({ customer: STRANGER });
+    const found = resolveDestination(
+      order({ recipient: { name: STRANGER }, destination: undefined }),
+    );
     expect(found).toEqual({ status: "unresolved", customer: STRANGER });
     // The precise regression: no address, of any kind, is handed back.
     expect(found).not.toHaveProperty("address");
   });
 
-  it("does not fall through when a bad key is given either", () => {
-    expect(resolveDestination({ customer: STRANGER, customerKey: "not-a-customer" })).toEqual({
-      status: "unresolved",
-      customer: STRANGER,
-    });
+  it("does not accept a half-filled record either", () => {
+    // A host that carries the field but has never filled it in is the same
+    // situation as a host that carries no field, and must read the same.
+    const found = resolveDestination(
+      order({
+        recipient: { name: STRANGER },
+        destination: { name: STRANGER, lines: [], city: "  ", postcode: "", country: "GB" },
+      }),
+    );
+    expect(found).toEqual({ status: "unresolved", customer: STRANGER });
   });
 
-  it("starts an empty form that carries no seeded street, town or postcode", () => {
-    const blank = blankAddress(STRANGER);
+  it("starts an empty form that carries no street, town or postcode", () => {
+    const blank = blankAddress(STRANGER, DEMO_ORIGIN.country);
     expect(blank.name).toBe(STRANGER);
     expect(blank.city).toBe("");
     expect(blank.postcode).toBe("");
     expect(blank.lines.join("")).toBe("");
-    // A country is not an address, and the works' own is the honest default.
-    expect(blank.country).toBe(WORKS_ADDRESS.country);
-    for (const postcode of SEEDED_POSTCODES) {
-      expect(JSON.stringify(blank)).not.toContain(postcode);
-    }
+    // A country is not an address, and the one the shop collects from is the
+    // honest default.
+    expect(blank.country).toBe(DEMO_ORIGIN.country);
+    expect(JSON.stringify(blank)).not.toContain(OTHER.postcode);
   });
 
   it("cannot be quoted until a town and a postcode are typed", () => {
     // This is what disables "Get rates" and the retry button, so an empty
     // address can never reach `quote`, `book` or a printed label.
-    const blank = blankAddress(STRANGER);
+    const blank = blankAddress(STRANGER, "GB");
     expect(addressIsUsable(blank)).toBe(false);
     expect(addressIsUsable({ ...blank, city: "Ashcombe" })).toBe(false);
     expect(addressIsUsable({ ...blank, city: "Ashcombe", postcode: "AC1 4TR" })).toBe(true);
@@ -128,7 +148,7 @@ describe("a customer nobody can place", () => {
     const raw = renderToStaticMarkup(
       createElement(UnresolvedDestination, {
         customer: STRANGER,
-        to: blankAddress(STRANGER),
+        to: blankAddress(STRANGER, "GB"),
         onChange: () => {},
       }),
     );
@@ -146,11 +166,9 @@ describe("a customer nobody can place", () => {
     expect(markup).toContain(
       en["addon.shipping-dhl.dest.unknownBody"].replace("{customer}", STRANGER),
     );
-    // And not one character of anybody else's address is on the screen.
-    for (const address of Object.values(DESTINATIONS)) {
-      expect(markup).not.toContain(address.postcode);
-      expect(markup).not.toContain(address.city);
-      for (const line of address.lines) expect(markup).not.toContain(line);
-    }
+    // And not one character of another parcel's address is on the screen.
+    expect(markup).not.toContain(OTHER.postcode);
+    expect(markup).not.toContain(OTHER.city);
+    for (const line of OTHER.lines) expect(markup).not.toContain(line);
   });
 });
