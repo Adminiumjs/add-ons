@@ -74,19 +74,24 @@ export const SUBSTRING_BANNED = [
 ] as const;
 
 /**
- * The homograph table. Per-locale, because each language advertises a paid
- * grade in its own letters, and none of those letters is an English banned run.
+ * THE TIERING IDEA, SPELT PER LANGUAGE — and it is NOT written out here.
+ *
+ * [Rewritten 2026-08-11, wave 4b round 4.] This was a table of one word per
+ * language ("premium", and its spellings), and it was a FINGERPRINT: planting
+ * "الترقية إلى الباقة المدفوعة" and "Jetzt auf den bezahlten Tarif wechseln"
+ * in two locale bundles left every gate in this repo green. The rule D12 and
+ * 17 §2 state is about a set of IDEAS — pricing, plan, tier, billing, upgrade,
+ * free, premium — and each of them is spelt differently in each of the eight
+ * languages.
+ *
+ * The whole `idea × language` table now lives in
+ * `@adminium/add-on-host/testing`, once, because there were SIX divergent
+ * copies of the one-word version and a shelf where the host forbids a word and
+ * an add-on advertises it is not a shelf with a rule. Read it there.
  */
-export const TIERING_WORDS: Record<LexiconLocale, RegExp[]> = {
-  "en-US": [/\bpro\b/i, /premium/i],
-  "de-DE": [/\bprofi/i, /premium/i],
-  "fr-FR": [/\bpro\b/i, /premium/i],
-  "cs-CZ": [/prémiov/i, /profesionál/i],
-  "da-DK": [/\bpro\b/i, /premium/i],
-  "zh-CN": [/高级版/, /专业版/],
-  "zh-TW": [/高級版/, /專業版/],
-  "ar-EG": [/احترافي/, /مميز/],
-};
+import { TIERING_WORDS } from "@adminium/add-on-host/testing";
+
+export { TIERING_WORDS };
 
 /**
  * Every pattern above, flattened.
