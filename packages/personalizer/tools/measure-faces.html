@@ -1,0 +1,52 @@
+<!doctype html><meta charset="utf-8"><title>Measure the studio's five faces</title>
+<!--
+  THE PAGE THAT PRODUCED THE NUMBERS IN `src/faces.ts`, shipped so they can be
+  reproduced or revised rather than trusted.
+
+  Open it in a browser, copy the JSON, and paste the arrays into `FACES`. It was
+  last run in Chrome on macOS on 2026-08-10.
+
+  It uses canvas, which the ENGINE may not (24 D5c): the whole point of a
+  committed table is that the measuring happens once, here, by a person, instead
+  of once per render on whatever machine a shopper happens to be using.
+
+  `adv` is per mille of the type size for ASCII 32..126 in code order. `cap`,
+  `xh`, `inkAsc` and `inkDesc` are per mille of the same size, read off `H`, `x`
+  and `Hgjy`. `check` vs `sum` is the sanity line: the browser's own laid-out
+  width of a specimen string against the sum of this table's advances, which is
+  how much kerning the no-kerning rule in `lineWidthMm` gives up.
+-->
+<pre id="out">measuring…</pre>
+<script>
+const FACES = {
+  fenwick: { css: 'Georgia, "Iowan Old Style", "Times New Roman", serif', weight: 600 },
+  bramley: { css: '"Rockwell", "Roboto Slab", "Bookman Old Style", Georgia, serif', weight: 700 },
+  row:     { css: 'Manrope, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif', weight: 600 },
+  alder:   { css: '"Snell Roundhand", "Bradley Hand", "Segoe Script", "Brush Script MT", cursive', weight: 600 },
+  quarry:  { css: '"Haettenschweiler", "Arial Narrow", "Avenir Next Condensed", "Helvetica Neue Condensed", sans-serif', weight: 600 }
+};
+const c = document.createElement('canvas').getContext('2d');
+const out = {};
+for (const [id, f] of Object.entries(FACES)) {
+  c.font = f.weight + ' 1000px ' + f.css;
+  const row = [];
+  for (let code = 32; code <= 126; code++) {
+    row.push(Math.round(c.measureText(String.fromCharCode(code)).width));
+  }
+  // kerning-ish sanity: width of a known string vs sum of advances
+  c.font = f.weight + ' 1000px ' + f.css;
+  const s = 'The Hartleys';
+  const sum = [...s].reduce((a, ch) => a + (ch.charCodeAt(0) >= 32 && ch.charCodeAt(0) <= 126 ? row[ch.charCodeAt(0) - 32] : 0), 0);
+  const H = c.measureText('H'), X = c.measureText('x'), G = c.measureText('Hgjy');
+  out[id] = {
+    adv: row,
+    cap: Math.round(H.actualBoundingBoxAscent),
+    xh: Math.round(X.actualBoundingBoxAscent),
+    inkAsc: Math.round(G.actualBoundingBoxAscent),
+    inkDesc: Math.round(G.actualBoundingBoxDescent),
+    check: Math.round(c.measureText(s).width),
+    sum
+  };
+}
+document.getElementById('out').textContent = JSON.stringify(out);
+</script>
