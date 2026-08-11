@@ -14,15 +14,58 @@ export {
   type ArtworkSourceFixtures,
 } from './artwork-source.ts';
 export {
+  describeProductPersonalizer,
+  FONT_REFERENCE,
+  type ProductPersonalizerFixtures,
+} from './product-personalizer.ts';
+export {
   describeShippingCarrier,
   type ShippingCarrierFixtures,
 } from './shipping-carrier.ts';
+export {
+  HOST_BEHAVIOURS,
+  type HostBehaviour,
+} from './host-behaviours.ts';
+export {
+  describeNumerals,
+  latinNumbersIn,
+  type NumeralFixtures,
+} from './numerals.ts';
+export {
+  BANNED_IDEAS,
+  IDEA_IN_LANGUAGE,
+  OTHER_LANGUAGES,
+  TIERING_WORDS,
+  type BannedIdea,
+} from './tiering.ts';
+export {
+  addressesIn,
+  foreignImportsIn,
+  offendingAddresses,
+  originOf,
+  reachesElsewhere,
+  SENDERS,
+  sendersIn,
+  watchEgress,
+  type EgressAttempt,
+  type InertOrigin,
+} from './egress.ts';
+export {
+  IMPURITIES,
+  RESTATEMENTS,
+  impuritiesIn,
+  restatementsIn,
+  type Impurity,
+} from './purity.ts';
 export {
   addressSchema,
   artworkRefSchema,
   jobSpecSchema,
   parcelSchema,
+  personalizationSchema,
   rateSchema,
   shipmentSchema,
+  templateSchema,
   trackEventSchema,
+  zoneSchema,
 } from './schemas.ts';

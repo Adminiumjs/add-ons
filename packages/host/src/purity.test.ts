@@ -20,6 +20,14 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
+import { impuritiesIn } from './testing/purity.ts';
+import {
+  foreignImportsIn,
+  offendingAddresses,
+  sendersIn,
+  type InertOrigin,
+} from './testing/egress.ts';
+
 const SRC = fileURLToPath(new URL('.', import.meta.url));
 
 function walk(dir: string): string[] {
@@ -41,23 +49,66 @@ const codeOf = (file: string) =>
     .replace(/\/\*[\s\S]*?\*\//g, ' ')
     .replace(/(^|[^:])\/\/.*$/gm, '$1');
 
+/**
+ * The shared contract names no host at all — it is types and pure functions.
+ *
+ * An empty list is the honest value here, and it is worth more than a
+ * populated one: the gate below reports EVERY address, so the day somebody adds
+ * a URL to this package they have to come here and say why it is inert.
+ */
+const INERT: readonly InertOrigin[] = [];
+
 describe('the shared contract stays pure (24 D7, D11)', () => {
-  it('makes no call of any kind', () => {
-    const offenders = SHIPPABLE.filter((file) =>
-      /\bfetch\s*\(|XMLHttpRequest|new WebSocket|navigator\.sendBeacon|EventSource/.test(
-        codeOf(file),
-      ),
+  /*
+   * D11 AS A RULE RATHER THAN A WORD LIST — see `testing/egress.ts` for the
+   * argument and for the mutant that beat the five-word grep this replaced.
+   * Two nets: an address nobody declared inert, and an API whose only purpose
+   * is to issue a request. The third net (the value, at run time) lives in the
+   * host apps, which are the repos that have a page to render.
+   */
+  it('names no address outside the ones declared inert', () => {
+    const offenders = SHIPPABLE.flatMap((file) =>
+      offendingAddresses(codeOf(file), INERT).map((url) => `${relative(file)} → ${url}`),
     );
-    expect(offenders.map(relative)).toEqual([]);
+    expect(offenders).toEqual([]);
   });
 
+  it('carries nothing that can issue a request', () => {
+    const offenders = SHIPPABLE.flatMap((file) => [
+      ...sendersIn(codeOf(file)).map((means) => `${relative(file)} → ${means}`),
+      ...foreignImportsIn(codeOf(file)).map((spec) => `${relative(file)} → ${spec}`),
+    ]);
+    expect(offenders).toEqual([]);
+  });
+
+  /*
+   * THE RULE IS `testing/purity.ts` NOW, not a regular expression written out
+   * here. There were three of these — one per repo — and they had drifted:
+   * this one banned five things, the print works checked four and the maker
+   * studio three, so `performance.now()` and `crypto.randomUUID()` were live in
+   * two shipped apps with every gate green. See that file.
+   */
   it('reads no clock and rolls no dice', () => {
-    const offenders = SHIPPABLE.filter((file) =>
-      /Date\.now\s*\(|Math\.random\s*\(|new Date\s*\(|performance\.now\s*\(|crypto\.randomUUID/.test(
-        codeOf(file),
-      ),
+    const offenders = SHIPPABLE.flatMap((file) =>
+      impuritiesIn(codeOf(file)).map((means) => `${relative(file)} → ${means}`),
     );
-    expect(offenders.map(relative)).toEqual([]);
+    expect(offenders).toEqual([]);
+  });
+
+  it('would say so if one arrived, in every spelling the three repos disagreed on', () => {
+    // The mutant that proved the drift, driven through the shared rule.
+    const seeded = 'export const zzSeed = { at: performance.now(), id: crypto.randomUUID() };';
+    expect(impuritiesIn(seeded).length).toBe(2);
+    expect(impuritiesIn('const t = Date.now();').length).toBe(1);
+    expect(impuritiesIn('const d = new Date();').length).toBe(1);
+    expect(impuritiesIn('const r = Math.random();').length).toBe(1);
+    expect(impuritiesIn('crypto.getRandomValues(new Uint8Array(8))').length).toBe(1);
+    // …and the shapes that are pure arithmetic over a value passed in stay
+    // quiet, or the rule would be one more thing with an exemption list.
+    expect(impuritiesIn('const d = new Date(Date.UTC(2026, 7, 5));')).toEqual([]);
+    expect(impuritiesIn('const d = new Date(iso);')).toEqual([]);
+    expect(impuritiesIn('const at = clock.now();')).toEqual([]);
+    expect(impuritiesIn('const id = job.cryptoRandomUUIDLabel;')).toEqual([]);
   });
 
   it('pulls in no Node built-in, because add-ons import this into a browser', () => {
