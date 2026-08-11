@@ -143,6 +143,43 @@ describe("a design that already carries the bleed", () => {
   });
 });
 
+/**
+ * A HOST THAT DOES NOT TRIM, WHICH IS `bleedMm: 0` AND NOT A MISSING FIELD.
+ *
+ * `ArtworkJob.bleedMm` is how far past the finished edge the artwork must
+ * reach, and a host that reproduces a design onto a fixed-size object — a mug,
+ * a slate, a phone case — answers "no further". `packages/host/src/payloads.ts`
+ * argues in its header that the zero is a real answer rather than a stand-in
+ * for a fact such a host has no concept of, and the binding half of that
+ * argument is here: an add-on must read the zero as the INSTRUCTION it is and
+ * never fall back to a default of its own.
+ *
+ * Reproduce at exactly the finished size, and a design made at exactly that
+ * size is already right.
+ */
+describe("a host that does not trim, so nothing has to reach past the edge", () => {
+  const UNTRIMMED: ImportJob = { ...CARDS, bleedMm: 0 };
+  const AT_SIZE: DesignSize = { widthMm: 85, heightMm: 55, bleedMm: 0, dpi: 300, pages: 1 };
+
+  it("asks for the finished size and not a millimetre more", () => {
+    expect(requiredSize(UNTRIMMED)).toEqual({ widthMm: 85, heightMm: 55 });
+  });
+
+  it("passes a design made at that size, with nothing to remedy", () => {
+    const assessment = assessImport(AT_SIZE, UNTRIMMED);
+    expect(assessment.blocked).toBe(false);
+    expect(assessment.remedies).toEqual([]);
+    // The bleed row PASSES rather than being skipped or quietly defaulted to 3
+    // — which is the same design this suite blocks against `CARDS` above.
+    expect(assessment.verdicts.find((v) => v.key === "check.bleedOk")?.measured).toEqual({
+      mm: 0,
+    });
+    expect(assessImport(AT_SIZE, CARDS).blocked || assessImport(AT_SIZE, CARDS).remedies.length > 0).toBe(
+      true,
+    );
+  });
+});
+
 describe("a design of the wrong shape", () => {
   // An A5 flyer offered to a business-card job: it covers twice over, so the
   // bleed is not the problem — the proportions are.
