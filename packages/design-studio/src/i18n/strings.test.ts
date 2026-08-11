@@ -26,6 +26,11 @@ const SHARED_WITH_ENGLISH: readonly {
     why: "`mm` is the SI symbol for a millimetre. It is not a word in any language and does not decline, so translating it would be inventing a unit.",
   },
   {
+    key: "addon.design-studio.insp.pt",
+    locales: ["de-DE", "fr-FR", "cs-CZ", "da-DK"],
+    why: "`pt` is the typographic point, abbreviated the same way in German, French, Czech and Danish typesetting. Chinese does have its own words for it (磅, 點) and uses them.",
+  },
+  {
     key: "addon.design-studio.tool.text",
     locales: ["de-DE", "cs-CZ"],
     why: "German `Text` and Czech `text` are the ordinary nouns, spelt as English spells them. Capitalisation is German's, not English's.",
@@ -103,6 +108,39 @@ const SHARED_WITH_ENGLISH: readonly {
     key: "addon.design-studio.layout.roll-up",
     locales: ["cs-CZ"],
     why: "Czech: the print trade uses the English loanword and writes it as two words, so the Czech term is spelt exactly as the English one is.",
+  },
+  /*
+   * ── THE THREE MEASUREMENT TEMPLATES ─────────────────────────────────────
+   *
+   * `mm` is the SI symbol for a millimetre and `dpi` is an initialism the
+   * whole trade uses; both are written the same way in German, French, Czech
+   * and Danish, and a symbol is not a word to translate — SI is explicit that
+   * unit symbols are the same in every language. What DOES differ is where
+   * the figure sits and whether the language uses a symbol at all, which is
+   * why Chinese carries 毫米/公釐 and Arabic مم and نقطة/بوصة, and why these
+   * are templates rather than a bare unit appended in JSX.
+   *
+   * French takes `ppp` (points par pouce) for dpi, so it is not listed here.
+   */
+  {
+    key: "addon.design-studio.dims",
+    locales: ["de-DE", "fr-FR", "cs-CZ", "da-DK"],
+    why: "`mm` is the SI symbol for the millimetre, identical in every language that uses the metric system, and the figures around it are substituted and formatted per locale.",
+  },
+  {
+    key: "addon.design-studio.mmValue",
+    locales: ["de-DE", "fr-FR", "cs-CZ", "da-DK"],
+    why: "The same SI symbol standing on its own beside one figure. Translating a unit symbol would make it wrong rather than local.",
+  },
+  {
+    key: "addon.design-studio.zoomValue",
+    locales: ["zh-CN", "zh-TW"],
+    why: "Chinese writes a percentage with the same `%` sign directly after the figure, exactly as English does. German, French, Czech and Danish put a space before it and Arabic uses ٪, so those four and Arabic differ.",
+  },
+  {
+    key: "addon.design-studio.dpiValue",
+    locales: ["de-DE", "cs-CZ", "da-DK"],
+    why: "`dpi` is the initialism the print trade uses in German, Czech and Danish alike. French has its own (`ppp`) and uses it; Chinese and Arabic carry their own too.",
   },
 ];
 

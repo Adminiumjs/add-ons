@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { importCanvaStrings } from "./strings.ts";
+import { TIERING_WORDS } from "@adminium/add-on-host/testing";
+import { importCanvaStrings, NOT_A_QUANTITY } from "./strings.ts";
 import { LOCALE_TAGS, makeT, resolveLocale } from "./t.ts";
 
 const EN = importCanvaStrings["en-US"];
@@ -33,6 +34,97 @@ describe("parity", () => {
 
   it("namespaces every key under this add-on, so nothing shadows the host", () => {
     for (const key of KEYS) expect(key).toMatch(/^addon\.import-canva\./);
+  });
+
+  /**
+   * THE CASE THIS FILE WAS MISSING, and the one that catches real work.
+   *
+   * EIGHT COPIES OF THE ENGLISH BUNDLE PASSES A KEY CHECK PERFECTLY. Parity is
+   * easy to satisfy and easy to satisfy dishonestly, and a locale left in
+   * English is invisible to every other assertion above: the keys are all
+   * there, the placeholders all match, nothing is blank.
+   *
+   * Design Studio needed three rounds to grow this case and found a real
+   * untranslated string when it did (`layout.roll-up`, verbatim English in
+   * Czech). The personalizer has it. This bundle did not, and for a while it
+   * had NOTHING to declare: not one value in any of the seven other locales was
+   * spelt as English spells it.
+   *
+   * The list is therefore an assertion rather than an oversight, and it is the
+   * strictest state this rule has: a value that matches English has to be
+   * argued for HERE, in a list a reader can disagree with, rather than passing
+   * quietly. `dims` is the first entry it has ever needed.
+   */
+  const SHARED_WITH_ENGLISH: readonly {
+    key: keyof typeof EN;
+    locales: readonly (typeof LOCALE_TAGS)[number][];
+    why: string;
+  }[] = [
+    {
+      key: "addon.import-canva.dims",
+      locales: ["de-DE", "fr-FR", "cs-CZ", "da-DK"],
+      why:
+        "`mm` is the SI symbol for the millimetre, and German, French, Czech and Danish all " +
+        "write it exactly as English does — this bundle's own bleed and redo strings already " +
+        "spell it `mm` in those four. Chinese (毫米/公釐) and Arabic (مم) do not, and their " +
+        "values differ accordingly, which is the whole reason the chip goes through the bundle.",
+    },
+  ];
+
+  it("is actually translated — nothing but the declared shared words matches English", () => {
+    const excused = new Map(
+      SHARED_WITH_ENGLISH.map((entry) => [entry.key as string, new Set(entry.locales)]),
+    );
+    const untranslated: string[] = [];
+    for (const locale of LOCALE_TAGS) {
+      if (locale === "en-US") continue;
+      const bundle = importCanvaStrings[locale] as Record<string, string>;
+      for (const key of KEYS) {
+        if (bundle[key] !== EN[key]) continue;
+        if (excused.get(key as string)?.has(locale) === true) continue;
+        untranslated.push(`${locale} · ${String(key)} = “${bundle[key]}”`);
+      }
+    }
+    expect(untranslated, `\n${untranslated.join("\n")}\n`).toEqual([]);
+  });
+
+  it("keeps the shared-word list short, reasoned, and free of stale entries", () => {
+    // Empty today. Each of the three checks below is what a future entry must
+    // survive, so the list cannot grow into a place to hide an untranslated
+    // string: it has to name a real key, carry a real reason, and still be
+    // identical to English on the day it is read.
+    expect(SHARED_WITH_ENGLISH.length).toBeLessThanOrEqual(8);
+    for (const entry of SHARED_WITH_ENGLISH) {
+      expect([...KEYS] as string[], `${String(entry.key)} is not a key`).toContain(
+        entry.key as string,
+      );
+      expect(entry.why.length, `${String(entry.key)} has no reason`).toBeGreaterThan(40);
+      for (const locale of entry.locales) {
+        expect(
+          (importCanvaStrings[locale] as Record<string, string>)[entry.key as string],
+          `${locale} · ${String(entry.key)} is excused but is no longer identical to English`,
+        ).toBe(EN[entry.key]);
+      }
+    }
+  });
+});
+
+/**
+ * THE ALLOWANCES THAT TRAVEL WITH THESE STRINGS (24 AC20/D21).
+ *
+ * Every add-on exports `NOT_A_QUANTITY` and every host reads it off whatever it
+ * has vendored — see the block above the export in `strings.ts`. This bundle
+ * declares none, which is a claim rather than a gap: every Latin digit these
+ * strings can put on an Arabic page is a figure this add-on worked out, and
+ * must therefore be formatted.
+ */
+describe("the allowances travel with the strings", () => {
+  it("declares no Latin figure of its own, and says so explicitly", () => {
+    expect(NOT_A_QUANTITY).toEqual([]);
+  });
+
+  it("carries every reason if one is ever added", () => {
+    for (const entry of NOT_A_QUANTITY) expect(entry.why.length).toBeGreaterThan(30);
   });
 });
 
@@ -79,26 +171,13 @@ describe("the vocabulary ban (17 §2, 24 D10), in all eight locales", () => {
     expect(offences).toEqual([]);
   });
 
-  /**
-   * D12's second half: never present this add-on as the paid-up version of a
-   * lesser one. The ban is on the IDEA, so each language is checked against its
-   * own marketing words rather than the English ones transliterated.
-   *
-   * Czech is why this is a per-locale table instead of one regex: `pro` is the
-   * Czech preposition "for" and appears in ordinary sentences. Banning it there
-   * would be banning a function word, so Czech is checked for `prémiový` and
-   * `profesionální`, which are what a violation would actually look like.
+  /*
+   * THE TIERING TABLE IS NOT WRITTEN OUT HERE, and used to be — inline, in a
+   * test, as one of six divergent copies of a one-word-per-language list that a
+   * verifier proved blind. See `@adminium/add-on-host/testing`'s `tiering.ts`:
+   * the ban is on a set of IDEAS, each spelt in each of the eight languages,
+   * and the table is total over both so a cell cannot be forgotten.
    */
-  const TIERING_WORDS: Record<string, RegExp[]> = {
-    "en-US": [/\bpro\b/i, /premium/i],
-    "de-DE": [/\bprofi/i, /premium/i],
-    "fr-FR": [/\bpro\b/i, /premium/i],
-    "cs-CZ": [/prémiov/i, /profesionál/i],
-    "da-DK": [/\bpro\b/i, /premium/i],
-    "zh-CN": [/高级版/, /专业版/],
-    "zh-TW": [/高級版/, /專業版/],
-    "ar-EG": [/احترافي/, /مميز/],
-  };
 
   it.each(LOCALE_TAGS)("%s never presents this add-on as the paid-up one", (locale) => {
     const patterns = TIERING_WORDS[locale]!;
