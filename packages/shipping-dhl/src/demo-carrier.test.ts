@@ -14,40 +14,58 @@ import { PINNED_NOW } from "./clock.ts";
 import { CarrierError, type Address } from "@adminium/add-on-host/contracts";
 import { createDemoCarrier, POSTCODE_REFUSAL, postcodeFits } from "./demo-carrier.ts";
 import { parcelFor } from "./parcel.ts";
-import { DESTINATIONS, DISPATCH_READY, FIRST_TRACKING, WORKS_ADDRESS } from "./seed.ts";
+import { DEMO_ORIGIN, FIRST_TRACKING, SAMPLE_ORDER } from "./seed.ts";
 import { describeShippingCarrier } from "@adminium/add-on-host/testing";
 
 const CUTOFF = "15:00";
 
-/** The clean job: 500 business cards on 350gsm, boxed, going to Nether Wold. */
-const CLEAN_JOB = DISPATCH_READY[0]!;
-/** The refused job: the postcode is a GB one on an IE address. */
-const REFUSED_TO: Address = DESTINATIONS.tworivers!;
+/**
+ * ADDRESSES BELONG TO THE HOST NOW, so a suite for the transport supplies its
+ * own rather than reaching into an address book this add-on used to ship.
+ * Everything here is shaped rather than borrowed: `TO` is somewhere ordinary,
+ * and `REFUSED_TO` is the seeded failure — a GB postcode typed onto an IE
+ * address, which the carrier's own postcode check is what rejects.
+ */
+const TO: Address = {
+  name: "Kestrel Joinery",
+  lines: ["The Joinery Shop", "Wold Lane"],
+  city: "Nether Wold",
+  postcode: "NW3 6BD",
+  country: "GB",
+};
+
+const REFUSED_TO: Address = {
+  name: "Two Rivers Cycles",
+  lines: ["Unit 4, Canal Wharf"],
+  city: "Dun Laoghaire",
+  postcode: "ML9 4TT",
+  country: "IE",
+};
 
 function parcel() {
-  const estimate = parcelFor(CLEAN_JOB);
+  const estimate = parcelFor(SAMPLE_ORDER.items);
   return {
     weightKg: estimate.weightKg,
     lengthCm: estimate.lengthCm,
     widthCm: estimate.widthCm,
     heightCm: estimate.heightCm,
-    contents: "Printed work at 350gsm, boxed",
+    contents: "500 × Sample goods",
   };
 }
 
 describeShippingCarrier(createDemoCarrier({ clock: PINNED_NOW, cutoff: CUTOFF }), {
   parcel: parcel(),
-  from: WORKS_ADDRESS,
-  to: DESTINATIONS.kestrel!,
+  from: DEMO_ORIGIN,
+  to: TO,
   rejectedTo: REFUSED_TO,
-  order: { reference: CLEAN_JOB.ref },
+  order: { reference: SAMPLE_ORDER.ref },
 });
 
 describe("demo carrier — the seeded figures", () => {
   const carrier = () => createDemoCarrier({ clock: PINNED_NOW, cutoff: CUTOFF });
 
   it("quotes three services, cheapest first, inside the seeded band", async () => {
-    const rates = await carrier().quote(parcel(), WORKS_ADDRESS, DESTINATIONS.kestrel!);
+    const rates = await carrier().quote(parcel(), DEMO_ORIGIN, TO);
     expect(rates.map((r) => r.code)).toEqual(["ECO-2WD", "EXP-NWD", "EXP-1200"]);
     expect(rates.map((r) => r.amount)).toEqual([6.63, 11.43, 18.9]);
     for (const rate of rates) {
@@ -58,7 +76,7 @@ describe("demo carrier — the seeded figures", () => {
   });
 
   it("delivers on the next and second working day from the pinned Wednesday", async () => {
-    const rates = await carrier().quote(parcel(), WORKS_ADDRESS, DESTINATIONS.kestrel!);
+    const rates = await carrier().quote(parcel(), DEMO_ORIGIN, TO);
     const byCode = Object.fromEntries(rates.map((r) => [r.code, r.estimatedDelivery]));
     // Thursday 6 August for both express services, Friday 7 for economy.
     expect(byCode["EXP-1200"]).toBe("2026-08-06");
@@ -68,7 +86,7 @@ describe("demo carrier — the seeded figures", () => {
 
   it("mints the seeded tracking reference first, then counts up", async () => {
     const impl = carrier();
-    const [rate] = await impl.quote(parcel(), WORKS_ADDRESS, DESTINATIONS.kestrel!);
+    const [rate] = await impl.quote(parcel(), DEMO_ORIGIN, TO);
     const first = await impl.book(rate!, { reference: "MP-4126" });
     const second = await impl.book(rate!, { reference: "MP-4120" });
     expect(first.tracking).toBe(FIRST_TRACKING);
@@ -78,7 +96,7 @@ describe("demo carrier — the seeded figures", () => {
 
   it("books the collection into the afternoon window of the pinned day", async () => {
     const impl = carrier();
-    const [rate] = await impl.quote(parcel(), WORKS_ADDRESS, DESTINATIONS.kestrel!);
+    const [rate] = await impl.quote(parcel(), DEMO_ORIGIN, TO);
     const shipment = await impl.book(rate!, { reference: "MP-4126" });
     expect(shipment.collectionFrom).toBe("2026-08-05T14:00:00");
     expect(shipment.collectionTo).toBe("2026-08-05T17:00:00");
@@ -89,27 +107,44 @@ describe("demo carrier — the seeded figures", () => {
       clock: { iso: "2026-08-07", hour: 16, minute: 5 },
       cutoff: CUTOFF,
     });
-    const [rate] = await late.quote(parcel(), WORKS_ADDRESS, DESTINATIONS.kestrel!);
+    const [rate] = await late.quote(parcel(), DEMO_ORIGIN, TO);
     const shipment = await late.book(rate!, { reference: "MP-4126" });
     // Friday after 15:00 — the next working day is Monday, not Saturday.
     expect(shipment.collectionFrom.slice(0, 10)).toBe("2026-08-10");
   });
 
-  it("returns three tracking events, ending at the destination", async () => {
+  it("scans the SHOP'S OWN towns, not the transport's default ones", async () => {
+    /*
+     * The route travels with the booking, and the reason is a defect a second
+     * host made visible: the scan lines read whichever origin the transport
+     * happened to be CONSTRUCTED with, so a studio two hundred miles away
+     * watched its parcel be collected from another shop's town, and the hub
+     * was a place name out of the first app's fiction.
+     */
+    const SHOP = {
+      name: "Birch Row",
+      lines: ["Unit 6, Station Yard"],
+      city: "Saltburn",
+      postcode: "TS12 1HJ",
+      country: "GB",
+    };
     const impl = carrier();
-    impl.rememberDestination("MP-4126", DESTINATIONS.kestrel!);
-    const [rate] = await impl.quote(parcel(), WORKS_ADDRESS, DESTINATIONS.kestrel!);
-    const shipment = await impl.book(rate!, { reference: "MP-4126" });
+    impl.rememberRoute("BR-2276", SHOP, TO);
+    const [rate] = await impl.quote(parcel(), SHOP, TO);
+    const shipment = await impl.book(rate!, { reference: "BR-2276" });
     const events = await impl.track(shipment.tracking);
     expect(events).toHaveLength(3);
     expect(events.map((e) => e.status)).toEqual(["collected", "at-hub", "out-for-delivery"]);
-    expect(events[0]!.place).toBe(WORKS_ADDRESS.city);
-    expect(events[2]!.place).toBe(DESTINATIONS.kestrel!.city);
+    expect(events[0]!.place).toBe(SHOP.city);
+    expect(events[1]!.place).toBe(`${SHOP.city} depot`);
+    expect(events[2]!.place).toBe(TO.city);
+    // And not one town belonging to the transport's own fallback address.
+    expect(JSON.stringify(events)).not.toContain(DEMO_ORIGIN.city);
   });
 
   it("makes a real PDF label whose bytes are stable across runs", async () => {
     const impl = carrier();
-    const [rate] = await impl.quote(parcel(), WORKS_ADDRESS, DESTINATIONS.kestrel!);
+    const [rate] = await impl.quote(parcel(), DEMO_ORIGIN, TO);
     const shipment = await impl.book(rate!, { reference: "MP-4126" });
     const file = await impl.label(shipment.id);
 
@@ -128,17 +163,17 @@ describe("demo carrier — the seeded figures", () => {
     // Determinism, stated as bytes: a second carrier booking the same job must
     // produce the identical file, which is what lets `bytes` be asserted at all.
     const twin = carrier();
-    const [twinRate] = await twin.quote(parcel(), WORKS_ADDRESS, DESTINATIONS.kestrel!);
+    const [twinRate] = await twin.quote(parcel(), DEMO_ORIGIN, TO);
     const twinShipment = await twin.book(twinRate!, { reference: "MP-4126" });
     expect(twin.labels.read(twinShipment.labelFileId)).toBe(bytes);
   });
 
   it("refuses the seeded address with the carrier's own words, verbatim", async () => {
-    await expect(carrier().quote(parcel(), WORKS_ADDRESS, REFUSED_TO)).rejects.toThrow(
+    await expect(carrier().quote(parcel(), DEMO_ORIGIN, REFUSED_TO)).rejects.toThrow(
       POSTCODE_REFUSAL,
     );
     try {
-      await carrier().quote(parcel(), WORKS_ADDRESS, REFUSED_TO);
+      await carrier().quote(parcel(), DEMO_ORIGIN, REFUSED_TO);
       expect.unreachable("the seeded refusal should have thrown");
     } catch (err) {
       const carrierError = err as CarrierError;
@@ -153,7 +188,7 @@ describe("demo carrier — the seeded figures", () => {
 
   it("quotes once the refused address is corrected — the retry is real", async () => {
     const fixed: Address = { ...REFUSED_TO, postcode: "A96 X4T2" };
-    const rates = await carrier().quote(parcel(), WORKS_ADDRESS, fixed);
+    const rates = await carrier().quote(parcel(), DEMO_ORIGIN, fixed);
     expect(rates.length).toBe(3);
     // Crossing a border costs more; the same parcel domestically was $6.63.
     expect(rates[0]!.amount).toBeGreaterThan(6.63);
@@ -170,7 +205,7 @@ describe("demo carrier — the seeded figures", () => {
 
   it("cancels a booking and forgets it, so the order can be booked again", async () => {
     const impl = carrier();
-    const [rate] = await impl.quote(parcel(), WORKS_ADDRESS, DESTINATIONS.kestrel!);
+    const [rate] = await impl.quote(parcel(), DEMO_ORIGIN, TO);
     const shipment = await impl.book(rate!, { reference: "MP-4126" });
     await impl.cancel(shipment.id);
     expect(impl.find("MP-4126")).toBeUndefined();
@@ -186,8 +221,8 @@ describe("demo carrier — the seeded figures", () => {
     // `Date.now()` between the two constructions.
     const a = createDemoCarrier({ clock: PINNED_NOW, cutoff: CUTOFF });
     const b = createDemoCarrier({ clock: PINNED_NOW, cutoff: CUTOFF });
-    expect(await a.quote(parcel(), WORKS_ADDRESS, DESTINATIONS.kestrel!)).toEqual(
-      await b.quote(parcel(), WORKS_ADDRESS, DESTINATIONS.kestrel!),
+    expect(await a.quote(parcel(), DEMO_ORIGIN, TO)).toEqual(
+      await b.quote(parcel(), DEMO_ORIGIN, TO),
     );
   });
 });

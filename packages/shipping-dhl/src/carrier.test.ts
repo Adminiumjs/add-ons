@@ -24,7 +24,29 @@ import { describe, expect, it } from "vitest";
 import { createDhlCarrier, WIRE, wireIsPinned } from "./carrier.ts";
 import { CarrierError } from "@adminium/add-on-host/contracts";
 import type { HttpClient, HttpRequest, HttpResponse } from "./http.ts";
-import { DESTINATIONS, WORKS_ADDRESS } from "./seed.ts";
+import { DEMO_ORIGIN } from "./seed.ts";
+
+/**
+ * A destination, supplied here rather than looked up: the address book this
+ * add-on used to ship was one host's customer list, and a suite is a host like
+ * any other.
+ */
+const TO = {
+  name: "Kestrel Joinery",
+  lines: ["The Joinery Shop", "Wold Lane"],
+  city: "Nether Wold",
+  postcode: "NW3 6BD",
+  country: "GB",
+};
+
+/** The address the fake refuses: a GB postcode typed onto an IE address. */
+const REFUSED_TO = {
+  name: "Two Rivers Cycles",
+  lines: ["Unit 4, Canal Wharf"],
+  city: "Dun Laoghaire",
+  postcode: "ML9 4TT",
+  country: "IE",
+};
 import { describeShippingCarrier } from "@adminium/add-on-host/testing";
 
 /** Write a value at a dotted path, creating the objects on the way down. */
@@ -156,11 +178,11 @@ describeShippingCarrier(
       lengthCm: 34,
       widthCm: 26,
       heightCm: 12,
-      contents: "Printed work at 350gsm, boxed",
+      contents: "500 × Sample goods",
     },
-    from: WORKS_ADDRESS,
-    to: DESTINATIONS.kestrel!,
-    rejectedTo: DESTINATIONS.tworivers!,
+    from: DEMO_ORIGIN,
+    to: TO,
+    rejectedTo: REFUSED_TO,
     order: { reference: "MP-4126" },
   },
 );
@@ -176,7 +198,7 @@ describe("real transport — the plumbing that is actually finished", () => {
     lengthCm: 34,
     widthCm: 26,
     heightCm: 12,
-    contents: "Printed work at 350gsm, boxed",
+    contents: "500 × Sample goods",
   };
 
   it("declares its endpoints as unread placeholders until someone pins them", () => {
@@ -189,7 +211,7 @@ describe("real transport — the plumbing that is actually finished", () => {
 
   it("sends the credentials as headers and never in a query string", async () => {
     const { http, impl } = build();
-    await impl.quote(parcel, WORKS_ADDRESS, DESTINATIONS.kestrel!);
+    await impl.quote(parcel, DEMO_ORIGIN, TO);
     const request = http.calls[0]!;
     expect(request.headers?.[WIRE.auth.header]).toContain(credentials.apiKey);
     expect(request.headers?.[WIRE.auth.accountHeader]).toBe(credentials.accountNumber);
@@ -198,20 +220,20 @@ describe("real transport — the plumbing that is actually finished", () => {
 
   it("sorts what the carrier sends into cheapest-first order", async () => {
     const { impl } = build();
-    const rates = await impl.quote(parcel, WORKS_ADDRESS, DESTINATIONS.kestrel!);
+    const rates = await impl.quote(parcel, DEMO_ORIGIN, TO);
     expect(rates.map((r) => r.code)).toEqual(["ECO-2WD", "EXP-1200"]);
   });
 
   it("cuts a carrier datetime back to the contract's ISO date", async () => {
     const { impl } = build();
-    const rates = await impl.quote(parcel, WORKS_ADDRESS, DESTINATIONS.kestrel!);
+    const rates = await impl.quote(parcel, DEMO_ORIGIN, TO);
     expect(rates.every((r) => /^\d{4}-\d{2}-\d{2}$/.test(r.estimatedDelivery))).toBe(true);
   });
 
   it("lifts a refusal into a CarrierError with the carrier's own words", async () => {
     const { impl } = build();
     try {
-      await impl.quote(parcel, WORKS_ADDRESS, DESTINATIONS.tworivers!);
+      await impl.quote(parcel, DEMO_ORIGIN, REFUSED_TO);
       expect.unreachable("the fake refuses that address");
     } catch (err) {
       const error = err as CarrierError;
@@ -228,7 +250,7 @@ describe("real transport — the plumbing that is actually finished", () => {
       credentials,
       todayIso: "2026-08-05",
     });
-    await expect(impl.quote(parcel, WORKS_ADDRESS, DESTINATIONS.kestrel!)).rejects.toMatchObject({
+    await expect(impl.quote(parcel, DEMO_ORIGIN, REFUSED_TO)).rejects.toMatchObject({
       retryable: false,
     });
   });
@@ -241,7 +263,7 @@ describe("real transport — the plumbing that is actually finished", () => {
     });
     // A 200 with nothing in it leaves a works staring at a blank panel with no
     // idea whether it is loading, broken or genuinely unservable.
-    await expect(impl.quote(parcel, WORKS_ADDRESS, DESTINATIONS.kestrel!)).rejects.toBeInstanceOf(
+    await expect(impl.quote(parcel, DEMO_ORIGIN, TO)).rejects.toBeInstanceOf(
       CarrierError,
     );
   });
@@ -257,7 +279,7 @@ describe("real transport — the plumbing that is actually finished", () => {
       credentials,
       todayIso: "2026-08-05",
     });
-    const [rate] = await impl.quote(parcel, WORKS_ADDRESS, DESTINATIONS.kestrel!);
+    const [rate] = await impl.quote(parcel, DEMO_ORIGIN, TO);
     await expect(impl.book(rate!, { reference: "MP-4126" })).rejects.toMatchObject({
       code: "MALFORMED_SHIPMENT",
     });
@@ -265,7 +287,7 @@ describe("real transport — the plumbing that is actually finished", () => {
 
   it("sends an idempotency key and calls the carrier once for one order", async () => {
     const { http, impl } = build();
-    const [rate] = await impl.quote(parcel, WORKS_ADDRESS, DESTINATIONS.kestrel!);
+    const [rate] = await impl.quote(parcel, DEMO_ORIGIN, TO);
     await impl.book(rate!, { reference: "MP-4126" });
     await impl.book(rate!, { reference: "MP-4126" });
     const bookings = http.calls.filter((c) => c.path === WIRE.paths.shipments);
@@ -280,7 +302,7 @@ describe("real transport — the plumbing that is actually finished", () => {
 
   it("keeps a status code the add-on has never seen, rather than dropping the event", async () => {
     const { impl } = build();
-    const [rate] = await impl.quote(parcel, WORKS_ADDRESS, DESTINATIONS.kestrel!);
+    const [rate] = await impl.quote(parcel, DEMO_ORIGIN, TO);
     const shipment = await impl.book(rate!, { reference: "MP-4126" });
     const events = await impl.track(shipment.tracking);
     expect(events.map((e) => e.status)).toEqual(["PU", "PL"]);
