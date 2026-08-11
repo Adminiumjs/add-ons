@@ -21,7 +21,10 @@
   },
   "capabilities": ["outbound-http", "file-storage"],
   "addOn": {
-    "attaches": [{ "app": "printing", "range": "^1.0.0" }],
+    "attaches": [
+      { "app": "printing", "range": "^1.0.0" },
+      { "app": "maker", "range": "^1.0.0" }
+    ],
     "provides": [
       { "contract": "shipping-carrier", "version": 1, "server": "dist/server.js" }
     ],
@@ -34,7 +37,7 @@
     ],
     "events": [],
     "connect": { "kind": "api-key" },
-    "scopes": ["records:jobs:read", "records:shipments:write", "files:write"],
+    "scopes": ["records:shipments:write", "files:write"],
     "network": { "allow": ["express.api.dhl.com"] },
     "publicSettings": ["demo_transport", "collection_cutoff"],
     "demoTransport": "dist/server.js"
@@ -45,7 +48,7 @@
         "ref": "shipments",
         "columns": [
           { "ref": "id", "type": "id", "role": "pk" },
-          { "ref": "job_id", "type": "fk", "references": "jobs" },
+          { "ref": "order_reference", "type": "text" },
           { "ref": "carrier", "type": "text" },
           { "ref": "service", "type": "text" },
           { "ref": "tracking", "type": "text" },

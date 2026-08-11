@@ -11,8 +11,8 @@ of those screens even as an empty state.
 
 ## What it attaches to
 
-An add-on never stands alone. This one attaches to the `printing` app (`^1.0.0`) and fills four of
-its slots:
+An add-on never stands alone. This one attaches to **two** apps — `printing` (`^1.0.0`) and `maker`
+(`^1.0.0`) — and fills four slots, the same four in both:
 
 | Slot | Surface | What appears |
 |---|---|---|
@@ -29,8 +29,20 @@ carrier's own arithmetic. The host used to compute that table by importing
 weight engine into its own chrome, which is exactly what the app claims not to
 do. The settings form and every sentence in it are rendered here too.
 
-It provides `shipping-carrier@1`. The contract is not print-specific, so once a second app hosts
-those slots the correct `attaches` value is `"*"`.
+It provides `shipping-carrier@1`. The contract is not print-specific, and the second host is now
+real: Birch Row, the maker studio, mounts all four of those slots and runs this add-on with nothing
+in this package changed. `attaches` names both apps rather than `"*"` because `"*"` claims every app
+that will ever exist, and a claim is only worth making where somebody has checked it — the two
+named here are checked, on every run, by `packages/host/src/manifest-schema.test.ts`, which puts
+this manifest through the product's own validator against each host's declared schema.
+
+**The scope list shrank when the second host arrived, and that is the interesting part.** It used to
+open with `records:jobs:read` — a table only the print works has. The add-on never read it: a host
+hands the parcel, both addresses and an `OrderRef` (the host's own reference string) across the
+slot payload, and `shipping-carrier@1` has no operation that takes a record id at all. So the scope
+was asking for a table this add-on cannot name in one of its two hosts and does not use in either,
+and the installer refused the maker studio with `SCOPE_OUT_OF_RANGE` for a permission nothing wanted.
+It asks for `records:shipments:write` and `files:write` now, and both are its own.
 
 Switch the add-on off and all three surfaces disappear, leaving the app's own words behind — "no
 delivery companies are connected" at checkout, "collection from the works" on the customer's order.
@@ -111,8 +123,11 @@ than hopeful.
 
 Two tables, kept when the add-on is disconnected:
 
-- `shipments` — id, job, carrier, service, tracking, label file, amount, currency, collection
-  window, status, created at
+- `shipments` — id, the host's own order reference, carrier, service, tracking, label file, amount,
+  currency, collection window, status, created at. The order reference is TEXT and not a foreign
+  key: the print works calls that record a `job` and the maker studio calls it an `order`, and a
+  column declaring `references: "jobs"` is a column that cannot be installed in half the apps this
+  add-on attaches to. What crosses the seam is the reference string, so that is what is kept.
 - `shipment_events` — id, shipment, at, place, status, description
 
 ## Package notes
