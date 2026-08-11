@@ -7,6 +7,7 @@ packages/host/            the ONE mirror of the host seam + the contracts
 packages/design-studio/   Design Studio   — artwork-source@1, connects to nothing
 packages/shipping-dhl/    DHL Shipping    — shipping-carrier@1, api-key
 packages/import-canva/    Canva Import    — artwork-source@1, oauth2
+packages/personalizer/    Live Personalizer — product-personalizer@1, connects to nothing
 scripts/sync-to-host.sh   vendor the client halves into a host app checkout
 ```
 
@@ -62,7 +63,8 @@ notice independently. Nothing failed, and nothing could have — no suite anywhe
 had both sides in front of it.
 
 Now there is one mirror, and a suite watching it:
-`packages/host/src/host-mirror.test.ts` reads the host app's own source and
+`packages/host/src/host-mirror.test.ts` reads BOTH host apps' own sources —
+`print-shop` and `maker-shop` — and
 fails when a member the host declares is missing here. It checks host ⊆ mirror
 rather than equality — the host is authoritative, and this repository may carry
 a member one particular host has not adopted yet. It **skips with a clear
@@ -71,23 +73,70 @@ repository alone builds and tests green.
 
 Point it somewhere else with `ADMINIUM_PRINT_SHOP=/path/to/print-shop`.
 
+### And a second suite, because the mirror guard has a blind side
+
+`host-mirror.test.ts` answers *has a copy drifted*. It cannot answer *is anyone
+reading it*, and that is the way this failure actually recurred. When
+`testing/purity.ts` became one file, the repair reached the shared contract and
+the two hosts and stopped: all four add-on packages went on running the private
+regular expressions they already had, none of them checked
+`crypto.getRandomValues`, and there was no second copy of the file for any guard
+to find a difference in. `crypto.getRandomValues` appended to the personalizer's
+template engine left that package at 157 of 157 green.
+
+`packages/host/src/shared-rule.test.ts` asks the other question of every package
+and every checked-out host: does it **call** the shared rule, and does it state
+that rule **anywhere else**. The four packages reach the rule through the
+workspace — one file, no copy — while each host vendors and mirrors its own,
+because a host is a standalone app published from a clean clone with no sibling
+checkout. Both halves are in that file's header.
+
 ### What is shared, and what stays with an add-on
 
-The rule:
+**The rule this section used to state was wrong, and the correction is the whole
+of 24 D21.** It read:
 
-> A type the add-on **constructs and hands back** to the host must match the
-> host exactly, so it is shared. A type the add-on **only reads** may be
-> narrowed, so it lives with the add-on.
+> ~~A type the add-on **constructs and hands back** must match the host exactly,
+> so it is shared. A type the add-on **only reads** may be narrowed, so it lives
+> with the add-on.~~
+
+That is sound about *ownership* and silent about *shape*, and the shape is what a
+second host changes. Every add-on duly wrote down "the fields I read", which in
+practice was "the fields the one host I was built against happened to send":
+`SampleJob` carried `trimWidthMm` and `packagingKey` — a print works' job record
+under a general name — and the personalizer read `payload.line.productKey`, a
+maker studio's basket line, equally particular in the other direction. Wired into
+a second host by registration alone, everything compiled and three components
+threw. The rule in force now:
+
+> **A slot id names a SURFACE.** Its payload is the smallest shape *every* host
+> of that surface can honestly produce, it is declared once in
+> `packages/host/src/payloads.ts`, and **each host maps its own records into it
+> at the mount site**. A field only some hosts have is optional, and the add-on
+> handles its absence in words on screen.
 
 | Shared (`packages/host`) | With the add-on |
 |---|---|
-| `AddOn`, `AddOnFill`, `AddOnSetting`, `AddOnSettingValues`, `Permission`, `ActivityEntry`, `DemoSwitch`, `SampleJob`, `SlotPayload`, `SettingsPanelPayload` | `HostJob`, `DispatchPayload`, `HostBasketLine`, `CheckoutPayload` (`shipping-dhl/src/host-payloads.ts`) |
-| `AddOnCategory`, `ConnectKind` — closed vocabularies | each artwork add-on's own `ArtworkSlotPayload` + `HostConfiguration` |
-| `HOSTED_SLOTS`, `SlotId`, `SLOT_FILL`, `SLOT_EMPTY_BEHAVIOUR` | each package's `FILLED_SLOTS` — its own narrowing, `satisfies readonly SlotId[]` |
-| `createRegistry`, `defaultSettingsFor`, `applyAddOnSettings`, `isConnectable` | `LabelStore` (`shipping-dhl`) — explicitly *not* part of `shipping-carrier@1` |
+| `AddOn`, `AddOnFill<S>`, `AnyAddOnFill`, `AddOnSetting`, `AddOnSettingValues`, `Permission`, `ActivityEntry`, `DemoSwitch` | each package's `FILLED_SLOTS` — its own narrowing, `satisfies readonly SlotId[]` |
+| **every slot payload**, one per id, in `payloads.ts` — `ArtworkSlotPayload`, `CheckoutPayload`, `DispatchPayload`, `SettingsPanelPayload`, `PersonalizePayload`, `CartLinePayload`, `ProductAdminPayload`, `OrderLinePayload`, `RoutePayload`, `RecordEditorPayload` | each package's own engines, seed data and settings shape |
+| the neutral vocabulary they are built from — `SlotItem`, `OutboundOrder`, `PostalAddress`, `Party`, `Money`, `Dimensions`, `HostProduct`, `LineOrder`, `CatalogueSample`, `ShopClock` | `LabelStore` (`shipping-dhl`) — explicitly *not* part of `shipping-carrier@1` |
+| `PayloadFor<S>` + `SlotPayloads`, so a fill's `render` is typed by the id it names | |
+| `AddOnCategory`, `ConnectKind` — closed vocabularies | |
+| `HOSTED_SLOTS`, `SlotId`, `SLOT_FILL`, `SLOT_EMPTY_BEHAVIOUR` | |
+| `createRegistry`, `defaultSettingsFor`, `applyAddOnSettings`, `isConnectable` | |
 | `DeliveryChoice` — built by a fill, stored by the host, handed back down | |
 | `artwork-source@1` and `shipping-carrier@1` types + `CarrierError` | |
 | both conformance suites and their Zod validators, under `/testing` | |
+
+An add-on may still **narrow** what it reads — `render` is contravariant in its
+payload — but it now narrows against a shape both hosts promise rather than
+against one host's memory. The check bites in both directions: a host passing the
+wrong record is red in the **host's** repo, an add-on reading a field the surface
+does not carry is red in the **add-on's**.
+
+`shipping-dhl/src/host-payloads.ts` is gone; so is every per-add-on copy of a
+payload. `packages/host/src/host-mirror.test.ts` lists every shape above and
+fails when either host declares a member this mirror has not heard of.
 
 `zod` is behind the separate `@adminium/add-on-host/testing` entry point and
 nothing under the other two entry points imports it, so no add-on's `dist/` can
@@ -150,9 +199,13 @@ Each package runs the same three scripts on its own if you `cd` into it.
 - **CSS logical properties only.** Arabic renders right-to-left with no RTL
   stylesheet, so a physical `left` is a bug exactly one of eight locales shows.
 - **The vocabulary ban**, as a case-insensitive **substring** over user-visible
-  copy in all eight locales *and* over built output, with `premium` and `pro`
-  also banned as standalone-token concepts in each language's own spelling.
-  Each package carries the tables and greps its own `dist/`.
+  copy in all eight locales *and* over built output. Two words for a paid grade
+  of a product are banned as standalone-token concepts as well, in each
+  language's own spelling — this paragraph does not print either of them,
+  because the ban is a substring ban and a document describing it must not be
+  the first thing the release grep finds. `testing/lexicon.ts` in each package
+  is the list, with a named reason beside every carve-out; each package greps
+  its own `dist/`.
 
 ## Licence
 
