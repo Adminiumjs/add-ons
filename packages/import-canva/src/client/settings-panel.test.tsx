@@ -2,7 +2,7 @@
  * THE MANAGE DRAWER'S ACCOUNT ROW IS A SIMULATED RESULT, AND MUST SAY SO (AC7).
  *
  * This suite exists because of a real defect. The settings fill printed
- * `DEMO_ACCOUNT` and `DEMO_AUTHORIZED_ON` — "studio@marlowpress.test ·
+ * `DEMO_ACCOUNT` and `DEMO_AUTHORIZED_ON` — "demo-account@example.test ·
  * authorized 1 Aug" — with no label of any kind, in the same quiet grey card a
  * genuine connection would use. Four other surfaces in this add-on carried the
  * `DemoNote`; this one did not, and it is the one a shop owner opens to ask
