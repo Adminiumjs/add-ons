@@ -12,7 +12,9 @@
  */
 
 export type {
+  ActivityContext,
   ActivityEntry,
+  SeededActivityEntry,
   AddOn,
   AddOnCategory,
   AddOnFill,
@@ -69,6 +71,7 @@ export {
   defaultSettingsFor,
   EMPTY_REGISTRY,
   isConnectable,
+  resolveActivity,
 } from './host.ts';
 
 export type { SlotEmptyBehaviour, SlotId } from './slots.ts';
