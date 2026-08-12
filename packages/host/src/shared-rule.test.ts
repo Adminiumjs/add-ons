@@ -78,6 +78,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { impuritiesIn, restatementsIn } from './testing/purity.ts';
+import { encodingRestatementsIn, rawControlsIn } from './testing/encoding.ts';
 
 /** `packages/` — this file lives at `packages/host/src/`. */
 const PACKAGES = fileURLToPath(new URL('../..', import.meta.url));
@@ -222,6 +223,86 @@ describe.skipIf(absentHosts.length === 0)('the hosts this run could not see', ()
 });
 
 /**
+ * ── THE SAME TWO QUESTIONS, ASKED OF `testing/encoding.ts` ──────────────────
+ *
+ * [Added 2026-08-12.] `host-mirror.test.ts` holds the three copies of that file
+ * byte-identical, and that guard has exactly the blind spot this suite was
+ * written about: it can only see a copy that DIFFERS. A repo that carries a
+ * perfect copy and imports nothing from it passes the mirror and enforces
+ * nothing, which is the state print-shop was in for the hour between being
+ * given the file and being wired to it.
+ *
+ * The rule matters more than most for being unenforced, because its whole
+ * failure mode is a tool reporting NOTHING and being believed: a raw control
+ * byte makes `grep` skip a file silently, with exit status 0. A repo not
+ * running this scan does not look like a repo not running it.
+ */
+const ENCODING_RULE = join('testing', 'encoding.ts');
+function encodingSourcesOf(base: CodeBase): string[] {
+  return sourcesOf(base).filter((file) => !file.endsWith(ENCODING_RULE));
+}
+
+const encodingHosts = HOSTS.filter((host) =>
+  existsSync(join(host.src, 'testing', 'encoding.ts')),
+);
+const encodingAbsent = HOSTS.filter((host) => !encodingHosts.includes(host));
+
+describe.each(ADD_ONS)('$name states the still-text rule by importing it', (base) => {
+  it('calls rawControlOffences somewhere, rather than scanning for itself', () => {
+    const callers = encodingSourcesOf(base).filter((file) =>
+      /\brawControlOffences\s*\(/.test(codeOf(file)),
+    );
+    expect(
+      callers.map((file) => relative(base, file)),
+      `${base.name} never calls rawControlOffences, so nothing there notices a file ` +
+        'the tools have quietly stopped reading — and a repo not running this scan ' +
+        `looks exactly like one whose files are clean. Import it from ${base.reaches}.`,
+    ).not.toEqual([]);
+  });
+
+  it('reaches it through the workspace, not through a copy of the file', () => {
+    expect(existsSync(join(base.src, 'testing', 'encoding.ts'))).toBe(false);
+  });
+
+  it('states it nowhere else', () => {
+    const offenders = encodingSourcesOf(base).flatMap((file) =>
+      encodingRestatementsIn(codeOf(file)).map((means) => `${relative(base, file)} → ${means}`),
+    );
+    expect(
+      offenders,
+      'a C0 scan of its own beside the shared one is two scanners, and only one of ' +
+        'them gets repaired next time — see testing/encoding.ts',
+    ).toEqual([]);
+  });
+});
+
+describe.each(encodingHosts)('$name states the still-text rule by importing its copy', (base) => {
+  it('calls rawControlOffences somewhere', () => {
+    const callers = encodingSourcesOf(base).filter((file) =>
+      /\brawControlOffences\s*\(/.test(codeOf(file)),
+    );
+    expect(
+      callers.map((file) => relative(base, file)),
+      `${base.name} carries testing/encoding.ts and calls nothing in it, so the ` +
+        'mirror suite is holding a copy of a rule that repo does not run.',
+    ).not.toEqual([]);
+  });
+
+  it('states it nowhere else', () => {
+    const offenders = encodingSourcesOf(base).flatMap((file) =>
+      encodingRestatementsIn(codeOf(file)).map((means) => `${relative(base, file)} → ${means}`),
+    );
+    expect(offenders).toEqual([]);
+  });
+});
+
+describe.skipIf(encodingAbsent.length === 0)('the hosts with no still-text rule at all', () => {
+  it('says which, rather than passing quietly', () => {
+    expect(encodingAbsent.map((h) => h.src)).not.toEqual([]);
+  });
+});
+
+/**
  * THE DETECTOR'S OWN TESTS, and they live here rather than in `purity.test.ts`
  * because they have to spell restatements out — this file is the one place the
  * sweep above deliberately never reads.
@@ -289,5 +370,50 @@ describe('a restatement is told from a mention', () => {
    */
   it('is guarding a rule that still knows the API the four copies missed', () => {
     expect(impuritiesIn('crypto.getRandomValues(new Uint8Array(4))')).toHaveLength(1);
+  });
+});
+
+/**
+ * THE ENCODING DETECTOR'S OWN TESTS, here for the reason the purity ones are:
+ * they have to spell restatements out, and this file is the one place the
+ * sweeps above deliberately never read.
+ */
+describe('a C0 scan is told from the ordinary use of a character code', () => {
+  it('catches the two shapes a reimplementation actually takes', () => {
+    // The character class: what `encoding.ts` replaced in three files, and the
+    // first thing anybody writing this scan again would reach for.
+    expect(encodingRestatementsIn(String.raw`const ctl = /[\x00-\x08]/g;`)).toHaveLength(1);
+    expect(encodingRestatementsIn(String.raw`/[\u0000-\u001f]/u`)).toHaveLength(1);
+    // The threshold: the other half of the same scan.
+    expect(encodingRestatementsIn('if (code > 0x1f) continue;')).toHaveLength(1);
+    expect(encodingRestatementsIn('if (c <= 0x1F) report(c);')).toHaveLength(1);
+    // Both together is this scanner, rewritten.
+    expect(
+      encodingRestatementsIn(String.raw`const ctl = /[\x00-\x1f]/; if (n > 0x1f) skip();`),
+    ).toHaveLength(2);
+  });
+
+  it('says nothing about reading a character code, which is everywhere', () => {
+    // Every one of these is real code in these repos: a string hash, a glyph
+    // lookup, and the Eastern Arabic digit map. A detector that fired on them
+    // would be switched off inside a week.
+    expect(encodingRestatementsIn('h ^= text.charCodeAt(i);')).toEqual([]);
+    expect(encodingRestatementsIn('const code = ch.codePointAt(0) ?? 0;')).toEqual([]);
+    expect(encodingRestatementsIn('const code = d.codePointAt(0)!;')).toEqual([]);
+  });
+
+  it('says nothing about an escape in an ordinary string, which is the fix', () => {
+    // The whole point of the rule is that these are what a file SHOULD say.
+    expect(encodingRestatementsIn(String.raw`const k = a + '\x00' + b;`)).toEqual([]);
+    expect(encodingRestatementsIn(String.raw`parts.sort().join('\x01')`)).toEqual([]);
+  });
+
+  /**
+   * And the rule the two halves are guarding still bites: if `rawControlsIn`
+   * had quietly stopped reporting anything, every import check above would be
+   * guarding a scanner that finds nothing.
+   */
+  it('is guarding a scanner that still reports a raw byte', () => {
+    expect(rawControlsIn(`a${String.fromCharCode(0)}b`)).toHaveLength(1);
   });
 });

@@ -58,6 +58,15 @@ export {
   type Impurity,
 } from './purity.ts';
 export {
+  ENCODING_RESTATEMENTS,
+  RAW_CONTROL_EXPLANATION,
+  encodingRestatementsIn,
+  rawControlOffences,
+  rawControlsIn,
+  type EncodingRestatement,
+  type RawControl,
+} from './encoding.ts';
+export {
   addressSchema,
   artworkRefSchema,
   jobSpecSchema,

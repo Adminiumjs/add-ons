@@ -493,9 +493,9 @@ function copyOf(bundle: Bundle): Record<string, string> {
   for (const key of [...keys].sort()) {
     const parts = LOCALES.map((locale) => {
       const value = bundle[locale]?.[key];
-      return `${locale} ${value === undefined ? 'NOT TRANSLATED' : String(value)}`;
+      return `${locale}\x00${value === undefined ? '\x01NOT TRANSLATED' : String(value)}`;
     });
-    out[key] = fingerprint(parts.join(''));
+    out[key] = fingerprint(parts.join('\x02'));
   }
   return out;
 }
