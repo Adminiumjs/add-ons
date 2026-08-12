@@ -23,6 +23,8 @@ import {
   offendingAddresses,
   sendersIn,
   type InertOrigin,
+  RAW_CONTROL_EXPLANATION,
+  rawControlOffences,
 } from "@adminium/add-on-host/testing";
 
 import { INERT_ORIGINS } from "./add-on-facts.ts";
@@ -274,5 +276,22 @@ describe("no real logo, and no claim of a partnership (24 D12)", () => {
     const CLAIMS = /\bpartner|\bofficial\b|\bendorse|authoris?ed reseller|certified by/i;
     const offenders = SHIPPED.filter((file) => CLAIMS.test(codeOf(file)));
     expect(offenders.map(relative)).toEqual([]);
+  });
+});
+
+/**
+ * ── EVERY SOURCE FILE IS TEXT, OR THE TOOLS QUIETLY STOP READING IT ─────────
+ *
+ * The rule and the reasoning are in `@adminium/add-on-host/testing`'s
+ * `encoding.ts`, imported rather than restated for the reason
+ * `shared-rule.test.ts` gives: a scanner kept one-per-package is not one rule,
+ * it is N rules that agree until one of them is repaired.
+ */
+describe("every source file is text a tool will read", () => {
+  it("writes control characters as escapes, never as raw bytes", () => {
+    const offenders = ALL.flatMap((path) =>
+      rawControlOffences(path.slice(SRC.length), readFileSync(path, "utf8")),
+    );
+    expect(offenders, `\n${RAW_CONTROL_EXPLANATION}\n${offenders.join("\n")}\n`).toEqual([]);
   });
 });

@@ -22,6 +22,11 @@ import { describe, expect, it } from 'vitest';
 
 import { impuritiesIn } from './testing/purity.ts';
 import {
+  RAW_CONTROL_EXPLANATION,
+  rawControlOffences,
+  rawControlsIn,
+} from './testing/encoding.ts';
+import {
   foreignImportsIn,
   offendingAddresses,
   sendersIn,
@@ -154,5 +159,46 @@ describe('the shared contract stays pure (24 D7, D11)', () => {
         expect(line.trim(), `${relative(file)} imports React as a value`).toMatch(/^import type /);
       }
     }
+  });
+});
+
+/**
+ * ── AND THE FILES THEMSELVES ARE STILL TEXT ─────────────────────────────────
+ *
+ * The rule is in `testing/encoding.ts`; this is it aimed at the package that
+ * declares it, which is the same argument the header of this file makes about
+ * purity. The stakes are the same shape too: a raw control byte HERE is a
+ * module `grep` silently refuses to read in every repo that vendors it.
+ *
+ * The scanner's own behaviour is driven below rather than assumed, because a
+ * detector that reported nothing would make this and the four add-on suites
+ * pass by finding nothing to find.
+ */
+describe('every source file is text a tool will read', () => {
+  it('writes control characters as escapes, never as raw bytes', () => {
+    const offenders = ALL.flatMap((file) =>
+      rawControlOffences(relative(file), readFileSync(file, 'utf8')),
+    );
+    expect(offenders, `\n${RAW_CONTROL_EXPLANATION}\n${offenders.join('\n')}\n`).toEqual([]);
+  });
+
+  it('reports a raw byte, with the line and the code point', () => {
+    const planted = `const k = \`a${String.fromCharCode(0)}b\`;\nconst j = 'x${String.fromCharCode(1)}y';`;
+    expect(rawControlsIn(planted).map((hit) => hit.label)).toEqual(['U+0000', 'U+0001']);
+    expect(rawControlsIn(planted).map((hit) => hit.line)).toEqual([1, 2]);
+    expect(rawControlOffences('store.ts', planted)).toEqual([
+      'store.ts:1 · U+0000',
+      'store.ts:2 · U+0001',
+    ]);
+  });
+
+  it('takes the escaped spelling of the same string as clean', () => {
+    // The whole point: identical to a compiler, readable to everything else.
+    expect(rawControlsIn(String.raw`const k = 'a\x00b', j = 'x\x01y';`)).toEqual([]);
+    expect(String.raw`a\x00b`.length).toBe(6);
+  });
+
+  it('leaves tab, newline and carriage return alone, which are text', () => {
+    expect(rawControlsIn('a\tb\r\nc')).toEqual([]);
   });
 });
