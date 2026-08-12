@@ -508,6 +508,45 @@ describe.each(present)('the purity rule is the same file in $name', (host) => {
 });
 
 /**
+ * ── AND "IS THIS FILE STILL TEXT", WHICH IS THE SAME RULE ONE LEVEL DOWN ────
+ *
+ * [Added 2026-08-12, with the rule.] `testing/encoding.ts` answers whether a
+ * source file is something a tool will still read, and it exists because three
+ * files across these repos held RAW control bytes where an escape was meant —
+ * `personalizer/src/store.ts`, this package's `app-neutral.test.ts` and both
+ * hosts' `reviewedCopy.test.ts`. A raw byte makes `file` call the module data
+ * and `grep` match nothing inside it, silently and with exit status 0.
+ *
+ * Equality rather than containment, for the reason the three rules above give:
+ * the copy that misses a repair is the one whose repo goes blind, and this is
+ * the rule whose whole failure mode is a tool reporting NOTHING and being
+ * believed.
+ */
+const ENCODING = 'src/testing/encoding.ts';
+const MIRROR_ENCODING = join(MIRROR_SRC, 'testing', 'encoding.ts');
+
+describe.each(present)('the still-text rule is the same file in $name', (host) => {
+  it('is byte for byte the copy in this package', () => {
+    const theirs = join(host.root, 'src', 'testing', 'encoding.ts');
+    expect(
+      existsSync(theirs),
+      `${host.name} carries no ${ENCODING}, so nothing there notices a file the ` +
+        'tools have quietly stopped reading — which is how an exported reset went ' +
+        'missing from a grep for it while sitting in the file being searched.',
+    ).toBe(true);
+    const mine = readFileSync(MIRROR_ENCODING, 'utf8');
+    const yours = readFileSync(theirs, 'utf8');
+    if (mine !== yours) {
+      const at = [...mine].findIndex((ch, i) => ch !== yours[i]);
+      expect(`${host.name} ${ENCODING} differs at character ${at}: …${yours.slice(Math.max(0, at - 60), at + 60)}…`).toBe(
+        `${host.name} ${ENCODING} differs at character ${at}: …${mine.slice(Math.max(0, at - 60), at + 60)}…`,
+      );
+    }
+    expect(yours).toEqual(mine);
+  });
+});
+
+/**
  * ── AND THE "DID THE FILL DRAW ANYTHING" RULE, SAME RULE AGAIN ──────────────
  *
  * `slot-content.ts` here is `src/add-ons/slotContent.ts` in each host. It is the
