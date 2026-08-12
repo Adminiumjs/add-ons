@@ -4,3 +4,9 @@ dist
 .DS_Store
 *.local
 .vercel
+
+# A real ADMINIUM_SECRET or add-on credential must never be committable by a
+# stray `git add`, even though this repo ships no .env.example of its own.
+.env
+.env.*
+!.env.example
