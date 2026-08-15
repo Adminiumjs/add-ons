@@ -15,6 +15,9 @@
     "typecheck": "tsc -b",
     "test": "vitest run"
   },
+  "devDependencies": {
+    "@adminiumjs/manifest": "^0.2.1"
+  },
   "peerDependencies": {
     "react": "^19.0.0"
   },

@@ -23,65 +23,51 @@
  * A hand-restated rule can only ever catch what its author already knew. This
  * runs the actual code the product runs.
  *
- * ── HOW IT REACHES A PACKAGE IT CANNOT INSTALL ──────────────────────────────
+ * ── AN ORDINARY DEVDEPENDENCY NOW (changed 2026-08-15) ──────────────────────
  *
- * `@adminium/manifest` is published to no registry, and it cannot be installed
- * from a path either: its own `package.json` declares `zod: "catalog:"` and
+ * This used to load the validator from a SIBLING CHECKOUT by path, because
+ * `@adminium/manifest` was on no registry and could not be installed from a
+ * path either: its `package.json` declares `zod: "catalog:"` and
  * `@adminium/add-on-contracts: "workspace:*"`, two pnpm protocols npm does not
- * understand, so `npm i file:../adminium/packages/manifest` fails at resolve.
+ * understand. The cost was that a clean clone — and CI — had no product beside
+ * it, so this entire block SKIPPED. The suite written to catch a drifting
+ * hand-restated schema was the one not running where drift lands.
  *
- * So it is loaded the way the host seam already is: from a SIBLING CHECKOUT, by
- * path, at run time. Its built `dist/` imports `@adminium/add-on-contracts` and
- * `zod` as bare specifiers, and Node resolves both from the importing file's
- * own directory — inside the product's `node_modules`, not this repo's — so the
- * validator that runs here is byte-for-byte the one that runs there.
+ * The fix this file asked for was taken: both packages published 2026-08-14.
+ * `@adminiumjs/manifest@0.2.1` ships FULLY RESOLVED ranges — `zod: "^4.4.3"`,
+ * `@adminium/add-on-contracts: "npm:@adminiumjs/add-on-contracts@0.2.1"` —
+ * because the publisher rewrites both protocols on the way out. So it installs
+ * like anything else, and this suite can no longer silently not run.
  *
- *   <somewhere>/add-ons     ← this repo
- *   <somewhere>/adminium    ← the product, with packages/manifest built
+ * NOTE THE SCOPE: the published name is `@adminiumjs/manifest`, NOT
+ * `@adminium/manifest` — `npm view @adminium/…` always 404s and means nothing.
+ * It is a devDependency and must stay one: `purity.test.ts` forbids a runtime
+ * dependency here, because every add-on would inherit it as a D7 violation.
  *
- * `ADMINIUM_REPO` points elsewhere. A clean clone of this repo alone has no
- * product beside it and must still be green — an add-on author is not required
- * to check out the product to work on an add-on — so it reports what it looked
- * for and skips, exactly as the mirror guard does.
- *
- * THE PROPER FIX IS TO PUBLISH. `@adminium/manifest` and
- * `@adminium/add-on-contracts` are already versioned, AGPL-licensed and
- * `files: ["dist"]`; publishing them turns this from a skippable path lookup
- * into an ordinary devDependency that CI cannot be missing. That is a decision
- * for the product's release process rather than something an add-on repo can
- * take, and it is recorded here so the skip is a known cost rather than a
- * silent one.
+ * THE HOST APPS below are a different question and still skip. `print-shop` and
+ * `maker-shop` are standalone repos, not published packages, so there is
+ * nothing to install and a sibling checkout is still the only way to read them.
  */
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { pathToFileURL, fileURLToPath } from 'node:url';
+import { fileURLToPath } from 'node:url';
 
+import { validateManifest } from '@adminiumjs/manifest';
 import { describe, expect, it } from 'vitest';
 
 /** `packages/` — this repo's own, holding one directory per add-on. */
 const PACKAGES = fileURLToPath(new URL('../..', import.meta.url));
 
-const PRODUCT_ROOT =
-  process.env.ADMINIUM_REPO ?? fileURLToPath(new URL('../../../../adminium', import.meta.url));
-
-const VALIDATOR = join(PRODUCT_ROOT, 'packages', 'manifest', 'dist', 'index.js');
-
-interface Issue {
-  path: string;
-  message: string;
-}
-
-interface ValidateOptions {
-  knownAppKeys?: readonly string[];
-  hostTables?: readonly string[];
-}
-
-interface Validator {
-  validateManifest: (
-    value: unknown,
-    opts?: ValidateOptions,
-  ) => { ok: boolean; issues?: readonly Issue[] };
+/**
+ * `ValidateManifestResult` is a DISCRIMINATED UNION — `issues` exists only on
+ * the `ok: false` branch. The hand-rolled `{ ok: boolean; issues?: … }` this
+ * file used to declare was looser than the real thing and would have accepted
+ * `result.issues` on a success, which is precisely the class of drift the suite
+ * exists to stop. Narrow instead of optional-chaining.
+ */
+function issuesOf(result: ReturnType<typeof validateManifest>) {
+  return result.ok ? [] : result.issues;
 }
 
 /** Every `manifest.json` this repo ships, by the package that owns it. */
@@ -96,28 +82,10 @@ function manifests(): { pkg: string; manifest: unknown }[] {
     }));
 }
 
-const available = existsSync(VALIDATOR);
-
-if (!available) {
-  console.info(
-    `[add-on-host] the real manifest validator was not run: nothing at ${VALIDATOR}. ` +
-      'Clone the product beside this repo (or point ADMINIUM_REPO at it) and build ' +
-      'packages/manifest, and every manifest here is checked against the schema the ' +
-      'product enforces.',
-  );
-}
-
-describe.skipIf(!available)('the manifests pass @adminium/manifest itself', () => {
-  it.each(manifests())('$pkg validates against the frozen v1 schema', async ({ manifest }) => {
-    const { validateManifest } = (await import(
-      /* @vite-ignore */ pathToFileURL(VALIDATOR).href
-    )) as Validator;
-
+describe('the manifests pass @adminiumjs/manifest itself', () => {
+  it.each(manifests())('$pkg validates against the frozen v1 schema', ({ manifest }) => {
     const result = validateManifest(manifest);
-    expect(
-      result.issues ?? [],
-      'the real validator rejects this manifest',
-    ).toEqual([]);
+    expect(issuesOf(result), 'the real validator rejects this manifest').toEqual([]);
     expect(result.ok).toBe(true);
   });
 
@@ -126,11 +94,7 @@ describe.skipIf(!available)('the manifests pass @adminium/manifest itself', () =
    * is a validator that might not be wired up at all. This is the exact shape
    * the personalizer shipped: a dashboard mount naming a table and no app.
    */
-  it('rejects the attach target this repo actually shipped', async () => {
-    const { validateManifest } = (await import(
-      /* @vite-ignore */ pathToFileURL(VALIDATOR).href
-    )) as Validator;
-
+  it('rejects the attach target this repo actually shipped', () => {
     const [first] = manifests();
     const broken = structuredClone(first!.manifest) as {
       addOn: { attaches: unknown[] };
@@ -139,7 +103,7 @@ describe.skipIf(!available)('the manifests pass @adminium/manifest itself', () =
 
     const result = validateManifest(broken);
     expect(result.ok).toBe(false);
-    expect(result.issues?.some((issue) => issue.path.startsWith('addOn.attaches'))).toBe(true);
+    expect(issuesOf(result).some((issue) => issue.path.startsWith('addOn.attaches'))).toBe(true);
   });
 });
 
@@ -240,7 +204,7 @@ function hostApps(): HostApp[] {
 
 const HOSTS = hostApps();
 
-if (available && HOSTS.length === 0) {
+if (HOSTS.length === 0) {
   console.info(
     '[add-on-host] no add-on was validated against a host app: none of ' +
       `${HOST_ROOTS.map((h) => h.root).join(', ')} holds an app manifest. ` +
@@ -261,16 +225,12 @@ function installs(): { pkg: string; app: string; manifest: unknown }[] {
   });
 }
 
-describe.skipIf(!available || HOSTS.length === 0)(
+describe.skipIf(HOSTS.length === 0)(
   'every add-on installs into every app it says it attaches to',
   () => {
     const known = HOSTS.map((host) => host.key);
 
-    it.each(installs())('$pkg installs into $app', async ({ app, manifest }) => {
-      const { validateManifest } = (await import(
-        /* @vite-ignore */ pathToFileURL(VALIDATOR).href
-      )) as Validator;
-
+    it.each(installs())('$pkg installs into $app', ({ app, manifest }) => {
       const host = HOSTS.find((entry) => entry.key === app)!;
       expect(host.tables.length, `${host.name} declares no tables`).toBeGreaterThan(0);
 
@@ -279,7 +239,7 @@ describe.skipIf(!available || HOSTS.length === 0)(
         hostTables: host.tables,
       });
       expect(
-        result.issues ?? [],
+        issuesOf(result),
         `the installer would refuse this add-on for the "${app}" app`,
       ).toEqual([]);
       expect(result.ok).toBe(true);
@@ -309,11 +269,7 @@ describe.skipIf(!available || HOSTS.length === 0)(
      * a table the host app has not got. Without this, a green run cannot be
      * told apart from a run that forgot to pass `hostTables`.
      */
-    it('refuses a scope on a table the host app does not have', async () => {
-      const { validateManifest } = (await import(
-        /* @vite-ignore */ pathToFileURL(VALIDATOR).href
-      )) as Validator;
-
+    it('refuses a scope on a table the host app does not have', () => {
       const host = HOSTS[0]!;
       const [first] = manifests();
       const broken = structuredClone(first!.manifest) as { addOn: { scopes: string[] } };
@@ -325,7 +281,7 @@ describe.skipIf(!available || HOSTS.length === 0)(
       });
       expect(result.ok).toBe(false);
       expect(
-        result.issues?.some((issue) => issue.path === 'addOn.scopes.0'),
+        issuesOf(result).some((issue) => issue.path === 'addOn.scopes.0'),
         'the scope check did not run — was hostTables passed?',
       ).toBe(true);
     });
