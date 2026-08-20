@@ -17,7 +17,7 @@
 import { CheckCircle2, PenLine } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 
-import { createArtworkSource } from "../artworkSource.ts";
+import { createArtworkSource, type StartDoc } from "../artworkSource.ts";
 import type { ArtworkRef } from "@adminium/add-on-host/contracts";
 import type { Doc } from "../doc.ts";
 import type { T } from "../i18n/strings.ts";
@@ -34,6 +34,15 @@ import { Monogram } from "./Monogram.tsx";
  */
 type Outcome = { kind: "used"; ref: ArtworkRef } | { kind: "saved" } | null;
 
+/**
+ * What one open of the editor is given, held together because it arrives
+ * together: `start()` hands both to `open()` and neither means anything without
+ * the other. `startDoc` is the job's bleed already bound (`artworkSource.ts`),
+ * so keeping it beside the layouts is what stops this component from reaching
+ * for a document constructor of its own while the editor is up.
+ */
+type EditorSession = { layouts: readonly StartingLayout[]; startDoc: StartDoc };
+
 export function ArtworkSourceTile({
   payload,
   t,
@@ -44,8 +53,7 @@ export function ArtworkSourceTile({
   /** The layouts the shop has switched on, from the manage panel. */
   allowedLayouts?: readonly string[];
 }) {
-  const [editorOpen, setEditorOpen] = useState(false);
-  const [offered, setOffered] = useState<readonly StartingLayout[]>([]);
+  const [session, setSession] = useState<EditorSession | null>(null);
   const [outcome, setOutcome] = useState<Outcome>(null);
 
   // Held across the await: `start()` resolves when the editor closes, and this
@@ -59,9 +67,8 @@ export function ArtworkSourceTile({
       createArtworkSource({
         allowedLayouts,
         t,
-        open: (_job, layouts) => {
-          setOffered(layouts);
-          setEditorOpen(true);
+        open: (_job, layouts, startDoc) => {
+          setSession({ layouts, startDoc });
           return new Promise<Doc | null>((r) => {
             resolve.current = r;
           });
@@ -84,7 +91,7 @@ export function ArtworkSourceTile({
   };
 
   const close = (doc: Doc | null) => {
-    setEditorOpen(false);
+    setSession(null);
     resolve.current?.(doc);
     resolve.current = null;
   };
@@ -155,11 +162,12 @@ export function ArtworkSourceTile({
         </div>
       )}
 
-      {editorOpen && (
+      {session !== null && (
         <Editor
           productLabel={job.productLabel}
-          layouts={offered}
-          initialLayout={initialLayoutFor(job.trimWidthMm, job.trimHeightMm, offered)}
+          layouts={session.layouts}
+          initialLayout={initialLayoutFor(job.trimWidthMm, job.trimHeightMm, session.layouts)}
+          startDoc={session.startDoc}
           t={t}
           onUse={(doc) => close(doc)}
           onSave={() => {
@@ -179,8 +187,13 @@ export function ArtworkSourceTile({
  * Skip the picker when the configured job already answers its question. A
  * customer who has just chosen 500 business cards should not be asked what they
  * are making — but only if that layout is one the shop still offers.
+ *
+ * EXPORTED FOR `harness.test.tsx`, which holds the dev harness's panels to what
+ * each says on the page — one opens straight onto a layout and one opens the
+ * picker. A suite that restated this rule instead would go on passing while the
+ * shipped decision changed underneath it.
  */
-function initialLayoutFor(
+export function initialLayoutFor(
   widthMm: number,
   heightMm: number,
   offered: readonly StartingLayout[],

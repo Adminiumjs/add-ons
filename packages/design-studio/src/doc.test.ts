@@ -36,7 +36,13 @@ import {
   type LayerDraft,
 } from "./doc.ts";
 import { LOCALE_TAGS, designStudioStrings } from "./i18n/strings.ts";
-import { BLANK_LAYOUT, LAYOUTS, docFromLayout, layoutForSize } from "./layouts.ts";
+import {
+  BLANK_LAYOUT,
+  DEFAULT_SEED_TEXT,
+  LAYOUTS,
+  docFromLayout,
+  layoutForSize,
+} from "./layouts.ts";
 
 // ── the host's artwork checks, COPIED ────────────────────────────────────────
 
@@ -78,9 +84,18 @@ interface HostArtworkFile {
 
 function hostCheckArtwork(
   file: HostArtworkFile,
-  job: { trimWidthMm: number; trimHeightMm: number; sides: 1 | 2 },
+  job: { trimWidthMm: number; trimHeightMm: number; sides: 1 | 2; bleedMm?: number },
 ): ArtworkVerdict[] {
-  const HOST_BLEED_MM = 3;
+  /*
+   * A PARAMETER, BECAUSE A HOST CHECKS AGAINST THE SAME NUMBER IT ASKED FOR.
+   * In the works this was copied from, `checkArtwork()` and the `job.bleedMm`
+   * it hands an add-on both read one constant (print-shop `src/lib/rates.ts`,
+   * used at `src/lib/quote.ts:638` and `src/add-ons/artwork.ts:70`) — so a host
+   * whose job says 0 is a host whose check wants 0, and passing the job's value
+   * here is faithful to the copy rather than a softening of it. It defaults to
+   * this works' own 3 so every case that does not care reads as it did.
+   */
+  const HOST_BLEED_MM = job.bleedMm ?? 3;
   const HOST_MIN_DPI = 150;
   const HOST_SAFE_AREA_ADVISORY_MM = 4;
   const verdicts: ArtworkVerdict[] = [];
@@ -676,7 +691,7 @@ describe("outsideSafeArea", () => {
 // ── output ───────────────────────────────────────────────────────────────────
 
 describe("toArtworkRef", () => {
-  it("adds the bleed to the finished size and states 3mm by construction", () => {
+  it("adds the document's own bleed to the finished size", () => {
     const doc = docFromLayout(CARD);
     const ref = toArtworkRef(doc);
     expect(ref.widthMm).toBe(91);
@@ -686,6 +701,27 @@ describe("toArtworkRef", () => {
     expect(ref.pages).toBe(2);
     expect(ref.source).toBe("design-studio");
     expect(ref.previewFileId).toBe(`${fileIdFor(doc)}-preview.png`);
+  });
+
+  it("is the finished size exactly when the document carries no bleed", () => {
+    const doc = docFromLayout(CARD, DEFAULT_SEED_TEXT, 0);
+    const ref = toArtworkRef(doc);
+    expect(ref.bleedMm).toBe(0);
+    expect(ref.widthMm).toBe(85);
+    expect(ref.heightMm).toBe(55);
+    // The pixels follow the sheet rather than a remembered one: 300dpi of 85mm,
+    // not of the 91mm this add-on used to build whatever it was asked for.
+    expect(toArtworkFile(doc).widthPx).toBe(Math.round((85 / 25.4) * OUTPUT_DPI));
+  });
+
+  it("grows the sheet, and only the sheet, when the job asks for more", () => {
+    const five = docFromLayout(CARD, DEFAULT_SEED_TEXT, 5);
+    expect(toArtworkRef(five).widthMm).toBe(95);
+    expect(toArtworkRef(five).heightMm).toBe(65);
+    // NOTHING THE CUSTOMER PUT DOWN MOVES. The seeds are clamped into the safe
+    // area, which is measured from the trim, so the bleed changes the sheet the
+    // design sits on and not the design.
+    expect(five.layers).toEqual(docFromLayout(CARD).layers);
   });
 
   it("gives the same file id for the same document and a different one otherwise", () => {
@@ -743,6 +779,34 @@ describe("the host's own artwork checks, run against this editor's output", () =
     expect(hostBlocked(verdicts)).toBe(false);
     // Ink at the cut is still worth a word — a warning, which the customer ticks.
     expect(verdicts.some((v) => v.key === "verdict.nearTrim")).toBe(true);
+  });
+
+  /*
+   * THE CASE THE OLD CONSTANT WOULD HAVE FAILED, both ways round.
+   *
+   * A host asking for 5mm rejected a 3mm file outright — its own add-on's file,
+   * for its own job. A host asking for none passed the bleed check (3 ≥ 0) and
+   * took delivery of a sheet 6mm too big in each direction, which is worse: no
+   * verdict fires, and the mug the design is reproduced onto is a fixed size, so
+   * the error surfaces as a design that does not fit.
+   */
+  it("passes at a bleed this add-on does not think of as the usual one", () => {
+    for (const bleedMm of [0, 5]) {
+      const doc = docFromLayout(CARD, DEFAULT_SEED_TEXT, bleedMm);
+      const file = toArtworkFile(doc);
+      const verdicts = hostCheckArtwork(file, {
+        trimWidthMm: CARD.widthMm,
+        trimHeightMm: CARD.heightMm,
+        sides: CARD.sides,
+        bleedMm,
+      });
+      expect(hostBlocked(verdicts), `${bleedMm}mm was blocked`).toBe(false);
+      expect(verdicts.map((v) => v.key)).toContain("verdict.bleedOk");
+      // And the file IS the size that host asked for — a pass on the bleed
+      // check alone would also be a pass for a file that is simply too big.
+      expect(file.widthMm).toBe(CARD.widthMm + bleedMm * 2);
+      expect(file.heightMm).toBe(CARD.heightMm + bleedMm * 2);
+    }
   });
 
   it("sends one page per printed side, so the page-count check is quiet", () => {

@@ -31,6 +31,7 @@ export {
   KEY,
   createArtworkSource,
   type ArtworkSourceDeps,
+  type StartDoc,
 } from "../artworkSource.ts";
 
 export {

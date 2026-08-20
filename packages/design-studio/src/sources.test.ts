@@ -142,6 +142,36 @@ describe("no real third-party call, no real clock (24 D11)", () => {
   });
 });
 
+describe("the job's bleed reaches the document (24 §5.5)", () => {
+  /*
+   * ANOTHER RULE ABOUT AN ABSENCE, which is why it is a grep.
+   *
+   * Every document this add-on built used to carry a constant 3mm bleed, so a
+   * host asking for anything else — including the `bleedMm: 0` a host that
+   * reproduces onto a fixed-size object honestly declares — got a file at a size
+   * it never asked for, and then rejected it with its own `checkArtwork()`. The
+   * repair is that `createArtworkSource` binds `job.bleedMm` into a `startDoc`
+   * and hands that to `open()`.
+   *
+   * What makes it stay repaired is that there is no second way to start a
+   * document. A `docFromLayout()` or `createDoc()` call in a component takes the
+   * bleed's default and looks perfectly correct doing it — the reviewable
+   * symptom is not the call site but the absence of the job at it.
+   */
+  const UI_CONSTRUCTORS = /\b(docFromLayout|createDoc)\s*\(/;
+
+  it("builds no document inside a component, where the job is not in hand", () => {
+    const offenders = UI.filter((file) => UI_CONSTRUCTORS.test(codeOf(file)));
+    expect(offenders.map(relative)).toEqual([]);
+  });
+
+  it("reads the field, in the one place that holds the job", () => {
+    // The other half of the rule: a grep that only forbids would be satisfied by
+    // an add-on that had stopped making documents at all.
+    expect(codeOf(join(SRC, "artworkSource.ts"))).toMatch(/job\.bleedMm/);
+  });
+});
+
 describe("secrets are server-only (24 D15)", () => {
   it("has no secret setting to leak in the first place", () => {
     const settings = manifest.settings as { key: string; secret?: boolean }[];
