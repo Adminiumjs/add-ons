@@ -28,8 +28,11 @@ import {
 } from './testing/encoding.ts';
 import {
   foreignImportsIn,
+  foreignModulesIn,
   offendingAddresses,
   sendersIn,
+  withoutComments,
+  type AllowedModule,
   type InertOrigin,
 } from './testing/egress.ts';
 
@@ -48,11 +51,23 @@ const relative = (file: string) => file.slice(SRC.length);
 /** Everything an add-on's bundle can reach: not a test, not a test helper. */
 const SHIPPABLE = ALL.filter((f) => !f.includes('.test.') && !f.includes(`${'testing'}${'/'}`));
 
-/** Comments stripped — every rule below is about what the CODE does. */
-const codeOf = (file: string) =>
-  readFileSync(file, 'utf8')
-    .replace(/\/\*[\s\S]*?\*\//g, ' ')
-    .replace(/(^|[^:])\/\/.*$/gm, '$1');
+/**
+ * The source with its comments removed, by a LEXER and not two regexes.
+ *
+ * [Changed 2026-08-20.] What stood here deleted everything between a block
+ * comment opener and the next closer, wherever they appeared. An adversarial
+ * pass put those two tokens inside two ORDINARY STRING LITERALS with a real
+ * third-party import between them, and every static net below went blind at
+ * once: the import, an image beacon and a literal tracker address all vanished
+ * before any scanner ran, the suite stayed green, and the module reached the
+ * built bundle. It was not one gate's hole, it was this function's.
+ *
+ * Half of it was already known — the line-comment regex carried an explicit
+ * guard so a `https` prefix inside a string was not read as a comment. There
+ * was no counterpart for block comments. `withoutComments` is string-aware for
+ * both, and is the same file in all three repos.
+ */
+const codeOf = (file: string) => withoutComments(readFileSync(file, 'utf8'));
 
 /**
  * The shared contract names no host at all — it is types and pure functions.
@@ -78,12 +93,47 @@ describe('the shared contract stays pure (24 D7, D11)', () => {
     expect(offenders).toEqual([]);
   });
 
+  /**
+   * ── AND THE PACKAGES A SHIPPABLE SOURCE MAY IMPORT (28-T26 follow-up) ─────
+   *
+   * Net two banned the APIs that send and the dynamic `import()` of anything
+   * but a relative literal, and read as though it covered "reaching outside
+   * this repo". A STATIC import was in neither half: `import { track } from
+   * "some-analytics-sdk"` matched nothing, because the `fetch` is in the SDK
+   * and not in our file.
+   *
+   * This package is the seam two host apps vendor, so its list is the shortest
+   * of the three: an add-on host renders slots and does nothing else. `react`
+   * is here because it renders; nobody is claiming it was audited.
+   */
+  const ALLOWED_MODULES: readonly AllowedModule[] = [
+    { name: 'react', why: 'the renderer \u2014 the slot seam returns elements' },
+  ];
+
   it('carries nothing that can issue a request', () => {
     const offenders = SHIPPABLE.flatMap((file) => [
       ...sendersIn(codeOf(file)).map((means) => `${relative(file)} → ${means}`),
       ...foreignImportsIn(codeOf(file)).map((spec) => `${relative(file)} → ${spec}`),
+      // The static half, which neither of the two above ever looked at.
+      ...foreignModulesIn(codeOf(file), ALLOWED_MODULES).map(
+        (spec) => `${relative(file)} → imports ${spec}, which nobody declared`,
+      ),
     ]);
     expect(offenders).toEqual([]);
+  });
+
+  it('sees a static import, in the spellings the old net two could not', () => {
+    const allowed = [{ name: 'react', why: 'test' }];
+    const seen = (code: string): string[] => foreignModulesIn(code, allowed);
+
+    expect(seen('import { track } from "some-analytics-sdk";')).toEqual(['some-analytics-sdk']);
+    // No bindings at all: it imports nothing and runs everything in the module.
+    expect(seen('import "some-analytics-sdk";')).toEqual(['some-analytics-sdk']);
+    expect(seen('export { z } from "exfil-pkg";')).toEqual(['exfil-pkg']);
+    // A declared package forgives its subpaths and no lookalike.
+    expect(seen('import x from "react/jsx-runtime";')).toEqual([]);
+    expect(seen('import x from "react-tracker";')).toEqual(['react-tracker']);
+    expect(seen('import x from "./local.ts";')).toEqual([]);
   });
 
   /*
