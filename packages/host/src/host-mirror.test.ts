@@ -180,6 +180,43 @@ for (const host of absent) {
   );
 }
 
+/** CI sets this beside the host checkouts; see .github/workflows/ci.yml. */
+const HOSTS_REQUIRED = process.env.ADMINIUM_REQUIRE_HOSTS === 'true';
+
+/**
+ * ── THE GUARD'S OWN COVERAGE, WHICH IS A TEST AND NOT A CONSOLE LINE ───────
+ *
+ * [Added 2026-08-21 with this repo's first CI workflow.] The comment above says
+ * a clean clone "is expected to be green". It was not. Every block below is
+ * `describe.each(present)`, so with neither host checked out this file declared
+ * NO SUITE AT ALL, and vitest treats that as an error:
+ *
+ *     FAIL  src/host-mirror.test.ts
+ *     Error: No test suite found in file .../host-mirror.test.ts
+ *
+ * — which is exactly what a clean clone is, and what CI does on every run. So
+ * the file's stated contract was false in the one case it was written for.
+ *
+ * This block always declares a suite, which fixes that. It also turns the skip
+ * into a FAILURE where the hosts were promised: a drift guard that quietly
+ * checks nothing is the disease this whole file exists to treat, one directory
+ * further up.
+ */
+describe('the drift guard reports its own coverage', () => {
+  it('accounts for every host, present or not', () => {
+    expect(present.length + absent.length).toBe(HOSTS.length);
+    expect(HOSTS.length, 'two hosts is the point — see the header').toBe(2);
+  });
+
+  it.skipIf(!HOSTS_REQUIRED)('checked BOTH hosts, because CI said they were there', () => {
+    expect(
+      absent.map((host) => host.name),
+      'ADMINIUM_REQUIRE_HOSTS is set, so both host checkouts must be present. ' +
+        'The checkout step did not run, or ADMINIUM_PRINT_SHOP/ADMINIUM_MAKER_SHOP point nowhere.',
+    ).toEqual([]);
+  });
+});
+
 describe.each(present)('the mirror has not drifted from $name', (host) => {
   // The seam and the payloads, read as one text on both sides: which of the
   // two files a shape sits in is a filing decision, and the guard is about
