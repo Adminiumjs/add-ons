@@ -1,0 +1,86 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# The add-on monorepo's CI.
+#
+# WHY THIS EXISTS. This repo had no `.github` directory at all. Five packages
+# and roughly nine hundred tests were verified only on whichever laptop last ran
+# `npm run verify` — in a repo whose whole purpose is to be COPIED into two host
+# apps, which is the one shape where "it passed locally" is worth least, because
+# the copy that ships is somewhere else.
+#
+# WHY IT CHECKS OUT THE TWO HOSTS. `packages/host/src/host-mirror.test.ts` is
+# the guard that holds `testing/egress.ts`, `testing/purity.ts`,
+# `testing/encoding.ts`, `add-ons/slotContent.ts`, the seam and the payloads
+# byte-for-byte identical across three repos. Every block in it is
+# `describe.each(present)`, and `present` means the hosts it can FIND. With no
+# checkout beside it there is nothing to compare, so the guard written to catch
+# drift becomes the thing that drifts. Ninety assertions turn into none.
+#
+# It needs their SOURCES and nothing else — the guard reads files, it never runs
+# them — so neither host is installed or built here. That is also why this stays
+# fast.
+#
+# `ADMINIUM_REQUIRE_HOSTS` turns a missing checkout into a FAILURE rather than a
+# quiet pass. Without it a broken checkout step looks exactly like a clean clone,
+# and a clean clone is green by design (somebody reading one add-on is not
+# required to clone two host apps).
+#
+# THE CHECKOUTS SIT BESIDE `packages/` ON PURPOSE, and that was measured, not
+# assumed: `npm run test --workspaces` runs vitest once per package with that
+# package as its root, so a directory at the repo root is never collected. A
+# deliberately failing `.hosts-probe/src/planted.test.ts` was invisible to the
+# entire suite. The example apps' workflow has to move its checkout to
+# RUNNER_TEMP for the opposite reason — those repos run one vitest from the repo
+# root, and on the first attempt it swallowed the product's own test suite.
+
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    name: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # `npm ci` needs the committed lockfile. If this repo ever loses it the
+      # failure should be loud here rather than a silent `npm install` resolving
+      # something different from what the hosts vendor.
+      - name: Install dependencies
+        run: npm ci
+
+      # Sources only. The drift guard reads these two trees; it does not build
+      # or execute them, so there is no install step for either.
+      - name: Check out the print works
+        uses: actions/checkout@v4
+        with:
+          repository: Adminiumjs/print-shop
+          path: .hosts/print-shop
+
+      - name: Check out the maker studio
+        uses: actions/checkout@v4
+        with:
+          repository: Adminiumjs/maker-shop
+          path: .hosts/maker-shop
+
+      # `verify` is the repo's own script — typecheck, then test, then build —
+      # so CI cannot drift from what a maintainer runs by hand.
+      - name: Typecheck, test, build
+        env:
+          ADMINIUM_PRINT_SHOP: ${{ github.workspace }}/.hosts/print-shop
+          ADMINIUM_MAKER_SHOP: ${{ github.workspace }}/.hosts/maker-shop
+          ADMINIUM_REQUIRE_HOSTS: 'true'
+        run: npm run verify
