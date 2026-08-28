@@ -22,7 +22,14 @@ import { FILLED_SLOTS } from "./slots.ts";
 
 import { INERT_ORIGINS, NEVER_IN_A_BROWSER } from "./add-on-facts.ts";
 
-/** The closed slot registry of 24 §5.4 — never invent an id. */
+/**
+ * The closed slot registry of 24 §5.4 — never invent an id.
+ *
+ * HAND-TYPED, AND IT IS ONE OF THE FOUR SILENT COPIES 25 D2 WARNS ABOUT. It is
+ * only read as `SLOT_IDS.has(fill.slot)`, so an id MISSING here fails nothing
+ * until some add-on names it — and then it fails as "invented an id", which is
+ * the opposite of the truth. Twelve since 2026-08-28 (31 O1).
+ */
 const SLOT_IDS = new Set([
   "artwork.sources",
   "checkout.delivery.methods",
@@ -35,6 +42,7 @@ const SLOT_IDS = new Set([
   "product.admin.panel",
   "order.line.actions",
   "record.editor.panel",
+  "record.actions",
 ]);
 
 const CONTRACT_IDS = new Set(["artwork-source", "shipping-carrier", "product-personalizer"]);
@@ -213,15 +221,44 @@ describe("the manifest", () => {
    * installer reads the manifest, not the demo: `attaches` was the one place
    * where "it runs in both shops" was checkable, and it said otherwise.
    *
-   * Neither entry is `"*"`. `"*"` claims every app that will ever exist, and
+   * No entry is `"*"`. `"*"` claims every app that will ever exist, and
    * `packages/host/src/manifest-schema.test.ts` can only check the hosts that
    * are checked out — so a `"*"` here would be an unfalsifiable claim replacing
    * a false one.
+   *
+   * ── THE THIRD, ADDED 2026-08-28 (31-T06) ────────────────────────────────
+   *
+   * `factory` is the works desk, and it is the first host to mount a STRICT
+   * SUBSET of this add-on's slots: it has a staff frontend and no customer one,
+   * so it hosts `order.dispatch.actions` and `settings.add-on.panel` and cannot
+   * host `checkout.delivery.methods` or `order.dispatch.panel` at all. Those two
+   * fills simply never render there.
+   *
+   * That is the sharpest version of D21 this add-on has been put to, and it is
+   * the reason the entry belongs here rather than being withheld: a partial
+   * mount is not a partial installation. The manifest says which apps this
+   * add-on runs in; which of its slots a given app happens to draw is the app's
+   * business and is declared in the app, not here.
+   *
+   * ── THE FOURTH, ADDED 2026-08-28 (31-T05) ───────────────────────────────
+   *
+   * `ecommerce-shop` is the storefront, and it is the works desk's mirror
+   * image: a CUSTOMER frontend and no staff one, so it hosts
+   * `checkout.delivery.methods` and `order.dispatch.panel` and cannot host
+   * `order.dispatch.actions` at all. Between them the two prove the claim from
+   * both ends — the same four fills, two disjoint halves of them drawn, no
+   * change to a line of this package.
+   *
+   * The pairing is worth keeping in one comment because it is the evidence:
+   * one host mounting a subset could be a host that had not finished, and two
+   * hosts mounting COMPLEMENTARY subsets is a contract doing its job.
    */
-  it("attaches to both hosts that mount its slots, and to no app it has not been run in", () => {
+  it("attaches to the four hosts that mount its slots, and to no app it has not been run in", () => {
     expect(manifest.addOn.attaches).toEqual([
       { app: "printing", range: "^1.0.0" },
       { app: "maker", range: "^1.0.0" },
+      { app: "factory", range: "^1.0.0" },
+      { app: "ecommerce-shop", range: "^1.0.0" },
     ]);
   });
 });

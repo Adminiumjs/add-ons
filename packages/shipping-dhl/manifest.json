@@ -23,7 +23,9 @@
   "addOn": {
     "attaches": [
       { "app": "printing", "range": "^1.0.0" },
-      { "app": "maker", "range": "^1.0.0" }
+      { "app": "maker", "range": "^1.0.0" },
+      { "app": "factory", "range": "^1.0.0" },
+      { "app": "ecommerce-shop", "range": "^1.0.0" }
     ],
     "provides": [
       { "contract": "shipping-carrier", "version": 1, "server": "dist/server.js" }
