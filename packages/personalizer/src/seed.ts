@@ -166,6 +166,15 @@ export function templateFor(productKey: string): Template | undefined {
 export const PIECE_NAME_KEYS: Readonly<Record<string, string>> = {
   'walnut-coasters': 'addon.personalizer.piece.walnut-coasters',
   'house-sign': 'addon.personalizer.piece.house-sign',
+  /*
+   * The three with nothing drawn on them yet are named too, because "Reuse
+   * areas" lists them as somewhere to copy TO. A piece a maker is being asked
+   * to choose has to have a name; showing `ply-coasters` there would be the
+   * slug this map exists to replace, one screen over.
+   */
+  'ply-coasters': 'addon.personalizer.piece.ply-coasters',
+  keyring: 'addon.personalizer.piece.keyring',
+  'stoneware-mug': 'addon.personalizer.piece.stoneware-mug',
 };
 
 /** Pieces the shop sells that have no areas drawn on them yet. */
