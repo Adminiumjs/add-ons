@@ -60,6 +60,7 @@ including the ones that name no company.
 | Canva Import | `packages/import-canva` | `CNV` | **Canva** | its owner |
 | Live Personalizer | `packages/personalizer` | `LP` | *(none)* | — |
 | Holiday Calendars | `packages/holiday-calendars` | `CAL` | *(none)* | — |
+| Barcode Labels | `packages/barcode-labels` | `LBL` | *(none)* | — |
 
 Adminium and the Adminium name are marks of the Adminium project. Every add-on
 here is published by the project itself (`publisher.id: adminium`), which in v1
@@ -362,6 +363,93 @@ data pack.
 If a future version ever names a company — a calendar service, a payroll
 provider — that flag flips to `true`, the table above gains the mark and the
 vendor's terms link, and the affiliation line appears with it.
+
+
+---
+
+# Barcode Labels — references no third-party trademarks
+
+**This add-on connects to no outside company.** It calls no third-party API,
+requires no account anywhere, declares `connect: { kind: "none" }` in its
+manifest, asks for no capability at all and has no `network` block for an egress
+allow-list to go in. There is therefore no company to name, and none is named —
+in the code, in the interface, in the manifest, in the symbol tables it carries
+or on the website.
+
+## Why this one has three ways to get it wrong, not one
+
+Every other section here answers a single question: does this add-on name the
+company it talks to. A barcode add-on has **three** separate directions a
+supplier could arrive from, and a reader auditing this file should want each of
+them answered rather than a single "no".
+
+**The symbologies are published standards.** `EAN-13` and `Code 128` are the
+designations of symbologies, in the same way `PDF` and `ISO 3166` are the
+designations of published things. They belong to standards bodies rather than to
+a vendor, and this add-on uses them for exactly what they are: the name of the
+kind of bars it is drawing. They are also the only two strings in the message
+bundle that are identical in all eight languages, which
+`packages/barcode-labels/src/i18n/strings.test.ts` records as a deliberate
+exemption with the reason attached.
+
+**The numbers are the shop's.** Nothing here allocates a number, registers one,
+or looks one up anywhere. The shop types a number it already owns and the only
+opinion this package has about it is arithmetic — a check digit worked out from
+the twelve digits before it. A number that has to be unique beyond one shop is
+issued by a **numbering authority** the shop deals with directly, and the copy
+says so in every language rather than implying otherwise.
+`sources.test.ts` greps every shipped source and all eight bundles for the names
+of such bodies and finds none, which is the check that keeps a future "look my
+number up" feature from arriving quietly.
+
+**The label sheet is described, not named.** There is a very common stationery
+sheet with the measurements in `packages/barcode-labels/src/geometry.ts` — A4,
+twenty-four labels, 63.5 mm by 33.9 mm — and that file gives the measurements
+instead of the catalogue number, for exactly this reason. A stationery reference
+is a company's product code. The measurements are also more use to a shop: a
+name only helps somebody who buys that name. There is a case in
+`sources.test.ts` for that too, and another for scanner, till and printer makes,
+because "works with X" is both a mark and a claim about equipment no add-on can
+know a shop owns.
+
+## The empty declaration, and why it is a claim rather than a default
+
+`COMPANY_MARKS` in `packages/barcode-labels/src/add-on-facts.ts` is the list a
+HOST greps its own screens against, and this add-on's is empty — but **an empty
+list is exactly the shape a broken one takes.** A glob that stopped matching, a
+file nobody filled in, and a correct declaration all export `[]`.
+
+So the emptiness is not asserted on its own. `sources.test.ts` sweeps every
+shipped source and all eight locale bundles for the marks the *sibling* add-ons
+declare, which is a real needle list rather than an empty one, and shows the
+sweep is not vacuous by running the same predicate over text that does name a
+company. The row above and that export are held together by
+`packages/host/src/trademarks.test.ts`, which requires a package declaring no
+mark to say `*(none)*` in the table.
+
+The no-logo rule binds it like every other: Barcode Labels is represented by the
+monogram tile `LBL` (`packages/barcode-labels/src/index.ts`) — three letters in
+`--fg-muted` on `--surface-3`, no brand colour, no brand tint, no vendor imagery
+anywhere in the bundle or the README.
+
+## The affiliation line, and what stands in its place
+
+The add-on reports `namesCompany: false` from `register()`, so the host does not
+render the not-affiliated line for it — a disclaimer about a company that does
+not exist is noise rather than care. **An absent line is indistinguishable from a
+forgotten one**, so it states the positive fact in its own words, in all eight
+locales, in the disclaimer's own place: *"Barcode Labels connects to no outside
+company. It needs no account anywhere, it calls nothing, and every symbol it
+draws comes from a published standard rather than from a supplier."*
+
+That key travels on the registration object as `noCompanyKeys`, which is how the
+host's affiliation component knows to render it where the not-affiliated line
+would otherwise go, and the settings panel repeats it at the foot of its own
+form, where an operator changing a setting is looking.
+
+If a future version ever names a company — a numbering service, a label
+supplier, a printer make — that flag flips to `true`, the table above gains the
+mark and the vendor's terms link, and the affiliation line appears with it.
 
 
 ---

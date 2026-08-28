@@ -1,0 +1,19 @@
+{
+  "name": "@adminium/add-on-barcode-labels",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Barcode Labels — give a catalogue row an EAN-13 or Code 128 code and print a sheet of labels for it. No network, no account, no service.",
+  "license": "AGPL-3.0-only",
+  "scripts": {
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b --force",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@adminium/add-on-host": "*"
+  }
+}

@@ -9,6 +9,7 @@ packages/shipping-dhl/    DHL Shipping    — shipping-carrier@1, api-key
 packages/import-canva/    Canva Import    — artwork-source@1, oauth2
 packages/personalizer/    Live Personalizer — product-personalizer@1, connects to nothing
 packages/holiday-calendars/ Holiday Calendars — no contract, no egress, connects to nothing
+packages/barcode-labels/  Barcode Labels  — no contract, no egress, connects to nothing
 scripts/sync-to-host.sh   vendor the client halves into a host app checkout
 ```
 

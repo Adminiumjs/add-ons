@@ -442,8 +442,28 @@ describe.skipIf(HOSTS.length === 0)(
      */
     it('refuses a scope on a table the host app does not have', () => {
       const host = HOSTS[0]!;
-      const [first] = manifests();
+      /*
+       * PINNED TO A NAMED PACKAGE, and it used to be `manifests()[0]`.
+       *
+       * [Fixed 2026-08-28, wave 6.] Taking whichever manifest sorts first made
+       * this proof hostage to DIRECTORY ORDER, and a new package called
+       * `barcode-labels` duly sorted ahead of `design-studio` and became the
+       * fixture. That would be harmless if the envelope always reached the rule
+       * under test — but validation SHORT-CIRCUITS, so the new manifest failed
+       * on an earlier field and the scope rule never ran. The message this test
+       * prints on failure ("the scope check did not run — was hostTables
+       * passed?") then accused the wrong thing entirely.
+       *
+       * A proof must not be able to change its own subject. `shipping-dhl` is
+       * named here because it is the one add-on with a real, non-empty
+       * `addOn.scopes` block that every host in this repo installs — if it ever
+       * loses that, this line should fail loudly rather than silently drift to
+       * a neighbour.
+       */
+      const first = manifests().find((doc) => doc.pkg === 'shipping-dhl');
+      expect(first, 'shipping-dhl is the pinned fixture for this proof').toBeDefined();
       const broken = structuredClone(first!.manifest) as { addOn: { scopes: string[] } };
+      expect(broken.addOn.scopes.length, 'the fixture must carry a scope to break').toBeGreaterThan(0);
       broken.addOn.scopes = ['records:no_such_table:read'];
 
       const result = validateManifest(broken, {
