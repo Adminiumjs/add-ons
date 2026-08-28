@@ -40,6 +40,7 @@ import {
   type Remedy,
 } from '../template.ts';
 import { Chip, Mono, Note, Preview, Remedies, Stepper } from './bits.tsx';
+import { Help } from './Help.tsx';
 
 /**
  * WHAT ONE REMEDY SAYS ON ITS BUTTON — every kind, in one place.
@@ -419,6 +420,10 @@ export function Personalize({
       {!plain && blocks.length === 0 && verdicts.every((verdict) => verdict.ok) && (
         <p className="lp-honest">{t('addon.personalizer.replaced')}</p>
       )}
+
+      {/* The questions a shopper asks before they trust the box, answered under
+          the box. Closed until somebody wants it. */}
+      <Help />
     </div>
   );
 }
