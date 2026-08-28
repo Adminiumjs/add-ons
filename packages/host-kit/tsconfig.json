@@ -1,0 +1,29 @@
+{
+  /*
+   * ONE FILE, not the app/node pair the add-on packages use.
+   *
+   * `packages/host` is the sibling this package is modelled on and it has one
+   * config for the same reason: there is no bundle here. The add-ons split
+   * their config because they emit a client half and a server half with
+   * different `lib`s; this package emits nothing at all — a host vendors its
+   * sources and compiles them with its own tsconfig, which is the only compiler
+   * whose settings ever matter to shipped bytes.
+   *
+   * Which means THIS config is a proxy and must be at least as strict as the
+   * strictest host. `tsconfig.base.json` is where that strictness lives and no
+   * option below relaxes any of it.
+   */
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    /*
+     * `vite/client` is here for `import.meta.glob` alone — `guards/facts.ts`
+     * reads every vendored add-on's `add-on-facts.ts` through an eager glob
+     * rather than through a list, and vitest resolves that glob the way Vite
+     * does. Nothing this package SHIPS depends on Vite: a host that vendors the
+     * kit already builds with Vite, and the one glob is inside a guard.
+     */
+    "types": ["node", "vite/client"]
+  },
+  "include": ["src"]
+}
