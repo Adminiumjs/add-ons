@@ -25,6 +25,7 @@ import type {
   OrderLinePayload,
   PersonalizePayload,
   ProductAdminPayload,
+  RoutePayload,
   SettingsPanelPayload,
   SlotItem,
 } from '@adminium/add-on-host';
@@ -33,11 +34,14 @@ import type { Personalization, Template } from '@adminium/add-on-host/contracts'
 import { FACE_LIST } from '../faces.ts';
 import { useNumber, useT, zoneLabel, type TFunction } from '../i18n/t.ts';
 import type { MessageKey } from '../i18n/strings.ts';
-import { PIECE_NAME_KEYS, TEMPLATES, templateFor } from '../seed.ts';
-import { blankFor, commit, fromNote, recall } from '../store.ts';
+import { PIECE_NAME_KEYS, sampleFor, TEMPLATES, templateFor } from '../seed.ts';
+import { blankFor, commit, drewForLine, fromNote, recall } from '../store.ts';
 import { check, defaultSizeMm, settingsFor } from '../template.ts';
 import { Chip, LinePicture, Mono, Note } from './bits.tsx';
+import { Bench } from './Bench.tsx';
+import { Fonts } from './Fonts.tsx';
 import { blockSentence, Personalize } from './Personalize.tsx';
+import { Reuse } from './Reuse.tsx';
 import { Production } from './Production.tsx';
 import { Setup } from './Setup.tsx';
 
@@ -93,6 +97,12 @@ function personalizationOf(
   if (personalization === undefined) return undefined;
   const template = templateFor(personalization.templateId);
   if (template === undefined) return undefined;
+  /*
+   * Reaching here means a line of the HOST's carries these words — which is
+   * the one thing this add-on can honestly say about a shop's paperwork, and
+   * the only thing the bench sheet needs. See `store.drewForLine`.
+   */
+  drewForLine(personalization);
   return { personalization, template };
 }
 
@@ -507,21 +517,85 @@ export function OrderLineFill({ payload }: { payload: OrderLinePayload }) {
 // ── nav.add-on.routes ───────────────────────────────────────────────────────
 
 /**
- * The full-screen set-up route, at `/add-ons/personalizer/edit`.
+ * The full-screen route, at `/add-ons/personalizer/edit` — FIVE surfaces, not
+ * one, and the add-on carries its own way between them.
  *
  * A HOST THAT MOUNTS THIS SLOT IS WHY IT IS FILLED AT ALL. Design Studio shipped
  * a fill for this id for one release into a host with no router, and nothing
  * ever drew it (§5.4's amendment). Birch Row's maker shell has a view for an
  * add-on to occupy and mounts the slot in it, and its own suite asserts that
  * every id it lists is mounted somewhere in `src/`.
+ *
+ * ── WHY THE TABS ARE HERE AND NOT IN THE HOST'S SIDEBAR ────────────────────
+ *
+ * Comp L draws Set-up, Reuse areas, Fonts, Bench sheet and Production file as
+ * five entries in the WORKSHOP's own sidebar, appearing and disappearing with
+ * the add-on. That is right for a comp, which draws one shop; it is wrong for
+ * an add-on, which cannot name five pages inside a nav it does not own — the
+ * host would need a list of this add-on's screens, in eight languages, and
+ * would then have it wrong for the next add-on. `nav.add-on.routes` lends the
+ * PAGE, so the page carries the tabs. Recorded as a bracket amendment against
+ * 24 §8B rather than resolved silently.
+ *
+ * Every tab is this add-on's own words through its own bundle: a host that
+ * translated "Bench sheet" would be writing copy for a product it does not own.
  */
-export function RouteFill() {
+const TABS = ['setup', 'reuse', 'fonts', 'bench', 'production'] as const;
+type Tab = (typeof TABS)[number];
+
+const TAB_KEYS: Readonly<Record<Tab, MessageKey>> = {
+  setup: 'addon.personalizer.tab.setup',
+  reuse: 'addon.personalizer.tab.reuse',
+  fonts: 'addon.personalizer.tab.fonts',
+  bench: 'addon.personalizer.tab.bench',
+  production: 'addon.personalizer.tab.production',
+};
+
+export function RouteFill({ payload }: { payload: RoutePayload }) {
   const t = useT();
+  const [tab, setTab] = useState<Tab>('setup');
   const [productKey, setProductKey] = useState(TEMPLATES[0]!.productKey);
   const [template, setTemplate] = useState(() => templateFor(TEMPLATES[0]!.productKey));
 
+  const settings = (payload.settings ?? {}) as { offered_fonts?: string[] };
+  /*
+   * The fonts page edits the same setting the manage panel does, and neither
+   * owns it — the HOST does, and this route is handed a read-only copy of it.
+   * Until a host lends this slot a way to write settings back, the page is a
+   * specimen book that says which are offered and lets a maker see the effect
+   * of the choice; `onChange` keeps it local so the surface is not lying about
+   * being interactive. The seam to widen is the payload, not this component.
+   */
+  const [offered, setOffered] = useState<readonly string[]>(
+    settings.offered_fonts ?? FACE_LIST.map((face) => face.id),
+  );
+
   return (
     <div className="lp">
+      {/* Named with the add-on's own page title rather than its product name:
+          a nav's accessible name has to be a phrase in the reader's language,
+          and "Live Personalizer" is the same six syllables in all eight. */}
+      <nav className="lp-tabs" aria-label={t('addon.personalizer.setup.title')}>
+        {TABS.map((id) => (
+          <button
+            key={id}
+            type="button"
+            className="lp-tab"
+            aria-current={tab === id ? 'page' : undefined}
+            onClick={() => setTab(id)}
+          >
+            {t(TAB_KEYS[id])}
+          </button>
+        ))}
+      </nav>
+
+      {tab === 'reuse' && <Reuse />}
+      {tab === 'fonts' && <Fonts offered={offered} onChange={setOffered} />}
+      {tab === 'bench' && <Bench />}
+      {tab === 'production' && <RouteProduction />}
+
+      {tab === 'setup' && (
+        <>
       <div className="lp-row">
         {/*
          * ── THE CHIPS USED TO READ `walnut-coasters` AND `house-sign` ───────
@@ -554,7 +628,29 @@ export function RouteFill() {
       ) : (
         <Setup template={template} onChange={setTemplate} />
       )}
+        </>
+      )}
     </div>
+  );
+}
+
+/**
+ * The production file, reached from the add-on's own page rather than from an
+ * order line.
+ *
+ * It draws the SAMPLE, and says so by drawing the same piece the set-up tab
+ * starts on: a maker opening "Production file" from a nav has not picked an
+ * order, and the useful thing to show is what this add-on's output looks like
+ * for a piece they have set up. `order.line.actions` is still the route from a
+ * real line to a real file, and that one carries the customer's own words.
+ */
+function RouteProduction() {
+  const t = useT();
+  const template = TEMPLATES[0]!;
+  return template === undefined ? (
+    <p className="lp-empty">{t('addon.personalizer.setup.empty')}</p>
+  ) : (
+    <Production personalization={sampleFor(template)} template={template} />
   );
 }
 

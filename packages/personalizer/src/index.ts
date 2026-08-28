@@ -164,7 +164,7 @@ export function register(): AddOn {
       {
         slot: 'nav.add-on.routes',
         order: 10,
-        render: () => createElement(RouteFill),
+        render: (payload) => createElement(RouteFill, { payload }),
       },
       {
         slot: 'settings.add-on.panel',

@@ -77,8 +77,58 @@ export function rememberedCount(): number {
   return chosen.size;
 }
 
+/**
+ * The personalizations that are on a REAL LINE of the host's — a basket line,
+ * an order line, a proof — as opposed to every wording anybody has typed.
+ *
+ * ── WHY IT IS A SECOND MAP AND NOT JUST `chosen` ───────────────────────────
+ *
+ * `commit` files a picture on every keystroke that leaves the piece makeable,
+ * and it has to: `recall` keys a personalization by the shopper's words, so a
+ * basket line can only find its picture if the picture was filed under exactly
+ * the words the line ended up carrying. The cost is that `chosen` also holds
+ * every makeable PREFIX — "The Hartleys" on the way to "The Hartleys · est.
+ * 2019" — which is right for a lookup and wrong for a list.
+ *
+ * The bench sheet is a list, and a maker reading four rows where two pieces are
+ * being cut would trust it once and never again. So the sheet reads this map,
+ * which is written from `personalizationOf` — the one helper the cart line, the
+ * order line and the proof all resolve through, and therefore the only place
+ * that means "a line of this shop's actually carries these words".
+ *
+ * ── AND WHY THE HOST STILL DOES NOT TELL US ITS ORDERS ─────────────────────
+ *
+ * Nothing here reads a reference, a line id or a stage. What is recorded is
+ * that SOME line resolved to this personalization, which is a fact about this
+ * add-on's own output. `nav.add-on.routes` carries no payload but the settings,
+ * and an add-on that listed "today's orders" would be inventing a shop's
+ * paperwork — the defect `seed.ts` records against the references that used to
+ * live in this package.
+ *
+ * Writing it from a render is safe and deliberate: the key is the content, so a
+ * double render in strict mode sets the same entry twice and changes nothing.
+ */
+const onLines = new Map<string, Personalization>();
+
+/** Record that a host line resolved to this personalization. Idempotent. */
+export function drewForLine(p: Personalization): void {
+  onLines.set(keyOf(p.templateId, summarize(p)), p);
+}
+
+/**
+ * What is on a line, in the order the lines were first drawn.
+ *
+ * A Map preserves insertion order, which is the order the shop asked about
+ * them — close enough to the order they will be cut in to be useful, and
+ * honest about being neither more nor less than that.
+ */
+export function remembered(): readonly Personalization[] {
+  return [...onLines.values()];
+}
+
 export function forgetAll(): void {
   chosen.clear();
+  onLines.clear();
 }
 
 /**
