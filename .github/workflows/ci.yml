@@ -76,11 +76,78 @@ jobs:
           repository: Adminiumjs/maker-shop
           path: .hosts/maker-shop
 
+      # WHY TWO MORE, AND WHY THEY ARE A DIFFERENT KIND OF CHECKOUT.
+      #
+      # The two above are ADD-ON HOSTS: they mount slots, they vendor the shared
+      # mirror, and `host-mirror.test.ts` compares their files byte for byte.
+      # These two are ADD-ON TARGETS: `holiday-calendars` attaches to `hr` and
+      # `clinic`, and `manifest-schema.test.ts` runs the product's own validator
+      # against each app's declared tables — so a scope naming a table
+      # people-ops has not got is refused here rather than by an installer.
+      #
+      # Neither has an `src/add-ons/` directory yet, so neither is judged by the
+      # attach-surface gate; that suite names them instead of skipping quietly.
+      # Without these two steps the manifest's attach claim is UNVERIFIABLE in
+      # CI, and the gate that reports an unverifiable claim would fail — which is
+      # the correct behaviour and the reason these lines exist rather than a
+      # loosened assertion.
+      - name: Check out the people-ops app
+        uses: actions/checkout@v4
+        with:
+          repository: Adminiumjs/people-ops
+          path: .hosts/people-ops
+
+      - name: Check out the clinic-desk app
+        uses: actions/checkout@v4
+        with:
+          repository: Adminiumjs/clinic-desk
+          path: .hosts/clinic-desk
+
+      # ── AND THE TWO CARRIER HOSTS, WHICH ARRIVED AFTER THE BLOCK ABOVE ──────
+      #
+      # [Added 2026-08-28, wave 6, and the omission is the lesson.] The four
+      # names above were added when `holiday-calendars` attached to two apps.
+      # The SAME DAY, the carrier retrofits made `factory-ops` and
+      # `ecommerce-storefront` real add-on hosts and registered them in
+      # `manifest-schema.test.ts`'s `HOST_ROOTS` — and nobody came back here.
+      #
+      # The consequence is exactly the one this file's own comment above warns
+      # about, arrived at from the other direction: `shipping-dhl` now attaches
+      # to `factory` and `ecommerce-shop`, and with neither app checked out
+      # those two claims are UNVERIFIABLE in CI while passing perfectly on the
+      # laptop of anybody who has the whole fleet cloned beside them. A guard
+      # that only runs on one machine is the disease this repo's CI exists to
+      # treat.
+      #
+      # Unlike the two apps above, these two DO have `src/add-ons/`, so they are
+      # judged by the attach-surface gate as well as by the validator — which is
+      # the stricter of the two readings and the reason they belong here rather
+      # than in an env-var-only exemption.
+      - name: Check out the factory-ops app
+        uses: actions/checkout@v4
+        with:
+          repository: Adminiumjs/factory-ops
+          path: .hosts/factory-ops
+
+      - name: Check out the ecommerce-storefront app
+        uses: actions/checkout@v4
+        with:
+          repository: Adminiumjs/ecommerce-storefront
+          path: .hosts/ecommerce-storefront
+
       # `verify` is the repo's own script — typecheck, then test, then build —
       # so CI cannot drift from what a maintainer runs by hand.
       - name: Typecheck, test, build
         env:
           ADMINIUM_PRINT_SHOP: ${{ github.workspace }}/.hosts/print-shop
           ADMINIUM_MAKER_SHOP: ${{ github.workspace }}/.hosts/maker-shop
+          ADMINIUM_PEOPLE_OPS: ${{ github.workspace }}/.hosts/people-ops
+          ADMINIUM_CLINIC_DESK: ${{ github.workspace }}/.hosts/clinic-desk
+          ADMINIUM_FACTORY_OPS: ${{ github.workspace }}/.hosts/factory-ops
+          ADMINIUM_ECOMMERCE_STOREFRONT: ${{ github.workspace }}/.hosts/ecommerce-storefront
+          # Only the two add-on HOSTS are required: `host-mirror.test.ts` is the
+          # guard this covers, and it compares vendored files that only those two
+          # carry. The two target apps above are read by a different suite, which
+          # reports their absence rather than depending on it.
           ADMINIUM_REQUIRE_HOSTS: 'true'
         run: npm run verify
