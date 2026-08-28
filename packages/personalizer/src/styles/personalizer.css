@@ -588,3 +588,405 @@
     min-block-size: 160px;
   }
 }
+
+/* ── the add-on's own page: five surfaces behind one nav ─────────────────── */
+
+/*
+ * The tabs are the add-on's, because `nav.add-on.routes` lends the PAGE and a
+ * host cannot name five screens it does not own. Everything below follows the
+ * same two rules as the rest of this file: host tokens only, and logical
+ * properties throughout so the whole workspace mirrors for Arabic untouched.
+ */
+.lp-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  border-block-end: 1px solid var(--border);
+  padding-block-end: 8px;
+  margin-block-end: 4px;
+}
+
+.lp-tab {
+  border: 0;
+  background: transparent;
+  color: var(--fg-muted);
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 7px 12px;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.lp-tab:hover {
+  background: var(--surface-3);
+  color: var(--fg);
+}
+
+.lp-tab[aria-current='page'] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.lp-page-title {
+  margin: 0 0 6px;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.018em;
+}
+
+/* ── the studio's fonts ─────────────────────────────────────────────────── */
+
+.lp-faces {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lp-face {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+/* Offered gets the accent edge; studio-only stays quiet rather than disabled —
+   it is a face the maker still uses, just not one a customer picks. */
+.lp-face[data-on='true'] {
+  border-color: var(--border-strong);
+}
+
+.lp-face-specimen {
+  padding: 18px 16px;
+  font-size: 30px;
+  line-height: 1.25;
+  color: var(--fg);
+  background: var(--surface-2);
+  /* A specimen is one line. A long one is cut off rather than wrapped, because
+     wrapping changes what the alphabet looks like. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lp-face[data-on='false'] .lp-face-specimen {
+  color: var(--fg-subtle);
+}
+
+.lp-face-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+}
+
+.lp-face-name {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.lp-face-smallest {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-inline-start: auto;
+}
+
+.lp-face-smallest-label {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--fg-subtle);
+}
+
+/* Arabic has no monospace face and no tradition of tracked capitals; the run
+   reads as broken letters. Same carve-out both hosts make. */
+[dir='rtl'] .lp-face-smallest-label {
+  letter-spacing: normal;
+}
+
+/* ── reuse areas ────────────────────────────────────────────────────────── */
+
+.lp-reuse {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+}
+
+@media (max-width: 759px) {
+  .lp-reuse {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.lp-zonelist {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lp-zonelist-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12.5px;
+}
+
+.lp-zonelist-name {
+  font-weight: 600;
+}
+
+.lp-targets {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-block: 10px;
+}
+
+.lp-target {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  text-align: start;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--surface);
+  color: inherit;
+  cursor: pointer;
+}
+
+.lp-target:hover {
+  border-color: var(--border-strong);
+}
+
+.lp-target[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.lp-target-name {
+  font-weight: 700;
+  font-size: 13.5px;
+}
+
+.lp-target-meta {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.lp-target-state {
+  font-size: 11.5px;
+  color: var(--fg-subtle);
+  /* Two words that mean one thing. Wrapping them turned "Not set up" into a
+     two-line stack beside a one-line row on a phone, which reads as an error
+     rather than a state. */
+  white-space: nowrap;
+  flex: none;
+}
+
+@media (max-width: 480px) {
+  /* Under a phone's width the name and the measurements stop sharing a line
+     and stack instead, which keeps the piece's name whole. */
+  .lp-target {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+}
+
+/* ── the bench sheet ────────────────────────────────────────────────────── */
+
+.lp-bench-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.lp-bench {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lp-bench-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+/* Off the machine: quieter, never hidden — a maker checking their own work
+   needs to see what they have already ticked. */
+.lp-bench-row[data-done='true'] {
+  opacity: 0.62;
+}
+
+.lp-tick {
+  inline-size: 26px;
+  block-size: 26px;
+  flex: none;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface-2);
+  cursor: pointer;
+  /* A bench control is pressed with a thumb, often a dusty one: the drawn box
+     is 26px and the hit area is the 44px the rest of this add-on uses. */
+  position: relative;
+}
+
+.lp-tick::after {
+  content: '';
+  position: absolute;
+  inset: -9px;
+}
+
+.lp-tick[aria-pressed='true'] {
+  border-color: var(--pos);
+  background: var(--pos-soft);
+}
+
+.lp-tick[aria-pressed='true']::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 8px;
+  inset-block-start: 4px;
+  inline-size: 6px;
+  block-size: 11px;
+  border: solid var(--pos);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.lp-bench-pic {
+  inline-size: 64px;
+  flex: none;
+}
+
+.lp-bench-what {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-inline-size: 0;
+}
+
+.lp-bench-piece {
+  font-weight: 700;
+  font-size: 13.5px;
+}
+
+.lp-bench-words {
+  font-size: 12.5px;
+  color: var(--fg-muted);
+  overflow-wrap: anywhere;
+}
+
+.lp-bench-state {
+  margin-inline-start: auto;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--fg-subtle);
+  flex: none;
+}
+
+/* ── how personalizing works ────────────────────────────────────────────── */
+
+.lp-help {
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--surface-2);
+  padding: 12px 14px;
+}
+
+.lp-help-open {
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--fg);
+}
+
+.lp-help-steps {
+  list-style: none;
+  margin: 12px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lp-help-step {
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+}
+
+.lp-help-n {
+  inline-size: 22px;
+  block-size: 22px;
+  flex: none;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+  font-size: 11.5px;
+  font-weight: 800;
+}
+
+.lp-help-what {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.lp-help-title {
+  font-weight: 700;
+  font-size: 13.5px;
+}
+
+.lp-help-body {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--fg-muted);
+}
+
+.lp-help-asked {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-block: 14px;
+}
+
+.lp-help-qa {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lp-help-pair dt {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.lp-help-pair dd {
+  margin: 3px 0 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--fg-muted);
+}
