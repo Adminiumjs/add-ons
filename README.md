@@ -8,6 +8,7 @@ packages/design-studio/   Design Studio   — artwork-source@1, connects to noth
 packages/shipping-dhl/    DHL Shipping    — shipping-carrier@1, api-key
 packages/import-canva/    Canva Import    — artwork-source@1, oauth2
 packages/personalizer/    Live Personalizer — product-personalizer@1, connects to nothing
+packages/holiday-calendars/ Holiday Calendars — no contract, no egress, connects to nothing
 scripts/sync-to-host.sh   vendor the client halves into a host app checkout
 ```
 
@@ -174,9 +175,13 @@ Each package runs the same three scripts on its own if you `cd` into it.
 5. `src/index.ts`: `register(): AddOn`, importing the seam from
    `@adminium/add-on-host`. Every payload type it only reads gets narrowed in
    its own module, next to the engine that reads it.
-6. Implement a contract and run the shared suite from
+6. If it implements a contract, run that contract's shared suite from
    `@adminium/add-on-host/testing`. If it cannot pass, the implementation is
-   wrong — do not soften an assertion.
+   wrong — do not soften an assertion. **Not every add-on implements one**, and
+   inventing a contract to have one is worse than having none: a contract is for
+   a surface two genuinely different implementations meet at, and
+   `holiday-calendars` provides nothing because a second country's holidays are
+   more rows in one data table rather than a second implementation of anything.
 7. `manifest.json`, with entry points relative to the **package root**, and a
    `manifest.test.ts` asserting that every path it names is a file the build
    actually emits and that its slots are exactly `FILLED_SLOTS`.

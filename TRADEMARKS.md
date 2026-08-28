@@ -3,7 +3,7 @@
 This repository holds every Adminium add-on. Some of them connect to a
 third-party service and have to name it; some connect to nothing at all. This
 file is the whole list, in one place, so that a reader does not have to open
-four packages to find out which marks are involved.
+every package to find out which marks are involved.
 
 Each add-on's own section below carries its detail. Nothing has been dropped in
 the move from separate repositories to one: what used to be a `TRADEMARKS.md`
@@ -59,6 +59,7 @@ including the ones that name no company.
 | DHL Shipping | `packages/shipping-dhl` | `DHL` | **DHL** | Deutsche Post AG |
 | Canva Import | `packages/import-canva` | `CNV` | **Canva** | its owner |
 | Live Personalizer | `packages/personalizer` | `LP` | *(none)* | — |
+| Holiday Calendars | `packages/holiday-calendars` | `CAL` | *(none)* | — |
 
 Adminium and the Adminium name are marks of the Adminium project. Every add-on
 here is published by the project itself (`publisher.id: adminium`), which in v1
@@ -291,6 +292,77 @@ them ships alongside so the numbers can be reproduced.
 
 Icons here, as everywhere in this repository, are
 [Lucide](https://lucide.dev) (ISC Licence), used unmodified.
+
+---
+
+# Holiday Calendars — references no third-party trademarks
+
+**This add-on connects to no outside company.** It calls no third-party API,
+requires no account anywhere, declares `connect: { kind: "none" }` in its
+manifest, asks for no capability at all and has no `network` block for an
+egress allow-list to go in. There is therefore no company to name, and none is
+named — in the code, in the interface, in the manifest, in the data it carries
+or on the website.
+
+## Why it still has a section here
+
+Because 24 AC6 (as amended 2026-08-09) is unconditional: every add-on in this
+repository is listed, and one that references no mark says so rather than being
+missing. A reader cannot tell an add-on that names nothing from an add-on
+nobody checked.
+
+There is a sharper version of that argument in this add-on's own code, and it
+is worth repeating here because it is the reason its checks are shaped the way
+they are. `COMPANY_MARKS` in `packages/holiday-calendars/src/add-on-facts.ts` is
+the list a HOST greps its own screens against, and this add-on's is empty — but
+**an empty list is exactly the shape a broken one takes.** A glob that stopped
+matching, a file nobody filled in, and a correct declaration all export `[]`.
+So the emptiness is not asserted on its own: `sources.test.ts` there sweeps
+every shipped source and all eight locale bundles for the marks the *sibling*
+add-ons declare, which is a real needle list rather than an empty one, and
+proves the sweep is not vacuous by running the same predicate over text that
+does name a company. The row above and that export are held together by
+`packages/host/src/trademarks.test.ts`, which requires a package declaring no
+mark to say `*(none)*` in the table.
+
+The no-logo rule binds it like every other: Holiday Calendars is represented by
+the monogram tile `CAL` (`packages/holiday-calendars/src/index.ts`) — three
+letters in `--fg-muted` on `--surface-3`, no brand colour, no brand tint, no
+vendor imagery anywhere in the bundle or the README.
+
+## The affiliation line, and what stands in its place
+
+The add-on reports `namesCompany: false` from `register()`, so the host does not
+render the not-affiliated line for it — a disclaimer about a company that does
+not exist is noise rather than care. **An absent line is indistinguishable from a
+forgotten one**, so it states the positive fact in its own words, in all eight
+locales, in the disclaimer's own place: *"Holiday Calendars connects to no
+outside company. It needs no account anywhere, it calls nothing, and every day
+it knows about is already in the add-on."*
+
+That key travels on the registration object as `noCompanyKeys`, which is how the
+host's affiliation component knows to render it where the not-affiliated line
+would otherwise go, and the settings panel repeats it at the foot of its own
+form, where an operator changing a setting is looking.
+
+## The day-set data names states, not companies
+
+The sixty-odd holiday names this add-on carries — `Thanksgiving Day`, `Tag der
+Deutschen Einheit`, `Velký pátek`, `Nytårsdag` — are the names of **public
+holidays**, in the language of the country whose holidays they are. A public
+holiday is a fact about a statute; none of these is anybody's trademark, none is
+a brand, and none is used to suggest a relationship with anybody.
+
+The same is true of the three countries the picker names as having **no** set
+here: China, Taiwan and Egypt are named because their public-holiday calendars
+are announced annually by their governments and cannot be computed in advance,
+which is a statement about a legislative practice and about the limits of this
+data pack.
+
+If a future version ever names a company — a calendar service, a payroll
+provider — that flag flips to `true`, the table above gains the mark and the
+vendor's terms link, and the affiliation line appears with it.
+
 
 ---
 

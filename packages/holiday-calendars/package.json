@@ -1,0 +1,19 @@
+{
+  "name": "@adminium/add-on-holiday-calendars",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Holiday Calendars — curated public-holiday day-sets, shipped as data inside the add-on. No network, no account, no live service.",
+  "license": "AGPL-3.0-only",
+  "scripts": {
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b --force",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@adminium/add-on-host": "*"
+  }
+}
