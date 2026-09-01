@@ -68,13 +68,16 @@ describe("the manifest", () => {
     for (const category of manifest.categories) expect(ADD_ON_CATEGORIES.has(category)).toBe(true);
   });
 
-  it("fills four slots from the closed registry, all at order 10", () => {
+  it("fills five slots from the closed registry, all at order 10", () => {
     const slots = manifest.addOn.slots.map((s) => s.slot);
     expect(slots).toEqual([
       "order.dispatch.actions",
       "checkout.delivery.methods",
       "order.dispatch.panel",
       "settings.add-on.panel",
+      // The inbound half (31 O4): the prepaid return label, entity-gated to
+      // `return` so on every other record the fill draws nothing.
+      "record.actions",
     ]);
     for (const fill of manifest.addOn.slots) {
       expect(SLOT_IDS.has(fill.slot), `SLOT_UNKNOWN: ${fill.slot}`).toBe(true);
@@ -123,7 +126,18 @@ describe("the manifest", () => {
     for (const key of manifest.addOn.publicSettings) {
       expect(secrets, `publicSettings leaks ${key}`).not.toContain(key);
     }
-    expect(manifest.addOn.publicSettings).toEqual(["demo_transport", "collection_cutoff"]);
+    expect(manifest.addOn.publicSettings).toEqual([
+      "demo_transport",
+      "collection_cutoff",
+      // The returns depot (31 O4): five pieces of display text that end up
+      // printed on a label. None is a secret, and the client half reads them
+      // to know where a customer's return parcel goes.
+      "returns_name",
+      "returns_lines",
+      "returns_city",
+      "returns_postcode",
+      "returns_country",
+    ]);
   });
 
   it("ships a demo transport, and defaults to it (D11)", () => {
@@ -252,13 +266,22 @@ describe("the manifest", () => {
    * The pairing is worth keeping in one comment because it is the evidence:
    * one host mounting a subset could be a host that had not finished, and two
    * hosts mounting COMPLEMENTARY subsets is a contract doing its job.
+   *
+   * ── THE FIFTH, ADDED 2026-09-01 (31-T07, O4) ────────────────────────────
+   *
+   * `helpdesk` is the support desk — a customer frontend and the first host of
+   * the INBOUND direction: its returns flow mounts `record.actions` (the
+   * prepaid return label) and `order.dispatch.panel` (the unmodified tracking
+   * panel, now following a parcel travelling TOWARD the shop). Same contract,
+   * route reversed, per the conformance suite's direction-symmetry cases.
    */
-  it("attaches to the four hosts that mount its slots, and to no app it has not been run in", () => {
+  it("attaches to the five hosts that mount its slots, and to no app it has not been run in", () => {
     expect(manifest.addOn.attaches).toEqual([
       { app: "printing", range: "^1.0.0" },
       { app: "maker", range: "^1.0.0" },
       { app: "factory", range: "^1.0.0" },
       { app: "ecommerce-shop", range: "^1.0.0" },
+      { app: "helpdesk", range: "^1.0.0" },
     ]);
   });
 });
@@ -312,7 +335,7 @@ describe("the manifest's entry points are the files the build writes", () => {
   });
 
   it("sends every slot to the client bundle", () => {
-    expect(clientPaths).toHaveLength(4);
+    expect(clientPaths).toHaveLength(5);
     for (const path of clientPaths) expect(path).toBe(OUTPUT.client);
   });
 

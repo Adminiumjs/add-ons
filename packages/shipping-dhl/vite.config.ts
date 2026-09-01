@@ -160,7 +160,7 @@ export default defineConfig({
     // Every engine here is pure and every suite runs headless: the conformance
     // suites drive the transports directly, so nothing needs a DOM.
     environment: "node",
-    include: ["src/**/*.test.ts"],
+    include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
     // `dist.test.ts` builds both halves before it greps them.
     testTimeout: 120_000,
     // TWO SUITES NOW NEED `dist/` ON DISK — `dist.test.ts` greps it and

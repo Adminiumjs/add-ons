@@ -21,6 +21,10 @@ export const FILLED_SLOTS = [
   "order.dispatch.panel",
   "order.dispatch.actions",
   "settings.add-on.panel",
+  // The inbound half (31 O4): a prepaid return label for the record in front
+  // of you. Entity-gated to `return` — on any other record the fill draws
+  // nothing, which multi-fill and the paint rule are built for.
+  "record.actions",
 ] as const satisfies readonly SlotId[];
 
 export type FilledSlot = (typeof FILLED_SLOTS)[number];

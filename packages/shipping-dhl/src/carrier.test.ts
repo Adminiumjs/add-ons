@@ -114,11 +114,26 @@ function fakeCarrierApi(): HttpClient & { calls: HttpRequest[] } {
       calls.push(request);
 
       if (request.path === WIRE.paths.rates) {
-        const to = (request.body as { to: { postcode: string; country: string } }).to;
-        if (to.country === "IE" && to.postcode.startsWith("ML")) {
+        const route = request.body as {
+          from: { postcode: string; country: string };
+          to: { postcode: string; country: string };
+        };
+        // The live service resolves BOTH ends of the route (31 O4) — a label
+        // needs a deliverable recipient and a resolvable sender — so the fake
+        // refuses the seeded bad address whichever end it arrives at, with the
+        // sentence naming which one.
+        const badEnd = (a: { postcode: string; country: string }) =>
+          a.country === "IE" && a.postcode.startsWith("ML");
+        if (badEnd(route.from) || badEnd(route.to)) {
           const error: Record<string, unknown> = {};
           put(error, WIRE.fields.error.code, "998");
-          put(error, WIRE.fields.error.message, "Postcode not recognised for the destination country");
+          put(
+            error,
+            WIRE.fields.error.message,
+            badEnd(route.to)
+              ? "Postcode not recognised for the destination country"
+              : "Postcode not recognised for the sender's country",
+          );
           return { status: 422, body: error };
         }
         const body: Record<string, unknown> = {};

@@ -25,7 +25,8 @@
       { "app": "printing", "range": "^1.0.0" },
       { "app": "maker", "range": "^1.0.0" },
       { "app": "factory", "range": "^1.0.0" },
-      { "app": "ecommerce-shop", "range": "^1.0.0" }
+      { "app": "ecommerce-shop", "range": "^1.0.0" },
+      { "app": "helpdesk", "range": "^1.0.0" }
     ],
     "provides": [
       { "contract": "shipping-carrier", "version": 1, "server": "dist/server.js" }
@@ -35,13 +36,22 @@
       { "slot": "order.dispatch.actions", "client": "dist/client.js", "order": 10 },
       { "slot": "checkout.delivery.methods", "client": "dist/client.js", "order": 10 },
       { "slot": "order.dispatch.panel", "client": "dist/client.js", "order": 10 },
-      { "slot": "settings.add-on.panel", "client": "dist/client.js", "order": 10 }
+      { "slot": "settings.add-on.panel", "client": "dist/client.js", "order": 10 },
+      { "slot": "record.actions", "client": "dist/client.js", "order": 10 }
     ],
     "events": [],
     "connect": { "kind": "api-key" },
     "scopes": ["records:shipments:write", "files:write"],
     "network": { "allow": ["express.api.dhl.com"] },
-    "publicSettings": ["demo_transport", "collection_cutoff"],
+    "publicSettings": [
+      "demo_transport",
+      "collection_cutoff",
+      "returns_name",
+      "returns_lines",
+      "returns_city",
+      "returns_postcode",
+      "returns_country"
+    ],
     "demoTransport": "dist/server.js"
   },
   "requiredSchema": {
@@ -115,6 +125,51 @@
       "label": {
         "key": "addon.shipping-dhl.setting.cutoff",
         "fallback": "Collection cut-off"
+      }
+    },
+    {
+      "key": "returns_name",
+      "type": "string",
+      "default": "",
+      "label": {
+        "key": "addon.shipping-dhl.setting.returnsName",
+        "fallback": "Returns address — name on the label"
+      }
+    },
+    {
+      "key": "returns_lines",
+      "type": "string",
+      "default": "",
+      "label": {
+        "key": "addon.shipping-dhl.setting.returnsLines",
+        "fallback": "Returns address — street"
+      }
+    },
+    {
+      "key": "returns_city",
+      "type": "string",
+      "default": "",
+      "label": {
+        "key": "addon.shipping-dhl.setting.returnsCity",
+        "fallback": "Returns address — town or city"
+      }
+    },
+    {
+      "key": "returns_postcode",
+      "type": "string",
+      "default": "",
+      "label": {
+        "key": "addon.shipping-dhl.setting.returnsPostcode",
+        "fallback": "Returns address — postcode"
+      }
+    },
+    {
+      "key": "returns_country",
+      "type": "string",
+      "default": "",
+      "label": {
+        "key": "addon.shipping-dhl.setting.returnsCountry",
+        "fallback": "Returns address — country"
       }
     }
   ]
