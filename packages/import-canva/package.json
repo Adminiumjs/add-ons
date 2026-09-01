@@ -1,10 +1,23 @@
 {
   "name": "@adminium/add-on-import-canva",
-  "private": true,
   "version": "1.0.0",
   "type": "module",
   "description": "Canva Import — an artwork-source add-on for the Adminium Print Shop example app.",
   "license": "AGPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Adminiumjs/add-ons.git",
+    "directory": "packages/import-canva"
+  },
+  "homepage": "https://adminium.dev/marketplace",
+  "bugs": "https://github.com/Adminiumjs/add-ons/issues",
+  "files": [
+    "dist",
+    "manifest.json",
+    "TRADEMARKS.md",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "dev": "vite build --watch",
     "build": "tsc -b && vite build",
@@ -12,11 +25,10 @@
     "test": "vitest run"
   },
   "peerDependencies": {
-    "lucide-react": "^0.462.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react": "^19.0.0"
   },
   "devDependencies": {
-    "@adminium/add-on-host": "*"
+    "@adminium/add-on-host": "*",
+    "lucide-react": "^0.462.0"
   }
 }

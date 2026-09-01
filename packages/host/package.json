@@ -8,7 +8,10 @@
   "exports": {
     ".": "./src/index.ts",
     "./contracts": "./src/contracts/index.ts",
-    "./testing": "./src/testing/index.ts"
+    "./testing": "./src/testing/index.ts",
+    "./runtime": "./src/runtime/index.ts",
+    "./runtime/react": "./src/runtime/react.ts",
+    "./runtime/jsx-runtime": "./src/runtime/jsx-runtime.ts"
   },
   "scripts": {
     "build": "echo 'packages/host publishes TypeScript sources; there is nothing to build' >&2",
@@ -16,7 +19,7 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@adminiumjs/manifest": "^0.2.1"
+    "@adminiumjs/manifest": "0.2.1"
   },
   "peerDependencies": {
     "react": "^19.0.0"

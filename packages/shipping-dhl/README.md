@@ -9,6 +9,10 @@ reference and a label. That is the whole of it.
 **not** job dispatch, **not** field-service routing and **not** driver management, and it gains none
 of those screens even as an empty state.
 
+DHL is a trademark of Deutsche Post AG, used nominatively to say which delivery company this add-on
+connects to. Adminium is not affiliated with, endorsed by or in partnership with the company named
+here. See [TRADEMARKS.md](TRADEMARKS.md).
+
 ## What it attaches to
 
 An add-on never stands alone. This one attaches to **two** apps — `printing` (`^1.0.0`) and `maker`
@@ -187,5 +191,5 @@ carrier hostname appears in it, and that the built bytes are clean of the releas
 ## License
 
 AGPL-3.0-only. The full text is in [`LICENSE`](LICENSE), and `package.json` and `manifest.json`
-both declare it. See the repository-root `TRADEMARKS.md` for the marks this repo references and the affiliation it
+both declare it. See [`TRADEMARKS.md`](TRADEMARKS.md) for the marks this add-on references and the affiliation it
 disclaims.

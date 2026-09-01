@@ -1,10 +1,23 @@
 {
   "name": "@adminium/add-on-design-studio",
-  "private": true,
   "version": "1.0.0",
   "type": "module",
   "description": "Design Studio — a small in-browser artwork editor that attaches to the Adminium Print Shop.",
   "license": "AGPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Adminiumjs/add-ons.git",
+    "directory": "packages/design-studio"
+  },
+  "homepage": "https://adminium.dev/marketplace",
+  "bugs": "https://github.com/Adminiumjs/add-ons/issues",
+  "files": [
+    "dist",
+    "manifest.json",
+    "TRADEMARKS.md",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "dev": "vite --config vite.dev.config.ts",
     "build": "tsc -b && vite build",
@@ -13,11 +26,10 @@
     "test:watch": "vitest"
   },
   "peerDependencies": {
-    "lucide-react": "^0.462.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react": "^19.0.0"
   },
   "devDependencies": {
-    "@adminium/add-on-host": "*"
+    "@adminium/add-on-host": "*",
+    "lucide-react": "^0.462.0"
   }
 }

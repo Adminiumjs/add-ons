@@ -1,10 +1,23 @@
 {
   "name": "@adminium/add-on-holiday-calendars",
-  "private": true,
   "version": "1.0.0",
   "type": "module",
   "description": "Holiday Calendars — curated public-holiday day-sets, shipped as data inside the add-on. No network, no account, no live service.",
   "license": "AGPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Adminiumjs/add-ons.git",
+    "directory": "packages/holiday-calendars"
+  },
+  "homepage": "https://adminium.dev/marketplace",
+  "bugs": "https://github.com/Adminiumjs/add-ons/issues",
+  "files": [
+    "dist",
+    "manifest.json",
+    "TRADEMARKS.md",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b --force",

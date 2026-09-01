@@ -1,10 +1,23 @@
 {
   "name": "@adminium/add-on-barcode-labels",
-  "private": true,
   "version": "1.0.0",
   "type": "module",
   "description": "Barcode Labels — give a catalogue row an EAN-13 or Code 128 code and print a sheet of labels for it. No network, no account, no service.",
   "license": "AGPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Adminiumjs/add-ons.git",
+    "directory": "packages/barcode-labels"
+  },
+  "homepage": "https://adminium.dev/marketplace",
+  "bugs": "https://github.com/Adminiumjs/add-ons/issues",
+  "files": [
+    "dist",
+    "manifest.json",
+    "TRADEMARKS.md",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b --force",

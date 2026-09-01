@@ -10,3 +10,6 @@ dist
 .env
 .env.*
 !.env.example
+
+# Tarballs staged by scripts/publish-add-ons.mjs before upload.
+scripts/out/

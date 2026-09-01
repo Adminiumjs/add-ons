@@ -78,3 +78,13 @@ export {
   trackEventSchema,
   zoneSchema,
 } from './schemas.ts';
+export {
+  describePackShape,
+  REQUIRED_ROOT_FILES,
+  type PackShapeFixtures,
+} from './pack-shape.ts';
+export {
+  describeLoadable,
+  bareSpecifiersIn,
+  type LoadableFixtures,
+} from './loadable.ts';

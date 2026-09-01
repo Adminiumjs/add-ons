@@ -1,0 +1,167 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# THE FILENAME OF THIS FILE IS LOAD-BEARING. Every published package names this
+# repository AND `release.yml` as its trusted publisher on npmjs.com. Renaming
+# the file breaks every publish until all six are repointed by hand.
+#
+# DISPATCH-TRIGGERED, NOT TAG-TRIGGERED — a deliberate difference from the main
+# monorepo's release.yml, forced by the release ledger. 32 D7 leg 2 wants
+# `{name, version, integrity}` computed from the tarballs that were actually
+# published, committed into the repo, and INSIDE the tag. A tag-triggered run
+# cannot commit into the tag that started it. So this job publishes, writes the
+# ledger, commits it, and cuts the tag last. The guards `on: push: tags` would
+# have given for free are restated explicitly in the first step: main only, and
+# refuse a tag that already exists.
+#
+# BEFORE THE FIRST RUN EVER SUCCEEDS: all six package names must already exist
+# on the registry with this repository + this filename registered as their
+# trusted publisher. npm cannot attach a trusted publisher to a name that has
+# never been published, and there is no scope-level inheritance, so each of the
+# six needs a ONE-TIME manual 2FA bootstrap by the account holder from a
+# `--dry-run` tarball, then `npm trust github Adminiumjs/add-ons --file
+# release.yml`. All six are 404 today. That ceremony is 32-T03.
+
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release, without the v (e.g. 1.0.1). Must already be in every package.json AND manifest.json.'
+        required: true
+        type: string
+
+concurrency:
+  group: release-${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: release
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write # commit the ledger, push the tag
+      id-token: write # the OIDC token npm exchanges for its publish credential.
+        # WITHOUT THIS npm silently falls back to token auth, finds none, and
+        # fails with an error that does not mention OIDC.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Refuse anything but main, and any tag that already exists
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+            echo "::error::'$VERSION' is not a semver version"; exit 1
+          fi
+          if git rev-parse -q --verify "refs/tags/v$VERSION" >/dev/null; then
+            echo "::error::tag v$VERSION already exists — npm versions are immutable, pick a new one"; exit 1
+          fi
+          echo "Releasing $VERSION from $(git rev-parse --short HEAD)"
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      # Trusted publishing needs npm >= 11.5.1. Node 22 bundles npm 10.9.x,
+      # which has NO OIDC support: it ignores the id-token, falls back to an
+      # auth token that is not set, and fails misleadingly. This step is what
+      # makes the job work; it is not housekeeping. Ranged rather than @latest
+      # so an npm major cannot change publish behaviour underneath a release.
+      - name: Upgrade npm for trusted publishing
+        run: |
+          npm install -g 'npm@^11.5.1'
+          npm --version
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck, test, build
+        run: npm run verify
+
+      # The manifests on disk are what ships: publish-add-ons.mjs reads each
+      # package's own version and never looks at this input. Assert they agree
+      # with what was asked for BEFORE anything is uploaded — npm has no undo.
+      # This is also the backstop for a `changeset version` run where
+      # sync-manifest-versions.mjs did not happen.
+      - name: Assert every package and manifest is at the requested version
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          node -e '
+            const { readdirSync, readFileSync, existsSync } = require("fs");
+            const { join } = require("path");
+            const want = process.env.VERSION;
+            const bad = [];
+            let n = 0;
+            for (const d of readdirSync("packages")) {
+              const m = join("packages", d, "manifest.json");
+              if (!existsSync(m)) continue;
+              n += 1;
+              const pkg = JSON.parse(readFileSync(join("packages", d, "package.json"), "utf8"));
+              const man = JSON.parse(readFileSync(m, "utf8"));
+              if (pkg.version !== want) bad.push(`${d}/package.json is ${pkg.version}`);
+              if (man.version !== want) bad.push(`${d}/manifest.json is ${man.version}`);
+            }
+            if (n < 6) { console.error(`::error::only ${n} add-ons discovered under packages/`); process.exit(1); }
+            if (bad.length) { console.error(`::error::expected ${want}:\n  ` + bad.join("\n  ")); process.exit(1); }
+            console.log(`${n} add-ons all at ${want}`);
+          '
+
+      # Pack + X-ray everything before uploading anything. A published version
+      # is immutable, so a defect found while packing package five must not
+      # leave four on the registry forever.
+      - name: Pack and X-ray every tarball
+        run: node scripts/publish-add-ons.mjs --dry-run
+
+      # No NODE_AUTH_TOKEN: npm authenticates with the OIDC token above and
+      # generates provenance automatically on that path, so --provenance would
+      # be redundant.
+      - name: Publish and write the release ledger
+        run: node scripts/publish-add-ons.mjs
+
+      # The ledger is D7 leg 2 — the integrity values whose provenance is
+      # independent of npm at rest. It has to be readable at a pinned SHA, so it
+      # is committed and tagged rather than left as a build artifact.
+      - name: Commit the ledger and cut the tag
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          git config user.name  'Mohamed Sofi'
+          git config user.email 'designsuniverse@gmail.com'
+          git add RELEASES.json
+          if git diff --cached --quiet; then
+            echo "::error::RELEASES.json did not change — the publish step wrote no ledger"; exit 1
+          fi
+          git commit -m "chore(release): ledger for v$VERSION"
+          git tag -a "v$VERSION" -m "v$VERSION"
+          git push origin HEAD:main
+          git push origin "v$VERSION"
+
+      - name: Summary
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          {
+            echo "### Released \`v$VERSION\`"
+            echo
+            echo '| package | version | integrity |'
+            echo '|---|---|---|'
+            node -e '
+              const l = JSON.parse(require("fs").readFileSync("RELEASES.json", "utf8"));
+              for (const r of l.releases) {
+                console.log(`| \`${r.name}\` | ${r.version} | \`${r.integrity.slice(0, 24)}…\` |`);
+              }
+            '
+          } >> "$GITHUB_STEP_SUMMARY"

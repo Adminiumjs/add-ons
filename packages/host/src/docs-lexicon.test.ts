@@ -31,8 +31,32 @@
  * So this gate takes the seven runs that have no ordinary-English homograph in
  * this vocabulary, and it takes them WITHOUT a word boundary, which is the
  * whole point: `explanation` carries `plan`, `frontier` carries `tier`, and
- * both are real failures the moment somebody reaches for them. The `pro` half
- * stays where it can be paid for — over the built bundles, where the copy is.
+ * both are real failures the moment somebody reaches for them.
+ *
+ * ── THE `pro` HALF, NOW CLOSED (32-add-on-distribution.md D1) ───────────────
+ *
+ * It used to stay only where it could be paid for — over the built bundles.
+ * Publishing changes the stakes: a package README and its `description` become
+ * the npm LISTING PAGE, which is marketplace copy on somebody else's site, read
+ * by people who never open this repo. So both are swept here now, each in the
+ * form it can afford:
+ *
+ *  - **Markdown** keeps the eight substrings above and gains `pro` as a
+ *    TOKEN (`\bpro\b`), the same shape `host-kit`'s `WORD_BANNED` uses.
+ *    Measured: zero hits across every document. Swapping in the substring
+ *    instead would have fired 50 times on `product`, `production`, `proof`,
+ *    `provides` and `promise` — the exact carve-out-list-nobody-audits failure
+ *    the section above argues against.
+ *  - **`package.json` `description`** takes the FULL nine-run list, `pro` as a
+ *    substring included, because the copy is one sentence and is written around
+ *    the run — the same trade the locale bundles make. Measured clean on all
+ *    eight packages.
+ *
+ * WHAT IS DELIBERATELY NOT SWEPT: the tarball's contents as a whole. The
+ * `LICENSE` staged into every package at pack time is the AGPL, whose preamble
+ * says `free` twenty-two times. A sweep written over `package/**` rather than
+ * over named surfaces turns all six packages red the moment the licence is
+ * staged — and the correct response to that would be to weaken the gate.
  */
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -100,4 +124,48 @@ describe('the documents describe the bans without tripping them', () => {
       expect(offences, `\n  ${offences.join('\n  ')}\n`).toEqual([]);
     },
   );
+
+  it.each(files.map((file) => ({ file: file.slice(ROOT.length) })))(
+    '$file carries no bare “pro”',
+    ({ file }) => {
+      // Token-anchored, unlike everything above. See the header: as a substring
+      // this run is unaffordable in prose about a codebase, and as a word it is
+      // free.
+      const text = readFileSync(join(ROOT, file), 'utf8');
+      const offences = [...text.matchAll(/\bpro\b/gi)].map(
+        (match) => `line ${text.slice(0, match.index).split('\n').length}: “${match[0]}”`,
+      );
+      expect(offences, `\n  ${offences.join('\n  ')}\n`).toEqual([]);
+    },
+  );
+});
+
+describe('the npm listing copy carries no banned run', () => {
+  // A published package's `description` is the one line npm shows in search
+  // results. It is marketplace copy on somebody else's site, so it is held to
+  // the FULL list including `pro` — affordable here because it is a sentence.
+  const packages = readdirSync(join(ROOT, 'packages'), { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+
+  it('finds packages to check at all', () => {
+    expect(packages.length, 'no packages found, so this proves nothing').toBeGreaterThan(3);
+  });
+
+  it.each(packages.map((name) => ({ name })))('$name', ({ name }) => {
+    const pkg = JSON.parse(
+      readFileSync(join(ROOT, 'packages', name, 'package.json'), 'utf8'),
+    ) as { description?: string };
+    const description = pkg.description ?? '';
+    expect(description.length, `${name} has no description; npm would list it blank`).toBeGreaterThan(0);
+
+    const offences: string[] = [];
+    for (const banned of [...BANNED, 'pro']) {
+      for (const match of description.matchAll(new RegExp(banned.replace('/', '\\/'), 'gi'))) {
+        offences.push(`“${tokenAround(description, match.index, match[0].length)}” carries “${banned}”`);
+      }
+    }
+    expect(offences, `\n  ${offences.join('\n  ')}\n`).toEqual([]);
+  });
 });
