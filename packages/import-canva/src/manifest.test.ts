@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import manifest from "../manifest.json";
 import { OUTPUT } from "../vite.config.ts";
 import { register } from "./index.ts";
-import { OAUTH, VENDOR_API_HOST } from "./oauth.ts";
+import { OAUTH, VENDOR_API_HOST, VENDOR_AUTH_HOST } from "./oauth.ts";
 import { FILLED_SLOTS } from "./slots.ts";
 import { importCanvaStrings } from "./i18n/strings.ts";
 import { PACKAGE_ROOT, distFiles, ensureFreshBuild, packageRelative } from "./testing/built.ts";
@@ -132,8 +132,13 @@ describe("the manifest's entry points exist in the build output (AC10)", () => {
 });
 
 describe("the egress allow-list (24 D14)", () => {
-  it("carries exactly one exact hostname, and it is the one oauth.ts names", () => {
-    expect(manifest.addOn.network.allow).toEqual([VENDOR_API_HOST]);
+  it("carries exactly the hostnames its own endpoints name", () => {
+    // BOTH, and the plural is the fix. See `VENDOR_AUTH_HOST` in `oauth.ts`:
+    // one hostname here while the authorize URL named another is what made
+    // this add-on's OAuth flow unstartable against a real Adminium.
+    expect([...manifest.addOn.network.allow].sort()).toEqual(
+      [VENDOR_API_HOST, VENDOR_AUTH_HOST].sort(),
+    );
   });
 
   it("has no wildcard, no scheme, no port and no bare IP", () => {
@@ -151,12 +156,22 @@ describe("the egress allow-list (24 D14)", () => {
   });
 
   it("keeps every declared URL inside the hosts it is allowed to reach", () => {
-    // An authorize URL on a host the allow-list does not carry is a call the
-    // runtime would refuse — better to fail here than in an audit row.
+    /*
+     * THE RULE THIS COMMENT ALWAYS STATED, NOW ACTUALLY CHECKED.
+     *
+     * What stood here said "an authorize URL on a host the allow-list does not
+     * carry is a call the runtime would refuse — better to fail here than in an
+     * audit row", and then asserted `hostname.endsWith("canva.com")`. A suffix
+     * test where the runtime does an EXACT one, so `www.canva.com` passed this
+     * file for a fortnight and was refused by the first real server it met.
+     *
+     * `endsWith` was also a weaker check than it looks: `evilcanva.com` ends
+     * with `canva.com` too.
+     */
     for (const url of [OAUTH.authorizeUrl, OAUTH.tokenUrl]) {
       const { protocol, hostname } = new URL(url);
       expect(protocol).toBe("https:");
-      expect(hostname.endsWith("canva.com")).toBe(true);
+      expect(manifest.addOn.network.allow, url).toContain(hostname);
     }
   });
 
@@ -169,9 +184,15 @@ describe("the egress allow-list (24 D14)", () => {
    * gate reports and should. The URL is written out now, so the guarantee has
    * to be stated rather than constructed, and this is where it is stated.
    */
-  it("sends the token exchange to exactly the one allow-listed hostname", () => {
+  it("sends the token exchange to exactly the allow-listed API hostname", () => {
     expect(new URL(OAUTH.tokenUrl).hostname).toBe(VENDOR_API_HOST);
     expect(manifest.addOn.network.allow).toContain(VENDOR_API_HOST);
+  });
+
+  it("sends the browser to exactly the allow-listed AUTHORIZE hostname", () => {
+    // The half that had no assertion at all, which is why it was wrong.
+    expect(new URL(OAUTH.authorizeUrl).hostname).toBe(VENDOR_AUTH_HOST);
+    expect(manifest.addOn.network.allow).toContain(VENDOR_AUTH_HOST);
   });
 });
 

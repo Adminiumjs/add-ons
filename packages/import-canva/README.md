@@ -12,7 +12,9 @@ implementation marks its own homework — and that asymmetry is the demo: an art
 the finished size passes by construction, while a design made in a general-purpose tool routinely
 arrives without bleed.
 
-Adminium is not affiliated with the company named here. See [TRADEMARKS.md](../../TRADEMARKS.md).
+Canva is a trademark of Canva Pty Ltd, used nominatively to say which design tool this add-on
+imports from. Adminium is not affiliated with, endorsed by or in partnership with the company
+named here. See [TRADEMARKS.md](TRADEMARKS.md).
 
 ---
 
