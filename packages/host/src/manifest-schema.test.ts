@@ -343,6 +343,30 @@ const HOST_ROOTS: readonly { name: string; root: string }[] = [
       process.env.ADMINIUM_ECOMMERCE_STOREFRONT ??
       fileURLToPath(new URL('../../../../ecommerce-storefront', import.meta.url)),
   },
+  /*
+   * ── THE FIRST HOST OF THE INBOUND DIRECTION (31-T07, O4) ─────────────────
+   *
+   * [Added 2026-09-01, plan-31 close-out.] `support-desk` — app key
+   * `helpdesk` — is a customer help portal whose returns wizard mounts
+   * `record.actions` (the carrier's prepaid return label, the twelfth slot's
+   * second consumer) and `order.dispatch.panel` (the unmodified tracking
+   * panel, now reading a parcel that travels TOWARD the business). Same
+   * contract, route reversed, per the conformance suite's direction-symmetry
+   * cases — and the attach-surface gate verifies the claim through the
+   * `record.actions` mount, `settings.add-on.panel` not counting, exactly as
+   * it should.
+   *
+   * THE CI WORKFLOW GAINS ITS CHECKOUT IN THE SAME CHANGE AS THIS ENTRY. The
+   * two hosts above were registered here and nobody came back to `ci.yml` the
+   * same day; the omission is written up at length in that file, and this
+   * entry is the first to apply its own lesson.
+   */
+  {
+    name: 'support-desk',
+    root:
+      process.env.ADMINIUM_SUPPORT_DESK ??
+      fileURLToPath(new URL('../../../../support-desk', import.meta.url)),
+  },
 ];
 
 /** The checked-out directory a host name stands for. */

@@ -135,6 +135,19 @@ jobs:
           repository: Adminiumjs/ecommerce-storefront
           path: .hosts/ecommerce-storefront
 
+      # ── THE RETURNS HOST, ADDED IN THE SAME CHANGE AS ITS HOST_ROOTS ENTRY ──
+      #
+      # [Added 2026-09-01, 31-T07.] `support-desk` — app key `helpdesk` — is
+      # the carrier's fifth attach target and the first host of the inbound
+      # direction (31 O4). Registered in `HOST_ROOTS` and here in ONE change,
+      # which is this file's own lesson above being applied for the first time
+      # rather than re-learned.
+      - name: Check out the support-desk app
+        uses: actions/checkout@v4
+        with:
+          repository: Adminiumjs/support-desk
+          path: .hosts/support-desk
+
       # `verify` is the repo's own script — typecheck, then test, then build —
       # so CI cannot drift from what a maintainer runs by hand.
       - name: Typecheck, test, build
@@ -145,6 +158,7 @@ jobs:
           ADMINIUM_CLINIC_DESK: ${{ github.workspace }}/.hosts/clinic-desk
           ADMINIUM_FACTORY_OPS: ${{ github.workspace }}/.hosts/factory-ops
           ADMINIUM_ECOMMERCE_STOREFRONT: ${{ github.workspace }}/.hosts/ecommerce-storefront
+          ADMINIUM_SUPPORT_DESK: ${{ github.workspace }}/.hosts/support-desk
           # Only the two add-on HOSTS are required: `host-mirror.test.ts` is the
           # guard this covers, and it compares vendored files that only those two
           # carry. The two target apps above are read by a different suite, which
