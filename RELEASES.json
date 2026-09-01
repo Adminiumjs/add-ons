@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "releases": [
+    {
+      "name": "@adminiumjs/add-on-barcode-labels",
+      "key": "barcode-labels",
+      "version": "1.0.0",
+      "integrity": "sha512-DFNoYAcJEx1KZtPZK1GTTuZDq+/qpZ9k5/hL0QLYD9xJG0VWdawLDkktkNnoXpNgQkUR2XXhaMGUjZ1CYihPwA==",
+      "shasum": "9f3566c8f1483e981970de78eb04052e286da8e2",
+      "fileCount": 6
+    },
+    {
+      "name": "@adminiumjs/add-on-design-studio",
+      "key": "design-studio",
+      "version": "1.0.0",
+      "integrity": "sha512-/1L7egbr8kj89Bcn3NGnBzV0vfTipQjqSjEcA9rZ2HmoZGvhGJwp6DZzQxjnU+qvw5YCkM5Gmj9PBDouUlkEyQ==",
+      "shasum": "d92a03740317d661ed8d81826254627baf84b5f8",
+      "fileCount": 8
+    },
+    {
+      "name": "@adminiumjs/add-on-holiday-calendars",
+      "key": "holiday-calendars",
+      "version": "1.0.0",
+      "integrity": "sha512-AjZzZeLlBF+o5am/jXk69gnzjxm4urqye2Z4FamU/CjiezjDs9OihSyqAAt8qfIRuQJXzrFxJZn0nUirOc0hkQ==",
+      "shasum": "62414c0fa476b6b1ad9dd958bd99fb8ccbcc4173",
+      "fileCount": 6
+    },
+    {
+      "name": "@adminiumjs/add-on-import-canva",
+      "key": "import-canva",
+      "version": "1.0.0",
+      "integrity": "sha512-GDfCrLRmnMMhfuHuzZdMn4wpiBYHeHc1Z3049D/VoZWpwHWKddXrZ401hv5Nwwi/FNKsbMRpJ4kxCTOBBn/QPg==",
+      "shasum": "787be9101af9f35d1658ec1bfb417f6489d2a5af",
+      "fileCount": 8
+    },
+    {
+      "name": "@adminiumjs/add-on-personalizer",
+      "key": "personalizer",
+      "version": "1.0.0",
+      "integrity": "sha512-kVJ029dTIndC0Pim/SwN3RamiU38hr1vGSUts/yysvd/iaUaFQ7N1oi30S09u2kP9D93oasxwmxqPKDiXRcg6w==",
+      "shasum": "fbf1d4579cd7e3ee0c674ad8099e3ddcf5ae5035",
+      "fileCount": 8
+    },
+    {
+      "name": "@adminiumjs/add-on-shipping-dhl",
+      "key": "shipping-dhl",
+      "version": "1.0.0",
+      "integrity": "sha512-2/pMeVBIuyNRFQNfjHl1IEDi7ls6gD42AZ/FwFrkOGoj5CJHPO4XeD6FLkNLqkABsdNwLdBWjGju2gWyM4PKKA==",
+      "shasum": "88b6d8bc4c1ca3b4730893ddd7b714475bca6818",
+      "fileCount": 7
+    }
+  ]
+}
