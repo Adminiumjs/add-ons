@@ -110,16 +110,25 @@ describe('the build writes what the manifest promises', () => {
     expect(relativeImports).toEqual([]);
   });
 
-  it('imports nothing but the runtime the host already has (D7)', () => {
+  it('imports NOTHING, because the host hands it the runtime (D7, 26-T13)', () => {
     // React, and nothing else. An add-on that brought a barcode library would
     // put somebody else's symbol tables in a page — which is a large part of
     // why `ean13.ts` and `code128.ts` are written out by hand.
+    //
+    // THE ASSERTION INVERTED WITH THE ABI. It used to be "imports react and
+    // nothing else", with a floor requiring at least one import so an empty
+    // read could not pass as a clean one. 26-T13 made the bundle import
+    // literally nothing — React now arrives through a global the host installs
+    // before importing, because a browser cannot resolve a bare specifier — so
+    // the old floor asserted the exact thing that is now correct.
+    //
+    // The anti-empty-read intent is kept, on a proxy that is still true: the
+    // file has bytes and it exports `register`.
     const client = readFileSync(join(ROOT, OUTPUT.client), 'utf8');
     const packages = [...client.matchAll(/from\s*["']([^."'][^"']*)["']/g)].map((m) => m[1]!);
-    for (const specifier of packages) {
-      expect(/^react($|\/)/.test(specifier), `the bundle imports ${specifier}`).toBe(true);
-    }
-    expect(packages.length, 'the bundle imports nothing at all — did it build?').toBeGreaterThan(0);
+    expect(packages, 'the bundle must ask a browser to resolve nothing').toEqual([]);
+    expect(client.length, 'the bundle is empty — did it build?').toBeGreaterThan(1000);
+    expect(client, 'the bundle must export register()').toContain('register');
   });
 
   it('carries no test-only module, so the lexicon cannot ship', () => {

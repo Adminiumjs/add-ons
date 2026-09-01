@@ -335,7 +335,20 @@ describe("the client / server split survives bundling (24 D15, AC10)", () => {
   });
 
   it("still puts the renderer in the client bundle, so the split is real and not empty", () => {
-    expect(readDist(CLIENT)).toMatch(/from\s*"react"/);
+    /*
+     * THE PROXY CHANGED WITH THE ABI (26-T13), THE CLAIM DID NOT.
+     *
+     * This used to look for `from "react"`, which was a fine stand-in for "the
+     * half that renders is really in here" while React was a Rollup external.
+     * It is not one any more: the client bundle imports nothing at all, because
+     * a browser cannot resolve a bare specifier and React now arrives through a
+     * global the host installs before importing.
+     *
+     * The runtime key is the replacement, and a better proxy than the old one:
+     * only the rendering half reaches for React, so its presence says the split
+     * is real — and unlike a package name, it cannot appear by coincidence.
+     */
+    expect(readDist(CLIENT)).toContain("__ADMINIUM_ADD_ON_RUNTIME__");
   });
 
   /**

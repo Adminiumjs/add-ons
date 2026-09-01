@@ -1,5 +1,16 @@
+import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
+import type { PluginOption } from "vite";
 import { build, defineConfig, type Plugin } from "vite";
+
+/** The host-runtime shims this add-on's React imports are aliased to (26-T13). */
+const HOST_RUNTIME_REACT = fileURLToPath(
+  new URL("../host/src/runtime/react.ts", import.meta.url),
+);
+const HOST_RUNTIME_JSX = fileURLToPath(
+  new URL("../host/src/runtime/jsx-runtime.ts", import.meta.url),
+);
+
 
 /**
  * THE TWO HALVES, AND THE FILENAMES THE MANIFEST NAMES.
@@ -39,7 +50,7 @@ export const OUTPUT = {
  * development runtime instead of importing it. Matching by PREFIX rather than
  * by exact name is what stops the next such subpath from slipping through.
  */
-const EXTERNAL = [/^react($|\/)/, /^react-dom($|\/)/, /^lucide-react($|\/)/];
+const EXTERNAL: never[] = [];
 
 /**
  * Build the server half after the client half, inside the same `vite build`.
@@ -80,8 +91,43 @@ function serverHalf(): Plugin {
   };
 }
 
+/**
+ * The React aliases, applied to the BUILD ONLY (26-T13).
+ *
+ * A top-level `resolve.alias` would apply to vitest as well, because vitest
+ * reads this same config — and then the add-on's own source would resolve
+ * `react` to the shim during tests, which throws at module init because no HOST
+ * provided a runtime. Tests must render against the real React; only the
+ * artefact a browser loads needs the shim.
+ *
+ * `apply: "build"` is what draws that line, and it is the whole reason this is
+ * a plugin rather than three lines of config.
+ */
+function hostRuntimeAlias(): PluginOption {
+  return {
+    name: "adminium:host-runtime-alias",
+    apply: "build",
+    config: () => ({
+      resolve: {
+        /*
+         * ANCHORED REGEXES IN THE ARRAY FORM. Vite's object aliases match by
+         * PREFIX, so a `react` key also swallows `react/jsx-runtime` and
+         * resolves it to `<…>/react.ts/jsx-runtime` — an ENOTDIR nobody would
+         * read as "your alias was too greedy".
+         */
+        alias: [
+          { find: /^react\/jsx-dev-runtime$/, replacement: HOST_RUNTIME_JSX },
+          { find: /^react\/jsx-runtime$/, replacement: HOST_RUNTIME_JSX },
+          { find: /^react$/, replacement: HOST_RUNTIME_REACT },
+        ],
+      },
+    }),
+  };
+}
+
+
 export default defineConfig({
-  plugins: [react(), serverHalf()],
+  plugins: [hostRuntimeAlias(), react(), serverHalf()],
   build: {
     // Comments survive a library build, which is why the release grep reads
     // `dist/` and not only the sources — see `built-output.test.ts`.

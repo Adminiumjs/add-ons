@@ -1,7 +1,17 @@
 import { fileURLToPath } from "node:url";
 
 import react from "@vitejs/plugin-react";
+import type { PluginOption } from "vite";
 import { build, defineConfig, type Plugin, type UserConfig } from "vite";
+
+/** The host-runtime shims this add-on's React imports are aliased to (26-T13). */
+const HOST_RUNTIME_REACT = fileURLToPath(
+  new URL("../host/src/runtime/react.ts", import.meta.url),
+);
+const HOST_RUNTIME_JSX = fileURLToPath(
+  new URL("../host/src/runtime/jsx-runtime.ts", import.meta.url),
+);
+
 
 /**
  * THE PACKAGE ROOT, resolved from this file rather than from `process.cwd()`,
@@ -85,6 +95,41 @@ function serverHalf(): Plugin {
   };
 }
 
+/**
+ * The React aliases, applied to the BUILD ONLY (26-T13).
+ *
+ * A top-level `resolve.alias` would apply to vitest as well, because vitest
+ * reads this same config — and then the add-on's own source would resolve
+ * `react` to the shim during tests, which throws at module init because no HOST
+ * provided a runtime. Tests must render against the real React; only the
+ * artefact a browser loads needs the shim.
+ *
+ * `apply: "build"` is what draws that line, and it is the whole reason this is
+ * a plugin rather than three lines of config.
+ */
+function hostRuntimeAlias(): PluginOption {
+  return {
+    name: "adminium:host-runtime-alias",
+    apply: "build",
+    config: () => ({
+      resolve: {
+        /*
+         * ANCHORED REGEXES IN THE ARRAY FORM. Vite's object aliases match by
+         * PREFIX, so a `react` key also swallows `react/jsx-runtime` and
+         * resolves it to `<…>/react.ts/jsx-runtime` — an ENOTDIR nobody would
+         * read as "your alias was too greedy".
+         */
+        alias: [
+          { find: /^react\/jsx-dev-runtime$/, replacement: HOST_RUNTIME_JSX },
+          { find: /^react\/jsx-runtime$/, replacement: HOST_RUNTIME_JSX },
+          { find: /^react$/, replacement: HOST_RUNTIME_REACT },
+        ],
+      },
+    }),
+  };
+}
+
+
 /*
  * An add-on's client half builds to a SINGLE ESM bundle (24 D7), which is what
  * the host `import()`s from `/add-ons/design-studio/client.js` once the
@@ -109,7 +154,7 @@ function serverHalf(): Plugin {
  * still spells the extra field out.
  */
 const config: UserConfig & { test: { globalSetup: readonly string[] } } = {
-  plugins: [react(), serverHalf()],
+  plugins: [hostRuntimeAlias(), react(), serverHalf()],
   build: {
     lib: {
       entry: "src/index.ts",
@@ -147,13 +192,7 @@ const config: UserConfig & { test: { globalSetup: readonly string[] } } = {
        * second reconciler in the page (D7) and a pile of React's own vocabulary
        * in an artefact the release sweep greps.
        */
-      external: [
-        "react",
-        "react-dom",
-        "react/jsx-runtime",
-        "react/jsx-dev-runtime",
-        "lucide-react",
-      ],
+      external: [],
     },
   },
   /*

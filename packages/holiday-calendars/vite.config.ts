@@ -1,5 +1,16 @@
+import { fileURLToPath } from "node:url";
+import type { PluginOption } from "vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
+
+/** The host-runtime shims this add-on's React imports are aliased to (26-T13). */
+const HOST_RUNTIME_REACT = fileURLToPath(
+  new URL("../host/src/runtime/react.ts", import.meta.url),
+);
+const HOST_RUNTIME_JSX = fileURLToPath(
+  new URL("../host/src/runtime/jsx-runtime.ts", import.meta.url),
+);
+
 
 /**
  * ONE HALF, AND THE FILENAME THE MANIFEST NAMES.
@@ -46,7 +57,42 @@ export const OUTPUT = {
  * development element factory a non-production build resolves — from being
  * quietly inlined beside the production one.
  */
-const EXTERNAL = [/^react($|\/)/, /^react-dom($|\/)/, /^lucide-react($|\/)/];
+const EXTERNAL: never[] = [];
+
+/**
+ * The React aliases, applied to the BUILD ONLY (26-T13).
+ *
+ * A top-level `resolve.alias` would apply to vitest as well, because vitest
+ * reads this same config — and then the add-on's own source would resolve
+ * `react` to the shim during tests, which throws at module init because no HOST
+ * provided a runtime. Tests must render against the real React; only the
+ * artefact a browser loads needs the shim.
+ *
+ * `apply: "build"` is what draws that line, and it is the whole reason this is
+ * a plugin rather than three lines of config.
+ */
+function hostRuntimeAlias(): PluginOption {
+  return {
+    name: "adminium:host-runtime-alias",
+    apply: "build",
+    config: () => ({
+      resolve: {
+        /*
+         * ANCHORED REGEXES IN THE ARRAY FORM. Vite's object aliases match by
+         * PREFIX, so a `react` key also swallows `react/jsx-runtime` and
+         * resolves it to `<…>/react.ts/jsx-runtime` — an ENOTDIR nobody would
+         * read as "your alias was too greedy".
+         */
+        alias: [
+          { find: /^react\/jsx-dev-runtime$/, replacement: HOST_RUNTIME_JSX },
+          { find: /^react\/jsx-runtime$/, replacement: HOST_RUNTIME_JSX },
+          { find: /^react$/, replacement: HOST_RUNTIME_REACT },
+        ],
+      },
+    }),
+  };
+}
+
 
 /**
  * An add-on's client half builds to a SINGLE ESM bundle (24 D7).
@@ -65,7 +111,7 @@ const EXTERNAL = [/^react($|\/)/, /^react-dom($|\/)/, /^lucide-react($|\/)/];
  * rather than quietly re-opening the hole.
  */
 export default defineConfig({
-  plugins: [react()],
+  plugins: [hostRuntimeAlias(), react()],
   build: {
     lib: {
       entry: "src/index.ts",
