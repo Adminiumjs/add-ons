@@ -11,6 +11,8 @@
 
 import { describe, expect, it } from 'vitest';
 
+import { HOSTED_SLOTS } from '@adminium/add-on-host';
+
 import { mountProblems, type SlotMountRecord } from './mounts.ts';
 import { syntheticHost } from './synthetic-host.ts';
 
@@ -135,22 +137,19 @@ describe('the mis-import', () => {
      * host uses for its own list. Importing the wrong one silently widens every
      * slot check in this package rather than erroring anywhere.
      */
-    const host = syntheticHost({
-      hostedSlots: [
-        'artwork.sources',
-        'checkout.delivery.methods',
-        'order.dispatch.panel',
-        'order.dispatch.actions',
-        'settings.add-on.panel',
-        'nav.add-on.routes',
-        'product.options.personalize',
-        'cart.line.preview',
-        'product.admin.panel',
-        'order.line.actions',
-        'record.editor.panel',
-        'record.actions',
-      ],
-    });
+    /*
+     * TAKEN FROM THE MIRROR RATHER THAN HAND-TYPED, and the hand-typed version
+     * is what this replaced. A literal list here is one more silent copy of a
+     * registry that grows: it went stale the first time a slot was bought
+     * (`shell.overlay`, 2026-09-01) and failed as "a twelve-id list is not the
+     * registry" — a true sentence about the fixture and a misleading one about
+     * the guard, which was working perfectly. Nothing is lost by deriving it:
+     * the assertion under test is what `isWholeRegistry` DOES with a whole
+     * registry and with one id fewer, and neither branch is about which ids
+     * the registry happens to hold. That question has a ratchet of its own,
+     * one repo over.
+     */
+    const host = syntheticHost({ hostedSlots: [...HOSTED_SLOTS] });
     try {
       expect(mountProblems(host.config, []).isWholeRegistry).toBe(true);
       // …and a host with one fewer is an ordinary host, not a mis-import.
