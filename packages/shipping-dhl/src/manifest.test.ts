@@ -28,7 +28,7 @@ import { INERT_ORIGINS, NEVER_IN_A_BROWSER } from "./add-on-facts.ts";
  * HAND-TYPED, AND IT IS ONE OF THE FOUR SILENT COPIES 25 D2 WARNS ABOUT. It is
  * only read as `SLOT_IDS.has(fill.slot)`, so an id MISSING here fails nothing
  * until some add-on names it — and then it fails as "invented an id", which is
- * the opposite of the truth. Twelve since 2026-08-28 (31 O1).
+ * the opposite of the truth. Thirteen since 2026-09-01 (33 O1).
  */
 const SLOT_IDS = new Set([
   "artwork.sources",
@@ -43,6 +43,7 @@ const SLOT_IDS = new Set([
   "order.line.actions",
   "record.editor.panel",
   "record.actions",
+  "shell.overlay",
 ]);
 
 const CONTRACT_IDS = new Set(["artwork-source", "shipping-carrier", "product-personalizer"]);

@@ -48,7 +48,7 @@ import { buildForReal, ROOT } from './testing/build.ts';
  * HAND-TYPED, AND IT IS THE SIXTH SILENT COPY (25 D2). It is only read as
  * `SLOT_IDS.has(fill.slot)`, so an id MISSING here fails nothing until some
  * add-on names it — and then it fails as "invented an id", which is the
- * opposite of the truth. Twelve since 2026-08-28 (31 O1).
+ * opposite of the truth. Thirteen since 2026-09-01 (33 O1).
  *
  * The check that cannot go stale that way is one line further down: `slots.ts`
  * narrows against the host's ONE mirror with `satisfies readonly SlotId[]`, and
@@ -68,6 +68,7 @@ const SLOT_IDS = new Set([
   'order.line.actions',
   'record.editor.panel',
   'record.actions',
+  'shell.overlay',
 ]);
 
 const ADD_ON_CATEGORIES = new Set(['artwork', 'delivery', 'payments', 'email', 'data']);
