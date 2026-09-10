@@ -481,3 +481,30 @@ export function labelSheetFilename(assigned: AssignedCode): string {
 export function undrawableCharacters(facts: Pick<SheetFacts, 'entity' | 'reference'>): number {
   return latinOnly(facts.entity).dropped + latinOnly(facts.reference).dropped;
 }
+
+/**
+ * WHICH characters the fonts cannot draw — each one once, in the order it
+ * first appears.
+ *
+ * DELIBERATELY NOT THE SAME NUMBER as `undrawableCharacters`, and the two are
+ * kept apart rather than folded together. That one counts OCCURRENCES, because
+ * the record panel renders it as "n characters cannot be printed" and a
+ * reference of three identical accented letters loses three of them. This one
+ * lists each glyph ONCE, because that is what a `LATIN_ONLY` refusal carries
+ * (34 D6) — a refusal saying "some characters" leaves somebody guessing which
+ * of two fields to fix, and one saying `['é','é','é']` tells them nothing the
+ * first entry did not.
+ */
+export function undrawnCharacters(
+  facts: Pick<SheetFacts, 'entity' | 'reference'>,
+): readonly string[] {
+  const dropped: string[] = [];
+  for (const text of [facts.entity, facts.reference]) {
+    for (const character of text) {
+      const at = character.codePointAt(0)!;
+      if (at >= 32 && at <= 126) continue;
+      if (!dropped.includes(character)) dropped.push(character);
+    }
+  }
+  return dropped;
+}

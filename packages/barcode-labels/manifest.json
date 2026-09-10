@@ -14,26 +14,52 @@
     "key": "addon.barcode-labels.line",
     "fallback": "Give a catalogue row an EAN-13 or Code 128 number and print a sheet of labels for it, from the row's own screen. The symbols are drawn here; nothing is fetched and no number is allocated."
   },
-  "categories": ["data"],
+  "categories": [
+    "data"
+  ],
   "compatibility": {
     "minAdminiumVersion": "1.0.0",
     "requires": []
   },
   "addOn": {
     "attaches": [
-      { "app": "factory", "range": "^1.0.0" },
-      { "app": "maker", "range": "^1.0.0" }
+      {
+        "app": "factory",
+        "range": "^1.0.0"
+      },
+      {
+        "app": "maker",
+        "range": "^1.0.0"
+      }
     ],
-    "provides": [],
+    "provides": [
+      {
+        "contract": "document-render",
+        "version": 1,
+        "server": "dist/server.js"
+      }
+    ],
     "consumes": [],
     "slots": [
-      { "slot": "settings.add-on.panel", "client": "dist/client.js", "order": 10 },
-      { "slot": "record.actions", "client": "dist/client.js", "order": 10 }
+      {
+        "slot": "settings.add-on.panel",
+        "client": "dist/client.js",
+        "order": 10
+      },
+      {
+        "slot": "record.actions",
+        "client": "dist/client.js",
+        "order": 10
+      }
     ],
     "events": [],
-    "connect": { "kind": "none" },
+    "connect": {
+      "kind": "none"
+    },
     "scopes": [],
-    "publicSettings": ["codes"]
+    "publicSettings": [
+      "codes"
+    ]
   },
   "settings": [
     {

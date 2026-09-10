@@ -164,19 +164,32 @@ describe('the manifest', () => {
   });
 
   /**
-   * NO CONTRACT, EITHER SIDE, AND IT IS THE SAME ARGUMENT `holiday-calendars`
-   * RECORDS FOR ITS DAY-SETS.
+   * ONE CONTRACT PROVIDED, NONE CONSUMED — AND THE OLD ARGUMENT FOR ZERO IS
+   * WORTH READING BEFORE ADDING A SECOND.
    *
-   * A contract exists so a host can swap one implementation for another without
-   * knowing which it has — a second carrier, a second artwork source. A second
-   * label renderer is not that: it would draw the same published symbologies
-   * from the same published tables, so the "implementations" a contract would
-   * abstract over are not independent code, they are one algorithm written
-   * twice. `provides` and `consumes` are empty because there is nothing here for
-   * a second party to be.
+   * [Amended 2026-09-10 by 34-T06.] This used to assert `provides: []`, on the
+   * argument `holiday-calendars` still records for its day-sets: a contract
+   * exists so a host can swap one implementation for another without knowing
+   * which it has, and a SECOND LABEL RENDERER is not that — it would draw the
+   * same published symbologies from the same published tables, so the
+   * "implementations" it abstracted over would be one algorithm written twice.
+   *
+   * That argument was about a `barcode-render` contract nobody has proposed,
+   * and it still holds. `document-render@1` is a different shape and the
+   * difference is the whole reason it was bought: the thing being abstracted
+   * is not "how to draw a symbol" but "how a record becomes bytes somebody
+   * files, prints or is sent". The other implementation is an invoice
+   * renderer, which shares no line of code with this one and disagrees with it
+   * about formats, paper and glyph coverage — the three fields the contract
+   * puts on the KIND rather than on itself, for exactly that reason (25 D4,
+   * 34 O11, and the deviation O11 records).
+   *
+   * `consumes` stays empty. Nothing here reads another add-on's work.
    */
-  it('declares no contract on either side, because a second one would be a copy', () => {
-    expect(manifest.addOn.provides).toEqual([]);
+  it('provides document-render@1 from its server half, and consumes nothing', () => {
+    expect(manifest.addOn.provides).toEqual([
+      { contract: 'document-render', version: 1, server: 'dist/server.js' },
+    ]);
     expect(manifest.addOn.consumes).toEqual([]);
   });
 
@@ -280,12 +293,28 @@ describe('the manifest’s entry points are the file the build writes', () => {
     }
   });
 
-  it('points both slots at the one module, because there is only one half', () => {
-    // Two fills, one bundle. A second file would be a second thing the host has
-    // to load for an add-on that has no credential to keep out of a page.
-    expect(Object.keys(OUTPUT)).toEqual(['client']);
-    expect(declared).toHaveLength(2);
-    expect(new Set(declared).size).toBe(1);
+  it('points both SLOTS at the one client bundle, and the contract at the other half', () => {
+    /*
+     * [Amended 2026-09-10 by 34-T06.] Two fills still share one bundle, and
+     * that half of the assertion is unchanged: a second CLIENT file would be a
+     * second thing the host has to load for an add-on with no credential to
+     * keep out of a page.
+     *
+     * The server half is not that. It is never loaded by a browser at all —
+     * it is the module Adminium imports in the `document.render` job when a
+     * profile names this add-on. So the shape to pin is: every slot points at
+     * the client, the contract points at the server, and neither points at the
+     * other.
+     */
+    expect(Object.keys(OUTPUT).sort()).toEqual(['client', 'server']);
+
+    const slotEntries = manifest.addOn.slots.map((slot) => slot.client);
+    expect(slotEntries).toHaveLength(2);
+    expect(new Set(slotEntries)).toEqual(new Set([OUTPUT.client]));
+
+    const providedEntries = manifest.addOn.provides.map((p) => p.server);
+    expect(providedEntries).toEqual([OUTPUT.server]);
+    expect(providedEntries).not.toContain(OUTPUT.client);
   });
 });
 

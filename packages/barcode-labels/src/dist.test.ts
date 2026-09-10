@@ -84,11 +84,17 @@ describe('the build writes what the manifest promises', () => {
     }
   });
 
-  it('ships nothing but that one module', () => {
-    // No server half, no sourcemap, no stray asset: what the manifest names is
-    // the whole of the artefact, which is what makes "grep all of `dist/`" a
-    // complete gate rather than a sample of one.
-    expect(built().map(relative).sort()).toEqual(['client.js']);
+  it('ships the two modules the manifest names and nothing else', () => {
+    /*
+     * [Amended 2026-09-10 by 34-T06 — this read `['client.js']`.] No sourcemap,
+     * no stray asset: what the manifest names is the whole of the artefact,
+     * which is what makes "grep all of `dist/`" a complete gate rather than a
+     * sample of one. The list is spelled out rather than derived from the
+     * manifest on purpose — a build that quietly emitted a third file would
+     * still satisfy "every declared entry exists" (the case above) and would
+     * be caught only here.
+     */
+    expect(built().map(relative).sort()).toEqual(['client.js', 'server.js']);
   });
 
   it('emits no sourcemap, and no reference to one', () => {
