@@ -146,6 +146,8 @@ function cleanFiles(prefix: string): Record<string, string> {
       'payloadCastsGuard(hostKit);',
       'factsGuard(hostKit);',
       'vendoredGuard(hostKit);',
+      'deliveryClaimsGuard(hostKit, claims);',
+      'recordPayloadGuard(hostKit);',
       'stylesGuard(hostKit);',
       'tierGuard(hostKit);',
       '',

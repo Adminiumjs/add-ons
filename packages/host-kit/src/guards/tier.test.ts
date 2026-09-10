@@ -26,10 +26,11 @@ afterEach(() => {
 });
 
 describe('the guard tables', () => {
-  it('name seven and four, and every entry says what it closes', () => {
+  it('name nine and four, and every entry says what it closes', () => {
     /*
-     * SEVEN AND FOUR, not the six and five `config.ts`'s prose says — see
-     * `tier.ts` for why `label-pairing` is the piece that moves. The NAMES are
+     * NINE AND FOUR, not the six and five `config.ts`'s prose says — see
+     * `tier.ts` for why `label-pairing` is the piece that moves, and 34-T28 for
+     * the two that joined tier 1 with the document work. The NAMES are
      * authoritative; this case exists so the tables cannot be quietly trimmed,
      * and it asserts a relation about the entries rather than only a count.
      */
@@ -40,6 +41,8 @@ describe('the guard tables', () => {
       'payloadCastsGuard',
       'factsGuard',
       'vendoredGuard',
+      'deliveryClaimsGuard',
+      'recordPayloadGuard',
       'stylesGuard',
     ]);
     expect(TIER_2_GUARDS.map((guard) => guard.symbol)).toEqual([
@@ -109,6 +112,8 @@ describe('which guards a host actually wired', () => {
       'payloadCastsGuard',
       'factsGuard',
       'vendoredGuard',
+      'deliveryClaimsGuard',
+      'recordPayloadGuard',
       'stylesGuard',
     ]);
   });

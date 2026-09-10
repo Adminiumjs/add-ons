@@ -77,6 +77,8 @@ const host = syntheticHost({
       'payloadCastsGuard(hostKit);',
       'factsGuard(hostKit);',
       'vendoredGuard(hostKit);',
+      'deliveryClaimsGuard(hostKit, claims);',
+      'recordPayloadGuard(hostKit);',
       'stylesGuard(hostKit);',
       'tierGuard(hostKit);',
       'labelPairingRenderedGuard(hostKit, fixtures);',
