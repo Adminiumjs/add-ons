@@ -61,6 +61,7 @@ including the ones that name no company.
 | Live Personalizer | `packages/personalizer` | `LP` | *(none)* | — |
 | Holiday Calendars | `packages/holiday-calendars` | `CAL` | *(none)* | — |
 | Barcode Labels | `packages/barcode-labels` | `LBL` | *(none)* | — |
+| Invoices & Receipts | `packages/invoices` | `INV` | *(none)* | — |
 
 Adminium and the Adminium name are marks of the Adminium project. Every add-on
 here is published by the project itself (`publisher.id: adminium`), which in v1
@@ -458,3 +459,62 @@ mark and the vendor's terms link, and the affiliation line appears with it.
 
 If you own a mark referenced here and believe any use is incorrect or
 overstepping, open an issue on this repository and it will be corrected.
+
+---
+
+# Invoices & Receipts — references no third-party trademarks
+
+## Why an add-on that prints company names references no mark
+
+This is the package where the distinction matters most, so it is worth drawing
+carefully. An invoice exists to name a company: the seller at the top, the
+customer below it, and often a payment service at the foot. **Every one of those
+names belongs to the operator and arrives at render time**, in the subject the
+engine hands over. None of them is in this repository, none is compiled into the
+bundle, and none can be — the renderer has no network and no store, so a name it
+was not given is a name it cannot print.
+
+What this section is about is the marks the PACKAGE ITSELF could have named, in
+its own code and its own eight locale bundles, and did not.
+
+## Three places a supplier could have got in
+
+**The paper sizes are standards.** `A4` is ISO 216 and `Letter` is ANSI. The
+80 mm receipt roll is given as a MEASUREMENT, in millimetres, in the renderer's
+own paper table — not by any stationery manufacturer's catalogue number. That is
+the same choice `Barcode Labels` makes about its label sheet, for the same
+reason, and it is checked the same way.
+
+**The font is a standard too, and is the one place a supplier could have
+appeared.** `Helvetica` is one of the fourteen base fonts named in the PDF
+specification itself — which is precisely why no font file ships here and why
+the metrics table can be a table of numbers rather than a licence. The name is
+used to say which metrics those numbers are, in the way one names a standard.
+
+**No payment service is named.** The redesigned invoice comp has a QR slot; it
+holds an image the operator supplies, and nothing in this package knows or asks
+what is in it. No processor, no card scheme and no bank appears in any of the
+eight locale bundles, in the outline labels Studio renders, or in the document
+chrome that is printed on the page.
+
+## Not affiliated, and there is nobody to be unaffiliated with
+
+The repository-wide disclaimer at the top of this file applies here as it does
+everywhere else. This add-on is unusual in that it has no counterparty at all:
+it connects to nothing, holds no credential, names no service, and reaches no
+address. The affiliation line therefore has nothing to attach itself to, which
+is exactly why the fact is stated here rather than left as an absence.
+
+## How the claim is kept true
+
+`COMPANY_MARKS` in `packages/invoices/src/add-on-facts.ts` is the executable
+half of this section, and it is empty. An empty list is the same shape a BROKEN
+one takes, so the emptiness is not asserted on its own: the package's
+`sources.test.ts` also checks that `register()` reports `namesCompany: false`
+and supplies the positive statement a host renders in place of a disclaimer,
+and that none of the marks any SIBLING add-on in this repository declares
+appears anywhere in its sources or its locale bundles — a real needle list
+rather than an empty one.
+
+The day any of the three paragraphs above stops being true, that suite turns red
+and this section has to grow an entry.

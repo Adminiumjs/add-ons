@@ -88,3 +88,8 @@ export {
   bareSpecifiersIn,
   type LoadableFixtures,
 } from './loadable.ts';
+
+export {
+  describeDocumentRenderer,
+  type DocumentRendererFixtures,
+} from './document-render.ts';

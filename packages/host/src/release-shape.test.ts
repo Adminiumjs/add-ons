@@ -71,10 +71,14 @@ describe('release shape: discovery', () => {
       'barcode-labels',
       'design-studio',
       'holiday-calendars',
+      // The seventh, added 2026-09-10 (34-invoices-add-on.md 34e). It is the
+      // first add-on here that attaches to `*` rather than to a named host
+      // app, and the first to provide `document-render@1`.
+      'invoices',
       'import-canva',
       'personalizer',
       'shipping-dhl',
-    ]);
+    ].sort());
   });
 
   it('keeps the two never-published packages out of the add-on set', () => {

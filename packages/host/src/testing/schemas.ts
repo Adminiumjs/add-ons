@@ -17,6 +17,8 @@
 
 import { z } from 'zod';
 
+import { DOCUMENT_LOCALE_IDS, type DocumentLocaleId } from '../contracts/document-render.ts';
+
 // ── artwork-source@1 ────────────────────────────────────────────────────────
 
 export const jobSpecSchema = z
@@ -164,5 +166,78 @@ export const personalizationSchema = z
     font: z.string().min(1).optional(),
     sizeMm: z.number().positive().optional(),
     finish: z.enum(['engraved', 'raised', 'printed', 'painted']).optional(),
+  })
+  .strict();
+
+// ── document-render@1 ───────────────────────────────────────────────────────
+
+/**
+ * The eight compiled locales, as a validator that requires ALL of them and
+ * refuses a ninth. `.strict()` is doing both jobs: a provider that forgot
+ * Czech and a provider that invented `es-ES` fail the same way, which is what
+ * keeps Studio's profile editor from rendering either a raw slot id or a
+ * language nothing else in the product speaks.
+ */
+export const localizedTextSchema = z
+  .object(
+    Object.fromEntries(DOCUMENT_LOCALE_IDS.map((id) => [id, z.string().min(1)])) as Record<
+      DocumentLocaleId,
+      z.ZodString
+    >,
+  )
+  .strict();
+
+export const documentKindSchema = z
+  .object({
+    id: z.string().regex(/^[a-z][a-z0-9-]*$/, 'kind id must be kebab-case'),
+    label: localizedTextSchema,
+    formats: z.array(z.enum(['html', 'pdf'])).min(1),
+    paper: z.array(z.enum(['a4', 'letter', 'receipt-80mm'])).min(1),
+    coverage: z.enum(['ascii', 'winansi', 'all']),
+  })
+  .strict();
+
+const outlineSlotShape = {
+  id: z.string().regex(/^[A-Za-z][A-Za-z0-9_]*$/, 'slot id must be an identifier'),
+  label: localizedTextSchema,
+  help: localizedTextSchema.optional(),
+  type: z.enum([
+    'text',
+    'text[]',
+    'date',
+    'email',
+    'money',
+    'percent',
+    'currency',
+    'number',
+    'collection',
+  ]),
+  required: z.boolean(),
+  default: z.enum(['sequence', 'connection', 'setting', 'now']).optional(),
+};
+
+/** One column of a `collection`. A column is never itself a collection. */
+export const outlineLeafSlotSchema = z.object(outlineSlotShape).strict();
+
+/**
+ * Two levels, and the third is refused. `OutlineSlot.columns` is typed as a
+ * full slot list, which would admit a collection of collections; nothing maps
+ * one, no renderer draws one, and Studio has no row for one — so the validator
+ * catches it here rather than letting it render as an empty table later.
+ */
+export const outlineSlotSchema = z
+  .object({ ...outlineSlotShape, columns: z.array(outlineLeafSlotSchema).optional() })
+  .strict();
+
+export const documentOutlineSchema = z.object({ slots: z.array(outlineSlotSchema) }).strict();
+
+export const renderedDocumentSchema = z
+  .object({
+    format: z.enum(['html', 'pdf']),
+    filename: z.string().min(1),
+    mediaType: z.string().min(1),
+    bytes: z.instanceof(Uint8Array),
+    locale: z.string().min(2),
+    warnings: z.array(z.string()),
   })
   .strict();

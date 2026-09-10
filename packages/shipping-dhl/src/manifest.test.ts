@@ -46,7 +46,12 @@ const SLOT_IDS = new Set([
   "shell.overlay",
 ]);
 
-const CONTRACT_IDS = new Set(["artwork-source", "shipping-carrier", "product-personalizer"]);
+const CONTRACT_IDS = new Set([
+  "artwork-source",
+  "shipping-carrier",
+  "product-personalizer",
+  "document-render",
+]);
 const ADD_ON_CATEGORIES = new Set(["artwork", "delivery", "payments", "email", "data"]);
 
 describe("the manifest", () => {

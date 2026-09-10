@@ -70,6 +70,34 @@ function issuesOf(result: ReturnType<typeof validateManifest>) {
   return result.ok ? [] : result.issues;
 }
 
+/**
+ * The issues, spelled out, because the assertion's own diff does not.
+ *
+ * `toEqual([])` against a one-element array prints `expected [ { …(2) } ] to
+ * deeply equal []` — the path and the message, which are the only two things
+ * a reader needs, are exactly what vitest elides. This turned a two-minute
+ * diagnosis into a ten-minute one on 2026-09-10, when the answer was a single
+ * line the validator had already written.
+ *
+ * It also names the ONE failure that is expected and temporary. A contract
+ * this repo has bought but npm has not published yet fails here on purpose
+ * (34-invoices-add-on.md §4.3 step 2): the vendored registry knows
+ * `document-render`, the installed `@adminiumjs/manifest` does not, and the
+ * gap closes when the owner cuts the release (34-T07) and the lockfile is
+ * refreshed — with NO source change, which is step 5's whole point and the
+ * reason this helper explains the red rather than tolerating it.
+ */
+function whyRejected(result: ReturnType<typeof validateManifest>, what: string): string {
+  const issues = issuesOf(result);
+  if (issues.length === 0) return what;
+  const lines = issues.map((issue) => `  ${issue.path}: ${issue.message}`).join('\n');
+  const pending = issues.some((issue) => issue.path.startsWith('addOn.provides'))
+    ? '\n  → a `provides` refusal is EXPECTED until 34-T07 releases @adminiumjs/manifest' +
+      ' with the new contract in its registry, and the lockfile is refreshed.'
+    : '';
+  return `${what}:\n${lines}${pending}`;
+}
+
 /** Every `manifest.json` this repo ships, by the package that owns it. */
 function manifests(): { pkg: string; manifest: unknown }[] {
   return readdirSync(PACKAGES, { withFileTypes: true })
@@ -85,7 +113,9 @@ function manifests(): { pkg: string; manifest: unknown }[] {
 describe('the manifests pass @adminiumjs/manifest itself', () => {
   it.each(manifests())('$pkg validates against the frozen v1 schema', ({ manifest }) => {
     const result = validateManifest(manifest);
-    expect(issuesOf(result), 'the real validator rejects this manifest').toEqual([]);
+    expect(issuesOf(result), whyRejected(result, 'the real validator rejects this manifest')).toEqual(
+      [],
+    );
     expect(result.ok).toBe(true);
   });
 
@@ -435,7 +465,7 @@ describe.skipIf(HOSTS.length === 0)(
       });
       expect(
         issuesOf(result),
-        `the installer would refuse this add-on for the "${app}" app`,
+        whyRejected(result, `the installer would refuse this add-on for the "${app}" app`),
       ).toEqual([]);
       expect(result.ok).toBe(true);
     });
