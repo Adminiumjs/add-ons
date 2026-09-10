@@ -1,0 +1,32 @@
+{
+  "name": "@adminium/add-on-invoices",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Invoices & Receipts \u2014 invoices, receipts and credit notes rendered from your own records. No network, no account, no service.",
+  "license": "AGPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Adminiumjs/add-ons.git",
+    "directory": "packages/invoices"
+  },
+  "homepage": "https://adminium.dev/marketplace",
+  "bugs": "https://github.com/Adminiumjs/add-ons/issues",
+  "files": [
+    "dist",
+    "manifest.json",
+    "TRADEMARKS.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b --force",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@adminium/add-on-host": "*"
+  }
+}
