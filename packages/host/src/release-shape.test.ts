@@ -6,9 +6,10 @@
  * single `package.json`** — so `private: true`, a missing `files[]`, a name
  * that no longer matched its manifest key, and a version skew between
  * `package.json` and `manifest.json` were all invisible to the whole suite.
- * That is fine while nothing is published and catastrophic the moment something
- * is, because npm versions are immutable: the first release is also the last
- * chance to notice.
+ * That is fine while nothing is released and catastrophic the moment something
+ * is, because a released file is immutable — the downloads bucket's lock keeps
+ * it for good (48-self-hosted-downloads.md D2): the first release is also the
+ * last chance to notice.
  *
  * THE ONE THAT WOULD HAVE SHIPPED. Without `files[]`, `npm pack` here produces
  * an INVERTED tarball — all of `src/` including every `.test.ts`, and no `dist/`
@@ -237,10 +238,47 @@ describe('release shape: the repo-level pieces the pipeline needs', () => {
     expect(config.fixed).toEqual([['@adminium/add-on-*']]);
   });
 
-  it('names this workflow file, whose filename is load-bearing for OIDC', () => {
-    // npm attaches the trusted publisher to a repository AND a workflow
-    // FILENAME. Renaming it breaks every publish until all six are repointed
-    // by hand on npmjs.com.
+  it('has the release workflow', () => {
     expect(existsSync(join(REPO, '.github/workflows/release.yml'))).toBe(true);
+  });
+
+  /*
+   * 48-self-hosted-downloads.md D6: add-ons are released into the downloads
+   * bucket and read back from downloads.adminium.dev — never published to npm.
+   * Greps, deliberately, like the LICENSE check above: these are tripwires for
+   * the npm pipeline creeping back in, and each names the exact spelling that
+   * pipeline used (`execFileSync('npm', ['publish', …])`, `id-token: write`,
+   * `registry-url`).
+   */
+  it('releases into the downloads bucket, never to npm (48 D6)', () => {
+    const workflow = readFileSync(join(REPO, '.github/workflows/release.yml'), 'utf8');
+    const script = readFileSync(join(REPO, 'scripts/publish-add-ons.mjs'), 'utf8');
+    expect(workflow).not.toMatch(/id-token\s*:/);
+    expect(workflow).not.toMatch(/registry-url/);
+    expect(workflow).not.toMatch(/npm\s+publish/);
+    expect(script).not.toMatch(/['"]publish['"]/);
+    expect(script).not.toMatch(/npm\s+publish/);
+    expect(script).toMatch(/from '\.\/r2\.mjs'/);
+    expect(script).toMatch(/publishObject\(/);
+  });
+
+  it('hands the bucket secret to exactly one step', () => {
+    // The upload step is the only one that needs it. Every earlier step runs
+    // third-party code (`npm ci`, the whole verify), so an extra mapping is an
+    // exposure, not a convenience. The credential guard reads only whether the
+    // secret is set (`!= ''`), which yields a boolean, never the value.
+    const workflow = readFileSync(join(REPO, '.github/workflows/release.yml'), 'utf8');
+    expect(workflow.match(/\$\{\{\s*secrets\.R2_SECRET_ACCESS_KEY\s*\}\}/g)).toHaveLength(1);
+    expect(workflow.match(/\$\{\{\s*secrets\.R2_ACCESS_KEY_ID\s*\}\}/g)).toHaveLength(1);
+  });
+
+  it('vendors the bucket client from the Adminium monorepo', () => {
+    // Byte-identity with the canonical copy is checked from the monorepo
+    // (`app-release.sh check`), which is where that copy lives. What this repo
+    // can check is that the file is the vendored one. That it still WORKS is
+    // proven each time the release script imports it: r2.mjs re-derives an AWS
+    // SigV4 vector at import and throws before signing anything if it cannot.
+    const client = readFileSync(join(REPO, 'scripts/r2.mjs'), 'utf8');
+    expect(client).toContain('VENDORED. The canonical copy is `workplan/tools/app-release/r2.mjs`');
   });
 });

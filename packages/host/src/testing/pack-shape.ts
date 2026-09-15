@@ -5,7 +5,9 @@
  * exists": `manifest.json` + `dist/` + `README.md` + `TRADEMARKS.md` + a
  * copied-in `LICENSE`, `files[]`-allowlisted so nothing else ships. This asserts
  * that the tarball npm ACTUALLY produces is that, so it "cannot silently grow or
- * lose a half".
+ * lose a half". 48-self-hosted-downloads.md D5 keeps that shape: the file
+ * uploaded to the downloads bucket is still `npm pack`'s tarball — npm is the
+ * local packer, no longer where it is published.
  *
  * ── WHY THIS IS NOT COVERED BY ASSERTING `files[]` ──────────────────────────
  *
@@ -141,10 +143,10 @@ export function describePackShape(fixtures: PackShapeFixtures): void {
       paths = report.files.map((f) => f.path).sort();
     }, 180_000);
 
-    it('publishes under the @adminiumjs wire scope, never @adminium', () => {
-      // The source name stays `@adminium/*` — the publish script maps it — so
-      // what this asserts is that the mapping is the only way a name reaches
-      // the registry. A source rename would show up here.
+    it('packs from the @adminium source scope, which only the release script maps', () => {
+      // The source name stays `@adminium/*` — the release script maps it to
+      // `@adminiumjs/*` — so what this asserts is that the mapping is the only
+      // way that name reaches a released file. A source rename would show up here.
       expect(report.name.startsWith('@adminium/')).toBe(true);
     });
 

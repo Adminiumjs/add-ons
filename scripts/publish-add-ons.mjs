@@ -1,24 +1,32 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: AGPL-3.0-only
 /**
- * Pack, X-ray, publish and LEDGER every add-on in this repository
- * (32-add-on-distribution.md §2, D1/D2/D7).
+ * Pack, X-ray, upload and LEDGER every add-on in this repository
+ * (32-add-on-distribution.md §2, D1/D7; 48-self-hosted-downloads.md D1/D5/D6).
  *
- * ── WHY A SCRIPT AND NOT `npm publish --workspaces` ─────────────────────────
+ * Add-ons are not published to npm. Each packed file goes into the Adminiumjs
+ * downloads bucket at `add-ons/<key>/<key>-<version>.tgz`, is read back from
+ * https://downloads.adminium.dev, and only then enters the ledger. `npm pack`
+ * survives as the LOCAL packer, because the server's hardened unpacker reads
+ * exactly its tar shape (48 D5). The bucket client is `scripts/r2.mjs`,
+ * vendored byte for byte from the Adminium monorepo's
+ * `workplan/tools/app-release/r2.mjs` — the same file every app repo releases with.
  *
- *  - The published NAME differs from the source name: `@adminium/add-on-x` is
- *    rewritten to `@adminiumjs/add-on-x` at pack time, the same mapping
- *    `scripts/release/publish-npm.mjs` does in the main monorepo. The source
- *    keeps the internal scope so a scope change is one line here, not a rename
- *    across six packages and every host that vendors them.
+ * ── WHY A SCRIPT ────────────────────────────────────────────────────────────
+ *
+ *  - The packed NAME differs from the source name: `@adminium/add-on-x` is
+ *    rewritten to `@adminiumjs/add-on-x` at pack time. The name only labels
+ *    the tarball's package.json and the ledger row now — nothing resolves it
+ *    on a registry — but it stays so every row, old and new, reads the same.
  *  - `devDependencies` name `@adminium/add-on-host`, which is on no registry,
  *    and `scripts` name tsconfigs that `files[]` excludes. Both would ship as
  *    instructions a consumer cannot follow.
  *  - The LICENSE lives once, at the repo root, and AGPL §4 wants it in every
  *    copy. npm only picks up a LICENSE from the PACKAGE root, so one is staged
  *    beside each package at pack time and removed afterwards.
- *  - The release LEDGER (D7 leg 2) records the integrity of the exact bytes
- *    uploaded, which is the leg whose provenance is independent of npm at rest.
+ *  - The release LEDGER records the integrity of the exact bytes the public
+ *    address serves. The marketplace catalog carries it to every server, which
+ *    keeps a download only if its bytes hash to it (48 D3).
  *
  * ── WHAT THIS DELIBERATELY DOES *NOT* COPY FROM THE MONOREPO ────────────────
  *
@@ -30,13 +38,28 @@
  *
  * ── PACK EVERYTHING, THEN UPLOAD EVERYTHING ─────────────────────────────────
  *
- * The one structural idea worth copying wholesale. A published version is
- * IMMUTABLE, so a defect discovered while packing package five must not leave
- * four already on the registry forever. Every tarball is built and X-rayed
- * first; nothing is uploaded until all of them pass.
+ * The one structural idea worth copying wholesale. A released version is
+ * IMMUTABLE — the bucket lock keeps every file for good — so a defect
+ * discovered while packing package five must not leave four already in the
+ * bucket. Every tarball is built and X-rayed first; nothing is uploaded until
+ * all of them pass.
+ *
+ * ── RE-RUNNING IS THE RECOVERY ──────────────────────────────────────────────
+ *
+ * If an upload or a read-back fails part-way, no ledger is written and no tag
+ * is cut, so the same version can be dispatched again. Files already in the
+ * bucket with the same bytes are accepted (`npm pack` is reproducible from the
+ * same sources); a file there with DIFFERENT bytes stops the run, and that
+ * version number is burned for every add-on in the fixed group.
  *
  *   node scripts/publish-add-ons.mjs --dry-run     # pack + X-ray, upload nothing
- *   node scripts/publish-add-ons.mjs               # publish + write the ledger
+ *   node scripts/publish-add-ons.mjs               # upload, read back, write the ledger
+ *
+ * A real run needs R2_ACCOUNT_ID, R2_BUCKET, R2_ACCESS_KEY_ID and
+ * R2_SECRET_ACCESS_KEY; release.yml maps them from the Adminiumjs organization.
+ * Both runs first read the newest published @adminiumjs/adminium from the npm
+ * registry, and refuse any manifest whose compatibility.minAdminiumVersion is
+ * newer (48-self-hosted-downloads.md A17).
  */
 
 import { execFileSync } from 'node:child_process';
@@ -53,6 +76,8 @@ import {
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { assertMinimumReleased, newestAdminium, objectKeyFor, publishObject, r2ConfigFromEnv, sriOf } from './r2.mjs';
+
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PACKAGES = join(ROOT, 'packages');
 const OUT_DIR = join(ROOT, 'scripts/out');
@@ -61,6 +86,10 @@ const LEDGER = join(ROOT, 'RELEASES.json');
 
 const SCOPE = process.env['NPM_SCOPE'] ?? 'adminiumjs';
 const DRY_RUN = process.argv.includes('--dry-run');
+const UNKNOWN = process.argv.slice(2).filter((arg) => arg !== '--dry-run');
+if (UNKNOWN.length > 0) {
+  throw new Error(`unknown argument(s): ${UNKNOWN.join(' ')} — the only flag is --dry-run`);
+}
 
 /** The `files[]` allow-list every add-on declares (D1). */
 const FILES_FIELD = ['dist', 'manifest.json', 'TRADEMARKS.md', 'README.md', 'LICENSE'];
@@ -185,14 +214,18 @@ function packOne(addOn) {
     const [result] = JSON.parse(raw);
     const tarball = join(OUT_DIR, result.filename);
     xray(`${mappedName(addOn.manifest.key)}@${addOn.pkg.version}`, result.files.map((f) => f.path), addOn);
+    // `npm pack --json` reports the sha512 SRI of the bytes it just wrote.
+    // Asserted equal to a hash of the file on disk rather than trusted: the
+    // ledger must name the bytes that are uploaded, and the upload reads the file.
+    const onDisk = sriOf(readFileSync(tarball));
+    if (onDisk !== result.integrity) {
+      throw new Error(`${result.filename}: npm pack reported ${result.integrity}, the file hashes to ${onDisk}`);
+    }
     return {
       name: mappedName(addOn.manifest.key),
       key: addOn.manifest.key,
       version: addOn.pkg.version,
-      // `npm pack --json` reports the sha512 SRI of the bytes it just wrote —
-      // the same value npm's packument will carry as `dist.integrity`, so the
-      // ledger and the packument are computed the same way from the same
-      // artifact. Verified equal to `sha512sum` of the tarball on disk.
+      objectKey: objectKeyFor({ kind: 'add-on', key: addOn.manifest.key, version: addOn.pkg.version }),
       integrity: result.integrity,
       shasum: result.shasum,
       filename: result.filename,
@@ -205,19 +238,29 @@ function packOne(addOn) {
   }
 }
 
-function publishOne(packed) {
-  // No NODE_AUTH_TOKEN and no --provenance: npm authenticates with the
-  // workflow's OIDC token and generates provenance automatically on that path.
-  execFileSync('npm', ['publish', packed.tarball, '--access', 'public'], {
-    cwd: ROOT,
-    stdio: 'inherit',
+/** Into the bucket and served back with the same sha512 — or a thrown error. */
+async function uploadOne(packed, config) {
+  const released = await publishObject({
+    config,
+    kind: 'add-on',
+    key: packed.key,
+    version: packed.version,
+    bytes: readFileSync(packed.tarball),
+    log: (line) => console.log(`    ${line}`),
   });
+  if (released.integrity !== packed.integrity) {
+    throw new Error(`${packed.objectKey}: uploaded ${released.integrity}, packed ${packed.integrity}`);
+  }
+  return released;
 }
 
-function main() {
+async function main() {
   if (!existsSync(ROOT_LICENSE)) {
     throw new Error(`no LICENSE at ${ROOT_LICENSE}; every tarball needs one staged from it`);
   }
+  // Before packing: a missing credential should cost nothing.
+  const config = DRY_RUN ? undefined : r2ConfigFromEnv(process.env);
+  if (config?.test) console.log(`TEST ENDPOINTS — bucket ${config.endpoint}, read-back ${config.publicBase}`);
   const found = addOns();
   if (found.length < 6) {
     // An empty or short discovery is the worst outcome: a release that silently
@@ -236,6 +279,15 @@ function main() {
     );
   }
 
+  // A minimum no published Adminium meets would sit in every released file
+  // forever (48 A17), so it is refused before anything is packed.
+  const newest = await newestAdminium();
+  for (const addOn of found) {
+    const minimum = assertMinimumReleased(addOn.manifest, newest);
+    console.log(`  ${addOn.manifest.key}@${addOn.manifest.version} needs Adminium ${minimum}`);
+  }
+  console.log(`Every minimum is met by a published Adminium (newest: ${newest}).`);
+
   rmSync(OUT_DIR, { recursive: true, force: true });
   mkdirSync(OUT_DIR, { recursive: true });
 
@@ -250,17 +302,20 @@ function main() {
   });
 
   if (DRY_RUN) {
-    console.log(`\nDry run: ${packed.length} tarball(s) in ${relative(ROOT, OUT_DIR)}, nothing published.`);
-    for (const p of packed) console.log(`  ${p.name}@${p.version}  ${p.integrity}`);
+    console.log(`\nDry run: ${packed.length} tarball(s) in ${relative(ROOT, OUT_DIR)}, nothing uploaded.`);
+    for (const p of packed) console.log(`  ${p.objectKey}  ${p.integrity}`);
     return;
   }
 
-  console.log(`\nPublishing ${packed.length} add-on(s)…`);
-  for (const result of packed) publishOne(result);
+  console.log(`\nUploading ${packed.length} add-on(s)…`);
+  for (const result of packed) {
+    console.log(`  ${result.name}@${result.version}`);
+    await uploadOne(result, config);
+  }
 
-  // The ledger last, and only over what actually uploaded (D7 leg 2). Written
-  // atomically so an interrupted release cannot leave a half-file that the
-  // website would read as the catalog's source of truth.
+  // The ledger last, and only over what the public address serves (48 D6).
+  // Written atomically so an interrupted release cannot leave a half-file that
+  // the website would read as the catalog's source of truth.
   const ledger = {
     schemaVersion: 1,
     releases: packed
@@ -280,4 +335,4 @@ function main() {
   console.log(`\nWrote ${relative(ROOT, LEDGER)} with ${ledger.releases.length} release(s).`);
 }
 
-main();
+await main();
