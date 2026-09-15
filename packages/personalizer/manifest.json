@@ -3,7 +3,7 @@
   "manifestVersion": 1,
   "key": "personalizer",
   "name": "Live Personalizer",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": {
     "id": "adminium",
     "name": "Adminium",
@@ -17,7 +17,7 @@
   "categories": ["artwork"],
 
   "compatibility": {
-    "minAdminiumVersion": "1.0.0"
+    "minAdminiumVersion": "0.2.3"
   },
 
   "capabilities": ["file-storage"],

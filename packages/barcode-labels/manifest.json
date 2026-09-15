@@ -3,7 +3,7 @@
   "manifestVersion": 1,
   "key": "barcode-labels",
   "name": "Barcode Labels",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": {
     "id": "adminium",
     "name": "Adminium",
@@ -18,7 +18,7 @@
     "data"
   ],
   "compatibility": {
-    "minAdminiumVersion": "1.0.0",
+    "minAdminiumVersion": "0.2.6",
     "requires": []
   },
   "addOn": {

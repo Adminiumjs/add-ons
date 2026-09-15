@@ -3,7 +3,7 @@
   "manifestVersion": 1,
   "key": "shipping-dhl",
   "name": "DHL Shipping",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": {
     "id": "adminium",
     "name": "Adminium",
@@ -16,7 +16,7 @@
   },
   "categories": ["delivery"],
   "compatibility": {
-    "minAdminiumVersion": "1.0.0",
+    "minAdminiumVersion": "0.2.6",
     "requires": ["outbound-http", "file-storage"]
   },
   "capabilities": ["outbound-http", "file-storage"],
