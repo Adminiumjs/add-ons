@@ -14,23 +14,61 @@
     "key": "addon.invoices.line",
     "fallback": "Invoices, receipts and credit notes drawn from your own records. Pick the table, map the columns, and a row becomes a numbered document you can print, download or email."
   },
-  "categories": ["data"],
+  "categories": [
+    "data"
+  ],
   "compatibility": {
     "minAdminiumVersion": "0.2.6",
     "requires": []
   },
   "addOn": {
-    "attaches": [{ "app": "*" }],
+    "attaches": [
+      {
+        "app": "*"
+      }
+    ],
     "provides": [
-      { "contract": "document-render", "version": 1, "server": "dist/server.js" }
+      {
+        "contract": "document-render",
+        "version": 1,
+        "server": "dist/server.js"
+      }
     ],
     "consumes": [],
     "slots": [
-      { "slot": "settings.add-on.panel", "client": "dist/client.js", "order": 10 },
-      { "slot": "record.actions", "client": "dist/client.js", "order": 20 }
+      {
+        "slot": "settings.add-on.panel",
+        "client": "dist/client.js",
+        "order": 10
+      },
+      {
+        "slot": "record.actions",
+        "client": "dist/client.js",
+        "order": 20
+      }
     ],
+    "pages": [
+      {
+        "ref": "documents",
+        "title": {
+          "key": "addon.invoices.nav",
+          "fallback": "Invoices"
+        },
+        "icon": "file-text",
+        "client": "dist/page.js",
+        "nav": {
+          "group": "library",
+          "order": 20,
+          "adminOnly": true
+        },
+        "detail": true
+      }
+    ],
+    "hostApi": 1,
     "events": [],
-    "connect": { "kind": "none" },
+    "connect": {
+      "kind": "none"
+    },
     "scopes": [],
     "publicSettings": [
       "business_name",
@@ -49,7 +87,10 @@
       "key": "business_name",
       "type": "string",
       "default": "",
-      "label": { "key": "addon.invoices.setting.business_name", "fallback": "Business name" },
+      "label": {
+        "key": "addon.invoices.setting.business_name",
+        "fallback": "Business name"
+      },
       "help": {
         "key": "addon.invoices.setting.business_name.help",
         "fallback": "On every document's letterhead."
@@ -59,27 +100,36 @@
       "key": "business_lines",
       "type": "json",
       "default": [],
-      "label": { "key": "addon.invoices.setting.business_lines", "fallback": "Address lines" },
+      "label": {
+        "key": "addon.invoices.setting.business_lines",
+        "fallback": "Address lines"
+      },
       "help": {
         "key": "addon.invoices.setting.business_lines.help",
-        "fallback": "One line each, under the name — your invoice address."
+        "fallback": "One line each, under the name \u2014 your invoice address."
       }
     },
     {
       "key": "logo_data_url",
       "type": "string",
       "default": "",
-      "label": { "key": "addon.invoices.setting.logo_data_url", "fallback": "Letterhead image" },
+      "label": {
+        "key": "addon.invoices.setting.logo_data_url",
+        "fallback": "Letterhead image"
+      },
       "help": {
         "key": "addon.invoices.setting.logo_data_url.help",
-        "fallback": "Small — 32 KB at most. It travels inside every document."
+        "fallback": "Small \u2014 32 KB at most. It travels inside every document."
       }
     },
     {
       "key": "number_prefix",
       "type": "string",
       "default": "INV-",
-      "label": { "key": "addon.invoices.setting.number_prefix", "fallback": "Number prefix" },
+      "label": {
+        "key": "addon.invoices.setting.number_prefix",
+        "fallback": "Number prefix"
+      },
       "help": {
         "key": "addon.invoices.setting.number_prefix.help",
         "fallback": "The next number is shown here. Numbers are never reused, and gaps can happen."
@@ -89,28 +139,40 @@
       "key": "terms",
       "type": "string",
       "default": "",
-      "label": { "key": "addon.invoices.setting.terms", "fallback": "Terms" },
+      "label": {
+        "key": "addon.invoices.setting.terms",
+        "fallback": "Terms"
+      },
       "help": {
         "key": "addon.invoices.setting.terms.help",
-        "fallback": "Printed under the totals. One language — write it as you want it read."
+        "fallback": "Printed under the totals. One language \u2014 write it as you want it read."
       }
     },
     {
       "key": "tax_label",
       "type": "string",
       "default": "Tax",
-      "label": { "key": "addon.invoices.setting.tax_label", "fallback": "Word for the tax line" },
+      "label": {
+        "key": "addon.invoices.setting.tax_label",
+        "fallback": "Word for the tax line"
+      },
       "help": {
         "key": "addon.invoices.setting.tax_label.help",
-        "fallback": "VAT, GST, Sales tax — your word. No tax line appears unless a rate or a column is mapped."
+        "fallback": "VAT, GST, Sales tax \u2014 your word. No tax line appears unless a rate or a column is mapped."
       }
     },
     {
       "key": "paper",
       "type": "enum",
-      "enum": ["a4", "letter"],
+      "enum": [
+        "a4",
+        "letter"
+      ],
       "default": "a4",
-      "label": { "key": "addon.invoices.setting.paper", "fallback": "Paper" },
+      "label": {
+        "key": "addon.invoices.setting.paper",
+        "fallback": "Paper"
+      },
       "help": {
         "key": "addon.invoices.setting.paper.help",
         "fallback": "Receipts always use 80 mm."
@@ -119,8 +181,14 @@
     {
       "key": "default_formats",
       "type": "json",
-      "default": ["html", "pdf"],
-      "label": { "key": "addon.invoices.setting.default_formats", "fallback": "What to draw" },
+      "default": [
+        "html",
+        "pdf"
+      ],
+      "label": {
+        "key": "addon.invoices.setting.default_formats",
+        "fallback": "What to draw"
+      },
       "help": {
         "key": "addon.invoices.setting.default_formats.help",
         "fallback": "PDF is drawn for Latin text; other scripts get a print-ready page instead. Stated, not hidden."
@@ -130,7 +198,10 @@
       "key": "entities",
       "type": "json",
       "default": [],
-      "label": { "key": "addon.invoices.setting.entities", "fallback": "Where the button shows" },
+      "label": {
+        "key": "addon.invoices.setting.entities",
+        "fallback": "Where the button shows"
+      },
       "help": {
         "key": "addon.invoices.setting.entities.help",
         "fallback": "Which record kinds get a document button. What the columns mean is set where the button is mounted, never here."

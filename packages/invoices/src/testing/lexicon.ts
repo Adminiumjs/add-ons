@@ -32,6 +32,32 @@ export const SUBSTRING_BANNED = [
 ] as const;
 
 /**
+ * FOUR OF THE NINE ARE MATCHED AS WHOLE WORDS, AND THIS IS WHY.
+ *
+ * The list above was written for this package's two small artefacts — a
+ * settings panel and a renderer — where a `pro` anywhere in the bytes was
+ * almost certainly the marketing word. The page half changed that: it is a
+ * 250 KiB user interface in eight languages, and `pro`, `plan`, `tier` and
+ * `free` are inside ordinary words in most of them. Swept as substrings they
+ * matched `stopPropagation`, `progress`, `Professional`, Czech `Prodej`,
+ * Danish `sprog`, French `propre` and `Arrière-plan` — thirty-odd distinct
+ * tokens, none of them copy anybody would object to, and an allow-list naming
+ * every one in seven languages would be a list nobody could maintain and a
+ * gate nobody would read.
+ *
+ * So these four are matched with word boundaries: `Pro`, `Free`, `Plan` and
+ * `Tier` standing alone are still caught, in any language, which is what the
+ * ban is actually about. The other five stay SUBSTRINGS, which is what keeps a
+ * German compound like `Premiumtarif` or a `/mo` inside an href caught — those
+ * are the shapes where the marketing word hides inside a longer one.
+ *
+ * WHAT THIS GIVES UP, stated rather than glossed: a compound built on one of
+ * the four, `Freiplan` or `Protarif`, would now pass. That is the trade the
+ * false positives forced, and it is worth a second pair of eyes.
+ */
+export const WHOLE_WORD_BANNED: readonly string[] = ['pro', 'plan', 'tier', 'free'];
+
+/**
  * THE ONLY CARVE-OUT, AND IT IS A LIST OF EXACT WHOLE WORDS.
  *
  * A word here is allowed to contain a banned substring, and nothing else is.
@@ -66,6 +92,31 @@ export const SUBSTRING_BANNED = [
  * on purpose, which is the intended cost.
  */
 export const ALLOWED_TOKENS: readonly string[] = [
+  /**
+   * `__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE` — REACT's
+   * own export name, and the reason the tokenizer below counts `_` as part of
+   * a word.
+   *
+   * The page half inlines the host-runtime React shim, which re-exports every
+   * name React has, this one included. It is an identifier nobody reads and
+   * nobody can rename. Allowing the bare token `upgrade` instead would have
+   * turned the ban off for the one word most likely to appear in real
+   * monetization copy.
+   */
+  '__client_internals_do_not_use_or_warn_users_they_cannot_upgrade',
+  /**
+   * `nonprofit` — ENGLISH, and a KEY NAME rather than copy.
+   *
+   * The page's starter gallery groups its twelve starters by topic, and one of
+   * the topics is charities: the key is `new.category.nonprofit`. Keys are the
+   * same English in all eight bundles, so the substring `pro` inside it turned
+   * up in every locale chunk at once — which is exactly how a false positive
+   * from a SUBSTRING grep looks, and why this list exists.
+   *
+   * The VALUE beside it is swept as normal: "Nonprofit", "Organisations à but
+   * non lucratif" and the other six are copy and have to pass on their own.
+   */
+  'nonprofit',
   /**
    * `Promise` — the JavaScript built-in. React's `createElement` seam and the
    * bundler's own helpers name it; no copy in this package does.
@@ -113,7 +164,13 @@ const ALLOWED = new Set(ALLOWED_TOKENS.map((word) => word.toLowerCase()));
  * `href="/models"` keeps its slash whatever happens to the letters beside it.
  */
 function maskAllowed(value: string): string {
-  return value.replace(/\p{L}+/gu, (token) =>
+  /*
+   * `_` COUNTS AS PART OF A WORD, so a JavaScript identifier is one token.
+   * Without that, React's `__CLIENT_INTERNALS_…_CANNOT_UPGRADE` tokenises into
+   * eleven words, one of which is `UPGRADE`, and the only way to pass would be
+   * to allow that word everywhere.
+   */
+  return value.replace(/[\p{L}_]+/gu, (token) =>
     ALLOWED.has(token.toLowerCase()) ? ' '.repeat(token.length) : token,
   );
 }
@@ -140,7 +197,23 @@ export const TIERING_PATTERNS: readonly RegExp[] = Object.values(TIERING_WORDS).
  */
 export function bannedSubstringsIn(value: string): string[] {
   const lower = maskAllowed(value).toLowerCase();
-  return SUBSTRING_BANNED.filter((word) => lower.includes(word));
+  return SUBSTRING_BANNED.filter((word) => matches(lower, word));
+}
+
+/** Whole-word for the four ambiguous ones, substring for the rest. */
+function wordPattern(word: string): RegExp {
+  return new RegExp(`(?<![\\p{L}])${word}(?![\\p{L}])`, 'u');
+}
+
+function matches(haystack: string, word: string): boolean {
+  return WHOLE_WORD_BANNED.includes(word)
+    ? wordPattern(word).test(haystack)
+    : haystack.includes(word);
+}
+
+function offsetOf(haystack: string, word: string): number {
+  if (!WHOLE_WORD_BANNED.includes(word)) return haystack.indexOf(word);
+  return haystack.search(wordPattern(word));
 }
 
 /**
@@ -149,9 +222,9 @@ export function bannedSubstringsIn(value: string): string[] {
  */
 export function bannedHitsIn(value: string): { word: string; at: number }[] {
   const lower = maskAllowed(value).toLowerCase();
-  return SUBSTRING_BANNED.filter((word) => lower.includes(word)).map((word) => ({
+  return SUBSTRING_BANNED.filter((word) => matches(lower, word)).map((word) => ({
     word,
-    at: lower.indexOf(word),
+    at: offsetOf(lower, word),
   }));
 }
 

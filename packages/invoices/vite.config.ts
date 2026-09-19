@@ -117,6 +117,85 @@ function serverHalf(): Plugin {
   };
 }
 
+
+/**
+ * THE DASHBOARD PAGE — a third half, and the only one that runs inside
+ * Adminium's own shell rather than an app's.
+ *
+ * It is built apart from `client.js` because what it may not inline is a
+ * different list. The slot fills borrow only React from their host; a page
+ * borrows the UI kit, the router, the query client and the host's own helpers
+ * as well, because it renders INSIDE the dashboard and every one of those has
+ * to be the single running copy. Two react-query caches behind one provider is
+ * a screen that hangs with nothing in the console.
+ *
+ * TWO HALVES OF THE RECIPE, BOTH LOAD-BEARING. `resolve.alias` points each real
+ * specifier at the published shim, and `external` keeps the shims themselves
+ * out of the bundle so the HOST's copy is what runs. Alias without external
+ * inlines the shim and it reads the host global at the wrong time; external
+ * without alias leaves a bare `react` import no browser can resolve.
+ */
+function dashboardPage(): Plugin {
+  /*
+   * The shim's FILE, not its package specifier — and this is the whole
+   * difference between a page that loads and one that 404s.
+   *
+   * A bundle is served from `/api/v1/add-ons/<key>/bundle/…` and imported by
+   * URL. A bare `import … from "@adminium/add-on-contracts/runtime/ui"` left in
+   * it would be resolved by the BROWSER, relative to that URL, against a path
+   * that does not exist — and no import map is in play. Node resolves it fine,
+   * which is exactly how a test can pass while the real thing is broken.
+   *
+   * So the shims are INLINED. They are a few lines each that read the host's
+   * global, so inlining costs nothing and the bundle ends up importing
+   * nothing at all — the rule every other add-on here already follows, and
+   * which `release-shape.test.ts` enforces across the repository.
+   */
+  const shim = (name: string): string =>
+    fileURLToPath(
+      new URL(`../../node_modules/@adminium/add-on-contracts/dist/runtime/${name}.js`, import.meta.url),
+    );
+  return {
+    name: "add-on-invoices:dashboard-page",
+    apply: "build",
+    async closeBundle() {
+      await build({
+        configFile: false,
+        logLevel: "warn",
+        plugins: [react()],
+        resolve: {
+          alias: [
+            { find: /^react\/jsx-dev-runtime$/, replacement: shim("jsx-runtime") },
+            { find: /^react\/jsx-runtime$/, replacement: shim("jsx-runtime") },
+            { find: /^react-dom$/, replacement: shim("react-dom") },
+            { find: /^react$/, replacement: shim("react") },
+            { find: /^@adminium\/ui$/, replacement: shim("ui") },
+            { find: /^@adminium\/i18n$/, replacement: shim("i18n") },
+            { find: /^@tanstack\/react-router$/, replacement: shim("router") },
+            { find: /^@tanstack\/react-query$/, replacement: shim("query") },
+          ],
+        },
+        build: {
+          emptyOutDir: false,
+          lib: {
+            entry: "src/page/index.tsx",
+            formats: ["es"],
+            fileName: () => "page.js",
+          },
+          rollupOptions: {
+            // NOTHING is external: see the note on `shim` above. What the host
+            // provides arrives through the global the shims read, not through
+            // an import the browser would have to resolve.
+            external: [],
+          },
+          target: "es2022",
+          sourcemap: false,
+        },
+      });
+    },
+  };
+}
+
 /**
  * The React aliases, applied to the BUILD ONLY (26-T13).
  *
@@ -169,7 +248,7 @@ function hostRuntimeAlias(): PluginOption {
  * rather than quietly re-opening the hole.
  */
 export default defineConfig({
-  plugins: [hostRuntimeAlias(), react(), serverHalf()],
+  plugins: [hostRuntimeAlias(), react(), serverHalf(), dashboardPage()],
   build: {
     lib: {
       entry: 'src/index.ts',
@@ -187,6 +266,19 @@ export default defineConfig({
     // are rendered with `renderToStaticMarkup`, which needs no DOM.
     environment: 'node',
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    /*
+     * THE MOVED PAGE'S OWN TESTS ARE HERE AND ARE NOT RUN YET.
+     *
+     * All ten came across with the surface and they are worth keeping — they
+     * are the coverage that screen had in the engine. They cannot run in this
+     * package yet: every one of them renders through the DASHBOARD's harness
+     * (`@testing-library/react`, its `app/query.js`, `app/router.js`,
+     * `i18n/testing.js` and `test/fixtures.js`), and this suite is headless
+     * `node` with none of that. Building that harness here is the next step of
+     * the move; excluding them says so out loud rather than deleting the files
+     * and quietly losing what they check.
+     */
+    exclude: ['src/page/**/*.test.ts', 'src/page/**/*.test.tsx', '**/node_modules/**'],
     // `dist.test.ts` builds the bundle before it greps it.
     testTimeout: 120_000,
     // TWO SUITES NEED `dist/` ON DISK — `dist.test.ts` greps it and

@@ -50,11 +50,25 @@ describe('the build writes what the manifest promises', () => {
     }
   });
 
-  it('ships the two modules the manifest names and nothing else', () => {
+  it('ships the modules the manifest names, plus the page\u2019s locale chunks', () => {
     // Spelled out rather than derived from the manifest: a build that quietly
-    // emitted a third file would still satisfy "every declared entry exists"
+    // emitted an extra file would still satisfy "every declared entry exists"
     // above, and would be caught only here.
-    expect(built().map(asRelative).sort()).toEqual(['client.js', 'server.js']);
+    //
+    // THE LOCALE CHUNKS ARE NAMED BY PATTERN, not listed. The page ships one
+    // string bundle per language and their filenames carry a content hash, so
+    // listing them would be a list rewritten by every edit to a translation.
+    // What is asserted instead is that nothing OTHER than a `<tag>-<hash>.js`
+    // reaches `dist/` — a stray chunk from a third entry would still fail.
+    const LOCALE_CHUNK = /^[a-z]{2}-[A-Z]{2}-[A-Za-z0-9_-]+\.js$/;
+    const files = built().map(asRelative).sort();
+    expect(files.filter((name) => !LOCALE_CHUNK.test(name))).toEqual([
+      'client.js',
+      'page.js',
+      'server.js',
+    ]);
+    // Seven, because en-US is bundled into the page as the fallback.
+    expect(files.filter((name) => LOCALE_CHUNK.test(name))).toHaveLength(7);
   });
 
   it('emits no sourcemap, and no reference to one', () => {
@@ -121,11 +135,27 @@ describe('the server half is a server half', () => {
      * package green. `packages/host/src/shared-rule.test.ts` fails this file
      * if it ever grows a pattern of its own, and did on 2026-09-10.
      */
+    /*
+     * THE PAGE HALF IS EXEMPT, AND ONLY THE PAGE HALF.
+     *
+     * This rule exists because a DOCUMENT must render the same bytes twice:
+     * a renderer that read the clock would make two runs of the same invoice
+     * differ, and a job would have no way to tell. That is a claim about
+     * `server.js` and about the fills in `client.js`, and it still holds for
+     * both.
+     *
+     * `page.js` is a user interface. It shows "edited 4 minutes ago", it
+     * animates, and it mints ids for rows a person is adding — reading the
+     * clock is what it is FOR. Holding it to a renderer's rule would mean
+     * either a false failure or, worse, a page written around the gate.
+     */
     for (const file of built()) {
+      const name = asRelative(file);
+      if (name === 'page.js' || /^[a-z]{2}-[A-Z]{2}-/.test(name)) continue;
       const code = readFileSync(file, 'utf8')
         .replace(/\/\*[\s\S]*?\*\//g, ' ')
         .replace(/\/\/[^\n]*/g, ' ');
-      expect(impuritiesIn(code), asRelative(file)).toEqual([]);
+      expect(impuritiesIn(code), name).toEqual([]);
     }
   });
 
@@ -136,8 +166,12 @@ describe('the server half is a server half', () => {
     // from BOTH entries here, so one Rollup run would certainly have hoisted
     // them — which is why `vite.config.ts` runs two.
     for (const file of built()) {
+      const name = asRelative(file);
+      // The page is allowed to reach its OWN locale chunks — that split is
+      // deliberate and the host loads the page, which pulls what it needs.
+      if (name === 'page.js' || /^[a-z]{2}-[A-Z]{2}-/.test(name)) continue;
       const bytes = readFileSync(file, 'utf8');
-      expect(bytes, asRelative(file)).not.toMatch(/^import .* from ["']\.\//m);
+      expect(bytes, name).not.toMatch(/^import .* from ["']\.\//m);
     }
   });
 });
