@@ -27,7 +27,7 @@
     "react": "^19.0.0"
   },
   "devDependencies": {
-    "@adminium/add-on-contracts": "npm:@adminiumjs/add-on-contracts@0.2.12",
+    "@adminium/add-on-contracts": "npm:@adminiumjs/add-on-contracts@0.3.0-rc.0",
     "@adminium/add-on-host": "*",
     "@adminium/i18n": "npm:@adminiumjs/i18n@0.2.9",
     "@adminium/tokens": "npm:@adminiumjs/tokens@0.2.9",
