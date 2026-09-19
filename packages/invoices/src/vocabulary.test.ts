@@ -10,6 +10,7 @@
 import { describe, expect, it } from 'vitest';
 
 import vocabulary from './block-vocabulary.json' with { type: 'json' };
+import { BUILTIN_BLOCK_KEYS } from './page/model/blocks.js';
 import { DRAWN, NOT_YET_DRAWN } from './render/drawn.ts';
 
 describe('the vendored block vocabulary', () => {
@@ -51,5 +52,29 @@ describe('the vendored block vocabulary', () => {
     for (const custom of vocabulary.kinds.filter((kind) => kind.startsWith('custom.'))) {
       expect(NOT_YET_DRAWN, custom).toContain(custom);
     }
+  });
+});
+
+/*
+ * THE CANVAS'S LIST, held to the same data.
+ *
+ * This used to be the engine's job — `scripts/check-invoice-block-vocab.mjs`
+ * held the dashboard's derived list equal to this file across a repository
+ * boundary. The canvas moved into this package, so both copies are here now and
+ * the check belongs here with them: an editor that can compose a block the
+ * renderer drops is the failure either version exists to prevent.
+ */
+describe('the canvas and the renderer share one vocabulary', () => {
+  it('derives the same builtin kinds the data declares', () => {
+    /*
+     * The data lists all 27 kinds — the 23 built-ins the canvas orders plus the
+     * four custom types — so the canvas's list is a SUBSET of it, and every
+     * name it uses must be in there. A canvas kind the data does not know is a
+     * block the renderer would drop without a word.
+     */
+    const declared = new Set<string>(vocabulary.kinds);
+    const unknown = [...BUILTIN_BLOCK_KEYS].filter((key) => !declared.has(key));
+    expect(unknown).toEqual([]);
+    expect(BUILTIN_BLOCK_KEYS.length).toBeGreaterThan(0);
   });
 });
