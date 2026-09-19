@@ -1,9 +1,9 @@
 {
   "name": "@adminium/add-on-host",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
-  "description": "The one mirror of the Adminium add-on host seam and the implementation contracts \u2014 shared by every add-on in this repo.",
+  "description": "The one mirror of the Adminium add-on host seam and the implementation contracts — shared by every add-on in this repo.",
   "license": "AGPL-3.0-only",
   "exports": {
     ".": "./src/index.ts",

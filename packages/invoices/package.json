@@ -1,8 +1,8 @@
 {
   "name": "@adminium/add-on-invoices",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
-  "description": "Invoices & Receipts \u2014 invoices, receipts and credit notes rendered from your own records. No network, no account, no service.",
+  "description": "Invoices & Receipts — invoices, receipts and credit notes rendered from your own records. No network, no account, no service.",
   "license": "AGPL-3.0-only",
   "repository": {
     "type": "git",
