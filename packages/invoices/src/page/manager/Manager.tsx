@@ -24,6 +24,7 @@ import { Alert, Button, EmptyState, Spinner, Tabs, TabsContent } from '@adminium
 
 import { PageActions, PageSurface, formatSince, useAppToasts, useLocaleTag } from '@adminium/add-on-contracts/runtime/app';
 
+import { documentPath } from '../routes.js';
 import { t } from '../messages.js';
 import { invoicesApi, type InvoiceDetail, type InvoiceDocumentKind, type InvoiceSummary } from '../api.js';
 import { invalidateInvoices, invoicesQuery } from '../queries.js';
@@ -159,7 +160,7 @@ export function InvoiceManager({ initialTab = 'template' }: InvoiceManagerProps)
         };
 
   const openEditor = (id: string) => {
-    void navigate({ to: '/invoices/$id', params: { id } });
+    void navigate({ to: documentPath(id) });
   };
   const actions: DocumentActions = {
     onOpen: (doc) => openEditor(doc.id),

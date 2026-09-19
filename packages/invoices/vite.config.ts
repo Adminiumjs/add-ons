@@ -278,7 +278,24 @@ export default defineConfig({
      * the move; excluding them says so out loud rather than deleting the files
      * and quietly losing what they check.
      */
-    exclude: ['src/page/**/*.test.ts', 'src/page/**/*.test.tsx', '**/node_modules/**'],
+    /*
+     * The page's MODEL tests run here; its component tests do not, yet.
+     *
+     * The five model suites are pure — the money law, the envelope, the block
+     * list, the ops, the languages — and they need no DOM and no host. The five
+     * component suites mount the engine's whole app router and navigate to
+     * `/invoices`, a shell that does not exist in this package; they are being
+     * ported onto the harness in `src/page/testing/`.
+     */
+    exclude: ['**/node_modules/**'],
+    /*
+     * The page's component suites need a DOM and a HOST. `host.tsx` publishes
+     * the runtime their imports read — before any test file is imported, which
+     * is the ordering the shims require — and each of those files carries its
+     * own `@vitest-environment happy-dom`, because everything else in this
+     * package is headless and should stay that way.
+     */
+    setupFiles: ['src/page/testing/host.tsx'],
     // `dist.test.ts` builds the bundle before it greps it.
     testTimeout: 120_000,
     // TWO SUITES NEED `dist/` ON DISK — `dist.test.ts` greps it and

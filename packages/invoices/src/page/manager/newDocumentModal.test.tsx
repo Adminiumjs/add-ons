@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 /**
+ * @vitest-environment happy-dom
+ *
  * The New modal (O20): the grid is Blank + the twelve starters, plus
  * *Your templates* on the invoices tab; a pick creates through the API and
  * hands the reply up.
  */
-import { QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { createQueryClient } from '../../app/query.js';
-import { installTestI18n } from '../../i18n/testing.js';
-import { AppToastProvider } from '@adminium/add-on-contracts/runtime/app';
-import { jsonResponse } from '../../test/fixtures.js';
+import { QueryClientProvider } from '@tanstack/react-query';
+
+import { createTestQueryClient, jsonResponse } from '../testing/harness.js';
 import type { InvoiceDetail, InvoiceDocumentKind, InvoiceStarterCard, InvoiceSummary } from '../api.js';
 import { emptyBody } from '../model/envelope.js';
 import { NewDocumentModal } from './NewDocumentModal.js';
@@ -111,21 +111,22 @@ function renderModal(kind: InvoiceDocumentKind, templates: InvoiceSummary[] = []
   const onCreated = vi.fn();
   const onClose = vi.fn();
   render(
-    <QueryClientProvider client={createQueryClient()}>
-      <AppToastProvider>
-        <NewDocumentModal kind={kind} onClose={onClose} onCreated={onCreated} />
-      </AppToastProvider>
+    /*
+     * No toast PROVIDER here any more. In the engine this suite mounted the
+     * dashboard's own `AppToastProvider`; in an add-on the host owns the toast
+     * queue and publishes only `useAppToasts`, which the test harness answers.
+     * Mounting a provider would have been mounting a second queue.
+     */
+    <QueryClientProvider client={createTestQueryClient()}>
+      <NewDocumentModal kind={kind} onClose={onClose} onCreated={onCreated} />
     </QueryClientProvider>,
   );
   return { calls, onCreated, onClose, user: userEvent.setup() };
 }
 
-let restoreI18n: () => void;
 beforeAll(() => {
-  restoreI18n = installTestI18n();
 });
 afterAll(() => {
-  restoreI18n();
 });
 afterEach(() => {
   vi.unstubAllGlobals();

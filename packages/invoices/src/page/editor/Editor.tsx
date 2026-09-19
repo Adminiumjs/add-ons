@@ -28,6 +28,7 @@ import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { ApiError, PageActions, PageSurface, useAppToasts, useShortcut } from '@adminium/add-on-contracts/runtime/app';
 
+import { documentPath, managerPath } from '../routes.js';
 import { t } from '../messages.js';
 import { invoicesApi, type InvoiceDetail } from '../api.js';
 import { DeleteModal } from '../manager/DeleteModal.js';
@@ -135,7 +136,7 @@ export function Editor({ detail }: EditorProps) {
   // --- the header's actions ------------------------------------------------------
   const kind = detail.kind;
   const openDocument = (id: string) => {
-    void navigate({ to: '/invoices/$id', params: { id } });
+    void navigate({ to: documentPath(id) });
   };
 
   const duplicate = useMutation({
@@ -165,7 +166,7 @@ export function Editor({ detail }: EditorProps) {
       setConfirmDelete(false);
       void invalidateInvoices(queryClient);
       bypassGuard.current = true;
-      void navigate({ to: '/invoices', search: { kind } });
+      void navigate({ to: managerPath(kind) });
     },
     onError: (error) => {
       setConfirmDelete(false);
@@ -242,7 +243,7 @@ export function Editor({ detail }: EditorProps) {
         title={shownName}
         subtitle={kind === 'invoice' && number !== '' ? number : undefined}
         documentTitle={`${shownName} · ${t('manager.title', 'Invoices')}`}
-        backTo="/invoices"
+        backTo={managerPath()}
       />
       <PageSurface width="full" padding="none" testId="invoices-editor">
         <div style={{ '--adm-topbar-h': stickyOffsets.topbar, '--adm-editor-header-h': stickyOffsets.header }} className="flex min-h-0 flex-1 flex-col">

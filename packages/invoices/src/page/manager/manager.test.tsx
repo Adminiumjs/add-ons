@@ -1,21 +1,21 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 /**
- * The invoice manager, rendered through the real router and
- * shell so the topbar's published actions, the toasts and the navigation
- * are the product's own. The API is a fetch stub keyed on the routes the
+ * @vitest-environment happy-dom
+ *
+ * The invoice manager, rendered the way the HOST renders it: one splat route,
+ * the real UI kit, the real router and query client, and stand-ins only for the
+ * things a running dashboard provides (`src/page/testing/`). It used to build
+ * the engine's whole app router and navigate to `/invoices`; that shell does
+ * not exist in this package, and the page never owned a router anyway. The API is a fetch stub keyed on the routes the
  * manager calls; the fixtures are the comp's seed (1138-1170): ten
  * templates with de/fr/es/ja variations and seven invoices.
  */
-import { QueryClientProvider } from '@tanstack/react-query';
-import { RouterProvider, createMemoryHistory } from '@tanstack/react-router';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { createQueryClient } from '../../app/query.js';
-import { createAppRouter } from '../../app/router.js';
-import { installTestI18n } from '../../i18n/testing.js';
-import { jsonResponse, makeBootstrap } from '../../test/fixtures.js';
+import { jsonResponse, mountPage } from '../testing/harness.js';
+import { InvoicesPage } from '../InvoicesPage.js';
 import type { InvoiceDetail, InvoiceDocumentKind, InvoiceLang, InvoiceStatus, InvoiceSummary, InvoiceSummaryFacts, InvoiceTopic } from '../api.js';
 import { emptyBody } from '../model/envelope.js';
 import { MANAGER_PREFS_KEY } from './useManagerPrefs.js';
@@ -174,17 +174,21 @@ function stubFetch(fixture: Fixture) {
   return { calls, fetchMock };
 }
 
+/*
+ * `path` is still written the way the engine's routes read — `/invoices`,
+ * `/invoices?kind=invoice` — and translated to the host's address here. Keeping
+ * the call sites unchanged makes the diff of this file about the harness and
+ * not about a hundred string edits; the assertions below that name an address
+ * were changed, because those are about where a click actually goes.
+ */
+const HOST_PATH = '/add-ons/invoices/documents';
+
 async function renderPage(fixture: Fixture = {}, path = '/invoices') {
   vi.stubGlobal('WebSocket', FakeWebSocket);
   const stub = stubFetch(fixture);
-  const queryClient = createQueryClient();
-  const router = createAppRouter(queryClient, {
-    history: createMemoryHistory({ initialEntries: [path] }),
-  });
-  const view = render(
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>,
+  const { queryClient, view, router } = mountPage(
+    <InvoicesPage />,
+    path.replace('/invoices', HOST_PATH),
   );
   await screen.findByTestId('invoices-toolbar');
   await waitFor(() => {
@@ -200,12 +204,9 @@ function headerTexts(): { label: string; sub: string }[] {
   }));
 }
 
-let restoreI18n: () => void;
 beforeAll(() => {
-  restoreI18n = installTestI18n();
 });
 afterAll(() => {
-  restoreI18n();
 });
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -329,7 +330,7 @@ describe('InvoiceManager — shell', () => {
       expect(calls.filter((c) => c.method === 'POST' && c.url === '/api/v1/invoices').map((c) => c.body)).toEqual([{ kind: 'template', starter: 'standard' }]);
     });
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe('/invoices/new_1');
+      expect(router.state.location.pathname).toBe(`${HOST_PATH}/new_1`);
     });
   });
 
@@ -444,7 +445,7 @@ describe('InvoiceManager — gallery, list and groups', () => {
     const rows = await screen.findAllByTestId('invoices-row');
     await user.click(within(rows[2] as HTMLElement).getByTestId('invoices-row-sub'));
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe('/invoices/tpl-standard-fr');
+      expect(router.state.location.pathname).toBe(`${HOST_PATH}/tpl-standard-fr`);
     });
   });
 
@@ -512,7 +513,7 @@ describe('InvoiceManager — gallery, list and groups', () => {
       expect(calls.some((c) => c.method === 'POST' && c.url === '/api/v1/invoices/tpl-standard/duplicate')).toBe(true);
     });
     await screen.findByText('Template duplicated');
-    expect(router.state.location.pathname).toBe('/invoices');
+    expect(router.state.location.pathname).toBe(HOST_PATH);
     await user.click(screen.getByRole('button', { name: 'Undo' }));
     await waitFor(() => {
       expect(calls.filter((c) => c.method === 'DELETE').map((c) => c.url)).toEqual(['/api/v1/invoices/tpl-standard_copy']);

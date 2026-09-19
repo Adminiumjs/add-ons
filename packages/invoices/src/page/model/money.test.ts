@@ -20,7 +20,16 @@ interface Fixture {
   format: { minor: number; currency: string; cents: boolean; expect: string }[];
 }
 
-const fixture = JSON.parse(readFileSync(join(process.cwd(), 'src/invoices/model/money-fixture.json'), 'utf8')) as Fixture;
+/*
+ * THE PACKAGE'S ONE COPY, not a second one beside this file.
+ *
+ * The fixture arrived here with the surface, byte-identical to the copy this
+ * add-on already had for its renderer — which is the point of it: the money law
+ * is implemented more than once and the fixture is what holds the
+ * implementations to the same answers. Two copies in one package would be one
+ * copy too many, and the moved one was deleted rather than kept in step.
+ */
+const fixture = JSON.parse(readFileSync(join(process.cwd(), 'src/money-fixture.json'), 'utf8')) as Fixture;
 
 describe('the money law', () => {
   for (const c of fixture.cases) {

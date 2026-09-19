@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 /**
+ * @vitest-environment happy-dom
+ *
  * The inspector, rendered on its own over a full draft and a mocked
  * `DocumentEdits`: every one of the twenty-nine panels shows its header and
  * its key controls under their accessible names; every textbox, slider,
@@ -13,7 +15,6 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { userEvent } from '@testing-library/user-event';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { installTestI18n } from '../../../i18n/testing.js';
 import { FIXED_SECTION_KEYS, type FixedSectionKey, type OptionalFlag, type SectionKey } from '../../model/blocks.js';
 import type { EditorDraft } from '../../model/doc.js';
 import type { DocumentEdits } from '../../model/edits.js';
@@ -232,12 +233,9 @@ const EXPECTED: Readonly<Record<FixedSectionKey, Expectation>> = {
   delivery: { fields: ['Step 1'], buttons: ['Add step', 'Step 1 status: Pending', 'Remove step 1'], flag: 'delShow' },
 };
 
-let restoreI18n: () => void;
 beforeAll(() => {
-  restoreI18n = installTestI18n();
 });
 afterAll(() => {
-  restoreI18n();
 });
 
 describe('Inspector — every fixed section', () => {

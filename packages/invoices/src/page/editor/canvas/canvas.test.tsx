@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 /**
+ * @vitest-environment happy-dom
+ *
  * The canvas (O25): every one of the 27 kinds draws when
  * its flag is on and one custom section of each type exists; the gate leaves
  * the five permanent blocks with every flag off; the ladder prints the money
@@ -12,16 +14,18 @@
  * modal). The axe pass runs in the e2e file against the built canvas:
  * happy-dom cannot host axe-core.
  */
-import { QueryClientProvider } from '@tanstack/react-query';
-import { RouterProvider, createMemoryHistory } from '@tanstack/react-router';
 import { render, screen, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { createQueryClient } from '../../../app/query.js';
-import { createAppRouter } from '../../../app/router.js';
-import { installTestI18n } from '../../../i18n/testing.js';
-import { jsonResponse, makeBootstrap } from '../../../test/fixtures.js';
+/*
+ * The page ENTRY, not the editor component: the host mounts one splat route and
+ * the entry reads the document id out of the path. Mounting the inner component
+ * with a fixed id meant a navigation changed the URL and re-rendered the same
+ * document, and two tests failed looking for the document they had opened.
+ */
+import InvoicesAddOnPage from '../../index.js';
+import { jsonResponse, mountPage } from '../../testing/harness.js';
 import type { InvoiceDetail } from '../../api.js';
 import { BLOCK_VOCABULARY } from '../../model/blocks.js';
 import { DEFAULT_BLOCK_ORDER, emptyBody, type CustomSection, type InvoiceBody } from '../../model/envelope.js';
@@ -190,12 +194,9 @@ function stubFetch(doc: InvoiceDetail) {
 async function renderCanvas(doc: InvoiceDetail = detail(fullBody())) {
   vi.stubGlobal('WebSocket', FakeWebSocket);
   stubFetch(doc);
-  const queryClient = createQueryClient();
-  const router = createAppRouter(queryClient, { history: createMemoryHistory({ initialEntries: [`/invoices/${doc.id}`] }) });
-  render(
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>,
+  const { router } = mountPage(
+    <InvoicesAddOnPage />,
+    `/add-ons/invoices/documents/${doc.id}`,
   );
   const paper = await screen.findByTestId('invoices-paper');
   return { paper, router, user: userEvent.setup() };
@@ -203,12 +204,9 @@ async function renderCanvas(doc: InvoiceDetail = detail(fullBody())) {
 
 const blockKeys = () => screen.getAllByTestId('invoices-block').map((el) => el.getAttribute('data-block') ?? '');
 
-let restoreI18n: () => void;
 beforeAll(() => {
-  restoreI18n = installTestI18n();
 });
 afterAll(() => {
-  restoreI18n();
 });
 afterEach(() => {
   vi.unstubAllGlobals();

@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 /**
+ * @vitest-environment happy-dom
+ *
  * The editor shell (O19, O22, O24): explicit save with its chip and
  * history, the discard guard, the gate (an off block is absent, and returns
  * through the Add-section modal at the index the chip was opened from),
@@ -8,16 +10,21 @@
  * topbar's Back and the blocker are the product's own; the API is a fetch
  * stub keyed on the routes the editor calls.
  */
-import { QueryClientProvider } from '@tanstack/react-query';
-import { RouterProvider, createMemoryHistory } from '@tanstack/react-router';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { createQueryClient } from '../../app/query.js';
-import { createAppRouter } from '../../app/router.js';
-import { installTestI18n } from '../../i18n/testing.js';
-import { jsonResponse, makeBootstrap } from '../../test/fixtures.js';
+/*
+ * The page ENTRY, not the editor component: the host mounts one splat route and
+ * the entry reads the document id out of the path. Mounting the inner component
+ * with a fixed id meant a navigation changed the URL and re-rendered the same
+ * document, and two tests failed looking for the document they had opened.
+ */
+import InvoicesAddOnPage from '../index.js';
+
+/** Where the host mounts this page; the engine's `/invoices` is gone. */
+const HOST_PATH = '/add-ons/invoices/documents';
+import { jsonResponse, mountPage } from '../testing/harness.js';
 import type { InvoiceDetail, InvoicePutBody } from '../api.js';
 import { emptyBody, type InvoiceBody } from '../model/envelope.js';
 
@@ -147,12 +154,9 @@ function stubFetch(doc: InvoiceDetail) {
 async function renderEditor(doc: InvoiceDetail = detail()) {
   vi.stubGlobal('WebSocket', FakeWebSocket);
   const stub = stubFetch(doc);
-  const queryClient = createQueryClient();
-  const router = createAppRouter(queryClient, { history: createMemoryHistory({ initialEntries: [`/invoices/${doc.id}`] }) });
-  render(
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>,
+  const { queryClient, router } = mountPage(
+    <InvoicesAddOnPage />,
+    `/add-ons/invoices/documents/${doc.id}`,
   );
   await screen.findByTestId('invoices-editor-header');
   return { ...stub, queryClient, router, user: userEvent.setup() };
@@ -164,12 +168,9 @@ const puts = (calls: Call[]) => calls.filter((c) => c.method === 'PUT');
 const blockKeys = () => screen.getAllByTestId('invoices-block').map((el) => el.getAttribute('data-block'));
 const selectedRegions = () => [...document.querySelectorAll('[data-testid="invoices-section"][data-selected]')].map((el) => el.getAttribute('data-section'));
 
-let restoreI18n: () => void;
 beforeAll(() => {
-  restoreI18n = installTestI18n();
 });
 afterAll(() => {
-  restoreI18n();
 });
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -245,13 +246,13 @@ describe('Invoice editor — save, history, guard (O22)', () => {
     await waitFor(() => {
       expect(screen.queryByRole('dialog')).toBeNull();
     });
-    expect(router.state.location.pathname).toBe('/invoices/inv_1');
+    expect(router.state.location.pathname).toBe(`${HOST_PATH}/inv_1`);
     expect(nameInput().value).toBe('Standard invoice 2026');
 
     await user.click(screen.getByRole('link', { name: 'Back' }));
     await user.click(within(await screen.findByRole('dialog')).getByTestId('invoices-discard-confirm'));
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe('/invoices');
+      expect(router.state.location.pathname).toBe(HOST_PATH);
     });
     expect(puts(calls)).toHaveLength(0);
   });
@@ -260,7 +261,7 @@ describe('Invoice editor — save, history, guard (O22)', () => {
     const { user, router } = await renderEditor();
     await user.click(screen.getByRole('link', { name: 'Back' }));
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe('/invoices');
+      expect(router.state.location.pathname).toBe(HOST_PATH);
     });
     expect(screen.queryByRole('dialog')).toBeNull();
   });
@@ -429,7 +430,7 @@ describe('Invoice editor — header (O24)', () => {
       expect(calls.filter((c) => c.method === 'POST')).toEqual([{ method: 'POST', url: '/api/v1/invoices/inv_1/languages', body: { lang: 'fr' } }]);
     });
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe('/invoices/inv_fr');
+      expect(router.state.location.pathname).toBe(`${HOST_PATH}/inv_fr`);
     });
     expect(await screen.findByDisplayValue('Standard invoice · Français')).toBeDefined();
   });
@@ -440,7 +441,7 @@ describe('Invoice editor — header (O24)', () => {
     const menu = await screen.findByTestId('invoices-language-menu');
     await user.click(within(menu).getByText('Deutsch').closest('button') as HTMLElement);
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe('/invoices/inv_de');
+      expect(router.state.location.pathname).toBe(`${HOST_PATH}/inv_de`);
     });
     expect(await screen.findByDisplayValue('Standard invoice · Deutsch')).toBeDefined();
     expect(calls.filter((c) => c.method === 'POST')).toHaveLength(0);
@@ -456,7 +457,7 @@ describe('Invoice editor — header (O24)', () => {
       expect(calls.some((c) => c.method === 'POST' && c.url === '/api/v1/invoices/inv_1/duplicate')).toBe(true);
     });
     await screen.findByText('Template duplicated');
-    expect(router.state.location.pathname).toBe('/invoices/inv_1');
+    expect(router.state.location.pathname).toBe(`${HOST_PATH}/inv_1`);
     // The toast's Undo, not the header's history button of the same name.
     const undo = screen.getAllByRole('button', { name: 'Undo' }).find((el) => el.getAttribute('data-testid') !== 'invoices-undo') as HTMLElement;
     await user.click(undo);
@@ -479,7 +480,7 @@ describe('Invoice editor — header (O24)', () => {
     });
     // The guard is bypassed on purpose: a dirty draft of a deleted row has nowhere to go.
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe('/invoices');
+      expect(router.state.location.pathname).toBe(HOST_PATH);
     });
     expect(router.state.location.search).toEqual({ kind: 'invoice' });
     expect(screen.queryByText('Discard unsaved changes?')).toBeNull();

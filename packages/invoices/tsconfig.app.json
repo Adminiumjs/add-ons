@@ -4,7 +4,6 @@
     "src"
   ],
   "exclude": [
-    "src/page/**/*.test.ts",
     "src/page/**/*.test.tsx"
   ]
 }
