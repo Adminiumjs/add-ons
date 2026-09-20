@@ -16,7 +16,7 @@
   },
   "categories": ["data"],
   "compatibility": {
-    "minAdminiumVersion": "0.2.3",
+    "minAdminiumVersion": "0.2.6",
     "requires": []
   },
   "addOn": {
