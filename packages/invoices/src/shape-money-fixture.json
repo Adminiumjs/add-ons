@@ -1,0 +1,1739 @@
+{
+  "adminium": {
+    "kind": "invoice-shape-money-fixture",
+    "version": 1
+  },
+  "law": "a line: max(0, qty × rate − amount off) or max(0, qty × rate × (1 − rate off / 100)), or rate × share / 100 for a stage of a quote, rounded once half away from zero to the currency’s decimals; subtotal = the sum of the stored line amounts; tax = subtotal × tax rate / 100 rounded once; total = subtotal + tax",
+  "decimals": {
+    "JPY": 0,
+    "EUR": 2,
+    "USD": 2,
+    "KWD": 3,
+    "BHD": 3,
+    "CLP": 0,
+    "GBP": 2,
+    "ISK": 0,
+    "OMR": 3
+  },
+  "cases": [
+    {
+      "name": "euros: whole and fractional hours, an amount off, 20 % tax",
+      "currency": "EUR",
+      "taxRate": "20",
+      "lines": [
+        {
+          "qty": "12",
+          "rate": "180.00",
+          "expect": "2160.00"
+        },
+        {
+          "qty": "1.5",
+          "rate": "145.00",
+          "discountKind": "amount",
+          "discount": "17.5",
+          "expect": "200.00"
+        }
+      ],
+      "expect": {
+        "subtotal": "2360.00",
+        "tax": "472.00",
+        "total": "2832.00"
+      }
+    },
+    {
+      "name": "yen: a rate off rounds to whole yen, 8 % tax on 4,049 is 323.92 → 324",
+      "currency": "JPY",
+      "taxRate": "8",
+      "lines": [
+        {
+          "qty": "3",
+          "rate": "1200",
+          "discountKind": "percent",
+          "discount": "12.5",
+          "expect": "3150"
+        },
+        {
+          "qty": "1",
+          "rate": "999",
+          "discountKind": "amount",
+          "discount": "100",
+          "expect": "899"
+        }
+      ],
+      "expect": {
+        "subtotal": "4049",
+        "tax": "324",
+        "total": "4373"
+      }
+    },
+    {
+      "name": "dinars: three places, 9.0045 rounds half away to 9.005",
+      "currency": "KWD",
+      "taxRate": "5",
+      "lines": [
+        {
+          "qty": "2",
+          "rate": "1.250",
+          "expect": "2.500"
+        },
+        {
+          "qty": "1",
+          "rate": "10.005",
+          "discountKind": "percent",
+          "discount": "10",
+          "expect": "9.005"
+        }
+      ],
+      "expect": {
+        "subtotal": "11.505",
+        "tax": "0.575",
+        "total": "12.080"
+      }
+    },
+    {
+      "name": "an amount off larger than the line stops at zero",
+      "currency": "USD",
+      "taxRate": "0",
+      "lines": [
+        {
+          "qty": "1",
+          "rate": "50.00",
+          "discountKind": "amount",
+          "discount": "80",
+          "expect": "0.00"
+        },
+        {
+          "qty": "2",
+          "rate": "10.00",
+          "expect": "20.00"
+        }
+      ],
+      "expect": {
+        "subtotal": "20.00",
+        "tax": "0.00",
+        "total": "20.00"
+      }
+    },
+    {
+      "name": "a stage of a quote bills its share of the quote’s total",
+      "currency": "GBP",
+      "taxRate": "20",
+      "lines": [
+        {
+          "qty": "1",
+          "rate": "12000.00",
+          "share": "50",
+          "expect": "6000.00"
+        }
+      ],
+      "expect": {
+        "subtotal": "6000.00",
+        "tax": "1200.00",
+        "total": "7200.00"
+      }
+    },
+    {
+      "name": "no tax rate at all",
+      "currency": "EUR",
+      "taxRate": null,
+      "lines": [
+        {
+          "qty": "0.25",
+          "rate": "165.00",
+          "expect": "41.25"
+        }
+      ],
+      "expect": {
+        "subtotal": "41.25",
+        "tax": "0.00",
+        "total": "41.25"
+      }
+    },
+    {
+      "name": "a rate with three places: 8.875 % of 99.99 is 8.874… → 8.87",
+      "currency": "USD",
+      "taxRate": "8.875",
+      "lines": [
+        {
+          "qty": "1",
+          "rate": "99.99",
+          "expect": "99.99"
+        }
+      ],
+      "expect": {
+        "subtotal": "99.99",
+        "tax": "8.87",
+        "total": "108.86"
+      }
+    },
+    {
+      "name": "a tax of exactly half a cent rounds up: 5 % of 0.10 is 0.005 → 0.01",
+      "currency": "USD",
+      "taxRate": "5",
+      "lines": [
+        {
+          "qty": "1",
+          "rate": "0.10",
+          "expect": "0.10"
+        }
+      ],
+      "expect": {
+        "subtotal": "0.10",
+        "tax": "0.01",
+        "total": "0.11"
+      }
+    },
+    {
+      "name": "generated 01",
+      "currency": "CLP",
+      "taxRate": "19.0",
+      "lines": [
+        {
+          "qty": "34.2",
+          "rate": "52044",
+          "discountKind": "amount",
+          "discount": "1956.660",
+          "expect": "1777948"
+        },
+        {
+          "qty": "6",
+          "rate": "87740",
+          "discountKind": "percent",
+          "discount": "10.566",
+          "expect": "470816"
+        },
+        {
+          "qty": "12.019",
+          "rate": "33595",
+          "discountKind": "amount",
+          "discount": "4945",
+          "expect": "398833"
+        },
+        {
+          "qty": "12.635",
+          "rate": "11780",
+          "discountKind": "amount",
+          "discount": "4247.79",
+          "expect": "144593"
+        }
+      ],
+      "expect": {
+        "subtotal": "2792190",
+        "tax": "530516",
+        "total": "3322706"
+      }
+    },
+    {
+      "name": "generated 02",
+      "currency": "CLP",
+      "taxRate": "22",
+      "lines": [
+        {
+          "qty": "33.1",
+          "rate": "67543",
+          "expect": "2235673"
+        }
+      ],
+      "expect": {
+        "subtotal": "2235673",
+        "tax": "491848",
+        "total": "2727521"
+      }
+    },
+    {
+      "name": "generated 03",
+      "currency": "BHD",
+      "taxRate": "13.7",
+      "lines": [
+        {
+          "qty": "33.8",
+          "rate": "145.057",
+          "discountKind": "amount",
+          "discount": "10",
+          "expect": "4892.927"
+        }
+      ],
+      "expect": {
+        "subtotal": "4892.927",
+        "tax": "670.331",
+        "total": "5563.258"
+      }
+    },
+    {
+      "name": "generated 04",
+      "currency": "JPY",
+      "taxRate": "5.255",
+      "lines": [
+        {
+          "qty": "9.7",
+          "rate": "56441",
+          "expect": "547478"
+        }
+      ],
+      "expect": {
+        "subtotal": "547478",
+        "tax": "28770",
+        "total": "576248"
+      }
+    },
+    {
+      "name": "generated 05",
+      "currency": "KWD",
+      "taxRate": "21.0",
+      "lines": [
+        {
+          "qty": "36",
+          "rate": "212.500",
+          "discountKind": "percent",
+          "discount": "12.9",
+          "expect": "6663.150"
+        },
+        {
+          "qty": "5.6",
+          "rate": "240.955",
+          "discountKind": "percent",
+          "discount": "17.376",
+          "expect": "1114.885"
+        },
+        {
+          "qty": "25",
+          "rate": "594.966",
+          "discountKind": "amount",
+          "discount": "44",
+          "expect": "14830.150"
+        }
+      ],
+      "expect": {
+        "subtotal": "22608.185",
+        "tax": "4747.719",
+        "total": "27355.904"
+      }
+    },
+    {
+      "name": "generated 06",
+      "currency": "GBP",
+      "taxRate": "2",
+      "lines": [
+        {
+          "qty": "15",
+          "rate": "439.82",
+          "expect": "6597.30"
+        }
+      ],
+      "expect": {
+        "subtotal": "6597.30",
+        "tax": "131.95",
+        "total": "6729.25"
+      }
+    },
+    {
+      "name": "generated 07",
+      "currency": "JPY",
+      "taxRate": "11.984",
+      "lines": [
+        {
+          "qty": "25.5",
+          "rate": "6957",
+          "discountKind": "amount",
+          "discount": "3621.082",
+          "expect": "173782"
+        },
+        {
+          "qty": "30.5",
+          "rate": "2678",
+          "discountKind": "amount",
+          "discount": "1323",
+          "expect": "80356"
+        },
+        {
+          "qty": "31.3",
+          "rate": "74782",
+          "expect": "2340677"
+        }
+      ],
+      "expect": {
+        "subtotal": "2594815",
+        "tax": "310963",
+        "total": "2905778"
+      }
+    },
+    {
+      "name": "generated 08",
+      "currency": "BHD",
+      "taxRate": "17.7",
+      "lines": [
+        {
+          "qty": "5.925",
+          "rate": "707.700",
+          "expect": "4193.123"
+        }
+      ],
+      "expect": {
+        "subtotal": "4193.123",
+        "tax": "742.183",
+        "total": "4935.306"
+      }
+    },
+    {
+      "name": "generated 09",
+      "currency": "GBP",
+      "taxRate": "18",
+      "lines": [
+        {
+          "qty": "25",
+          "rate": "814.87",
+          "expect": "20371.75"
+        }
+      ],
+      "expect": {
+        "subtotal": "20371.75",
+        "tax": "3666.92",
+        "total": "24038.67"
+      }
+    },
+    {
+      "name": "generated 10",
+      "currency": "CLP",
+      "taxRate": "9.1",
+      "lines": [
+        {
+          "qty": "19",
+          "rate": "61913",
+          "discountKind": "amount",
+          "discount": "3281.384",
+          "expect": "1173066"
+        }
+      ],
+      "expect": {
+        "subtotal": "1173066",
+        "tax": "106749",
+        "total": "1279815"
+      }
+    },
+    {
+      "name": "generated 11",
+      "currency": "EUR",
+      "taxRate": "11.165",
+      "lines": [
+        {
+          "qty": "32",
+          "rate": "192.57",
+          "discountKind": "amount",
+          "discount": "35",
+          "expect": "6127.24"
+        }
+      ],
+      "expect": {
+        "subtotal": "6127.24",
+        "tax": "684.11",
+        "total": "6811.35"
+      }
+    },
+    {
+      "name": "generated 12",
+      "currency": "EUR",
+      "taxRate": "4",
+      "lines": [
+        {
+          "qty": "2.629",
+          "rate": "505.60",
+          "discountKind": "percent",
+          "discount": "17.1",
+          "expect": "1101.93"
+        },
+        {
+          "qty": "29",
+          "rate": "495.30",
+          "discountKind": "amount",
+          "discount": "1.68",
+          "expect": "14362.02"
+        }
+      ],
+      "expect": {
+        "subtotal": "15463.95",
+        "tax": "618.56",
+        "total": "16082.51"
+      }
+    },
+    {
+      "name": "generated 13",
+      "currency": "ISK",
+      "taxRate": "15.8",
+      "lines": [
+        {
+          "qty": "28.135",
+          "rate": "5076",
+          "discountKind": "percent",
+          "discount": "31.9",
+          "expect": "97256"
+        },
+        {
+          "qty": "39",
+          "rate": "32433",
+          "discountKind": "percent",
+          "discount": "37",
+          "expect": "796879"
+        }
+      ],
+      "expect": {
+        "subtotal": "894135",
+        "tax": "141273",
+        "total": "1035408"
+      }
+    },
+    {
+      "name": "generated 14",
+      "currency": "JPY",
+      "taxRate": "11",
+      "lines": [
+        {
+          "qty": "18.591",
+          "rate": "28329",
+          "discountKind": "amount",
+          "discount": "4287",
+          "expect": "522377"
+        }
+      ],
+      "expect": {
+        "subtotal": "522377",
+        "tax": "57461",
+        "total": "579838"
+      }
+    },
+    {
+      "name": "generated 15",
+      "currency": "JPY",
+      "taxRate": "20.1",
+      "lines": [
+        {
+          "qty": "14",
+          "rate": "45565",
+          "expect": "637910"
+        }
+      ],
+      "expect": {
+        "subtotal": "637910",
+        "tax": "128220",
+        "total": "766130"
+      }
+    },
+    {
+      "name": "generated 16",
+      "currency": "ISK",
+      "taxRate": "21.4",
+      "lines": [
+        {
+          "qty": "25",
+          "rate": "47539",
+          "discountKind": "amount",
+          "discount": "1144.806",
+          "expect": "1187330"
+        },
+        {
+          "qty": "1",
+          "rate": "41143",
+          "discountKind": "amount",
+          "discount": "3098",
+          "expect": "38045"
+        }
+      ],
+      "expect": {
+        "subtotal": "1225375",
+        "tax": "262230",
+        "total": "1487605"
+      }
+    },
+    {
+      "name": "generated 17",
+      "currency": "ISK",
+      "taxRate": "16",
+      "lines": [
+        {
+          "qty": "18.2",
+          "rate": "43969",
+          "discountKind": "amount",
+          "discount": "4478.24",
+          "expect": "795758"
+        },
+        {
+          "qty": "14.910",
+          "rate": "82140",
+          "expect": "1224707"
+        },
+        {
+          "qty": "12.7",
+          "rate": "19154",
+          "expect": "243256"
+        },
+        {
+          "qty": "9.997",
+          "rate": "77286",
+          "expect": "772628"
+        }
+      ],
+      "expect": {
+        "subtotal": "3036349",
+        "tax": "485816",
+        "total": "3522165"
+      }
+    },
+    {
+      "name": "generated 18",
+      "currency": "ISK",
+      "taxRate": "9",
+      "lines": [
+        {
+          "qty": "10.523",
+          "rate": "63428",
+          "expect": "667453"
+        },
+        {
+          "qty": "8",
+          "rate": "8723",
+          "discountKind": "percent",
+          "discount": "26.047",
+          "expect": "51607"
+        },
+        {
+          "qty": "13.194",
+          "rate": "15264",
+          "discountKind": "percent",
+          "discount": "15.0",
+          "expect": "171184"
+        }
+      ],
+      "expect": {
+        "subtotal": "890244",
+        "tax": "80122",
+        "total": "970366"
+      }
+    },
+    {
+      "name": "generated 19",
+      "currency": "USD",
+      "taxRate": "3",
+      "lines": [
+        {
+          "qty": "8.124",
+          "rate": "824.61",
+          "expect": "6699.13"
+        }
+      ],
+      "expect": {
+        "subtotal": "6699.13",
+        "tax": "200.97",
+        "total": "6900.10"
+      }
+    },
+    {
+      "name": "generated 20",
+      "currency": "OMR",
+      "taxRate": "13.7",
+      "lines": [
+        {
+          "qty": "19.7",
+          "rate": "476.891",
+          "discountKind": "percent",
+          "discount": "24",
+          "expect": "7140.012"
+        }
+      ],
+      "expect": {
+        "subtotal": "7140.012",
+        "tax": "978.182",
+        "total": "8118.194"
+      }
+    },
+    {
+      "name": "generated 21",
+      "currency": "KWD",
+      "taxRate": "5.183",
+      "lines": [
+        {
+          "qty": "14.6",
+          "rate": "382.613",
+          "discountKind": "percent",
+          "discount": "11.9",
+          "expect": "4921.398"
+        },
+        {
+          "qty": "33.906",
+          "rate": "381.422",
+          "discountKind": "amount",
+          "discount": "28.43",
+          "expect": "12904.064"
+        },
+        {
+          "qty": "24",
+          "rate": "450.065",
+          "discountKind": "percent",
+          "discount": "1",
+          "expect": "10693.544"
+        }
+      ],
+      "expect": {
+        "subtotal": "28519.006",
+        "tax": "1478.140",
+        "total": "29997.146"
+      }
+    },
+    {
+      "name": "generated 22",
+      "currency": "JPY",
+      "taxRate": "21",
+      "lines": [
+        {
+          "qty": "29.778",
+          "rate": "89588",
+          "discountKind": "amount",
+          "discount": "386.738",
+          "expect": "2667365"
+        }
+      ],
+      "expect": {
+        "subtotal": "2667365",
+        "tax": "560147",
+        "total": "3227512"
+      }
+    },
+    {
+      "name": "generated 23",
+      "currency": "EUR",
+      "taxRate": "2.4",
+      "lines": [
+        {
+          "qty": "6.1",
+          "rate": "809.75",
+          "expect": "4939.48"
+        },
+        {
+          "qty": "3",
+          "rate": "833.51",
+          "discountKind": "percent",
+          "discount": "4.3",
+          "expect": "2393.01"
+        },
+        {
+          "qty": "23.5",
+          "rate": "814.95",
+          "expect": "19151.33"
+        },
+        {
+          "qty": "15",
+          "rate": "98.54",
+          "discountKind": "percent",
+          "discount": "39.698",
+          "expect": "891.32"
+        }
+      ],
+      "expect": {
+        "subtotal": "27375.14",
+        "tax": "657.00",
+        "total": "28032.14"
+      }
+    },
+    {
+      "name": "generated 24",
+      "currency": "USD",
+      "taxRate": "19.0",
+      "lines": [
+        {
+          "qty": "37.6",
+          "rate": "299.14",
+          "expect": "11247.66"
+        },
+        {
+          "qty": "7",
+          "rate": "898.87",
+          "expect": "6292.09"
+        },
+        {
+          "qty": "14.516",
+          "rate": "398.08",
+          "discountKind": "percent",
+          "discount": "13",
+          "expect": "5027.32"
+        },
+        {
+          "qty": "17.311",
+          "rate": "454.62",
+          "discountKind": "percent",
+          "discount": "19.124",
+          "expect": "6364.88"
+        }
+      ],
+      "expect": {
+        "subtotal": "28931.95",
+        "tax": "5497.07",
+        "total": "34429.02"
+      }
+    },
+    {
+      "name": "generated 25",
+      "currency": "CLP",
+      "taxRate": "1",
+      "lines": [
+        {
+          "qty": "25.5",
+          "rate": "8365",
+          "expect": "213308"
+        },
+        {
+          "qty": "31.5",
+          "rate": "22065",
+          "discountKind": "amount",
+          "discount": "2070.81",
+          "expect": "692977"
+        },
+        {
+          "qty": "13",
+          "rate": "37587",
+          "expect": "488631"
+        },
+        {
+          "qty": "5",
+          "rate": "25697",
+          "discountKind": "percent",
+          "discount": "23.2",
+          "expect": "98676"
+        }
+      ],
+      "expect": {
+        "subtotal": "1493592",
+        "tax": "14936",
+        "total": "1508528"
+      }
+    },
+    {
+      "name": "generated 26",
+      "currency": "EUR",
+      "taxRate": "11",
+      "lines": [
+        {
+          "qty": "5.713",
+          "rate": "862.86",
+          "discountKind": "amount",
+          "discount": "8.21",
+          "expect": "4921.31"
+        },
+        {
+          "qty": "6.5",
+          "rate": "648.32",
+          "discountKind": "amount",
+          "discount": "35.920",
+          "expect": "4178.16"
+        }
+      ],
+      "expect": {
+        "subtotal": "9099.47",
+        "tax": "1000.94",
+        "total": "10100.41"
+      }
+    },
+    {
+      "name": "generated 27",
+      "currency": "GBP",
+      "taxRate": "6",
+      "lines": [
+        {
+          "qty": "35.7",
+          "rate": "121.15",
+          "discountKind": "percent",
+          "discount": "12",
+          "expect": "3806.05"
+        },
+        {
+          "qty": "6.086",
+          "rate": "708.14",
+          "discountKind": "amount",
+          "discount": "28.473",
+          "expect": "4281.27"
+        },
+        {
+          "qty": "12.623",
+          "rate": "824.47",
+          "discountKind": "percent",
+          "discount": "3.922",
+          "expect": "9999.11"
+        }
+      ],
+      "expect": {
+        "subtotal": "18086.43",
+        "tax": "1085.19",
+        "total": "19171.62"
+      }
+    },
+    {
+      "name": "generated 28",
+      "currency": "GBP",
+      "taxRate": "0.5",
+      "lines": [
+        {
+          "qty": "20.695",
+          "rate": "856.36",
+          "discountKind": "percent",
+          "discount": "18",
+          "expect": "14532.34"
+        },
+        {
+          "qty": "1.9",
+          "rate": "302.61",
+          "discountKind": "percent",
+          "discount": "1",
+          "expect": "569.21"
+        }
+      ],
+      "expect": {
+        "subtotal": "15101.55",
+        "tax": "75.51",
+        "total": "15177.06"
+      }
+    },
+    {
+      "name": "generated 29",
+      "currency": "GBP",
+      "taxRate": "4",
+      "lines": [
+        {
+          "qty": "2.833",
+          "rate": "792.87",
+          "discountKind": "amount",
+          "discount": "22",
+          "expect": "2224.20"
+        },
+        {
+          "qty": "29",
+          "rate": "660.12",
+          "discountKind": "percent",
+          "discount": "26",
+          "expect": "14166.18"
+        },
+        {
+          "qty": "20.5",
+          "rate": "897.64",
+          "discountKind": "amount",
+          "discount": "9",
+          "expect": "18392.62"
+        }
+      ],
+      "expect": {
+        "subtotal": "34783.00",
+        "tax": "1391.32",
+        "total": "36174.32"
+      }
+    },
+    {
+      "name": "generated 30",
+      "currency": "CLP",
+      "taxRate": "16.309",
+      "lines": [
+        {
+          "qty": "38.365",
+          "rate": "55811",
+          "expect": "2141189"
+        },
+        {
+          "qty": "33.284",
+          "rate": "27811",
+          "discountKind": "amount",
+          "discount": "2453.33",
+          "expect": "923208"
+        },
+        {
+          "qty": "38.1",
+          "rate": "36606",
+          "discountKind": "amount",
+          "discount": "3107.559",
+          "expect": "1391581"
+        }
+      ],
+      "expect": {
+        "subtotal": "4455978",
+        "tax": "726725",
+        "total": "5182703"
+      }
+    },
+    {
+      "name": "generated 31",
+      "currency": "USD",
+      "taxRate": "3",
+      "lines": [
+        {
+          "qty": "16",
+          "rate": "67.37",
+          "discountKind": "percent",
+          "discount": "36.8",
+          "expect": "681.25"
+        },
+        {
+          "qty": "8.6",
+          "rate": "235.08",
+          "discountKind": "amount",
+          "discount": "47",
+          "expect": "1974.69"
+        }
+      ],
+      "expect": {
+        "subtotal": "2655.94",
+        "tax": "79.68",
+        "total": "2735.62"
+      }
+    },
+    {
+      "name": "generated 32",
+      "currency": "GBP",
+      "taxRate": "16.4",
+      "lines": [
+        {
+          "qty": "32",
+          "rate": "221.10",
+          "discountKind": "amount",
+          "discount": "44",
+          "expect": "7031.20"
+        },
+        {
+          "qty": "12.2",
+          "rate": "292.32",
+          "discountKind": "percent",
+          "discount": "18.679",
+          "expect": "2900.15"
+        },
+        {
+          "qty": "35.084",
+          "rate": "26.07",
+          "expect": "914.64"
+        },
+        {
+          "qty": "23.8",
+          "rate": "22.17",
+          "expect": "527.65"
+        }
+      ],
+      "expect": {
+        "subtotal": "11373.64",
+        "tax": "1865.28",
+        "total": "13238.92"
+      }
+    },
+    {
+      "name": "generated 33",
+      "currency": "ISK",
+      "taxRate": "5.5",
+      "lines": [
+        {
+          "qty": "0.6",
+          "rate": "27660",
+          "discountKind": "amount",
+          "discount": "1402",
+          "expect": "15194"
+        },
+        {
+          "qty": "1",
+          "rate": "34531",
+          "discountKind": "percent",
+          "discount": "13.367",
+          "expect": "29915"
+        }
+      ],
+      "expect": {
+        "subtotal": "45109",
+        "tax": "2481",
+        "total": "47590"
+      }
+    },
+    {
+      "name": "generated 34",
+      "currency": "OMR",
+      "taxRate": "17.937",
+      "lines": [
+        {
+          "qty": "30.7",
+          "rate": "722.179",
+          "discountKind": "percent",
+          "discount": "25.552",
+          "expect": "16505.788"
+        }
+      ],
+      "expect": {
+        "subtotal": "16505.788",
+        "tax": "2960.643",
+        "total": "19466.431"
+      }
+    },
+    {
+      "name": "generated 35",
+      "currency": "OMR",
+      "taxRate": "7.2",
+      "lines": [
+        {
+          "qty": "29",
+          "rate": "469.268",
+          "discountKind": "amount",
+          "discount": "37.15",
+          "expect": "13571.622"
+        },
+        {
+          "qty": "28",
+          "rate": "276.131",
+          "discountKind": "percent",
+          "discount": "33.9",
+          "expect": "5110.633"
+        }
+      ],
+      "expect": {
+        "subtotal": "18682.255",
+        "tax": "1345.122",
+        "total": "20027.377"
+      }
+    },
+    {
+      "name": "generated 36",
+      "currency": "JPY",
+      "taxRate": "4",
+      "lines": [
+        {
+          "qty": "8.892",
+          "rate": "5976",
+          "discountKind": "percent",
+          "discount": "20.547",
+          "expect": "42220"
+        }
+      ],
+      "expect": {
+        "subtotal": "42220",
+        "tax": "1689",
+        "total": "43909"
+      }
+    },
+    {
+      "name": "generated 37",
+      "currency": "KWD",
+      "taxRate": "9",
+      "lines": [
+        {
+          "qty": "18.779",
+          "rate": "56.689",
+          "expect": "1064.563"
+        }
+      ],
+      "expect": {
+        "subtotal": "1064.563",
+        "tax": "95.811",
+        "total": "1160.374"
+      }
+    },
+    {
+      "name": "generated 38",
+      "currency": "KWD",
+      "taxRate": "19.7",
+      "lines": [
+        {
+          "qty": "3.8",
+          "rate": "737.626",
+          "expect": "2802.979"
+        }
+      ],
+      "expect": {
+        "subtotal": "2802.979",
+        "tax": "552.187",
+        "total": "3355.166"
+      }
+    },
+    {
+      "name": "generated 39",
+      "currency": "CLP",
+      "taxRate": "8",
+      "lines": [
+        {
+          "qty": "36",
+          "rate": "73795",
+          "discountKind": "amount",
+          "discount": "133.510",
+          "expect": "2656486"
+        },
+        {
+          "qty": "5",
+          "rate": "65851",
+          "discountKind": "percent",
+          "discount": "10.611",
+          "expect": "294318"
+        }
+      ],
+      "expect": {
+        "subtotal": "2950804",
+        "tax": "236064",
+        "total": "3186868"
+      }
+    },
+    {
+      "name": "generated 40",
+      "currency": "CLP",
+      "taxRate": "23.589",
+      "lines": [
+        {
+          "qty": "24",
+          "rate": "79321",
+          "expect": "1903704"
+        }
+      ],
+      "expect": {
+        "subtotal": "1903704",
+        "tax": "449065",
+        "total": "2352769"
+      }
+    },
+    {
+      "name": "generated 41",
+      "currency": "BHD",
+      "taxRate": "18.6",
+      "lines": [
+        {
+          "qty": "22",
+          "rate": "705.313",
+          "discountKind": "percent",
+          "discount": "29",
+          "expect": "11016.989"
+        },
+        {
+          "qty": "4.6",
+          "rate": "216.478",
+          "expect": "995.799"
+        }
+      ],
+      "expect": {
+        "subtotal": "12012.788",
+        "tax": "2234.379",
+        "total": "14247.167"
+      }
+    },
+    {
+      "name": "generated 42",
+      "currency": "USD",
+      "taxRate": "8.1",
+      "lines": [
+        {
+          "qty": "32.0",
+          "rate": "778.05",
+          "discountKind": "percent",
+          "discount": "25.820",
+          "expect": "18469.04"
+        }
+      ],
+      "expect": {
+        "subtotal": "18469.04",
+        "tax": "1495.99",
+        "total": "19965.03"
+      }
+    },
+    {
+      "name": "generated 43",
+      "currency": "ISK",
+      "taxRate": "7.260",
+      "lines": [
+        {
+          "qty": "0",
+          "rate": "70117",
+          "discountKind": "amount",
+          "discount": "1324.67",
+          "expect": "0"
+        },
+        {
+          "qty": "33.964",
+          "rate": "85197",
+          "discountKind": "amount",
+          "discount": "2786.75",
+          "expect": "2890844"
+        },
+        {
+          "qty": "24.8",
+          "rate": "22171",
+          "discountKind": "amount",
+          "discount": "2962",
+          "expect": "546879"
+        },
+        {
+          "qty": "39.4",
+          "rate": "27901",
+          "discountKind": "amount",
+          "discount": "3087.49",
+          "expect": "1096212"
+        }
+      ],
+      "expect": {
+        "subtotal": "4533935",
+        "tax": "329164",
+        "total": "4863099"
+      }
+    },
+    {
+      "name": "generated 44",
+      "currency": "ISK",
+      "taxRate": "2",
+      "lines": [
+        {
+          "qty": "10.9",
+          "rate": "87245",
+          "discountKind": "percent",
+          "discount": "18",
+          "expect": "779796"
+        },
+        {
+          "qty": "17",
+          "rate": "67745",
+          "discountKind": "amount",
+          "discount": "4987",
+          "expect": "1146678"
+        },
+        {
+          "qty": "18.2",
+          "rate": "77387",
+          "discountKind": "amount",
+          "discount": "4239.75",
+          "expect": "1404204"
+        }
+      ],
+      "expect": {
+        "subtotal": "3330678",
+        "tax": "66614",
+        "total": "3397292"
+      }
+    },
+    {
+      "name": "generated 45",
+      "currency": "OMR",
+      "taxRate": "10.6",
+      "lines": [
+        {
+          "qty": "19",
+          "rate": "573.362",
+          "expect": "10893.878"
+        },
+        {
+          "qty": "25.188",
+          "rate": "431.169",
+          "discountKind": "percent",
+          "discount": "9.961",
+          "expect": "9778.492"
+        }
+      ],
+      "expect": {
+        "subtotal": "20672.370",
+        "tax": "2191.271",
+        "total": "22863.641"
+      }
+    },
+    {
+      "name": "generated 46",
+      "currency": "JPY",
+      "taxRate": "6",
+      "lines": [
+        {
+          "qty": "36.9",
+          "rate": "69460",
+          "expect": "2563074"
+        },
+        {
+          "qty": "33.8",
+          "rate": "61157",
+          "discountKind": "amount",
+          "discount": "4159.403",
+          "expect": "2062947"
+        },
+        {
+          "qty": "10",
+          "rate": "48266",
+          "discountKind": "percent",
+          "discount": "16",
+          "expect": "405434"
+        }
+      ],
+      "expect": {
+        "subtotal": "5031455",
+        "tax": "301887",
+        "total": "5333342"
+      }
+    },
+    {
+      "name": "generated 47",
+      "currency": "CLP",
+      "taxRate": "24",
+      "lines": [
+        {
+          "qty": "29",
+          "rate": "42358",
+          "expect": "1228382"
+        },
+        {
+          "qty": "31.063",
+          "rate": "30930",
+          "discountKind": "amount",
+          "discount": "4629.76",
+          "expect": "956149"
+        },
+        {
+          "qty": "19",
+          "rate": "19192",
+          "discountKind": "percent",
+          "discount": "9",
+          "expect": "331830"
+        }
+      ],
+      "expect": {
+        "subtotal": "2516361",
+        "tax": "603927",
+        "total": "3120288"
+      }
+    },
+    {
+      "name": "generated 48",
+      "currency": "BHD",
+      "taxRate": "1.5",
+      "lines": [
+        {
+          "qty": "18.329",
+          "rate": "673.092",
+          "discountKind": "amount",
+          "discount": "36.023",
+          "expect": "12301.080"
+        }
+      ],
+      "expect": {
+        "subtotal": "12301.080",
+        "tax": "184.516",
+        "total": "12485.596"
+      }
+    },
+    {
+      "name": "generated 49",
+      "currency": "CLP",
+      "taxRate": "11.474",
+      "lines": [
+        {
+          "qty": "33",
+          "rate": "69989",
+          "discountKind": "percent",
+          "discount": "12.0",
+          "expect": "2032481"
+        },
+        {
+          "qty": "38.892",
+          "rate": "51963",
+          "discountKind": "amount",
+          "discount": "1619.77",
+          "expect": "2019325"
+        },
+        {
+          "qty": "5",
+          "rate": "51811",
+          "discountKind": "percent",
+          "discount": "15.7",
+          "expect": "218383"
+        },
+        {
+          "qty": "35",
+          "rate": "66634",
+          "discountKind": "amount",
+          "discount": "881.009",
+          "expect": "2331309"
+        }
+      ],
+      "expect": {
+        "subtotal": "6601498",
+        "tax": "757456",
+        "total": "7358954"
+      }
+    },
+    {
+      "name": "generated 50",
+      "currency": "GBP",
+      "taxRate": "7.290",
+      "lines": [
+        {
+          "qty": "1",
+          "rate": "510.15",
+          "discountKind": "percent",
+          "discount": "9.5",
+          "expect": "461.69"
+        },
+        {
+          "qty": "26.125",
+          "rate": "896.13",
+          "discountKind": "amount",
+          "discount": "11",
+          "expect": "23400.40"
+        },
+        {
+          "qty": "0",
+          "rate": "419.10",
+          "expect": "0.00"
+        }
+      ],
+      "expect": {
+        "subtotal": "23862.09",
+        "tax": "1739.55",
+        "total": "25601.64"
+      }
+    },
+    {
+      "name": "generated 51",
+      "currency": "ISK",
+      "taxRate": "13.032",
+      "lines": [
+        {
+          "qty": "2.634",
+          "rate": "13776",
+          "discountKind": "amount",
+          "discount": "4347.363",
+          "expect": "31939"
+        },
+        {
+          "qty": "16.115",
+          "rate": "14856",
+          "discountKind": "percent",
+          "discount": "5.1",
+          "expect": "227195"
+        },
+        {
+          "qty": "36",
+          "rate": "15640",
+          "discountKind": "percent",
+          "discount": "26",
+          "expect": "416650"
+        },
+        {
+          "qty": "6.755",
+          "rate": "39063",
+          "discountKind": "amount",
+          "discount": "291.60",
+          "expect": "263579"
+        }
+      ],
+      "expect": {
+        "subtotal": "939363",
+        "tax": "122418",
+        "total": "1061781"
+      }
+    },
+    {
+      "name": "generated 52",
+      "currency": "OMR",
+      "taxRate": "12",
+      "lines": [
+        {
+          "qty": "15.8",
+          "rate": "525.433",
+          "expect": "8301.841"
+        }
+      ],
+      "expect": {
+        "subtotal": "8301.841",
+        "tax": "996.221",
+        "total": "9298.062"
+      }
+    },
+    {
+      "name": "generated 53",
+      "currency": "JPY",
+      "taxRate": "20.6",
+      "lines": [
+        {
+          "qty": "11.9",
+          "rate": "1201",
+          "expect": "14292"
+        }
+      ],
+      "expect": {
+        "subtotal": "14292",
+        "tax": "2944",
+        "total": "17236"
+      }
+    },
+    {
+      "name": "generated 54",
+      "currency": "GBP",
+      "taxRate": "8",
+      "lines": [
+        {
+          "qty": "1.579",
+          "rate": "246.31",
+          "discountKind": "amount",
+          "discount": "24",
+          "expect": "364.92"
+        },
+        {
+          "qty": "34.441",
+          "rate": "867.26",
+          "expect": "29869.30"
+        },
+        {
+          "qty": "6",
+          "rate": "499.90",
+          "discountKind": "percent",
+          "discount": "16.6",
+          "expect": "2501.50"
+        },
+        {
+          "qty": "3.2",
+          "rate": "202.47",
+          "expect": "647.90"
+        }
+      ],
+      "expect": {
+        "subtotal": "33383.62",
+        "tax": "2670.69",
+        "total": "36054.31"
+      }
+    },
+    {
+      "name": "generated 55",
+      "currency": "EUR",
+      "taxRate": "10",
+      "lines": [
+        {
+          "qty": "38.1",
+          "rate": "402.98",
+          "discountKind": "amount",
+          "discount": "44",
+          "expect": "15309.54"
+        }
+      ],
+      "expect": {
+        "subtotal": "15309.54",
+        "tax": "1530.95",
+        "total": "16840.49"
+      }
+    },
+    {
+      "name": "generated 56",
+      "currency": "ISK",
+      "taxRate": "6",
+      "lines": [
+        {
+          "qty": "37.859",
+          "rate": "11043",
+          "discountKind": "amount",
+          "discount": "839.43",
+          "expect": "417238"
+        }
+      ],
+      "expect": {
+        "subtotal": "417238",
+        "tax": "25034",
+        "total": "442272"
+      }
+    },
+    {
+      "name": "generated 57",
+      "currency": "EUR",
+      "taxRate": "17.733",
+      "lines": [
+        {
+          "qty": "2.7",
+          "rate": "369.54",
+          "discountKind": "percent",
+          "discount": "12.129",
+          "expect": "876.74"
+        },
+        {
+          "qty": "10.9",
+          "rate": "165.61",
+          "discountKind": "percent",
+          "discount": "13.274",
+          "expect": "1565.53"
+        },
+        {
+          "qty": "11.6",
+          "rate": "885.75",
+          "expect": "10274.70"
+        }
+      ],
+      "expect": {
+        "subtotal": "12716.97",
+        "tax": "2255.10",
+        "total": "14972.07"
+      }
+    },
+    {
+      "name": "generated 58",
+      "currency": "KWD",
+      "taxRate": "22.735",
+      "lines": [
+        {
+          "qty": "39.864",
+          "rate": "600.497",
+          "expect": "23938.212"
+        },
+        {
+          "qty": "7.3",
+          "rate": "379.872",
+          "expect": "2773.066"
+        },
+        {
+          "qty": "8",
+          "rate": "552.191",
+          "discountKind": "amount",
+          "discount": "13.674",
+          "expect": "4403.854"
+        }
+      ],
+      "expect": {
+        "subtotal": "31115.132",
+        "tax": "7074.025",
+        "total": "38189.157"
+      }
+    },
+    {
+      "name": "generated 59",
+      "currency": "CLP",
+      "taxRate": "21.2",
+      "lines": [
+        {
+          "qty": "25.2",
+          "rate": "51684",
+          "expect": "1302437"
+        },
+        {
+          "qty": "6.0",
+          "rate": "63682",
+          "discountKind": "percent",
+          "discount": "22.3",
+          "expect": "296885"
+        },
+        {
+          "qty": "31",
+          "rate": "9994",
+          "discountKind": "percent",
+          "discount": "6",
+          "expect": "291225"
+        }
+      ],
+      "expect": {
+        "subtotal": "1890547",
+        "tax": "400796",
+        "total": "2291343"
+      }
+    },
+    {
+      "name": "generated 60",
+      "currency": "OMR",
+      "taxRate": "15.461",
+      "lines": [
+        {
+          "qty": "21.8",
+          "rate": "887.254",
+          "expect": "19342.137"
+        },
+        {
+          "qty": "15.1",
+          "rate": "628.210",
+          "expect": "9485.971"
+        }
+      ],
+      "expect": {
+        "subtotal": "28828.108",
+        "tax": "4457.114",
+        "total": "33285.222"
+      }
+    }
+  ]
+}

@@ -32,7 +32,7 @@
  * `pdf-lib` and `jsPDF` are design errors here, not shortcuts.
  */
 
-import { widthOf, winAnsiByte, type FontWeight } from './helvetica.ts';
+import { CENTRAL_EUROPEAN_DIFFERENCES, centralEuropeanByte, widthOf, winAnsiByte, type FontWeight } from './helvetica.ts';
 
 /** ASCII text → bytes. For PDF syntax only: operators, dictionaries, numbers. */
 export function ascii(text: string): number[] {
@@ -54,6 +54,38 @@ export function literal(text: string): number[] {
   const out: number[] = [0x28];
   for (const character of text) {
     const byte = winAnsiByte(character);
+    if (byte === null) continue;
+    if (byte === 0x28 || byte === 0x29 || byte === 0x5c) out.push(0x5c);
+    out.push(byte);
+  }
+  out.push(0x29);
+  return out;
+}
+
+/** Which of the two faces a run of text is drawn in. */
+export type FontFace = 'winansi' | 'central';
+
+/**
+ * A string cut into runs, each drawable in one face: WinAnsi wherever a
+ * character has a WinAnsi byte, the Central European face for the letters
+ * only it has. Most strings are one WinAnsi run.
+ */
+export function runsOf(text: string): { face: FontFace; text: string }[] {
+  const runs: { face: FontFace; text: string }[] = [];
+  for (const character of text) {
+    const face: FontFace = winAnsiByte(character) === null && centralEuropeanByte(character) !== null ? 'central' : 'winansi';
+    const last = runs[runs.length - 1];
+    if (last !== undefined && last.face === face) last.text += character;
+    else runs.push({ face, text: character });
+  }
+  return runs;
+}
+
+/** A string literal in the Central European face — its bytes come from that face's own table. */
+export function centralLiteral(text: string): number[] {
+  const out: number[] = [0x28];
+  for (const character of text) {
+    const byte = centralEuropeanByte(character);
     if (byte === null) continue;
     if (byte === 0x28 || byte === 0x29 || byte === 0x5c) out.push(0x5c);
     out.push(byte);
@@ -109,6 +141,16 @@ export function writePdf(pages: readonly Page[]): Uint8Array {
   const firstStream = firstPage + pages.length;
   const regularFont = firstStream + pages.length;
   const boldFont = regularFont + 1;
+  // The Central European face is declared only when a page draws in it, so a
+  // WinAnsi document keeps exactly the objects it always had.
+  const central = pages.some((page) => usesCentralFace(page.stream));
+  const centralRegular = boldFont + 1;
+  const centralBold = boldFont + 2;
+  const fonts =
+    `/F1 ${String(regularFont)} 0 R/F2 ${String(boldFont)} 0 R` +
+    (central ? `/F3 ${String(centralRegular)} 0 R/F4 ${String(centralBold)} 0 R` : '');
+  const differences = CENTRAL_EUROPEAN_DIFFERENCES.map(([byte, glyph]) => `${String(byte)}/${glyph}`).join(' ');
+  const centralEncoding = `/Encoding<</Type/Encoding/BaseEncoding/WinAnsiEncoding/Differences[${differences}]>>`;
 
   const kids = pages.map((_, at) => `${String(firstPage + at)} 0 R`).join(' ');
 
@@ -118,7 +160,7 @@ export function writePdf(pages: readonly Page[]): Uint8Array {
     ...pages.map((page, at) =>
       ascii(
         `<</Type/Page/Parent 2 0 R/MediaBox[0 0 ${pt(page.widthPt)} ${pt(page.heightPt)}]` +
-          `/Resources<</Font<</F1 ${String(regularFont)} 0 R/F2 ${String(boldFont)} 0 R>>>>` +
+          `/Resources<</Font<<${fonts}>>>>` +
           `/Contents ${String(firstStream + at)} 0 R>>`,
       ),
     ),
@@ -129,6 +171,12 @@ export function writePdf(pages: readonly Page[]): Uint8Array {
     ]),
     ascii('<</Type/Font/Subtype/Type1/BaseFont/Helvetica/Encoding/WinAnsiEncoding>>'),
     ascii('<</Type/Font/Subtype/Type1/BaseFont/Helvetica-Bold/Encoding/WinAnsiEncoding>>'),
+    ...(central
+      ? [
+          ascii(`<</Type/Font/Subtype/Type1/BaseFont/Helvetica${centralEncoding}>>`),
+          ascii(`<</Type/Font/Subtype/Type1/BaseFont/Helvetica-Bold${centralEncoding}>>`),
+        ]
+      : []),
   ];
 
   const bytes: number[] = [...ascii('%PDF-1.4\n')];
@@ -155,8 +203,20 @@ export function writePdf(pages: readonly Page[]): Uint8Array {
 }
 
 /** Which `/F` name a weight maps to in the resource dictionary above. */
-export function fontName(weight: FontWeight): string {
+export function fontName(weight: FontWeight, face: FontFace = 'winansi'): string {
+  if (face === 'central') return weight === 'bold' ? '/F4' : '/F3';
   return weight === 'bold' ? '/F2' : '/F1';
+}
+
+/** Whether a content stream selects the Central European face (`/F3` or `/F4 … Tf`). */
+function usesCentralFace(stream: readonly number[]): boolean {
+  const needle = [0x2f, 0x46]; // "/F"
+  for (let at = 0; at + 3 < stream.length; at += 1) {
+    if (stream[at] !== needle[0] || stream[at + 1] !== needle[1]) continue;
+    const digit = stream[at + 2];
+    if ((digit === 0x33 || digit === 0x34) && stream[at + 3] === 0x20) return true;
+  }
+  return false;
 }
 
 export { widthOf };

@@ -19,7 +19,9 @@
  *                         wants the list.
  *   4. LATIN_ONLY       — checked over the LAID-OUT document, after the layout
  *                         and before a single byte is written, and only when
- *                         PDF was actually asked for.
+ *                         PDF was actually asked for. Asked for the PDF alone,
+ *                         it is the answer; asked for both, the print copy is
+ *                         returned without the PDF and a warning says so.
  *
  * Step 4's placement is the one worth defending. Checking earlier — over the
  * raw subject — would miss the words the layout itself contributes and would
@@ -45,6 +47,7 @@ import { undrawnCharacters } from './pdf/helvetica.ts';
 import { layout, type Document } from './render/layout.ts';
 import { renderHtml } from './render/html.ts';
 import { renderPdf } from './render/pdf.ts';
+import { formatsFor } from './render/format.ts';
 import { isRtl, wordsFor } from './render/words.ts';
 import { documentFrom, refuseSubject } from './subject.ts';
 
@@ -52,27 +55,42 @@ const KEY = 'invoices';
 
 /** Every string the finished document will draw, for the coverage check. */
 function drawnText(document: Document): string {
-  const parts: string[] = [];
+  const parts: string[] = [document.voidMark ?? ''];
   for (const block of document.blocks) {
     switch (block.kind) {
-      case 'heading':
-        parts.push(block.title, block.number);
+      case 'letterhead':
+        // The letter is drawn; the image is not (the PDF says so in a warning).
+        parts.push(block.name, block.letter, ...block.lines);
         break;
       case 'parties':
-        parts.push(block.fromLabel, block.toLabel, block.toName, ...block.from, ...block.to);
+        parts.push(block.toLabel, block.toName, ...block.toLines);
+        for (const row of block.meta) parts.push(row.label, row.value);
         break;
-      case 'facts':
-        for (const row of block.rows) parts.push(row.label, row.value);
+      case 'title':
+        parts.push(block.text);
         break;
       case 'items':
         for (const column of block.columns) parts.push(column.label);
-        for (const row of block.rows) parts.push(...row);
+        for (const row of block.rows) parts.push(...row.cells, row.note);
         break;
       case 'ladder':
         for (const row of block.rows) parts.push(row.label, row.value);
         break;
+      case 'ledger':
+        parts.push(block.heading, block.dueLabel, block.due);
+        for (const row of block.rows) parts.push(row.date, row.method, row.amount);
+        break;
+      case 'signed':
+        parts.push(block.heading, block.name, block.line);
+        break;
       case 'passage':
         parts.push(block.heading, ...block.lines);
+        break;
+      case 'foot':
+        parts.push(block.payLabel, block.footLabel, block.footText, ...block.payLines.map((line) => line.text));
+        break;
+      case 'signature':
+        parts.push(block.text);
         break;
     }
   }
@@ -134,28 +152,51 @@ export function renderSync(input: RenderInput): readonly RenderedDocument[] | Do
   const refusal = refuseSubject(input.kind, input.subject);
   if (refusal !== null) return refusal;
 
-  const { body, extras } = documentFrom(input.kind, input.subject, input.body);
+  const { body, extras, facts } = documentFrom(input.kind, input.subject, input.body, input.settings);
+  const words = wordsFor(input.subject.locale);
+  // Whether the document's own words can be drawn in the PDF's fonts at all:
+  // only then is an undrawable currency sign swapped for its code.
+  const latin = undrawnCharacters(Object.values(words).join('\n')).length === 0;
   const document = layout({
+    kind: input.kind,
     body,
     extras,
-    words: wordsFor(input.subject.locale),
+    facts,
+    words,
+    formats: formatsFor(input.subject.locale, facts.currency, { latin, cents: body.cents }),
     locale: input.subject.locale,
     rtl: isRtl(input.subject.locale),
+    authored: input.body !== undefined,
   });
 
+  // A statement is in no series: it is named by the day it runs to.
+  const fileNumber = input.kind === 'statement' ? (facts.statement.periodTo !== '' ? facts.statement.periodTo : facts.today) : body.number;
   const kind = kinds().find((entry) => entry.id === input.kind)!;
-  const formats = input.formats.filter((format) => kind.formats.includes(format));
+  let formats = input.formats.filter((format) => kind.formats.includes(format));
+  const warnings: string[] = [];
 
   if (formats.includes('pdf')) {
     const dropped = undrawnCharacters(drawnText(document));
     if (dropped.length > 0) {
-      return {
-        code: 'LATIN_ONLY',
-        detail:
-          'this add-on draws PDF in the base-14 fonts, which cover Latin scripts only; ' +
-          'the same document renders in HTML in every language',
-        dropped,
-      };
+      /*
+       * Asked for the PDF ALONE, the answer is the typed refusal, naming the
+       * glyphs (the contract's own case). Asked for both, the print copy is
+       * still a complete document in every language — so it is returned, and
+       * the missing PDF is said in the warning, in the document's language:
+       * "use Print and choose Save as PDF". A refusal of both would leave an
+       * Arabic or Chinese client with nothing to open.
+       */
+      if (!formats.includes('html')) {
+        return {
+          code: 'LATIN_ONLY',
+          detail:
+            'this add-on draws PDF in the base-14 fonts, which cover Latin scripts only; ' +
+            'the same document renders in HTML in every language',
+          dropped,
+        };
+      }
+      formats = formats.filter((format) => format !== 'pdf');
+      warnings.push(words.noPdf);
     }
   }
 
@@ -165,15 +206,15 @@ export function renderSync(input: RenderInput): readonly RenderedDocument[] | Do
       format === 'html'
         ? {
             format: 'html',
-            filename: filenameFor(input.kind, body.number, 'html'),
+            filename: filenameFor(input.kind, fileNumber, 'html'),
             mediaType: 'text/html; charset=utf-8',
             bytes: renderHtml(document, input.paper),
             locale: input.subject.locale,
-            warnings: [],
+            warnings,
           }
         : {
             format: 'pdf',
-            filename: filenameFor(input.kind, body.number, 'pdf'),
+            filename: filenameFor(input.kind, fileNumber, 'pdf'),
             mediaType: 'application/pdf',
             bytes: renderPdf(document, input.paper),
             locale: input.subject.locale,
@@ -183,12 +224,16 @@ export function renderSync(input: RenderInput): readonly RenderedDocument[] | Do
             // which is a runtime dependency this package refuses (25 D11).
             // So the letterhead is drawn as text, and the caller is TOLD,
             // rather than finding a missing mark on a printed invoice.
-            warnings:
-              body.logoImage === '' ? [] : ['the letterhead image is drawn in HTML only'],
+            warnings: imageIn(document) ? ['the letterhead image is drawn in HTML only'] : [],
           },
     );
   }
   return documents;
+}
+
+/** Whether the letterhead carries an image, which the HTML draws and the PDF cannot. */
+function imageIn(document: Document): boolean {
+  return document.blocks.some((block) => block.kind === 'letterhead' && block.image !== '');
 }
 
 export default new InvoiceDocumentRenderer();

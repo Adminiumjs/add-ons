@@ -146,7 +146,7 @@ describe('the invoices provider draws what it was asked for', () => {
     expect(page).not.toContain('Somebody Else Ltd');
   });
 
-  it('prints the total the money law computes, not one it was told', async () => {
+  it('prints the total the money law computes when no stored total is mapped', async () => {
     /*
      * 12 × 180.00 = 2160.00, 45 × 165.00 = 7425.00, 12 × 210.00 = 2520.00 →
      * subtotal 12105.00; less 10% = 1210.50 → 10894.50; tax 20% = 2178.90 →
@@ -163,10 +163,13 @@ describe('the invoices provider draws what it was asked for', () => {
     });
     if (isDocumentError(outcome)) throw new Error(JSON.stringify(outcome));
     const page = html(outcome[0]!.bytes);
-    expect(page).toContain('EUR12,105.00');
-    expect(page).toContain('−EUR1,210.50');
-    expect(page).toContain('EUR2,178.90');
-    expect(page).toContain('EUR13,073.40');
+    // The sign is the currency's own, from `Intl` in the document's language —
+    // never the code typed in front of the figure.
+    expect(page).toContain('€12,105.00');
+    expect(page).toContain('-€1,210.50');
+    expect(page).toContain('€2,178.90');
+    expect(page).toContain('€13,073.40');
+    expect(page).not.toContain('EUR');
   });
 
   it('names every unmapped required column, not just the first', async () => {
@@ -293,7 +296,8 @@ describe('the invoices provider draws what it was asked for', () => {
 
     const pdf = LATIN1.decode(outcome[0]!.bytes);
     expect(pdf).toContain('(Müller & Söhne)');
-    expect(pdf).toContain('(INVOICE)');
+    // A mapping with no template is headed by the kind's own name.
+    expect(pdf).toContain('(Invoice)');
     expect(pdf).toContain('(Design system audit)');
     // The ampersand is NOT escaped in a PDF string literal — only `(`, `)`
     // and the backslash are. An HTML-shaped escape leaking in here would show
@@ -332,7 +336,7 @@ describe('the invoices provider draws what it was asked for', () => {
     expect(isDocumentError(outcome)).toBe(false);
   });
 
-  it('gives every kind a filename carrying its number', async () => {
+  it('gives every kind a filename carrying its number, and a statement its day', async () => {
     for (const kind of provider.kinds()) {
       const outcome = await provider.render({
         kind: kind.id,
@@ -343,7 +347,9 @@ describe('the invoices provider draws what it was asked for', () => {
       });
       if (isDocumentError(outcome)) throw new Error(`${kind.id}: ${JSON.stringify(outcome)}`);
       for (const document of outcome) {
-        expect(document.filename).toBe(`${kind.id}-INV-1042.${document.format}`);
+        // A statement is in no series; it is named by the day it runs to.
+        const number = kind.id === 'statement' ? '2026-09-10' : 'INV-1042';
+        expect(document.filename).toBe(`${kind.id}-${number}.${document.format}`);
       }
     }
   });

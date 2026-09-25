@@ -83,9 +83,17 @@ describe('the manifest', () => {
     expect(NEVER_IN_A_BROWSER).toEqual([]);
   });
 
-  it('puts every setting in publicSettings, because none of them is private', () => {
-    const declared = manifest.settings.map((setting) => setting.key).sort();
-    expect([...manifest.addOn.publicSettings].sort()).toEqual(declared);
+  it('makes public only the five settings an app’s staff screens are given', () => {
+    // The name, the tax name, how to pay, the footer and whether to list the
+    // payments — what an app built on the shapes shows its own staff. None is
+    // a secret (above), and the payment instructions still never reach a
+    // public page: a client reads them through a signed-in read, never the
+    // open customer config.
+    expect([...manifest.addOn.publicSettings].sort()).toEqual(
+      ['business_name', 'footer', 'payment_instructions', 'show_payment_ledger', 'tax_name'].sort(),
+    );
+    const declared = manifest.settings.map((setting) => setting.key);
+    for (const key of manifest.addOn.publicSettings) expect(declared).toContain(key);
   });
 
   it('ships defaults for exactly the settings it declares', () => {
@@ -97,18 +105,32 @@ describe('the manifest', () => {
     );
   });
 
-  it('has NO tax_rate setting, and that is a decision (D20)', () => {
+  it('has a DEFAULT tax rate, copied at create, and no rate a document is drawn with', () => {
     /*
-     * A rate held as a workspace setting would change every already-issued
-     * document the day somebody edited it — or, if it did not, the setting and
-     * the documents would disagree with nothing to say which is right. A rate
-     * is a mapped column or a per-profile override. `tax_label` — the WORD on
-     * the line — is a setting, because renaming a line changes nothing anybody
-     * owes.
+     * A rate held as a workspace setting and READ AT RENDER would change every
+     * already-issued document the day somebody edited it. So the setting is
+     * `default_tax_rate`: the invoice shape copies it onto a document when the
+     * document is created (after the client's own rate, when the app keeps
+     * one), the document keeps its own `tax_rate` from then on, and the
+     * renderer prints the document's. There is still no `tax_rate` setting.
      */
     const keys = manifest.settings.map((setting) => setting.key);
     expect(keys).not.toContain('tax_rate');
+    expect(keys).toContain('default_tax_rate');
     expect(keys).toContain('tax_label');
+  });
+
+  it('keeps every key an install may have saved, and drops only the one nothing read', () => {
+    const keys = manifest.settings.map((setting) => setting.key);
+    for (const kept of ['business_name', 'business_lines', 'logo_data_url', 'terms', 'tax_label', 'paper', 'default_formats', 'entities']) {
+      expect(keys).toContain(kept);
+    }
+    // Numbering is per series now; the one prefix nothing ever numbered by is gone.
+    expect(keys).not.toContain('number_prefix');
+    for (const series of ['invoice', 'receipt', 'quote']) {
+      expect(keys).toContain(`prefix_${series}`);
+      expect(keys).toContain(`number_start_${series}`);
+    }
   });
 
   it('gives every setting a label AND the sentence under it', () => {
@@ -128,8 +150,9 @@ describe('the manifest', () => {
     expect(INERT_ORIGINS).toEqual([]);
   });
 
-  it('brings no schema of its own (D5)', () => {
-    // It renders from the deployment's tables and stores nothing.
+  it('brings no schema of its own — its shapes are built in the apps\' tables', () => {
+    // It renders from the deployment's tables and stores nothing. The shapes
+    // (`addOn.shapes`) describe tables an APP creates under its own names.
     expect(manifest).not.toHaveProperty('requiredSchema');
   });
 
@@ -158,12 +181,13 @@ describe('the manifest’s entry points are the files the build writes', () => {
 });
 
 describe('the manifest and the provider agree about what it draws', () => {
-  it('declares one contract and the provider lists three kinds under it', () => {
-    // The count that catches a provider quietly losing a kind: three is what
+  it('declares one contract and the provider lists five kinds under it', () => {
+    // The count that catches a provider quietly losing a kind: five is what
     // `kinds.ts` documents as the number of distinct MAPPING shapes — money
-    // owed, money received, money returned — not the twelve starters, which
-    // are template presets (34 O28(b) → D54).
-    expect(kinds().map((kind) => kind.id)).toEqual(['invoice', 'receipt', 'credit-note']);
+    // owed, money received, money returned, money offered, and one client's
+    // account over a period — not the twelve starters, which are template
+    // presets.
+    expect(kinds().map((kind) => kind.id)).toEqual(['invoice', 'receipt', 'credit-note', 'quote', 'statement']);
   });
 
   it('draws every kind in both formats, unlike the other implementer', () => {
@@ -182,5 +206,7 @@ describe('the manifest and the provider agree about what it draws', () => {
     expect(paper.receipt).toBe('receipt-80mm');
     expect(paper.invoice).toBe('a4');
     expect(paper['credit-note']).toBe('a4');
+    expect(paper.quote).toBe('a4');
+    expect(paper.statement).toBe('a4');
   });
 });

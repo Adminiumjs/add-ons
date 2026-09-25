@@ -6,9 +6,10 @@ import {
   undrawnCharacters,
   widthOf,
   winAnsiByte,
+  centralEuropeanByte,
 } from './helvetica.ts';
 import { box, paragraph, rule, text, textRight, wrap } from './primitives.ts';
-import { ascii, literal, writePdf, type Page } from './writer.ts';
+import { ascii, literal, runsOf, writePdf, type Page } from './writer.ts';
 
 const LATIN1 = new TextDecoder('latin1');
 const FRAME = { widthPt: 595, heightPt: 842 };
@@ -262,3 +263,38 @@ describe('the primitives', () => {
     expect(ascii('BT /F1 11 Tf')).toEqual([...'BT /F1 11 Tf'].map((c) => c.charCodeAt(0)));
   });
 });
+
+describe('the Central European face', () => {
+  it('draws the Czech, Polish and Hungarian letters WinAnsi lacks', () => {
+    expect(undrawnCharacters('Částka k úhradě · Łódź · Győr · Dušan Šťastný')).toEqual([]);
+    expect(centralEuropeanByte('č')).not.toBeNull();
+    // A letter WinAnsi has stays in WinAnsi.
+    expect(centralEuropeanByte('é')).toBeNull();
+  });
+
+  it('advances an accented letter as its base letter, and ď as its own', () => {
+    expect(widthOf('č', 10)).toBeCloseTo(widthOf('c', 10), 6);
+    expect(widthOf('Ř', 10, 'bold')).toBeCloseTo(widthOf('R', 10, 'bold'), 6);
+    expect(widthOf('ď', 10)).toBeCloseTo(6.43, 6);
+  });
+
+  it('cuts a string into runs, one face each', () => {
+    expect(runsOf('Částka 5 Kč')).toEqual([
+      { face: 'central', text: 'Č' },
+      { face: 'winansi', text: 'ástka 5 K' },
+      { face: 'central', text: 'č' },
+    ]);
+  });
+
+  it('declares the second face only for a page that draws in it', () => {
+    const plain = LATIN1.decode(writePdf([onePage(text(FRAME, 40, 60, 'Müller', { sizePt: 11 }))]));
+    expect(plain).not.toContain('/F3');
+    const czech = writePdf([onePage(text(FRAME, 40, 60, 'Částka', { sizePt: 11 }))]);
+    const source = LATIN1.decode(czech);
+    expect(source).toContain('/F3 ');
+    expect(source).toContain('/Differences[33/Aogonek');
+    // Catalog, pages, one page, one stream, four fonts — and the table still walks.
+    expect(parseXrefBack(czech)).toHaveLength(8);
+  });
+});
+

@@ -41,6 +41,23 @@ function asSettings(value: RenderRequest['settings']): InvoiceSettings {
 }
 
 /**
+ * The settings back in the manifest's own key names — what the provider is
+ * handed on the server, so the page and the server draw from one shape.
+ */
+function settingValues(settings: InvoiceSettings): Readonly<Record<string, unknown>> {
+  return {
+    business_name: settings.businessName,
+    business_lines: settings.businessLines,
+    logo_data_url: settings.logoDataUrl,
+    tax_name: settings.taxName,
+    tax_number: settings.taxNumber,
+    payment_instructions: settings.paymentInstructions,
+    footer: settings.footer,
+    show_payment_ledger: settings.showPaymentLedger,
+  };
+}
+
+/**
  * Draw a document, synchronously, from a record in front of somebody.
  *
  * SYNCHRONOUS on purpose, where the contract's `render` is async: a button in
@@ -62,7 +79,14 @@ export function renderDocument(
         now: { iso: request.now.iso, timezone: request.now.timezone ?? 'UTC' },
         locale: request.locale ?? 'en-US',
         currency: request.currency ?? 'USD',
-        business: { name: settings.businessName, lines: settings.businessLines },
+        business: {
+          name: settings.businessName,
+          lines: settings.businessLines,
+          ...(settings.logoDataUrl === '' ? {} : { logoDataUrl: settings.logoDataUrl }),
+          ...(settings.taxNumber === '' ? {} : { taxNumber: settings.taxNumber }),
+          ...(settings.paymentInstructions === '' ? {} : { paymentInstructions: settings.paymentInstructions }),
+          ...(settings.footer === '' ? {} : { footer: settings.footer }),
+        },
         entity: null,
         number: null,
       },
@@ -91,7 +115,7 @@ export function renderDocument(
     subject,
     formats: settings.defaultFormats,
     paper: request.kind === 'receipt' ? 'receipt-80mm' : settings.paper,
-    settings: { tax_label: settings.taxLabel, terms: settings.terms },
+    settings: settingValues(settings),
   });
 }
 

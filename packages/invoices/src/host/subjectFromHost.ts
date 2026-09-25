@@ -47,7 +47,15 @@ export interface HostContext {
   readonly now: { readonly iso: string; readonly timezone: string };
   readonly locale: string;
   readonly currency: string;
-  readonly business: { readonly name: string; readonly lines: readonly string[] };
+  /** The letterhead; the last four are optional, as the contract's newer fields are. */
+  readonly business: {
+    readonly name: string;
+    readonly lines: readonly string[];
+    readonly logoDataUrl?: string;
+    readonly taxNumber?: string;
+    readonly paymentInstructions?: string;
+    readonly footer?: string;
+  };
   /** `null` where the host has no durable record yet — a till before a sale is saved. */
   readonly entity: DocumentSubject['entity'];
   /** `null` until the engine mints one. */
@@ -99,7 +107,9 @@ export function subjectFromHost(
     now: { iso: context.now.iso, timezone: context.now.timezone },
     locale: context.locale,
     currency: context.currency,
-    business: { name: context.business.name, lines: [...context.business.lines] },
+    // Spread rather than listed: the letterhead fields a newer contract adds
+    // ride through to the renderer, which reads each only when it is there.
+    business: { ...context.business, lines: [...context.business.lines] },
     entity: context.entity,
     number: context.number,
     fields: { ...mapping.fields },

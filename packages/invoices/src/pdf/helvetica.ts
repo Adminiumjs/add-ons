@@ -24,8 +24,10 @@
  * conformance suite asserts exactly that by rendering the same subject to HTML
  * and requiring it to succeed.
  *
- * The document languages this covers, at v1: English, German, French,
- * Spanish, Portuguese and Danish. The one it does not is Japanese, which the
+ * The document languages this covers: English, German, French, Spanish,
+ * Portuguese and Danish in WinAnsi, and — through the second, Central
+ * European face below — Czech, Polish, Slovak, Slovenian, Croatian, Hungarian
+ * and Romanian. The one it does not is Japanese, which the
  * surface makes a first-class document language (34 D49) — a `ja` document
  * gets HTML and a browser's own Save-as-PDF, and says so rather than
  * producing a page of blanks.
@@ -102,6 +104,67 @@ const TYPOGRAPHIC_EQUIVALENTS: Readonly<Record<string, string>> = {
 };
 
 /**
+ * ── THE CENTRAL EUROPEAN LETTERS: A SECOND ENCODING OF THE SAME FONT ──────
+ *
+ * WinAnsi has no č, ř, ě, ů — so a Czech invoice, whose every word is Latin,
+ * was refused a PDF like an Arabic one. Helvetica itself DOES carry these
+ * glyphs (the base-14 fonts cover the Adobe Latin set, which includes the
+ * Central European letters), so the writer declares Helvetica a second time
+ * with its own small encoding: a `/Differences` array that gives each of these
+ * glyphs a byte (from 0x21 up, in this table's order). A run of text made only
+ * of these letters is drawn in that face; everything else stays in WinAnsi.
+ * Czech, Polish, Slovak, Slovenian, Croatian, Hungarian and Romanian text then
+ * draws in the same two faces, with nothing embedded.
+ *
+ * The widths are Helvetica's for those glyphs: an accented letter advances as
+ * its base letter does, and the four written with an apostrophe-like caron
+ * (ď ť ľ Ľ) are the exceptions, carried as such.
+ */
+const CENTRAL_EUROPEAN_GLYPHS: readonly (readonly [string, string, number, number])[] = [
+  // character, glyph name, regular width, bold width
+  ['Ą', 'Aogonek', 667, 722], ['ą', 'aogonek', 556, 556],
+  ['Ă', 'Abreve', 667, 722], ['ă', 'abreve', 556, 556],
+  ['Ć', 'Cacute', 722, 722], ['ć', 'cacute', 500, 556],
+  ['Č', 'Ccaron', 722, 722], ['č', 'ccaron', 500, 556],
+  ['Ď', 'Dcaron', 722, 722], ['ď', 'dcaron', 643, 743],
+  ['Đ', 'Dcroat', 722, 722], ['đ', 'dcroat', 556, 611],
+  ['Ę', 'Eogonek', 667, 667], ['ę', 'eogonek', 556, 556],
+  ['Ě', 'Ecaron', 667, 667], ['ě', 'ecaron', 556, 556],
+  ['Ĺ', 'Lacute', 556, 611], ['ĺ', 'lacute', 222, 278],
+  ['Ľ', 'Lcaron', 556, 611], ['ľ', 'lcaron', 299, 400],
+  ['Ł', 'Lslash', 556, 611], ['ł', 'lslash', 222, 278],
+  ['Ń', 'Nacute', 722, 722], ['ń', 'nacute', 556, 611],
+  ['Ň', 'Ncaron', 722, 722], ['ň', 'ncaron', 556, 611],
+  ['Ő', 'Ohungarumlaut', 778, 778], ['ő', 'ohungarumlaut', 556, 611],
+  ['Ŕ', 'Racute', 722, 722], ['ŕ', 'racute', 333, 389],
+  ['Ř', 'Rcaron', 722, 722], ['ř', 'rcaron', 333, 389],
+  ['Ś', 'Sacute', 667, 667], ['ś', 'sacute', 500, 556],
+  ['Ş', 'Scedilla', 667, 667], ['ş', 'scedilla', 500, 556],
+  ['Ș', 'Scommaaccent', 667, 667], ['ș', 'scommaaccent', 500, 556],
+  ['Ť', 'Tcaron', 611, 611], ['ť', 'tcaron', 317, 389],
+  ['Ţ', 'Tcedilla', 611, 611], ['ţ', 'tcedilla', 278, 333],
+  ['Ț', 'Tcommaaccent', 611, 611], ['ț', 'tcommaaccent', 278, 333],
+  ['Ů', 'Uring', 722, 722], ['ů', 'uring', 556, 611],
+  ['Ű', 'Uhungarumlaut', 722, 722], ['ű', 'uhungarumlaut', 556, 611],
+  ['Ź', 'Zacute', 611, 611], ['ź', 'zacute', 500, 500],
+  ['Ż', 'Zdotaccent', 611, 611], ['ż', 'zdotaccent', 500, 500],
+];
+
+const CENTRAL_EUROPEAN: ReadonlyMap<string, { byte: number; glyph: string; regular: number; bold: number }> = new Map(
+  CENTRAL_EUROPEAN_GLYPHS.map(([character, glyph, regular, bold], at) => [character, { byte: 0x21 + at, glyph, regular, bold }]),
+);
+
+/** The byte a Central European letter has in the second face, or `null` when it is not one. */
+export function centralEuropeanByte(character: string): number | null {
+  return CENTRAL_EUROPEAN.get(character)?.byte ?? null;
+}
+
+/** The second face's encoding: WinAnsi, with these bytes given to these glyphs. */
+export const CENTRAL_EUROPEAN_DIFFERENCES: readonly (readonly [number, string])[] = CENTRAL_EUROPEAN_GLYPHS.map(
+  ([, glyph], at) => [0x21 + at, glyph] as const,
+);
+
+/**
  * The byte WinAnsiEncoding gives a character, or `null` when it draws none.
  *
  * `null` and not a fallback glyph, on purpose. A writer that substituted `?`
@@ -141,7 +204,7 @@ export function undrawnCharacters(text: string): readonly string[] {
   const dropped: string[] = [];
   for (const character of text) {
     if (character === '\n' || character === '\r' || character === '\t') continue;
-    if (winAnsiByte(character) !== null) continue;
+    if (winAnsiByte(character) !== null || centralEuropeanByte(character) !== null) continue;
     if (!dropped.includes(character)) dropped.push(character);
   }
   return dropped;
@@ -244,8 +307,12 @@ export function widthOf(text: string, sizePt: number, weight: FontWeight = 'regu
   let units = 0;
   for (const character of text) {
     const byte = winAnsiByte(character);
-    if (byte === null) continue;
-    units += table[byte] ?? 0;
+    if (byte !== null) {
+      units += table[byte] ?? 0;
+      continue;
+    }
+    const central = CENTRAL_EUROPEAN.get(character);
+    if (central !== undefined) units += weight === 'bold' ? central.bold : central.regular;
   }
   return (units * sizePt) / 1000;
 }

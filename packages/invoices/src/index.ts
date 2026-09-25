@@ -4,19 +4,22 @@
  *
  * ── WHAT THIS PACKAGE IS, IN ONE SENTENCE ──────────────────────────────────
  *
- * It turns a record into a document somebody can keep: an invoice, a receipt
- * or a credit note, drawn as a web page and — where the base-14 fonts can
- * draw the language — as a PDF, from values the host hands over and nothing
- * else.
+ * It turns a record into a document somebody can keep: an invoice, a quote, a
+ * receipt, a credit note or a statement, drawn as a web page and — where the
+ * base-14 fonts can draw the language — as a PDF, from values the host hands
+ * over and nothing else.
  *
- * ── WHAT IT DELIBERATELY IS NOT ────────────────────────────────────────────
+ * ── WHAT IT RECORDS, AND WHAT IT NEVER DOES ────────────────────────────────
  *
- * It is not an accounting product and says so in every locale. It keeps no
- * ledger, tracks no balance, and its arithmetic is confined to adding up the
- * lines it was given under one written law (`money.ts`, 34 D20). "Total" on a
- * document from here is a total, never a "total due": recorded payments do not
- * reduce it, because there is no balance model behind it and "due" would be a
- * claim the document cannot support.
+ * An app may build its invoices, quotes and payments on this add-on's shapes
+ * (`manifest.json`, `addOn.shapes`). Adminium then keeps them by the rules the
+ * shapes declare — gapless numbers, each line and the totals in the currency's
+ * decimals, the balance as payments are recorded, the reminders — and the
+ * documents print those stored figures as they are. A payment is only ever
+ * what a person records: the add-on charges no card and moves no money.
+ *
+ * A document mapped by hand, with no stored totals, is added up here under one
+ * written law (`money.ts`), as it always was.
  *
  * It also does not decide WHICH column means what. That is the host's
  * projection at the mount site — see `host/subjectFromHost.ts`, which carries

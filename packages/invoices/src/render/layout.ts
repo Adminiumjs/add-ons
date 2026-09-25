@@ -7,58 +7,69 @@
  * about what was on it. That is not a cosmetic bug on a document a customer is
  * asked to pay.
  *
- * So neither renderer decides anything. This module turns a body plus its
- * bound extras into a flat list of BLOCKS — a heading, a party, a table of
- * lines, a totals ladder, a paragraph — and `html.ts` and `pdf.ts` each know
- * only how to draw those. A block that one of them cannot draw is a block
- * neither of them draws, because it would have to be added here first.
+ * So neither renderer decides anything. This module turns a body, its bound
+ * extras and the subject's facts into a flat list of BLOCKS, and `html.ts` and
+ * `pdf.ts` each know only how to draw those. A block that one of them cannot
+ * draw is a block neither of them draws, because it would have to be added
+ * here first.
  *
- * ── WHY THE MONEY IS FORMATTED HERE AND NOT IN EITHER RENDERER ─────────────
+ * ── THE ANATOMY IS THE PRINTED COPY'S ──────────────────────────────────────
  *
- * `formatMoney` is in the shared law (`money.ts`), and the formatted STRING is
- * put into the block. Two renderers each calling the formatter is two chances
- * to call it with a different `cents` flag; one caller is none. The same goes
- * for the totals ladder: it is computed once, here, from `totalsOf`.
+ * One sheet for every kind, top to bottom: the letterhead (mark, name, the
+ * business's own lines and tax number) → who it is for, beside the facts (the
+ * kind and its number, the days, the terms) → the title → a quote's scope →
+ * the lines → the totals → the payments so far and the amount due → a quote's
+ * acceptance → the pay box beside the footer → the signature line. A void
+ * document carries the word across the sheet and the day it was voided —
+ * NEVER the reason, which is the business's alone.
  *
- * ── WHAT IS DELIBERATELY NOT MODELLED ──────────────────────────────────────
+ * ── STORED FIGURES, OR ADDED UP HERE ───────────────────────────────────────
  *
- * Images. The comp's five image slots are `data:` URIs and an HTML page can
- * carry one directly, while a PDF would need an XObject, a decoder for
- * whatever the URI holds, and a licence position on the formats. The PDF draws
- * the letterhead as TEXT and says nothing about the missing mark rather than
- * leaving a grey box where a logo should be. Recorded as a departure rather
- * than left for somebody to discover.
+ * A document built on a shape carries its stored figures (`SubjectFacts`) and
+ * they are printed as they are. A hand-mapped or authored document carries
+ * none, and is added up by `money.ts`'s law, as it always was. The two paths
+ * meet in one formatter, so the sign and the decimals are the currency's in
+ * both.
  */
 
 import type { InvoiceBody, LineItem } from '../document.ts';
-import { formatMoney, formatPercent, lineMinor, taxBreakdown, totalsOf } from '../money.ts';
-import type { BoundExtras } from '../subject.ts';
+import { lineMinor, taxBreakdown, totalsOf } from '../money.ts';
+import { differenceText, isPositive, isZero, productText, sumText } from '../shape-money.ts';
+import type { BoundExtras, StoredLine, SubjectFacts } from '../subject.ts';
+import { minorToDecimal, type Formats } from './format.ts';
+import { fill, type LayoutWords } from './words.ts';
 
-export interface HeadingBlock {
-  readonly kind: 'heading';
-  readonly title: string;
-  readonly number: string;
-  readonly accent: string;
+export type { LayoutWords } from './words.ts';
+
+/** The business's mark and name, and the lines beside them. */
+export interface LetterheadBlock {
+  readonly kind: 'letterhead';
+  readonly name: string;
+  /** The first letter of the name, drawn on the accent where there is no image. */
+  readonly letter: string;
+  /** A `data:` URI; drawn in HTML only. */
+  readonly image: string;
+  readonly lines: readonly string[];
 }
 
 export interface PartiesBlock {
   readonly kind: 'parties';
-  readonly fromLabel: string;
-  readonly from: readonly string[];
   readonly toLabel: string;
   readonly toName: string;
-  readonly to: readonly string[];
+  readonly toLines: readonly string[];
+  readonly meta: readonly { readonly label: string; readonly value: string }[];
 }
 
-export interface FactsBlock {
-  readonly kind: 'facts';
-  readonly rows: readonly { readonly label: string; readonly value: string }[];
+export interface TitleBlock {
+  readonly kind: 'title';
+  readonly text: string;
 }
 
 export interface ItemsBlock {
   readonly kind: 'items';
   readonly columns: readonly { readonly label: string; readonly align: 'left' | 'right' }[];
-  readonly rows: readonly (readonly string[])[];
+  /** `note` is a small line under the first cell: a reduction, what a payment was against. */
+  readonly rows: readonly { readonly cells: readonly string[]; readonly note: string }[];
 }
 
 export interface LadderBlock {
@@ -70,46 +81,110 @@ export interface LadderBlock {
   }[];
 }
 
+/** "Payments so far": each unvoided payment, and the amount still due, in bold. */
+export interface LedgerBlock {
+  readonly kind: 'ledger';
+  readonly heading: string;
+  readonly rows: readonly { readonly date: string; readonly method: string; readonly amount: string }[];
+  readonly dueLabel: string;
+  readonly due: string;
+}
+
+/** A quote's acceptance: the name typed, and the line under it. */
+export interface SignedBlock {
+  readonly kind: 'signed';
+  readonly heading: string;
+  readonly name: string;
+  readonly line: string;
+}
+
 export interface PassageBlock {
   readonly kind: 'passage';
   readonly heading: string;
   readonly lines: readonly string[];
 }
 
-export type Block = HeadingBlock | PartiesBlock | FactsBlock | ItemsBlock | LadderBlock | PassageBlock;
+/** The pay box and the footer beside it, at the foot of the sheet. */
+export interface FootBlock {
+  readonly kind: 'foot';
+  readonly payLabel: string;
+  readonly payLines: readonly { readonly text: string; readonly strong: boolean }[];
+  readonly footLabel: string;
+  readonly footText: string;
+}
+
+export interface SignatureBlock {
+  readonly kind: 'signature';
+  readonly text: string;
+}
+
+export type Block =
+  | LetterheadBlock
+  | PartiesBlock
+  | TitleBlock
+  | ItemsBlock
+  | LadderBlock
+  | LedgerBlock
+  | SignedBlock
+  | PassageBlock
+  | FootBlock
+  | SignatureBlock;
 
 export interface Document {
   readonly locale: string;
   /** Right-to-left is a property of the DOCUMENT's language, not the viewer's. */
   readonly rtl: boolean;
   readonly accent: string;
+  /** The word drawn across a void document, or `null`. */
+  readonly voidMark: string | null;
+  /** The title the page is known by: the kind and its number. */
+  readonly name: string;
   readonly blocks: readonly Block[];
 }
 
-/** The words a rendered document needs, supplied by the caller per locale. */
-export interface LayoutWords {
-  readonly from: string;
-  readonly to: string;
-  readonly issued: string;
-  readonly due: string;
-  readonly reference: string;
-  readonly corrects: string;
-  readonly description: string;
-  readonly quantity: string;
-  readonly unit: string;
-  readonly amount: string;
-  readonly subtotal: string;
-  readonly reduction: string;
-  readonly tax: string;
-  readonly gratuity: string;
-  readonly total: string;
-  readonly settledWith: string;
-  readonly terms: string;
-  readonly notes: string;
-  readonly payment: string;
+export interface LayoutInput {
+  readonly kind: string;
+  readonly body: InvoiceBody;
+  readonly extras: BoundExtras;
+  readonly facts: SubjectFacts;
+  readonly words: LayoutWords;
+  readonly formats: Formats;
+  readonly locale: string;
+  readonly rtl: boolean;
+  /** Whether the body was authored (a template) rather than drawn from a mapping alone. */
+  readonly authored: boolean;
 }
 
-function factRow(label: string, value: string): { label: string; value: string } | null {
+const TERM_WORDS: Readonly<Record<string, keyof LayoutWords>> = {
+  net7: 'termNet7',
+  net14: 'termNet14',
+  net30: 'termNet30',
+  'on-receipt': 'termOnReceipt',
+};
+
+const METHOD_WORDS: Readonly<Record<string, keyof LayoutWords>> = {
+  'bank-transfer': 'methodBankTransfer',
+  card: 'methodCard',
+  cheque: 'methodCheque',
+  cash: 'methodCash',
+  other: 'methodOther',
+};
+
+const KIND_WORDS: Readonly<Record<string, keyof LayoutWords>> = {
+  invoice: 'kindInvoice',
+  receipt: 'kindReceipt',
+  'credit-note': 'kindCreditNote',
+  quote: 'kindQuote',
+  statement: 'kindStatement',
+};
+
+/** A stored enum value in the document's language, or the value as typed. */
+function named(value: string, map: Readonly<Record<string, keyof LayoutWords>>, words: LayoutWords): string {
+  const key = map[value];
+  return key === undefined ? value : words[key];
+}
+
+function row(label: string, value: string): { label: string; value: string } | null {
   return value === '' ? null : { label, value };
 }
 
@@ -117,144 +192,406 @@ function notEmpty<T>(value: T | null): value is T {
   return value !== null;
 }
 
-export interface LayoutInput {
-  readonly body: InvoiceBody;
-  readonly extras: BoundExtras;
-  readonly words: LayoutWords;
-  readonly locale: string;
-  readonly rtl: boolean;
+/** Hundredths (the hand-mapped law's unit) as exact decimal text. */
+const hundredths = (minor: number): string => minorToDecimal(minor, 2);
+
+/** First and last four characters of a fingerprint, as the sheet prints it. */
+function shortPrint(print: string): string {
+  return print.length <= 10 ? print : `${print.slice(0, 4)}…${print.slice(-4)}`;
 }
 
 export function layout(input: LayoutInput): Document {
-  const { body, extras, words } = input;
-  const money = (minor: number): string => formatMoney(minor, body.currency, body.cents);
-  const totals = totalsOf(body);
+  const { kind, body, facts, words, formats } = input;
+  const isVoid = facts.status === 'void' || (kind === 'receipt' && facts.receipt.voided);
+  const voidDay = facts.voidedOn === '' ? '' : formats.day(facts.voidedOn);
+  const kindWord = words[KIND_WORDS[kind] ?? 'kindInvoice'];
 
-  const blocks: Block[] = [
-    {
-      kind: 'heading',
-      title: body.title,
-      number: body.number,
-      accent: body.accent,
-    },
-    {
-      kind: 'parties',
-      fromLabel: words.from,
-      // `logoText` is the letterhead's name where there is no drawn mark, and
-      // it is the first `from` line when the body has none — otherwise a
-      // document authored with only a logo would print no seller at all.
-      from: body.from.length > 0 ? body.from : [body.logoText].filter((line) => line !== ''),
-      toLabel: words.to,
-      toName: body.customerName,
-      to: body.customer,
-    },
-  ];
+  const blocks: Block[] = [letterheadBlock(input)];
+  blocks.push(partiesBlock(input, kindWord, isVoid, voidDay));
 
-  const facts = [
-    factRow(words.issued, body.issued),
-    factRow(words.due, body.due),
-    factRow(words.reference, body.poNumber),
-    factRow(words.corrects, extras.references),
-  ].filter(notEmpty);
-  if (facts.length > 0) blocks.push({ kind: 'facts', rows: facts });
+  const title = titleOf(input, kindWord);
+  if (title !== '') blocks.push({ kind: 'title', text: title });
 
-  blocks.push(itemsBlock(body, words, money));
-  blocks.push(ladderBlock(body, extras, totals, words, money));
-
-  for (const [heading, lines] of [
-    [words.terms, body.terms === '' ? [] : [body.terms]],
-    [words.payment, body.payment],
-    [words.notes, body.notes === '' ? [] : [body.notes]],
-    [words.settledWith, extras.paidWith === '' ? [] : [extras.paidWith]],
-  ] as const) {
-    if (lines.length === 0) continue;
-    blocks.push({ kind: 'passage', heading, lines });
+  if (kind === 'quote' && facts.quote.scope.length > 0) {
+    blocks.push({ kind: 'passage', heading: '', lines: facts.quote.scope });
   }
 
-  return { locale: input.locale, rtl: input.rtl, accent: body.accent, blocks };
-}
+  if (kind === 'statement') {
+    blocks.push(...statementBlocks(input));
+  } else if (kind === 'receipt' && facts.receipt.amount !== null) {
+    blocks.push(...paymentReceiptBlocks(input));
+  } else {
+    blocks.push(...documentBlocks(input, isVoid));
+  }
 
-function itemsBlock(
-  body: InvoiceBody,
-  words: LayoutWords,
-  money: (minor: number) => string,
-): ItemsBlock {
+  if (kind === 'quote' && facts.quote.signedName !== '') {
+    const parts = [
+      facts.quote.signedOn === '' ? '' : formats.day(facts.quote.signedOn),
+      facts.quote.termsVersion === '' ? '' : fill(words.termsVersion, { version: facts.quote.termsVersion }),
+      facts.quote.fingerprint === '' ? '' : fill(words.fingerprint, { print: shortPrint(facts.quote.fingerprint) }),
+    ].filter((part) => part !== '');
+    blocks.push({ kind: 'signed', heading: words.acceptedAndSigned, name: facts.quote.signedName, line: parts.join(' · ') });
+  }
+
+  if (body.notes !== '') blocks.push({ kind: 'passage', heading: words.notes, lines: [body.notes] });
+
+  const foot = footBlock(input, isVoid, voidDay);
+  if (foot !== null) blocks.push(foot);
+
+  const signature = [
+    facts.letterhead.name !== '' ? facts.letterhead.name : body.logoText,
+    facts.preparedBy === '' ? formats.day(facts.today) : fill(words.preparedBy, { name: facts.preparedBy, date: formats.day(facts.today) }),
+  ].filter((part) => part !== '');
+  blocks.push({ kind: 'signature', text: signature.join(' · ') });
+
   return {
-    kind: 'items',
-    columns: [
-      { label: words.description, align: 'left' },
-      { label: words.quantity, align: 'right' },
-      { label: words.unit, align: 'right' },
-      { label: words.amount, align: 'right' },
-    ],
-    rows: body.items.map((item: LineItem) => [
-      item.desc,
-      item.qty,
-      money(unitMinor(item)),
-      money(lineMinor(item)),
-    ]),
+    locale: input.locale,
+    rtl: input.rtl,
+    accent: body.accent,
+    voidMark: isVoid ? words.voidMark : null,
+    name: [kindWord, kind === 'statement' ? '' : body.number].filter((part) => part !== '').join(' '),
+    blocks,
   };
 }
 
 /**
- * One line's UNIT amount in minor units.
- *
- * Through `lineMinor` with a quantity of one rather than through `parseMinor`
- * directly, so the printed unit amount and the printed line amount come out of
- * the same function. Two different parses of the same typed text is how a
- * document ends up showing `$0.33 × 3 = $1.00`.
+ * The letterhead. An authored template's own name and lines win — a document
+ * keeps the letterhead its template had — and the business's settings (which
+ * Adminium puts in every subject) fill in where it has none.
  */
-function unitMinor(item: LineItem): number {
-  return lineMinor({ qty: '1', rate: item.rate });
+function letterheadBlock(input: LayoutInput): LetterheadBlock {
+  const { body, facts, words } = input;
+  const letterhead = facts.letterhead;
+  const name = body.logoText !== '' ? body.logoText : letterhead.name;
+  const lines = [...(body.from.length > 0 ? body.from : letterhead.lines)];
+  if (letterhead.taxNumber !== '') {
+    lines.push(letterhead.taxName === '' ? fill(words.taxNumber, { number: letterhead.taxNumber }) : `${letterhead.taxName} ${letterhead.taxNumber}`);
+  }
+  return {
+    kind: 'letterhead',
+    name,
+    letter: [...name.trim()][0]?.toUpperCase() ?? '',
+    image: drawableImage(body.logoImage !== '' ? body.logoImage : letterhead.logo),
+    lines,
+  };
 }
 
-function ladderBlock(
-  body: InvoiceBody,
-  extras: BoundExtras,
-  totals: ReturnType<typeof totalsOf>,
-  words: LayoutWords,
-  money: (minor: number) => string,
-): LadderBlock {
-  const rows: { label: string; value: string; emphasis: boolean }[] = [
-    { label: words.subtotal, value: money(totals.subtotal), emphasis: false },
-  ];
+/**
+ * A letterhead image the page may carry: a raster `data:` URI and nothing
+ * else — never an address to fetch, never a document of its own.
+ */
+function drawableImage(value: string): string {
+  return /^data:image\/(png|jpeg|gif|webp);base64,[A-Za-z0-9+/=]+$/.test(value) ? value : '';
+}
 
-  if (totals.discount !== 0) {
-    rows.push({
-      label: `${words.reduction} ${formatPercent(body.discountRate)}`,
-      value: money(-totals.discount),
-      emphasis: false,
+function partiesBlock(input: LayoutInput, kindWord: string, isVoid: boolean, voidDay: string): PartiesBlock {
+  const { kind, body, extras, facts, words, formats } = input;
+  const toLabel =
+    kind === 'invoice'
+      ? words.invoiceTo
+      : kind === 'quote'
+        ? words.quoteFor
+        : kind === 'receipt'
+          ? words.receivedFrom
+          : kind === 'statement'
+            ? words.statementFor
+            : words.to;
+  const toLines = [
+    facts.customerContact,
+    ...body.customer,
+    facts.customerTaxNumber === '' ? '' : fill(words.taxNumber, { number: facts.customerTaxNumber }),
+    extras.customerEmail,
+  ].filter((line) => line !== '');
+
+  const day = (value: string) => (value === '' ? '' : formats.day(value));
+  let meta: ({ label: string; value: string } | null)[];
+  switch (kind) {
+    case 'quote':
+      meta = [
+        row(kindWord, body.number),
+        row(words.sent, day(facts.quote.sentOn)),
+        row(words.validUntil, day(facts.quote.validUntil)),
+      ];
+      break;
+    case 'receipt':
+      meta = [
+        row(kindWord, body.number),
+        row(words.forInvoice, facts.receipt.invoiceNumber),
+        row(words.received, day(body.issued)),
+        row(words.method, named(extras.paidWith, METHOD_WORDS, words)),
+      ];
+      break;
+    case 'statement': {
+      const period =
+        facts.statement.periodFrom === '' ? day(facts.statement.periodTo) : `${day(facts.statement.periodFrom)} – ${day(facts.statement.periodTo)}`;
+      const documents = facts.statement.entries.filter((entry) => entry.kind !== 'payment').length;
+      meta = [
+        row(words.period, facts.statement.periodTo === '' ? '' : period),
+        row(words.issued, day(body.issued)),
+        row(words.documents, facts.statement.entries.length === 0 ? '' : formats.quantity(String(documents))),
+      ];
+      break;
+    }
+    default:
+      meta = [
+        row(kindWord, body.number),
+        row(words.issued, day(body.issued)),
+        row(words.due, day(body.due)),
+        row(words.terms, facts.terms === '' ? '' : named(facts.terms, TERM_WORDS, words)),
+        row(words.reference, body.poNumber),
+        row(words.corrects, extras.references),
+      ];
+  }
+  if (isVoid && voidDay !== '') meta.push(row(words.voided, voidDay));
+
+  // A till receipt made out to nobody says nothing about whom it is for.
+  const nobody = body.customerName === '' && toLines.length === 0;
+  return {
+    kind: 'parties',
+    toLabel: nobody ? '' : toLabel,
+    toName: body.customerName,
+    toLines,
+    meta: meta.filter(notEmpty),
+  };
+}
+
+function titleOf(input: LayoutInput, kindWord: string): string {
+  const { kind, body, facts, words } = input;
+  if (facts.title !== '') return facts.title;
+  if (kind === 'statement') return words.statementTitle;
+  if (kind === 'receipt' && facts.receipt.amount !== null) {
+    return facts.receipt.invoiceNumber === ''
+      ? `${kindWord} ${body.number}`.trim()
+      : fill(words.receiptTitle, { number: body.number, invoice: facts.receipt.invoiceNumber });
+  }
+  // An authored template's own heading ("PROFORMA"); a mapping alone gets the kind's name.
+  return input.authored ? body.title : kindWord;
+}
+
+function itemColumns(words: LayoutWords): ItemsBlock['columns'] {
+  return [
+    { label: words.description, align: 'left' },
+    { label: words.quantity, align: 'right' },
+    { label: words.unit, align: 'right' },
+    { label: words.amount, align: 'right' },
+  ];
+}
+
+/** An invoice, a quote, a credit note or a till receipt: lines, totals, what is still due. */
+function documentBlocks(input: LayoutInput, isVoid: boolean): Block[] {
+  const { body, extras, facts, words, formats } = input;
+  const money = formats.money;
+  const blocks: Block[] = [];
+  const stored = facts.total !== null;
+
+  if (facts.storedLines !== null) {
+    blocks.push({ kind: 'items', columns: itemColumns(words), rows: facts.storedLines.map((line) => storedLineRow(line, input)) });
+  } else {
+    blocks.push({
+      kind: 'items',
+      columns: itemColumns(words),
+      rows: body.items.map((item: LineItem) => ({
+        cells: [item.desc, formats.quantity(item.qty), money(item.rate), money(hundredths(lineMinor(item)))],
+        note: '',
+      })),
     });
   }
 
-  /*
-   * The breakdown when the document has one, the single line when it does not
-   * — and never both. `taxBreakdown` puts every component on the ladder's own
-   * base (O25), which is the correction the comp needed: it computed them on
-   * the UNDISCOUNTED subtotal, so a discounted document's components added up
-   * to more tax than the ladder charged.
-   */
-  if (body.taxLines.length > 0) {
-    for (const line of taxBreakdown(totals.taxBase, body.taxLines)) {
+  const rows: { label: string; value: string; emphasis: boolean }[] = [];
+  const taxWord = facts.taxName !== '' ? facts.taxName : facts.letterhead.taxName !== '' ? facts.letterhead.taxName : words.tax;
+  let totalText: string;
+
+  if (stored) {
+    const scale = facts.scale;
+    const subtotal = facts.subtotal ?? facts.total!;
+    const tax = facts.tax ?? differenceText(facts.total!, subtotal, scale);
+    rows.push({ label: words.subtotal, value: money(subtotal), emphasis: false });
+    if (!isZero(tax) || (facts.taxRate !== null && facts.taxRate !== 0)) {
+      const rate = facts.taxRate === null ? '' : ` ${formats.percent(facts.taxRate / 100)}`;
+      rows.push({ label: `${taxWord}${rate}`, value: money(tax), emphasis: false });
+    }
+    totalText = facts.total!;
+  } else {
+    const totals = totalsOf(body);
+    rows.push({ label: words.subtotal, value: money(hundredths(totals.subtotal)), emphasis: false });
+    if (totals.discount !== 0) {
       rows.push({
-        label: `${line.label} ${formatPercent(line.rate)}`,
-        value: money(line.amount),
+        label: `${words.reduction} ${formats.percent(Number(body.discountRate) || 0)}`,
+        value: money(hundredths(-totals.discount)),
         emphasis: false,
       });
     }
-  } else if (totals.tax !== 0) {
-    rows.push({
-      label: `${words.tax} ${formatPercent(body.taxRate)}`,
-      value: money(totals.tax),
-      emphasis: false,
-    });
+    /*
+     * The breakdown when the document has one, the single line when it does
+     * not — and never both. Each component sits on the ladder's own base,
+     * which is the correction the comp needed.
+     */
+    if (body.taxLines.length > 0) {
+      for (const line of taxBreakdown(totals.taxBase, body.taxLines)) {
+        rows.push({ label: `${line.label} ${formats.percent(Number(line.rate) || 0)}`, value: money(hundredths(line.amount)), emphasis: false });
+      }
+    } else if (totals.tax !== 0) {
+      rows.push({ label: `${taxWord} ${formats.percent(Number(body.taxRate) || 0)}`, value: money(hundredths(totals.tax)), emphasis: false });
+    }
+    totalText = hundredths(totals.total);
   }
 
-  const tip = extras.tip ?? 0;
-  if (tip !== 0) rows.push({ label: words.gratuity, value: money(tip), emphasis: false });
+  if (extras.tip !== null && !isZero(extras.tip)) {
+    rows.push({ label: words.gratuity, value: money(extras.tip), emphasis: false });
+    totalText = sumText([totalText, extras.tip], Math.max(facts.scale, 2));
+  }
+  // "Total", not "Total due": what is still due is its own line, below, once
+  // something has been paid.
+  rows.push({ label: words.total, value: money(totalText), emphasis: true });
 
-  // "Total", not "Total due": recorded payments never reduce it, so "due"
-  // would be a claim this document cannot support (O25).
-  rows.push({ label: words.total, value: money(totals.total + tip), emphasis: true });
-  return { kind: 'ladder', rows };
+  // Only an invoice is paid against; a quote or a credit note owes nothing.
+  const live = input.kind === 'invoice' ? facts.payments.filter((payment) => !payment.voided) : [];
+  const paid = input.kind !== 'invoice' ? null : (facts.paid ?? (live.length > 0 ? sumText(live.map((payment) => payment.amount), facts.scale) : null));
+  const due = facts.balance ?? (paid === null ? null : differenceText(totalText, paid, facts.scale));
+  const somethingPaid = isPositive(paid);
+
+  if (somethingPaid && !isVoid && !facts.showPaymentLedger) {
+    rows.push({ label: words.paid, value: money(paid!), emphasis: false });
+    rows.push({ label: words.amountDue, value: money(due ?? totalText), emphasis: true });
+  }
+  blocks.push({ kind: 'ladder', rows });
+
+  if (somethingPaid && !isVoid && facts.showPaymentLedger) {
+    blocks.push({
+      kind: 'ledger',
+      heading: words.paymentsSoFar,
+      rows: live.map((payment) => ({
+        date: payment.paidOn === '' ? '' : formats.day(payment.paidOn),
+        method: named(payment.method, METHOD_WORDS, words),
+        amount: money(payment.amount),
+      })),
+      dueLabel: words.amountDue,
+      due: money(due ?? totalText),
+    });
+  }
+  return blocks;
+}
+
+function storedLineRow(line: StoredLine, input: LayoutInput): { cells: string[]; note: string } {
+  const { facts, words, formats } = input;
+  const amount = line.amount ?? productText(line.qty, line.rate, facts.scale);
+  let note = '';
+  if (line.discount !== null && line.discount !== 0) {
+    const off = line.discountKind === 'percent' ? formats.percent(line.discount) : formats.money(String(line.discount));
+    note = fill(words.lessDiscount, { amount: off });
+  }
+  return {
+    cells: [line.desc, line.share === null ? formats.quantity(line.qty) : formats.percent(line.share), formats.money(line.rate), formats.money(amount)],
+    note,
+  };
+}
+
+/** The receipt of one payment: one line, what the invoice came to, what was received, what is left. */
+function paymentReceiptBlocks(input: LayoutInput): Block[] {
+  const { body, facts, words, formats } = input;
+  const amount = facts.receipt.amount!;
+  const received = body.issued === '' ? '' : formats.day(body.issued);
+  const description =
+    facts.receipt.invoiceNumber === '' ? words.kindReceipt : fill(words.paymentAgainst, { number: facts.receipt.invoiceNumber });
+  const rows: { label: string; value: string; emphasis: boolean }[] = [];
+  if (facts.receipt.invoiceTotal !== null) rows.push({ label: words.invoiceTotal, value: formats.money(facts.receipt.invoiceTotal), emphasis: false });
+  rows.push({ label: received === '' ? words.received : fill(words.receivedOn, { date: received }), value: formats.money(amount), emphasis: true });
+  if (facts.receipt.balanceAfter !== null) rows.push({ label: words.balanceLeft, value: formats.money(facts.receipt.balanceAfter), emphasis: false });
+  return [
+    {
+      kind: 'items',
+      columns: itemColumns(words),
+      rows: [{ cells: [description, formats.quantity('1'), formats.money(amount), formats.money(amount)], note: '' }],
+    },
+    { kind: 'ladder', rows },
+  ];
+}
+
+/** A statement: every entry of the period with the balance after it, then the totals. */
+function statementBlocks(input: LayoutInput): Block[] {
+  const { facts, words, formats } = input;
+  const s = facts.statement;
+  const minus = (text: string) => (text.startsWith('-') ? text.slice(1) : `-${text}`);
+  const entryRows = s.entries.map((entry) => {
+    const payment = entry.kind === 'payment';
+    const label = fill(payment ? words.paymentEntry : words.invoiceEntry, { number: entry.number }).trim();
+    return {
+      cells: [
+        label,
+        entry.date === '' ? '' : formats.day(entry.date),
+        formats.money(payment ? minus(entry.amount) : entry.amount),
+        entry.balance === null ? '' : formats.money(entry.balance),
+      ],
+      note: '',
+    };
+  });
+  const rows: { label: string; value: string; emphasis: boolean }[] = [];
+  if (s.opening !== null && (s.periodFrom !== '' || !isZero(s.opening))) rows.push({ label: words.openingBalance, value: formats.money(s.opening), emphasis: false });
+  if (s.documentsTotal !== null) rows.push({ label: words.invoiced, value: formats.money(s.documentsTotal), emphasis: false });
+  if (s.paymentsTotal !== null) rows.push({ label: words.paid, value: formats.money(s.paymentsTotal), emphasis: false });
+  const closing = s.closing ?? (s.entries.length > 0 ? s.entries[s.entries.length - 1]!.balance : null);
+  if (closing !== null) rows.push({ label: words.balance, value: formats.money(closing), emphasis: true });
+  return [
+    {
+      kind: 'items',
+      columns: [
+        { label: words.entry, align: 'left' },
+        { label: words.date, align: 'right' },
+        { label: words.amount, align: 'right' },
+        { label: words.balance, align: 'right' },
+      ],
+      rows: entryRows,
+    },
+    { kind: 'ladder', rows },
+  ];
+}
+
+/**
+ * The pay box and the footer. How to pay (the business's instructions, then
+ * the reference to quote) on an invoice or a statement; the thanks on a
+ * receipt; a quote's split. Nothing to pay on a void document, and its footer
+ * says why the number is still there.
+ */
+function footBlock(input: LayoutInput, isVoid: boolean, voidDay: string): FootBlock | null {
+  const { kind, body, facts, words, formats } = input;
+  const instructions = facts.letterhead.paymentInstructions === '' ? body.payment : facts.letterhead.paymentInstructions.split('\n').filter((line) => line.trim() !== '');
+  let payLabel = '';
+  let payLines: { text: string; strong: boolean }[] = [];
+  let footLabel = words.terms;
+  let footText = body.terms !== '' ? body.terms : facts.letterhead.footer;
+
+  if (kind === 'receipt' && facts.receipt.amount !== null) {
+    const received = body.issued === '' ? '' : formats.day(body.issued);
+    payLabel = words.thankYou;
+    payLines = [{ text: fill(words.receivedLine, { amount: formats.money(facts.receipt.amount), date: received }).trim(), strong: false }];
+    if (facts.receipt.balanceAfter !== null) payLines.push({ text: fill(words.balanceLeftLine, { amount: formats.money(facts.receipt.balanceAfter) }), strong: false });
+    footLabel = words.note;
+    footText = words.receiptNote;
+  } else if (kind === 'quote') {
+    if (facts.quote.split.length > 0) {
+      payLabel = words.howItGetsPaid;
+      payLines = facts.quote.split.map((line) => ({ text: line, strong: false }));
+    }
+  } else if (kind === 'statement') {
+    payLabel = words.howToPay;
+    payLines = [...instructions.map((line) => ({ text: line, strong: false })), { text: words.referenceInvoiceNumber, strong: true }];
+  } else if (!isVoid && (kind === 'invoice' || instructions.length > 0)) {
+    payLabel = words.howToPay;
+    payLines = instructions.map((line) => ({ text: line, strong: false }));
+    if (kind === 'invoice' && body.number !== '') payLines.push({ text: fill(words.referenceLine, { number: body.number }), strong: true });
+  }
+
+  if (isVoid) {
+    // The day, and why the number is kept. The REASON is the business's own
+    // note and never reaches the page.
+    footText = voidDay === '' ? '' : fill(words.voidedFooter, { date: voidDay });
+    footLabel = words.voided;
+  }
+  if (kind === 'receipt' && facts.receipt.amount === null && input.extras.paidWith !== '' && payLines.length === 0) {
+    payLabel = words.settledWith;
+    payLines = [{ text: named(input.extras.paidWith, METHOD_WORDS, words), strong: false }];
+  }
+
+  if (payLines.length === 0 && footText === '') return null;
+  return { kind: 'foot', payLabel, payLines, footLabel: footText === '' ? '' : footLabel, footText };
 }

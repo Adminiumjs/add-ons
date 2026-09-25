@@ -14,7 +14,7 @@
  */
 
 import { widthOf, type FontWeight } from './helvetica.ts';
-import { ascii, fontName, literal, pt, rgb } from './writer.ts';
+import { ascii, centralLiteral, fontName, literal, pt, rgb, runsOf } from './writer.ts';
 
 export interface Frame {
   readonly widthPt: number;
@@ -42,14 +42,22 @@ function setFill(color: string | undefined): number[] {
 /** A run of text with its LEFT edge and BASELINE at (x, y), measured top-down. */
 export function text(frame: Frame, x: number, y: number, value: string, style: TextStyle): number[] {
   if (value === '') return [];
-  return [
+  const weight = style.weight ?? 'regular';
+  const runs = runsOf(value);
+  const ops: number[] = [
     ...ascii('q\n'),
     ...setFill(style.color),
-    ...ascii(`BT\n${fontName(style.weight ?? 'regular')} ${pt(style.sizePt)} Tf\n`),
+    ...ascii(`BT\n${fontName(weight, runs[0]!.face)} ${pt(style.sizePt)} Tf\n`),
     ...ascii(`1 0 0 1 ${pt(x)} ${pt(at(frame, y))} Tm\n`),
-    ...literal(value),
-    ...ascii(' Tj\nET\nQ\n'),
   ];
+  // Each run in its own face; the text position carries on from one to the
+  // next, so a Czech word set in two faces reads as one word.
+  runs.forEach((run, index) => {
+    if (index > 0) ops.push(...ascii(`\n${fontName(weight, run.face)} ${pt(style.sizePt)} Tf\n`));
+    ops.push(...(run.face === 'central' ? centralLiteral(run.text) : literal(run.text)), ...ascii(' Tj'));
+  });
+  ops.push(...ascii('\nET\nQ\n'));
+  return ops;
 }
 
 /**

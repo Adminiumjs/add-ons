@@ -1,5 +1,5 @@
 /**
- * The three kinds this add-on renders, and the outline of each.
+ * The five kinds this add-on renders, and the outline of each.
  *
  * ── WHAT AN OUTLINE IS, AND WHAT IT IS NOT ─────────────────────────────────
  *
@@ -17,15 +17,16 @@
  * render — a receipt fired by a till, with no authored template behind it —
  * has no body at all and is drawn from the outline's defaults.
  *
- * ── THREE KINDS, TWELVE STARTERS, AND WHY THOSE ARE DIFFERENT NUMBERS ──────
+ * ── FIVE KINDS, TWELVE STARTERS, AND WHY THOSE ARE DIFFERENT NUMBERS ───────
  *
  * The surface offers twelve starters over eight titles, four of which
  * (PROFORMA, ESTIMATE, DEPOSIT, COMMERCIAL INVOICE) no kind covers. A starter
  * is a TEMPLATE PRESET, not a kind (34 O28(b) → D54): as a preset it costs
  * nothing, and as a kind each would have cost another `describe()` outline
- * with eight-locale labels on every slot. `kinds()` is three because three is
+ * with eight-locale labels on every slot. `kinds()` is five because five is
  * the number of distinct MAPPING shapes — money owed, money received, money
- * returned.
+ * returned, money offered (a quote), and one client's account over a period
+ * (a statement, which is not one row but a read of many).
  *
  * ── WHY THE LABELS ARE HERE AND NOT IN `i18n/strings.ts` ───────────────────
  *
@@ -113,6 +114,26 @@ const KIND_LABELS = {
     'zh-CN': '贷记单',
     'zh-TW': '貸記單',
     'ar-EG': 'إشعار دائن',
+  },
+  quote: {
+    'en-US': 'Quote',
+    'de-DE': 'Angebot',
+    'fr-FR': 'Devis',
+    'cs-CZ': 'Nabídka',
+    'da-DK': 'Tilbud',
+    'zh-CN': '报价单',
+    'zh-TW': '報價單',
+    'ar-EG': 'عرض سعر',
+  },
+  statement: {
+    'en-US': 'Statement',
+    'de-DE': 'Kontoauszug',
+    'fr-FR': 'Relevé de compte',
+    'cs-CZ': 'Výpis z účtu',
+    'da-DK': 'Kontoudtog',
+    'zh-CN': '对账表',
+    'zh-TW': '對帳表',
+    'ar-EG': 'كشف حساب',
   },
 } as const satisfies Readonly<Record<string, LocalizedText>>;
 
@@ -369,29 +390,112 @@ const ITEMS: OutlineSlot = {
       type: 'money',
       required: true,
     },
+    /*
+     * NO PER-LINE TAX RATE. A document carries one rate, and a column
+     * that used to sit here was mapped by profiles and then dropped on the way
+     * to the page (`subject.ts` never read it), so nothing that ever printed
+     * loses anything by its going. The four below are for the tables an app
+     * builds on this add-on's shapes: a line's reduction, its kind, the amount
+     * Adminium stored for it, and the share of a quote a stage line bills.
+     */
     {
-      id: 'taxRate',
+      id: 'discount',
       label: {
-        'en-US': 'Tax rate on this line',
-        'de-DE': 'Steuersatz dieser Position',
-        'fr-FR': 'Taux de taxe de cette ligne',
-        'cs-CZ': 'Daňová sazba této položky',
-        'da-DK': 'Afgiftssats på denne linje',
-        'zh-CN': '本行税率',
-        'zh-TW': '本列稅率',
-        'ar-EG': 'نسبة الضريبة لهذا السطر',
+        'en-US': 'Reduction on this line',
+        'de-DE': 'Nachlass dieser Position',
+        'fr-FR': 'Remise sur cette ligne',
+        'cs-CZ': 'Sleva na této položce',
+        'da-DK': 'Rabat på denne linje',
+        'zh-CN': '本行折让',
+        'zh-TW': '本列折讓',
+        'ar-EG': 'خصم هذا السطر',
       },
       help: {
-        'en-US': 'Only where lines differ. Left unmapped, the document’s own rate is used.',
-        'de-DE': 'Nur wenn Positionen sich unterscheiden. Ohne Zuordnung gilt der Satz des Belegs.',
-        'fr-FR': 'Uniquement si les lignes diffèrent. Sans correspondance, le taux du document s’applique.',
-        'cs-CZ': 'Jen když se položky liší. Bez přiřazení platí sazba dokladu.',
-        'da-DK': 'Kun hvor linjer er forskellige. Uden tilknytning bruges bilagets egen sats.',
-        'zh-CN': '仅当各行不同时使用。不映射时使用单据自身的税率。',
-        'zh-TW': '僅當各列不同時使用。不對應時使用單據自身的稅率。',
-        'ar-EG': 'فقط عند اختلاف السطور. بدون ربط تُستخدم نسبة المستند نفسه.',
+        'en-US': 'An amount, or a rate when the reduction kind says so. Printed under the line.',
+        'de-DE': 'Ein Betrag oder, wenn die Art es sagt, ein Satz. Unter der Position gedruckt.',
+        'fr-FR': 'Un montant, ou un taux si le type de remise l’indique. Imprimée sous la ligne.',
+        'cs-CZ': 'Částka, nebo sazba, když to říká druh slevy. Tiskne se pod položkou.',
+        'da-DK': 'Et beløb, eller en sats når rabattypen siger det. Trykkes under linjen.',
+        'zh-CN': '金额；折让类型为比例时为比例。印在该行下方。',
+        'zh-TW': '金額；折讓類型為比例時為比例。印在該列下方。',
+        'ar-EG': 'مبلغ، أو نسبة إذا قال نوع الخصم ذلك. يُطبع تحت السطر.',
       },
-      type: 'percent',
+      type: 'number',
+      required: false,
+    },
+    {
+      id: 'discountKind',
+      label: {
+        'en-US': 'Reduction kind',
+        'de-DE': 'Art des Nachlasses',
+        'fr-FR': 'Type de remise',
+        'cs-CZ': 'Druh slevy',
+        'da-DK': 'Rabattype',
+        'zh-CN': '折让类型',
+        'zh-TW': '折讓類型',
+        'ar-EG': 'نوع الخصم',
+      },
+      help: {
+        'en-US': '“amount” or “percent”, as the line stores it.',
+        'de-DE': '„amount“ oder „percent“, wie die Position es speichert.',
+        'fr-FR': '« amount » ou « percent », tel que la ligne l’enregistre.',
+        'cs-CZ': '„amount“ nebo „percent“, jak to položka ukládá.',
+        'da-DK': '“amount” eller “percent”, som linjen gemmer det.',
+        'zh-CN': '按该行的存储值，为“amount”或“percent”。',
+        'zh-TW': '依該列的儲存值，為「amount」或「percent」。',
+        'ar-EG': '“amount” أو “percent” كما يخزنه السطر.',
+      },
+      type: 'text',
+      required: false,
+    },
+    {
+      id: 'amount',
+      label: {
+        'en-US': 'Line amount',
+        'de-DE': 'Betrag der Position',
+        'fr-FR': 'Montant de la ligne',
+        'cs-CZ': 'Částka položky',
+        'da-DK': 'Linjens beløb',
+        'zh-CN': '本行金额',
+        'zh-TW': '本列金額',
+        'ar-EG': 'مبلغ السطر',
+      },
+      help: {
+        'en-US': 'The amount stored for the line. Mapped, it is printed as stored; unmapped, quantity times each.',
+        'de-DE': 'Der gespeicherte Betrag der Position. Zugeordnet wird er so gedruckt; sonst Menge mal Einzelbetrag.',
+        'fr-FR': 'Le montant enregistré de la ligne. Associé, il est imprimé tel quel ; sinon quantité fois montant unitaire.',
+        'cs-CZ': 'Uložená částka položky. Přiřazená se tiskne, jak je; jinak množství krát cena za jednotku.',
+        'da-DK': 'Linjens gemte beløb. Tilknyttet trykkes det som gemt; ellers antal gange pris pr. enhed.',
+        'zh-CN': '该行存储的金额。映射时按存储值打印；不映射时为数量乘单价。',
+        'zh-TW': '該列儲存的金額。對應時依儲存值列印；不對應時為數量乘單價。',
+        'ar-EG': 'المبلغ المخزن للسطر. عند ربطه يُطبع كما هو؛ وإلا فالكمية مضروبة في سعر الوحدة.',
+      },
+      type: 'money',
+      required: false,
+    },
+    {
+      id: 'share',
+      label: {
+        'en-US': 'Share of a quote',
+        'de-DE': 'Anteil an einem Angebot',
+        'fr-FR': 'Part d’un devis',
+        'cs-CZ': 'Podíl z nabídky',
+        'da-DK': 'Andel af et tilbud',
+        'zh-CN': '报价单所占比例',
+        'zh-TW': '報價單所占比例',
+        'ar-EG': 'حصة من عرض السعر',
+      },
+      help: {
+        'en-US': 'For a line that bills a stage of a quote: its share, printed where the quantity goes.',
+        'de-DE': 'Für eine Position, die eine Stufe eines Angebots abrechnet: ihr Anteil, gedruckt an Stelle der Menge.',
+        'fr-FR': 'Pour une ligne qui facture une étape d’un devis : sa part, imprimée à la place de la quantité.',
+        'cs-CZ': 'U položky, která účtuje část nabídky: její podíl, vytištěný místo množství.',
+        'da-DK': 'For en linje, der fakturerer et trin af et tilbud: dens andel, trykt hvor antallet står.',
+        'zh-CN': '用于按报价单阶段开票的行：其所占比例，印在数量的位置。',
+        'zh-TW': '用於按報價單階段開票的列：其所占比例，印在數量的位置。',
+        'ar-EG': 'لسطر يفوتر مرحلة من عرض سعر: حصته، تُطبع مكان الكمية.',
+      },
+      type: 'number',
       required: false,
     },
   ],
@@ -509,6 +613,821 @@ const REFERENCES: OutlineSlot = {
   required: false,
 };
 
+/*
+ * ── THE SLOTS BELOW ARE FOR THE TABLES AN APP BUILDS ON THIS ADD-ON'S SHAPES ─
+ *
+ * Every one is optional, so a profile an operator mapped by hand before they
+ * existed keeps rendering exactly as it did. A shape's document profile maps
+ * them to the columns Adminium keeps — the stored totals, the payments, the
+ * void — and the renderer then prints those figures as stored rather than
+ * adding anything up itself. The client's own details (name, address, tax
+ * number, contact) are the app's columns, so the app maps them.
+ */
+
+const TITLE: OutlineSlot = {
+  id: 'title',
+  label: {
+    'en-US': 'What it is for',
+    'de-DE': 'Betreff',
+    'fr-FR': 'Objet',
+    'cs-CZ': 'Předmět',
+    'da-DK': 'Emne',
+    'zh-CN': '事由',
+    'zh-TW': '事由',
+    'ar-EG': 'الموضوع',
+  },
+  help: {
+    'en-US': 'A line saying what the document is about, printed above the lines.',
+    'de-DE': 'Eine Zeile, worum es im Beleg geht, über den Positionen gedruckt.',
+    'fr-FR': 'Une ligne qui dit l’objet du document, imprimée au-dessus des lignes.',
+    'cs-CZ': 'Řádek o tom, čeho se doklad týká, vytištěný nad položkami.',
+    'da-DK': 'En linje om, hvad bilaget handler om, trykt over linjerne.',
+    'zh-CN': '说明单据内容的一行，印在明细上方。',
+    'zh-TW': '說明單據內容的一行，印在明細上方。',
+    'ar-EG': 'سطر يقول موضوع المستند، يُطبع فوق البنود.',
+  },
+  type: 'text',
+  required: false,
+};
+
+const CUSTOMER_CONTACT: OutlineSlot = {
+  id: 'customerContact',
+  label: {
+    'en-US': 'Contact person',
+    'de-DE': 'Ansprechperson',
+    'fr-FR': 'Personne à contacter',
+    'cs-CZ': 'Kontaktní osoba',
+    'da-DK': 'Kontaktperson',
+    'zh-CN': '联系人',
+    'zh-TW': '聯絡人',
+    'ar-EG': 'جهة الاتصال',
+  },
+  type: 'text',
+  required: false,
+};
+
+const CUSTOMER_TAX_NUMBER: OutlineSlot = {
+  id: 'customerTaxNumber',
+  label: {
+    'en-US': 'Their tax number',
+    'de-DE': 'Steuernummer des Empfängers',
+    'fr-FR': 'Numéro fiscal du destinataire',
+    'cs-CZ': 'Daňové číslo odběratele',
+    'da-DK': 'Modtagerens skattenummer',
+    'zh-CN': '对方税号',
+    'zh-TW': '對方稅號',
+    'ar-EG': 'الرقم الضريبي للعميل',
+  },
+  type: 'text',
+  required: false,
+};
+
+const TERMS: OutlineSlot = {
+  id: 'terms',
+  label: {
+    'en-US': 'Terms',
+    'de-DE': 'Zahlungsziel',
+    'fr-FR': 'Conditions de règlement',
+    'cs-CZ': 'Splatnost',
+    'da-DK': 'Betalingsbetingelser',
+    'zh-CN': '付款条件',
+    'zh-TW': '付款條件',
+    'ar-EG': 'شروط السداد',
+  },
+  help: {
+    'en-US': 'The terms stored with the document — net7, net14, net30 or on-receipt are printed in the document’s language.',
+    'de-DE': 'Die beim Beleg gespeicherte Bedingung — net7, net14, net30 und on-receipt werden in der Sprache des Belegs gedruckt.',
+    'fr-FR': 'Les conditions enregistrées avec le document — net7, net14, net30 et on-receipt sont imprimées dans la langue du document.',
+    'cs-CZ': 'Splatnost uložená u dokladu — net7, net14, net30 a on-receipt se tisknou v jazyce dokladu.',
+    'da-DK': 'Betingelserne gemt med bilaget — net7, net14, net30 og on-receipt trykkes på bilagets eget sprog.',
+    'zh-CN': '与单据一起存储的付款条件——net7、net14、net30 和 on-receipt 以单据语言打印。',
+    'zh-TW': '與單據一起儲存的付款條件——net7、net14、net30 和 on-receipt 以單據語言列印。',
+    'ar-EG': 'الشروط المخزنة مع المستند — تُطبع net7 وnet14 وnet30 وon-receipt بلغة المستند.',
+  },
+  type: 'text',
+  required: false,
+};
+
+const TAX_NAME: OutlineSlot = {
+  id: 'taxName',
+  label: {
+    'en-US': 'Tax name on this document',
+    'de-DE': 'Steuerbezeichnung auf diesem Beleg',
+    'fr-FR': 'Nom de la taxe sur ce document',
+    'cs-CZ': 'Název daně na tomto dokladu',
+    'da-DK': 'Afgiftens navn på dette bilag',
+    'zh-CN': '本单据的税名',
+    'zh-TW': '本單據的稅名',
+    'ar-EG': 'اسم الضريبة في هذا المستند',
+  },
+  help: {
+    'en-US': 'Copied onto the document when it was made. Unmapped, the word from the settings is used.',
+    'de-DE': 'Beim Erstellen auf den Beleg kopiert. Ohne Zuordnung gilt das Wort aus den Einstellungen.',
+    'fr-FR': 'Copié sur le document à sa création. Sans correspondance, le mot des réglages est utilisé.',
+    'cs-CZ': 'Zkopírováno na doklad při jeho vytvoření. Bez přiřazení se použije slovo z nastavení.',
+    'da-DK': 'Kopieret over på bilaget, da det blev lavet. Uden tilknytning bruges ordet fra indstillingerne.',
+    'zh-CN': '创建单据时复制到单据上。不映射时使用设置中的名称。',
+    'zh-TW': '建立單據時複製到單據上。不對應時使用設定中的名稱。',
+    'ar-EG': 'يُنسخ على المستند عند إنشائه. بدون ربط تُستخدم الكلمة من الإعدادات.',
+  },
+  type: 'text',
+  required: false,
+};
+
+const SUBTOTAL: OutlineSlot = {
+  id: 'subtotal',
+  label: {
+    'en-US': 'Subtotal',
+    'de-DE': 'Zwischensumme',
+    'fr-FR': 'Sous-total',
+    'cs-CZ': 'Mezisoučet',
+    'da-DK': 'Subtotal',
+    'zh-CN': '小计',
+    'zh-TW': '小計',
+    'ar-EG': 'المجموع الفرعي',
+  },
+  type: 'money',
+  required: false,
+};
+
+const TAX: OutlineSlot = {
+  id: 'tax',
+  label: {
+    'en-US': 'Tax',
+    'de-DE': 'Steuer',
+    'fr-FR': 'Taxe',
+    'cs-CZ': 'Daň',
+    'da-DK': 'Afgift',
+    'zh-CN': '税额',
+    'zh-TW': '稅額',
+    'ar-EG': 'الضريبة',
+  },
+  type: 'money',
+  required: false,
+};
+
+const TOTAL: OutlineSlot = {
+  id: 'total',
+  label: {
+    'en-US': 'Total',
+    'de-DE': 'Gesamt',
+    'fr-FR': 'Total',
+    'cs-CZ': 'Celkem',
+    'da-DK': 'I alt',
+    'zh-CN': '合计',
+    'zh-TW': '合計',
+    'ar-EG': 'الإجمالي',
+  },
+  help: {
+    'en-US': 'Map the stored subtotal, tax and total and they are printed exactly as stored. Unmapped, the lines are added up here.',
+    'de-DE': 'Gespeicherte Zwischensumme, Steuer und Gesamtsumme zuordnen, und sie werden genau so gedruckt. Ohne Zuordnung werden die Positionen hier addiert.',
+    'fr-FR': 'Associez le sous-total, la taxe et le total enregistrés : ils sont imprimés tels quels. Sans correspondance, les lignes sont additionnées ici.',
+    'cs-CZ': 'Přiřaďte uložený mezisoučet, daň a celkovou částku a vytisknou se přesně tak. Bez přiřazení se položky sečtou zde.',
+    'da-DK': 'Tilknyt den gemte subtotal, afgift og total, så trykkes de præcis som gemt. Uden tilknytning lægges linjerne sammen her.',
+    'zh-CN': '映射存储的小计、税额和合计，即按存储值原样打印。不映射时在此处合计明细。',
+    'zh-TW': '對應儲存的小計、稅額和合計，即依儲存值原樣列印。不對應時在此處合計明細。',
+    'ar-EG': 'اربط المجموع الفرعي والضريبة والإجمالي المخزنة فتُطبع كما هي تماماً. بدون ربط تُجمع البنود هنا.',
+  },
+  type: 'money',
+  required: false,
+};
+
+const PAID: OutlineSlot = {
+  id: 'paid',
+  label: {
+    'en-US': 'Paid so far',
+    'de-DE': 'Bisher bezahlt',
+    'fr-FR': 'Déjà réglé',
+    'cs-CZ': 'Dosud uhrazeno',
+    'da-DK': 'Betalt indtil nu',
+    'zh-CN': '已付金额',
+    'zh-TW': '已付金額',
+    'ar-EG': 'المدفوع حتى الآن',
+  },
+  type: 'money',
+  required: false,
+};
+
+const BALANCE: OutlineSlot = {
+  id: 'balance',
+  label: {
+    'en-US': 'Amount due',
+    'de-DE': 'Offener Betrag',
+    'fr-FR': 'Montant dû',
+    'cs-CZ': 'K úhradě',
+    'da-DK': 'Skyldigt beløb',
+    'zh-CN': '应付金额',
+    'zh-TW': '應付金額',
+    'ar-EG': 'المبلغ المستحق',
+  },
+  type: 'money',
+  required: false,
+};
+
+const STATUS: OutlineSlot = {
+  id: 'status',
+  label: {
+    'en-US': 'State',
+    'de-DE': 'Status',
+    'fr-FR': 'Statut',
+    'cs-CZ': 'Stav',
+    'da-DK': 'Status',
+    'zh-CN': '状态',
+    'zh-TW': '狀態',
+    'ar-EG': 'الحالة',
+  },
+  help: {
+    'en-US': 'When it says void, the document is drawn marked Void, with the day it was voided and never the reason.',
+    'de-DE': 'Steht hier void, wird der Beleg als storniert gezeichnet, mit dem Tag der Stornierung und nie dem Grund.',
+    'fr-FR': 'Quand il vaut void, le document est dessiné marqué Annulé, avec le jour de l’annulation et jamais le motif.',
+    'cs-CZ': 'Když je zde void, doklad se vykreslí jako stornovaný, s dnem storna a nikdy s důvodem.',
+    'da-DK': 'Når der står void, tegnes bilaget som annulleret, med dagen for annulleringen og aldrig grunden.',
+    'zh-CN': '值为 void 时，单据会标为作废，附作废日期，从不显示原因。',
+    'zh-TW': '值為 void 時，單據會標為作廢，附作廢日期，從不顯示原因。',
+    'ar-EG': 'عندما تكون القيمة void يُرسم المستند موسوماً بالإلغاء، مع يوم الإلغاء ودون السبب أبداً.',
+  },
+  type: 'text',
+  required: false,
+};
+
+const VOIDED_ON: OutlineSlot = {
+  id: 'voidedOn',
+  label: {
+    'en-US': 'Voided on',
+    'de-DE': 'Storniert am',
+    'fr-FR': 'Annulé le',
+    'cs-CZ': 'Stornováno dne',
+    'da-DK': 'Annulleret den',
+    'zh-CN': '作废日期',
+    'zh-TW': '作廢日期',
+    'ar-EG': 'تاريخ الإلغاء',
+  },
+  type: 'date',
+  required: false,
+};
+
+const PREPARED_BY: OutlineSlot = {
+  id: 'preparedBy',
+  label: {
+    'en-US': 'Prepared by',
+    'de-DE': 'Erstellt von',
+    'fr-FR': 'Préparé par',
+    'cs-CZ': 'Vystavil',
+    'da-DK': 'Udarbejdet af',
+    'zh-CN': '经办人',
+    'zh-TW': '經辦人',
+    'ar-EG': 'أعدّه',
+  },
+  type: 'text',
+  required: false,
+};
+
+const SENT_ON: OutlineSlot = {
+  id: 'sentOn',
+  label: {
+    'en-US': 'Sent on',
+    'de-DE': 'Gesendet am',
+    'fr-FR': 'Envoyé le',
+    'cs-CZ': 'Odesláno dne',
+    'da-DK': 'Sendt den',
+    'zh-CN': '发送日期',
+    'zh-TW': '發送日期',
+    'ar-EG': 'تاريخ الإرسال',
+  },
+  type: 'date',
+  required: false,
+};
+
+const VALID_UNTIL: OutlineSlot = {
+  id: 'validUntil',
+  label: {
+    'en-US': 'Valid until',
+    'de-DE': 'Gültig bis',
+    'fr-FR': 'Valable jusqu’au',
+    'cs-CZ': 'Platí do',
+    'da-DK': 'Gyldig til',
+    'zh-CN': '有效期至',
+    'zh-TW': '有效期至',
+    'ar-EG': 'صالح حتى',
+  },
+  type: 'date',
+  required: false,
+};
+
+const SCOPE: OutlineSlot = {
+  id: 'scope',
+  label: {
+    'en-US': 'What it covers',
+    'de-DE': 'Umfang',
+    'fr-FR': 'Périmètre',
+    'cs-CZ': 'Rozsah',
+    'da-DK': 'Omfang',
+    'zh-CN': '范围',
+    'zh-TW': '範圍',
+    'ar-EG': 'النطاق',
+  },
+  help: {
+    'en-US': 'Paragraphs printed under the title, one each.',
+    'de-DE': 'Absätze unter dem Betreff, je einer.',
+    'fr-FR': 'Paragraphes imprimés sous l’objet, un par un.',
+    'cs-CZ': 'Odstavce vytištěné pod předmětem, každý zvlášť.',
+    'da-DK': 'Afsnit trykt under emnet, ét ad gangen.',
+    'zh-CN': '印在事由下方的段落，每段一条。',
+    'zh-TW': '印在事由下方的段落，每段一條。',
+    'ar-EG': 'فقرات تُطبع تحت الموضوع، كل واحدة على حدة.',
+  },
+  type: 'text[]',
+  required: false,
+};
+
+const PAYMENT_SPLIT: OutlineSlot = {
+  id: 'paymentSplit',
+  label: {
+    'en-US': 'How it gets paid',
+    'de-DE': 'Zahlungsaufteilung',
+    'fr-FR': 'Échéancier',
+    'cs-CZ': 'Rozložení plateb',
+    'da-DK': 'Betalingsopdeling',
+    'zh-CN': '付款安排',
+    'zh-TW': '付款安排',
+    'ar-EG': 'طريقة الدفع',
+  },
+  type: 'text[]',
+  required: false,
+};
+
+const SIGNED_NAME: OutlineSlot = {
+  id: 'signedName',
+  label: {
+    'en-US': 'Accepted and signed by',
+    'de-DE': 'Angenommen und unterschrieben von',
+    'fr-FR': 'Accepté et signé par',
+    'cs-CZ': 'Přijal a podepsal',
+    'da-DK': 'Accepteret og underskrevet af',
+    'zh-CN': '接受并签署人',
+    'zh-TW': '接受並簽署人',
+    'ar-EG': 'قبِله ووقّعه',
+  },
+  type: 'text',
+  required: false,
+};
+
+const SIGNED_ON: OutlineSlot = {
+  id: 'signedOn',
+  label: {
+    'en-US': 'Signed on',
+    'de-DE': 'Unterschrieben am',
+    'fr-FR': 'Signé le',
+    'cs-CZ': 'Podepsáno dne',
+    'da-DK': 'Underskrevet den',
+    'zh-CN': '签署日期',
+    'zh-TW': '簽署日期',
+    'ar-EG': 'تاريخ التوقيع',
+  },
+  type: 'date',
+  required: false,
+};
+
+const TERMS_VERSION: OutlineSlot = {
+  id: 'termsVersion',
+  label: {
+    'en-US': 'Terms version',
+    'de-DE': 'Fassung der Bedingungen',
+    'fr-FR': 'Version des conditions',
+    'cs-CZ': 'Verze podmínek',
+    'da-DK': 'Vilkårsversion',
+    'zh-CN': '条款版本',
+    'zh-TW': '條款版本',
+    'ar-EG': 'إصدار الشروط',
+  },
+  type: 'text',
+  required: false,
+};
+
+const FINGERPRINT: OutlineSlot = {
+  id: 'fingerprint',
+  label: {
+    'en-US': 'Fingerprint',
+    'de-DE': 'Fingerabdruck',
+    'fr-FR': 'Empreinte',
+    'cs-CZ': 'Otisk',
+    'da-DK': 'Fingeraftryk',
+    'zh-CN': '指纹',
+    'zh-TW': '指紋',
+    'ar-EG': 'البصمة',
+  },
+  help: {
+    'en-US': 'Printed shortened, first four and last four characters.',
+    'de-DE': 'Gekürzt gedruckt, die ersten und letzten vier Zeichen.',
+    'fr-FR': 'Imprimée abrégée : les quatre premiers et les quatre derniers caractères.',
+    'cs-CZ': 'Tiskne se zkráceně, první a poslední čtyři znaky.',
+    'da-DK': 'Trykkes forkortet, de første og sidste fire tegn.',
+    'zh-CN': '缩短打印，保留前四位和后四位。',
+    'zh-TW': '縮短列印，保留前四位和後四位。',
+    'ar-EG': 'تُطبع مختصرة: أول أربعة أحرف وآخر أربعة.',
+  },
+  type: 'text',
+  required: false,
+};
+
+const AMOUNT: OutlineSlot = {
+  id: 'amount',
+  label: {
+    'en-US': 'Amount received',
+    'de-DE': 'Erhaltener Betrag',
+    'fr-FR': 'Montant reçu',
+    'cs-CZ': 'Přijatá částka',
+    'da-DK': 'Modtaget beløb',
+    'zh-CN': '收款金额',
+    'zh-TW': '收款金額',
+    'ar-EG': 'المبلغ المستلم',
+  },
+  type: 'money',
+  required: false,
+};
+
+const INVOICE_NUMBER: OutlineSlot = {
+  id: 'invoiceNumber',
+  label: {
+    'en-US': 'For invoice',
+    'de-DE': 'Zu Rechnung',
+    'fr-FR': 'Pour la facture',
+    'cs-CZ': 'K faktuře',
+    'da-DK': 'Til faktura',
+    'zh-CN': '对应发票',
+    'zh-TW': '對應發票',
+    'ar-EG': 'عن الفاتورة',
+  },
+  type: 'text',
+  required: false,
+};
+
+const INVOICE_TOTAL: OutlineSlot = {
+  id: 'invoiceTotal',
+  label: {
+    'en-US': 'Invoice total',
+    'de-DE': 'Rechnungsbetrag',
+    'fr-FR': 'Total de la facture',
+    'cs-CZ': 'Celkem na faktuře',
+    'da-DK': 'Fakturabeløb',
+    'zh-CN': '发票合计',
+    'zh-TW': '發票合計',
+    'ar-EG': 'إجمالي الفاتورة',
+  },
+  type: 'money',
+  required: false,
+};
+
+const BALANCE_AFTER: OutlineSlot = {
+  id: 'balanceAfter',
+  label: {
+    'en-US': 'Balance left',
+    'de-DE': 'Restbetrag',
+    'fr-FR': 'Reste à régler',
+    'cs-CZ': 'Zbývá uhradit',
+    'da-DK': 'Resterende beløb',
+    'zh-CN': '剩余金额',
+    'zh-TW': '剩餘金額',
+    'ar-EG': 'الرصيد المتبقي',
+  },
+  type: 'money',
+  required: false,
+};
+
+const VOIDED: OutlineSlot = {
+  id: 'voided',
+  label: {
+    'en-US': 'Voided',
+    'de-DE': 'Storniert',
+    'fr-FR': 'Annulé',
+    'cs-CZ': 'Stornováno',
+    'da-DK': 'Annulleret',
+    'zh-CN': '已作废',
+    'zh-TW': '已作廢',
+    'ar-EG': 'ملغى',
+  },
+  help: {
+    'en-US': 'True when the payment was voided: its receipt is then drawn marked Void.',
+    'de-DE': 'Wahr, wenn die Zahlung storniert wurde: die Quittung wird dann als storniert gezeichnet.',
+    'fr-FR': 'Vrai quand le règlement a été annulé : son reçu est alors dessiné marqué Annulé.',
+    'cs-CZ': 'Pravda, když byla platba stornována: stvrzenka se pak vykreslí jako stornovaná.',
+    'da-DK': 'Sand, når betalingen er annulleret: kvitteringen tegnes da som annulleret.',
+    'zh-CN': '付款已作废时为真：其收据会标为作废。',
+    'zh-TW': '付款已作廢時為真：其收據會標為作廢。',
+    'ar-EG': 'صحيح عند إلغاء الدفعة: عندها يُرسم إيصالها موسوماً بالإلغاء.',
+  },
+  type: 'text',
+  required: false,
+};
+
+const PERIOD_FROM: OutlineSlot = {
+  id: 'periodFrom',
+  label: {
+    'en-US': 'Period from',
+    'de-DE': 'Zeitraum ab',
+    'fr-FR': 'Période du',
+    'cs-CZ': 'Období od',
+    'da-DK': 'Periode fra',
+    'zh-CN': '期间起始',
+    'zh-TW': '期間起始',
+    'ar-EG': 'الفترة من',
+  },
+  type: 'date',
+  required: false,
+};
+
+const PERIOD_TO: OutlineSlot = {
+  id: 'periodTo',
+  label: {
+    'en-US': 'Period to',
+    'de-DE': 'Zeitraum bis',
+    'fr-FR': 'Période au',
+    'cs-CZ': 'Období do',
+    'da-DK': 'Periode til',
+    'zh-CN': '期间截止',
+    'zh-TW': '期間截止',
+    'ar-EG': 'الفترة إلى',
+  },
+  type: 'date',
+  required: false,
+};
+
+const OPENING_BALANCE: OutlineSlot = {
+  id: 'openingBalance',
+  label: {
+    'en-US': 'Owed at the start',
+    'de-DE': 'Stand zu Beginn',
+    'fr-FR': 'Solde d’ouverture',
+    'cs-CZ': 'Počáteční zůstatek',
+    'da-DK': 'Primosaldo',
+    'zh-CN': '期初余额',
+    'zh-TW': '期初餘額',
+    'ar-EG': 'الرصيد الافتتاحي',
+  },
+  type: 'money',
+  required: false,
+};
+
+const DOCUMENTS_TOTAL: OutlineSlot = {
+  id: 'documentsTotal',
+  label: {
+    'en-US': 'Invoiced',
+    'de-DE': 'In Rechnung gestellt',
+    'fr-FR': 'Facturé',
+    'cs-CZ': 'Fakturováno',
+    'da-DK': 'Faktureret',
+    'zh-CN': '开票合计',
+    'zh-TW': '開票合計',
+    'ar-EG': 'المفوتر',
+  },
+  type: 'money',
+  required: false,
+};
+
+const PAYMENTS_TOTAL: OutlineSlot = {
+  id: 'paymentsTotal',
+  label: {
+    'en-US': 'Paid',
+    'de-DE': 'Bezahlt',
+    'fr-FR': 'Réglé',
+    'cs-CZ': 'Uhrazeno',
+    'da-DK': 'Betalt',
+    'zh-CN': '已付',
+    'zh-TW': '已付',
+    'ar-EG': 'المدفوع',
+  },
+  type: 'money',
+  required: false,
+};
+
+const CLOSING_BALANCE: OutlineSlot = {
+  id: 'closingBalance',
+  label: {
+    'en-US': 'Still open',
+    'de-DE': 'Noch offen',
+    'fr-FR': 'Reste dû',
+    'cs-CZ': 'Zbývá',
+    'da-DK': 'Udestående',
+    'zh-CN': '未结余额',
+    'zh-TW': '未結餘額',
+    'ar-EG': 'المتبقي',
+  },
+  type: 'money',
+  required: false,
+};
+
+const PAYMENTS: OutlineSlot = {
+  id: 'payments',
+  label: {
+    'en-US': 'Payments recorded',
+    'de-DE': 'Erfasste Zahlungen',
+    'fr-FR': 'Règlements enregistrés',
+    'cs-CZ': 'Zaznamenané platby',
+    'da-DK': 'Registrerede betalinger',
+    'zh-CN': '已记录的付款',
+    'zh-TW': '已記錄的付款',
+    'ar-EG': 'المدفوعات المسجلة',
+  },
+  help: {
+    'en-US': 'The payments against this document. Voided ones are left off the page.',
+    'de-DE': 'Die Zahlungen zu diesem Beleg. Stornierte stehen nicht auf dem Blatt.',
+    'fr-FR': 'Les règlements de ce document. Les annulés ne sont pas imprimés.',
+    'cs-CZ': 'Platby k tomuto dokladu. Stornované se netisknou.',
+    'da-DK': 'Betalingerne til dette bilag. Annullerede kommer ikke med på siden.',
+    'zh-CN': '该单据的付款。已作废的不打印。',
+    'zh-TW': '該單據的付款。已作廢的不列印。',
+    'ar-EG': 'المدفوعات على هذا المستند. الملغاة لا تُطبع.',
+  },
+  type: 'collection',
+  required: false,
+  columns: [
+    {
+      id: 'number',
+      label: {
+        'en-US': 'Receipt number',
+        'de-DE': 'Quittungsnummer',
+        'fr-FR': 'Numéro du reçu',
+        'cs-CZ': 'Číslo stvrzenky',
+        'da-DK': 'Kvitteringsnummer',
+        'zh-CN': '收据编号',
+        'zh-TW': '收據編號',
+        'ar-EG': 'رقم الإيصال',
+      },
+      type: 'text',
+      required: false,
+    },
+    {
+      id: 'paidOn',
+      label: {
+        'en-US': 'Paid on',
+        'de-DE': 'Bezahlt am',
+        'fr-FR': 'Réglé le',
+        'cs-CZ': 'Uhrazeno dne',
+        'da-DK': 'Betalt den',
+        'zh-CN': '付款日期',
+        'zh-TW': '付款日期',
+        'ar-EG': 'تاريخ الدفع',
+      },
+      type: 'date',
+      required: false,
+    },
+    {
+      id: 'method',
+      label: {
+        'en-US': 'Method',
+        'de-DE': 'Zahlungsweg',
+        'fr-FR': 'Moyen',
+        'cs-CZ': 'Způsob',
+        'da-DK': 'Betalingsmåde',
+        'zh-CN': '方式',
+        'zh-TW': '方式',
+        'ar-EG': 'الطريقة',
+      },
+      type: 'text',
+      required: false,
+    },
+    {
+      id: 'amount',
+      label: {
+        'en-US': 'Amount',
+        'de-DE': 'Betrag',
+        'fr-FR': 'Montant',
+        'cs-CZ': 'Částka',
+        'da-DK': 'Beløb',
+        'zh-CN': '金额',
+        'zh-TW': '金額',
+        'ar-EG': 'المبلغ',
+      },
+      type: 'money',
+      required: false,
+    },
+    {
+      id: 'voided',
+      label: {
+        'en-US': 'Voided',
+        'de-DE': 'Storniert',
+        'fr-FR': 'Annulé',
+        'cs-CZ': 'Stornováno',
+        'da-DK': 'Annulleret',
+        'zh-CN': '已作废',
+        'zh-TW': '已作廢',
+        'ar-EG': 'ملغى',
+      },
+      type: 'text',
+      required: false,
+    },
+  ],
+};
+
+const ENTRIES: OutlineSlot = {
+  id: 'entries',
+  label: {
+    'en-US': 'Entries',
+    'de-DE': 'Buchungen',
+    'fr-FR': 'Écritures',
+    'cs-CZ': 'Položky výpisu',
+    'da-DK': 'Poster',
+    'zh-CN': '明细',
+    'zh-TW': '明細',
+    'ar-EG': 'القيود',
+  },
+  help: {
+    'en-US': 'One row per document and per payment in the period, oldest first, with the balance after each.',
+    'de-DE': 'Eine Zeile je Beleg und je Zahlung im Zeitraum, älteste zuerst, mit dem Saldo danach.',
+    'fr-FR': 'Une ligne par document et par règlement de la période, du plus ancien au plus récent, avec le solde après chacun.',
+    'cs-CZ': 'Jeden řádek na doklad a na platbu v období, od nejstarších, se zůstatkem po každém.',
+    'da-DK': 'Én række pr. bilag og pr. betaling i perioden, ældste først, med saldoen efter hver.',
+    'zh-CN': '期间内每张单据和每笔付款一行，按时间先后，附每笔之后的余额。',
+    'zh-TW': '期間內每張單據和每筆付款一列，按時間先後，附每筆之後的餘額。',
+    'ar-EG': 'صف لكل مستند ولكل دفعة في الفترة، الأقدم أولاً، مع الرصيد بعد كل منها.',
+  },
+  type: 'collection',
+  required: false,
+  columns: [
+    {
+      id: 'date',
+      label: {
+        'en-US': 'Date',
+        'de-DE': 'Datum',
+        'fr-FR': 'Date',
+        'cs-CZ': 'Datum',
+        'da-DK': 'Dato',
+        'zh-CN': '日期',
+        'zh-TW': '日期',
+        'ar-EG': 'التاريخ',
+      },
+      type: 'date',
+      required: false,
+    },
+    {
+      id: 'kind',
+      label: {
+        'en-US': 'Entry kind',
+        'de-DE': 'Art',
+        'fr-FR': 'Type',
+        'cs-CZ': 'Druh',
+        'da-DK': 'Type',
+        'zh-CN': '类型',
+        'zh-TW': '類型',
+        'ar-EG': 'النوع',
+      },
+      type: 'text',
+      required: false,
+    },
+    {
+      id: 'number',
+      label: {
+        'en-US': 'Number',
+        'de-DE': 'Nummer',
+        'fr-FR': 'Numéro',
+        'cs-CZ': 'Číslo',
+        'da-DK': 'Nummer',
+        'zh-CN': '编号',
+        'zh-TW': '編號',
+        'ar-EG': 'الرقم',
+      },
+      type: 'text',
+      required: false,
+    },
+    {
+      id: 'amount',
+      label: {
+        'en-US': 'Amount',
+        'de-DE': 'Betrag',
+        'fr-FR': 'Montant',
+        'cs-CZ': 'Částka',
+        'da-DK': 'Beløb',
+        'zh-CN': '金额',
+        'zh-TW': '金額',
+        'ar-EG': 'المبلغ',
+      },
+      type: 'money',
+      required: false,
+    },
+    {
+      id: 'balance',
+      label: {
+        'en-US': 'Balance after',
+        'de-DE': 'Saldo danach',
+        'fr-FR': 'Solde après',
+        'cs-CZ': 'Zůstatek po',
+        'da-DK': 'Saldo efter',
+        'zh-CN': '之后余额',
+        'zh-TW': '之後餘額',
+        'ar-EG': 'الرصيد بعده',
+      },
+      type: 'money',
+      required: false,
+    },
+  ],
+};
+
+/** On a receipt the customer is optional: a till receipt names nobody, and a payment's client is two rows away. */
+const CUSTOMER_NAME_OPTIONAL: OutlineSlot = { ...CUSTOMER_NAME, required: false };
+
+/** The details every kind can carry about the party a document is made out to. */
+const PARTY: readonly OutlineSlot[] = [CUSTOMER_CONTACT, CUSTOMER_TAX_NUMBER];
+
 const SHARED: readonly OutlineSlot[] = [
   NUMBER,
   ISSUED_AT,
@@ -521,17 +1440,105 @@ const SHARED: readonly OutlineSlot[] = [
   DISCOUNT_RATE,
 ];
 
+/** The figures Adminium stores on a document built on a shape, printed as stored. */
+const STORED_TOTALS: readonly OutlineSlot[] = [TAX_NAME, SUBTOTAL, TAX, TOTAL];
+
 const OUTLINES: Readonly<Record<string, DocumentOutline>> = {
-  invoice: { slots: [...SHARED, DUE_AT, PO_NUMBER] },
+  invoice: {
+    slots: [
+      ...SHARED,
+      DUE_AT,
+      PO_NUMBER,
+      TITLE,
+      ...PARTY,
+      TERMS,
+      ...STORED_TOTALS,
+      PAID,
+      BALANCE,
+      PAYMENTS,
+      STATUS,
+      VOIDED_ON,
+      PREPARED_BY,
+    ],
+  },
   /*
    * `paidWith` and `tip` are drawn nowhere in `Invoice Builder.dc.html`, and
    * that is not an oversight on either side: the comp is the INVOICE authoring
    * surface, and a receipt is what a till prints after money has changed hands
    * (34 §6.1 — the point-of-sale mount is the owner's own example). They have a
    * caller in 34f and none in the comp.
+   *
+   * The receipt of ONE PAYMENT — a shape's payments row — maps `amount`, the
+   * invoice it pays and the balance left, and `paidWith` to its method.
    */
-  receipt: { slots: [...SHARED, PAID_WITH, TIP] },
-  'credit-note': { slots: [...SHARED, REFERENCES] },
+  receipt: {
+    slots: [
+      NUMBER,
+      ISSUED_AT,
+      CUSTOMER_NAME_OPTIONAL,
+      CUSTOMER_LINES,
+      CUSTOMER_EMAIL,
+      CURRENCY,
+      ITEMS,
+      TAX_RATE,
+      DISCOUNT_RATE,
+      PAID_WITH,
+      TIP,
+      TITLE,
+      ...PARTY,
+      AMOUNT,
+      INVOICE_NUMBER,
+      INVOICE_TOTAL,
+      BALANCE_AFTER,
+      VOIDED,
+      VOIDED_ON,
+      PREPARED_BY,
+    ],
+  },
+  'credit-note': { slots: [...SHARED, REFERENCES, TITLE, ...PARTY, PREPARED_BY] },
+  quote: {
+    slots: [
+      ...SHARED,
+      TITLE,
+      ...PARTY,
+      ...STORED_TOTALS,
+      STATUS,
+      SENT_ON,
+      VALID_UNTIL,
+      SCOPE,
+      PAYMENT_SPLIT,
+      SIGNED_NAME,
+      SIGNED_ON,
+      TERMS_VERSION,
+      FINGERPRINT,
+      PREPARED_BY,
+    ],
+  },
+  /*
+   * A statement is one client and a period, not one row and its lines: no
+   * number of its own (it is not a document in any series), and its entries
+   * and balances come from Adminium's statement read, keyed by the slot ids
+   * here — `entries` (date, kind, number, amount, balance after), the opening
+   * balance, the two totals and what is still open.
+   */
+  statement: {
+    slots: [
+      ISSUED_AT,
+      CUSTOMER_NAME,
+      CUSTOMER_LINES,
+      CUSTOMER_EMAIL,
+      ...PARTY,
+      CURRENCY,
+      PERIOD_FROM,
+      PERIOD_TO,
+      OPENING_BALANCE,
+      DOCUMENTS_TOTAL,
+      PAYMENTS_TOTAL,
+      CLOSING_BALANCE,
+      ENTRIES,
+      PREPARED_BY,
+    ],
+  },
 };
 
 export const KINDS: readonly DocumentKind[] = [
@@ -553,6 +1560,20 @@ export const KINDS: readonly DocumentKind[] = [
   {
     id: 'credit-note',
     label: KIND_LABELS['credit-note'],
+    formats: ['html', 'pdf'],
+    paper: ['a4', 'letter'],
+    coverage: 'winansi',
+  },
+  {
+    id: 'quote',
+    label: KIND_LABELS.quote,
+    formats: ['html', 'pdf'],
+    paper: ['a4', 'letter'],
+    coverage: 'winansi',
+  },
+  {
+    id: 'statement',
+    label: KIND_LABELS.statement,
     formats: ['html', 'pdf'],
     paper: ['a4', 'letter'],
     coverage: 'winansi',
