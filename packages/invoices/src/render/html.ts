@@ -73,7 +73,8 @@ body {
   font: ${narrow ? '11px' : '12.5px'}/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 .sheet { position: relative; max-width: ${narrow ? '72mm' : '178mm'}; margin: 0 auto; padding: ${narrow ? '4mm 0' : '10mm 0'}; }
-.fig { font-variant-numeric: tabular-nums; unicode-bidi: isolate; white-space: nowrap; }
+/* An amount reads left to right in every language: an Arabic page would otherwise turn "US$ 2,821" around its sign. */
+.fig { font-variant-numeric: tabular-nums; direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
 .void { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; overflow: hidden; }
 .void span { transform: rotate(-24deg); font-size: ${narrow ? '48px' : '120px'}; font-weight: 800; letter-spacing: .08em; color: rgba(25,25,32,.08); border: ${narrow ? '4px' : '10px'} solid rgba(25,25,32,.08); border-radius: 26px; padding: 0 .25em; line-height: 1.15; }
 .letterhead { display: ${narrow ? 'block' : 'grid'}; grid-template-columns: minmax(0,1fr) auto; gap: 20px; align-items: start; padding-block-end: ${narrow ? '10px' : '22px'}; border-block-end: 1px solid var(--line); }

@@ -276,6 +276,8 @@ describe('the print copy in every language', () => {
     expect(html).toContain('المدفوعات حتى الآن');
     // Figures are isolated, so the digits of a total keep their order.
     expect(html).toMatch(/<span class="fig">[^<]*١٬٣١٨٫٨٠[^<]*<\/span>/);
+    // …and read left to right, or the page's direction turns the amount around its currency.
+    expect(html).toMatch(/\.fig \{[^}]*direction: ltr;[^}]*unicode-bidi: isolate;/);
   });
 
   it.each(['zh-CN', 'zh-TW'])('draws a %s invoice as the print copy only', async (locale) => {
