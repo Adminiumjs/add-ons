@@ -18,18 +18,22 @@
     "data"
   ],
   "compatibility": {
-    "minAdminiumVersion": "0.2.6",
+    "minAdminiumVersion": "0.3.1",
     "requires": []
   },
   "addOn": {
     "attaches": [
       {
         "app": "factory",
-        "range": "^1.0.0"
+        "range": "^0.1.0"
       },
       {
         "app": "maker",
-        "range": "^1.0.0"
+        "range": "^0.1.0"
+      },
+      {
+        "app": "pos",
+        "range": "^0.2.0"
       }
     ],
     "provides": [

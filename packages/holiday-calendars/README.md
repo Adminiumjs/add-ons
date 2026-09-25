@@ -23,16 +23,18 @@ contributes is a list of days; the days themselves are drawn by the host, on the
 through the read surface below. An add-on that also drew a calendar would be a second, disagreeing
 copy of one the app already has.
 
-`attaches` names `hr` (people-ops) and `clinic` (clinic-desk) rather than `"*"`, because `"*"` claims
-every app that will ever exist and an unfalsifiable claim is worse than a wrong one. Both named apps
-are validated on every run by `packages/host/src/manifest-schema.test.ts`, which puts this manifest
-through the product's own validator against each app's declared tables.
+`attaches` names `hr` (people-ops), `clinic` (clinic-desk) and `clients` (the Client Portal) rather
+than `"*"`, because `"*"` claims every app that will ever exist and an unfalsifiable claim is worse
+than a wrong one. Each range is the minor line that app ships on — `^0.1.0` for people-ops,
+`^0.2.0` for clinic-desk and the Client Portal. All three are validated on every run by
+`packages/host/src/manifest-schema.test.ts`, which puts this manifest through the product's own
+validator against each app's declared tables.
 
-**Neither of those apps has an add-on seam yet**, and the suite says so out loud rather than
-skipping quietly: `named every app an add-on may target but cannot yet draw in` prints them. The
-retrofit is a separate task. What is checked today is that the manifest would INSTALL into both;
-what is not yet checkable is that the panel would mount, because neither app mounts add-on slots at
-all.
+people-ops and clinic-desk vendor the add-on host and read the days at their own mount sites, so the
+attach-surface gate sees them consume this add-on. **The Client Portal has no add-on seam and
+imports no add-on code at all**: it reads this add-on's public setting `days` from the config
+Adminium gives its staff screens (see below), so the suite checks its claim for installability only
+and says so out loud (`names every app an add-on may target but cannot yet draw in`).
 
 ---
 
@@ -232,20 +234,35 @@ Every computed leave balance comes off that array, with no change to the engine 
 
 ### clinic-desk (`clinic`)
 
-A `closures` table exists in the schema and the manifest and **nothing reads it**; `isWorkingDay` is
-a pure weekday predicate that reads `getDay()` and nothing else. The same day maps to a closure row:
+The desk offers each day as a SUGGESTION on Hours & closures, because the server's booking rule
+reads only rows in the `closures` table — a day held in an add-on's settings cannot close the
+diary. "Add as a closure" writes the row; a closure is a span, and a public holiday is a span of
+one day:
 
 ```ts
 const rows = nonWorkingDays(settings['holiday-calendars']).map((day) => ({
-  on_date: day.date,
-  reason: day.name,
+  from_date: day.date,
+  to_date: day.date,
+  label: day.name,      // the country's own name for the day, never run through `t()`
   clinician_id: null,   // the schema's own way of saying the whole practice is shut
 }));
 ```
 
-Two hosts, two record shapes, one array, and neither host reaches into this add-on's storage. Both
-mappings are exercised in `calendar.test.ts` — not because this repository can test another
-application, but because a claim in a README that no code has ever run is a claim on trust.
+### the Client Portal (`clients`)
+
+The portal's screens import no add-on code. Adminium hands its staff screens the public settings of
+the add-ons the app suggests, and `days` is one of them: a list in which every entry carries `date`
+(`YYYY-MM-DD`) and `name`, exactly the two fields `nonWorkingDays` returns (an entry may also carry
+`from`, which the portal ignores). The portal suggests this add-on for its Schedule and Capacity
+screens: a day in the list is taken out of every person's working week, and shown on the schedule
+under its own name.
+
+Nothing is written back and nothing is required: with the add-on absent the list is empty and the
+weeks are what they were.
+
+Three hosts, three record shapes, one list, and none of them reaches into this add-on's private
+fields. All three mappings are exercised in `calendar.test.ts` — not because this repository can test
+another application, but because a claim in a README that no code has ever run is a claim on trust.
 
 ---
 
@@ -364,7 +381,7 @@ The suites, and what each is for:
 |---|---|
 | `civil.test.ts` | the arithmetic, against five years of Easter and both years of every American weekday holiday — facts from outside this repository |
 | `daysets.test.ts` | the data's own integrity: no duplicate day in a set, every date real and inside its year, every set carrying its derivation and review date, and literal anchor dates per country |
-| `calendar.test.ts` | the refusal, idempotency, the tolerant read, and both hosts' mappings |
+| `calendar.test.ts` | the refusal, idempotency, the tolerant read, and the three hosts' mappings |
 | `manifest.test.ts` | the manifest against `register()`, the build, and the four empty declarations |
 | `sources.test.ts` | no address, no clock, no die, no physical CSS direction, no company named, nothing test-only reachable from the entry |
 | `i18n/strings.test.ts` | eight locales complete, actually translated, and every set's limits surviving translation |

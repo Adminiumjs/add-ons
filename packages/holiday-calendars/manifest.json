@@ -16,13 +16,14 @@
   },
   "categories": ["data"],
   "compatibility": {
-    "minAdminiumVersion": "0.2.6",
+    "minAdminiumVersion": "0.3.1",
     "requires": []
   },
   "addOn": {
     "attaches": [
-      { "app": "hr", "range": "^1.0.0" },
-      { "app": "clinic", "range": "^1.0.0" }
+      { "app": "hr", "range": "^0.1.0" },
+      { "app": "clinic", "range": "^0.2.0" },
+      { "app": "clients", "range": "^0.2.0" }
     ],
     "provides": [],
     "consumes": [],

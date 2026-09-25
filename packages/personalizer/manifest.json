@@ -17,14 +17,14 @@
   "categories": ["artwork"],
 
   "compatibility": {
-    "minAdminiumVersion": "0.2.6"
+    "minAdminiumVersion": "0.3.1"
   },
 
   "capabilities": ["file-storage"],
 
   "addOn": {
     "attaches": [
-      { "app": "maker", "range": "^1.0.0" },
+      { "app": "maker", "range": "^0.1.0" },
       { "app": "*", "table": "products" },
       { "app": "*", "table": "order_lines" }
     ],

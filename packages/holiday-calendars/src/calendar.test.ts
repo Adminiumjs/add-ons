@@ -428,9 +428,11 @@ describe("the read surface a host consumes", () => {
  * It does not. It asserts something about THIS package's read surface: that the
  * shape it hands over can be turned into each host's own record with a mapping
  * short enough to sit at a mount site, and that the mapping loses nothing.
- * `people-ops` stores `{ serial, name }` and `clinic-desk` stores
- * `{ on_date, reason, clinician_id }`, and the README documents both; a claim
- * in a README that no code has ever run is a claim on trust.
+ * `people-ops` stores `{ serial, name }`, `clinic-desk` writes a closure row
+ * `{ from_date, to_date, label, clinician_id }` when the desk accepts a
+ * suggested day, and the Client Portal reads the public setting itself with no
+ * code of this add-on; the README documents all three, and a claim in a README
+ * that no code has ever run is a claim on trust.
  *
  * The two record shapes are declared inline rather than imported. Importing
  * them would make this repository depend on two applications it does not build
@@ -466,27 +468,48 @@ describe("both hosts can map this into their own record, at the seam", () => {
     expect(serials.some(Number.isNaN)).toBe(false);
   });
 
-  it("becomes clinic-desk's closure row — an ISO date, a reason, no clinician", () => {
-    // `{ on_date, reason, clinician_id }`, where a null clinician is the
-    // schema's own way of saying the whole practice is shut that day.
+  it("becomes clinic-desk's closure row — one day, a label, no clinician", () => {
+    // `{ from_date, to_date, label, clinician_id }`: a closure is a span, and a
+    // public holiday is a span of one day. A null clinician is the schema's own
+    // way of saying the whole practice is shut. The desk writes the row when
+    // somebody accepts the suggestion ("Add as a closure") — only a row in the
+    // closures table closes the diary.
     const closures = nonWorkingDays(values).map((day) => ({
-      on_date: day.date,
-      reason: day.name,
+      from_date: day.date,
+      to_date: day.date,
+      label: day.name,
       clinician_id: null,
     }));
     expect(closures.length).toBeGreaterThan(20);
     for (const closure of closures) {
-      expect(closure.on_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-      expect(closure.reason.trim()).toBe(closure.reason);
+      expect(closure.from_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(closure.to_date).toBe(closure.from_date);
+      expect(closure.label.trim()).toBe(closure.label);
       expect(closure.clinician_id).toBeNull();
     }
     // The practice's own closure is in there beside the public holidays, which
     // is the whole reason the surface carries both.
     expect(closures).toContainEqual({
-      on_date: "2026-03-02",
-      reason: "Training",
+      from_date: "2026-03-02",
+      to_date: "2026-03-02",
+      label: "Training",
       clinician_id: null,
     });
+  });
+
+  it("is read by the Client Portal from the public setting alone — a date and a name each", () => {
+    // The portal imports no add-on code: it reads `days` from the config
+    // Adminium gives its staff screens and takes those days out of a studio's
+    // working weeks. So the stored value must carry, on every entry, exactly
+    // what `nonWorkingDays` hands a host with code: an ISO day and a name.
+    const raw = values["days"] as { date: string; name: string }[];
+    expect(raw.map(({ date, name }) => ({ date, name }))).toEqual(
+      nonWorkingDays(values).map(({ date, name }) => ({ date, name })),
+    );
+    for (const day of raw) {
+      expect(day.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(day.name.length).toBeGreaterThan(0);
+    }
   });
 
   it("hands neither host anything it would have to reach into storage for", () => {

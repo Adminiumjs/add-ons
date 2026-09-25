@@ -47,7 +47,7 @@ import {
   type RenderedDocument,
 } from '@adminium/add-on-host/contracts';
 
-import { SYMBOLOGIES, codeRefusal, type AssignedCode, type Symbology } from './codes.ts';
+import { SYMBOLOGIES, codeRefusal, symbologyOf, type AssignedCode, type Symbology } from './codes.ts';
 import { MAX_LABELS } from './geometry.ts';
 import {
   labelSheetFilename,
@@ -101,14 +101,14 @@ const LABELS: Readonly<Record<string, LocalizedText>> = {
     'ar-EG': 'نظام الترميز',
   },
   symbologyHelp: {
-    'en-US': 'Either `ean13` or `code128`.',
-    'de-DE': 'Entweder `ean13` oder `code128`.',
-    'fr-FR': 'Soit `ean13`, soit `code128`.',
-    'cs-CZ': 'Buď `ean13`, nebo `code128`.',
-    'da-DK': 'Enten `ean13` eller `code128`.',
-    'zh-CN': '`ean13` 或 `code128`。',
-    'zh-TW': '`ean13` 或 `code128`。',
-    'ar-EG': 'إما `ean13` أو `code128`.',
+    'en-US': 'Either `ean13` or `code128`. Left unmapped, the number decides: thirteen digits are EAN-13, anything else Code 128.',
+    'de-DE': 'Entweder `ean13` oder `code128`. Ohne Zuordnung entscheidet die Nummer: dreizehn Ziffern sind EAN-13, alles andere Code 128.',
+    'fr-FR': 'Soit `ean13`, soit `code128`. Sans correspondance, le numéro décide : treize chiffres donnent EAN-13, tout le reste Code 128.',
+    'cs-CZ': 'Buď `ean13`, nebo `code128`. Bez přiřazení rozhodne číslo: třináct číslic je EAN-13, cokoli jiného Code 128.',
+    'da-DK': 'Enten `ean13` eller `code128`. Uden tilknytning afgør nummeret det: tretten cifre er EAN-13, alt andet Code 128.',
+    'zh-CN': '`ean13` 或 `code128`。不映射时由号码决定：十三位数字为 EAN-13，其他为 Code 128。',
+    'zh-TW': '`ean13` 或 `code128`。不對應時由號碼決定：十三位數字為 EAN-13，其他為 Code 128。',
+    'ar-EG': 'إما `ean13` أو `code128`. بدون ربط يحدد الرقم ذلك: ثلاثة عشر رقماً تعني EAN-13، وأي شيء آخر Code 128.',
   },
   code: {
     'en-US': 'Number',
@@ -121,14 +121,14 @@ const LABELS: Readonly<Record<string, LocalizedText>> = {
     'ar-EG': 'الرقم',
   },
   codeHelp: {
-    'en-US': 'The number the shop already owns. Nothing here allocates one.',
-    'de-DE': 'Die Nummer, die dem Geschäft bereits gehört. Hier wird keine vergeben.',
-    'fr-FR': 'Le numéro que la boutique possède déjà. Rien ici n’en attribue.',
-    'cs-CZ': 'Číslo, které dílna už má. Nic zde žádné nepřiděluje.',
-    'da-DK': 'Det nummer, butikken allerede har. Intet her tildeler et.',
-    'zh-CN': '店铺已有的号码。这里不会分配号码。',
-    'zh-TW': '店家已有的號碼。這裡不會配發號碼。',
-    'ar-EG': 'الرقم الذي يملكه المحل بالفعل. لا شيء هنا يصدر رقماً.',
+    'en-US': 'The number the shop already owns — map the column that holds it, such as a menu item’s barcode. Nothing here allocates one.',
+    'de-DE': 'Die Nummer, die dem Geschäft bereits gehört — ordnen Sie die Spalte zu, die sie enthält, etwa den Barcode eines Artikels. Hier wird keine vergeben.',
+    'fr-FR': 'Le numéro que la boutique possède déjà — associez la colonne qui le contient, comme le code-barres d’un article. Rien ici n’en attribue.',
+    'cs-CZ': 'Číslo, které dílna už má — přiřaďte sloupec, ve kterém je, například čárový kód položky. Nic zde žádné nepřiděluje.',
+    'da-DK': 'Det nummer, butikken allerede har — tilknyt den kolonne, der rummer det, fx en vares stregkode. Intet her tildeler et.',
+    'zh-CN': '店铺已有的号码——映射存放它的列，例如菜单项的条码。这里不会分配号码。',
+    'zh-TW': '店家已有的號碼——對應存放它的欄，例如菜單項的條碼。這裡不會配發號碼。',
+    'ar-EG': 'الرقم الذي يملكه المحل بالفعل — اربط العمود الذي يحمله، مثل باركود صنف في القائمة. لا شيء هنا يصدر رقماً.',
   },
   entity: {
     'en-US': 'What the row is',
@@ -204,15 +204,22 @@ const OUTLINE: DocumentOutline = {
      * are named in `help`, which is what `help` is for, and `factsFrom`
      * refuses anything else as `INVALID_SUBJECT` rather than guessing.
      */
+    /*
+     * OPTIONAL since a host's own barcode column became a source: a till's
+     * `menu_items.barcode` holds the number and nothing says which symbology
+     * it is. Left unmapped, the number's own shape decides (`symbologyOf`).
+     */
     {
       id: 'symbology',
       label: LABELS.symbology!,
       help: LABELS.symbologyHelp!,
       type: 'text',
-      required: true,
+      required: false,
     },
     { id: 'code', label: LABELS.code!, help: LABELS.codeHelp!, type: 'text', required: true },
-    { id: 'entity', label: LABELS.entity!, help: LABELS.entityHelp!, type: 'text', required: true },
+    // Optional: a shelf label for a menu item names the item, and a shop that
+    // maps no word for what the row is gets a label without that small line.
+    { id: 'entity', label: LABELS.entity!, help: LABELS.entityHelp!, type: 'text', required: false },
     { id: 'reference', label: LABELS.reference!, type: 'text', required: true },
     { id: 'count', label: LABELS.count!, type: 'number', required: false },
     // The shop's own day. `default: 'now'` is how the engine knows to fill it
@@ -244,7 +251,9 @@ function factsFrom(input: RenderInput): SheetFacts | DocumentError {
    * the tag is what an operator can search for and what the settings panel
    * already renders a sentence from.
    */
-  const symbology = String(fields.symbology) as Symbology;
+  const code = String(fields.code).trim();
+  const given = fields.symbology;
+  const symbology = (given === undefined || given === null || given === '' ? symbologyOf(code) : String(given)) as Symbology;
   if (!SYMBOLOGIES.includes(symbology)) {
     return {
       code: 'INVALID_SUBJECT',
@@ -252,7 +261,6 @@ function factsFrom(input: RenderInput): SheetFacts | DocumentError {
     };
   }
 
-  const code = String(fields.code).trim();
   const refusal = codeRefusal(symbology, code);
   if (refusal !== undefined) {
     return { code: 'INVALID_SUBJECT', detail: `'code' was refused: ${refusal.why}` };
@@ -262,7 +270,7 @@ function factsFrom(input: RenderInput): SheetFacts | DocumentError {
   const wanted = Number(fields.count ?? 1);
   return {
     assigned,
-    entity: String(fields.entity),
+    entity: fields.entity === undefined || fields.entity === null ? '' : String(fields.entity),
     reference: String(fields.reference),
     count: Number.isFinite(wanted) ? Math.min(Math.max(Math.trunc(wanted), 1), MAX_LABELS) : 1,
     // The shop's day, from the subject. Never a clock — that is what makes two

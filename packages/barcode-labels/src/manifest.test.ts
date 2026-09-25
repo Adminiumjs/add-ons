@@ -224,14 +224,21 @@ describe('the manifest', () => {
    * named here that is checked out beside this repository, it runs the product's
    * own validator against that app's declared tables.
    *
-   * NEITHER ENTRY IS `"*"`. `"*"` claims every app that will ever exist, and an
+   * NO ENTRY IS `"*"`. `"*"` claims every app that will ever exist, and an
    * unfalsifiable claim is worse than a wrong one — a reader cannot tell it from
    * a checked one.
+   *
+   * POINT OF SALE (`pos`, shipping on 0.2.x) is the third: a retail till's
+   * shelf labels. It keeps its own number on each menu item
+   * (`menu_items.barcode`) and mounts no add-on slot, so it reaches this add-on
+   * through a document profile that MAPS that column onto the label sheet's
+   * `code` slot — the symbology then read from the number itself.
    */
-  it('attaches to the two apps whose catalogue rows are things a shop labels', () => {
+  it('attaches to the three apps whose catalogue rows are things a shop labels', () => {
     expect(manifest.addOn.attaches).toEqual([
-      { app: 'factory', range: '^1.0.0' },
-      { app: 'maker', range: '^1.0.0' },
+      { app: 'factory', range: '^0.1.0' },
+      { app: 'maker', range: '^0.1.0' },
+      { app: 'pos', range: '^0.2.0' },
     ]);
   });
 

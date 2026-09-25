@@ -397,6 +397,29 @@ const HOST_ROOTS: readonly { name: string; root: string }[] = [
       process.env.ADMINIUM_SUPPORT_DESK ??
       fileURLToPath(new URL('../../../../support-desk', import.meta.url)),
   },
+  /*
+   * ── TWO MORE TARGETS, BOTH READING AN ADD-ON WITHOUT A SEAM ──────────────
+   *
+   * `holiday-calendars` attaches to the Client Portal (app key `clients`),
+   * which reads the add-on's public `days` setting from the config Adminium
+   * gives its staff screens; `barcode-labels` attaches to Point of Sale (app
+   * key `pos`), which maps its own `menu_items.barcode` column onto the label
+   * sheet through a document profile. Neither app mounts add-on slots, so both
+   * are checked for installability and named by the case below — and both are
+   * checked out in CI in the same change as these two entries.
+   */
+  {
+    name: 'client-portal',
+    root:
+      process.env.ADMINIUM_CLIENT_PORTAL ??
+      fileURLToPath(new URL('../../../../client-portal', import.meta.url)),
+  },
+  {
+    name: 'point-of-sale',
+    root:
+      process.env.ADMINIUM_POINT_OF_SALE ??
+      fileURLToPath(new URL('../../../../point-of-sale', import.meta.url)),
+  },
 ];
 
 /** The checked-out directory a host name stands for. */

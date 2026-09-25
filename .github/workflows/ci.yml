@@ -148,6 +148,23 @@ jobs:
           repository: Adminiumjs/support-desk
           path: .hosts/support-desk
 
+      # ── TWO TARGETS THAT READ AN ADD-ON WITHOUT A SEAM ────────────────────
+      #
+      # `holiday-calendars` attaches to the Client Portal (`clients`) and
+      # `barcode-labels` to Point of Sale (`pos`). Registered in `HOST_ROOTS`
+      # and here in one change, for the reason the blocks above give.
+      - name: Check out the client-portal app
+        uses: actions/checkout@v4
+        with:
+          repository: Adminiumjs/client-portal
+          path: .hosts/client-portal
+
+      - name: Check out the point-of-sale app
+        uses: actions/checkout@v4
+        with:
+          repository: Adminiumjs/point-of-sale
+          path: .hosts/point-of-sale
+
       # `verify` is the repo's own script — typecheck, then test, then build —
       # so CI cannot drift from what a maintainer runs by hand.
       - name: Typecheck, test, build
@@ -159,6 +176,8 @@ jobs:
           ADMINIUM_FACTORY_OPS: ${{ github.workspace }}/.hosts/factory-ops
           ADMINIUM_ECOMMERCE_STOREFRONT: ${{ github.workspace }}/.hosts/ecommerce-storefront
           ADMINIUM_SUPPORT_DESK: ${{ github.workspace }}/.hosts/support-desk
+          ADMINIUM_CLIENT_PORTAL: ${{ github.workspace }}/.hosts/client-portal
+          ADMINIUM_POINT_OF_SALE: ${{ github.workspace }}/.hosts/point-of-sale
           # Only the two add-on HOSTS are required: `host-mirror.test.ts` is the
           # guard this covers, and it compares vendored files that only those two
           # carry. The two target apps above are read by a different suite, which

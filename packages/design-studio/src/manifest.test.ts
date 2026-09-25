@@ -57,7 +57,7 @@ describe("manifest.json", () => {
   });
 
   it("attaches to the print shop at a real semver range (ATTACH_TARGET_UNKNOWN)", () => {
-    expect(addOn.attaches).toEqual([{ app: "printing", range: "^1.0.0" }]);
+    expect(addOn.attaches).toEqual([{ app: "printing", range: "^0.1.0" }]);
   });
 
   it("fills only slots in the closed registry, and only the ones it renders (SLOT_UNKNOWN)", () => {

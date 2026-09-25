@@ -261,6 +261,21 @@ export function codeRefusal(symbology: Symbology, code: string): Refusal | undef
 }
 
 /**
+ * WHICH SYMBOLOGY A NUMBER IS, when nobody said — the case of a host's own
+ * barcode column (a till's `menu_items.barcode`), which holds the number and
+ * nothing else.
+ *
+ * Thirteen digits are EAN-13: that is what a retail product number is, and the
+ * check digit is still checked (`codeRefusal`), so a mistyped one is refused
+ * rather than quietly drawn as Code 128 — a sticker that scans as some other
+ * number than the product's is worse than no sticker. Anything else is Code
+ * 128, which carries any printable ASCII the shop wrote.
+ */
+export function symbologyOf(code: string): Symbology {
+  return isThirteenDigits(code.trim()) ? 'ean13' : 'code128';
+}
+
+/**
  * Give a row a code, or say why not.
  *
  * `code` is trimmed at the ends and nowhere else. Outer whitespace is what a

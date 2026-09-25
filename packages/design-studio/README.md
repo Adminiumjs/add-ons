@@ -15,7 +15,7 @@ editor says so in its own words, under the canvas:
 ## What it attaches to
 
 An **add-on**, not an app: it cannot stand on its own, because it has nothing to
-attach a design to. It attaches to **Print Shop** (`printing ^1.0.0`) and fills
+attach a design to. It attaches to **Print Shop** (`printing ^0.1.0`) and fills
 two of the host's slots:
 
 | Slot | What appears |

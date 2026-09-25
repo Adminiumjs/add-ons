@@ -52,10 +52,27 @@ says so. The payoff is that the absence costs nothing: the surface renders **the
 whether the host offers a handle or not, and `record-action.test.tsx` renders it both ways and
 compares them, so an edit that reached for the handle turns that case red.
 
-### `attaches` names two apps and not `"*"`
+### `attaches` names three apps and not `"*"`
 
-`factory` (factory-ops) and `maker` (maker-shop). `"*"` claims every app that will ever exist, and an
+`factory` (factory-ops) and `maker` (maker-shop) on `^0.1.0`, and `pos` (Point of Sale) on `^0.2.0` —
+each the minor line that app ships on. `"*"` claims every app that will ever exist, and an
 unfalsifiable claim is worse than a wrong one — a reader cannot tell it from a checked one.
+
+### Shelf labels at a till (`pos`) — the number from the host's own column
+
+Point of Sale keeps each product's number on the menu item itself (`menu_items.barcode`), not in this
+add-on's list, and it mounts no add-on slot. So it reaches the label sheet the other way: through
+the `document-render` provider, with a document profile the app ships that MAPS its columns onto the
+sheet's slots — the row's key onto `sku`, `barcode` onto `code`, the item's name onto `reference`.
+Nothing is copied into this add-on and nothing is written back to the till.
+
+No column says which symbology a till's number is, so when `symbology` is not mapped the number
+decides: thirteen digits are EAN-13 — and the check digit is still checked, so a mistyped product
+number is refused rather than drawn as some other code — and anything else is Code 128. `entity`,
+the small word above the reference, is optional for the same reason: a till has no column for it.
+
+The sheet is drawn in the base-14 fonts' ASCII, as every sheet here is, so an item name with an
+accent is refused `LATIN_ONLY`, naming the letters, rather than printed with holes in it.
 
 ---
 

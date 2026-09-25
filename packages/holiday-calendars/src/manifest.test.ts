@@ -172,12 +172,28 @@ describe("the manifest", () => {
    * NEITHER ENTRY IS `"*"`. `"*"` claims every app that will ever exist, and an
    * unfalsifiable claim is worse than a wrong one — a reader cannot tell it from
    * a checked one.
+   *
+   * EACH RANGE IS THE MINOR LINE THAT APP SHIPS ON. Apps are 0.x and patch-only,
+   * so `^0.<minor>.0` covers every release until the owner authorises a minor
+   * jump, at which point this claim must move with it. The contract accepts
+   * only `^`/`~`/exact/`*` (no `>=`, no `||`), so clinic's 0.1.x releases, which
+   * also consumed the days, go unclaimed: an under-claim, never an over-claim.
+   * The old `^1.0.0` named a major neither app has reached.
+   *
+   * THE THIRD APP READS THE DAYS WITHOUT CODE. The Client Portal (`clients`,
+   * shipping on 0.2.x) has no add-on seam and imports nothing: it reads this
+   * add-on's public setting `days` from the config Adminium gives its staff
+   * screens, and takes those days out of a studio's working weeks. Its range is
+   * the same minor-line rule.
    */
-  it("attaches to the two apps whose engines consume its days", () => {
+  it("attaches to the three apps that use its days", () => {
     expect(manifest.addOn.attaches).toEqual([
-      { app: "hr", range: "^1.0.0" },
-      { app: "clinic", range: "^1.0.0" },
+      { app: "hr", range: "^0.1.0" },
+      { app: "clinic", range: "^0.2.0" },
+      { app: "clients", range: "^0.2.0" },
     ]);
+    // The portal reads the days through the public setting, so it must stay public.
+    expect(manifest.addOn.publicSettings).toContain(STORAGE_KEY);
   });
 
   it("describes itself with the same sentence the bundle carries", () => {

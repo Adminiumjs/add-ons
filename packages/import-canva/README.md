@@ -24,7 +24,7 @@ named here. See [TRADEMARKS.md](TRADEMARKS.md).
 |---|---|
 | Manifest kind | `add-on` |
 | Key | `import-canva` |
-| Attaches to | `printing ^1.0.0` |
+| Attaches to | `printing ^0.1.0` |
 | Category | `artwork` |
 | Provides | `artwork-source@1` |
 | Fills | `artwork.sources`, order **20** — behind Design Studio's 10, because the shop's own editor leads |

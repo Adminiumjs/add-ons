@@ -283,11 +283,11 @@ describe("the manifest", () => {
    */
   it("attaches to the five hosts that mount its slots, and to no app it has not been run in", () => {
     expect(manifest.addOn.attaches).toEqual([
-      { app: "printing", range: "^1.0.0" },
-      { app: "maker", range: "^1.0.0" },
-      { app: "factory", range: "^1.0.0" },
-      { app: "ecommerce-shop", range: "^1.0.0" },
-      { app: "helpdesk", range: "^1.0.0" },
+      { app: "printing", range: "^0.1.0" },
+      { app: "maker", range: "^0.1.0" },
+      { app: "factory", range: "^0.1.0" },
+      { app: "ecommerce-shop", range: "^0.1.0" },
+      { app: "helpdesk", range: "^0.1.0" },
     ]);
   });
 });

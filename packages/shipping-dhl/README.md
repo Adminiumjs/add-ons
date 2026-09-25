@@ -15,15 +15,17 @@ here. See [TRADEMARKS.md](TRADEMARKS.md).
 
 ## What it attaches to
 
-An add-on never stands alone. This one attaches to **two** apps — `printing` (`^1.0.0`) and `maker`
-(`^1.0.0`) — and fills four slots, the same four in both:
+An add-on never stands alone. This one attaches to **five** apps — `printing`, `maker`, `factory`,
+`ecommerce-shop` and `helpdesk`, each at `^0.1.0` — and fills five slots. Each app mounts the ones
+its surfaces have; a fill with no mount simply never renders there:
 
-| Slot | Surface | What appears |
-|---|---|---|
-| `order.dispatch.actions` | staff | "Book a collection" and the whole dispatch flow behind it |
-| `checkout.delivery.methods` | customer | selectable rate rows with prices and delivery dates |
-| `order.dispatch.panel` | customer | a read-only tracking view |
-| `settings.add-on.panel` | admin | the demo switch, the collection cut-off, and the default parcel weights |
+| Slot | Surface | What appears | Mounted by |
+|---|---|---|---|
+| `order.dispatch.actions` | staff | "Book a collection" and the whole dispatch flow behind it | printing, maker, factory |
+| `checkout.delivery.methods` | customer | selectable rate rows with prices and delivery dates | printing, maker, ecommerce-shop |
+| `order.dispatch.panel` | customer | a read-only tracking view | printing, maker, ecommerce-shop, helpdesk |
+| `settings.add-on.panel` | admin | the demo switch, the collection cut-off, and the default parcel weights | all five |
+| `record.actions` | both | a prepaid return label, only on a record the host says is a `return` | maker, factory, helpdesk |
 
 The **default parcel weights belong here**, and that is not a detail. The host
 knows its own catalogue and passes one representative job per product family; it
@@ -35,10 +37,11 @@ do. The settings form and every sentence in it are rendered here too.
 
 It provides `shipping-carrier@1`. The contract is not print-specific, and the second host is now
 real: Birch Row, the maker studio, mounts all four of those slots and runs this add-on with nothing
-in this package changed. `attaches` names both apps rather than `"*"` because `"*"` claims every app
-that will ever exist, and a claim is only worth making where somebody has checked it — the two
-named here are checked, on every run, by `packages/host/src/manifest-schema.test.ts`, which puts
-this manifest through the product's own validator against each host's declared schema.
+in this package changed. `attaches` names each app rather than `"*"` because `"*"` claims every app
+that will ever exist, and a claim is only worth making where somebody has checked it — every app
+named here is checked, on every run that has it checked out, by
+`packages/host/src/manifest-schema.test.ts`, which puts this manifest through the product's own
+validator against each host's declared schema.
 
 **The scope list shrank when the second host arrived, and that is the interesting part.** It used to
 open with `records:jobs:read` — a table only the print works has. The add-on never read it: a host
@@ -48,8 +51,9 @@ was asking for a table this add-on cannot name in one of its two hosts and does 
 and the installer refused the maker studio with `SCOPE_OUT_OF_RANGE` for a permission nothing wanted.
 It asks for `records:shipments:write` and `files:write` now, and both are its own.
 
-Switch the add-on off and all three surfaces disappear, leaving the app's own words behind — "no
-delivery companies are connected" at checkout, "collection from the works" on the customer's order.
+Switch the add-on off and every surface it fills disappears, leaving the app's own words behind —
+"no delivery companies are connected" at checkout, "collection from the works" on the customer's
+order.
 The shipment history stays: disconnecting removes surfaces and credentials, never data.
 
 ## The two transports

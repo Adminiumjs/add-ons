@@ -16,17 +16,17 @@
   },
   "categories": ["delivery"],
   "compatibility": {
-    "minAdminiumVersion": "0.2.6",
+    "minAdminiumVersion": "0.3.1",
     "requires": ["outbound-http", "file-storage"]
   },
   "capabilities": ["outbound-http", "file-storage"],
   "addOn": {
     "attaches": [
-      { "app": "printing", "range": "^1.0.0" },
-      { "app": "maker", "range": "^1.0.0" },
-      { "app": "factory", "range": "^1.0.0" },
-      { "app": "ecommerce-shop", "range": "^1.0.0" },
-      { "app": "helpdesk", "range": "^1.0.0" }
+      { "app": "printing", "range": "^0.1.0" },
+      { "app": "maker", "range": "^0.1.0" },
+      { "app": "factory", "range": "^0.1.0" },
+      { "app": "ecommerce-shop", "range": "^0.1.0" },
+      { "app": "helpdesk", "range": "^0.1.0" }
     ],
     "provides": [
       { "contract": "shipping-carrier", "version": 1, "server": "dist/server.js" }

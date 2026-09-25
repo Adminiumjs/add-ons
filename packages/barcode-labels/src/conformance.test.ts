@@ -131,4 +131,62 @@ describe('the label-sheet provider refuses what it cannot draw', () => {
     expect(outcome.code).toBe('INVALID_SUBJECT');
     expect(outcome.detail).toContain('symbology');
   });
+
+  it('refuses a symbology it has been given and does not know, even though it could read one', async () => {
+    // Only an ABSENT symbology is read from the number; a wrong one given is
+    // still a mapping somebody should fix.
+    const outcome = await provider.render({
+      kind: 'label-sheet',
+      subject: { ...SUBJECT, fields: { ...SUBJECT.fields, symbology: 'upc' } },
+      formats: ['pdf'],
+      paper: 'a4',
+      settings: {},
+    });
+    if (!isDocumentError(outcome)) throw new Error('expected a refusal');
+    expect(outcome.code).toBe('INVALID_SUBJECT');
+  });
+});
+
+/**
+ * SHELF LABELS FROM A HOST'S OWN COLUMN.
+ *
+ * A till keeps its product numbers on the menu item (`menu_items.barcode`), not
+ * in this add-on's list, and has no column saying which symbology each is. Its
+ * document profile maps the columns it has — the row's key, the number, the
+ * item's name — and the sheet is drawn from those alone.
+ */
+describe('a label sheet mapped from a host’s barcode column', () => {
+  const shelf = (code: string) => ({
+    ...SUBJECT,
+    fields: { sku: 'menu-item-12', code, reference: 'Oat flat white' },
+  });
+
+  it('reads thirteen digits as EAN-13, and draws it', async () => {
+    const outcome = await provider.render({ kind: 'label-sheet', subject: shelf('5901234123457'), formats: ['pdf'], paper: 'a4', settings: {} });
+    if (isDocumentError(outcome)) throw new Error(JSON.stringify(outcome));
+    expect(outcome).toHaveLength(1);
+    expect(outcome[0]!.filename).toBe('labels-5901234123457.pdf');
+    expect(new TextDecoder('latin1').decode(outcome[0]!.bytes)).toContain('(Oat flat white)');
+  });
+
+  it('still checks the check digit of a number it read as EAN-13', async () => {
+    const outcome = await provider.render({ kind: 'label-sheet', subject: shelf('5901234123456'), formats: ['pdf'], paper: 'a4', settings: {} });
+    if (!isDocumentError(outcome)) throw new Error('expected a refusal');
+    expect(outcome.code).toBe('INVALID_SUBJECT');
+    expect(outcome.detail).toContain('ean13Check');
+  });
+
+  it('reads anything else as Code 128', async () => {
+    const outcome = await provider.render({ kind: 'label-sheet', subject: shelf('CAF-0012'), formats: ['pdf'], paper: 'a4', settings: {} });
+    if (isDocumentError(outcome)) throw new Error(JSON.stringify(outcome));
+    expect(outcome[0]!.filename).toBe('labels-CAF-0012.pdf');
+  });
+
+  it('asks for the number, and for nothing a till does not keep', () => {
+    const required = provider
+      .describe('label-sheet')
+      .slots.filter((slot) => slot.required && slot.default === undefined)
+      .map((slot) => slot.id);
+    expect(required).toEqual(['sku', 'code', 'reference']);
+  });
 });

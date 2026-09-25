@@ -116,7 +116,7 @@ describe('manifest.json', () => {
    */
   it('attaches to the host that mounts its slots, AND to the dashboard tables (D20)', () => {
     expect(addOn.attaches).toEqual([
-      { app: 'maker', range: '^1.0.0' },
+      { app: 'maker', range: '^0.1.0' },
       { app: '*', table: 'products' },
       { app: '*', table: 'order_lines' },
     ]);
