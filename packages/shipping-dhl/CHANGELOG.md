@@ -1,5 +1,7 @@
 # @adminium/add-on-shipping-dhl
 
+## 1.0.4
+
 ## 1.0.3
 
 ### Patch Changes

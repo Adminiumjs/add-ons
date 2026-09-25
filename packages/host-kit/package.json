@@ -1,7 +1,7 @@
 {
   "name": "@adminium/add-on-host-kit",
   "private": true,
-  "version": "1.0.3",
+  "version": "1.0.4",
   "type": "module",
   "description": "The retrofit kit: the AddOnHost seam and its guards, as one installable thing, so a twelfth host is a supported operation rather than a hand-copy.",
   "license": "AGPL-3.0-only",

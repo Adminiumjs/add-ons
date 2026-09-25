@@ -3,7 +3,7 @@
   "manifestVersion": 1,
   "key": "barcode-labels",
   "name": "Barcode Labels",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "publisher": {
     "id": "adminium",
     "name": "Adminium",
