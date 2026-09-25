@@ -115,7 +115,7 @@
       }
     },
     {
-      "name": "a stage of a quote bills its share of the quote’s total",
+      "name": "a stage of a quote bills its share of the quote’s subtotal, taxed once on the invoice",
       "currency": "GBP",
       "taxRate": "20",
       "lines": [

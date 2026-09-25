@@ -495,7 +495,7 @@
                 "rules": {
                   "copy": {
                     "via": "quote_id",
-                    "from": "total",
+                    "from": "subtotal",
                     "mode": "always"
                   }
                 }

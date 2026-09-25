@@ -120,6 +120,18 @@ describe('the manifest', () => {
     expect(keys).toContain('tax_label');
   });
 
+  it('bills a stage of a quote before tax, so the invoice taxes it once', () => {
+    /*
+     * A stage line's rate is copied from its quote. The quote's TOTAL already
+     * carries the quote's tax, and the invoice taxes its own subtotal again:
+     * copying the total would tax the stage twice. The line takes the quote's
+     * subtotal, and the invoice adds the tax at its own rate.
+     */
+    const shape = (manifest.addOn as unknown as { shapes: { name: string; parts: Record<string, { columns: { ref: string; rules?: Record<string, unknown> }[] }> }[] }).shapes.find((s) => s.name === 'invoice')!;
+    const rate = shape.parts['lines']!.columns.find((column) => column.ref === 'rate')!;
+    expect(rate.rules?.['copy']).toEqual({ via: 'quote_id', from: 'subtotal', mode: 'always' });
+  });
+
   it('keeps every key an install may have saved, and drops only the one nothing read', () => {
     const keys = manifest.settings.map((setting) => setting.key);
     for (const kept of ['business_name', 'business_lines', 'logo_data_url', 'terms', 'tax_label', 'paper', 'default_formats', 'entities']) {
