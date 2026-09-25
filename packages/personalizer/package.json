@@ -1,6 +1,6 @@
 {
   "name": "@adminium/add-on-personalizer",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "type": "module",
   "description": "Live Personalizer — the maker draws the areas a customer may change, and the customer watches their own words appear on the piece.",
   "license": "AGPL-3.0-only",

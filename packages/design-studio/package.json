@@ -1,6 +1,6 @@
 {
   "name": "@adminium/add-on-design-studio",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "type": "module",
   "description": "Design Studio — a small in-browser artwork editor that attaches to the Adminium Print Shop.",
   "license": "AGPL-3.0-only",

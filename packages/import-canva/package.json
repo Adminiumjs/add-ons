@@ -1,6 +1,6 @@
 {
   "name": "@adminium/add-on-import-canva",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "type": "module",
   "description": "Canva Import — an artwork-source add-on for the Adminium Print Shop example app.",
   "license": "AGPL-3.0-only",

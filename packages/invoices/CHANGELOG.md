@@ -1,5 +1,12 @@
 # @adminium/add-on-invoices
 
+## 1.0.3
+
+### Patch Changes
+
+- 775c6a7: Every add-on now needs Adminium 0.3.1 or later. That release checks the app versions an add-on attaches to, reads the invoice and quote shapes, and draws the letterhead's tax number, payment instructions and footer.
+- e666d6e: Invoices & Receipts gives apps the shapes of an invoice and a quote to build on — gapless numbers, every line, the tax and the total in the currency's own decimals, payments and three held reminders — and draws quotes, receipts and statements with the business's tax number, how to pay and a footer.
+
 ## 1.0.2
 
 ### Patch Changes

@@ -3,7 +3,7 @@
   "manifestVersion": 1,
   "key": "invoices",
   "name": "Invoices & Receipts",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "publisher": {
     "id": "adminium",
     "name": "Adminium",

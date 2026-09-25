@@ -1,5 +1,13 @@
 # @adminium/add-on-barcode-labels
 
+## 1.0.3
+
+### Patch Changes
+
+- 775c6a7: Every add-on now needs Adminium 0.3.1 or later. That release checks the app versions an add-on attaches to, reads the invoice and quote shapes, and draws the letterhead's tax number, payment instructions and footer.
+- 775c6a7: `addOn.attaches` now names the app versions that ship. Every range said `^1.0.0`, a major no app has reached: apps are 0.x and patch-only, so each range is now the minor line its app ships on — `^0.2.0` for Clinic Desk, `^0.1.0` for every other app.
+- 775c6a7: Barcode Labels attaches to Point of Sale (`pos`, `^0.2.0`) for shelf labels: a label sheet can be drawn from a host's own barcode column mapped onto its `code` slot, with the symbology read from the number (thirteen digits are EAN-13, check digit still checked; anything else Code 128) and the entity word optional. Holiday Calendars attaches to the Client Portal (`clients`, `^0.2.0`), which reads the public `days` setting to take holidays out of a studio's working weeks; its README now maps a day onto Clinic Desk's closure row as `from_date`, `to_date`, `label`.
+
 ## 1.0.2
 
 ## 1.0.1
