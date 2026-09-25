@@ -4,57 +4,57 @@
     {
       "name": "@adminiumjs/add-on-barcode-labels",
       "key": "barcode-labels",
-      "version": "1.0.4",
-      "integrity": "sha512-R7/+j078ioFIvf8S1iXzpXAnIU3G5XpYKu4CktMJuaiEAJw4w5wZaEE1Rj9Q7Ev6lWUPWozA5IewBH5HK4A6vg==",
-      "shasum": "b59ae7d01f62948b657672855819bc7e69a96517",
+      "version": "1.0.5",
+      "integrity": "sha512-i1R89AfXJNMcWfbTFkQQrAciWlJ0DYQdJmiq+18T/C8lxE52ueLryZHEzRIAcwsc7B5wS4gS/H1JcecCPw7M9A==",
+      "shasum": "67fa5fe4eaa4c49947b9f6dde8013b5964a7e539",
       "fileCount": 7
     },
     {
       "name": "@adminiumjs/add-on-design-studio",
       "key": "design-studio",
-      "version": "1.0.4",
-      "integrity": "sha512-Sv0/Yl6kgTEg0jOrlG5gdMyfJOIxrow1lI4KYfvzCzAEVNNEGCaXuqsdEFJB26VoZxN5f8bt6ug0qZ6xQIhjdw==",
-      "shasum": "75bf63e9b3263d0b201b20698216411b0274aacb",
+      "version": "1.0.5",
+      "integrity": "sha512-/2lky2jamaOaqxlIxhGihE6AABP7UPTP+t6LVlfc5BS6U5tIPoRwO6ugDDGNUWx57up4widvwMsMF3WtT0G+2g==",
+      "shasum": "10dd79f706aa48485c3985c1d322ce6a5c87a214",
       "fileCount": 8
     },
     {
       "name": "@adminiumjs/add-on-holiday-calendars",
       "key": "holiday-calendars",
-      "version": "1.0.4",
-      "integrity": "sha512-99ld/6RgvnDUQxgpWxvkQKfzNVNfiOJpgpEkNX/lAVEd2g9lmLKBx0v4AlIQcJdqfN1kj1bheqJKerYCo0X14Q==",
-      "shasum": "f34b8ee972dca614a778f5281caa48df8404efb5",
+      "version": "1.0.5",
+      "integrity": "sha512-qhAmoIoc9ZJOsFoerIZj1y+WQA3BehrX1AK9YEDSZIgMoaPyvtjrZSsoUnDKYpPFMygCkJDwQ9t6jykuOb6tLg==",
+      "shasum": "a0eb8e201be0027558b34269654b6c55d2e0486e",
       "fileCount": 6
     },
     {
       "name": "@adminiumjs/add-on-import-canva",
       "key": "import-canva",
-      "version": "1.0.4",
-      "integrity": "sha512-wvswOg8JsbaroQwUy0Qn3jCloixYMz5Apvw0k1TP2fTYme0KroKb4QOy8O2XOYlshG1xUBq3MKMZrn3TH/R5Qw==",
-      "shasum": "a7ee702e6673349616a86d4a568b7384850a6b35",
+      "version": "1.0.5",
+      "integrity": "sha512-+lMYXQDZSVWrKMJ0dBQKAfM2Jz0zDaboYc5HmUE7P20LzKeb65lsati3UTm/pl7Eh05P2dFGJyive9jgKxd6Iw==",
+      "shasum": "cb141a1c2522685e301227094acbcc29d887bb77",
       "fileCount": 8
     },
     {
       "name": "@adminiumjs/add-on-invoices",
       "key": "invoices",
-      "version": "1.0.4",
-      "integrity": "sha512-Vq2R7KT5X1Rra8NGp6hsz8+BdixMcDarskYr1WDG1EDMQ48jOLlVVqHo/DM2sSSt4PodvKHeZpt2lUQZf/m2cQ==",
-      "shasum": "523ae0d55b77c3fb53a58339db61c2403434495f",
+      "version": "1.0.5",
+      "integrity": "sha512-MLb5rteOMDUbyfmrM+lBIkQG4YZ3QNrqrBhk30NihJK/Xy7Ng1tzjLzRZeKBczXTgLkrRwMRDzWJMDWafuIKog==",
+      "shasum": "9c502489b6e1bb998e385c9dd47ff4614a313e67",
       "fileCount": 15
     },
     {
       "name": "@adminiumjs/add-on-personalizer",
       "key": "personalizer",
-      "version": "1.0.4",
-      "integrity": "sha512-iHnDSOzCvGnNlG+skRcLcm3meDNNYpSqRf/NYqurROI/NzosutlOb4BbEZmGdjAdd/2ThaPS5AZzimm84iN6Kw==",
-      "shasum": "3b40594650e6fee3fa6d858e4db1123f71a8e0f8",
+      "version": "1.0.5",
+      "integrity": "sha512-JFYN/QoiltfieU+pUbEAnmtSokP58dMhYuuxTOD9cvvQ8yCXEncjrsGrKXihc5hEYYfTf1JjREYfnEAf1mMPlA==",
+      "shasum": "1dca5218cf9efa2c25847d25ab1cb0c1ed1f25b7",
       "fileCount": 8
     },
     {
       "name": "@adminiumjs/add-on-shipping-dhl",
       "key": "shipping-dhl",
-      "version": "1.0.4",
-      "integrity": "sha512-pp7Sz48TIpsCgyzjPjTImnxy/W4Tt1DhMPyrwIFEA4lWA/tdmh2hHzAjggsmjYA0m7Y0TX7x+cAolNtDSI0HYA==",
-      "shasum": "0e6bbd7e573c422cc852f67d4480207ab095b4a6",
+      "version": "1.0.5",
+      "integrity": "sha512-RbFzrp2jaBBgPw0j8iMEGf+VDsHyrepm1AwgqXMZ6bebHnDwlMuCrg9U/RQ7CndNyglWkgzHlPt9+A71Schxgw==",
+      "shasum": "90a66e16daeae0af260848d9ecc8892312d4d3ff",
       "fileCount": 7
     }
   ]
