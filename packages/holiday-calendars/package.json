@@ -1,6 +1,6 @@
 {
   "name": "@adminium/add-on-holiday-calendars",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "type": "module",
   "description": "Holiday Calendars — curated public-holiday day-sets, shipped as data inside the add-on. No network, no account, no live service.",
   "license": "AGPL-3.0-only",

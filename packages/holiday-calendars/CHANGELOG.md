@@ -1,5 +1,7 @@
 # @adminium/add-on-holiday-calendars
 
+## 1.0.5
+
 ## 1.0.4
 
 ## 1.0.3
