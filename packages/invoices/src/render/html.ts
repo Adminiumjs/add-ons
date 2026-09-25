@@ -90,7 +90,7 @@ body {
 .meta { display: flex; flex-direction: column; gap: 7px; min-inline-size: 190px; }
 .meta .pair { display: flex; gap: 16px; justify-content: space-between; }
 .meta .k { font-size: 11.5px; font-weight: 700; color: var(--sub); }
-.meta .v { font-weight: 600; }
+.meta .v { font-weight: 600; text-align: end; }
 h1 { margin: 6px 0 18px; font-size: ${narrow ? '15px' : '24px'}; font-weight: 800; letter-spacing: -.03em; line-height: 1.2; }
 table { inline-size: 100%; border-collapse: collapse; border-block-start: 1px solid var(--ink); }
 th, td { padding: ${narrow ? '4px 2px' : '9px 4px'}; border-block-end: 1px solid var(--line); vertical-align: top; }
@@ -162,7 +162,7 @@ function block(entry: Block): string {
           .map(
             (row) =>
               `<span class="pair"><span class="k">${escapeHtml(row.label)}</span>` +
-              `<span class="v">${figure(row.value)}</span></span>`,
+              `<span class="v">${row.words === true ? own(row.value) : figure(row.value)}</span></span>`,
           )
           .join('') +
         '</div></section>'

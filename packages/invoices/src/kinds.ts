@@ -583,6 +583,16 @@ const TIP: OutlineSlot = {
     'zh-TW': '小費',
     'ar-EG': 'إكرامية',
   },
+  help: {
+    'en-US': 'Printed above the total and added to it, so map a stored total that does not include it.',
+    'de-DE': 'Über der Gesamtsumme gedruckt und zu ihr addiert — ordnen Sie also eine gespeicherte Gesamtsumme ohne Trinkgeld zu.',
+    'fr-FR': 'Imprimé au-dessus du total et ajouté à celui-ci : associez donc un total enregistré qui ne le compte pas.',
+    'cs-CZ': 'Tiskne se nad celkovou částkou a přičítá se k ní, takže přiřaďte uloženou celkovou částku bez dýška.',
+    'da-DK': 'Trykkes over totalen og lægges til den, så tilknyt en gemt total uden drikkepenge.',
+    'zh-CN': '打印在合计上方并计入合计，因此请映射不含小费的存储合计。',
+    'zh-TW': '列印在合計上方並計入合計，因此請對應不含小費的儲存合計。',
+    'ar-EG': 'تُطبع فوق الإجمالي وتُضاف إليه، فاربط إجمالياً مخزناً لا يشملها.',
+  },
   type: 'money',
   required: false,
 };
@@ -1120,6 +1130,95 @@ const VOIDED: OutlineSlot = {
   required: false,
 };
 
+/*
+ * ── WHAT A PAYMENT WAS FOR, WHEN IT WAS NOT AN INVOICE ─────────────────────
+ *
+ * A practice's receipt is for a VISIT, and the insurer who repays the patient
+ * reads three things off it besides the amount: the day of the visit, who saw
+ * the patient, and the claim number the insurer gave. A till's receipt maps
+ * none of them — the sale is the service, the day is the day it was paid — so
+ * every one is optional and drawn only when it holds a value. The names are
+ * the trade's, not the clinic's: a stylist, a repair or a class uses them too.
+ */
+
+const SERVICE_DATE: OutlineSlot = {
+  id: 'serviceDate',
+  label: {
+    'en-US': 'Date of service',
+    'de-DE': 'Leistungsdatum',
+    'fr-FR': 'Date de la prestation',
+    'cs-CZ': 'Datum služby',
+    'da-DK': 'Ydelsesdato',
+    'zh-CN': '服务日期',
+    'zh-TW': '服務日期',
+    'ar-EG': 'تاريخ الخدمة',
+  },
+  help: {
+    'en-US': 'The day the service was given — a visit, a treatment, a repair — when it is not the day of the payment.',
+    'de-DE': 'Der Tag, an dem die Leistung erbracht wurde — ein Besuch, eine Behandlung, eine Reparatur —, wenn er nicht der Tag der Zahlung ist.',
+    'fr-FR': 'Le jour de la prestation — une visite, un soin, une réparation — quand ce n’est pas le jour du règlement.',
+    'cs-CZ': 'Den, kdy byla služba poskytnuta — návštěva, ošetření, oprava — pokud to není den platby.',
+    'da-DK': 'Dagen, ydelsen blev givet — et besøg, en behandling, en reparation — når det ikke er betalingsdagen.',
+    'zh-CN': '提供服务的日期——一次就诊、一次治疗、一次维修——与付款日期不同时填写。',
+    'zh-TW': '提供服務的日期——一次看診、一次治療、一次維修——與付款日期不同時填寫。',
+    'ar-EG': 'يوم تقديم الخدمة — زيارة أو علاج أو إصلاح — إذا لم يكن يوم الدفع.',
+  },
+  type: 'date',
+  required: false,
+};
+
+const ATTENDED_BY: OutlineSlot = {
+  id: 'attendedBy',
+  label: {
+    'en-US': 'Attended by',
+    'de-DE': 'Betreut von',
+    'fr-FR': 'Pris en charge par',
+    'cs-CZ': 'Obsluha',
+    'da-DK': 'Betjent af',
+    'zh-CN': '服务人员',
+    'zh-TW': '服務人員',
+    'ar-EG': 'مقدّم الخدمة',
+  },
+  help: {
+    'en-US': 'Who gave the service or served at the till — a clinician, a stylist, a cashier.',
+    'de-DE': 'Wer die Leistung erbracht oder an der Kasse bedient hat — eine Ärztin, ein Friseur, eine Kassiererin.',
+    'fr-FR': 'Qui a assuré la prestation ou servi en caisse — une praticienne, un coiffeur, une caissière.',
+    'cs-CZ': 'Kdo službu poskytl nebo obsluhoval u pokladny — lékařka, kadeřník, pokladní.',
+    'da-DK': 'Hvem der gav ydelsen eller betjente kassen — en behandler, en frisør, en kasseassistent.',
+    'zh-CN': '提供服务或在收银台接待的人——医生、发型师、收银员。',
+    'zh-TW': '提供服務或在收銀台接待的人——醫師、髮型師、收銀員。',
+    'ar-EG': 'من قدّم الخدمة أو خدم عند الصندوق — طبيب أو مصفف شعر أو أمين صندوق.',
+  },
+  type: 'text',
+  required: false,
+};
+
+const REFERENCE: OutlineSlot = {
+  id: 'reference',
+  label: {
+    'en-US': 'Reference',
+    'de-DE': 'Referenz',
+    'fr-FR': 'Référence',
+    'cs-CZ': 'Referenční číslo',
+    'da-DK': 'Reference',
+    'zh-CN': '参考号',
+    'zh-TW': '參考號',
+    'ar-EG': 'المرجع',
+  },
+  help: {
+    'en-US': 'A number somebody asked to see on the receipt — an insurer’s claim or authorisation number, an order number.',
+    'de-DE': 'Eine Nummer, die jemand auf der Quittung sehen will — die Schadens- oder Genehmigungsnummer einer Versicherung, eine Bestellnummer.',
+    'fr-FR': 'Un numéro que quelqu’un veut voir sur le reçu — le numéro de dossier ou d’accord d’un assureur, un numéro de commande.',
+    'cs-CZ': 'Číslo, které někdo chce na stvrzence vidět — číslo pojistné události nebo schválení od pojišťovny, číslo objednávky.',
+    'da-DK': 'Et nummer, nogen vil se på kvitteringen — et forsikringsselskabs skade- eller godkendelsesnummer, et ordrenummer.',
+    'zh-CN': '有人要求在收据上看到的编号——保险公司的理赔号或授权号、订单号。',
+    'zh-TW': '有人要求在收據上看到的編號——保險公司的理賠號或授權號、訂單號。',
+    'ar-EG': 'رقم طلب أحدهم رؤيته على الإيصال — رقم مطالبة أو موافقة من شركة التأمين، أو رقم طلب.',
+  },
+  type: 'text',
+  required: false,
+};
+
 const PERIOD_FROM: OutlineSlot = {
   id: 'periodFrom',
   label: {
@@ -1470,6 +1569,11 @@ const OUTLINES: Readonly<Record<string, DocumentOutline>> = {
    *
    * The receipt of ONE PAYMENT — a shape's payments row — maps `amount`, the
    * invoice it pays and the balance left, and `paidWith` to its method.
+   *
+   * The receipt of a SALE — a till's ticket — maps its lines, the stored
+   * subtotal, tax and total (the total before the gratuity) and the tip, and
+   * may map what was received too; its lines are drawn either way. A visit's
+   * receipt adds the day of the visit, who gave it and the payer's reference.
    */
   receipt: {
     slots: [
@@ -1486,12 +1590,16 @@ const OUTLINES: Readonly<Record<string, DocumentOutline>> = {
       TIP,
       TITLE,
       ...PARTY,
+      ...STORED_TOTALS,
       AMOUNT,
       INVOICE_NUMBER,
       INVOICE_TOTAL,
       BALANCE_AFTER,
       VOIDED,
       VOIDED_ON,
+      SERVICE_DATE,
+      ATTENDED_BY,
+      REFERENCE,
       PREPARED_BY,
     ],
   },

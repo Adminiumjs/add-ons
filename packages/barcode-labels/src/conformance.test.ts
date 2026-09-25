@@ -19,6 +19,7 @@ import { isDocumentError } from '@adminium/add-on-host/contracts';
 import { describeDocumentRenderer } from '@adminium/add-on-host/testing';
 import { describe, expect, it } from 'vitest';
 
+import { MAX_LABELS } from './geometry.ts';
 import provider from './server.ts';
 
 const SUBJECT = {
@@ -188,5 +189,53 @@ describe('a label sheet mapped from a host’s barcode column', () => {
       .slots.filter((slot) => slot.required && slot.default === undefined)
       .map((slot) => slot.id);
     expect(required).toEqual(['sku', 'code', 'reference']);
+  });
+});
+
+/*
+ * How many labels a request asks for. A till's row keeps no count, so the slot
+ * is left unmapped and filled — when it is filled at all — by the request that
+ * asked for the sheet. Unfilled it is one label; anything it holds is read as
+ * a whole number and kept between one and ten sheets' worth.
+ */
+describe('how many labels a sheet carries', () => {
+  const drawn = async (count: unknown) => {
+    const fields: Record<string, unknown> = { sku: 'menu-item-12', code: '5901234123457', reference: 'Oat flat white' };
+    if (count !== undefined) fields.count = count;
+    const outcome = await provider.render({ kind: 'label-sheet', subject: { ...SUBJECT, fields }, formats: ['pdf'], paper: 'a4', settings: {} });
+    if (isDocumentError(outcome)) throw new Error(JSON.stringify(outcome));
+    const text = new TextDecoder('latin1').decode(outcome[0]!.bytes);
+    return {
+      labels: text.split('(Oat flat white)').length - 1,
+      sheets: (text.match(/\/Type\/Page\//g) ?? []).length,
+    };
+  };
+
+  it('offers an optional count, explained in all eight languages, that nothing has to map', () => {
+    const slot = provider.describe('label-sheet').slots.find((entry) => entry.id === 'count')!;
+    expect(slot).toMatchObject({ type: 'number', required: false });
+    expect(slot.default).toBeUndefined();
+    for (const locale of ['en-US', 'de-DE', 'fr-FR', 'cs-CZ', 'da-DK', 'zh-CN', 'zh-TW', 'ar-EG'] as const) {
+      expect(slot.help?.[locale], locale).toContain(String(MAX_LABELS));
+    }
+  });
+
+  it('draws one label when nothing fills the count', async () => {
+    expect(await drawn(undefined)).toEqual({ labels: 1, sheets: 1 });
+    expect(await drawn(null)).toEqual({ labels: 1, sheets: 1 });
+  });
+
+  it('draws the number a request asks for, over as many sheets as it takes', async () => {
+    expect(await drawn(30)).toEqual({ labels: 30, sheets: 2 });
+    // A request's value may arrive as text.
+    expect(await drawn('24')).toEqual({ labels: 24, sheets: 1 });
+    expect(await drawn(2.9)).toEqual({ labels: 2, sheets: 1 });
+  });
+
+  it('keeps the count between one label and ten sheets', async () => {
+    expect(await drawn(0)).toEqual({ labels: 1, sheets: 1 });
+    expect(await drawn(-5)).toEqual({ labels: 1, sheets: 1 });
+    expect(await drawn('many')).toEqual({ labels: 1, sheets: 1 });
+    expect(await drawn(1_000_000)).toEqual({ labels: MAX_LABELS, sheets: 10 });
   });
 });

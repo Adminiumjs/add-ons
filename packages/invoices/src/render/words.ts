@@ -114,6 +114,14 @@ export interface LayoutWords {
   readonly methodCheque: string;
   readonly methodCash: string;
   readonly methodOther: string;
+  readonly methodGiftCard: string;
+  readonly methodQr: string;
+  /** The receipt's own reference: the number an insurer, a payer or an order is quoted by. */
+  readonly receiptReference: string;
+  /** The day the service a receipt is for was given, when it was not the day of the payment. */
+  readonly serviceDate: string;
+  /** Who gave the service or served at the till. */
+  readonly attendedBy: string;
   readonly settledWith: string;
   readonly notes: string;
   readonly payment: string;
@@ -197,6 +205,11 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     methodCheque: 'Cheque',
     methodCash: 'Cash',
     methodOther: 'Other',
+    methodGiftCard: 'Gift card',
+    methodQr: 'QR code',
+    receiptReference: 'Reference',
+    serviceDate: 'Date of service',
+    attendedBy: 'Attended by',
     settledWith: 'Settled with',
     notes: 'Notes',
     payment: 'How to settle',
@@ -278,6 +291,11 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     methodCheque: 'Scheck',
     methodCash: 'Bar',
     methodOther: 'Sonstiges',
+    methodGiftCard: 'Gutscheinkarte',
+    methodQr: 'QR-Code',
+    receiptReference: 'Referenz',
+    serviceDate: 'Leistungsdatum',
+    attendedBy: 'Betreut von',
     settledWith: 'Beglichen mit',
     notes: 'Hinweise',
     payment: 'Zahlungsweg',
@@ -359,6 +377,11 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     methodCheque: 'Chèque',
     methodCash: 'Espèces',
     methodOther: 'Autre',
+    methodGiftCard: 'Carte cadeau',
+    methodQr: 'Code QR',
+    receiptReference: 'Référence',
+    serviceDate: 'Date de la prestation',
+    attendedBy: 'Pris en charge par',
     settledWith: 'Réglé par',
     notes: 'Notes',
     payment: 'Modalités de règlement',
@@ -440,6 +463,11 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     methodCheque: 'Šek',
     methodCash: 'Hotovost',
     methodOther: 'Jiné',
+    methodGiftCard: 'Dárková karta',
+    methodQr: 'QR kód',
+    receiptReference: 'Referenční číslo',
+    serviceDate: 'Datum služby',
+    attendedBy: 'Obsluha',
     settledWith: 'Uhrazeno čím',
     notes: 'Poznámky',
     payment: 'Jak uhradit',
@@ -521,6 +549,11 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     methodCheque: 'Check',
     methodCash: 'Kontant',
     methodOther: 'Andet',
+    methodGiftCard: 'Gavekort',
+    methodQr: 'QR-kode',
+    receiptReference: 'Reference',
+    serviceDate: 'Ydelsesdato',
+    attendedBy: 'Betjent af',
     settledWith: 'Betalt med',
     notes: 'Noter',
     payment: 'Sådan betales der',
@@ -602,6 +635,11 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     methodCheque: '支票',
     methodCash: '现金',
     methodOther: '其他',
+    methodGiftCard: '礼品卡',
+    methodQr: '二维码',
+    receiptReference: '参考号',
+    serviceDate: '服务日期',
+    attendedBy: '服务人员',
     settledWith: '结算方式',
     notes: '备注',
     payment: '结算办法',
@@ -683,6 +721,11 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     methodCheque: '支票',
     methodCash: '現金',
     methodOther: '其他',
+    methodGiftCard: '禮物卡',
+    methodQr: 'QR 碼',
+    receiptReference: '參考號',
+    serviceDate: '服務日期',
+    attendedBy: '服務人員',
     settledWith: '結算方式',
     notes: '備註',
     payment: '結算辦法',
@@ -764,6 +807,11 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     methodCheque: 'شيك',
     methodCash: 'نقداً',
     methodOther: 'أخرى',
+    methodGiftCard: 'بطاقة هدية',
+    methodQr: 'رمز QR',
+    receiptReference: 'المرجع',
+    serviceDate: 'تاريخ الخدمة',
+    attendedBy: 'مقدّم الخدمة',
     settledWith: 'تمت التسوية بـ',
     notes: 'ملاحظات',
     payment: 'طريقة السداد',

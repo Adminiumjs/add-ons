@@ -71,6 +71,10 @@ decides: thirteen digits are EAN-13 — and the check digit is still checked, so
 number is refused rather than drawn as some other code — and anything else is Code 128. `entity`,
 the small word above the reference, is optional for the same reason: a till has no column for it.
 
+A till keeps no count either, so `count` is left unmapped: the sheet carries one label, or the
+number the request for it asks for, read as a whole number and kept between one and 240 (ten
+sheets of 24).
+
 The sheet is drawn in the base-14 fonts' ASCII, as every sheet here is, so an item name with an
 accent is refused `LATIN_ONLY`, naming the letters, rather than printed with holes in it.
 

@@ -57,7 +57,12 @@ export interface PartiesBlock {
   readonly toLabel: string;
   readonly toName: string;
   readonly toLines: readonly string[];
-  readonly meta: readonly { readonly label: string; readonly value: string }[];
+  /**
+   * `words` marks a value that is somebody's words — a name, a reference —
+   * rather than a figure or a day: it may wrap on a till roll, and it keeps
+   * its own direction on a right-to-left page.
+   */
+  readonly meta: readonly { readonly label: string; readonly value: string; readonly words?: boolean }[];
 }
 
 export interface TitleBlock {
@@ -162,13 +167,46 @@ const TERM_WORDS: Readonly<Record<string, keyof LayoutWords>> = {
   'on-receipt': 'termOnReceipt',
 };
 
+/*
+ * The ways to pay the page has a word for, and the spellings apps store them
+ * in. An app's enum is its own — a practice writes `transfer`, a till
+ * `gift_card`, a bank export `CREDIT_CARD` — so the value is read without its
+ * case and with `_` and spaces as `-`, and every spelling here is one a real
+ * app stores. A value that is not here is printed exactly as the app wrote it:
+ * a method guessed wrong on a receipt is worse than one left in the app's own
+ * words.
+ */
 const METHOD_WORDS: Readonly<Record<string, keyof LayoutWords>> = {
   'bank-transfer': 'methodBankTransfer',
+  banktransfer: 'methodBankTransfer',
+  bank: 'methodBankTransfer',
+  transfer: 'methodBankTransfer',
+  wire: 'methodBankTransfer',
+  'wire-transfer': 'methodBankTransfer',
   card: 'methodCard',
+  'credit-card': 'methodCard',
+  creditcard: 'methodCard',
+  'debit-card': 'methodCard',
+  debitcard: 'methodCard',
+  'bank-card': 'methodCard',
   cheque: 'methodCheque',
+  check: 'methodCheque',
   cash: 'methodCash',
+  'gift-card': 'methodGiftCard',
+  giftcard: 'methodGiftCard',
+  qr: 'methodQr',
+  'qr-code': 'methodQr',
   other: 'methodOther',
 };
+
+/** A stored payment method in the document's language, or the value as the app wrote it. */
+export function methodWord(value: string, words: LayoutWords): string {
+  const key: unknown = METHOD_WORDS[value.trim().toLowerCase().replace(/[\s_]+/g, '-')];
+  // Read through `typeof`: a stored `constructor` or `toString` finds the
+  // object's own members, not a word, and is printed as written like any other.
+  const word: unknown = typeof key === 'string' ? words[key as keyof LayoutWords] : undefined;
+  return typeof word === 'string' ? word : value;
+}
 
 const KIND_WORDS: Readonly<Record<string, keyof LayoutWords>> = {
   invoice: 'kindInvoice',
@@ -184,8 +222,13 @@ function named(value: string, map: Readonly<Record<string, keyof LayoutWords>>, 
   return key === undefined ? value : words[key];
 }
 
-function row(label: string, value: string): { label: string; value: string } | null {
+function row(label: string, value: string): { label: string; value: string; words?: boolean } | null {
   return value === '' ? null : { label, value };
+}
+
+/** A row whose value is somebody's words, not a figure. */
+function wordsRow(label: string, value: string): { label: string; value: string; words: boolean } | null {
+  return value === '' ? null : { label, value, words: true };
 }
 
 function notEmpty<T>(value: T | null): value is T {
@@ -218,7 +261,7 @@ export function layout(input: LayoutInput): Document {
 
   if (kind === 'statement') {
     blocks.push(...statementBlocks(input));
-  } else if (kind === 'receipt' && facts.receipt.amount !== null) {
+  } else if (kind === 'receipt' && facts.receipt.amount !== null && !hasLines(input)) {
     blocks.push(...paymentReceiptBlocks(input));
   } else {
     blocks.push(...documentBlocks(input, isVoid));
@@ -304,7 +347,7 @@ function partiesBlock(input: LayoutInput, kindWord: string, isVoid: boolean, voi
   ].filter((line) => line !== '');
 
   const day = (value: string) => (value === '' ? '' : formats.day(value));
-  let meta: ({ label: string; value: string } | null)[];
+  let meta: ({ label: string; value: string; words?: boolean } | null)[];
   switch (kind) {
     case 'quote':
       meta = [
@@ -314,11 +357,17 @@ function partiesBlock(input: LayoutInput, kindWord: string, isVoid: boolean, voi
       ];
       break;
     case 'receipt':
+      // What the receipt is and the number it is quoted by, then what the
+      // money was for — the invoice, or the visit and who gave it — then when
+      // it was received and how. Each row only when the app mapped a value.
       meta = [
         row(kindWord, body.number),
+        row(words.receiptReference, facts.receipt.reference),
         row(words.forInvoice, facts.receipt.invoiceNumber),
+        row(words.serviceDate, day(facts.receipt.serviceDate)),
+        wordsRow(words.attendedBy, facts.receipt.attendedBy),
         row(words.received, day(body.issued)),
-        row(words.method, named(extras.paidWith, METHOD_WORDS, words)),
+        row(words.method, methodWord(extras.paidWith, words)),
       ];
       break;
     case 'statement': {
@@ -377,6 +426,16 @@ function itemColumns(words: LayoutWords): ItemsBlock['columns'] {
   ];
 }
 
+/**
+ * Whether the document maps lines of its own. A receipt that does is a SALE —
+ * a till's ticket, a visit with its items — and is drawn with its lines and
+ * totals even when the amount received is mapped too; without lines it is the
+ * receipt of one payment against an invoice.
+ */
+function hasLines(input: LayoutInput): boolean {
+  return input.facts.storedLines !== null || input.body.items.length > 0;
+}
+
 /** An invoice, a quote, a credit note or a till receipt: lines, totals, what is still due. */
 function documentBlocks(input: LayoutInput, isVoid: boolean): Block[] {
   const { body, extras, facts, words, formats } = input;
@@ -406,6 +465,19 @@ function documentBlocks(input: LayoutInput, isVoid: boolean): Block[] {
     const subtotal = facts.subtotal ?? facts.total!;
     const tax = facts.tax ?? differenceText(facts.total!, subtotal, scale);
     rows.push({ label: words.subtotal, value: money(subtotal), emphasis: false });
+    /*
+     * A sale stored with a reduction taken off the whole ticket keeps its
+     * subtotal before the reduction and its total after it, and no column for
+     * the reduction itself. The difference of the three stored figures IS
+     * that reduction, so it is printed as one — on a receipt, only when all
+     * three are stored and the total falls short of them. An invoice or a
+     * quote on a shape stores its total as its subtotal and tax, and draws as
+     * it always has.
+     */
+    if (input.kind === 'receipt' && facts.subtotal !== null && facts.tax !== null) {
+      const off = differenceText(facts.total!, sumText([facts.subtotal, facts.tax], scale), scale);
+      if (!isZero(off) && !isPositive(off)) rows.push({ label: words.reduction, value: money(off), emphasis: false });
+    }
     if (!isZero(tax) || (facts.taxRate !== null && facts.taxRate !== 0)) {
       const rate = facts.taxRate === null ? '' : ` ${formats.percent(facts.taxRate / 100)}`;
       rows.push({ label: `${taxWord}${rate}`, value: money(tax), emphasis: false });
@@ -444,6 +516,14 @@ function documentBlocks(input: LayoutInput, isVoid: boolean): Block[] {
   // something has been paid.
   rows.push({ label: words.total, value: money(totalText), emphasis: true });
 
+  // A sale's receipt that maps what was received: how it was paid, and what
+  // is still open when the app says so.
+  if (input.kind === 'receipt' && facts.receipt.amount !== null) {
+    const how = extras.paidWith === '' ? words.received : methodWord(extras.paidWith, words);
+    rows.push({ label: how, value: money(facts.receipt.amount), emphasis: false });
+    if (facts.receipt.balanceAfter !== null) rows.push({ label: words.balanceLeft, value: money(facts.receipt.balanceAfter), emphasis: false });
+  }
+
   // Only an invoice is paid against; a quote or a credit note owes nothing.
   const live = input.kind === 'invoice' ? facts.payments.filter((payment) => !payment.voided) : [];
   const paid = input.kind !== 'invoice' ? null : (facts.paid ?? (live.length > 0 ? sumText(live.map((payment) => payment.amount), facts.scale) : null));
@@ -462,7 +542,7 @@ function documentBlocks(input: LayoutInput, isVoid: boolean): Block[] {
       heading: words.paymentsSoFar,
       rows: live.map((payment) => ({
         date: payment.paidOn === '' ? '' : formats.day(payment.paidOn),
-        method: named(payment.method, METHOD_WORDS, words),
+        method: methodWord(payment.method, words),
         amount: money(payment.amount),
       })),
       dueLabel: words.amountDue,
@@ -589,7 +669,7 @@ function footBlock(input: LayoutInput, isVoid: boolean, voidDay: string): FootBl
   }
   if (kind === 'receipt' && facts.receipt.amount === null && input.extras.paidWith !== '' && payLines.length === 0) {
     payLabel = words.settledWith;
-    payLines = [{ text: named(input.extras.paidWith, METHOD_WORDS, words), strong: false }];
+    payLines = [{ text: methodWord(input.extras.paidWith, words), strong: false }];
   }
 
   if (payLines.length === 0 && footText === '') return null;

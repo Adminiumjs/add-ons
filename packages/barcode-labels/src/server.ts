@@ -170,6 +170,16 @@ const LABELS: Readonly<Record<string, LocalizedText>> = {
     'zh-TW': '標籤數量',
     'ar-EG': 'عدد الملصقات',
   },
+  countHelp: {
+    'en-US': 'Left unmapped, one label — or the number the request asks for. At most 240, which is ten sheets.',
+    'de-DE': 'Ohne Zuordnung ein Etikett — oder so viele, wie die Anfrage nennt. Höchstens 240, also zehn Bogen.',
+    'fr-FR': 'Sans correspondance, une étiquette — ou le nombre que la demande indique. Au plus 240, soit dix feuilles.',
+    'cs-CZ': 'Bez přiřazení jeden štítek — nebo tolik, kolik žádost uvádí. Nejvýše 240, tedy deset archů.',
+    'da-DK': 'Uden tilknytning én etiket — eller det antal, anmodningen beder om. Højst 240, altså ti ark.',
+    'zh-CN': '不映射时打印一张标签，或按请求中的数量打印。最多 240 张，即十页。',
+    'zh-TW': '不對應時列印一張標籤，或依請求中的數量列印。最多 240 張，即十頁。',
+    'ar-EG': 'بدون ربط ملصق واحد — أو العدد الذي يطلبه الطلب. 240 على الأكثر، أي عشر أوراق.',
+  },
   on: {
     'en-US': 'Day',
     'de-DE': 'Tag',
@@ -221,7 +231,9 @@ const OUTLINE: DocumentOutline = {
     // maps no word for what the row is gets a label without that small line.
     { id: 'entity', label: LABELS.entity!, help: LABELS.entityHelp!, type: 'text', required: false },
     { id: 'reference', label: LABELS.reference!, type: 'text', required: true },
-    { id: 'count', label: LABELS.count!, type: 'number', required: false },
+    // Optional, and one when nothing fills it: a till asks for a shelf's
+    // worth in its request, and a row keeps no count of its own.
+    { id: 'count', label: LABELS.count!, help: LABELS.countHelp!, type: 'number', required: false },
     // The shop's own day. `default: 'now'` is how the engine knows to fill it
     // from `subject.now` rather than leaving an operator to map a column that
     // does not exist on their table.

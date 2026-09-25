@@ -124,6 +124,20 @@ function numberOf(value: unknown): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+/**
+ * A receipt number in the add-on's receipt series.
+ *
+ * A number that is only digits is the bare count Adminium's register hands a
+ * profile that maps no number of its own — a till's sales or a practice's
+ * payments, numbered by the document register rather than by a shape. It is
+ * printed after the receipt series' prefix, so the page says `REC-2` and not
+ * `2`. Anything else is the app's own number and is printed as the app wrote
+ * it: a prefix is never added twice, and never added to a number with letters.
+ */
+export function inSeries(number: string, prefix: string): string {
+  return /^\d+$/.test(number) ? `${prefix}${number}` : number;
+}
+
 /** Every required slot with no engine-supplied default that has no value. */
 export function missingSlots(kind: string, subject: DocumentSubject): readonly string[] {
   const missing: string[] = [];
@@ -252,6 +266,10 @@ export interface SubjectFacts {
     readonly invoiceTotal: string | null;
     readonly balanceAfter: string | null;
     readonly voided: boolean;
+    /** What the payment was for, when it was not an invoice: the day of the visit, who gave it, the payer's reference. */
+    readonly serviceDate: string;
+    readonly attendedBy: string;
+    readonly reference: string;
   };
   readonly quote: {
     readonly sentOn: string;
@@ -350,8 +368,8 @@ export function documentFrom(
     scale,
   );
 
-  if (subject.number !== null && subject.number !== '') next.number = subject.number;
-  else if (has('number')) next.number = textOf(subject.fields.number);
+  const given = subject.number !== null && subject.number !== '' ? subject.number : has('number') ? textOf(subject.fields.number) : '';
+  if (given !== '') next.number = kind === 'receipt' ? inSeries(given, settings.prefixes.receipt) : given;
 
   if (has('issuedAt')) next.issued = dateOf(subject.fields.issuedAt);
   else if (next.issued === '') next.issued = subject.now.iso.slice(0, 10);
@@ -425,6 +443,9 @@ export function documentFrom(
       invoiceTotal: moneyOf(field('invoiceTotal'), scale),
       balanceAfter: moneyOf(field('balanceAfter'), scale),
       voided: flagOf(field('voided')),
+      serviceDate: dateOf(field('serviceDate')),
+      attendedBy: textOf(field('attendedBy')).trim(),
+      reference: textOf(field('reference')).trim(),
     },
     quote: {
       sentOn: dateOf(field('sentOn')),

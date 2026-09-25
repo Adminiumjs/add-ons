@@ -54,6 +54,8 @@ function settingValues(settings: InvoiceSettings): Readonly<Record<string, unkno
     payment_instructions: settings.paymentInstructions,
     footer: settings.footer,
     show_payment_ledger: settings.showPaymentLedger,
+    // A receipt numbered by the register prints in the receipt series.
+    prefix_receipt: settings.prefixes.receipt,
   };
 }
 
