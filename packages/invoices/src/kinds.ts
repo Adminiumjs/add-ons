@@ -498,6 +498,65 @@ const ITEMS: OutlineSlot = {
       type: 'number',
       required: false,
     },
+    /*
+     * A DAY AND A LIST OF NAMES, both optional, both drawn only when a line
+     * holds one — so a document whose lines carry neither prints exactly as
+     * it always has. The day is for lines that each belong to one day (a
+     * night of a booking, a day of a hire); the names are the choices made on
+     * a line (a bowl's base and toppings), printed under it one after another.
+     * A column is a leaf in this contract, so the names are one `text[]`
+     * column, never a collection of their own.
+     */
+    {
+      id: 'date',
+      label: {
+        'en-US': 'Date',
+        'de-DE': 'Datum',
+        'fr-FR': 'Date',
+        'cs-CZ': 'Datum',
+        'da-DK': 'Dato',
+        'zh-CN': '日期',
+        'zh-TW': '日期',
+        'ar-EG': 'التاريخ',
+      },
+      help: {
+        'en-US': 'The day this line is for. When any line has one, the lines print it first (under the line on a till roll).',
+        'de-DE': 'Der Tag, für den diese Position gilt. Hat eine Position einen, wird er vorne gedruckt (auf einer Kassenrolle unter der Position).',
+        'fr-FR': 'Le jour concerné par cette ligne. Dès qu’une ligne en a un, il est imprimé en tête (sous la ligne sur un rouleau de caisse).',
+        'cs-CZ': 'Den, ke kterému se položka vztahuje. Má-li jej některá položka, tiskne se na začátku (na pokladní roli pod položkou).',
+        'da-DK': 'Dagen, linjen gælder. Har en linje en dato, trykkes den først (under linjen på en kasserulle).',
+        'zh-CN': '该行所对应的日期。只要有一行填写，就印在行首（收银小票上印在该行下方）。',
+        'zh-TW': '該列所對應的日期。只要有一列填寫，就印在列首（收銀小票上印在該列下方）。',
+        'ar-EG': 'اليوم الذي يخص هذا السطر. إذا كان لأي سطر يوم، يُطبع أولاً (وتحت السطر على لفافة الكاشير).',
+      },
+      type: 'date',
+      required: false,
+    },
+    {
+      id: 'options',
+      label: {
+        'en-US': 'Options',
+        'de-DE': 'Optionen',
+        'fr-FR': 'Options',
+        'cs-CZ': 'Volby',
+        'da-DK': 'Tilvalg',
+        'zh-CN': '选项',
+        'zh-TW': '選項',
+        'ar-EG': 'الخيارات',
+      },
+      help: {
+        'en-US': 'Names printed under the line, one after another — the choices made on it.',
+        'de-DE': 'Namen, die unter der Position nacheinander gedruckt werden — die dazu getroffene Auswahl.',
+        'fr-FR': 'Des noms imprimés sous la ligne, l’un après l’autre — les choix faits sur cette ligne.',
+        'cs-CZ': 'Názvy vytištěné pod položkou jeden za druhým — volby k ní zvolené.',
+        'da-DK': 'Navne, der trykkes under linjen efter hinanden — de valg, der er truffet på den.',
+        'zh-CN': '依次印在该行下方的名称——为该行所做的选择。',
+        'zh-TW': '依次印在該列下方的名稱——為該列所做的選擇。',
+        'ar-EG': 'أسماء تُطبع تحت السطر واحداً تلو الآخر — الاختيارات التي تمت عليه.',
+      },
+      type: 'text[]',
+      required: false,
+    },
   ],
 };
 
@@ -1252,6 +1311,88 @@ const PERIOD_TO: OutlineSlot = {
   required: false,
 };
 
+/*
+ * ── THE PERIOD AN INVOICE IS FOR, AND THE NUMBER IT IS QUOTED BY ───────────
+ *
+ * An invoice for something that ran over several days — a booking, a hire, a
+ * course — states the period it covers; a German invoice must
+ * (Leistungszeitraum). This contract has no slot made of two values, so the
+ * period is two days, each optional: both print as one row, one alone prints
+ * that day. They are not the statement's period, which is the span a
+ * statement READS; this is the span the invoice CHARGES FOR.
+ *
+ * `reference` is the receipt's slot id on the invoice too, so a profile maps
+ * one name on both, with help that fits an invoice: the number a guest, a
+ * table or an order knows the document by besides its own.
+ */
+
+const SERVICE_FROM: OutlineSlot = {
+  id: 'serviceFrom',
+  label: {
+    'en-US': 'Service from',
+    'de-DE': 'Leistungszeitraum ab',
+    'fr-FR': 'Période de prestation du',
+    'cs-CZ': 'Období plnění od',
+    'da-DK': 'Leveringsperiode fra',
+    'zh-CN': '服务期间起始',
+    'zh-TW': '服務期間起始',
+    'ar-EG': 'فترة الخدمة من',
+  },
+  help: {
+    'en-US': 'The first day of the period this invoice covers — a booking, a hire, a course. Printed with the last day as the period of service.',
+    'de-DE': 'Der erste Tag des Zeitraums, für den diese Rechnung gilt — eine Buchung, eine Miete, ein Kurs. Mit dem letzten Tag als Leistungszeitraum gedruckt.',
+    'fr-FR': 'Le premier jour de la période couverte par cette facture — une réservation, une location, un cours. Imprimé avec le dernier jour comme période de prestation.',
+    'cs-CZ': 'První den období, které tato faktura pokrývá — rezervace, zapůjčení, kurz. Tiskne se s posledním dnem jako období plnění.',
+    'da-DK': 'Den første dag i perioden, fakturaen dækker — en booking, en udlejning, et kursus. Trykkes med den sidste dag som leveringsperiode.',
+    'zh-CN': '本发票所涵盖期间的第一天——一次预订、一次租用、一门课程。与最后一天一起作为服务期间打印。',
+    'zh-TW': '本發票所涵蓋期間的第一天——一次預訂、一次租用、一門課程。與最後一天一起作為服務期間列印。',
+    'ar-EG': 'أول يوم في الفترة التي تغطيها هذه الفاتورة — حجز أو إيجار أو دورة. يُطبع مع آخر يوم بوصفه فترة الخدمة.',
+  },
+  type: 'date',
+  required: false,
+};
+
+const SERVICE_TO: OutlineSlot = {
+  id: 'serviceTo',
+  label: {
+    'en-US': 'Service to',
+    'de-DE': 'Leistungszeitraum bis',
+    'fr-FR': 'Période de prestation au',
+    'cs-CZ': 'Období plnění do',
+    'da-DK': 'Leveringsperiode til',
+    'zh-CN': '服务期间截止',
+    'zh-TW': '服務期間截止',
+    'ar-EG': 'فترة الخدمة إلى',
+  },
+  help: {
+    'en-US': 'The day the period this invoice covers ends. With only one of the two mapped, that day is printed alone.',
+    'de-DE': 'Der Tag, an dem der Zeitraum dieser Rechnung endet. Ist nur einer der beiden zugeordnet, wird dieser Tag allein gedruckt.',
+    'fr-FR': 'Le jour où finit la période couverte par cette facture. Si un seul des deux est associé, ce jour est imprimé seul.',
+    'cs-CZ': 'Den, kdy období této faktury končí. Když je přiřazen jen jeden z obou dnů, tiskne se sám.',
+    'da-DK': 'Dagen, perioden for fakturaen slutter. Er kun den ene af de to tilknyttet, trykkes den dag alene.',
+    'zh-CN': '本发票所涵盖期间结束的那一天。只映射其中一个时，单独打印该日期。',
+    'zh-TW': '本發票所涵蓋期間結束的那一天。只對應其中一個時，單獨列印該日期。',
+    'ar-EG': 'اليوم الذي تنتهي فيه الفترة التي تغطيها هذه الفاتورة. إذا رُبط أحدهما فقط، يُطبع ذلك اليوم وحده.',
+  },
+  type: 'date',
+  required: false,
+};
+
+/** The receipt's `reference`, explained for an invoice. */
+const INVOICE_REFERENCE: OutlineSlot = {
+  ...REFERENCE,
+  help: {
+    'en-US': 'A number this invoice is quoted by besides its own — a room, a table, an order, a booking.',
+    'de-DE': 'Eine Nummer, unter der diese Rechnung neben ihrer eigenen geführt wird — ein Zimmer, ein Tisch, eine Bestellung, eine Buchung.',
+    'fr-FR': 'Un numéro sous lequel cette facture est connue en plus du sien — une chambre, une table, une commande, une réservation.',
+    'cs-CZ': 'Číslo, pod kterým se faktura vede vedle vlastního — pokoj, stůl, objednávka, rezervace.',
+    'da-DK': 'Et nummer, fakturaen kendes på ud over sit eget — et værelse, et bord, en ordre, en booking.',
+    'zh-CN': '除自身编号外，本发票还以此编号被引用——房间、桌号、订单、预订。',
+    'zh-TW': '除自身編號外，本發票還以此編號被引用——房間、桌號、訂單、預訂。',
+    'ar-EG': 'رقم تُعرف به هذه الفاتورة إلى جانب رقمها — غرفة أو طاولة أو طلب أو حجز.',
+  },
+};
+
 const OPENING_BALANCE: OutlineSlot = {
   id: 'openingBalance',
   label: {
@@ -1559,6 +1700,9 @@ const OUTLINES: Readonly<Record<string, DocumentOutline>> = {
       STATUS,
       VOIDED_ON,
       PREPARED_BY,
+      SERVICE_FROM,
+      SERVICE_TO,
+      INVOICE_REFERENCE,
     ],
   },
   /*

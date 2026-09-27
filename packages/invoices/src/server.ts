@@ -167,6 +167,7 @@ export function renderSync(input: RenderInput): readonly RenderedDocument[] | Do
     locale: input.subject.locale,
     rtl: isRtl(input.subject.locale),
     authored: input.body !== undefined,
+    narrow: input.paper === 'receipt-80mm',
   });
 
   // A statement is in no series: it is named by the day it runs to.

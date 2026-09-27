@@ -172,7 +172,9 @@ function block(entry: Block): string {
     case 'title':
       return `<h1>${own(entry.text)}</h1>`;
 
-    case 'items':
+    case 'items': {
+      // The description column: the first, or the second behind a column of days.
+      const described = entry.lead === true ? 1 : 0;
       return (
         '<table><thead><tr>' +
         entry.columns
@@ -189,8 +191,17 @@ function block(entry: Block): string {
               row.cells
                 .map((cell, at) => {
                   const right = entry.columns[at]?.align === 'right';
-                  const note = at === 0 && row.note !== '' ? `<span class="note">${escapeHtml(row.note)}</span>` : '';
-                  return `<td${right ? ' class="right"' : ''}>${right ? figure(cell) : own(cell)}${note}</td>`;
+                  // One small line each: the names chosen, then any reduction.
+                  const note =
+                    at === described && row.note !== ''
+                      ? row.note
+                          .split('\n')
+                          .map((line) => `<span class="note">${escapeHtml(line)}</span>`)
+                          .join('')
+                      : '';
+                  // A line's day is a figure, like every other day on the sheet.
+                  const drawn = right || at < described ? figure(cell) : own(cell);
+                  return `<td${right ? ' class="right"' : ''}>${drawn}${note}</td>`;
                 })
                 .join('') +
               '</tr>',
@@ -198,6 +209,7 @@ function block(entry: Block): string {
           .join('') +
         '</tbody></table>'
       );
+    }
 
     case 'ladder':
       return (

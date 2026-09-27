@@ -475,3 +475,177 @@ describe('what an authored template decides still stands', () => {
     expect(html).toContain('Kind regards');
   });
 });
+
+/*
+ * ── AN INVOICE FOR SEVERAL DAYS: ONE LINE PER DAY, THE PERIOD, A REFERENCE ─
+ *
+ * A guest house's folio, shaped the way Adminium hands one over for the
+ * house's profile: one line per night (its day, the room's name, the night's
+ * price), then the extras, then any charge the desk added, then the stored
+ * figures. The figures are the released house's own: a loft at 215 a night,
+ * 25 more on a Friday or Saturday night and 20 more in August; breakfast at 16
+ * a guest a night and a parking space at 14 a night; 9 % tax.
+ */
+
+/** The price of each night from `from` up to (not including) `to`, as the house prices a loft. */
+function nights(from: string, to: string): { date: string; rate: number }[] {
+  const out: { date: string; rate: number }[] = [];
+  for (let day = new Date(`${from}T00:00:00Z`); day < new Date(`${to}T00:00:00Z`); day = new Date(day.getTime() + 86_400_000)) {
+    const weekend = day.getUTCDay() === 5 || day.getUTCDay() === 6;
+    const august = day.getUTCMonth() === 7;
+    out.push({ date: day.toISOString().slice(0, 10), rate: (215 + (weekend ? 25 : 0) + (august ? 20 : 0)) * 100 });
+  }
+  return out;
+}
+
+const STAY = nights('2026-07-23', '2026-07-28');
+const ROOM = STAY.reduce((sum, night) => sum + night.rate, 0);
+const BREAKFAST = 16_00 * 3 * STAY.length;
+const PARKING = 14_00 * STAY.length;
+
+function folioSubject(fields: Fields = {}, charges: Fields[] = []): DocumentSubject {
+  const subtotal = ROOM + BREAKFAST + PARKING + charges.reduce((sum, charge) => sum + (charge.amount as number), 0);
+  // 9 %, half away from zero, in cents.
+  const tax = Math.round((subtotal * 9) / 100);
+  return {
+    now: { iso: '2026-07-28T10:30:00.000Z', timezone: 'Europe/London' },
+    locale: 'en-US',
+    currency: 'USD',
+    business: { name: 'Wren House', lines: ['2 Harbour Row', 'Porthleven TR13 9JA'] },
+    entity: null,
+    number: 'WH-3283',
+    fields: {
+      customerName: 'Teodor Blank',
+      customerEmail: 't.blank@example.com',
+      issuedAt: '2026-07-28',
+      serviceFrom: '2026-07-23',
+      serviceTo: '2026-07-28',
+      reference: '301',
+      currency: 'USD',
+      taxName: 'Taxes and city levy',
+      taxRate: 900,
+      subtotal,
+      tax,
+      total: subtotal + tax,
+      paid: 500_00,
+      balance: subtotal + tax - 500_00,
+      ...fields,
+    },
+    collections: {
+      items: [
+        ...STAY.map((night) => ({ desc: 'Loft suite', date: night.date, qty: 1, rate: night.rate })),
+        { desc: 'Breakfast in the morning', qty: 3 * STAY.length, rate: 16_00, amount: BREAKFAST },
+        { desc: 'A space in the yard', qty: STAY.length, rate: 14_00, amount: PARKING },
+        ...charges,
+      ],
+      payments: [{ number: 'P-7', paidOn: '2026-07-23', method: 'card', amount: 500_00, voided: false }],
+    },
+  };
+}
+
+/** The item table's rows, each as its cells' text. */
+function tableRows(html: string): string[][] {
+  const body = /<tbody>(.*?)<\/tbody>/s.exec(html)?.[1] ?? '';
+  return [...body.matchAll(/<tr>(.*?)<\/tr>/gs)].map((row) =>
+    [...row[1]!.matchAll(/<td[^>]*>(?:<span class="fig">|<bdi>)(.*?)(?:<\/span>|<\/bdi>)/g)].map((cell) => cell[1]!),
+  );
+}
+
+describe('an invoice for several days — a guest house’s folio', () => {
+  it('works from the house’s own prices: five nights of a loft come to $1,125', () => {
+    expect(STAY.map((night) => night.rate / 100)).toEqual([215, 240, 240, 215, 215]);
+    expect([ROOM, BREAKFAST, PARKING]).toEqual([1_125_00, 240_00, 70_00]);
+  });
+
+  it('prints the period of service and the reference beside the number', async () => {
+    const html = page(await render('invoice', folioSubject()));
+    const meta = /<div class="meta">(.*?)<\/div>/s.exec(html)?.[1] ?? '';
+    const rows = [...meta.matchAll(/<span class="k">(.*?)<\/span><span class="v"><span class="fig">(.*?)<\/span><\/span>/g)].map((m) => [m[1], m[2]]);
+    expect(rows).toEqual([
+      ['Invoice', 'WH-3283'],
+      ['Reference', '301'],
+      ['Issued', 'Jul 28, 2026'],
+      ['Period of service', 'Jul 23, 2026 – Jul 28, 2026'],
+    ]);
+  });
+
+  it('leads each line with its day, one line per night, then the extras with none', async () => {
+    const html = page(await render('invoice', folioSubject()));
+    expect(html).toContain('<thead><tr><th>Date</th><th>Description</th><th class="right">Qty</th>');
+    expect(tableRows(html)).toEqual([
+      ['Jul 23, 2026', 'Loft suite', '1', '$215.00', '$215.00'],
+      ['Jul 24, 2026', 'Loft suite', '1', '$240.00', '$240.00'],
+      ['Jul 25, 2026', 'Loft suite', '1', '$240.00', '$240.00'],
+      ['Jul 26, 2026', 'Loft suite', '1', '$215.00', '$215.00'],
+      ['Jul 27, 2026', 'Loft suite', '1', '$215.00', '$215.00'],
+      ['', 'Breakfast in the morning', '15', '$16.00', '$240.00'],
+      ['', 'A space in the yard', '5', '$14.00', '$70.00'],
+    ]);
+  });
+
+  it('prints the stored figures, the payment and what is still owed', async () => {
+    const html = page(await render('invoice', folioSubject()));
+    expect(html).toContain('<div class="row"><span class="k">Subtotal</span><span class="fig">$1,435.00</span></div>');
+    expect(html).toContain('<div class="row"><span class="k">Taxes and city levy 9%</span><span class="fig">$129.15</span></div>');
+    expect(html).toContain('<div class="row total"><span class="k">Total</span><span class="fig">$1,564.15</span></div>');
+    expect(html).toContain('Payments so far');
+    expect(html).toMatch(/<div class="due"><span>Amount due<\/span><span class="fig">\$1,064\.15<\/span><\/div>/);
+
+    const short = page(await render('invoice', folioSubject(), ['html'], { show_payment_ledger: false }));
+    expect(short).toContain('<div class="row"><span class="k">Paid</span><span class="fig">$500.00</span></div>');
+    expect(short).toContain('<div class="row total"><span class="k">Amount due</span><span class="fig">$1,064.15</span></div>');
+  });
+
+  it('puts a charge the desk added after the extras, with its day', async () => {
+    const html = page(await render('invoice', folioSubject({}, [{ desc: 'House red, a bottle', date: '2026-07-26', qty: 1, rate: 32_00, amount: 32_00 }])));
+    expect(tableRows(html).at(-1)).toEqual(['Jul 26, 2026', 'House red, a bottle', '1', '$32.00', '$32.00']);
+    expect(html).toContain('<span class="fig">$1,599.03</span>');
+    expect(html).toMatch(/Amount due<\/span><span class="fig">\$1,099\.03</);
+  });
+
+  it('draws the same in the PDF, on A4 and on Letter', async () => {
+    for (const paper of ['a4', 'letter'] as const) {
+      const outcome = await provider.render({ kind: 'invoice', subject: folioSubject(), formats: ['pdf'], paper, settings: {} });
+      if (isDocumentError(outcome)) throw new Error(JSON.stringify(outcome));
+      const text = LATIN1.decode(outcome[0]!.bytes);
+      for (const shown of ['(DATE)', '(DESCRIPTION)', '(Reference)', '(301)', '(Period of service)', '(Jul 23, 2026)', '(Jul 27, 2026)', '(Loft suite)', '(Breakfast in the morning)', '($1,564.15)', '($1,064.15)']) {
+        expect(text, `${paper} ${shown}`).toContain(shown);
+      }
+      // The span is drawn with an en dash, which the PDF's font has.
+      expect(text).toContain('(Jul 23, 2026 – Jul 28, 2026)');
+      // Each day sits in the column before the description, on the line's own baseline.
+      const day = /1 0 0 1 ([\d.]+) ([\d.]+) Tm\n\(Jul 24, 2026\)/.exec(text);
+      const name = [...text.matchAll(/1 0 0 1 ([\d.]+) ([\d.]+) Tm\n\(Loft suite\)/g)][1];
+      expect(day, paper).not.toBeNull();
+      expect(Number(day![1])).toBeLessThan(Number(name![1]));
+      expect(day![2]).toBe(name![2]);
+    }
+  });
+
+  it('draws the same folio to the same bytes twice', async () => {
+    const first = await render('invoice', folioSubject());
+    const second = await render('invoice', folioSubject());
+    expect(second.map((d) => Array.from(d.bytes))).toEqual(first.map((d) => Array.from(d.bytes)));
+  });
+
+  it('prints the period under the term the language has for it', async () => {
+    expect(page(await render('invoice', { ...folioSubject(), locale: 'de-DE' }))).toContain('<span class="k">Leistungszeitraum</span>');
+    expect(page(await render('invoice', { ...folioSubject(), locale: 'fr-FR' }))).toContain('<span class="k">Période de prestation</span>');
+    const arabic = await render('invoice', { ...folioSubject(), locale: 'ar-EG' });
+    expect(page(arabic)).toContain('<span class="k">فترة الخدمة</span>');
+  });
+
+  it('prints one day alone when only one end of the period is mapped', async () => {
+    const html = page(await render('invoice', folioSubject({ serviceTo: null }), ['html']));
+    expect(html).toContain('<span class="k">Period of service</span><span class="v"><span class="fig">Jul 23, 2026</span></span>');
+  });
+
+  it('prints neither the period, the reference nor a column of days when none is mapped', async () => {
+    const plain = folioSubject({ serviceFrom: null, serviceTo: undefined, reference: '' });
+    const html = page(await render('invoice', { ...plain, collections: { ...plain.collections, items: plain.collections.items!.map(({ date: _, ...line }) => line) } }));
+    expect(html).not.toContain('Period of service');
+    expect(html).not.toContain('>Reference<');
+    expect(html).not.toContain('<th>Date</th>');
+    expect(html).toContain('<thead><tr><th>Description</th>');
+  });
+});

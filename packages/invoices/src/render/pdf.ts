@@ -174,17 +174,30 @@ function drawTitle(entry: Extract<Block, { kind: 'title' }>, m: Metrics, cursor:
 }
 
 function drawItems(entry: Extract<Block, { kind: 'items' }>, m: Metrics, cursor: Cursor, pages: Page[]): void {
-  // The first column takes what the three figure columns leave. On a till roll
-  // the figure columns are narrower because there is nothing else to give.
+  // The description takes what the figure columns leave. On a till roll the
+  // figure columns are narrower because there is nothing else to give.
   const numeric = m.narrow ? 38 : 84;
-  const edges = [right(m) - numeric * 2, right(m) - numeric, right(m)];
-  const descWidth = contentWidth(m) - numeric * 3 - 6;
+  // Behind a column of days (never on a till roll), the description is the second column.
+  const described = entry.lead === true ? 1 : 0;
+  const figures = entry.columns.length - described - 1;
+  const edges = Array.from({ length: figures }, (_, at) => right(m) - numeric * (figures - 1 - at));
+  // The days' column is as wide as its widest day, and its heading.
+  const leadWidth =
+    described === 0
+      ? 0
+      : Math.max(
+          widthOf((entry.columns[0]?.label ?? '').toUpperCase(), m.small, 'bold'),
+          ...entry.rows.map((row) => widthOf(row.cells[0] ?? '', m.body, 'regular')),
+        ) + 12;
+  const descX = m.marginX + leadWidth;
+  const descWidth = contentWidth(m) - numeric * figures - 6 - leadWidth;
 
   const header = (): void => {
     cursor.ops.push(...rule(m.frame, m.marginX, cursor.y, contentWidth(m), INK));
     cursor.y += 6;
     cursor.ops.push(...label(m, m.marginX, cursor.y + m.small, entry.columns[0]?.label ?? ''));
-    entry.columns.slice(1).forEach((column, at) => {
+    if (described === 1) cursor.ops.push(...label(m, descX, cursor.y + m.small, entry.columns[1]?.label ?? ''));
+    entry.columns.slice(described + 1).forEach((column, at) => {
       if (column.label === '') return;
       cursor.ops.push(
         ...textRight(m.frame, edges[at]!, cursor.y + m.small, column.label.toUpperCase(), {
@@ -203,7 +216,7 @@ function drawItems(entry: Extract<Block, { kind: 'items' }>, m: Metrics, cursor:
   header();
 
   for (const row of entry.rows) {
-    const wrapped = wrap(row.cells[0] ?? '', descWidth, { sizePt: m.body });
+    const wrapped = wrap(row.cells[described] ?? '', descWidth, { sizePt: m.body });
     const notes = row.note === '' ? [] : wrap(row.note, descWidth, { sizePt: m.small });
     const height = wrapped.length * m.leading + notes.length * (m.small + 3) + 4;
     const before = cursor.page;
@@ -212,19 +225,22 @@ function drawItems(entry: Extract<Block, { kind: 'items' }>, m: Metrics, cursor:
     // otherwise page two is a table of unlabelled numbers.
     if (cursor.page !== before) header();
 
+    if (described === 1 && (row.cells[0] ?? '') !== '') {
+      cursor.ops.push(...text(m.frame, m.marginX, cursor.y + m.body, row.cells[0]!, { sizePt: m.body, color: MUTED }));
+    }
     wrapped.forEach((line, at) => {
-      cursor.ops.push(...text(m.frame, m.marginX, cursor.y + m.body + at * m.leading, line, { sizePt: m.body, color: INK }));
+      cursor.ops.push(...text(m.frame, descX, cursor.y + m.body + at * m.leading, line, { sizePt: m.body, color: INK }));
     });
     notes.forEach((line, at) => {
       cursor.ops.push(
-        ...text(m.frame, m.marginX, cursor.y + wrapped.length * m.leading + m.small + at * (m.small + 3), line, {
+        ...text(m.frame, descX, cursor.y + wrapped.length * m.leading + m.small + at * (m.small + 3), line, {
           sizePt: m.small,
           color: SUBTLE,
         }),
       );
     });
-    row.cells.slice(1).forEach((cell, at) => {
-      const last = at === row.cells.length - 2;
+    row.cells.slice(described + 1).forEach((cell, at) => {
+      const last = at === figures - 1;
       cursor.ops.push(
         ...textRight(m.frame, edges[at]!, cursor.y + m.body, cell, {
           sizePt: m.body,

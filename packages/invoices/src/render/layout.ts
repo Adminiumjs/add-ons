@@ -35,7 +35,7 @@
 import type { InvoiceBody, LineItem } from '../document.ts';
 import { lineMinor, taxBreakdown, totalsOf } from '../money.ts';
 import { differenceText, isPositive, isZero, productText, sumText } from '../shape-money.ts';
-import type { BoundExtras, StoredLine, SubjectFacts } from '../subject.ts';
+import type { BoundExtras, LineFacts, StoredLine, SubjectFacts } from '../subject.ts';
 import { minorToDecimal, type Formats } from './format.ts';
 import { fill, type LayoutWords } from './words.ts';
 
@@ -73,8 +73,18 @@ export interface TitleBlock {
 export interface ItemsBlock {
   readonly kind: 'items';
   readonly columns: readonly { readonly label: string; readonly align: 'left' | 'right' }[];
-  /** `note` is a small line under the first cell: a reduction, what a payment was against. */
+  /**
+   * `note` is small print under the line's description: the names chosen on
+   * it, a reduction, what a payment was against — one per `\n`-separated line.
+   */
   readonly rows: readonly { readonly cells: readonly string[]; readonly note: string }[];
+  /**
+   * Set when the first column is the day each line is for, drawn before the
+   * description. Only lines that carry a day make one, and never on a till
+   * roll, where the day goes under the line instead — so a document whose
+   * lines carry none is laid out exactly as it always was.
+   */
+  readonly lead?: true;
 }
 
 export interface LadderBlock {
@@ -158,6 +168,8 @@ export interface LayoutInput {
   readonly rtl: boolean;
   /** Whether the body was authored (a template) rather than drawn from a mapping alone. */
   readonly authored: boolean;
+  /** Whether the sheet is a till roll: too narrow for a column of days, so a line's day goes under it. */
+  readonly narrow?: boolean;
 }
 
 const TERM_WORDS: Readonly<Record<string, keyof LayoutWords>> = {
@@ -381,15 +393,21 @@ function partiesBlock(input: LayoutInput, kindWord: string, isVoid: boolean, voi
       ];
       break;
     }
-    default:
+    default: {
+      const { from, to } = facts.servicePeriod;
+      // Both days as one span; one alone is that day.
+      const period = from !== '' && to !== '' ? `${day(from)} – ${day(to)}` : day(from !== '' ? from : to);
       meta = [
         row(kindWord, body.number),
+        row(words.receiptReference, facts.reference),
         row(words.issued, day(body.issued)),
         row(words.due, day(body.due)),
+        row(words.servicePeriod, period),
         row(words.terms, facts.terms === '' ? '' : named(facts.terms, TERM_WORDS, words)),
         row(words.reference, body.poNumber),
         row(words.corrects, extras.references),
       ];
+    }
   }
   if (isVoid && voidDay !== '') meta.push(row(words.voided, voidDay));
 
@@ -444,16 +462,18 @@ function documentBlocks(input: LayoutInput, isVoid: boolean): Block[] {
   const stored = facts.total !== null;
 
   if (facts.storedLines !== null) {
-    blocks.push({ kind: 'items', columns: itemColumns(words), rows: facts.storedLines.map((line) => storedLineRow(line, input)) });
+    blocks.push(linesBlock(input, facts.storedLines.map((line) => ({ ...storedLineRow(line, input), line }))));
   } else {
-    blocks.push({
-      kind: 'items',
-      columns: itemColumns(words),
-      rows: body.items.map((item: LineItem) => ({
-        cells: [item.desc, formats.quantity(item.qty), money(item.rate), money(hundredths(lineMinor(item)))],
-        note: '',
-      })),
-    });
+    blocks.push(
+      linesBlock(
+        input,
+        body.items.map((item: LineItem, at) => ({
+          cells: [item.desc, formats.quantity(item.qty), money(item.rate), money(hundredths(lineMinor(item)))],
+          note: '',
+          line: extras.lines[at] ?? NO_LINE_FACTS,
+        })),
+      ),
+    );
   }
 
   const rows: { label: string; value: string; emphasis: boolean }[] = [];
@@ -550,6 +570,35 @@ function documentBlocks(input: LayoutInput, isVoid: boolean): Block[] {
     });
   }
   return blocks;
+}
+
+const NO_LINE_FACTS: LineFacts = { date: '', options: [] };
+
+/**
+ * The lines of an invoice, a quote, a credit note or a sale, with what each
+ * carries besides its figures.
+ *
+ * A line's names print under it, one after another, above any reduction. Its
+ * day leads the row, in a column of its own, when any line has one; on a till
+ * roll the day is the first line under the description instead. A document
+ * whose lines carry neither gets exactly the block it always got.
+ */
+function linesBlock(
+  input: LayoutInput,
+  rows: readonly { readonly cells: readonly string[]; readonly note: string; readonly line: LineFacts }[],
+): ItemsBlock {
+  const { words, formats } = input;
+  const narrow = input.narrow === true;
+  const lead = !narrow && rows.some((row) => row.line.date !== '');
+  const drawn = rows.map(({ cells, note, line }) => {
+    const day = line.date === '' ? '' : formats.day(line.date);
+    const notes = [narrow ? day : '', line.options.join(' · '), note].filter((part) => part !== '');
+    return { cells: lead ? [day, ...cells] : cells, note: notes.join('\n') };
+  });
+  const columns = itemColumns(words);
+  return lead
+    ? { kind: 'items', columns: [{ label: words.date, align: 'left' }, ...columns], rows: drawn, lead: true }
+    : { kind: 'items', columns, rows: drawn };
 }
 
 function storedLineRow(line: StoredLine, input: LayoutInput): { cells: string[]; note: string } {

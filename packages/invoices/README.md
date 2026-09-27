@@ -53,6 +53,32 @@ own — a practice's payments, a till's tickets — rather than on a shape.
   (the total before the tip) and they print as stored; a total below subtotal
   and tax prints the difference as a reduction.
 
+## Lines with a day, lines with choices, and invoices over several days
+
+Three things a document's lines and an invoice can carry besides their figures.
+Each is optional and prints only when it holds a value, so a document that maps
+none of them is drawn exactly as before.
+
+- **A day on each line.** `items` has a `date` column: the day a line is for, a
+  night of a booking or a day of a hire. When any line has one, the lines print
+  it in a column of its own before the description; on an 80 mm till roll it
+  is the first small line under the description instead.
+- **The choices made on a line.** `items` has an `options` column holding a
+  list of names (`text[]`), from a list or from text with one name per line.
+  They print under the line one after another, `Farro · Grilled chicken ·
+  Avocado`, above any reduction. The middle dot is in the PDF's font.
+- **The period an invoice covers.** An invoice has `serviceFrom` and
+  `serviceTo`, two days printed as one row, "Period of service" (in German
+  "Leistungszeitraum", which a German invoice must state). One mapped alone
+  prints that day.
+- **A reference on an invoice.** An invoice has `reference`, the slot the
+  receipt already had: a number the document is quoted by besides its own, a
+  room, a table or an order. It prints beside the invoice number.
+
+A server with an older release of this add-on draws none of these and says
+nothing about them, so an app that maps them should ask for release 1.0.6 or
+later.
+
 ## What it records, and what it never does
 
 **It records payments** — each one somebody enters against an invoice, with its

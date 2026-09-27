@@ -149,6 +149,18 @@ export function missingSlots(kind: string, subject: DocumentSubject): readonly s
   return missing;
 }
 
+/** The names a line lists, from a list or from text with one name per line; blanks dropped. */
+function namesOf(value: unknown): string[] {
+  return linesOf(value)
+    .map((name) => name.trim())
+    .filter((name) => name !== '');
+}
+
+/** A line's day and names, as the subject carries them. */
+function lineFactsOf(row: Readonly<Record<string, unknown>>): LineFacts {
+  return { date: dateOf(row.date).trim(), options: namesOf(row.options) };
+}
+
 function itemsFrom(slot: OutlineSlot | undefined, subject: DocumentSubject, scale: number): LineItem[] {
   if (slot === undefined) return [];
   const rows = subject.collections[slot.id] ?? [];
@@ -187,6 +199,19 @@ export interface BoundExtras {
   readonly tip: string | null;
   /** Stored with the document; nothing is sent until somebody presses send. */
   readonly customerEmail: string;
+  /**
+   * The day and the names of each MAPPED line, by the line's position in
+   * `body.items` — empty when the lines are the authored template's own. They
+   * ride here rather than on `LineItem` for the reason above.
+   */
+  readonly lines: readonly LineFacts[];
+}
+
+/** What a line carries besides its figures: the day it is for, and the names printed under it. */
+export interface LineFacts {
+  /** `YYYY-MM-DD`, or `''`. */
+  readonly date: string;
+  readonly options: readonly string[];
 }
 
 /** One line as a shape stores it: the figures Adminium worked out ride with it. */
@@ -200,6 +225,10 @@ export interface StoredLine {
   readonly discountKind: string;
   /** A stage of a quote: the share it bills, printed where the quantity goes. */
   readonly share: number | null;
+  /** The day the line is for, `YYYY-MM-DD`, or `''`. */
+  readonly date: string;
+  /** The names printed under the line, in order. */
+  readonly options: readonly string[];
 }
 
 export interface StoredPayment {
@@ -269,8 +298,13 @@ export interface SubjectFacts {
     /** What the payment was for, when it was not an invoice: the day of the visit, who gave it, the payer's reference. */
     readonly serviceDate: string;
     readonly attendedBy: string;
+    /** The same value as `reference` below, kept where the receipt has always read it. */
     readonly reference: string;
   };
+  /** The number the document is quoted by besides its own — a payer's claim, a room, an order. */
+  readonly reference: string;
+  /** The period an invoice charges for, each day `YYYY-MM-DD` or `''`. */
+  readonly servicePeriod: { readonly from: string; readonly to: string };
   readonly quote: {
     readonly sentOn: string;
     readonly validUntil: string;
@@ -395,6 +429,7 @@ export function documentFrom(
         discount: numberOf(row.discount),
         discountKind: textOf(row.discountKind),
         share: numberOf(row.share),
+        ...lineFactsOf(row),
       }))
     : null;
 
@@ -415,6 +450,7 @@ export function documentFrom(
   }));
 
   const field = (id: string): unknown => subject.fields[id];
+  const reference = textOf(field('reference')).trim();
   const facts: SubjectFacts = {
     currency: next.currency,
     scale,
@@ -445,8 +481,10 @@ export function documentFrom(
       voided: flagOf(field('voided')),
       serviceDate: dateOf(field('serviceDate')),
       attendedBy: textOf(field('attendedBy')).trim(),
-      reference: textOf(field('reference')).trim(),
+      reference,
     },
+    reference,
+    servicePeriod: { from: dateOf(field('serviceFrom')).trim(), to: dateOf(field('serviceTo')).trim() },
     quote: {
       sentOn: dateOf(field('sentOn')),
       validUntil: dateOf(field('validUntil')),
@@ -475,6 +513,9 @@ export function documentFrom(
       paidWith: textOf(subject.fields.paidWith),
       tip: moneyOf(subject.fields.tip, scale),
       customerEmail: textOf(subject.fields.customerEmail),
+      // Only lines that came from the subject: an authored template's own
+      // lines have no day and no names to line up with.
+      lines: items.length > 0 ? rows.map(lineFactsOf) : [],
     },
     facts,
   };

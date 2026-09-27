@@ -311,3 +311,192 @@ describe('a sale’s receipt from a till', () => {
     for (const shown of ['(Flat white)', '(Reduction)', '(-$1.69)', '(Gratuity)', '(Card)', '($19.46)']) expect(text, shown).toContain(shown);
   });
 });
+
+describe('what a line carries besides its figures', () => {
+  const LINE_KINDS = ['invoice', 'receipt', 'credit-note', 'quote'] as const;
+
+  it('offers a day and a list of names on every line, each optional, in all eight languages', () => {
+    for (const kind of LINE_KINDS) {
+      const columns = outlineOf(kind).slots.find((entry) => entry.id === 'items')!.columns!;
+      expect(columns.find((column) => column.id === 'date'), kind).toMatchObject({ type: 'date', required: false });
+      expect(columns.find((column) => column.id === 'options'), kind).toMatchObject({ type: 'text[]', required: false });
+      for (const id of ['date', 'options']) {
+        const column = columns.find((entry) => entry.id === id)!;
+        for (const locale of LOCALES) {
+          expect(column.label[locale], `${kind} ${id} ${locale}`).toMatch(/\S/);
+          expect(column.help?.[locale], `${kind} ${id} help ${locale}`).toMatch(/\S/);
+        }
+      }
+    }
+  });
+
+  it('offers an invoice the period of service and a reference, each optional', () => {
+    const slots = outlineOf('invoice').slots;
+    expect(slots.find((entry) => entry.id === 'serviceFrom')).toMatchObject({ type: 'date', required: false });
+    expect(slots.find((entry) => entry.id === 'serviceTo')).toMatchObject({ type: 'date', required: false });
+    expect(slots.find((entry) => entry.id === 'reference')).toMatchObject({ type: 'text', required: false });
+    for (const id of ['serviceFrom', 'serviceTo', 'reference']) {
+      const slot = slots.find((entry) => entry.id === id)!;
+      expect(slot.default).toBeUndefined();
+      for (const locale of LOCALES) {
+        expect(slot.label[locale], `${id} ${locale}`).toMatch(/\S/);
+        expect(slot.help?.[locale], `${id} help ${locale}`).toMatch(/\S/);
+      }
+    }
+    // The receipt's `reference` keeps its own explanation, and both kinds share the slot's name.
+    expect(outlineOf('receipt').slots.find((entry) => entry.id === 'reference')!.help!['en-US']).toContain('insurer');
+    expect(slots.find((entry) => entry.id === 'reference')!.label).toEqual(outlineOf('receipt').slots.find((entry) => entry.id === 'reference')!.label);
+  });
+
+  it('prints the German period as the term an invoice must carry', () => {
+    expect(wordsFor('de-DE').servicePeriod).toBe('Leistungszeitraum');
+    for (const locale of LOCALES) expect(wordsFor(locale).servicePeriod, locale).toMatch(/\S/);
+  });
+});
+
+/*
+ * ── A KITCHEN'S RECEIPT: THE NAMES CHOSEN ON A LINE, UNDER IT ──────────────
+ *
+ * Order #2109 at a lunch counter: a grain bowl built from three choices, and a
+ * cookie. The kitchen's profile maps the line's name, quantity and price, the
+ * names chosen on it one level below, the stored subtotal, tax and total, and
+ * the order's own number as the reference — the receipt's own number is the
+ * register's.
+ */
+function orderSubject(lines: Fields[] = [], fields: Fields = {}): DocumentSubject {
+  return {
+    now: { iso: '2026-07-28T11:16:00.000Z', timezone: 'America/New_York' },
+    locale: 'en-US',
+    currency: 'USD',
+    business: { name: 'Juniper Kitchen', lines: ['41 Alder Street'] },
+    entity: null,
+    number: '2118',
+    fields: {
+      issuedAt: '2026-07-28',
+      currency: 'USD',
+      reference: '#2109',
+      paidWith: 'card',
+      attendedBy: 'Sam',
+      subtotal: 21_50,
+      tax: 1_77,
+      total: 23_27,
+      ...fields,
+    },
+    collections: {
+      items:
+        lines.length > 0
+          ? lines
+          : [
+              { desc: 'Signature grain bowl', qty: 1, rate: 18_00, options: ['Farro', 'Grilled chicken', 'Avocado'] },
+              { desc: 'Cookie', qty: 1, rate: 3_50, options: [] },
+            ],
+    },
+  };
+}
+
+describe('a kitchen’s receipt, the choices under each line', () => {
+  it('prints the grain bowl at $18.00 with its three choices under it, on a till roll and on A4', async () => {
+    for (const paper of ['receipt-80mm', 'a4'] as const) {
+      const html = page(await draw(orderSubject(), paper));
+      expect(html, paper).toContain(
+        '<td><bdi>Signature grain bowl</bdi><span class="note">Farro · Grilled chicken · Avocado</span></td><td class="right"><span class="fig">1</span></td><td class="right"><span class="fig">$18.00</span></td><td class="right"><span class="fig">$18.00</span></td>',
+      );
+      expect(html, paper).toContain('<td><bdi>Cookie</bdi></td>');
+      expect(html, paper).toContain('<span class="fig">$23.27</span>');
+    }
+  });
+
+  it('quotes the order’s number as the reference, beside the register’s receipt number', async () => {
+    expect(facts(page(await draw(orderSubject())))).toEqual([
+      ['Receipt', 'REC-2118'],
+      ['Reference', '#2109'],
+      ['Attended by', 'Sam'],
+      ['Received', 'Jul 28, 2026'],
+      ['Method', 'Card'],
+    ]);
+  });
+
+  it('draws the choices in the PDF with a middle dot the font has, on a till roll and on A4', async () => {
+    for (const paper of ['receipt-80mm', 'a4'] as const) {
+      const outcome = await draw(orderSubject(), paper, {}, ['pdf']);
+      const bytes = outcome[0]!.bytes;
+      // U+00B7 is WinAnsi 0xB7: one byte, drawn, not dropped.
+      const wanted = [...'(Farro '].map((c) => c.charCodeAt(0)).concat(0xb7, ...[...' Grilled chicken '].map((c) => c.charCodeAt(0)), 0xb7);
+      const at = Buffer.from(bytes).indexOf(Buffer.from(wanted));
+      expect(at, paper).toBeGreaterThan(0);
+      expect(pdf(outcome), paper).toContain('(Signature grain bowl)');
+      expect(outcome[0]!.warnings, paper).toEqual([]);
+    }
+  });
+
+  it('reads the names from text with one name a line, as well as from a list', async () => {
+    const lines = [{ desc: 'Signature grain bowl', qty: 1, rate: 18_00, options: 'Farro\nGrilled chicken\n\n Avocado ' }];
+    expect(page(await draw(orderSubject(lines)))).toContain('<span class="note">Farro · Grilled chicken · Avocado</span>');
+  });
+
+  it('prints the choices above a reduction on a stored line, one small line each', async () => {
+    const lines = [
+      { desc: 'Signature grain bowl', qty: 1, rate: 18_00, discountKind: 'amount', discount: 2, amount: 16_00, options: ['Farro', 'Avocado'] },
+    ];
+    const documents = await draw(orderSubject(lines));
+    expect(page(documents)).toContain('<span class="note">Farro · Avocado</span><span class="note">less $2.00 discount</span>');
+    const text = pdf(documents);
+    expect(text.indexOf('(Farro · Avocado)')).toBeGreaterThan(0);
+    expect(text.indexOf('(Farro · Avocado)')).toBeLessThan(text.indexOf('(less $2.00 discount)'));
+  });
+
+  it('escapes a name like every other value', async () => {
+    const lines = [{ desc: 'Bowl', qty: 1, rate: 1_00, options: ['<script>alert(1)</script>', 'Tofu & rice'] }];
+    const html = page(await draw(orderSubject(lines)));
+    expect(html).not.toContain('<script');
+    expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt; · Tofu &amp; rice');
+  });
+
+  it('puts a line’s day under it on a till roll, where a column of days does not fit', async () => {
+    const lines = [{ desc: 'Class pass', qty: 1, rate: 12_00, amount: 12_00, date: '2026-07-30', options: ['Morning'] }];
+    const roll = page(await draw(orderSubject(lines), 'receipt-80mm'));
+    expect(roll).not.toContain('<th>Date</th>');
+    expect(roll).toContain('<td><bdi>Class pass</bdi><span class="note">Jul 30, 2026</span><span class="note">Morning</span></td>');
+    const sheet = page(await draw(orderSubject(lines), 'a4'));
+    expect(sheet).toContain('<thead><tr><th>Date</th><th>Description</th>');
+    expect(sheet).toContain('<tr><td><span class="fig">Jul 30, 2026</span></td><td><bdi>Class pass</bdi><span class="note">Morning</span></td>');
+  });
+});
+
+/*
+ * ── A TICKET OFFICE'S RECEIPT: NOTHING NEW, AND NOTHING LOST ───────────────
+ *
+ * Order WV-8790, a weekend pass. The number has letters, so it is printed as
+ * the app wrote it and never put in the receipt series.
+ */
+describe('a ticket office’s receipt', () => {
+  const ticketSubject = (fields: Fields = {}, items?: Fields[]): DocumentSubject => ({
+    now: { iso: '2026-07-28T18:00:00.000Z', timezone: 'Europe/London' },
+    locale: 'en-US',
+    currency: 'USD',
+    business: { name: 'Waveform', lines: [] },
+    entity: null,
+    number: '57',
+    fields: { issuedAt: '2026-07-20', currency: 'USD', amount: 85_00, paidWith: 'card', customerName: 'Ada Quill', reference: 'WV-8790', ...fields },
+    collections: items === undefined ? {} : { items },
+  });
+
+  it('prints the order as the reference on the receipt of its payment', async () => {
+    const html = page(await draw(ticketSubject(), 'a4'));
+    expect(facts(html)).toEqual([
+      ['Receipt', 'REC-57'],
+      ['Reference', 'WV-8790'],
+      ['Received', 'Jul 20, 2026'],
+      ['Method', 'Card'],
+    ]);
+    expect(html).toContain('<span class="fig">$85.00</span>');
+  });
+
+  it('prints the weekend pass as its line when the number is the order’s own', async () => {
+    const documents = await draw({ ...ticketSubject({ reference: '' }, [{ desc: 'Weekend pass', qty: 1, rate: 85_00, amount: 85_00 }]), number: 'WV-8790' }, 'a4');
+    expect(facts(page(documents))[0]).toEqual(['Receipt', 'WV-8790']);
+    expect(page(documents)).toContain('<td><bdi>Weekend pass</bdi></td>');
+    expect(pdf(documents)).toContain('(Weekend pass)');
+    expect(documents.map((d) => d.filename)).toEqual(['receipt-WV-8790.html', 'receipt-WV-8790.pdf']);
+  });
+});
