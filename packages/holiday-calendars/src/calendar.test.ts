@@ -430,9 +430,11 @@ describe("the read surface a host consumes", () => {
  * short enough to sit at a mount site, and that the mapping loses nothing.
  * `people-ops` stores `{ serial, name }`, `clinic-desk` writes a closure row
  * `{ from_date, to_date, label, clinician_id }` when the desk accepts a
- * suggested day, and the Client Portal reads the public setting itself with no
- * code of this add-on; the README documents all three, and a claim in a README
- * that no code has ever run is a claim on trust.
+ * suggested day, the Client Portal reads the public setting itself with no
+ * code of this add-on, and online ordering reads it the portal's way and
+ * writes a closure row `{ from_date, to_date, reason, active }` the desk's
+ * way; the README documents all four, and a claim in a README that no code has
+ * ever run is a claim on trust.
  *
  * The two record shapes are declared inline rather than imported. Importing
  * them would make this repository depend on two applications it does not build
@@ -509,6 +511,41 @@ describe("both hosts can map this into their own record, at the seam", () => {
     for (const day of raw) {
       expect(day.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       expect(day.name.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("becomes online ordering's closure row — one day, its name as the reason, switched on", () => {
+    // `{ from_date, to_date, reason, active }`: the kitchen reads `days` from
+    // the public setting, like the portal, and a staff click writes one row per
+    // day through the data API, like the clinic's desk — only a row in the
+    // closures table closes a day's pickup slots. `reason` holds at most 120
+    // characters; every name in every set fits.
+    const us = writeStored(imported([], US, 2026));
+    const closures = nonWorkingDays(us).map((day) => ({
+      from_date: day.date,
+      to_date: day.date,
+      reason: day.name,
+      active: true,
+    }));
+    expect(closures.length).toBe(US.days.length);
+    expect(closures).toContainEqual({ from_date: "2026-12-25", to_date: "2026-12-25", reason: "Christmas Day", active: true });
+    // A Friday, which is a day the kitchen would otherwise open.
+    expect(new Date("2026-12-25T00:00:00Z").getUTCDay()).toBe(5);
+    for (const closure of closures) {
+      expect(closure.from_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(closure.to_date).toBe(closure.from_date);
+      expect(closure.reason.length).toBeLessThanOrEqual(120);
+    }
+    // The same rows from the public setting alone, with no code of this add-on.
+    const raw = us["days"] as { date: string; name: string }[];
+    expect(raw.map((day) => ({ from_date: day.date, to_date: day.date, reason: day.name, active: true }))).toEqual(closures);
+  });
+
+  it("gives every set's names in a length a closure's reason can hold", () => {
+    for (const code of ["US", "DE", "FR", "CZ", "DK"]) {
+      for (const year of YEARS) {
+        for (const day of expandSet(daySetFor(code)!, year)) expect(day.name.length, `${code} ${year} ${day.name}`).toBeLessThanOrEqual(120);
+      }
     }
   });
 

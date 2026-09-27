@@ -422,6 +422,19 @@ const HOST_ROOTS: readonly { name: string; root: string }[] = [
       process.env.ADMINIUM_POINT_OF_SALE ??
       fileURLToPath(new URL('../../../../point-of-sale', import.meta.url)),
   },
+  /*
+   * AND A THIRD. `holiday-calendars` attaches to online ordering (app key
+   * `ordering`), which reads the same public `days` setting as the portal and
+   * writes a closure row through the data API on a staff click. It mounts no
+   * add-on slots either, so it is checked for installability and named by the
+   * case below — and it is checked out in CI in the same change as this entry.
+   */
+  {
+    name: 'online-ordering',
+    root:
+      process.env.ADMINIUM_ONLINE_ORDERING ??
+      fileURLToPath(new URL('../../../../online-ordering', import.meta.url)),
+  },
 ];
 
 /** The checked-out directory a host name stands for. */

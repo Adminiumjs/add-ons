@@ -23,18 +23,20 @@ contributes is a list of days; the days themselves are drawn by the host, on the
 through the read surface below. An add-on that also drew a calendar would be a second, disagreeing
 copy of one the app already has.
 
-`attaches` names `hr` (people-ops), `clinic` (clinic-desk) and `clients` (the Client Portal) rather
-than `"*"`, because `"*"` claims every app that will ever exist and an unfalsifiable claim is worse
-than a wrong one. Each range is the minor line that app ships on — `^0.1.0` for people-ops,
-`^0.2.0` for clinic-desk and the Client Portal. All three are validated on every run by
-`packages/host/src/manifest-schema.test.ts`, which puts this manifest through the product's own
-validator against each app's declared tables.
+`attaches` names `hr` (people-ops), `clinic` (clinic-desk), `clients` (the Client Portal) and
+`ordering` (online ordering) rather than `"*"`, because `"*"` claims every app that will ever exist
+and an unfalsifiable claim is worse than a wrong one. Each range is the minor line that app ships
+on — `^0.1.0` for people-ops, `^0.2.0` for clinic-desk, the Client Portal and online ordering (whose
+0.1.x line has no closures table, so an install there is refused rather than claimed). All four are
+validated on every run by `packages/host/src/manifest-schema.test.ts`, which puts this manifest
+through the product's own validator against each app's declared tables.
 
 people-ops and clinic-desk vendor the add-on host and read the days at their own mount sites, so the
 attach-surface gate sees them consume this add-on. **The Client Portal has no add-on seam and
 imports no add-on code at all**: it reads this add-on's public setting `days` from the config
 Adminium gives its staff screens (see below), so the suite checks its claim for installability only
-and says so out loud (`names every app an add-on may target but cannot yet draw in`).
+and says so out loud (`names every app an add-on may target but cannot yet draw in`). Online
+ordering reads the days the same way and is checked the same way.
 
 ---
 
@@ -248,6 +250,25 @@ const rows = nonWorkingDays(settings['holiday-calendars']).map((day) => ({
 }));
 ```
 
+### online ordering (`ordering`)
+
+The kitchen reads `days` from the config Adminium gives its staff screens, as the portal does below,
+and offers each day on its Hours screen as a suggestion. As at the clinic's desk, a day held in an
+add-on's settings cannot close anything by itself: the kitchen's pickup slots are closed only by a
+row in its `closures` table. "Add as a closure" writes that row through the data API, one day long:
+
+```ts
+const rows = (config.addOns['holiday-calendars']?.days ?? []).map((day) => ({
+  from_date: day.date,
+  to_date: day.date,
+  reason: day.name,     // the country's own name for the day, at most 120 characters
+  active: true,
+}));
+```
+
+So US Christmas Day 2026, a Friday, added as a closure, closes that day's pickups. Nothing of this
+add-on is vendored into the app and no slot is filled there.
+
 ### the Client Portal (`clients`)
 
 The portal's screens import no add-on code. Adminium hands its staff screens the public settings of
@@ -260,8 +281,8 @@ under its own name.
 Nothing is written back and nothing is required: with the add-on absent the list is empty and the
 weeks are what they were.
 
-Three hosts, three record shapes, one list, and none of them reaches into this add-on's private
-fields. All three mappings are exercised in `calendar.test.ts` — not because this repository can test
+Four apps, four record shapes, one list, and none of them reaches into this add-on's private
+fields. All four mappings are exercised in `calendar.test.ts` — not because this repository can test
 another application, but because a claim in a README that no code has ever run is a claim on trust.
 
 ---

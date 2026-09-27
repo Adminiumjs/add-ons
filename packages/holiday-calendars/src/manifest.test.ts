@@ -187,12 +187,20 @@ describe("the manifest", () => {
    * add-on's public setting `days` from the config Adminium gives its staff
    * screens, and takes those days out of a studio's working weeks. Its range is
    * the same minor-line rule.
+   *
+   * THE FOURTH READS THEM THE SAME WAY AND WRITES A ROW. Online ordering
+   * (`ordering`) reads `days` from its staff config like the portal, and a
+   * staff click writes a real `closures` row through the data API, as the
+   * clinic's desk does — only a row closes the kitchen's pickup slots. Its
+   * range is `^0.2.0`, the line that first has a closures table: an install on
+   * the 0.1.x line, which has none, is refused rather than claimed.
    */
-  it("attaches to the three apps that use its days", () => {
+  it("attaches to the four apps that use its days", () => {
     expect(manifest.addOn.attaches).toEqual([
       { app: "hr", range: "^0.1.0" },
       { app: "clinic", range: "^0.2.0" },
       { app: "clients", range: "^0.2.0" },
+      { app: "ordering", range: "^0.2.0" },
     ]);
     // The portal reads the days through the public setting, so it must stay public.
     expect(manifest.addOn.publicSettings).toContain(STORAGE_KEY);

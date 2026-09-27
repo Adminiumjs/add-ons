@@ -166,6 +166,15 @@ jobs:
           repository: Adminiumjs/point-of-sale
           path: .hosts/point-of-sale
 
+      # `holiday-calendars` also attaches to online ordering (`ordering`), which
+      # reads the same public setting and has no seam either. Registered in
+      # `HOST_ROOTS` and here in one change, for the reason the blocks above give.
+      - name: Check out the online-ordering app
+        uses: actions/checkout@v4
+        with:
+          repository: Adminiumjs/online-ordering
+          path: .hosts/online-ordering
+
       # `verify` is the repo's own script — typecheck, then test, then build —
       # so CI cannot drift from what a maintainer runs by hand.
       - name: Typecheck, test, build
@@ -179,6 +188,7 @@ jobs:
           ADMINIUM_SUPPORT_DESK: ${{ github.workspace }}/.hosts/support-desk
           ADMINIUM_CLIENT_PORTAL: ${{ github.workspace }}/.hosts/client-portal
           ADMINIUM_POINT_OF_SALE: ${{ github.workspace }}/.hosts/point-of-sale
+          ADMINIUM_ONLINE_ORDERING: ${{ github.workspace }}/.hosts/online-ordering
           # Only the two add-on HOSTS are required: `host-mirror.test.ts` is the
           # guard this covers, and it compares vendored files that only those two
           # carry. The two target apps above are read by a different suite, which
