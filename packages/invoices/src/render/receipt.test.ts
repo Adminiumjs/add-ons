@@ -15,6 +15,7 @@ import { describe, expect, it } from 'vitest';
 import { describe as outlineOf } from '../kinds.ts';
 import { renderDocument } from '../render.ts';
 import provider from '../server.ts';
+import { orderSubject, ticketSubject } from '../testing/app-documents.ts';
 import { methodWord } from './layout.ts';
 import { wordsFor } from './words.ts';
 
@@ -363,37 +364,6 @@ describe('what a line carries besides its figures', () => {
  * the order's own number as the reference — the receipt's own number is the
  * register's.
  */
-function orderSubject(lines: Fields[] = [], fields: Fields = {}): DocumentSubject {
-  return {
-    now: { iso: '2026-07-28T11:16:00.000Z', timezone: 'America/New_York' },
-    locale: 'en-US',
-    currency: 'USD',
-    business: { name: 'Juniper Kitchen', lines: ['41 Alder Street'] },
-    entity: null,
-    number: '2118',
-    fields: {
-      issuedAt: '2026-07-28',
-      currency: 'USD',
-      reference: '#2109',
-      paidWith: 'card',
-      attendedBy: 'Sam',
-      subtotal: 21_50,
-      tax: 1_77,
-      total: 23_27,
-      ...fields,
-    },
-    collections: {
-      items:
-        lines.length > 0
-          ? lines
-          : [
-              { desc: 'Signature grain bowl', qty: 1, rate: 18_00, options: ['Farro', 'Grilled chicken', 'Avocado'] },
-              { desc: 'Cookie', qty: 1, rate: 3_50, options: [] },
-            ],
-    },
-  };
-}
-
 describe('a kitchen’s receipt, the choices under each line', () => {
   it('prints the grain bowl at $18.00 with its three choices under it, on a till roll and on A4', async () => {
     for (const paper of ['receipt-80mm', 'a4'] as const) {
@@ -470,17 +440,6 @@ describe('a kitchen’s receipt, the choices under each line', () => {
  * the app wrote it and never put in the receipt series.
  */
 describe('a ticket office’s receipt', () => {
-  const ticketSubject = (fields: Fields = {}, items?: Fields[]): DocumentSubject => ({
-    now: { iso: '2026-07-28T18:00:00.000Z', timezone: 'Europe/London' },
-    locale: 'en-US',
-    currency: 'USD',
-    business: { name: 'Waveform', lines: [] },
-    entity: null,
-    number: '57',
-    fields: { issuedAt: '2026-07-20', currency: 'USD', amount: 85_00, paidWith: 'card', customerName: 'Ada Quill', reference: 'WV-8790', ...fields },
-    collections: items === undefined ? {} : { items },
-  });
-
   it('prints the order as the reference on the receipt of its payment', async () => {
     const html = page(await draw(ticketSubject(), 'a4'));
     expect(facts(html)).toEqual([

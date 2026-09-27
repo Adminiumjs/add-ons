@@ -12,6 +12,7 @@ import { isDocumentError, type DocumentSubject, type RenderedDocument } from '@a
 import { describe, expect, it } from 'vitest';
 
 import provider from '../server.ts';
+import { BREAKFAST, folioSubject, PARKING, ROOM, STAY } from '../testing/app-documents.ts';
 
 const UTF8 = new TextDecoder();
 const LATIN1 = new TextDecoder('latin1');
@@ -487,62 +488,6 @@ describe('what an authored template decides still stands', () => {
  * a guest a night and a parking space at 14 a night; 9 % tax.
  */
 
-/** The price of each night from `from` up to (not including) `to`, as the house prices a loft. */
-function nights(from: string, to: string): { date: string; rate: number }[] {
-  const out: { date: string; rate: number }[] = [];
-  for (let day = new Date(`${from}T00:00:00Z`); day < new Date(`${to}T00:00:00Z`); day = new Date(day.getTime() + 86_400_000)) {
-    const weekend = day.getUTCDay() === 5 || day.getUTCDay() === 6;
-    const august = day.getUTCMonth() === 7;
-    out.push({ date: day.toISOString().slice(0, 10), rate: (215 + (weekend ? 25 : 0) + (august ? 20 : 0)) * 100 });
-  }
-  return out;
-}
-
-const STAY = nights('2026-07-23', '2026-07-28');
-const ROOM = STAY.reduce((sum, night) => sum + night.rate, 0);
-const BREAKFAST = 16_00 * 3 * STAY.length;
-const PARKING = 14_00 * STAY.length;
-
-function folioSubject(fields: Fields = {}, charges: Fields[] = []): DocumentSubject {
-  const subtotal = ROOM + BREAKFAST + PARKING + charges.reduce((sum, charge) => sum + (charge.amount as number), 0);
-  // 9 %, half away from zero, in cents.
-  const tax = Math.round((subtotal * 9) / 100);
-  return {
-    now: { iso: '2026-07-28T10:30:00.000Z', timezone: 'Europe/London' },
-    locale: 'en-US',
-    currency: 'USD',
-    business: { name: 'Wren House', lines: ['2 Harbour Row', 'Porthleven TR13 9JA'] },
-    entity: null,
-    number: 'WH-3283',
-    fields: {
-      customerName: 'Teodor Blank',
-      customerEmail: 't.blank@example.com',
-      issuedAt: '2026-07-28',
-      serviceFrom: '2026-07-23',
-      serviceTo: '2026-07-28',
-      reference: '301',
-      currency: 'USD',
-      taxName: 'Taxes and city levy',
-      taxRate: 900,
-      subtotal,
-      tax,
-      total: subtotal + tax,
-      paid: 500_00,
-      balance: subtotal + tax - 500_00,
-      ...fields,
-    },
-    collections: {
-      items: [
-        ...STAY.map((night) => ({ desc: 'Loft suite', date: night.date, qty: 1, rate: night.rate })),
-        { desc: 'Breakfast in the morning', qty: 3 * STAY.length, rate: 16_00, amount: BREAKFAST },
-        { desc: 'A space in the yard', qty: STAY.length, rate: 14_00, amount: PARKING },
-        ...charges,
-      ],
-      payments: [{ number: 'P-7', paidOn: '2026-07-23', method: 'card', amount: 500_00, voided: false }],
-    },
-  };
-}
-
 /** The item table's rows, each as its cells' text. */
 function tableRows(html: string): string[][] {
   const body = /<tbody>(.*?)<\/tbody>/s.exec(html)?.[1] ?? '';
@@ -578,8 +523,10 @@ describe('an invoice for several days — a guest house’s folio', () => {
       ['Jul 25, 2026', 'Loft suite', '1', '$240.00', '$240.00'],
       ['Jul 26, 2026', 'Loft suite', '1', '$215.00', '$215.00'],
       ['Jul 27, 2026', 'Loft suite', '1', '$215.00', '$215.00'],
-      ['', 'Breakfast in the morning', '15', '$16.00', '$240.00'],
-      ['', 'A space in the yard', '5', '$14.00', '$70.00'],
+      // The extras store their amount and no count, so the profile maps the
+      // amount as the line's rate and the line counts one.
+      ['', 'Breakfast in the morning', '1', '$240.00', '$240.00'],
+      ['', 'A space in the yard', '1', '$70.00', '$70.00'],
     ]);
   });
 
