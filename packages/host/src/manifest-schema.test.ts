@@ -55,7 +55,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { validateManifest } from '@adminiumjs/manifest';
+import { satisfiesSemverRange, validateManifest } from '@adminiumjs/manifest';
 import { describe, expect, it } from 'vitest';
 
 /** `packages/` — this repo's own, holding one directory per add-on. */
@@ -174,6 +174,8 @@ describe('the manifests pass @adminiumjs/manifest itself', () => {
 interface HostApp {
   name: string;
   key: string;
+  /** The app's own `version`, as its checked-out manifest declares it (`null` when it declares none). */
+  version?: string | null;
   tables: readonly string[];
   /**
    * The slots this app's build actually mounts — its own `HOSTED_SLOTS` — or
@@ -451,12 +453,14 @@ function hostApps(): HostApp[] {
     const doc = JSON.parse(readFileSync(file, 'utf8')) as {
       kind?: string;
       key?: string;
+      version?: string;
       requiredSchema?: { tables?: { ref: string }[] };
     };
     if (doc.kind !== 'app' || typeof doc.key !== 'string') continue;
     out.push({
       name,
       key: doc.key,
+      version: typeof doc.version === 'string' ? doc.version : null,
       tables: (doc.requiredSchema?.tables ?? []).map((table) => table.ref),
       hostedSlots: constArrayIn(join(root, 'src', 'add-ons', 'slots.ts'), 'HOSTED_SLOTS'),
       readsDataFrom: dataReadersIn(root),
@@ -478,14 +482,55 @@ if (HOSTS.length === 0) {
 }
 
 /** One row per (add-on, app it attaches to), which is one row per install. */
-function installs(): { pkg: string; app: string; manifest: unknown }[] {
+function installs(): { pkg: string; app: string; range: string; manifest: unknown }[] {
   const known = new Map(HOSTS.map((host) => [host.key, host]));
   return manifests().flatMap(({ pkg, manifest }) => {
-    const doc = manifest as { addOn?: { attaches?: { app?: string; table?: string }[] } };
+    const doc = manifest as { addOn?: { attaches?: { app?: string; range?: string }[] } };
     return (doc.addOn?.attaches ?? [])
       .filter((target) => target.app !== '*' && known.has(target.app ?? ''))
-      .map((target) => ({ pkg, app: target.app!, manifest }));
+      .map((target) => ({ pkg, app: target.app!, range: target.range ?? '*', manifest }));
   });
+}
+
+/**
+ * ── THE RANGE, AND NOT ONLY THE KEY ──────────────────────────────────────────
+ *
+ * `validateManifest` is given the host's app KEYS and TABLES, never its
+ * version, so on its own it proves that an attach entry names an app that
+ * exists — `^9.0.0` would pass it as happily as `^0.2.0`. A server refuses an
+ * add-on whose range the installed app's version is outside (`ADD_ON_RANGE`),
+ * so a range this repo never compares is a claim only a customer tests. Each
+ * install row therefore also holds the checked-out app's version to the range,
+ * with the product's own range reader.
+ *
+ * FORWARD CLAIMS, NAMED. An add-on can be released for an app's NEXT line
+ * before that line is on the app's `main` — the add-on has to be out first so
+ * the app can require it. Such a claim is listed here, with why; it is excused
+ * only while the checked-out app is BELOW the range (the line has not shipped
+ * yet), never when it is above it or anywhere else, and every run says which
+ * were excused. To prove one, point its host root at a checkout of the app's
+ * unreleased branch: the claim is then held like any other. Remove the entry
+ * once the app's line is on its `main`.
+ */
+const FORWARD_ATTACHES: readonly { pkg: string; app: string; range: string; why: string }[] = [
+  {
+    pkg: 'holiday-calendars',
+    app: 'ordering',
+    range: '^0.2.0',
+    why: 'online ordering 0.2.0, the line with a closures table, is released after this add-on; 0.1.x has none',
+  },
+];
+
+/** Why the installer would refuse this app's version for this range, or `null` when it would not (or the claim is a named forward one). */
+function attachRangeIssue(pkg: string, app: string, range: string, version: string | null): string | null {
+  if (version === null) return `${app} declares no version, so ${pkg}'s range ${range} cannot be checked`;
+  if (satisfiesSemverRange(version, range)) return null;
+  const forward = FORWARD_ATTACHES.find((entry) => entry.pkg === pkg && entry.app === app && entry.range === range);
+  const floor = /^[\^~]?(\d+\.\d+\.\d+)$/.exec(range)?.[1];
+  if (forward !== undefined && floor !== undefined && satisfiesSemverRange(version, `<${floor}`)) {
+    return null;
+  }
+  return `${app} ${version} is outside ${pkg}'s range ${range}: the installer would refuse it (ADD_ON_RANGE)`;
 }
 
 describe.skipIf(HOSTS.length === 0)(
@@ -493,9 +538,13 @@ describe.skipIf(HOSTS.length === 0)(
   () => {
     const known = HOSTS.map((host) => host.key);
 
-    it.each(installs())('$pkg installs into $app', ({ app, manifest }) => {
+    it.each(installs())('$pkg installs into $app', ({ pkg, app, range, manifest }) => {
       const host = HOSTS.find((entry) => entry.key === app)!;
       expect(host.tables.length, `${host.name} declares no tables`).toBeGreaterThan(0);
+      expect(attachRangeIssue(pkg, app, range, host.version ?? null)).toBeNull();
+      if (host.version != null && !satisfiesSemverRange(host.version, range)) {
+        console.info(`[add-on-host] forward claim excused: ${pkg} attaches to ${app} ${range}, and ${app} here is ${host.version}`);
+      }
 
       const result = validateManifest(manifest, {
         knownAppKeys: known,
@@ -515,6 +564,22 @@ describe.skipIf(HOSTS.length === 0)(
      * add-on attaches to is one of the hosts this repo knows about, or the
      * claim is unverifiable and this is where that is said out loud.
      */
+    /**
+     * THE RANGE GATE, PROVED: a range no checked-out version meets fails, a
+     * forward claim is excused only below its line, and never above it.
+     */
+    it('holds each app’s version to the add-on’s range', () => {
+      expect(attachRangeIssue('holiday-calendars', 'ordering', '^9.0.0', '0.1.3')).toMatch(/0\.1\.3 is outside holiday-calendars's range \^9\.0\.0/);
+      expect(attachRangeIssue('holiday-calendars', 'ordering', '^0.2.0', '0.2.0')).toBeNull();
+      expect(attachRangeIssue('holiday-calendars', 'ordering', '^0.2.0', '0.2.7')).toBeNull();
+      // Below its line, the named forward claim is excused …
+      expect(attachRangeIssue('holiday-calendars', 'ordering', '^0.2.0', '0.1.3')).toBeNull();
+      // … above it, never; and nothing else is excused at all.
+      expect(attachRangeIssue('holiday-calendars', 'ordering', '^0.2.0', '0.3.0')).not.toBeNull();
+      expect(attachRangeIssue('holiday-calendars', 'clinic', '^0.2.0', '0.1.9')).not.toBeNull();
+      expect(attachRangeIssue('holiday-calendars', 'ordering', '^0.2.0', null)).not.toBeNull();
+    });
+
     it('attaches to no app this repo cannot check it against', () => {
       const strays: string[] = [];
       for (const { pkg, manifest } of manifests()) {
