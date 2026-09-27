@@ -25,6 +25,10 @@
  * not public holidays, and losing one of those loses a real appointment.
  */
 
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { describe, expect, it } from "vitest";
 
 import {
@@ -587,3 +591,38 @@ describe("both hosts can map this into their own record, at the seam", () => {
  * claim is that people-ops can reach its own record shape with what the add-on
  * hands it, and a conversion the add-on does not export is not that.
  */
+
+/*
+ * ── THE ROW, AGAINST ORDERING'S OWN TABLE ─────────────────────────────────
+ *
+ * The closure row above is written by online ordering into its `closures`
+ * table, which exists from its 0.2.0 line. When that app is checked out beside
+ * this repository (or named by `ADMINIUM_ONLINE_ORDERING`, as the host suite
+ * reads it) at a version that has the table, the row's four columns are held
+ * to the table's own declaration: two dates, a text that takes every name this
+ * add-on hands over, and a switch. Against an older checkout, or none, the
+ * case is skipped and says so.
+ */
+const ORDERING_ROOT =
+  process.env.ADMINIUM_ONLINE_ORDERING ?? fileURLToPath(new URL("../../../../online-ordering", import.meta.url));
+const orderingManifest = (() => {
+  const file = join(ORDERING_ROOT, "manifest.json");
+  if (!existsSync(file)) return undefined;
+  const doc = JSON.parse(readFileSync(file, "utf8")) as {
+    key?: string;
+    requiredSchema?: { tables?: { ref: string; columns: { ref: string; type: string; maxLength?: number }[] }[] };
+  };
+  return doc.key === "ordering" ? doc : undefined;
+})();
+const closures = orderingManifest?.requiredSchema?.tables?.find((table) => table.ref === "closures");
+
+describe.skipIf(closures === undefined)("online ordering's closures table takes the row", () => {
+  it("has the four columns the row writes, of the types it writes", () => {
+    const column = (ref: string) => closures!.columns.find((entry) => entry.ref === ref);
+    expect(column("from_date")?.type).toBe("date");
+    expect(column("to_date")?.type).toBe("date");
+    expect(column("reason")?.type).toBe("text");
+    expect(column("reason")?.maxLength ?? Infinity).toBeGreaterThanOrEqual(OWN_NAME_MAX);
+    expect(column("active")?.type).toBe("bool");
+  });
+});
