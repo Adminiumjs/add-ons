@@ -331,8 +331,8 @@ export function forgetSet(
 /**
  * Add a day of the business's own.
  *
- * Refuses a date that is not a real calendar day, an empty name, and a date the
- * operator has ALREADY typed — the same ambiguity `applyImport` refuses, met
+ * Refuses a date that is not a real calendar day, an empty name, a name longer
+ * than `OWN_NAME_MAX` characters, and a date the operator has ALREADY typed — the same ambiguity `applyImport` refuses, met
  * from the other direction. It does not refuse a date an imported day already
  * covers: adding "Stocktake" to a day that is also Boxing Day is a coherent
  * thing to record, and refusing it would make the imported set an obstacle
@@ -340,7 +340,16 @@ export function forgetSet(
  */
 export type AddOutcome =
   | { readonly ok: true; readonly days: readonly StoredDay[] }
-  | { readonly ok: false; readonly why: "date" | "name" | "duplicate" };
+  | { readonly ok: false; readonly why: "date" | "name" | "long" | "duplicate" };
+
+/**
+ * The longest name a day of the business's own may have: what the apps that
+ * write a day as a closure row can store (online ordering's `closures.reason`
+ * holds 120 characters). A longer name would be taken here and then refused by
+ * the app at the moment somebody tries to close the day. Every imported set's
+ * names fit, and a test holds them to it.
+ */
+export const OWN_NAME_MAX = 120;
 
 export function addOwnDay(
   current: readonly StoredDay[],
@@ -350,6 +359,9 @@ export function addOwnDay(
   if (epochDayOf(date) === null) return { ok: false, why: "date" };
   const trimmed = name.trim();
   if (trimmed === "") return { ok: false, why: "name" };
+  // Counted as a string's length (UTF-16 units), the strictest way an app's
+  // column may count it: a name that passes here fits every such column.
+  if (trimmed.length > OWN_NAME_MAX) return { ok: false, why: "long" };
   if (current.some((day) => day.from === undefined && day.date === date)) {
     return { ok: false, why: "duplicate" };
   }

@@ -46,6 +46,7 @@ import type { SettingsPanelPayload } from "@adminium/add-on-host";
 
 import {
   addOwnDay,
+  OWN_NAME_MAX,
   applyImport,
   forgetOwnDay,
   forgetSet,
@@ -92,7 +93,7 @@ type Outcome =
   | { readonly kind: "none" }
   | { readonly kind: "refused"; readonly collisions: readonly Collision[] }
   | { readonly kind: "done"; readonly added: number; readonly replaced: number }
-  | { readonly kind: "badOwnDay"; readonly why: "date" | "name" | "duplicate" };
+  | { readonly kind: "badOwnDay"; readonly why: "date" | "name" | "long" | "duplicate" };
 
 export function SettingsPanel({ payload }: { payload: SettingsPanelPayload }) {
   const t = useT();
@@ -293,6 +294,7 @@ export function SettingsPanel({ payload }: { payload: SettingsPanelPayload }) {
             <input
               type="text"
               value={ownName}
+              maxLength={OWN_NAME_MAX}
               onChange={(event) => setOwnName(event.target.value)}
               style={inputStyle}
             />
@@ -303,13 +305,15 @@ export function SettingsPanel({ payload }: { payload: SettingsPanelPayload }) {
         </div>
         {outcome.kind === "badOwnDay" && (
           <Note style={{ color: "var(--danger)", marginBlockStart: 8 }}>
-            {t(
-              outcome.why === "date"
-                ? "addon.holiday-calendars.own.badDate"
-                : outcome.why === "name"
-                  ? "addon.holiday-calendars.own.badName"
-                  : "addon.holiday-calendars.own.duplicate",
-            )}
+            {outcome.why === "long"
+              ? t("addon.holiday-calendars.own.longName", { max: OWN_NAME_MAX })
+              : t(
+                  outcome.why === "date"
+                    ? "addon.holiday-calendars.own.badDate"
+                    : outcome.why === "name"
+                      ? "addon.holiday-calendars.own.badName"
+                      : "addon.holiday-calendars.own.duplicate",
+                )}
           </Note>
         )}
       </Panel>

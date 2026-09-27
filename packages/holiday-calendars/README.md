@@ -29,7 +29,11 @@ and an unfalsifiable claim is worse than a wrong one. Each range is the minor li
 on — `^0.1.0` for people-ops, `^0.2.0` for clinic-desk, the Client Portal and online ordering (whose
 0.1.x line has no closures table, so an install there is refused rather than claimed). All four are
 validated on every run by `packages/host/src/manifest-schema.test.ts`, which puts this manifest
-through the product's own validator against each app's declared tables.
+through the product's own validator against each app's declared tables and holds each checked-out
+app's version to its range. The ordering claim is forward-dated: this add-on is released before
+ordering's 0.2.0 line reaches its `main`, so that test names it as a forward claim, excused only
+while the checked-out ordering is below 0.2.0; pointed at ordering's 0.2.0 branch, it is held like
+the others.
 
 people-ops and clinic-desk vendor the add-on host and read the days at their own mount sites, so the
 attach-surface gate sees them consume this add-on. **The Client Portal has no add-on seam and
@@ -258,7 +262,9 @@ add-on's settings cannot close anything by itself: the kitchen's pickup slots ar
 row in its `closures` table. "Add as a closure" writes that row through the data API, one day long:
 
 ```ts
-const rows = (config.addOns['holiday-calendars']?.days ?? []).map((day) => ({
+// The staff config carries each attached add-on as { version, settings }; a
+// `json` setting arrives as the value itself, here the array of days.
+const rows = (config.addOns['holiday-calendars']?.settings?.days ?? []).map((day) => ({
   from_date: day.date,
   to_date: day.date,
   reason: day.name,     // the country's own name for the day, at most 120 characters

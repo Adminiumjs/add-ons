@@ -130,6 +130,7 @@ export const strings = {
     "addon.holiday-calendars.own.add": "Write it in",
     "addon.holiday-calendars.own.badDate": "That is not a date on the calendar.",
     "addon.holiday-calendars.own.badName": "Give the day a name, so whoever reads the rota knows why it is shut.",
+    "addon.holiday-calendars.own.longName": "Keep the name to {max} characters or fewer.",
     "addon.holiday-calendars.own.duplicate": "A day of the business's own is already written in on that date.",
 
     // ── who keeps this current ────────────────────────────────────────────
@@ -207,6 +208,7 @@ export const strings = {
     "addon.holiday-calendars.own.add": "Eintragen",
     "addon.holiday-calendars.own.badDate": "Dieses Datum gibt es im Kalender nicht.",
     "addon.holiday-calendars.own.badName": "Geben Sie dem Tag einen Namen, damit auf der Schichtliste steht, warum zu ist.",
+    "addon.holiday-calendars.own.longName": "Der Name darf höchstens {max} Zeichen lang sein.",
     "addon.holiday-calendars.own.duplicate": "An diesem Datum steht bereits ein eigener Tag des Betriebs.",
 
     "addon.holiday-calendars.maint.owner": "die Add-on-Betreuer von Adminium",
@@ -283,6 +285,7 @@ export const strings = {
     "addon.holiday-calendars.own.add": "Saisir",
     "addon.holiday-calendars.own.badDate": "Cette date n'existe pas au calendrier.",
     "addon.holiday-calendars.own.badName": "Donnez un nom au jour, pour que le tableau de service dise pourquoi c'est fermé.",
+    "addon.holiday-calendars.own.longName": "Le nom ne peut pas dépasser {max} caractères.",
     "addon.holiday-calendars.own.duplicate": "Un jour à vous est déjà saisi à cette date.",
 
     "addon.holiday-calendars.maint.owner": "les mainteneurs des add-ons Adminium",
@@ -359,6 +362,7 @@ export const strings = {
     "addon.holiday-calendars.own.add": "Zapsat",
     "addon.holiday-calendars.own.badDate": "Takové datum v kalendáři není.",
     "addon.holiday-calendars.own.badName": "Pojmenujte den, ať je v rozpisu směn vidět, kvůli čemu je zavřeno.",
+    "addon.holiday-calendars.own.longName": "Název může mít nejvýš {max} znaků.",
     "addon.holiday-calendars.own.duplicate": "K tomuto datu už je vlastní den podniku zapsaný.",
 
     "addon.holiday-calendars.maint.owner": "správci add-onů Adminium",
@@ -435,6 +439,7 @@ export const strings = {
     "addon.holiday-calendars.own.add": "Skriv den ind",
     "addon.holiday-calendars.own.badDate": "Den dato findes ikke i kalenderen.",
     "addon.holiday-calendars.own.badName": "Giv dagen et navn, så vagtsedlen siger, hvorfor der er lukket.",
+    "addon.holiday-calendars.own.longName": "Navnet må højst være på {max} tegn.",
     "addon.holiday-calendars.own.duplicate": "Der står allerede en af virksomhedens egne dage på den dato.",
 
     "addon.holiday-calendars.maint.owner": "de folk, der passer Adminiums tilføjelser",
@@ -511,6 +516,7 @@ export const strings = {
     "addon.holiday-calendars.own.add": "写入",
     "addon.holiday-calendars.own.badDate": "日历上没有这一天。",
     "addon.holiday-calendars.own.badName": "给这一天起个名字，让看班表的人知道为什么关门。",
+    "addon.holiday-calendars.own.longName": "名称最多 {max} 个字符。",
     "addon.holiday-calendars.own.duplicate": "那一天已经写入过单位自己的日子了。",
 
     "addon.holiday-calendars.maint.owner": "Adminium 加载项的维护者",
@@ -587,6 +593,7 @@ export const strings = {
     "addon.holiday-calendars.own.add": "寫入",
     "addon.holiday-calendars.own.badDate": "日曆上沒有這一天。",
     "addon.holiday-calendars.own.badName": "給這一天取個名字，讓看班表的人知道為什麼關門。",
+    "addon.holiday-calendars.own.longName": "名稱最多 {max} 個字元。",
     "addon.holiday-calendars.own.duplicate": "那一天已經寫入過單位自己的日子了。",
 
     "addon.holiday-calendars.maint.owner": "Adminium 外掛的維護者",
@@ -663,6 +670,7 @@ export const strings = {
     "addon.holiday-calendars.own.add": "اكتبه",
     "addon.holiday-calendars.own.badDate": "ليس هذا تاريخًا في التقويم.",
     "addon.holiday-calendars.own.badName": "سَمِّ اليوم، ليعرف قارئ جدول المناوبات سبب الغلق.",
+    "addon.holiday-calendars.own.longName": "يجب ألا يتجاوز الاسم {max} حرفًا.",
     "addon.holiday-calendars.own.duplicate": "يوجد في هذا التاريخ يوم خاص بالمنشأة مكتوب من قبل.",
 
     "addon.holiday-calendars.maint.owner": "القائمون على إضافات Adminium",

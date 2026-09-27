@@ -29,6 +29,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   addOwnDay,
+  OWN_NAME_MAX,
   applyImport,
   forgetOwnDay,
   forgetSet,
@@ -40,6 +41,8 @@ import {
 } from "./calendar.ts";
 import { epochDayOf } from "./civil.ts";
 import { daySetFor, expandSet, YEARS } from "./daysets.ts";
+import { LOCALE_TAGS } from "./i18n/strings.ts";
+import { translate } from "./i18n/t.ts";
 
 const US = daySetFor("US")!;
 const DE = daySetFor("DE")!;
@@ -539,6 +542,25 @@ describe("both hosts can map this into their own record, at the seam", () => {
     // The same rows from the public setting alone, with no code of this add-on.
     const raw = us["days"] as { date: string; name: string }[];
     expect(raw.map((day) => ({ from_date: day.date, to_date: day.date, reason: day.name, active: true }))).toEqual(closures);
+  });
+
+  it("refuses a name of the business's own longer than a closure's reason can hold, and takes one exactly that long", () => {
+    const long = "x".repeat(OWN_NAME_MAX + 1);
+    expect(addOwnDay([], "2026-03-02", long)).toEqual({ ok: false, why: "long" });
+    // Counted after the trim, as a string's length: a sign outside the basic
+    // plane counts twice, which is the strictest way an app's column counts.
+    expect(addOwnDay([], "2026-03-02", `  ${"é".repeat(OWN_NAME_MAX)}  `).ok).toBe(true);
+    expect(addOwnDay([], "2026-03-02", "👍".repeat(OWN_NAME_MAX / 2)).ok).toBe(true);
+    expect(addOwnDay([], "2026-03-02", "👍".repeat(OWN_NAME_MAX / 2 + 1))).toEqual({ ok: false, why: "long" });
+    expect(OWN_NAME_MAX).toBe(120);
+  });
+
+  it("says so in every language, with the limit written in the reader's digits", () => {
+    for (const locale of LOCALE_TAGS) {
+      const text = translate(locale, "addon.holiday-calendars.own.longName", { max: OWN_NAME_MAX });
+      expect(text, locale).not.toContain("{max}");
+      expect(text, locale).toContain(new Intl.NumberFormat(locale).format(OWN_NAME_MAX));
+    }
   });
 
   it("gives every set's names in a length a closure's reason can hold", () => {
