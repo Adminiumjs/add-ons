@@ -132,7 +132,14 @@ export function formatsFor(locale: string, currency: string, options: { latin: b
 
   return {
     money,
-    day: (value) => (/^\d{4}-\d{2}-\d{2}$/.test(value) ? days.format(new Date(`${value}T00:00:00.000Z`)) : value),
+    day: (value) => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+      // A day the calendar does not have — month 13, 30 February — is printed
+      // as the app stored it: never a thrown error that loses the whole
+      // document, and never the day the date arithmetic rolls it over to.
+      const at = new Date(`${value}T00:00:00.000Z`);
+      return Number.isNaN(at.getTime()) || at.toISOString().slice(0, 10) !== value ? value : days.format(at);
+    },
     quantity: (decimal) => (/^-?\d+(\.\d+)?$/.test(decimal) ? quantity.format(decimal) : decimal),
     percent: (value) => percent.format(value / 100),
   };

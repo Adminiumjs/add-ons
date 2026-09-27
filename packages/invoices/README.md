@@ -75,9 +75,23 @@ none of them is drawn exactly as before.
   receipt already had: a number the document is quoted by besides its own, a
   room, a table or an order. It prints beside the invoice number.
 
+What they do with odd values:
+
+- A period whose two days are the same prints that one day; two days in the
+  wrong order print as stored, first as first, rather than turned round.
+- A day the calendar does not have (`2026-02-30`, `2026-13-01`) prints as the
+  app stored it, here and in every other day on the document, instead of
+  failing the document or printing the day it would roll over to.
+- The Date column takes at most a quarter of the line; text that is not a day
+  wraps inside it.
+- At most 40 names print under a line, then how many more ("+1,960 more"). A
+  true/false mapped as the names prints nothing.
+
 A server with an older release of this add-on draws none of these and says
 nothing about them, so an app that maps them should ask for release 1.0.6 or
-later.
+later. A host that draws documents from its own record with this add-on's
+button now prints any of its record's keys named like these slots
+(`reference`, `serviceFrom`, `serviceTo`, and `date` or `options` on a line).
 
 ## What it records, and what it never does
 

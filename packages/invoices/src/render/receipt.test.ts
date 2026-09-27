@@ -429,7 +429,9 @@ describe('a kitchen’s receipt, the choices under each line', () => {
     expect(roll).toContain('<td><bdi>Class pass</bdi><span class="note">Jul 30, 2026</span><span class="note">Morning</span></td>');
     const sheet = page(await draw(orderSubject(lines), 'a4'));
     expect(sheet).toContain('<thead><tr><th>Date</th><th>Description</th>');
-    expect(sheet).toContain('<tr><td><span class="fig">Jul 30, 2026</span></td><td><bdi>Class pass</bdi><span class="note">Morning</span></td>');
+    expect(sheet).toContain(
+      '<tr><td style="overflow-wrap: anywhere;"><span class="fig" style="white-space: normal;">Jul 30, 2026</span></td><td><bdi>Class pass</bdi><span class="note">Morning</span></td>',
+    );
   });
 });
 

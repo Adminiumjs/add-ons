@@ -149,9 +149,14 @@ export function missingSlots(kind: string, subject: DocumentSubject): readonly s
   return missing;
 }
 
-/** The names a line lists, from a list or from text with one name per line; blanks dropped. */
+/**
+ * The names a line lists, from a list or from text with one name per line;
+ * blanks dropped. A true/false is no name — a flag column mapped here by
+ * mistake prints nothing rather than the word "true".
+ */
 function namesOf(value: unknown): string[] {
-  return linesOf(value)
+  if (typeof value === 'boolean') return [];
+  return linesOf(Array.isArray(value) ? value.filter((entry) => typeof entry !== 'boolean') : value)
     .map((name) => name.trim())
     .filter((name) => name !== '');
 }

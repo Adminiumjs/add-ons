@@ -181,14 +181,19 @@ function drawItems(entry: Extract<Block, { kind: 'items' }>, m: Metrics, cursor:
   const described = entry.lead === true ? 1 : 0;
   const figures = entry.columns.length - described - 1;
   const edges = Array.from({ length: figures }, (_, at) => right(m) - numeric * (figures - 1 - at));
-  // The days' column is as wide as its widest day, and its heading.
+  // The days' column is as wide as its widest day, and its heading — but never
+  // more than a quarter of the line: a "day" that is really a sentence wraps
+  // inside it rather than pushing the description over the figures.
   const leadWidth =
     described === 0
       ? 0
-      : Math.max(
-          widthOf((entry.columns[0]?.label ?? '').toUpperCase(), m.small, 'bold'),
-          ...entry.rows.map((row) => widthOf(row.cells[0] ?? '', m.body, 'regular')),
-        ) + 12;
+      : Math.min(
+          Math.max(
+            widthOf((entry.columns[0]?.label ?? '').toUpperCase(), m.small, 'bold'),
+            ...entry.rows.map((row) => widthOf(row.cells[0] ?? '', m.body, 'regular')),
+          ) + 12,
+          contentWidth(m) * 0.25,
+        );
   const descX = m.marginX + leadWidth;
   const descWidth = contentWidth(m) - numeric * figures - 6 - leadWidth;
 
@@ -218,16 +223,17 @@ function drawItems(entry: Extract<Block, { kind: 'items' }>, m: Metrics, cursor:
   for (const row of entry.rows) {
     const wrapped = wrap(row.cells[described] ?? '', descWidth, { sizePt: m.body });
     const notes = row.note === '' ? [] : wrap(row.note, descWidth, { sizePt: m.small });
-    const height = wrapped.length * m.leading + notes.length * (m.small + 3) + 4;
+    const lead = described === 1 && (row.cells[0] ?? '') !== '' ? wrap(row.cells[0]!, leadWidth - 12, { sizePt: m.body }) : [];
+    const height = Math.max(wrapped.length * m.leading + notes.length * (m.small + 3), lead.length * m.leading) + 4;
     const before = cursor.page;
     ensure(cursor, m, height, pages);
     // A row that pushed onto a new page needs the column headings again —
     // otherwise page two is a table of unlabelled numbers.
     if (cursor.page !== before) header();
 
-    if (described === 1 && (row.cells[0] ?? '') !== '') {
-      cursor.ops.push(...text(m.frame, m.marginX, cursor.y + m.body, row.cells[0]!, { sizePt: m.body, color: MUTED }));
-    }
+    lead.forEach((line, at) => {
+      cursor.ops.push(...text(m.frame, m.marginX, cursor.y + m.body + at * m.leading, line, { sizePt: m.body, color: MUTED }));
+    });
     wrapped.forEach((line, at) => {
       cursor.ops.push(...text(m.frame, descX, cursor.y + m.body + at * m.leading, line, { sizePt: m.body, color: INK }));
     });

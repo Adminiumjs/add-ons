@@ -492,7 +492,7 @@ describe('what an authored template decides still stands', () => {
 function tableRows(html: string): string[][] {
   const body = /<tbody>(.*?)<\/tbody>/s.exec(html)?.[1] ?? '';
   return [...body.matchAll(/<tr>(.*?)<\/tr>/gs)].map((row) =>
-    [...row[1]!.matchAll(/<td[^>]*>(?:<span class="fig">|<bdi>)(.*?)(?:<\/span>|<\/bdi>)/g)].map((cell) => cell[1]!),
+    [...row[1]!.matchAll(/<td[^>]*>(?:<span class="fig"[^>]*>|<bdi>)(.*?)(?:<\/span>|<\/bdi>)/g)].map((cell) => cell[1]!),
   );
 }
 
@@ -594,5 +594,71 @@ describe('an invoice for several days — a guest house’s folio', () => {
     expect(html).not.toContain('>Reference<');
     expect(html).not.toContain('<th>Date</th>');
     expect(html).toContain('<thead><tr><th>Description</th>');
+  });
+});
+
+describe('what the new values do when an app hands over something odd', () => {
+  const pdfOf = async (subject: DocumentSubject, paper: 'a4' | 'receipt-80mm' = 'a4', kind = 'invoice'): Promise<string> => {
+    const outcome = await provider.render({ kind, subject, formats: ['pdf'], paper, settings: {} });
+    if (isDocumentError(outcome)) throw new Error(JSON.stringify(outcome));
+    return LATIN1.decode(outcome[0]!.bytes);
+  };
+
+  it('keeps a "day" that is really a sentence inside a quarter of the line, in the PDF and the page', async () => {
+    const sentence = 'Thursday the twenty-third of July through the morning of Friday';
+    const base = folioSubject();
+    const subject = { ...base, collections: { ...base.collections, items: [{ desc: 'Loft suite', date: sentence, qty: 1, rate: 215_00 }] } };
+    const text = await pdfOf(subject);
+    // The description is drawn whole, and starts within a quarter of A4's line (48 pt margin, 499 pt wide).
+    const at = /1 0 0 1 ([\d.]+) [\d.]+ Tm\n\(Loft suite\)/.exec(text);
+    expect(at).not.toBeNull();
+    expect(Number(at![1])).toBeLessThanOrEqual(48 + 499 * 0.25);
+    // The sentence wraps inside its column rather than overlapping anything.
+    expect(text).toContain('(Thursday the twenty-third)');
+    const html = page(await render('invoice', subject, ['html']));
+    expect(html).toContain(`<td style="overflow-wrap: anywhere;"><span class="fig" style="white-space: normal;">${sentence}</span></td>`);
+  });
+
+  it('prints a day the calendar does not have as given, never a thrown error or a rolled-over day', async () => {
+    const base = folioSubject({ serviceFrom: '2026-02-30', serviceTo: '2026-07-32', issuedAt: '2026-13-01' });
+    const subject = { ...base, collections: { ...base.collections, items: [{ desc: 'Loft suite', date: '2026-13-01', qty: 1, rate: 215_00 }, { desc: 'Loft suite', date: '2026-02-30', qty: 1, rate: 215_00 }] } };
+    const html = page(await render('invoice', subject));
+    expect(html).toContain('<span class="fig">2026-02-30 – 2026-07-32</span>');
+    expect(html).toContain('<span class="fig">2026-13-01</span>');
+    expect(tableRows(html).map((row) => row[0])).toEqual(['2026-13-01', '2026-02-30']);
+    expect(html).not.toContain('Mar 2, 2026');
+    expect(await pdfOf(subject)).toContain('(2026-02-30)');
+  });
+
+  it('prints one day for a period that starts and ends on it, and a reversed period as stored', async () => {
+    const same = page(await render('invoice', folioSubject({ serviceTo: '2026-07-23' }), ['html']));
+    expect(same).toContain('<span class="k">Period of service</span><span class="v"><span class="fig">Jul 23, 2026</span></span>');
+    const reversed = page(await render('invoice', folioSubject({ serviceFrom: '2026-07-28', serviceTo: '2026-07-23' }), ['html']));
+    expect(reversed).toContain('<span class="fig">Jul 28, 2026 – Jul 23, 2026</span>');
+  });
+
+  it('prints no names for a flag mapped as the choices, and none of the flags in a list', async () => {
+    const base = folioSubject();
+    const subject = { ...base, collections: { ...base.collections, items: [{ desc: 'Loft suite', qty: 1, rate: 215_00, options: true }, { desc: 'Cot', qty: 1, rate: 0, options: [false, 'For a baby', true] }] } };
+    const html = page(await render('invoice', subject, ['html']));
+    expect(html).not.toMatch(/>(true|false)</);
+    expect(html).toContain('<td><bdi>Loft suite</bdi></td>');
+    expect(html).toContain('<td><bdi>Cot</bdi><span class="note">For a baby</span></td>');
+  });
+
+  it('draws a line with 2,000 names on a till roll and on A4: the first 40, then how many more', async () => {
+    const names = Array.from({ length: 2000 }, (_, at) => `Choice ${String(at + 1)}`);
+    const subject = { ...folioSubject(), collections: { items: [{ desc: 'Build your own', qty: 1, rate: 12_00, options: names }] } };
+    for (const paper of ['a4', 'receipt-80mm'] as const) {
+      const kind = paper === 'a4' ? 'invoice' : 'receipt';
+      const outcome = await provider.render({ kind, subject, formats: ['html', 'pdf'], paper, settings: {} });
+      if (isDocumentError(outcome)) throw new Error(JSON.stringify(outcome));
+      const html = page(outcome);
+      expect(html, paper).toContain('Choice 40 · +1,960 more</span>');
+      expect(html, paper).not.toContain('Choice 41');
+      expect(pdf(outcome), paper).toContain('+1,960 more)');
+    }
+    const german = page(await render('invoice', { ...subject, locale: 'de-DE' }, ['html']));
+    expect(german).toContain('Choice 40 · +1.960 weitere</span>');
   });
 });

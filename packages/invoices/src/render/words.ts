@@ -124,6 +124,8 @@ export interface LayoutWords {
   readonly attendedBy: string;
   /** The period an invoice charges for — the legal term where there is one (German "Leistungszeitraum"). */
   readonly servicePeriod: string;
+  /** After the names printed under a line, how many more there are. */
+  readonly moreOptions: string;
   readonly settledWith: string;
   readonly notes: string;
   readonly payment: string;
@@ -213,6 +215,7 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     serviceDate: 'Date of service',
     attendedBy: 'Attended by',
     servicePeriod: 'Period of service',
+    moreOptions: '+{count} more',
     settledWith: 'Settled with',
     notes: 'Notes',
     payment: 'How to settle',
@@ -300,6 +303,7 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     serviceDate: 'Leistungsdatum',
     attendedBy: 'Betreut von',
     servicePeriod: 'Leistungszeitraum',
+    moreOptions: '+{count} weitere',
     settledWith: 'Beglichen mit',
     notes: 'Hinweise',
     payment: 'Zahlungsweg',
@@ -387,6 +391,7 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     serviceDate: 'Date de la prestation',
     attendedBy: 'Pris en charge par',
     servicePeriod: 'Période de prestation',
+    moreOptions: '+{count} autres',
     settledWith: 'Réglé par',
     notes: 'Notes',
     payment: 'Modalités de règlement',
@@ -474,6 +479,7 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     serviceDate: 'Datum služby',
     attendedBy: 'Obsluha',
     servicePeriod: 'Období plnění',
+    moreOptions: '+{count} další',
     settledWith: 'Uhrazeno čím',
     notes: 'Poznámky',
     payment: 'Jak uhradit',
@@ -561,6 +567,7 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     serviceDate: 'Ydelsesdato',
     attendedBy: 'Betjent af',
     servicePeriod: 'Leveringsperiode',
+    moreOptions: '+{count} flere',
     settledWith: 'Betalt med',
     notes: 'Noter',
     payment: 'Sådan betales der',
@@ -648,6 +655,7 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     serviceDate: '服务日期',
     attendedBy: '服务人员',
     servicePeriod: '服务期间',
+    moreOptions: '另 {count} 项',
     settledWith: '结算方式',
     notes: '备注',
     payment: '结算办法',
@@ -735,6 +743,7 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     serviceDate: '服務日期',
     attendedBy: '服務人員',
     servicePeriod: '服務期間',
+    moreOptions: '另 {count} 項',
     settledWith: '結算方式',
     notes: '備註',
     payment: '結算辦法',
@@ -822,6 +831,7 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     serviceDate: 'تاريخ الخدمة',
     attendedBy: 'مقدّم الخدمة',
     servicePeriod: 'فترة الخدمة',
+    moreOptions: '+{count} أخرى',
     settledWith: 'تمت التسوية بـ',
     notes: 'ملاحظات',
     payment: 'طريقة السداد',

@@ -395,8 +395,13 @@ function partiesBlock(input: LayoutInput, kindWord: string, isVoid: boolean, voi
     }
     default: {
       const { from, to } = facts.servicePeriod;
-      // Both days as one span; one alone is that day.
-      const period = from !== '' && to !== '' ? `${day(from)} – ${day(to)}` : day(from !== '' ? from : to);
+      /*
+       * Both days as one span; one alone, or both the same, is that day. Two
+       * days in the wrong order are printed as stored, first as first: the
+       * figures on the page are the app's, and a period quietly turned round
+       * would be a document that says something the records do not.
+       */
+      const period = from !== '' && to !== '' && from !== to ? `${day(from)} – ${day(to)}` : day(from !== '' ? from : to);
       meta = [
         row(kindWord, body.number),
         row(words.receiptReference, facts.reference),
@@ -575,6 +580,20 @@ function documentBlocks(input: LayoutInput, isVoid: boolean): Block[] {
 const NO_LINE_FACTS: LineFacts = { date: '', options: [] };
 
 /**
+ * The most names printed under one line; the rest are counted. A line is
+ * never split across pages, so a list with no end would run off a till roll
+ * (and a long enough one past what the writer can draw at all).
+ */
+export const OPTIONS_SHOWN = 40;
+
+/** A line's names as printed: every one, or the first `OPTIONS_SHOWN` and how many more. */
+function namesLine(options: readonly string[], input: LayoutInput): string {
+  if (options.length <= OPTIONS_SHOWN) return options.join(' · ');
+  const more = fill(input.words.moreOptions, { count: input.formats.quantity(String(options.length - OPTIONS_SHOWN)) });
+  return [...options.slice(0, OPTIONS_SHOWN), more].join(' · ');
+}
+
+/**
  * The lines of an invoice, a quote, a credit note or a sale, with what each
  * carries besides its figures.
  *
@@ -592,7 +611,7 @@ function linesBlock(
   const lead = !narrow && rows.some((row) => row.line.date !== '');
   const drawn = rows.map(({ cells, note, line }) => {
     const day = line.date === '' ? '' : formats.day(line.date);
-    const notes = [narrow ? day : '', line.options.join(' · '), note].filter((part) => part !== '');
+    const notes = [narrow ? day : '', namesLine(line.options, input), note].filter((part) => part !== '');
     return { cells: lead ? [day, ...cells] : cells, note: notes.join('\n') };
   });
   const columns = itemColumns(words);

@@ -199,9 +199,13 @@ function block(entry: Block): string {
                           .map((line) => `<span class="note">${escapeHtml(line)}</span>`)
                           .join('')
                       : '';
-                  // A line's day is a figure, like every other day on the sheet.
-                  const drawn = right || at < described ? figure(cell) : own(cell);
-                  return `<td${right ? ' class="right"' : ''}>${drawn}${note}</td>`;
+                  if (at < described) {
+                    // A line's day is a figure, like every other day on the sheet —
+                    // but one allowed to wrap, so a "day" that is really a sentence
+                    // cannot push the table off the page.
+                    return `<td style="overflow-wrap: anywhere;"><span class="fig" style="white-space: normal;">${escapeHtml(cell)}</span></td>`;
+                  }
+                  return `<td${right ? ' class="right"' : ''}>${right ? figure(cell) : own(cell)}${note}</td>`;
                 })
                 .join('') +
               '</tr>',

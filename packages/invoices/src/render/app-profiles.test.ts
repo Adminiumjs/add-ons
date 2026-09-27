@@ -11,6 +11,10 @@
  * drawn figure is one an app can really send.
  */
 
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+
 import type { DocumentSubject } from '@adminium/add-on-host/contracts';
 import { describe, expect, it } from 'vitest';
 
@@ -83,5 +87,26 @@ describe('the folio’s lines', () => {
       'stay_extras',
       'charges',
     ]);
+  });
+});
+
+/*
+ * THE SHAPE, AGAINST ADMINIUM'S OWN SCHEMA. The mappings above are written in
+ * the shape an app's manifest uses, and that shape is Adminium's to change.
+ * With an Adminium checkout named by `ADMINIUM_REPO` (built), each profile is
+ * parsed by its real `appDocumentSchema`, so the fixtures cannot drift from
+ * what an app can actually ship. Without one — this repository's own CI —
+ * the case says it was skipped rather than passing on trust.
+ */
+const CORE_SCHEMA = process.env['ADMINIUM_REPO'] === undefined ? undefined : join(process.env['ADMINIUM_REPO'], 'packages/manifest/dist/documents.js');
+
+describe.skipIf(CORE_SCHEMA === undefined || !existsSync(CORE_SCHEMA))('each profile, parsed by Adminium’s own schema', () => {
+  it.each(CASES)('%s is a document entry an app can ship', async (_, profile) => {
+    const { appDocumentSchema } = (await import(pathToFileURL(CORE_SCHEMA!).href)) as {
+      appDocumentSchema: { safeParse: (value: unknown) => { success: boolean; error?: unknown } };
+    };
+    const { app: _app, ...entry } = profile;
+    const parsed = appDocumentSchema.safeParse({ ...entry, name: { 'en-US': 'Document' } });
+    expect(parsed.success, JSON.stringify(parsed.error)).toBe(true);
   });
 });
