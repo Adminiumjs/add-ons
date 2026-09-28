@@ -4,58 +4,65 @@
     {
       "name": "@adminiumjs/add-on-barcode-labels",
       "key": "barcode-labels",
-      "version": "1.0.5",
-      "integrity": "sha512-i1R89AfXJNMcWfbTFkQQrAciWlJ0DYQdJmiq+18T/C8lxE52ueLryZHEzRIAcwsc7B5wS4gS/H1JcecCPw7M9A==",
-      "shasum": "67fa5fe4eaa4c49947b9f6dde8013b5964a7e539",
-      "fileCount": 7
+      "version": "1.0.6",
+      "integrity": "sha512-3jgsUbZZlIX9wd67luQ0jQMlqF9yum3AhlhSb8JvJ741MEsQEYpS1bFy1OmKH6pLRFwxFP+zcCIHrlqqQS9ckw==",
+      "shasum": "36bc1cd89ea84b9613adae247136a7204701478e",
+      "fileCount": 7,
+      "publishedAt": "2026-09-28T21:10:54.000Z"
     },
     {
       "name": "@adminiumjs/add-on-design-studio",
       "key": "design-studio",
-      "version": "1.0.5",
-      "integrity": "sha512-/2lky2jamaOaqxlIxhGihE6AABP7UPTP+t6LVlfc5BS6U5tIPoRwO6ugDDGNUWx57up4widvwMsMF3WtT0G+2g==",
-      "shasum": "10dd79f706aa48485c3985c1d322ce6a5c87a214",
-      "fileCount": 8
+      "version": "1.0.6",
+      "integrity": "sha512-ubbIwfoaQ9PLI7f9UNSTG1Ew02AletAy91mVypqP9Izu/Hs+G13QGySGxWHAAah7Jkxkn6JHNEOUvqL5DH4zSA==",
+      "shasum": "50dade023c59ac13f8b8f1c3bc8c9decd64bab2d",
+      "fileCount": 8,
+      "publishedAt": "2026-09-28T21:10:55.000Z"
     },
     {
       "name": "@adminiumjs/add-on-holiday-calendars",
       "key": "holiday-calendars",
-      "version": "1.0.5",
-      "integrity": "sha512-qhAmoIoc9ZJOsFoerIZj1y+WQA3BehrX1AK9YEDSZIgMoaPyvtjrZSsoUnDKYpPFMygCkJDwQ9t6jykuOb6tLg==",
-      "shasum": "a0eb8e201be0027558b34269654b6c55d2e0486e",
-      "fileCount": 6
+      "version": "1.0.6",
+      "integrity": "sha512-TrCs4kWIFYIiJ3VhTDj9Vl9ctfsNNb/EIVXVIYYso4ULnQfwlQf0EGD6fjol7ErbuTSzqQO+W3fPDGxa29Zz7A==",
+      "shasum": "def92307cddb0a37a029f45b6e6b72e818d8d0ac",
+      "fileCount": 6,
+      "publishedAt": "2026-09-28T21:10:56.000Z"
     },
     {
       "name": "@adminiumjs/add-on-import-canva",
       "key": "import-canva",
-      "version": "1.0.5",
-      "integrity": "sha512-+lMYXQDZSVWrKMJ0dBQKAfM2Jz0zDaboYc5HmUE7P20LzKeb65lsati3UTm/pl7Eh05P2dFGJyive9jgKxd6Iw==",
-      "shasum": "cb141a1c2522685e301227094acbcc29d887bb77",
-      "fileCount": 8
+      "version": "1.0.6",
+      "integrity": "sha512-4BRthpm5pjbIcgpidrOdwNq4MAdD1csxJUK/hG8+R9GFKrOGbYACThxTn7mLZT+SKhB94HrHHqKQY5K6z5r0mA==",
+      "shasum": "ed0102c95f08018a1fbba5c7d68ca12e2e6b3b32",
+      "fileCount": 8,
+      "publishedAt": "2026-09-28T21:10:57.000Z"
     },
     {
       "name": "@adminiumjs/add-on-invoices",
       "key": "invoices",
-      "version": "1.0.5",
-      "integrity": "sha512-MLb5rteOMDUbyfmrM+lBIkQG4YZ3QNrqrBhk30NihJK/Xy7Ng1tzjLzRZeKBczXTgLkrRwMRDzWJMDWafuIKog==",
-      "shasum": "9c502489b6e1bb998e385c9dd47ff4614a313e67",
-      "fileCount": 15
+      "version": "1.0.6",
+      "integrity": "sha512-dGUo9AgReux0wodE3BCGXCCjYSbu3MP4hvoZjRl/MaWzcl2cuUmDnZwLdB1A9DQp/+hpoJX0+KuuFHiDJsHGGg==",
+      "shasum": "94517a01026b4019d81ccfa4f8d54b742424f335",
+      "fileCount": 15,
+      "publishedAt": "2026-09-28T21:10:58.000Z"
     },
     {
       "name": "@adminiumjs/add-on-personalizer",
       "key": "personalizer",
-      "version": "1.0.5",
-      "integrity": "sha512-JFYN/QoiltfieU+pUbEAnmtSokP58dMhYuuxTOD9cvvQ8yCXEncjrsGrKXihc5hEYYfTf1JjREYfnEAf1mMPlA==",
-      "shasum": "1dca5218cf9efa2c25847d25ab1cb0c1ed1f25b7",
-      "fileCount": 8
+      "version": "1.0.6",
+      "integrity": "sha512-ebpijqMBC/jsKNy1QD5PGxQmCw9Eftxi7Iv8kPAyWczR1jkl/pALQA6KlxWjtmXW/XFqib9Wovr1xYyotDIGOw==",
+      "shasum": "24ba9cd4adcc6cd2057b4d048521ec9e9417dfff",
+      "fileCount": 8,
+      "publishedAt": "2026-09-28T21:10:59.000Z"
     },
     {
       "name": "@adminiumjs/add-on-shipping-dhl",
       "key": "shipping-dhl",
-      "version": "1.0.5",
-      "integrity": "sha512-RbFzrp2jaBBgPw0j8iMEGf+VDsHyrepm1AwgqXMZ6bebHnDwlMuCrg9U/RQ7CndNyglWkgzHlPt9+A71Schxgw==",
-      "shasum": "90a66e16daeae0af260848d9ecc8892312d4d3ff",
-      "fileCount": 7
+      "version": "1.0.6",
+      "integrity": "sha512-hK6o1LchTGhvmGrnx3zPRE46Bx5kTqfZaIr+f0oeG6k/DAR3RBN/+HJcag3k1GJu7BpQOJe+r+gbetDDHH5sNA==",
+      "shasum": "9a6ba844b4cb7c0e89f7c96bdd6877f99af77de5",
+      "fileCount": 7,
+      "publishedAt": "2026-09-28T21:11:00.000Z"
     }
   ]
 }
