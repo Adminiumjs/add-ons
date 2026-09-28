@@ -24,6 +24,7 @@
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
@@ -283,5 +284,74 @@ describe('release shape: the repo-level pieces the pipeline needs', () => {
     // SigV4 vector at import and throws before signing anything if it cannot.
     const client = readFileSync(join(REPO, 'scripts/r2.mjs'), 'utf8');
     expect(client).toContain('VENDORED. The canonical copy is `workplan/tools/app-release/r2.mjs`');
+  });
+});
+
+/*
+ * The ledger row, held by running the module that builds it rather than by a
+ * grep: the row is what the marketplace reads, and a date in the wrong shape
+ * would sit in a committed ledger for good. The specifier is built at run time,
+ * so the plain `.mjs` needs no declaration file.
+ */
+interface LedgerRowModule {
+  publishedAtOf(lastModified: string | null, now?: () => Date): string;
+  ledgerRow(
+    packed: Record<string, unknown>,
+    publishedAt: string,
+  ): Record<string, unknown>;
+}
+
+const ledgerModule = (): Promise<LedgerRowModule> =>
+  import(pathToFileURL(join(REPO, 'scripts/ledger-row.mjs')).href) as Promise<LedgerRowModule>;
+
+describe('release shape: every ledger row says when its file was written', () => {
+  it('reads publishedAt from the host’s Last-Modified, as an ISO instant', async () => {
+    const { publishedAtOf } = await ledgerModule();
+    const never = () => {
+      throw new Error('the local clock was read although the host sent a date');
+    };
+    expect(publishedAtOf('Mon, 28 Sep 2026 19:04:05 GMT', never)).toBe('2026-09-28T19:04:05.000Z');
+  });
+
+  it('falls back to now only when the host sends no readable date', async () => {
+    const { publishedAtOf } = await ledgerModule();
+    const now = () => new Date('2026-09-28T20:00:00.000Z');
+    expect(publishedAtOf(null, now)).toBe('2026-09-28T20:00:00.000Z');
+    expect(publishedAtOf('not a date', now)).toBe('2026-09-28T20:00:00.000Z');
+  });
+
+  it('writes the six install facts and the date, and nothing else', async () => {
+    const { ledgerRow } = await ledgerModule();
+    const packed = {
+      name: '@adminiumjs/add-on-invoices',
+      key: 'invoices',
+      version: '1.0.6',
+      objectKey: 'add-ons/invoices/invoices-1.0.6.tgz',
+      integrity: 'sha512-AAAA',
+      shasum: '0123abcd',
+      filename: 'adminiumjs-add-on-invoices-1.0.6.tgz',
+      tarball: '/tmp/x.tgz',
+      unpackedSize: 1,
+      fileCount: 15,
+    };
+    const row = ledgerRow(packed, '2026-09-28T19:04:05.000Z');
+    // Key order is the file's order, so a JSON diff of the ledger stays readable.
+    expect(Object.keys(row)).toEqual(['name', 'key', 'version', 'integrity', 'shasum', 'fileCount', 'publishedAt']);
+    expect(row).toEqual({
+      name: '@adminiumjs/add-on-invoices',
+      key: 'invoices',
+      version: '1.0.6',
+      integrity: 'sha512-AAAA',
+      shasum: '0123abcd',
+      fileCount: 15,
+      publishedAt: '2026-09-28T19:04:05.000Z',
+    });
+  });
+
+  it('is the row the publish script writes', () => {
+    const script = readFileSync(join(REPO, 'scripts/publish-add-ons.mjs'), 'utf8');
+    expect(script).toMatch(/from '\.\/ledger-row\.mjs'/);
+    expect(script).toMatch(/ledgerRow\(result, publishedAt\.get\(result\.key\)\)/);
+    expect(script).toMatch(/publishedAtOf\(released\.lastModified\)/);
   });
 });

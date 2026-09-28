@@ -78,6 +78,7 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { assertMinimumReleased, newestAdminium, objectKeyFor, publishObject, r2ConfigFromEnv, sriOf } from './r2.mjs';
+import { ledgerRow, publishedAtOf } from './ledger-row.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PACKAGES = join(ROOT, 'packages');
@@ -310,26 +311,24 @@ async function main() {
   }
 
   console.log(`\nUploading ${packed.length} add-on(s)…`);
+  const publishedAt = new Map();
   for (const result of packed) {
     console.log(`  ${result.name}@${result.version}`);
-    await uploadOne(result, config);
+    const released = await uploadOne(result, config);
+    publishedAt.set(result.key, publishedAtOf(released.lastModified));
+    console.log(`    written ${publishedAt.get(result.key)}`);
   }
 
   // The ledger last, and only over what the public address serves: the host
   // is the receipt, not the upload's 200.
+  // Each row carries `publishedAt`, the host's own Last-Modified for the file
+  // (see ledger-row.mjs).
   // Written atomically so an interrupted release cannot leave a half-file that
   // the website would read as the catalog's source of truth.
   const ledger = {
     schemaVersion: 1,
     releases: packed
-      .map(({ name, key, version, integrity, shasum, fileCount }) => ({
-        name,
-        key,
-        version,
-        integrity,
-        shasum,
-        fileCount,
-      }))
+      .map((result) => ledgerRow(result, publishedAt.get(result.key)))
       .sort((a, b) => (a.name < b.name ? -1 : 1)),
   };
   const partial = `${LEDGER}.partial`;
