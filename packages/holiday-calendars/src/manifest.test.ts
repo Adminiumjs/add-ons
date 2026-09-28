@@ -38,12 +38,13 @@ import { FILLED_SLOTS } from "./slots.ts";
 import { buildForReal, ROOT } from "./testing/build.ts";
 
 /**
- * The closed slot registry of 24 §5.4 — never invent an id.
+ * The closed slot registry — never invent an id.
  *
- * HAND-TYPED, AND IT IS THE FIFTH SILENT COPY (25 D2). It is only read as
- * `SLOT_IDS.has(fill.slot)`, so an id MISSING here fails nothing until some
- * add-on names it — and then it fails as "invented an id", which is the
- * opposite of the truth. Thirteen since 2026-09-01 (33 O1).
+ * HAND-TYPED, AND IT IS THE FIFTH COPY THAT WOULD PASS SILENTLY IF A NEW SLOT
+ * MISSED IT. It is only read as `SLOT_IDS.has(fill.slot)`, so an id MISSING
+ * here fails nothing until some add-on names it — and then it fails as
+ * "invented an id", which is the opposite of the truth. Thirteen since
+ * 2026-09-01, when `shell.overlay` was added for live chat.
  *
  * The check that cannot go stale that way is one line further down: `slots.ts`
  * narrows against the host's ONE mirror with `satisfies readonly SlotId[]`, and
@@ -79,11 +80,11 @@ describe("the manifest", () => {
     expect(manifest).not.toHaveProperty("roles");
   });
 
-  it("is first-party, because an unsandboxed in-process add-on has to be (D13)", () => {
+  it("is first-party, because an unsandboxed in-process add-on has to be", () => {
     expect(manifest.publisher.id).toBe("adminium");
   });
 
-  it("uses the add-on category vocabulary rather than the app facet set (D2)", () => {
+  it("uses the add-on category vocabulary rather than the app facet set", () => {
     expect(manifest.categories).toEqual(["data"]);
     for (const category of manifest.categories) expect(ADD_ON_CATEGORIES.has(category)).toBe(true);
   });
@@ -109,7 +110,7 @@ describe("the manifest", () => {
    * one decision — this add-on carries its data and reaches nowhere — and a
    * reader coming to widen any of them should meet the whole of it at once.
    */
-  it("declares no egress at all, which is stricter than an allow-list (D14)", () => {
+  it("declares no egress at all, which is stricter than an allow-list", () => {
     // NETWORK_ALLOW_REQUIRED is about an add-on that wants `outbound-http`.
     // This one does not want it: there is no block, so there is no hostname a
     // host could bind an HTTP client to, so no call can be made at all.
@@ -126,7 +127,7 @@ describe("the manifest", () => {
     expect(manifest).not.toHaveProperty("requiredSchema");
   });
 
-  it("needs nothing to connect to, so it ships no demo transport (D11)", () => {
+  it("needs nothing to connect to, so it ships no demo transport", () => {
     // `demoTransport` exists so an add-on that WOULD make a third-party call in
     // a demo can make a fake one instead. Nothing here calls anything, so a
     // demo transport would be a module standing in for nothing.
@@ -138,7 +139,7 @@ describe("the manifest", () => {
     expect(register().demoSwitch).toBeUndefined();
   });
 
-  it("marks no setting secret, so there is nothing to keep out of a browser (D15)", () => {
+  it("marks no setting secret, so there is nothing to keep out of a browser", () => {
     const secrets = manifest.settings.filter(
       (setting) => (setting as { secret?: boolean }).secret === true,
     );
@@ -162,7 +163,8 @@ describe("the manifest", () => {
   });
 
   /**
-   * THE CROSS-APP CLAIM, IN THE ARTEFACT AND NOT ONLY IN A README (24 AC20/D21).
+   * THE CROSS-APP CLAIM, IN THE ARTEFACT AND NOT ONLY IN A README: AN ADD-ON
+   * RUNS UNCHANGED IN ANY HOST APP.
    *
    * `attaches` is the one place "it runs in these apps" is checkable, and
    * `packages/host/src/manifest-schema.test.ts` is what checks it: for every app
@@ -205,7 +207,7 @@ describe("the manifest", () => {
     expect(manifest.description.fallback).toBe(register().messages!["en-US"]!["addon.holiday-calendars.line"]);
   });
 
-  it("uses one key namespace for the package, the manifest and every string (D17)", () => {
+  it("uses one key namespace for the package, the manifest and every string", () => {
     expect(manifest.key).toBe("holiday-calendars");
     expect(register().key).toBe(manifest.key);
     expect(manifest.name).toBe(register().name);
@@ -224,7 +226,7 @@ describe("the manifest", () => {
  * exactly it, and `dist.test.ts` asserts the build really put it on disk. Three
  * links, no gap for a guess.
  *
- * THE CONVENTION, RESTATED (24 AC10): every path is RELATIVE TO THE PACKAGE
+ * THE CONVENTION, RESTATED: every path is RELATIVE TO THE PACKAGE
  * ROOT — the directory `manifest.json` itself sits in, and the directory a host
  * installs — so nothing downstream has to know what the build's `outDir` is
  * called.
@@ -262,10 +264,11 @@ describe("the manifest's entry point is the file the build writes", () => {
  * WHAT THIS ADD-ON TELLS ITS HOSTS TO GREP FOR, CHECKED AGAINST WHAT IT
  * DECLARES.
  *
- * `add-on-facts.ts` carries the needles a host's D15 bundle gate looks for, and
- * it exists because those lists used to be written out inside each HOST — so a
- * credentialled add-on vendored into a shop that had never heard of it shipped
- * its secret setting keys with the gate fully green.
+ * `add-on-facts.ts` carries the needles a host's bundle gate looks for (secrets
+ * never reach the browser), and it exists because those lists used to be
+ * written out inside each HOST — so a credentialled add-on vendored into a shop
+ * that had never heard of it shipped its secret setting keys with the gate
+ * fully green.
  *
  * ── AND HERE BOTH LISTS ARE EMPTY, WHICH IS THE HARDER CASE TO CHECK ────────
  *

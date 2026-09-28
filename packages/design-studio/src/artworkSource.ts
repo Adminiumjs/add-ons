@@ -1,5 +1,5 @@
 /**
- * The `artwork-source@1` implementation (24 §5.5).
+ * The `artwork-source@1` implementation.
  *
  * It is deliberately thin: everything true about the output is already true of
  * the document, so `start()` is "open the editor, and if a document comes back,
@@ -17,7 +17,7 @@
  * document, because by then the customer has been drawing on the wrong sheet.
  *
  * WHAT IS NOT HERE, on purpose: any check of the artwork. The host runs
- * `checkArtwork()` on the returned `ArtworkRef` (§5.5), so this add-on cannot
+ * `checkArtwork()` on the returned `ArtworkRef`, so this add-on cannot
  * mark its own homework. `doc.test.ts` asserts that the host's own checks pass
  * on this output, which is a very different claim from asserting it here.
  */
@@ -35,7 +35,7 @@ import {
 } from "./layouts.ts";
 
 /**
- * The works' own size limits (24 D5), restated here because the editor has to
+ * The works' own size limits, restated here because the editor has to
  * decline BEFORE it opens rather than after the customer has drawn something.
  * A canvas larger than this is a job for a print-ready PDF, and saying so up
  * front is more honest than a browser tab that gives up halfway through.

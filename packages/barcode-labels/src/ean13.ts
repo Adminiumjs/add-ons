@@ -3,7 +3,7 @@
  *
  * ── WHY THIS IS HAND-ROLLED AND NOT A DEPENDENCY ───────────────────────────
  *
- * 25 D11: an add-on takes no runtime dependency the host has not already got.
+ * An add-on takes no runtime dependency the host has not already got.
  * The host has React and nothing else, so a barcode library is not available to
  * this package at any price — and the whole symbology is a lookup table, a
  * weighted sum and a fixed guard pattern. `shipping-dhl` writes a PDF by hand

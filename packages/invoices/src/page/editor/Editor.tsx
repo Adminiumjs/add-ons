@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 /**
- * The invoice editor: the header, the canvas and the
- * inspector over ONE draft that only `save()` sends (O22 → model).
+ * The invoice editor: the header, the canvas and the inspector over ONE draft
+ * that only `save()` sends (explicit save, no autosave).
  *
  * THE GUARD. A router blocker asks before any navigation away from a dirty
  * draft — the topbar's Back, the sidebar, a language switch, the browser's
@@ -270,7 +270,7 @@ export function Editor({ detail }: EditorProps) {
             onImages={() => setSection('images')}
             onDuplicate={() => duplicate.mutate()}
             onDelete={() => setConfirmDelete(true)}
-            // With no provider installed the primary only saves (O24);
+            // With no provider installed the primary only saves;
             // The provider read flips the label to *Send invoice* and
             // wires the render + delivery behind it.
             onPrimary={() => {

@@ -12,12 +12,12 @@
  *
  * ── WHY A DISCLOSURE AND NOT A PAGE ────────────────────────────────────────
  *
- * Comp L makes it a full shopper page with its own route. The add-on contract
- * has no shopper-side route to take — `nav.add-on.routes` is the maker's shell
- * — and inventing one would mean the host keeping a list of an add-on's pages.
- * It opens in place instead, directly under the surface it is about, which is
- * also where the question is actually asked. Recorded as a bracket amendment
- * against 24 §8B.
+ * The design comp makes it a full shopper page with its own route. The add-on
+ * contract has no shopper-side route to take — `nav.add-on.routes` is the
+ * maker's shell — and inventing one would mean the host keeping a list of an
+ * add-on's pages. It opens in place instead, directly under the surface it is
+ * about, which is also where the question is actually asked. Recorded as a
+ * deliberate departure from the design.
  *
  * Closed by default, because a shopper who is happy typing should not have to
  * scroll past an essay, and `<details>` rather than a hand-rolled toggle so it

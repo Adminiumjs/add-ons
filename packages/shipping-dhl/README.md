@@ -169,10 +169,11 @@ physical `left` is a bug, and a test greps for that too.
 `npm run build` writes exactly two files, and they are the two `manifest.json` names:
 
 - `dist/client.js` — the client half, built from `src/index.ts`: the four slot fills, the strings,
-  the settings seam and the demo transport. A single self-contained ESM bundle (24 D7), with React
-  and `lucide-react` external because the host already has them.
+  the settings seam and the demo transport. A single self-contained ESM bundle, with React and
+  `lucide-react` external because the host already has them — an add-on ships no runtime
+  dependency its host lacks.
 - `dist/server.js` — the server half, built from `src/server.ts`: the real transport, the HTTP
-  client seam and the credential types. It never reaches a browser (24 D15).
+  client seam and the credential types. It never reaches a browser, because secrets never do.
 
 Both paths in `manifest.json` are **relative to this repository's root** — the directory a host
 clones and the directory `manifest.json` itself sits in — so `dist/client.js` resolves with no

@@ -43,12 +43,13 @@ import { FILLED_SLOTS } from './slots.ts';
 import { buildForReal, ROOT } from './testing/build.ts';
 
 /**
- * The closed slot registry of 24 §5.4 — never invent an id.
+ * The closed slot registry — never invent an id.
  *
- * HAND-TYPED, AND IT IS THE SIXTH SILENT COPY (25 D2). It is only read as
- * `SLOT_IDS.has(fill.slot)`, so an id MISSING here fails nothing until some
+ * HAND-TYPED, AND IT IS THE SIXTH SILENT COPY of the registry. It is only read
+ * as `SLOT_IDS.has(fill.slot)`, so an id MISSING here fails nothing until some
  * add-on names it — and then it fails as "invented an id", which is the
- * opposite of the truth. Thirteen since 2026-09-01 (33 O1).
+ * opposite of the truth. Thirteen since 2026-09-01, when `shell.overlay` was
+ * bought.
  *
  * The check that cannot go stale that way is one line further down: `slots.ts`
  * narrows against the host's ONE mirror with `satisfies readonly SlotId[]`, and
@@ -84,11 +85,11 @@ describe('the manifest', () => {
     expect(manifest).not.toHaveProperty('roles');
   });
 
-  it('is first-party, because an unsandboxed in-process add-on has to be (D13)', () => {
+  it('is first-party, because an unsandboxed in-process add-on has to be', () => {
     expect(manifest.publisher.id).toBe('adminium');
   });
 
-  it('uses the add-on category vocabulary rather than the app facet set (D2)', () => {
+  it('uses the add-on category vocabulary rather than the app facet set', () => {
     expect(manifest.categories).toEqual(['data']);
     for (const category of manifest.categories) expect(ADD_ON_CATEGORIES.has(category)).toBe(true);
   });
@@ -135,7 +136,7 @@ describe('the manifest', () => {
    * one decision — this add-on carries its tables and reaches nowhere — and a
    * reader coming to widen any of them should meet the whole of it at once.
    */
-  it('declares no egress at all, which is stricter than an allow-list (D14)', () => {
+  it('declares no egress at all, which is stricter than an allow-list', () => {
     // NETWORK_ALLOW_REQUIRED is about an add-on that wants `outbound-http`.
     // This one does not want it: there is no block, so there is no hostname a
     // host could bind an HTTP client to, so no call can be made at all.
@@ -153,7 +154,7 @@ describe('the manifest', () => {
     expect(manifest).not.toHaveProperty('requiredSchema');
   });
 
-  it('needs nothing to connect to, so it ships no demo transport (D11)', () => {
+  it('needs nothing to connect to, so it ships no demo transport', () => {
     // `demoTransport` exists so an add-on that WOULD make a third-party call in
     // a demo can make a fake one instead. Nothing here calls anything, so a
     // demo transport would be a module standing in for nothing.
@@ -167,22 +168,25 @@ describe('the manifest', () => {
    * ONE CONTRACT PROVIDED, NONE CONSUMED — AND THE OLD ARGUMENT FOR ZERO IS
    * WORTH READING BEFORE ADDING A SECOND.
    *
-   * [Amended 2026-09-10 by 34-T06.] This used to assert `provides: []`, on the
-   * argument `holiday-calendars` still records for its day-sets: a contract
-   * exists so a host can swap one implementation for another without knowing
-   * which it has, and a SECOND LABEL RENDERER is not that — it would draw the
-   * same published symbologies from the same published tables, so the
-   * "implementations" it abstracted over would be one algorithm written twice.
+   * [Amended 2026-09-10, with the server half.] This used to assert
+   * `provides: []`, on the argument `holiday-calendars` still records for its
+   * day-sets: a contract exists so a host can swap one implementation for
+   * another without knowing which it has, and a SECOND LABEL RENDERER is not
+   * that — it would draw the same published symbologies from the same published
+   * tables, so the "implementations" it abstracted over would be one algorithm
+   * written twice.
    *
    * That argument was about a `barcode-render` contract nobody has proposed,
    * and it still holds. `document-render@1` is a different shape and the
-   * difference is the whole reason it was bought: the thing being abstracted
-   * is not "how to draw a symbol" but "how a record becomes bytes somebody
-   * files, prints or is sent". The other implementation is an invoice
-   * renderer, which shares no line of code with this one and disagrees with it
-   * about formats, paper and glyph coverage — the three fields the contract
-   * puts on the KIND rather than on itself, for exactly that reason (25 D4,
-   * 34 O11, and the deviation O11 records).
+   * difference is the whole reason it was bought: the thing being abstracted is
+   * not "how to draw a symbol" but "how a record becomes bytes somebody files,
+   * prints or is sent". The other implementation is an invoice renderer, which
+   * shares no line of code with this one and disagrees with it about formats,
+   * paper and glyph coverage — the three fields the contract puts on the KIND
+   * rather than on itself, for exactly that reason. It is the second
+   * implementation a contract needs before it enters the registry — Adminium's
+   * own rather than an unrelated one, which is a recorded deviation from that
+   * rule rather than an assumed pass.
    *
    * `consumes` stays empty. Nothing here reads another add-on's work.
    */
@@ -193,7 +197,7 @@ describe('the manifest', () => {
     expect(manifest.addOn.consumes).toEqual([]);
   });
 
-  it('marks no setting secret, so there is nothing to keep out of a browser (D15)', () => {
+  it('marks no setting secret, so there is nothing to keep out of a browser', () => {
     const secrets = manifest.settings.filter(
       (setting) => (setting as { secret?: boolean }).secret === true,
     );
@@ -217,7 +221,7 @@ describe('the manifest', () => {
   });
 
   /**
-   * THE CROSS-APP CLAIM, IN THE ARTEFACT AND NOT ONLY IN A README (24 AC20/D21).
+   * THE CROSS-APP CLAIM, IN THE ARTEFACT AND NOT ONLY IN A README.
    *
    * `attaches` is the one place "it runs in these apps" is checkable, and
    * `packages/host/src/manifest-schema.test.ts` is what checks it: for every app
@@ -253,7 +257,7 @@ describe('the manifest', () => {
     );
   });
 
-  it('uses one key namespace for the package, the manifest and every string (D17)', () => {
+  it('uses one key namespace for the package, the manifest and every string', () => {
     expect(manifest.key).toBe('barcode-labels');
     expect(register().key).toBe(manifest.key);
     expect(manifest.name).toBe(register().name);
@@ -272,10 +276,9 @@ describe('the manifest', () => {
  * exactly it, and `dist.test.ts` asserts the build really put it on disk. Three
  * links, no gap for a guess.
  *
- * THE CONVENTION, RESTATED (24 AC10): every path is RELATIVE TO THE PACKAGE
- * ROOT — the directory `manifest.json` itself sits in, and the directory a host
- * installs — so nothing downstream has to know what the build's `outDir` is
- * called.
+ * THE CONVENTION, RESTATED: every path is RELATIVE TO THE PACKAGE ROOT — the
+ * directory `manifest.json` itself sits in, and the directory a host installs —
+ * so nothing downstream has to know what the build's `outDir` is called.
  */
 describe('the manifest’s entry points are the file the build writes', () => {
   const declared = manifest.addOn.slots.map((fill) => fill.client);
@@ -302,10 +305,10 @@ describe('the manifest’s entry points are the file the build writes', () => {
 
   it('points both SLOTS at the one client bundle, and the contract at the other half', () => {
     /*
-     * [Amended 2026-09-10 by 34-T06.] Two fills still share one bundle, and
-     * that half of the assertion is unchanged: a second CLIENT file would be a
-     * second thing the host has to load for an add-on with no credential to
-     * keep out of a page.
+     * [Amended 2026-09-10, with the server half.] Two fills still share one
+     * bundle, and that half of the assertion is unchanged: a second CLIENT file
+     * would be a second thing the host has to load for an add-on with no
+     * credential to keep out of a page.
      *
      * The server half is not that. It is never loaded by a browser at all —
      * it is the module Adminium imports in the `document.render` job when a
@@ -329,10 +332,10 @@ describe('the manifest’s entry points are the file the build writes', () => {
  * WHAT THIS ADD-ON TELLS ITS HOSTS TO GREP FOR, CHECKED AGAINST WHAT IT
  * DECLARES.
  *
- * `add-on-facts.ts` carries the needles a host's D15 bundle gate looks for, and
- * it exists because those lists used to be written out inside each HOST — so a
- * credentialled add-on vendored into a shop that had never heard of it shipped
- * its secret setting keys with the gate fully green.
+ * `add-on-facts.ts` carries the needles a host's secret-leak bundle gate looks
+ * for, and it exists because those lists used to be written out inside each
+ * HOST — so a credentialled add-on vendored into a shop that had never heard of
+ * it shipped its secret setting keys with the gate fully green.
  *
  * ── AND HERE BOTH LISTS ARE EMPTY, WHICH IS THE HARDER CASE TO CHECK ───────
  *

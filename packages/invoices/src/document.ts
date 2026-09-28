@@ -2,16 +2,16 @@
  * THE AUTHORED BODY, AS THIS PROVIDER UNDERSTANDS IT.
  *
  * `RenderInput.body` is OPAQUE on the wire — `Readonly<Record<string,
- * unknown>>` and nothing more (34 O28(a2) → D54). That was a deliberate choice
- * and this file is the other side of it: the contract carries no block
- * vocabulary into eighteen repos, so a new block kind never costs a contract
- * release, and the PROVIDER owns the schema. Owning it means this file.
+ * unknown>>` and nothing more. That was a deliberate choice and this file is
+ * the other side of it: the contract carries no block vocabulary into eighteen
+ * repos, so a new block kind never costs a contract release, and the PROVIDER
+ * owns the schema. Owning it means this file.
  *
  * ── WHAT IS DELIBERATELY NOT HERE: ZOD ─────────────────────────────────────
  *
  * `apps/server/src/invoices/document.ts`, which this is copied from, validates
  * an incoming body with a Zod schema before it is stored. An add-on may take
- * no runtime dependency the host does not already have (24 D7), and Zod is
+ * no runtime dependency the host does not already have, and Zod is
  * one — so what came across is the TYPES, the caps, and the LENIENT decoder
  * (`normalizeInvoiceBody` and everything under it), which needs no library and
  * never throws.
@@ -234,7 +234,7 @@ export const DEFAULT_BLOCK_ORDER: readonly string[] = [
 
 export const DEFAULT_ACCENT = '#4f46e5';
 
-// --- the caps (34 O18) ----------------------------------------------------------------
+// --- the caps on inline images --------------------------------------------------------
 
 /** One inline image may be this many characters of data URL (~384 KB of image bytes). */
 export const IMAGE_DATA_URL_MAX = 512 * 1024;
@@ -368,11 +368,11 @@ function records(value: unknown): Record<string, unknown>[] {
  * `newLocalId` STAYED BEHIND TOO, and this one is not a tidiness call.
  *
  * The server's copy mints a short id from `node:crypto` for a new item or
- * custom section. A renderer must never mint anything: 25 D12 is that the same
- * subject renders to the same bytes, and one call to a random source anywhere
- * in the path makes that false forever — silently, because two renders a
- * second apart still LOOK identical to anybody eyeballing them, and only the
- * conformance suite's byte comparison would ever notice.
+ * custom section. A renderer must never mint anything: the contract requires
+ * that the same subject renders to the same bytes, and one call to a random
+ * source anywhere in the path makes that false forever — silently, because two
+ * renders a second apart still LOOK identical to anybody eyeballing them, and
+ * only the conformance suite's byte comparison would ever notice.
  *
  * `crypto` is on this package's purity gate for that reason, and this is the
  * line that would have tripped it. Nothing here calls it — verified: the
@@ -405,7 +405,7 @@ function customSection(raw: Record<string, unknown>): CustomSection | null {
 }
 
 /**
- * The composition, reconciled (34-T47's orphan rule): every built-in key
+ * The composition, reconciled (the orphan rule): every built-in key
  * exactly once, `cus:` keys only for sections that exist, and every existing
  * section referenced — an unreferenced one is appended rather than lost. The
  * comp renders an orphan key as an empty draggable block (1512); a decode
@@ -537,7 +537,7 @@ export function normalizeInvoiceBody(raw: unknown): InvoiceBody {
   };
 }
 
-// --- the caps (34 O18) ----------------------------------------------------------------
+// --- the caps on inline images --------------------------------------------------------
 
 /** Every inline image in a body, with the field that holds it — the five slots plus the custom sections'. */
 export function inlineImages(body: InvoiceBody): { field: string; url: string }[] {

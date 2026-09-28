@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 /**
- * The invoice arithmetic law (as amended by O25):
+ * The invoice arithmetic law:
  *
  *   a line rounds once           lineMinor  = round(qty × rate, in minor units)
  *   a document discount applies  discount   = round(subtotal × discountRate)
@@ -9,8 +9,8 @@
  *   subtotal                     total      = taxBase + tax
  *
  * and a tax-breakdown component is computed on the SAME base as the ladder
- * (the comp computed it on the undiscounted subtotal, 1709 — the second base
- * O25 corrected).
+ * (the comp computed it on the undiscounted subtotal, 1709 — a second base,
+ * corrected here).
  *
  * INTEGERS ONLY. Money is integer minor units, a rate is basis points, and
  * every product is divided with one half-away-from-zero rounding, so the same
@@ -21,7 +21,7 @@
  *
  * "Total", not the comp's "Total due" (452): recorded payments never reduce
  * it (1712) — there is no balance model, so "due" would be a claim the
- * document cannot support (O25).
+ * document cannot support.
  */
 import type { InvoiceBody, LineItem, TaxLine } from './envelope.js';
 
@@ -98,7 +98,7 @@ export function totalsOf(body: Pick<InvoiceBody, 'items' | 'taxRate' | 'discount
   return { lines, subtotal, discount, taxBase, tax, total: taxBase + tax };
 }
 
-/** Each component on the ladder's own base (O25). */
+/** Each component on the ladder's own base. */
 export function taxBreakdown(taxBase: number, lines: readonly TaxLine[]): { label: string; rate: string; amount: number }[] {
   return lines.map((line) => ({ label: line.label, rate: line.rate, amount: percentOf(taxBase, line.rate) }));
 }

@@ -1,8 +1,8 @@
 /**
- * The record.actions payload guard, caught failing (34 §5.3; 34-T28).
+ * The record.actions payload guard, caught failing.
  *
- * The mount in every fixture is §6.1 step 2's, verbatim in shape — the one the
- * plan writes for `Complete.tsx:94`.
+ * The mount in every fixture is point-of-sale's receipt mount, verbatim in
+ * shape — the one written for its `Complete.tsx:94`.
  */
 import { describe, expect, it } from 'vitest';
 
@@ -25,7 +25,7 @@ export function Complete({ sale }: { sale: Sale }) {
 `;
 
 describe('a record.actions mount hands over an entity and a record', () => {
-  it('says nothing about the mount §6.1 step 2 describes', () => {
+  it('says nothing about the point-of-sale receipt mount', () => {
     expect(recordPayloadFindings('Complete.tsx', GOOD, ['sale'])).toEqual([]);
   });
 
@@ -57,7 +57,7 @@ describe('the record is a projection, not a mount-site literal', () => {
      * This compiles, renders and draws a correct document today. What it does
      * is put ONE add-on's slot ids inside a host screen — so the day a slot is
      * renamed, or a second kind arrives, this literal is the copy nobody
-     * remembers. §5.3's whole inversion is that the host projects through a
+     * remembers. The whole inversion is that the host projects through a
      * named function and the add-on validates the result.
      */
     const source = GOOD.replace(

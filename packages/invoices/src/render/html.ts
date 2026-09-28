@@ -4,13 +4,13 @@
  *
  * ── EVERY LOCALE, WHICH IS WHY HTML EXISTS HERE AT ALL ─────────────────────
  *
- * The PDF writer draws Helvetica's WinAnsi repertoire and refuses the rest
- * (34 O12). HTML has no such limit — it is UTF-8, and the reader's own browser
- * has the fonts — so a Japanese or Arabic document is rendered here in full
- * and refused only for PDF. The conformance suite asserts exactly that pairing:
- * the same subject that returns `LATIN_ONLY` for `pdf` must succeed for `html`,
- * which is what proves the refusal belongs to the WRITER and is not a blanket
- * rejection of the subject.
+ * The PDF writer draws Helvetica's WinAnsi repertoire and refuses the rest (a
+ * typed refusal, never a silent drop). HTML has no such limit — it is UTF-8,
+ * and the reader's own browser has the fonts — so a Japanese or Arabic document
+ * is rendered here in full and refused only for PDF. The conformance suite
+ * asserts exactly that pairing: the same subject that returns `LATIN_ONLY` for
+ * `pdf` must succeed for `html`, which is what proves the refusal belongs to
+ * the WRITER and is not a blanket rejection of the subject.
  *
  * ── FORCED LIGHT, AND WHY THAT IS NOT A STYLE PREFERENCE ───────────────────
  *
@@ -25,10 +25,10 @@
  *
  * Every string in a document comes from somebody's database, and a customer
  * name is attacker-controlled input by the time a public request can supply
- * one (34 D15). One escape function, applied at every interpolation, five
- * characters, no allow-list and no "this one is safe" exception. The
- * conformance suite pushes `<script>alert(1)</script>` through a text slot on
- * every kind and requires the string `<script` to be absent from the output.
+ * one. One escape function, applied at every interpolation, five characters, no
+ * allow-list and no "this one is safe" exception. The conformance suite pushes
+ * `<script>alert(1)</script>` through a text slot on every kind and requires
+ * the string `<script` to be absent from the output.
  */
 
 import type { Block, Document } from './layout.ts';

@@ -1,14 +1,14 @@
 /**
  * THE MAPPING TABLE AND ITS TWO REFUSALS.
  *
- * The refusals are the reason this file is long. 25 D10 asks an add-on to
- * refuse by a REAL RULE the reader can act on, and a refusal is only worth
- * anything if it is exact in BOTH directions: it has to fire on the thing it is
- * about, and it has to stay quiet on everything that merely resembles it. The
- * second half is where a rule like this normally goes wrong — a duplicate check
- * that refused a row its own number would make the form refuse the state it is
- * already in, and a check-digit rule that corrected silently would hand a shop
- * back a different article number from the one on its own paperwork.
+ * The refusals are the reason this file is long. An add-on has to refuse by a
+ * REAL RULE the reader can act on, and a refusal is only worth anything if it
+ * is exact in BOTH directions: it has to fire on the thing it is about, and it
+ * has to stay quiet on everything that merely resembles it. The second half is
+ * where a rule like this normally goes wrong — a duplicate check that refused a
+ * row its own number would make the form refuse the state it is already in, and
+ * a check-digit rule that corrected silently would hand a shop back a different
+ * article number from the one on its own paperwork.
  *
  * So every refusal below has a matching case saying what it does NOT refuse.
  */
@@ -56,8 +56,8 @@ describe('what the table is', () => {
   });
 
   it('is empty for a shop that has connected and given nothing', () => {
-    // 24 D6 as a return value: a host merging nothing behaves exactly as it did
-    // before the add-on existed.
+    // The hole an app is designed with, as a return value: a host merging
+    // nothing behaves exactly as it did before the add-on existed.
     expect(readStored(undefined)).toEqual([]);
     expect(readStored({})).toEqual([]);
     expect(codeFor(undefined, 'anything')).toBeUndefined();

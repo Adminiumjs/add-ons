@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 /**
- * The Loyalty points panel (comp 1015-1021; bindings 1720): balance and
- * earned (mono, `parseInt || 0` as the comp), then the level — "Level" is
- * 34 Appendix D.2's word for the comp's label at 1019 (the field is `loyLevel`).
- * *Remove section* (`loyShow`).
+ * The Loyalty points panel (comp 1015-1021; bindings 1720): balance and earned
+ * (mono, `parseInt || 0` as the comp), then the level — "Level" is the
+ * banned-word lexicon's word for the comp's label at 1019 (the field is
+ * `loyLevel`). *Remove section* (`loyShow`).
  */
 import { t } from '../../../messages.js';
 import { RemoveSectionButton, TextField } from '../parts.js';

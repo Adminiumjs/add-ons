@@ -25,15 +25,15 @@
  * documents say `product`, `production`, `proof`, `provides`, `properties`,
  * `promise`, `prove`, `produce` and `toProductionPaths` on nearly every page,
  * because those are the names of the things being described. A carve-out list
- * longer than the ban is a list nobody audits, which is the failure mode 24 D10
- * is written against.
+ * longer than the ban is a list nobody audits, and an unaudited carve-out is a
+ * weakened gate.
  *
  * So this gate takes the seven runs that have no ordinary-English homograph in
  * this vocabulary, and it takes them WITHOUT a word boundary, which is the
  * whole point: `explanation` carries `plan`, `frontier` carries `tier`, and
  * both are real failures the moment somebody reaches for them.
  *
- * ── THE `pro` HALF, NOW CLOSED (32-add-on-distribution.md D1) ───────────────
+ * ── THE `pro` HALF, NOW CLOSED ──────────────────────────────────────────────
  *
  * It used to stay only where it could be paid for — over the built bundles.
  * Publishing changes the stakes: a package README and its `description` become

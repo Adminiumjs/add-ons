@@ -1,6 +1,5 @@
 /**
- * The `document-render@1` half — the SECOND implementation of the contract
- * (34-invoices-add-on.md O11, 34-T06).
+ * The `document-render@1` half — the SECOND implementation of the contract.
  *
  * ── WHY THIS ADD-ON HAS A SERVER HALF NOW, WHEN IT HAD A REASON NOT TO ─────
  *
@@ -16,16 +15,16 @@
  *
  * ── AND WHY A LABEL SHEET IS A DOCUMENT ────────────────────────────────────
  *
- * 25 D4 wants two implementations of a contract before it enters the registry,
- * so that the shape is answering to more than one caller. 34 O11 records the
- * deviation this pairing carries — both implementations write PDF bytes by
- * hand, where 25 §5 asked for "completely different means" — and buys
- * something real in exchange: a label sheet is `formats: ['pdf']` with nothing
- * to say in HTML, on `receipt`-adjacent die-cut stock rather than a page, and
- * `coverage: 'ascii'` where the invoices provider is `winansi`. Those three
- * fields are on the KIND rather than on the contract precisely because this
- * implementation disagreed with the other one about all three. A second
- * implementation that agreed about everything would have proved nothing.
+ * A contract needs two implementations before it enters the registry, so that
+ * the shape is answering to more than one caller. This pairing carries a
+ * recorded deviation — both implementations write PDF bytes by hand, where the
+ * rule asked for "completely different means" — and buys something real in
+ * exchange: a label sheet is `formats: ['pdf']` with nothing to say in HTML, on
+ * `receipt`-adjacent die-cut stock rather than a page, and `coverage: 'ascii'`
+ * where the invoices provider is `winansi`. Those three fields are on the KIND
+ * rather than on the contract precisely because this implementation disagreed
+ * with the other one about all three. A second implementation that agreed about
+ * everything would have proved nothing.
  *
  * ── THE REFUSAL COMES BEFORE THE WRITER ────────────────────────────────────
  *
@@ -33,7 +32,7 @@
  * (`latinOnly`) — which is right for a sheet somebody is looking at, and wrong
  * for bytes an engine files against a record. So the coverage check runs
  * FIRST and the sheet is never written: a caller gets `LATIN_ONLY` naming the
- * glyphs, not a label with a hole in the reference (34 D6).
+ * glyphs, not a label with a hole in the reference.
  */
 
 import {
@@ -66,8 +65,7 @@ export const LABEL_SHEET_KIND = 'label-sheet';
  * anything a person reads inside the add-on. These are different: they are
  * read by ADMINIUM's Studio, in the profile editor, where this package's
  * bundle is not loaded and its `t()` does not exist. The contract's answer is
- * that the provider carries them itself (34 D14), so they live beside the
- * provider.
+ * that the provider carries them itself, so they live beside the provider.
  */
 const LABELS: Readonly<Record<string, LocalizedText>> = {
   kind: {
@@ -286,7 +284,7 @@ function factsFrom(input: RenderInput): SheetFacts | DocumentError {
     reference: String(fields.reference),
     count: Number.isFinite(wanted) ? Math.min(Math.max(Math.trunc(wanted), 1), MAX_LABELS) : 1,
     // The shop's day, from the subject. Never a clock — that is what makes two
-    // renders of one subject the same bytes (25 D12).
+    // renders of one subject the same bytes, which the contract asserts.
     on: (fields.on === undefined || fields.on === null || fields.on === ''
       ? input.subject.now.iso
       : String(fields.on)

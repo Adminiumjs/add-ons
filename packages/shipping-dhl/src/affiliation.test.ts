@@ -1,5 +1,5 @@
 /**
- * WHEREVER THE COMPANY IS NAMED, THE DISCLAIMER IS ON THE SAME SCREEN (24 AC6).
+ * WHEREVER THE COMPANY IS NAMED, THE DISCLAIMER IS ON THE SAME SCREEN.
  *
  * ── THE DEFECT ──────────────────────────────────────────────────────────────
  *
@@ -16,7 +16,7 @@
  * where the company is really named — does not survive being looked at. The
  * monogram reads DHL. That is the company, named as plainly as a word names
  * anything, and a customer whose order has not shipped yet sees THAT card and
- * no other. AC6 is about the screen a reader is on, not about the richest of
+ * no other. The rule is about the screen a reader is on, not about the richest of
  * the screens they might reach later.
  *
  * ── SO THE RULE IS STATED OVER BOTH STATES, RENDERED ────────────────────────
@@ -39,7 +39,7 @@ import { strings } from "./i18n/strings.ts";
 import { TrackingPanel } from "./ui/TrackingPanel.tsx";
 
 const en = strings["en-US"];
-/** The three letters the neutral monogram tile carries. Never a logo (D12). */
+/** The three letters the neutral monogram tile carries. Never a drawn or traced logo. */
 const COMPANY = "DHL";
 
 beforeEach(() => {

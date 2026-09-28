@@ -1,6 +1,6 @@
 /**
- * The money law against the shared fixture (34-invoices-add-on.md 34-T54), on
- * the ADD-ON's copy of `money.ts` — the third of three.
+ * The money law against the shared fixture, on the ADD-ON's copy of `money.ts`
+ * — the third of three.
  *
  * The other two are the dashboard's `model/money.test.ts` and the server's
  * `test/invoice-money.test.ts`, and all three read the same JSON table.
@@ -57,7 +57,7 @@ const fixture = JSON.parse(
   readFileSync(new URL('./money-fixture.json', import.meta.url), 'utf8'),
 ) as Fixture;
 
-describe('the money law (34 D20 / O25) — the renderer copy', () => {
+describe('the money law — the renderer copy', () => {
   for (const scenario of fixture.cases) {
     it(scenario.name, () => {
       const totals = totalsOf({
@@ -70,9 +70,9 @@ describe('the money law (34 D20 / O25) — the renderer copy', () => {
   }
 
   it('puts every tax-breakdown component on the ladder’s own base', () => {
-    // O25's correction. The comp computed these on the UNDISCOUNTED subtotal
-    // (1709), which made a discounted document's components add up to more tax
-    // than the ladder charged.
+    // The breakdown-base correction. The comp computed these on the
+    // UNDISCOUNTED subtotal (1709), which made a discounted document's
+    // components add up to more tax than the ladder charged.
     expect(
       taxBreakdown(fixture.breakdown.taxBase, fixture.breakdown.lines).map((line) => line.amount),
     ).toEqual(fixture.breakdown.expect);

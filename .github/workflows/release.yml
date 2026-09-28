@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# WHERE A RELEASE GOES (48-self-hosted-downloads.md D1/D6). Each packed add-on
-# is uploaded to the Adminiumjs downloads bucket, read back from
-# https://downloads.adminium.dev, and only then recorded in RELEASES.json.
+# WHERE A RELEASE GOES. Each packed add-on is uploaded to the Adminiumjs
+# downloads bucket, read back from https://downloads.adminium.dev, and only
+# then recorded in RELEASES.json.
 # Add-ons are not published to npm.
 #
 # DISPATCH-TRIGGERED, NOT TAG-TRIGGERED — a deliberate difference from the main
@@ -16,9 +16,9 @@
 #
 # BEFORE THE FIRST RUN: this repository must be granted the Adminiumjs
 # organization's variables R2_ACCOUNT_ID + R2_BUCKET and secrets
-# R2_ACCESS_KEY_ID + R2_SECRET_ACCESS_KEY (48 §3 gate 1.7). The secret key is
-# an Object Read & Write token scoped to the bucket: it can add a version and
-# can never replace or delete one (48 D2).
+# R2_ACCESS_KEY_ID + R2_SECRET_ACCESS_KEY. The secret key is an Object Read &
+# Write token scoped to the bucket: it can add a version and can never replace
+# or delete one, because a released file can never change.
 
 name: release
 
@@ -141,8 +141,9 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
         run: node scripts/publish-add-ons.mjs
 
-      # The ledger is what the marketplace catalog carries to every server (48
-      # D3). It has to be readable at a pinned SHA, so it is committed and
+      # The ledger is what the marketplace catalog carries to every server, so
+      # a download's fingerprint never comes from the bucket it was downloaded
+      # from. It has to be readable at a pinned SHA, so it is committed and
       # tagged rather than left as a build artifact.
       - name: Commit the ledger and cut the tag
         env:

@@ -20,14 +20,15 @@
  *
  * The empty case is honest in the same way: a shop where every piece is already
  * set up has nothing to copy TO, and says so instead of drawing a disabled
- * button (D19).
+ * button: an empty state is a designed screen, never a placeholder.
  *
  * ── WHY THE LIST IS THE ADD-ON'S OWN SEED ───────────────────────────────────
  *
  * An add-on may not read a host's catalogue — `nav.add-on.routes` carries no
- * payload but the settings, and inventing a shop's product list would be D21's
- * defect exactly. What it may list is what it has itself: its templates, and
- * the pieces its own seed knows have no areas yet.
+ * payload but the settings, and inventing a shop's product list would tie the
+ * add-on to one app, when it must run unchanged in any host. What it may list
+ * is what it has itself: its templates, and the pieces its own seed knows have
+ * no areas yet.
  */
 
 import { useState } from 'react';

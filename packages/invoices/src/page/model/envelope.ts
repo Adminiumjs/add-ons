@@ -27,8 +27,8 @@ export const INVOICE_STATUSES: readonly InvoiceStatus[] = ['draft', 'sent', 'pai
 /**
  * The five-topic taxonomy (comp `topics()`, 1173-1180) plus `other` for a row
  * that names none (`topicMeta`, 1182). The first key is `recurring`, not the
- * comp's word: 34 Appendix D.2 renames the key as well as the label, because
- * the key leaks into group anchors and every row's summary.
+ * comp's word: the banned-word lexicon renames the key as well as the label,
+ * because the key leaks into group anchors and every row's summary.
  */
 export type InvoiceTopic = 'recurring' | 'services' | 'receipts' | 'sales' | 'logistics' | 'other';
 export const INVOICE_TOPICS: readonly InvoiceTopic[] = ['recurring', 'services', 'receipts', 'sales', 'logistics'];
@@ -263,10 +263,10 @@ export const BODY_BYTES_MAX = 4 * 1024 * 1024;
 
 /**
  * The STRUCTURAL defaults — every field present, nothing authored. The seeded
- * content a new document starts from (the comp's `base()` re-themed under
- * 34 Appendix D.2) is the server's (`apps/server/src/invoices/starters.ts`);
- * this is what a decoded row is completed against so an older body never
- * renders `undefined`.
+ * content a new document starts from (the comp's `base()` re-themed for the
+ * banned-word lexicon) is the server's
+ * (`apps/server/src/invoices/starters.ts`); this is what a decoded row is
+ * completed against so an older body never renders `undefined`.
  */
 export function emptyBody(): InvoiceBody {
   return {

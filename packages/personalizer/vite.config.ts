@@ -4,7 +4,7 @@ import react from "@vitejs/plugin-react";
 import type { PluginOption } from "vite";
 import { build, defineConfig, type Plugin, type UserConfig } from "vite";
 
-/** The host-runtime shims this add-on's React imports are aliased to (26-T13). */
+/** The host-runtime shims this add-on's React imports are aliased to. */
 const HOST_RUNTIME_REACT = fileURLToPath(
   new URL("../host/src/runtime/react.ts", import.meta.url),
 );
@@ -73,7 +73,8 @@ function serverHalf(): Plugin {
 }
 
 /**
- * The React aliases, applied to the BUILD ONLY (26-T13).
+ * The React aliases, applied to the BUILD ONLY, so the built bundle uses the
+ * host's one React and a browser can load it from a URL.
  *
  * A top-level `resolve.alias` would apply to vitest as well, because vitest
  * reads this same config — and then the add-on's own source would resolve
@@ -138,8 +139,8 @@ const config: UserConfig & { test: { globalSetup: readonly string[] } } = {
       /*
        * React, the JSX runtime and the icon set are external because the host
        * already has them: two copies of React in one page is two reconcilers
-       * arguing over one DOM tree (24 D7). `react/jsx-dev-runtime` is on the
-       * list even though a production build never reaches for it — it is what
+       * arguing over one DOM tree. `react/jsx-dev-runtime` is on the list even
+       * though a production build never reaches for it — it is what
        * `@vitejs/plugin-react` emits whenever `NODE_ENV` is not `production`,
        * and leaving it off means a non-production build silently INLINES
        * React's development runtime, source paths and all.

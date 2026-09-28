@@ -10,8 +10,8 @@
  *
  * The stakes are higher in this package than in any single add-on's: a
  * `Date.now()` here would be non-determinism in three demos at once, and a
- * runtime dependency here would be a D7 violation every add-on inherits
- * whether or not its own suite would have caught it.
+ * runtime dependency here would be a dependency the host lacks, inherited by
+ * every add-on whether or not its own suite would have caught it.
  */
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -78,13 +78,13 @@ const codeOf = (file: string) => withoutComments(readFileSync(file, 'utf8'));
  */
 const INERT: readonly InertOrigin[] = [];
 
-describe('the shared contract stays pure (24 D7, D11)', () => {
+describe('the shared contract stays pure', () => {
   /*
-   * D11 AS A RULE RATHER THAN A WORD LIST — see `testing/egress.ts` for the
-   * argument and for the mutant that beat the five-word grep this replaced.
-   * Two nets: an address nobody declared inert, and an API whose only purpose
-   * is to issue a request. The third net (the value, at run time) lives in the
-   * host apps, which are the repos that have a page to render.
+   * NO REAL CALL, AS A RULE RATHER THAN A WORD LIST — see `testing/egress.ts`
+   * for the argument and for the mutant that beat the five-word grep this
+   * replaced. Two nets: an address nobody declared inert, and an API whose only
+   * purpose is to issue a request. The third net (the value, at run time) lives
+   * in the host apps, which are the repos that have a page to render.
    */
   it('names no address outside the ones declared inert', () => {
     const offenders = SHIPPABLE.flatMap((file) =>
@@ -94,7 +94,7 @@ describe('the shared contract stays pure (24 D7, D11)', () => {
   });
 
   /**
-   * ── AND THE PACKAGES A SHIPPABLE SOURCE MAY IMPORT (28-T26 follow-up) ─────
+   * ── AND THE PACKAGES A SHIPPABLE SOURCE MAY IMPORT ────────────────────────
    *
    * Net two banned the APIs that send and the dynamic `import()` of anything
    * but a relative literal, and read as though it covered "reaching outside
@@ -172,10 +172,10 @@ describe('the shared contract stays pure (24 D7, D11)', () => {
   });
 
   /**
-   * THE D7 CHECK, and the one this package could most easily break for
-   * everyone. `zod` is the validators' dependency and the host does not carry
-   * it; the split that keeps it out of a browser is that `testing/` is a
-   * separate entry point nothing under it imports back.
+   * THE NO-NEW-RUNTIME-DEPENDENCY CHECK, and the one this package could most
+   * easily break for everyone. `zod` is the validators' dependency and the host
+   * does not carry it; the split that keeps it out of a browser is that
+   * `testing/` is a separate entry point nothing under it imports back.
    */
   it('keeps zod on the test side of the seam', () => {
     const offenders = SHIPPABLE.filter((file) => /from\s*['"]zod['"]/.test(codeOf(file)));

@@ -1,5 +1,5 @@
 /**
- * The build-mode claim guard, caught failing (34 D19; 34-T28).
+ * The build-mode claim guard, caught failing.
  *
  * The three fixtures are shipped strings: two lies and the correct shape of the
  * same claim. A guard written from invented copy would be a guard tuned to

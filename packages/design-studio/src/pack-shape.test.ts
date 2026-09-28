@@ -1,5 +1,6 @@
 /**
- * D1's pack-shape assertion for this package.
+ * The pack-shape assertion for this package: the npm tarball is the unit an
+ * add-on is distributed as.
  *
  * The suite lives in `@adminium/add-on-host/testing` so the six add-ons share
  * one implementation. This package builds `dist/` in vitest's `globalSetup`

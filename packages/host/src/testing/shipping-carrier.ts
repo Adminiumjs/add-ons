@@ -1,7 +1,7 @@
 /**
  * `describeShippingCarrier` — COPIED VERBATIM from
- * `@adminium/add-on-contracts/testing` (24 §5.5, D9), with only the import
- * paths changed to the local mirror.
+ * `@adminium/add-on-contracts/testing`, with only the import paths changed to
+ * the local mirror.
  *
  * The suite is part of the contract, not a courtesy. THE CLAIM THE DELIVERY
  * ADD-ON EXISTS TO MAKE — "each delivery company is its own add-on, and the
@@ -75,7 +75,7 @@ export function describeShippingCarrier(
     });
 
     /*
-     * ── THE INBOUND DIRECTION (31 O4, ruled 2026-09-01) ─────────────────────
+     * ── THE INBOUND DIRECTION (ruled 2026-09-01) ────────────────────────────
      *
      * The contract is direction-agnostic and these two cases are what that
      * sentence means executably. A RETURN — a customer sending a parcel back to

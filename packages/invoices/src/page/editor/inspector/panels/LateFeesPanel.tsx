@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 /**
  * The Late fees panel (comp 927-932): the rate with its unit and the grace
- * period in days, *Remove section* (`lateShow`). The unit reads "% per
- * month" spelled out — 34 Appendix D.1/D.2's lexicon row for the comp's
- * abbreviated suffix at 929.
+ * period in days, *Remove section* (`lateShow`). The unit reads "% per month"
+ * spelled out — the banned-word lexicon's row for the comp's abbreviated suffix
+ * at 929.
  */
 import { t } from '../../../messages.js';
 import { RemoveSectionButton, SuffixField } from '../parts.js';

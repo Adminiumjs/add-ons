@@ -1,10 +1,10 @@
 /**
  * THE FOUR SURFACES THE MAKER'S ROUTE GREW, AND THE ONE THE SHOPPER'S DID.
  *
- * `nav.add-on.routes` used to be one page — the set-up editor — and comp L
- * designs five: Set-up, Reuse areas, Fonts, Bench sheet, Production file, plus
- * the shopper's "How personalizing works". This file is what stops any of them
- * regressing into a page that renders but says nothing.
+ * `nav.add-on.routes` used to be one page — the set-up editor — and the design
+ * comp draws five: Set-up, Reuse areas, Fonts, Bench sheet, Production file,
+ * plus the shopper's "How personalizing works". This file is what stops any of
+ * them regressing into a page that renders but says nothing.
  *
  * ── WHAT IS ASSERTED, AND WHY EACH WOULD CATCH A REAL SLIP ─────────────────
  *

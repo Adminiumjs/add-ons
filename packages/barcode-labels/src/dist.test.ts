@@ -3,7 +3,7 @@
  *
  * Every other guard in this package reads sources. That is one inference away
  * from the thing that ships — a bundler keeps a comment, a constant is folded,
- * a string arrives from somewhere else — and the sweep (17 §2) does not read
+ * a string arrives from somewhere else — and the release sweep does not read
  * sources at all. So this suite builds the add-on and greps the bytes, with the
  * FULL release list: `bannedSubstringsIn` plus the union of the per-locale
  * tiering words, which catch the spellings no ASCII fragment can see.
@@ -24,7 +24,7 @@
  * It also closes the manifest's loop: `manifest.test.ts` proves the manifest
  * names the filename `vite.config.ts` says it writes, and this proves the build
  * actually wrote it, at the path the manifest declares, resolved the way an
- * installer resolves it (24 AC10: package-root-relative).
+ * installer resolves it: package-root-relative.
  */
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
@@ -75,7 +75,7 @@ describe('the build writes what the manifest promises', () => {
     }
   });
 
-  it('puts a real file at every entry point the manifest declares (AC10)', () => {
+  it('puts a real file at every entry point the manifest declares', () => {
     // Driven from `manifest.json` rather than from `OUTPUT`, so this fails when
     // the manifest names something the build does not write — the failure mode
     // an installer hits at load time and nobody hits before.
@@ -86,13 +86,13 @@ describe('the build writes what the manifest promises', () => {
 
   it('ships the two modules the manifest names and nothing else', () => {
     /*
-     * [Amended 2026-09-10 by 34-T06 — this read `['client.js']`.] No sourcemap,
-     * no stray asset: what the manifest names is the whole of the artefact,
-     * which is what makes "grep all of `dist/`" a complete gate rather than a
-     * sample of one. The list is spelled out rather than derived from the
-     * manifest on purpose — a build that quietly emitted a third file would
-     * still satisfy "every declared entry exists" (the case above) and would
-     * be caught only here.
+     * [Amended 2026-09-10, with the server half — this read `['client.js']`.]
+     * No sourcemap, no stray asset: what the manifest names is the whole of the
+     * artefact, which is what makes "grep all of `dist/`" a complete gate
+     * rather than a sample of one. The list is spelled out rather than derived
+     * from the manifest on purpose — a build that quietly emitted a third file
+     * would still satisfy "every declared entry exists" (the case above) and
+     * would be caught only here.
      */
     expect(built().map(relative).sort()).toEqual(['client.js', 'server.js']);
   });
@@ -107,26 +107,28 @@ describe('the build writes what the manifest promises', () => {
   });
 
   it('leaves the bundle a single self-contained ESM file', () => {
-    // D7. A second entry sharing a generated chunk would make the client import
-    // a sibling the manifest does not name, and the host loads only what the
-    // manifest names — which matters more here than usual, because TWO slots
-    // are pointed at this one file.
+    // The host supplies the runtime, so the bundle is one file. A second entry
+    // sharing a generated chunk would make the client import a sibling the
+    // manifest does not name, and the host loads only what the manifest names —
+    // which matters more here than usual, because TWO slots are pointed at this
+    // one file.
     const client = readFileSync(join(ROOT, OUTPUT.client), 'utf8');
     const relativeImports = [...client.matchAll(/from\s*["'](\.[^"']*)["']/g)].map((m) => m[1]);
     expect(relativeImports).toEqual([]);
   });
 
-  it('imports NOTHING, because the host hands it the runtime (D7, 26-T13)', () => {
+  it('imports NOTHING, because the host hands it the runtime', () => {
     // React, and nothing else. An add-on that brought a barcode library would
     // put somebody else's symbol tables in a page — which is a large part of
     // why `ean13.ts` and `code128.ts` are written out by hand.
     //
     // THE ASSERTION INVERTED WITH THE ABI. It used to be "imports react and
     // nothing else", with a floor requiring at least one import so an empty
-    // read could not pass as a clean one. 26-T13 made the bundle import
-    // literally nothing — React now arrives through a global the host installs
-    // before importing, because a browser cannot resolve a bare specifier — so
-    // the old floor asserted the exact thing that is now correct.
+    // read could not pass as a clean one. Loading from a server made the bundle
+    // import literally nothing — React now arrives through a global the host
+    // installs before importing, because a browser cannot resolve a bare
+    // specifier — so the old floor asserted the exact thing that is now
+    // correct.
     //
     // The anti-empty-read intent is kept, on a proxy that is still true: the
     // file has bytes and it exports `register`.
@@ -237,7 +239,7 @@ describe('the vocabulary ban, over built output', () => {
 });
 
 /**
- * D11 OVER THE ARTEFACT, WHICH IS WHERE A MUTANT ACTUALLY REACHES.
+ * NO LIVE CALL, OVER THE ARTEFACT, WHICH IS WHERE A MUTANT ACTUALLY REACHES.
  *
  * A sibling package's "no real third-party call" was once a grep for four
  * spellings. A verifier put `new Image(); img.src = "https://…"` into one of its
@@ -252,7 +254,7 @@ describe('the vocabulary ban, over built output', () => {
  * a COMMENT, because this build keeps comments inside expressions and a comment
  * in `dist/` is a byte in `dist/`.
  */
-describe('nothing in the artefact can reach a host we do not control (24 D11)', () => {
+describe('nothing in the artefact can reach a host we do not control', () => {
   it('names no address at all, in any emitted file', () => {
     const offences = built().flatMap((file) =>
       offendingAddresses(readFileSync(file, 'utf8'), []).map((url) => `${relative(file)} → ${url}`),

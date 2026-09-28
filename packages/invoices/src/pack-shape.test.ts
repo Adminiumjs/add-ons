@@ -1,5 +1,6 @@
 /**
- * D1's pack-shape assertion for this package.
+ * The pack-shape assertion for this package: the npm tarball is the
+ * distributable unit, so its shape is checked.
  *
  * The suite lives in `@adminium/add-on-host/testing` so the six add-ons share
  * one implementation; this file exists because only the owning package's suite

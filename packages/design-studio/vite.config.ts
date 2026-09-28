@@ -4,7 +4,7 @@ import react from "@vitejs/plugin-react";
 import type { PluginOption } from "vite";
 import { build, defineConfig, type Plugin, type UserConfig } from "vite";
 
-/** The host-runtime shims this add-on's React imports are aliased to (26-T13). */
+/** The host-runtime shims this add-on's React imports are aliased to. */
 const HOST_RUNTIME_REACT = fileURLToPath(
   new URL("../host/src/runtime/react.ts", import.meta.url),
 );
@@ -36,19 +36,19 @@ const ROOT = fileURLToPath(new URL(".", import.meta.url));
  *
  * `dist/client.js` is what every `addOn.slots[].client` points at, because the
  * host serves ONE bundle per add-on from its own origin at
- * `/add-ons/design-studio/client.js` (24 §5.7 item 2) and `import()`s it
- * lazily. The manifest used to name a file per slot — `client/artwork-tile.js`,
- * `client/editor-route.js` — which no build ever produced and which §5.7
- * contradicts anyway; one bundle registers both fills.
+ * `/add-ons/design-studio/client.js` and `import()`s it lazily. The manifest
+ * used to name a file per slot — `client/artwork-tile.js`,
+ * `client/editor-route.js` — which no build ever produced and which that
+ * one-bundle rule contradicts anyway; one bundle registers both fills.
  *
  * `dist/server.js` is `provides[0].server`, and it is a genuinely separate
  * rollup pass rather than a second entry in the same one. That matters more
  * than it looks: two entries in ONE lib build share their common modules
  * through a third, hash-named chunk, and the client half then stops being the
- * single ESM bundle D7 requires. Two passes duplicate the engine into both
- * files, which is the trade D7 asks for. The SOURCE keeps its descriptive name,
- * `src/server/artwork-source.ts` — it says which contract it implements, and
- * `add-ons.sh` names that path in its never-vendor list.
+ * single ESM bundle an add-on must ship. Two passes duplicate the engine into
+ * both files, which is the trade that rule asks for. The SOURCE keeps its
+ * descriptive name, `src/server/artwork-source.ts` — it says which contract it
+ * implements, and `add-ons.sh` names that path in its never-vendor list.
  */
 export const CLIENT_BUNDLE = "client.js";
 export const SERVER_HALF = "server.js";
@@ -96,7 +96,7 @@ function serverHalf(): Plugin {
 }
 
 /**
- * The React aliases, applied to the BUILD ONLY (26-T13).
+ * The React aliases, applied to the BUILD ONLY.
  *
  * A top-level `resolve.alias` would apply to vitest as well, because vitest
  * reads this same config — and then the add-on's own source would resolve
@@ -131,15 +131,15 @@ function hostRuntimeAlias(): PluginOption {
 
 
 /*
- * An add-on's client half builds to a SINGLE ESM bundle (24 D7), which is what
- * the host `import()`s from `/add-ons/design-studio/client.js` once the
- * server-side installer lands (§5.7 item 2). Until then the demo build inlines
- * it — the same file, a different loader.
+ * An add-on's client half builds to a SINGLE ESM bundle, which is what the host
+ * `import()`s from `/add-ons/design-studio/client.js` once the server-side
+ * installer lands. Until then the demo build inlines it — the same file, a
+ * different loader.
  *
  * React, the JSX runtime and the icon set are external because the host already
  * has them: two copies of React in one page is two reconcilers arguing over one
  * DOM tree, and an add-on that ships its own is a design error rather than a
- * size problem. The rule in D7 is stricter than it looks — this add-on takes NO
+ * size problem. The rule is stricter than it looks — this add-on takes NO
  * runtime dependency the host does not already have, which is also why `zod`
  * appears only in devDependencies and only inside the conformance suite.
  */
@@ -189,7 +189,7 @@ const config: UserConfig & { test: { globalSetup: readonly string[] } } = {
        * `NODE_ENV` is not `production` — under vitest, for instance — and
        * leaving it off meant a non-production build silently INLINED React's
        * development runtime into the bundle, source paths and all. That is a
-       * second reconciler in the page (D7) and a pile of React's own vocabulary
+       * second reconciler in the page and a pile of React's own vocabulary
        * in an artefact the release sweep greps.
        */
       external: [],

@@ -3,7 +3,8 @@
  *
  * Small module, but the one place a mistake would be invisible and serious: a
  * demo that quietly fell through to the connected transport would make a real
- * call on a public demo, which is exactly what D11 exists to prevent.
+ * call on a public demo, which is exactly what the demo transport exists to
+ * prevent.
  */
 
 import { beforeEach, describe, expect, it } from "vitest";

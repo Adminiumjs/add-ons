@@ -1,12 +1,12 @@
 /**
- * Live Personalizer — the add-on's registration (24 §8B).
+ * Live Personalizer — the add-on's registration.
  *
  * `register()` returns the object `@adminium/add-on-host` describes, and that
  * object is the whole public surface: the host's registry indexes it, the
  * dock's toggle flips it on and off, and its six fills are the only places this
  * add-on ever draws. There is no side effect on import — no global, no patched
  * host, no listener — which is what lets a host register it, unregister it, and
- * be back at exactly its base state (D6).
+ * be back at exactly its base state.
  *
  * `connect: "none"` is the honest answer and it changes what the connect dialog
  * shows: no credential form, no account, one click. The permission list is
@@ -39,7 +39,7 @@ export function register(): AddOn {
     shortName: 'Live Personalizer',
     lineKey: 'addon.personalizer.line',
     whatKey: 'addon.personalizer.what',
-    // Two letters in a neutral tile. Never a logo (D12) — and there is no
+    // Two letters in a neutral tile. Never a logo, anyone's — and there is no
     // company here to have one.
     monogram: 'LP',
     category: 'artwork',
@@ -177,8 +177,8 @@ export function register(): AddOn {
 }
 
 // The engine and the contract implementation, for a host that wants them
-// without the React half — the server side of a Phase B install, and the
-// website's demo build, both do.
+// without the React half — the server side of an install through the add-on
+// runtime, and the website's demo build, both do.
 export { createProductPersonalizer, KEY, drawPreview, drawProduction } from './personalizer.ts';
 export {
   check,

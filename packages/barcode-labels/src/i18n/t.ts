@@ -3,7 +3,7 @@
  *
  * A slot fill is handed a payload and nothing else. It cannot import the host's
  * `useT` — that would be a runtime dependency on the host's module graph, which
- * 24 D7 does not allow — so it has to work out the reader's language for
+ * an add-on may not take — so it has to work out the reader's language for
  * itself. The one thing the host guarantees is `<html lang>`, stamped by its
  * i18n provider; this module reads that attribute and re-renders when it moves.
  *

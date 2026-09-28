@@ -75,7 +75,7 @@ describe("the manifest agrees with the code", () => {
  * `ensureFreshBuild()` rebuilds when `dist/` is missing or behind, so this is a
  * check on the CURRENT build rather than on whatever was lying around.
  */
-describe("the manifest's entry points exist in the build output (AC10)", () => {
+describe("the manifest's entry points exist in the build output", () => {
   ensureFreshBuild();
   const emitted = new Set(distFiles().map(packageRelative));
 
@@ -97,7 +97,7 @@ describe("the manifest's entry points exist in the build output (AC10)", () => {
     }
   });
 
-  it("emits the demo transport D11 requires it to ship", () => {
+  it("emits the demo transport every add-on must ship", () => {
     expect(emitted.has(manifest.addOn.demoTransport)).toBe(true);
     expect(existsSync(join(PACKAGE_ROOT, manifest.addOn.demoTransport))).toBe(true);
   });
@@ -118,8 +118,8 @@ describe("the manifest's entry points exist in the build output (AC10)", () => {
 
   it("keeps the client and server halves in separate files", () => {
     // Not cosmetic: it is what lets a host serve one half to a browser and load
-    // the other outside one, and what makes D15's "no secret in the client
-    // bundle" a statement about a file rather than about intent.
+    // the other outside one, and what makes "no secret in the client bundle" a
+    // statement about a file rather than about intent.
     expect(OUTPUT.client).not.toBe(OUTPUT.server);
   });
 
@@ -131,7 +131,7 @@ describe("the manifest's entry points exist in the build output (AC10)", () => {
   });
 });
 
-describe("the egress allow-list (24 D14)", () => {
+describe("the egress allow-list", () => {
   it("carries exactly the hostnames its own endpoints name", () => {
     // BOTH, and the plural is the fix. See `VENDOR_AUTH_HOST` in `oauth.ts`:
     // one hostname here while the authorize URL named another is what made
@@ -180,9 +180,10 @@ describe("the egress allow-list (24 D14)", () => {
    *
    * `tokenUrl` was `https://${VENDOR_API_HOST}/…`, which guaranteed the host
    * and, in the built artefact, produced an address whose hostname was a
-   * minified variable — an endpoint decided at run time, which D11's egress
-   * gate reports and should. The URL is written out now, so the guarantee has
-   * to be stated rather than constructed, and this is where it is stated.
+   * minified variable — an endpoint decided at run time, which the no-real-call
+   * egress gate reports and should. The URL is written out now, so the
+   * guarantee has to be stated rather than constructed, and this is where it is
+   * stated.
    */
   it("sends the token exchange to exactly the allow-listed API hostname", () => {
     expect(new URL(OAUTH.tokenUrl).hostname).toBe(VENDOR_API_HOST);
@@ -196,7 +197,7 @@ describe("the egress allow-list (24 D14)", () => {
   });
 });
 
-describe("secrets and settings (24 D15)", () => {
+describe("secrets and settings", () => {
   it("declares no settings at all, so none can leak into the client", () => {
     expect(register().settings).toEqual([]);
     expect(manifest.addOn.publicSettings).toEqual([]);
@@ -222,7 +223,7 @@ describe("scopes", () => {
   });
 });
 
-describe("publisher (24 D13)", () => {
+describe("publisher", () => {
   it("is first-party, which is the only publisher v1 accepts", () => {
     expect(manifest.publisher.id).toBe("adminium");
   });
@@ -232,11 +233,12 @@ describe("publisher (24 D13)", () => {
  * WHAT THIS ADD-ON TELLS ITS HOSTS TO GREP FOR, CHECKED AGAINST WHAT IT
  * DECLARES.
  *
- * `add-on-facts.ts` carries `NEVER_IN_A_BROWSER` — the strings a host's D15
- * bundle gate looks for in every emitted file — and it exists because that list
- * used to be written out inside each HOST. A host cannot look for a needle
- * nobody told it about, so a credentialled add-on vendored into a shop that had
- * never heard of it shipped its secret setting keys with the gate fully green.
+ * `add-on-facts.ts` carries `NEVER_IN_A_BROWSER` — the strings a host's
+ * no-secret-in-the-bundle gate looks for in every emitted file — and it exists
+ * because that list used to be written out inside each HOST. A host cannot look
+ * for a needle nobody told it about, so a credentialled add-on vendored into a
+ * shop that had never heard of it shipped its secret setting keys with the gate
+ * fully green.
  *
  * Moving the list is only half a repair: a hand-kept list beside a manifest
  * drifts from the manifest. This is the other half. Everything the manifest

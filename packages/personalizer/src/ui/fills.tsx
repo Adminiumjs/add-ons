@@ -4,18 +4,19 @@
  *
  * Every one is handed a payload by the host's `<AddOnSlot>` and nothing else.
  * None of them reaches into the host's store, imports its `useT`, or knows what
- * app it is running inside — which is D21's claim made structural rather than
- * asserted: the same bundle renders inside Birch Row and inside the print works
- * because a slot id names a SURFACE.
+ * app it is running inside — which is the app-neutral claim made structural
+ * rather than asserted: the same bundle renders inside Birch Row and inside the
+ * print works because a slot id names a SURFACE.
  *
  * THE SEVENTH SLOT, `record.editor.panel`, IS DECLARED IN THE MANIFEST AND HAS
  * NO FILL HERE. Its host is Adminium's generated dashboard rather than an
  * example app, and it needs the add-on runtime that `POST /manifests` does not
- * yet provide (§5.10, D20). Comp L designs those four screens and 8B specifies
- * them; shipping a fill nothing can mount is the exact defect §5.4 records
- * against `nav.add-on.routes`, so the manifest declares the attachment and the
- * code ships nothing. `manifest.test.ts` asserts that difference BY NAME rather
- * than letting it look like an oversight.
+ * yet provide. The design comp draws those four screens and the spec describes
+ * them; shipping a fill nothing can mount is the exact defect
+ * `nav.add-on.routes` once had (a host listed it and nothing ever mounted it),
+ * so the manifest declares the attachment and the code ships nothing.
+ * `manifest.test.ts` asserts that difference BY NAME rather than letting it
+ * look like an oversight.
  */
 
 import { useEffect, useId, useState } from 'react';
@@ -63,7 +64,7 @@ import { Setup } from './Setup.tsx';
 // narrowing is now checked against a shape both hosts promise instead of
 // against one host's memory.
 
-// ── ONE LOOKUP AND ONE PICTURE, SHARED BY THE THREE SURFACES OF AC17 ────────
+// ── ONE LOOKUP AND ONE PICTURE, SHARED BY THE THREE SURFACES ────────────────
 
 /**
  * WHAT ONE LINE WAS PERSONALIZED WITH — the same two steps everywhere.
@@ -73,7 +74,7 @@ import { Setup } from './Setup.tsx';
  * asked `recall`, then `lineFor(payload.order.ref)` — an ORDER reference handed
  * to a function matching LINE ids, so that branch could not match under any
  * data — and then `fromNote`. The proof asked nobody at all: the host drew its
- * own material tile and criterion 17's three pictures were two.
+ * own material tile and the three pictures that must be one were two.
  *
  * Two steps, in this order, and no host-specific field in either:
  *
@@ -81,8 +82,8 @@ import { Setup } from './Setup.tsx';
  *      font, size and finish they actually chose are known.
  *   2. `fromNote(key, note)` — they did not, or it was ordered before this
  *      add-on was ever connected. The words are still on the line, because the
- *      words live in the HOST's own note field (D16), so they are laid into the
- *      areas the maker drew and everything else falls back to the piece's own
+ *      words live in the HOST's own note field, so they are laid into the areas
+ *      the maker drew and everything else falls back to the piece's own
  *      defaults. That is a true statement about that order rather than an
  *      invented one.
  *
@@ -108,7 +109,7 @@ function personalizationOf(
 
 /**
  * THE PICTURE PLUS WHAT IT WAS SET IN — the cart line, the proof, the order
- * line, one component (criterion 17).
+ * line, one component, so they are one picture.
  *
  * It is one component rather than three that agree because three that agree is
  * what this add-on shipped and it was not true: the basket drew the preview,
@@ -193,8 +194,8 @@ export function blockReason(
  * THE ONE THAT REPLACES A FINISHED SCREEN.
  *
  * The host's fallback here is not a placeholder: a note field, a live counter,
- * the maker's instructions and a proof promise (D19). This block takes its
- * place wholesale, so the arrival of the add-on is a visible gain in capability
+ * the maker's instructions and a proof promise. This block takes its place
+ * wholesale, so the arrival of the add-on is a visible gain in capability
  * rather than the repair of a broken page.
  */
 export function PersonalizeFill({ payload }: { payload: PersonalizePayload }) {
@@ -255,17 +256,17 @@ export function PersonalizeFill({ payload }: { payload: PersonalizePayload }) {
  * ── SWITCHING THE ADD-ON ON USED TO REMOVE A CAPABILITY ─────────────────────
  *
  * `product.options.personalize` is a `single` slot: while a fill is mounted the
- * host's own block is gone, and the host's own block is a finished thing (D19) —
- * a note field, a live counter against the shop's limit, and the promise that a
+ * host's own block is gone, and the host's own block is a finished thing — a
+ * note field, a live counter against the shop's limit, and the promise that a
  * picture comes back before anything is cut. Two of Birch Row's twelve pieces
  * have a template. On the other ten this fill rendered one sentence and NO
  * INPUT, so a shopper who could type "Sam & Jo, 2019" onto a keyring with the
  * add-on off could type nothing at all with it on. Driven and confirmed in the
  * DOM for all twelve.
  *
- * That inverts what an add-on is for. D19 says the arrival of one is a visible
- * gain in capability rather than the repair of a broken page, and there is no
- * reading of "gain" under which a working field becomes a paragraph.
+ * That inverts what an add-on is for. The arrival of one is meant to be a
+ * visible gain in capability rather than the repair of a broken page, and there
+ * is no reading of "gain" under which a working field becomes a paragraph.
  *
  * ── WHY THE FALLBACK RATHER THAN A TEMPLATE PER PIECE ───────────────────────
  *
@@ -276,9 +277,9 @@ export function PersonalizeFill({ payload }: { payload: PersonalizePayload }) {
  * behaviour the host already had; the template is the upgrade on top of it.
  *
  * `noteLimit` comes off the payload because it is the HOST's limit — the words
- * go back into the host's own field (D16), and an add-on that let a shopper type
- * more than the shop can store would be filling a column that truncates. A host
- * that caps nothing passes nothing and the counter is not drawn.
+ * go back into the host's own field, and an add-on that let a shopper type more
+ * than the shop can store would be filling a column that truncates. A host that
+ * caps nothing passes nothing and the counter is not drawn.
  *
  * `surfaces.test.tsx` walks a piece with a template, a piece without, and a key
  * this add-on has never heard of, and asserts a NAMED writable field on each —
@@ -343,9 +344,9 @@ function NoteFill({ payload }: { payload: PersonalizePayload }) {
        * sees the actual piece with their actual words on it, and the controls
        * that change them: "tell us the name and we will set it in the lettering
        * shown" and "we send a picture before we cut" are both superseded by
-       * being shown the thing. That is D19's "visible gain in capability".
-       * Here nothing has been gained — this IS the host's field — so nothing
-       * may be lost either.
+       * being shown the thing. That is the "visible gain in capability" an
+       * add-on's arrival is meant to be. Here nothing has been gained — this IS
+       * the host's field — so nothing may be lost either.
        */}
       {(payload.hostSays ?? []).map((line) => (
         <p key={line} className="lp-host-says">
@@ -470,13 +471,13 @@ export function AdminFill({ payload }: { payload: ProductAdminPayload }) {
  *
  * One button, and behind it `productionSvg` — the studio's own CUT ALPHABET,
  * geometry on a neutral ground, structurally a different picture from the one
- * the shopper saw. That was criterion 17 broken in the most easily missed way,
- * because both pictures are correct: the cart carried the preview, the order
- * line carried the file, and the sentence that says they are the same picture
- * was under both of them. The preview comes first now, from the same component
- * the basket and the proof draw with, and the file is one click behind it —
- * which is also the order a maker wants them in. `Production` says in its own
- * words why the letterforms differ once you are looking at it.
+ * the shopper saw. That was the one-picture rule broken in the most easily
+ * missed way, because both pictures are correct: the cart carried the preview,
+ * the order line carried the file, and the sentence that says they are the same
+ * picture was under both of them. The preview comes first now, from the same
+ * component the basket and the proof draw with, and the file is one click
+ * behind it — which is also the order a maker wants them in. `Production` says
+ * in its own words why the letterforms differ once you are looking at it.
  *
  * `payload.order` IS READ FOR NOTHING, and that is the fix to the other half.
  * It used to be `lineFor(payload.order.ref)` — an order reference passed to a
@@ -520,22 +521,22 @@ export function OrderLineFill({ payload }: { payload: OrderLinePayload }) {
  * The full-screen route, at `/add-ons/personalizer/edit` — FIVE surfaces, not
  * one, and the add-on carries its own way between them.
  *
- * A HOST THAT MOUNTS THIS SLOT IS WHY IT IS FILLED AT ALL. Design Studio shipped
- * a fill for this id for one release into a host with no router, and nothing
- * ever drew it (§5.4's amendment). Birch Row's maker shell has a view for an
- * add-on to occupy and mounts the slot in it, and its own suite asserts that
- * every id it lists is mounted somewhere in `src/`.
+ * A HOST THAT MOUNTS THIS SLOT IS WHY IT IS FILLED AT ALL. Design Studio
+ * shipped a fill for this id for one release into a host with no router, and
+ * nothing ever drew it, so that host stopped listing it. Birch Row's maker
+ * shell has a view for an add-on to occupy and mounts the slot in it, and its
+ * own suite asserts that every id it lists is mounted somewhere in `src/`.
  *
  * ── WHY THE TABS ARE HERE AND NOT IN THE HOST'S SIDEBAR ────────────────────
  *
- * Comp L draws Set-up, Reuse areas, Fonts, Bench sheet and Production file as
- * five entries in the WORKSHOP's own sidebar, appearing and disappearing with
- * the add-on. That is right for a comp, which draws one shop; it is wrong for
- * an add-on, which cannot name five pages inside a nav it does not own — the
- * host would need a list of this add-on's screens, in eight languages, and
- * would then have it wrong for the next add-on. `nav.add-on.routes` lends the
- * PAGE, so the page carries the tabs. Recorded as a bracket amendment against
- * 24 §8B rather than resolved silently.
+ * The design comp draws Set-up, Reuse areas, Fonts, Bench sheet and Production
+ * file as five entries in the WORKSHOP's own sidebar, appearing and
+ * disappearing with the add-on. That is right for a comp, which draws one shop;
+ * it is wrong for an add-on, which cannot name five pages inside a nav it does
+ * not own — the host would need a list of this add-on's screens, in eight
+ * languages, and would then have it wrong for the next add-on.
+ * `nav.add-on.routes` lends the PAGE, so the page carries the tabs. Recorded
+ * here as a departure from the design rather than resolved silently.
  *
  * Every tab is this add-on's own words through its own bundle: a host that
  * translated "Bench sheet" would be writing copy for a product it does not own.
@@ -721,7 +722,7 @@ export function SettingsFill({ payload }: { payload: SettingsPanelPayload }) {
       </div>
 
       {/*
-       * 24 AC6, as amended: an add-on that names a company carries the
+       * The not-affiliated rule: an add-on that names a company carries the
        * not-affiliated line; one that names none says so positively, in its own
        * words. The host renders whichever applies from `noCompanyKeys`, and the
        * panel repeats it where a shop owner changing a setting is looking.

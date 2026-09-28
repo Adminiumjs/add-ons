@@ -13,7 +13,8 @@
  *     against the PACKAGE ROOT — the directory a host installs — which is the
  *     convention every add-on in this repo uses.
  *
- *  2. The vocabulary ban (17 §2 / 24 D12) is a grep over BUILT output. Checking
+ *  2. The vocabulary ban (no pricing, plan, tier or billing talk, and no add-on
+ *     called "premium" or "pro") is a grep over BUILT output. Checking
  *     the string bundle catches the copy; it does not catch a CSS class name, a
  *     minified identifier or a comment that survived minification. The tables
  *     come from `testing/lexicon.ts`, which `i18n/strings.test.ts` also uses, so
@@ -62,8 +63,8 @@ describe("the manifest's entry points exist in the build output", () => {
 
   it("emits nothing the manifest does not account for", () => {
     // `dist/client.css` is the one file the manifest cannot name — the slot
-    // schema has no field for a stylesheet, and §5.7 item 2 has the host serve
-    // it beside the bundle. Everything else here is declared above, and an
+    // schema has no field for a stylesheet, and the host serves it beside the
+    // bundle. Everything else here is declared above, and an
     // unexplained fourth file means the build split something.
     expect(emitted).toEqual(["dist/client.css", "dist/client.js", "dist/server.js"]);
   });
@@ -76,7 +77,7 @@ describe("the manifest's entry points exist in the build output", () => {
     expect(emitted.filter((file) => file.endsWith(".map"))).toEqual([]);
   });
 
-  it("keeps the client half a SINGLE ESM bundle (D7)", () => {
+  it("keeps the client half a SINGLE ESM bundle", () => {
     // A THIRD script is what a shared chunk looks like, and it is the exact
     // failure mode that made this a two-pass build: one lib build with two
     // entries hoists the engine into a hash-named extra file, and the host then
@@ -94,7 +95,7 @@ describe("the manifest's entry points exist in the build output", () => {
   });
 });
 
-describe("the client/server split is real in the artefact (AC10)", () => {
+describe("the client/server split is real in the artefact", () => {
   it("keeps React, the JSX runtime and the icon set out of the server half", () => {
     const server = readEmitted("dist/server.js");
     expect(server).not.toMatch(/from\s*["']react/);
@@ -106,7 +107,7 @@ describe("the client/server split is real in the artefact (AC10)", () => {
   it("puts the real engine in the server half rather than an empty re-export", () => {
     const server = readEmitted("dist/server.js");
     // Both halves carry the engine — two rollup passes duplicate rather than
-    // share (D7). If this file ever shrinks to a stub, the contract it claims
+    // share. If this file ever shrinks to a stub, the contract it claims
     // to provide is not in it.
     expect(server.length).toBeGreaterThan(20_000);
     expect(server).toContain("design-studio");
@@ -114,14 +115,15 @@ describe("the client/server split is real in the artefact (AC10)", () => {
 
   it("declares no import of anything outside the bundle", () => {
     // The server half has no externals configured, so a bare specifier here
-    // would mean a runtime dependency this add-on is not allowed (D7).
+    // would mean a runtime dependency this add-on is not allowed: an add-on
+    // ships no runtime dependency its host lacks.
     const server = readEmitted("dist/server.js");
     const bare = [...server.matchAll(/\bfrom\s*["']([^."'][^"']*)["']/g)].map((m) => m[1]);
     expect(bare).toEqual([]);
   });
 });
 
-describe("the vocabulary ban, over built output (17 §2, 24 D12)", () => {
+describe("the vocabulary ban, over built output", () => {
   // `.map` is in the pattern even though the build emits none: if a sourcemap
   // ever appears it must be greped like anything else, not exempted for being
   // machine-written. The list above asserts none exists; this makes sure that
@@ -173,7 +175,7 @@ describe("the vocabulary ban, over built output (17 §2, 24 D12)", () => {
 });
 
 /**
- * D11 OVER THE ARTEFACT, WHICH IS WHERE THE MUTANT REACHED.
+ * NO REAL NETWORK CALL, OVER THE ARTEFACT, WHICH IS WHERE THE MUTANT REACHED.
  *
  * `sources.test.ts` states the rule over the sources; this states it over the
  * bytes a host serves. The two are not the same check: an address can arrive
@@ -187,7 +189,7 @@ describe("the vocabulary ban, over built output (17 §2, 24 D12)", () => {
  * ITS OWN CODE. React and every other dependency are external (see the entry
  * assertions above), so a request-issuing API in these bytes was written here.
  */
-describe("nothing in the artefact can reach a host we do not control (24 D11)", () => {
+describe("nothing in the artefact can reach a host we do not control", () => {
   const BYTES = /\.(js|css|html|map)$/;
 
   it("names no address at all, in any emitted file", () => {

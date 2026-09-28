@@ -133,7 +133,7 @@ describe('the writer', () => {
 
   it('keeps the table correct when the text is NOT ASCII — the whole point of the file', () => {
     /*
-     * 34 §0.3 trap 8. `Müller` is six characters and, WinAnsi-encoded, six
+     * The xref trap. `Müller` is six characters and, WinAnsi-encoded, six
      * bytes — but the file also carries `€` and `—`, and a writer that had
      * built this as a UTF-8 string would have offsets short by one byte per
      * high character for every object AFTER the stream. The fonts are emitted

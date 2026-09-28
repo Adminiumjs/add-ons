@@ -1,5 +1,6 @@
 /**
- * The real transport — the self-host path, OFF by default (24 D11, §7).
+ * The real transport — the self-host path, OFF by default, because no demo
+ * ever makes a real third-party call.
  *
  * WHAT THIS FILE DELIBERATELY DOES NOT DO. It does not guess DHL's endpoint
  * paths, its authentication header, or its field names. Every one of those is a
@@ -167,9 +168,9 @@ function ok(response: HttpResponse): boolean {
 }
 
 export interface DhlCarrierOptions {
-  /** Host-built and bound to `WIRE.host` (24 D14). There is no other way out. */
+  /** Host-built and bound to `WIRE.host`, the manifest's one allowed hostname. There is no other way out. */
   http: HttpClient;
-  /** Injected into the SERVER context only (24 D15). */
+  /** Injected into the SERVER context only — secrets never reach the browser. */
   credentials: CarrierCredentials;
   /** Fallback for a delivery date the carrier does not state. */
   todayIso: string;

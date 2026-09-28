@@ -1,5 +1,5 @@
 /**
- * THE ENGINE (24 D5c). Pure, deterministic, DOM-free.
+ * THE ENGINE. Pure, deterministic, DOM-free.
  *
  * Everything this add-on claims rests on four functions in this file:
  *
@@ -14,10 +14,11 @@
  *
  * Not one of them reads `Date.now()`, calls `Math.random()`, touches
  * `document`, or fetches anything. `sources.test.ts` greps for all four. The
- * measuring that comp L did with a canvas is a committed table in `faces.ts`,
- * for the reason set out at the top of that file: a preview measured on the
- * reader's machine is a different preview on a different machine, and criterion
- * 17 asks for the opposite.
+ * measuring that the design comp did with a canvas is a committed table in
+ * `faces.ts`, for the reason set out at the top of that file: a preview
+ * measured on the reader's machine is a different preview on a different
+ * machine, and the cart thumbnail, the proof and the order line must be one
+ * picture.
  *
  * ── THE PICTURE IS A STRING, AND THAT IS THE WHOLE DETERMINISM ARGUMENT ─────
  *
@@ -29,14 +30,15 @@
  *
  * ── WHAT IS A VERDICT AND WHAT IS A BLOCK ───────────────────────────────────
  *
- * `check` returns both, and the split is the reason criterion 18 can be
- * absolute. A VERDICT is about something the shopper typed, so there is always
- * a number to offer: a smaller size, a shorter line, a cut before the character
- * the studio has no letter for. A BLOCK is about something they have NOT typed
- * — a required area still empty — and "shorten it to N characters" is not
- * advice you can give about an empty box. So an empty required area stops "Add
- * to basket" with a plain reason instead, which is what comp L draws, and every
- * verdict without exception carries a remedy with a number in it.
+ * `check` returns both, and the split is the reason "every failing verdict
+ * carries a number" can be absolute. A VERDICT is about something the shopper
+ * typed, so there is always a number to offer: a smaller size, a shorter line,
+ * a cut before the character the studio has no letter for. A BLOCK is about
+ * something they have NOT typed — a required area still empty — and "shorten it
+ * to N characters" is not advice you can give about an empty box. So an empty
+ * required area stops "Add to basket" with a plain reason instead, which is
+ * what the design comp draws, and every verdict without exception carries a
+ * remedy with a number in it.
  */
 
 import type {
@@ -246,11 +248,11 @@ export interface CodedVerdict {
    * `Verdict.remedies.shortenToChars` — the contract's own field, which the
    * conformance suite asserts is a number on every failure — mirrored onto the
    * machine-readable half. It was NOT here, and the omission was invisible in
-   * exactly the way criterion 18 exists to prevent: the engine computed the
-   * number for `no-letter` and the suite asserted it was 3 for "Café Row",
-   * while the surface, which reads `detail` and never `verdicts`, could not
-   * reach it and drew a sentence with no button under it. A remedy a suite can
-   * see and a shopper cannot is not a remedy.
+   * exactly the way "every failing verdict carries a number" exists to prevent:
+   * the engine computed the number for `no-letter` and the suite asserted it
+   * was 3 for "Café Row", while the surface, which reads `detail` and never
+   * `verdicts`, could not reach it and drew a sentence with no button under it.
+   * A remedy a suite can see and a shopper cannot is not a remedy.
    */
   shortenToChars?: number;
   fit?: Fit;
@@ -290,14 +292,14 @@ export interface Check {
 /**
  * ONE WAY OUT OF ONE FAILURE, AS A VALUE THE SURFACE MUST PUT ON A BUTTON.
  *
- * ── WHY THIS TYPE EXISTS, WHICH IS THE WHOLE OF CRITERION 18 ────────────────
+ * ── WHY THIS TYPE EXISTS: EVERY FAILING VERDICT CARRIES A NUMBER ────────────
  *
  * The surface used to decide, per verdict code, which buttons a failure gets:
  * one branch per code, each reading whichever field of `CodedVerdict` it
  * happened to know about. Two things follow from that and both were real.
  *
  *   1. A CODE COULD SILENTLY GET FEWER BUTTONS THAN THE ENGINE OFFERED. An
- *      `overrun` carries BOTH remedies (D5c), and the guard asked only whether
+ *      `overrun` carries BOTH remedies, and the guard asked only whether
  *      the screen had at least one `.lp-remedy` in it. A verifier wrapped the
  *      SIZE button in `false &&`, deleting a working way out for every shopper
  *      whose wording will not fit at any length, and the suite stayed green
@@ -371,11 +373,11 @@ export function defaultSizeMm(t: Template): number {
  *
  * ONE SIZE AND ONE FACE FOR THE WHOLE PERSONALIZATION, because that is what the
  * contract's `Personalization` carries — `font`, `sizeMm` and `finish`, once
- * each. Comp L draws a stepper per area, and the honest way to have both is
- * this: the shopper picks a size, and each area takes as much of it as its own
- * range allows. A date area capped at five and a half millimetres stays at five
- * and a half while the line above it goes to nine, which is what a maker
- * setting those limits meant by setting them.
+ * each. The design comp draws a stepper per area, and the honest way to have
+ * both is this: the shopper picks a size, and each area takes as much of it as
+ * its own range allows. A date area capped at five and a half millimetres stays
+ * at five and a half while the line above it goes to nine, which is what a
+ * maker setting those limits meant by setting them.
  */
 export function settingsFor(
   p: Personalization,
@@ -395,7 +397,7 @@ export function settingsFor(
 const TEXT_KINDS = new Set(['text-line', 'text-block']);
 
 /**
- * ── AN EMPTY PANEL IS A PLAIN PIECE, NOT A HALF-FINISHED ONE (24 D19) ───────
+ * ── AN EMPTY PANEL IS A PLAIN PIECE, NOT A HALF-FINISHED ONE ────────────────
  *
  * `required-empty` is a real rule and it used to fire on arrival. That made
  * switching this add-on ON take a capability away: with it off, a shopper can
@@ -403,7 +405,7 @@ const TEXT_KINDS = new Set(['text-line', 'text-block']);
  * plain coaster, which is a thing Birch Row sells. With it on, "Add to basket"
  * was disabled from the moment the page opened and a danger note read "Fill in
  * Top line first." — a piece that was buyable a second ago, refused, because an
- * add-on arrived. D19 says an add-on's arrival is a GAIN, and there is no
+ * add-on arrived. An add-on's arrival is meant to be a GAIN, and there is no
  * reading of gain under which a purchasable product stops being purchasable.
  *
  * The maker's flag is still honoured, and it means what a maker means by it:
@@ -586,8 +588,9 @@ export function check(p: Personalization, t: Template): Check {
  * opaque string and every host passes through untouched: `top:required`.
  *
  * The maker's setup panel writes it and reads it back; a shopper never sees it.
- * What they see is comp L's sentence — "This one is cut into every coaster, so
- * it can't be left empty" — and "Add to basket" refusing until it is filled.
+ * What they see is the design comp's sentence — "This one is cut into every
+ * coaster, so it can't be left empty" — and "Add to basket" refusing until it
+ * is filled.
  */
 export const REQUIRED_SUFFIX = ':required';
 
@@ -653,8 +656,8 @@ const n2 = (n: number) => String(Math.round(n * 100) / 100);
  * BOTH `aria-label` AND `<title>`, deliberately. `aria-label` is what names it
  * on a page, and it cannot collide the way an id for `aria-labelledby` would
  * when the same picture appears twice (the basket line and the order line are
- * byte-identical by design — that is criterion 17). `<title>` is the only name
- * an SVG carries once it has left the page as a file.
+ * byte-identical by design — one picture wherever it is drawn). `<title>` is
+ * the only name an SVG carries once it has left the page as a file.
  */
 export function nameSvg(svg: string, name: string): string {
   const at = svg.indexOf('>');
@@ -721,12 +724,12 @@ export function zoneBox(
 /**
  * THE PICTURE, AS BYTES.
  *
- * A 2D composite and nothing else (24 D18): a material-textured tile, the piece
- * outline over it, and the shopper's words as SVG text sitting inside a zone,
- * skewed on the angled views and styled per finish. There is no WebGL context
- * here, no mesh, no `.stl` and no `three` — `sources.test.ts` and
- * `built-output.test.ts` both grep for all four, in the source and in the built
- * bundle, because criterion 16 asks for the bundle.
+ * A 2D composite and nothing else: a material-textured tile, the piece outline
+ * over it, and the shopper's words as SVG text sitting inside a zone, skewed on
+ * the angled views and styled per finish. There is no WebGL context here, no
+ * mesh, no `.stl` and no `three` — `sources.test.ts` and `built-output.test.ts`
+ * both grep for all four, in the source and in the built bundle, because the
+ * no-3D rule asks for the bundle.
  *
  * EVERY `<text>` CARRIES `textLength`, and that is not a nicety. It is what
  * makes the drawn width equal the width `fit` computed, on a machine with a
@@ -846,9 +849,9 @@ export function previewSvg(p: Personalization, t: Template, opts: PreviewOptions
  * FNV-1a over the picture's own bytes, in base 36.
  *
  * Not a cryptographic hash and not pretending to be one: it identifies a
- * picture so that two of them can be compared, which is what criterion 17 asks
- * for. Written out rather than imported because an add-on takes no runtime
- * dependency the host does not already have (24 D7).
+ * picture so that two of them can be compared, which is what "one picture
+ * wherever it is drawn" asks for. Written out rather than imported because an
+ * add-on takes no runtime dependency the host does not already have.
  */
 export function digestOf(text: string): string {
   let h = 0x811c9dc5;
@@ -908,7 +911,7 @@ function polyPath(points: readonly number[]): string {
  * picture puts it at and the line as a whole is the same width. The letterform
  * is the studio's own cut alphabet (`glyphs.ts`), because this package cannot
  * lift outlines out of somebody's typeface and a file that named one would fail
- * criterion 19 at the last step.
+ * "outlines, never a font" at the last step.
  *
  * The glyph is centred in its advance and scaled to the cap height, then its
  * skeleton is offset by the face's stroke weight into a closed contour. Slanted
@@ -954,9 +957,9 @@ export function textOutlines(
  * WHAT GOES TO THE LASER.
  *
  * Three layers, and the file stops there. Money and machine control are not in
- * this engine (D5c): it produces geometry, it never drives hardware, and the
- * screen that shows it says so in one line — "This is a file, not a machine —
- * send it to your laser the way you always do."
+ * this engine: it produces geometry, it never drives hardware, and the screen
+ * that shows it says so in one line — "This is a file, not a machine — send it
+ * to your laser the way you always do."
  */
 export function toProductionPaths(p: Personalization, t: Template): ProductionFile {
   const piece = pieceFor(t.productKey);
@@ -1030,8 +1033,8 @@ export const LAYER_COLOUR: Readonly<Record<LayerId, string>> = {
  * The production file as SVG source.
  *
  * PATHS ONLY — no `<text>`, no `font-family`, no `@font-face`, nothing that
- * could resolve to a typeface on the machine that opens it (criterion 19). The
- * conformance suite reads these bytes back and greps them for all four.
+ * could resolve to a typeface on the machine that opens it. The conformance
+ * suite reads these bytes back and greps them for all four.
  */
 export function productionSvg(p: Personalization, t: Template): string {
   const file = toProductionPaths(p, t);

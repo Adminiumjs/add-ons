@@ -16,13 +16,12 @@
  * ── AND TWO CHECKS THAT ARE THIS ADD-ON'S OWN ──────────────────────────────
  *
  * FIRST, THE REFUSALS. Seven of these keys are the sentence a shop reads when a
- * number is not taken, and 25 D10 is a rule about whether a refusal can be
- * ACTED ON. A refusal that lost its second half in translation — "that number
- * is wrong", with the digit it expected trimmed off because the sentence read
- * long — would satisfy every other gate in this repository and would be
- * useless. Every refusal carries its placeholders in every language, and every
- * one is measured against how compactly its locale writes the rest of the
- * bundle.
+ * number is not taken, and a refusal is only worth anything if it can be ACTED
+ * ON. A refusal that lost its second half in translation — "that number is
+ * wrong", with the digit it expected trimmed off because the sentence read long
+ * — would satisfy every other gate in this repository and would be useless.
+ * Every refusal carries its placeholders in every language, and every one is
+ * measured against how compactly its locale writes the rest of the bundle.
  *
  * SECOND, THE THINGS THIS ADD-ON DOES NOT DO. Four keys say that no number is
  * handed out here, that nothing is looked up anywhere, that a sheet covers one
@@ -258,7 +257,7 @@ describe('the refusals and the limits survive translation whole', () => {
   });
 });
 
-describe('the vocabulary ban, over the source bundle (17 §2, 24 D12)', () => {
+describe('the vocabulary ban, over the source bundle', () => {
   it('finds no banned substring in any locale', () => {
     const offences: string[] = [];
     for (const tag of LOCALE_TAGS) {
@@ -328,7 +327,8 @@ describe('the vocabulary ban, over the source bundle (17 §2, 24 D12)', () => {
 });
 
 /**
- * THE ALLOWANCES THAT TRAVEL WITH THESE STRINGS (24 AC20/D21).
+ * THE ALLOWANCES THAT TRAVEL WITH THESE STRINGS, so the add-on runs unchanged
+ * in any host.
  *
  * Every add-on exports `NOT_A_QUANTITY` and every host reads it off whatever it
  * has vendored. This bundle declares exactly one, and the entry is checked

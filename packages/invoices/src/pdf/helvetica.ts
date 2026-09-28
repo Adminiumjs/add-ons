@@ -17,20 +17,19 @@
  * A base-14 font has no Arabic, no Han, no Cyrillic and no Greek. Embedding a
  * face that did would mean shipping a font file — megabytes, a licence to
  * honour, and a subsetter — inside an add-on whose whole claim is that it
- * fetches nothing and depends on nothing (25 D11). So this writer draws what
- * Helvetica draws and REFUSES the rest, typed, naming the glyphs
- * (`DocumentError.LATIN_ONLY`, 34 D6/O12). HTML has no such limit and renders
- * all eight locales; the refusal is the PDF writer's alone, and the
+ * fetches nothing and depends on nothing. So this writer draws what Helvetica
+ * draws and REFUSES the rest, typed, naming the glyphs
+ * (`DocumentError.LATIN_ONLY` — never a silent drop). HTML has no such limit
+ * and renders all eight locales; the refusal is the PDF writer's alone, and the
  * conformance suite asserts exactly that by rendering the same subject to HTML
  * and requiring it to succeed.
  *
  * The document languages this covers: English, German, French, Spanish,
- * Portuguese and Danish in WinAnsi, and — through the second, Central
- * European face below — Czech, Polish, Slovak, Slovenian, Croatian, Hungarian
- * and Romanian. The one it does not is Japanese, which the
- * surface makes a first-class document language (34 D49) — a `ja` document
- * gets HTML and a browser's own Save-as-PDF, and says so rather than
- * producing a page of blanks.
+ * Portuguese and Danish in WinAnsi, and — through the second, Central European
+ * face below — Czech, Polish, Slovak, Slovenian, Croatian, Hungarian and
+ * Romanian. The one it does not is Japanese, which the surface makes a
+ * first-class document language — a `ja` document gets HTML and a browser's own
+ * Save-as-PDF, and says so rather than producing a page of blanks.
  */
 
 /**
@@ -71,13 +70,12 @@ const HIGH_PUNCTUATION: Readonly<Record<string, number>> = {
 /**
  * THE ONE SUBSTITUTION TABLE, AND THE RULE THAT KEEPS IT FROM GROWING.
  *
- * A character goes in here ONLY when its replacement is the same character in
- * a different typographic form — same meaning, same reading, a different
- * shape. Nothing that is merely "close enough" is eligible, and there is no
- * catch-all: an unmapped character the encoding cannot draw is still `null`,
- * still refused, still named in `LATIN_ONLY` (34 D6). A table that started
- * accepting approximations would be a silent-drop mechanism wearing a
- * different name.
+ * A character goes in here ONLY when its replacement is the same character in a
+ * different typographic form — same meaning, same reading, a different shape.
+ * Nothing that is merely "close enough" is eligible, and there is no catch-all:
+ * an unmapped character the encoding cannot draw is still `null`, still
+ * refused, still named in `LATIN_ONLY`. A table that started accepting
+ * approximations would be a silent-drop mechanism wearing a different name.
  *
  * ── WHY IT EXISTS AT ALL ───────────────────────────────────────────────────
  *

@@ -2,12 +2,13 @@
  * The manifest says what this add-on is; this asserts that what it says is
  * what the code does.
  *
- * The rules 24 §5.3 names are checked against `@adminiumjs/manifest` itself in
- * `packages/host/src/manifest-schema.test.ts`, so nothing here restates a
- * schema. What IS here is the set of agreements a schema cannot see: that the
- * declared slots are the slots `register()` fills, that the entry points are
- * files the build writes, and that the three empty facts in `add-on-facts.ts`
- * are empty because the manifest says they should be.
+ * The manifest's `addOn` validation rules are checked against
+ * `@adminiumjs/manifest` itself in `packages/host/src/manifest-schema.test.ts`,
+ * so nothing here restates a schema. What IS here is the set of agreements a
+ * schema cannot see: that the declared slots are the slots `register()` fills,
+ * that the entry points are files the build writes, and that the three empty
+ * facts in `add-on-facts.ts` are empty because the manifest says they should
+ * be.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -36,7 +37,7 @@ describe('the manifest', () => {
      * The others attach to a host app by key because they extend one — a print
      * shop's dispatch, a maker's catalogue. This one serves any deployment
      * that has rows, including a stock Adminium with no host app at all, which
-     * is what `dashboard` was reserved as a host key for (34 O10/D23).
+     * is what `dashboard` was reserved as a host key for.
      */
     expect(manifest.addOn.attaches).toEqual([{ app: '*' }]);
   });
@@ -49,7 +50,7 @@ describe('the manifest', () => {
   });
 
   it('buys no slot the registry does not already carry', () => {
-    // 24 §5.4: the slot registry is closed, and this plan bought none (34 §4).
+    // The slot registry is closed, and this add-on added no slot to it.
     expect(manifest.addOn.slots.map((slot) => slot.slot).sort()).toEqual([
       'record.actions',
       'settings.add-on.panel',
@@ -64,7 +65,7 @@ describe('the manifest', () => {
     expect(filled).toEqual(declared);
   });
 
-  it('needs nothing to connect to, so it ships no demo transport (D11)', () => {
+  it('needs nothing to connect to, so it ships no demo transport', () => {
     // `demoTransport` exists so an add-on that WOULD make a third-party call
     // in a demo can make a stand-in one instead. Nothing here calls anything,
     // so a demo transport would be a module standing in for nothing.
@@ -73,7 +74,7 @@ describe('the manifest', () => {
     expect(register().connect).toBe('none');
   });
 
-  it('marks no setting secret, so there is nothing to keep out of a browser (D15)', () => {
+  it('marks no setting secret, so there is nothing to keep out of a browser', () => {
     const secrets = manifest.settings.filter(
       (setting) => (setting as { secret?: boolean }).secret === true,
     );
@@ -146,10 +147,10 @@ describe('the manifest', () => {
   });
 
   it('gives every setting a label AND the sentence under it', () => {
-    // `help` is the field that rides 34-T07's release with the contract
-    // (§4.2). Every variant of the settings schema is `.strict()`, so a
-    // manifest carrying `help` before that release is REFUSED rather than
-    // ignored — which is why this assertion is here rather than assumed.
+    // `help` is the field that rides the same manifest release as the contract.
+    // Every variant of the settings schema is `.strict()`, so a manifest
+    // carrying `help` before that release is REFUSED rather than ignored —
+    // which is why this assertion is here rather than assumed.
     for (const setting of manifest.settings) {
       expect(setting.label, setting.key).toBeDefined();
       expect((setting as { help?: unknown }).help, setting.key).toBeDefined();
@@ -203,10 +204,10 @@ describe('the manifest and the provider agree about what it draws', () => {
   });
 
   it('draws every kind in both formats, unlike the other implementer', () => {
-    // The disagreement 25 D4 was asking for. `barcode-labels` declares
-    // `['pdf']` and `coverage: 'ascii'`; this one declares both formats and
-    // `winansi`. Two implementations that agreed about everything would have
-    // proved nothing about the contract.
+    // The disagreement a contract's second implementer is there for.
+    // `barcode-labels` declares `['pdf']` and `coverage: 'ascii'`; this one
+    // declares both formats and `winansi`. Two implementations that agreed
+    // about everything would have proved nothing about the contract.
     for (const kind of kinds()) {
       expect([...kind.formats].sort(), kind.id).toEqual(['html', 'pdf']);
       expect(kind.coverage, kind.id).toBe('winansi');

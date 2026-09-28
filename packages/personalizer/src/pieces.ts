@@ -14,12 +14,12 @@
  * That is the seam a real install replaces: the host hands over a product
  * record, this table becomes a lookup, and nothing above it changes.
  *
- * THE COLOURS ARE THE MATERIAL'S, NEVER THE INTERFACE'S. Comp L's one critical
- * colour rule: everything drawn inside the preview uses the piece's own
- * colours, and the only tokens allowed near it are the guide colours — a dashed
- * `--info` outline for a zone being edited, a solid `--danger` outline for one
- * whose content does not fit, a `--pos` flash when a change lands. Nothing in
- * this file is an accent.
+ * THE COLOURS ARE THE MATERIAL'S, NEVER THE INTERFACE'S. The design comp's one
+ * critical colour rule: everything drawn inside the preview uses the piece's
+ * own colours, and the only tokens allowed near it are the guide colours — a
+ * dashed `--info` outline for a zone being edited, a solid `--danger` outline
+ * for one whose content does not fit, a `--pos` flash when a change lands.
+ * Nothing in this file is an accent.
  */
 
 export type MaterialId = 'walnut' | 'birch' | 'slate' | 'ceramic';

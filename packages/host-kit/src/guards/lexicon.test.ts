@@ -1,10 +1,11 @@
 /**
  * The vocabulary ban, driven — including the ruling that is new in this package.
  *
- * Three separate things are checked and they fail for different reasons:
- * the SCANNER (does it read a script's words rather than its code), the LIST
- * (does the ban bite where 17 §2's grep bites), and the SCOPING (does 31 D4's
- * split put the right offences on the right side).
+ * Three separate things are checked and they fail for different reasons: the
+ * SCANNER (does it read a script's words rather than its code), the LIST (does
+ * the ban bite where the release sweep's grep bites), and the SCOPING (does the
+ * split between host copy and add-on copy put the right offences on the right
+ * side).
  *
  * The last one is the reason this file is longer than the guard it drives. A
  * split that mis-attributes fails silently in the direction that matters: every
@@ -32,7 +33,7 @@ import { syntheticHost } from './synthetic-host.ts';
 const words = (text: string): string[] => bundleOffences(text).map((offence) => offence.word);
 
 describe('the list bites where the release grep bites', () => {
-  it('catches the two traps 24 D10 names, which no `\\b` version can', () => {
+  it('catches the two standing substring traps, which no `\\b` version can', () => {
     expect(words('a short explanation of the sizes')).toContain('plan');
     expect(words('the frontier of large format')).toContain('tier');
     // …and the anchored version is shown NOT to, which is why the ban is a
@@ -157,13 +158,13 @@ describe('the scanner reads a script’s words and not its code', () => {
   });
 });
 
-// ── 31 D4: whose copy is this gate about ────────────────────────────────────
+// ── the scoping: whose copy is this gate about ──────────────────────────────
 
 const bundle = (entries: Record<string, string>): LexiconScope => ({
   bundleFor: () => entries,
 });
 
-describe('the scoping ruling (31 D4)', () => {
+describe('the scoping ruling: host copy is debt, add-on copy fails', () => {
   const host = syntheticHost({ localeTags: ['en-US'] });
   const config = host.config;
   afterAll(() => host.dispose());

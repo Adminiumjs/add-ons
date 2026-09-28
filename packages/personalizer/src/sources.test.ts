@@ -6,8 +6,9 @@
  * and an absence is invisible in review. This suite greps this package's own
  * `src/` for each of them, so the claim is checked rather than remembered.
  *
- * `built-output.test.ts` does the same over `dist/`, because criterion 16 asks
- * for the BUNDLE and a source check cannot see what a dependency dragged in.
+ * `built-output.test.ts` does the same over `dist/`, because the no-3D rule
+ * asks for the BUNDLE and a source check cannot see what a dependency dragged
+ * in.
  */
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -73,14 +74,14 @@ const codeOf = (file: string) =>
  */
 const INERT: readonly InertOrigin[] = INERT_ORIGINS;
 
-describe('the add-on calls nothing and reads no clock (24 D11, D5c)', () => {
+describe('the add-on calls nothing and reads no clock', () => {
   /*
-   * D11 AS A RULE, NOT A WORD LIST. This was a grep for five spellings until a
-   * verifier put `new Image(); img.src = "https://…"` into a sibling package
-   * and every gate in three repos stayed green. See `egress.ts` in
-   * `@adminium/add-on-host/testing`: an ADDRESS nobody declared inert, an API
-   * whose only purpose is to issue a request, and — in the hosts, which have a
-   * page to render — the VALUE handed to every URL sink at run time.
+   * NO REAL CALL, AS A RULE, NOT A WORD LIST. This was a grep for five
+   * spellings until a verifier put `new Image(); img.src = "https://…"` into a
+   * sibling package and every gate in three repos stayed green. See `egress.ts`
+   * in `@adminium/add-on-host/testing`: an ADDRESS nobody declared inert, an
+   * API whose only purpose is to issue a request, and — in the hosts, which
+   * have a page to render — the VALUE handed to every URL sink at run time.
    */
   it('names no address outside the ones declared inert', () => {
     const offenders = [...SHIPPABLE, ...STYLES].flatMap((file) =>
@@ -98,9 +99,9 @@ describe('the add-on calls nothing and reads no clock (24 D11, D5c)', () => {
   });
 
   /**
-   * THE ONE THAT MAKES CRITERION 17 POSSIBLE. A clock or a dice roll anywhere
-   * in the engine and the picture stops being a function of its values, which
-   * is the whole determinism claim.
+   * THE ONE THAT MAKES ONE PICTURE ON EVERY SURFACE POSSIBLE. A clock or a dice
+   * roll anywhere in the engine and the picture stops being a function of its
+   * values, which is the whole determinism claim.
    */
   it('reads no clock and rolls no dice', () => {
     /*
@@ -110,8 +111,8 @@ describe('the add-on calls nothing and reads no clock (24 D11, D5c)', () => {
      *
      *     export const zzSeed = crypto.getRandomValues(new Uint8Array(4))[0];
      *
-     * to `template.ts` — the engine this criterion rests on — left this package
-     * at 157 of 157 green and compiled the die into both bundles. See
+     * to `template.ts` — the engine that one picture rests on — left this
+     * package at 157 of 157 green and compiled the die into both bundles. See
      * `host/src/shared-rule.test.ts` for the guard that now fails if this line
      * turns back into a regex.
      */
@@ -142,7 +143,7 @@ describe('the add-on calls nothing and reads no clock (24 D11, D5c)', () => {
     expect(offenders.map(relative)).toEqual([]);
   });
 
-  it('imports nothing at runtime the host does not already have (D7)', () => {
+  it('imports nothing at runtime the host does not already have', () => {
     const allowed = /^(react|react-dom|react\/jsx-runtime|lucide-react|@adminium\/add-on-host(\/contracts)?)$/;
     const offenders: string[] = [];
     for (const file of SHIPPABLE) {
@@ -161,12 +162,13 @@ describe('the add-on calls nothing and reads no clock (24 D11, D5c)', () => {
 });
 
 /**
- * D5c, as a grep. The whole reason the metric table is committed is that comp
- * L measured text with a canvas and a canvas measures differently on different
- * machines. A `getContext("2d")` reappearing anywhere in this package would put
- * that back without anybody noticing, because it would still LOOK right.
+ * THE COMMITTED METRIC TABLE, as a grep. The whole reason it is committed is
+ * that the design comp measured text with a canvas and a canvas measures
+ * differently on different machines. A `getContext("2d")` reappearing anywhere
+ * in this package would put that back without anybody noticing, because it
+ * would still LOOK right.
  */
-describe('the engine measures from the table, never from the DOM (D5c)', () => {
+describe('the engine measures from the table, never from the DOM', () => {
   it('creates no canvas and measures no text with one', () => {
     const offenders = SHIPPABLE.filter((file) =>
       /getContext\s*\(|measureText\s*\(|new OffscreenCanvas|document\.fonts/.test(codeOf(file)),
@@ -180,7 +182,8 @@ describe('the engine measures from the table, never from the DOM (D5c)', () => {
   /**
    * The engine proper touches no DOM at all. The UI does — it is React — so
    * this is aimed at the four modules that must stay pure, by name, because
-   * that is what makes them testable headlessly and what D9 asks for.
+   * that is what makes them testable headlessly, and every engine ships with
+   * its own suite.
    */
   it('keeps the engine modules free of the document entirely', () => {
     const ENGINE = ['template.ts', 'faces.ts', 'glyphs.ts', 'pieces.ts', 'seed.ts', 'store.ts'];
@@ -193,11 +196,11 @@ describe('the engine measures from the table, never from the DOM (D5c)', () => {
 });
 
 /**
- * D18: the preview is a 2D composite and stays one. This is criterion 16's
- * source half — the bundle half is in `built-output.test.ts`, because a
- * dependency could drag any of these in without a line of ours mentioning it.
+ * The preview is a 2D composite and stays one. This is the source half of that
+ * rule — the bundle half is in `built-output.test.ts`, because a dependency
+ * could drag any of these in without a line of ours mentioning it.
  */
-describe('the preview is 2D and stays 2D (24 D18, AC16)', () => {
+describe('the preview is 2D and stays 2D', () => {
   it('has no WebGL context, no mesh, no model format anywhere', () => {
     const FORBIDDEN = /webgl|WebGLRenderingContext|from\s*['"]three|\bgltf\b|\.stl\b|BufferGeometry|THREE\./i;
     const offenders = SHIPPABLE.filter((file) => FORBIDDEN.test(codeOf(file)));
@@ -247,7 +250,7 @@ describe('the stylesheet is direction-agnostic', () => {
   });
 });
 
-describe('D10c — it names no other online marketplace, in code or comment', () => {
+describe('it names no other online marketplace, in code or comment', () => {
   it('mentions none, anywhere in the package', () => {
     const MARKETPLACES = /\betsy\b|\bshopify\b|\bebay\b|notonthehighstreet|\bfolksy\b/i;
     // The SUITES name them — that is what a grep for them looks like — so the

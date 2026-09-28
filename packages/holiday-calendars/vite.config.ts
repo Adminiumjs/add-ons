@@ -3,7 +3,7 @@ import type { PluginOption } from "vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
-/** The host-runtime shims this add-on's React imports are aliased to (26-T13). */
+/** The host-runtime shims this add-on's React imports are aliased to. */
 const HOST_RUNTIME_REACT = fileURLToPath(
   new URL("../host/src/runtime/react.ts", import.meta.url),
 );
@@ -26,10 +26,9 @@ const HOST_RUNTIME_JSX = fileURLToPath(
  *   IT HAS NO EGRESS. No `network.allow`, no `outbound-http` capability, and no
  *   third party to reach — the day-sets are DATA compiled into this bundle.
  *
- *   SO IT HAS NO DEMO TRANSPORT EITHER. `demoTransport` exists because 24 D11
- *   forbids a real third-party call in a demo, and an add-on that would
- *   otherwise make one needs a stand-in that does not. There is no call here to
- *   stand in for. Shipping an empty server module so the manifest could carry
+ *   SO IT HAS NO DEMO TRANSPORT EITHER. `demoTransport` exists because no demo
+ *   may make a real third-party call, and an add-on that would otherwise make
+ *   one needs a stand-in that does not. There is no call here to stand in for. Shipping an empty server module so the manifest could carry
  *   the field would be a module that exists to satisfy a schema, and the schema
  *   makes both fields optional precisely so it does not have to.
  *
@@ -47,8 +46,8 @@ export const OUTPUT = {
 } as const;
 
 /**
- * The runtime dependencies the host already has (24 D7), matched by PREFIX
- * rather than by exact name.
+ * The runtime dependencies the host already has — the only ones an add-on may
+ * take — matched by PREFIX rather than by exact name.
  *
  * `lucide-react` is on the list even though this add-on imports no icon: the
  * externals list says what a bundle may not INLINE, and a list that shrinks to
@@ -60,7 +59,8 @@ export const OUTPUT = {
 const EXTERNAL: never[] = [];
 
 /**
- * The React aliases, applied to the BUILD ONLY (26-T13).
+ * The React aliases, applied to the BUILD ONLY: the host's connected mode
+ * hands the bundle its React.
  *
  * A top-level `resolve.alias` would apply to vitest as well, because vitest
  * reads this same config — and then the add-on's own source would resolve
@@ -95,7 +95,7 @@ function hostRuntimeAlias(): PluginOption {
 
 
 /**
- * An add-on's client half builds to a SINGLE ESM bundle (24 D7).
+ * An add-on's client half builds to a SINGLE ESM bundle.
  *
  * React is external because the host already has it: an add-on that shipped its
  * own would put two copies of the reconciler in one page, and hooks called

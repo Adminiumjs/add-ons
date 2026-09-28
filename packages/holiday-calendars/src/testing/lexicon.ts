@@ -2,9 +2,9 @@
  * The release sweep's word list, in one executable place.
  *
  * THE GUARD HAS TO BE THE RELEASE GREP, NOT A POLITER VERSION OF IT. The sweep
- * (17 §2) reads BUILT OUTPUT case-insensitively for
- * `pricing|plan|tier|billing|upgrade|/mo|free` as SUBSTRINGS, and 24 D12 adds
- * `premium` and `pro` for add-ons. A `\b` anchor around any of them would make
+ * reads BUILT OUTPUT case-insensitively for
+ * `pricing|plan|tier|billing|upgrade|/mo|free` as SUBSTRINGS, and the add-on
+ * brand rule adds `premium` and `pro` (no add-on is ever graded). A `\b` anchor around any of them would make
  * this strictly weaker than the thing it claims to enforce: "freephone",
  * "explanation" and "frontier" all pass a word boundary and all fail the
  * release. Substrings here, no anchors.

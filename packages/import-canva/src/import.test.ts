@@ -253,14 +253,14 @@ describe("pages against printed sides", () => {
 /**
  * THE PATH A VISITOR ACTUALLY WALKS, asserted end to end.
  *
- * AC4 claims "the Canva no-bleed path shows +10.9% and ≈1.6mm trimmed". Every
- * assertion above proves the engine can produce those figures; none of them
- * proved the DEMO reaches them, and for a while it did not. The Print Shop
- * defaults business cards to two printed sides, the seeded design carried one
- * page, and `check.pagesShort` failed first — which correctly suppresses the
- * scale remedy, because scaling cannot add a back to a card. The screen a
- * visitor saw offered only "fix it and import again", and the wave's headline
- * number appeared nowhere.
+ * The add-on's own claim is "the Canva no-bleed path shows +10.9% and ≈1.6mm
+ * trimmed". Every assertion above proves the engine can produce those figures;
+ * none of them proved the DEMO reaches them, and for a while it did not. The
+ * Print Shop defaults business cards to two printed sides, the seeded design
+ * carried one page, and `check.pagesShort` failed first — which correctly
+ * suppresses the scale remedy, because scaling cannot add a back to a card.
+ * The screen a visitor saw offered only "fix it and import again", and the
+ * wave's headline number appeared nowhere.
  *
  * So this block reads the SEEDED design out of the shipped fixture rather than
  * retyping it, and runs it against the host's default configuration. If anyone

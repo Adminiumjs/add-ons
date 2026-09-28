@@ -1,5 +1,5 @@
 /**
- * The invoice arithmetic law (34-invoices-add-on.md D20 as amended by O25):
+ * The invoice arithmetic law:
  *
  *   a line rounds once           lineMinor  = round(qty × rate, in minor units)
  *   a document discount applies  discount   = round(subtotal × discountRate)
@@ -8,19 +8,19 @@
  *   subtotal                     total      = taxBase + tax
  *
  * and a tax-breakdown component is computed on the SAME base as the ladder
- * (the comp computed it on the undiscounted subtotal, 1709 — the second base
- * O25 corrected).
+ * (the comp computed it on the undiscounted subtotal, 1709 — a second base,
+ * corrected here).
  *
  * INTEGERS ONLY. Money is integer minor units, a rate is basis points, and
  * every product is divided with one half-away-from-zero rounding, so the same
  * subject gives the same cents on every runtime. `money-fixture.json` beside
- * this file is the table three trees assert (34-T54): this one, the server's
- * summary and, once it ships, the add-on's renderer — `scripts/check-invoice-
+ * this file is the table three trees assert: this one, the server's summary
+ * and, once it ships, the add-on's renderer — `scripts/check-invoice-
  * money-fixture.mjs` keeps the copies byte-equal.
  *
  * "Total", not the comp's "Total due" (452): recorded payments never reduce
  * it (1712) — there is no balance model, so "due" would be a claim the
- * document cannot support (O25).
+ * document cannot support.
  *
  * THIS FILE IS THE THIRD COPY, and the fixture is what makes three copies
  * safe rather than three chances to drift.
@@ -36,11 +36,11 @@
  * A change lands in all three files or in none.
  *
  * WHY A RENDERER RECOMPUTES A TOTAL IT COULD HAVE BEEN TOLD. Because the
- * document has to be re-derivable from the subject alone: 25 D12 requires the
- * same subject to render to the same bytes, a stored total would be a second
- * source of truth for a number printed beside the lines it comes from, and a
- * document whose printed subtotal does not equal its own lines is worse than
- * one that is arithmetically wrong in a way somebody can follow.
+ * document has to be re-derivable from the subject alone: the contract requires
+ * the same subject to render to the same bytes, a stored total would be a
+ * second source of truth for a number printed beside the lines it comes from,
+ * and a document whose printed subtotal does not equal its own lines is worse
+ * than one that is arithmetically wrong in a way somebody can follow.
  */
 import type { InvoiceBody, LineItem, TaxLine } from './document.ts';
 
@@ -117,7 +117,7 @@ export function totalsOf(body: Pick<InvoiceBody, 'items' | 'taxRate' | 'discount
   return { lines, subtotal, discount, taxBase, tax, total: taxBase + tax };
 }
 
-/** Each component on the ladder's own base (O25). */
+/** Each component on the ladder's own base. */
 export function taxBreakdown(taxBase: number, lines: readonly TaxLine[]): { label: string; rate: string; amount: number }[] {
   return lines.map((line) => ({ label: line.label, rate: line.rate, amount: percentOf(taxBase, line.rate) }));
 }

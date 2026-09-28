@@ -1,24 +1,25 @@
 /**
- * THE SHOPPER'S SURFACE — what replaces the plain note field (24 D19).
+ * THE SHOPPER'S SURFACE — what replaces the plain note field.
  *
- * Comp L's screen 2, and the whole reason the add-on exists: a preview that
- * redraws on every keystroke with no "apply" button, one input group per area
- * the maker drew, and — the part that is hardest and matters most — CONSTRAINT
- * FEEDBACK THAT IS SPECIFIC. A red border alone is not feedback. When a line
- * overruns, the area outlines in `--danger`, a sentence beneath says exactly
- * what is wrong with a number in it, and BOTH ways out are buttons that carry
- * their own numbers: set it at N millimetres, or shorten it to N characters.
+ * The design's shopper screen, and the whole reason the add-on exists: a
+ * preview that redraws on every keystroke with no "apply" button, one input
+ * group per area the maker drew, and — the part that is hardest and matters
+ * most — CONSTRAINT FEEDBACK THAT IS SPECIFIC. A red border alone is not
+ * feedback. When a line overruns, the area outlines in `--danger`, a sentence
+ * beneath says exactly what is wrong with a number in it, and BOTH ways out are
+ * buttons that carry their own numbers: set it at N millimetres, or shorten it
+ * to N characters.
  *
  * Those numbers come from the engine (`fit` in `template.ts`), never from this
  * file, and a verdict cannot reach here without them — the contract's failing
  * branch requires `remedies` and the conformance suite asserts one is a number.
- * That is criterion 18 turned into two buttons.
+ * That is "every failing verdict carries a number" turned into two buttons.
  *
- * THREE RULES OF ITS OWN, from comp L, and each is one line of CSS or one line
- * here rather than a paragraph: it updates on every keystroke; the redraw never
- * moves the page or resizes the canvas (`contain: layout paint`, a fixed
- * canvas box); and on a narrow viewport the picture pins to the top while the
- * inputs scroll under it.
+ * THREE RULES OF ITS OWN, from the design comp, and each is one line of CSS or
+ * one line here rather than a paragraph: it updates on every keystroke; the
+ * redraw never moves the page or resizes the canvas (`contain: layout paint`, a
+ * fixed canvas box); and on a narrow viewport the picture pins to the top while
+ * the inputs scroll under it.
  */
 
 import { useId, useState } from 'react';
@@ -46,7 +47,7 @@ import { Help } from './Help.tsx';
  * WHAT ONE REMEDY SAYS ON ITS BUTTON — every kind, in one place.
  *
  * The value is always IN the words: a size, a character count, or the two marks
- * a swap trades. Criterion 18 is not "there is a button", it is "the shopper is
+ * a swap trades. The rule is not "there is a button", it is "the shopper is
  * told the number", and a label built anywhere but from the remedy itself is a
  * label that can drift from the action beneath it.
  */
@@ -406,11 +407,12 @@ export function Personalize({
         <Note tone="info">{blockSentence(t, blocks[0]!, template)}</Note>
       )}
       {/*
-       * NOTHING TYPED IS AN ANSWER, and saying so is the other half of the D19
-       * repair in `check`. The panel opened with "Fill in Top line first." in
-       * `--danger` under a disabled button, which told a shopper who wanted a
-       * plain coaster that they had done something wrong. They had not; they
-       * had finished. So the untouched state says what will happen and how to
+       * NOTHING TYPED IS AN ANSWER, and saying so is the other half of the
+       * repair in `check` that stopped an untouched panel refusing a plain
+       * piece. The panel opened with "Fill in Top line first." in `--danger`
+       * under a disabled button, which told a shopper who wanted a plain
+       * coaster that they had done something wrong. They had not; they had
+       * finished. So the untouched state says what will happen and how to
        * change it, in the ordinary voice, and the refusal is kept for the case
        * that is really half-finished.
        */}

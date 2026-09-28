@@ -2,9 +2,8 @@
 /**
  * @vitest-environment happy-dom
  *
- * The New modal (O20): the grid is Blank + the twelve starters, plus
- * *Your templates* on the invoices tab; a pick creates through the API and
- * hands the reply up.
+ * The New modal: the grid is Blank + the twelve starters, plus *Your templates*
+ * on the invoices tab; a pick creates through the API and hands the reply up.
  */
 import { render, screen, waitFor, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
@@ -17,7 +16,7 @@ import type { InvoiceDetail, InvoiceDocumentKind, InvoiceStarterCard, InvoiceSum
 import { emptyBody } from '../model/envelope.js';
 import { NewDocumentModal } from './NewDocumentModal.js';
 
-/** The comp's `starterDefs()` keys (1117-1130; Appendix G). */
+/** The comp's `starterDefs()` keys (1117-1130). */
 const STARTERS: readonly [string, string, string][] = [
   ['standard', 'Standard invoice', 'business'],
   ['receipt', 'Payment receipt', 'payments'],

@@ -9,8 +9,8 @@
  * per-record data — which blocks, in what order, with which of the eighteen
  * optional ones switched on — and none of that is expressible as a slot list.
  * That half arrives through `RenderInput.body`, which the contract leaves
- * opaque for exactly this reason (34 O28(a2) → D54), and `document.ts` is
- * where this provider decodes it.
+ * opaque for exactly this reason, and `document.ts` is where this provider
+ * decodes it.
  *
  * So: `body` says how the page is arranged, `subject` says what goes in the
  * bound values, and a document may have either, or both. A purely mapped
@@ -21,21 +21,21 @@
  *
  * The surface offers twelve starters over eight titles, four of which
  * (PROFORMA, ESTIMATE, DEPOSIT, COMMERCIAL INVOICE) no kind covers. A starter
- * is a TEMPLATE PRESET, not a kind (34 O28(b) → D54): as a preset it costs
- * nothing, and as a kind each would have cost another `describe()` outline
- * with eight-locale labels on every slot. `kinds()` is five because five is
- * the number of distinct MAPPING shapes — money owed, money received, money
- * returned, money offered (a quote), and one client's account over a period
- * (a statement, which is not one row but a read of many).
+ * is a TEMPLATE PRESET, not a kind: as a preset it costs nothing, and as a kind
+ * each would have cost another `describe()` outline with eight-locale labels on
+ * every slot. `kinds()` is five because five is the number of distinct MAPPING
+ * shapes — money owed, money received, money returned, money offered (a quote),
+ * and one client's account over a period (a statement, which is not one row but
+ * a read of many).
  *
  * ── WHY THE LABELS ARE HERE AND NOT IN `i18n/strings.ts` ───────────────────
  *
  * `i18n/strings.ts` is this add-on's UI copy, read through the host's `t()`
  * inside this add-on's own bundle. These are read by ADMINIUM, in Studio's
  * profile editor, where this bundle is not loaded and that `t()` does not
- * exist. The contract's answer is that a provider carries its own strings
- * (34 D14), so they live beside the provider — and every record must carry all
- * eight, because a hole is a raw slot id on somebody's screen.
+ * exist. The contract's answer is that a provider carries its own strings, so
+ * they live beside the provider — and every record must carry all eight,
+ * because a hole is a raw slot id on somebody's screen.
  */
 
 import type {
@@ -49,10 +49,10 @@ import type {
  * ── A NOTE FOR TRANSLATORS, AND IT IS NOT OPTIONAL ─────────────────────────
  *
  * The release sweep reads BUILT BYTES case-insensitively for a short list of
- * commercial words as SUBSTRINGS (17 §2, 24 D12) — the list lives in
- * `testing/lexicon.ts`, executable rather than quoted, so there is one copy of
- * it. An innocent word with an unlucky spelling still trips it, and THIS
- * BUNDLE HAS A PARTICULARLY BAD CASE, worth knowing before editing a line:
+ * commercial words as SUBSTRINGS — the list lives in `testing/lexicon.ts`,
+ * executable rather than quoted, so there is one copy of it. An innocent word
+ * with an unlucky spelling still trips it, and THIS BUNDLE HAS A PARTICULARLY
+ * BAD CASE, worth knowing before editing a line:
  *
  *   · the ordinary word for "percent" carries a banned run in German, Czech
  *     and Danish, so those three say `Satz`, `sazba` and `sats` — the word for
@@ -514,8 +514,9 @@ const TAX_RATE: OutlineSlot = {
     'ar-EG': 'نسبة الضريبة',
   },
   help: {
-    // NO `default: 'setting'` — D20. A rate that came from a workspace setting
-    // would change every already-issued document the day somebody edited it.
+    // NO `default: 'setting'`, on purpose. A rate that came from a workspace
+    // setting would change every already-issued document the day somebody
+    // edited it.
     'en-US': 'Map a column, or type one rate for every document this mapping makes.',
     'de-DE': 'Eine Spalte zuordnen oder einen Satz für alle Belege dieser Zuordnung eintragen.',
     'fr-FR': 'Associer une colonne, ou saisir un taux unique pour tous les documents créés ici.',
@@ -1564,8 +1565,8 @@ const OUTLINES: Readonly<Record<string, DocumentOutline>> = {
    * `paidWith` and `tip` are drawn nowhere in `Invoice Builder.dc.html`, and
    * that is not an oversight on either side: the comp is the INVOICE authoring
    * surface, and a receipt is what a till prints after money has changed hands
-   * (34 §6.1 — the point-of-sale mount is the owner's own example). They have a
-   * caller in 34f and none in the comp.
+   * (the point-of-sale mount is the example this add-on was built for). They
+   * have a caller in the host apps and none in the comp.
    *
    * The receipt of ONE PAYMENT — a shape's payments row — maps `amount`, the
    * invoice it pays and the balance left, and `paidWith` to its method.

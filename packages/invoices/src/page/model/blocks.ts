@@ -99,7 +99,7 @@ export const BLOCK_GATE: Readonly<Record<BuiltinBlockKey, OptionalFlag | null>> 
 
 /**
  * The inspector's section keys (comp `sec` 1489 + `images` 1657 + `cus:` 1509).
- * `customer` is the comp's `billto` (34 Appendix D.2: the word is retired
+ * `customer` is the comp's `billto` (the banned-word lexicon retires the word
  * from keys as well as labels).
  */
 export type FixedSectionKey =

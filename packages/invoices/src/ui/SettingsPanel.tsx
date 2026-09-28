@@ -13,7 +13,7 @@
  * (a number already given must never be given again), a rate from 0 to 100,
  * and ladders of three rising days.
  *
- * ── THE SAMPLE IS A SIMULATED RESULT AND IT SAYS SO (24 D11) ───────────────
+ * ── THE SAMPLE IS A SIMULATED RESULT AND IT SAYS SO ────────────────────────
  *
  * Everything drawn under "What a document looks like" comes from figures
  * invented in this file. That is genuinely useful — somebody setting a

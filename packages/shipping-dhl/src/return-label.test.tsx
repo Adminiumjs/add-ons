@@ -1,5 +1,5 @@
 /**
- * THE INBOUND HALF, RENDERED AND REFUSED (31 O4).
+ * THE INBOUND HALF, RENDERED AND REFUSED.
  *
  * Four properties are load-bearing here, and each one is the executable form of
  * a sentence in `ui/ReturnLabel.tsx`'s header:
@@ -119,7 +119,7 @@ describe("a shop that has not set a returns address", () => {
     expect(markup).toContain(EN["addon.shipping-dhl.returns.notSetUp"]);
     expect(markup).not.toContain(EN["addon.shipping-dhl.rates.get"]);
     // The disclosure still ships: the monogram names the company, so the
-    // not-affiliated line belongs on THIS card too (24 AC6).
+    // not-affiliated line belongs on THIS card too.
     expect(markup).toContain(EN["addon.shipping-dhl.notAffiliated"]);
   });
 });

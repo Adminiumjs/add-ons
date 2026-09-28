@@ -1,13 +1,14 @@
 /**
- * D16 HAS TWO HEADINGS, AND EVERY SENTENCE HAS TO BE UNDER THE RIGHT ONE.
+ * THE DISCONNECT RULE HAS TWO HEADINGS, AND EVERY SENTENCE HAS TO BE UNDER THE
+ * RIGHT ONE.
  *
  * ── THE DEFECT ──────────────────────────────────────────────────────────────
  *
  * Both hosts render the disconnect confirm the same way: an eyebrow reading
  * "What goes", the add-on's `disconnect.goes` under it, an eyebrow reading
  * "What stays", the add-on's `disconnect.stays` under that. The rule the two
- * headings exist to teach is D16 — a disconnect DELETES THE CREDENTIALS and
- * KEEPS THE DATA — and it is the only thing a shop needs from that card.
+ * headings exist to teach is that a disconnect DELETES THE CREDENTIALS and
+ * KEEPS THE DATA, and it is the only thing a shop needs from that card.
  *
  * The carrier's `stays` read:
  *
@@ -17,9 +18,10 @@
  * A deletion, printed under the heading that promises survival, in all eight
  * locales. Canva Import had the identical shape: "Designs already brought onto
  * orders are kept. The authorization is revoked and the token deleted." Each
- * card stated both halves of D16 and assigned them to the wrong sides, which
- * teaches a reader precisely nothing — and worse than nothing, since the one
- * fear the card exists to answer is "will disconnecting take my work with it".
+ * card stated both halves of the rule and assigned them to the wrong sides,
+ * which teaches a reader precisely nothing — and worse than nothing, since the
+ * one fear the card exists to answer is "will disconnecting take my work with
+ * it".
  *
  * Nothing caught it because every gate in this repo reads a locale bundle as
  * text: the words were present, translated, at parity, and free of every banned
@@ -36,11 +38,11 @@
  *   erased on that side is the defect, whatever else the sentence says.
  *
  *   A CREDENTIALLED ADD-ON SAYS THE CREDENTIAL GOES, under "What goes". Half of
- *   D16 is a promise the shop is owed: an add-on it handed an account to has to
- *   state, before it presses the button, that the account details do not
- *   survive. `connect.kind` in `manifest.json` is what decides whether the add-on
- *   holds one, so the manifest is what this reads — not a list kept here, which
- *   would be one more mirror to drift.
+ *   the rule is a promise the shop is owed: an add-on it handed an account to
+ *   has to state, before it presses the button, that the account details do not
+ *   survive. `connect.kind` in `manifest.json` is what decides whether the
+ *   add-on holds one, so the manifest is what this reads — not a list kept
+ *   here, which would be one more mirror to drift.
  *
  * ── THE WORD LISTS ARE PER LANGUAGE AND DELIBERATELY NARROW ─────────────────
  *
@@ -48,7 +50,7 @@
  * and "customers will no longer see it" are surfaces going away, which is what
  * `goes` is for and what `stays` may legitimately contrast against; a sentence
  * is only an offence here if it says something was DELETED. That keeps the
- * check to the one distinction D16 draws, and keeps it from turning into a
+ * check to the one distinction the rule draws, and keeps it from turning into a
  * general ban on gloomy words that a translator would have to fight.
  */
 
@@ -160,7 +162,7 @@ function destroyers(locale: string): readonly RegExp[] {
   return own === undefined ? [english] : [english, own.pattern];
 }
 
-describe('a disconnect card puts each half of D16 on its own side', () => {
+describe('a disconnect card puts each half of the disconnect rule on its own side', () => {
   it('found every add-on’s two sentences to check', () => {
     expect(ADD_ONS.length, 'no add-on bundles were read at all').toBeGreaterThan(3);
     for (const addOn of ADD_ONS) {

@@ -80,8 +80,8 @@ function textZone(
       front: pct,
       // A skew on the angled views is what makes the words sit ON the surface
       // rather than float over it. It is a rotation of a couple of degrees plus
-      // the group's own shear — 24 D18, in one number, and nothing three-
-      // dimensional anywhere near it.
+      // the group's own shear — the 2D composite, in one number, and nothing
+      // three-dimensional anywhere near it.
       three: { ...pct, skewDeg: -3 },
       top: { ...pct, skewDeg: 0 },
       detail: pct,
@@ -93,9 +93,9 @@ const COASTER = { widthMm: 95, heightMm: 95 };
 const SIGN = { widthMm: 250, heightMm: 120 };
 
 /**
- * The walnut coasters — two areas, which is what comp L designs the shopper's
- * surface around: a top line of up to twenty-four characters and a date of up
- * to twelve.
+ * The walnut coasters — two areas, which is what the design comp builds the
+ * shopper's surface around: a top line of up to twenty-four characters and a
+ * date of up to twelve.
  */
 export const COASTER_TEMPLATE: Template = {
   productKey: 'walnut-coasters',

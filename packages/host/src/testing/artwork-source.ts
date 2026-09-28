@@ -3,7 +3,7 @@
  * `@adminium/add-on-contracts/testing`
  * (`packages/add-on-contracts/src/testing/index.ts`).
  *
- * THE SUITE IS PART OF THE CONTRACT, NOT A COURTESY (24 §5.5, D9). An
+ * THE SUITE IS PART OF THE CONTRACT, NOT A COURTESY. An
  * implementation that has not run it has claimed to implement the contract
  * without checking, and the whole point of `artwork-source@1` is that two
  * add-ons sharing no code can fill one slot. That claim rests on this file

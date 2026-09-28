@@ -4,7 +4,10 @@ import type { PluginOption } from "vite";
 import { build, type Plugin } from "vite";
 import { defineConfig } from "vitest/config";
 
-/** The host-runtime shims this add-on's React imports are aliased to (26-T13). */
+/**
+ * The host-runtime shims this add-on's React imports are aliased to, so the
+ * built bundle runs on the React of whichever host loads it.
+ */
 const HOST_RUNTIME_REACT = fileURLToPath(
   new URL("../host/src/runtime/react.ts", import.meta.url),
 );
@@ -31,8 +34,8 @@ export const OUTPUT = {
 } as const;
 
 /**
- * The three runtime dependencies the host already has (24 D7), matched by
- * PREFIX rather than by exact name.
+ * The three runtime dependencies the host already has — the only ones an
+ * add-on may take — matched by PREFIX rather than by exact name.
  *
  * `react/jsx-runtime` used to be listed and `react/jsx-dev-runtime` was not, so
  * any build that resolved the development runtime — anything with `NODE_ENV`
@@ -46,10 +49,10 @@ const EXTERNAL: never[] = [];
 /**
  * Build the server half after the client half, in the same `vite build`.
  *
- * TWO BUILDS RATHER THAN TWO LIB ENTRIES, and the reason is D7: two entries in
- * one Rollup run share their common modules through a generated chunk, so the
- * client would stop being a single self-contained ESM bundle and would start
- * importing a sibling file the manifest does not name. Two runs give two
+ * TWO BUILDS RATHER THAN TWO LIB ENTRIES, and the reason is the single-bundle
+ * rule: two entries in one Rollup run share their common modules through a
+ * generated chunk, so the client would stop being a single self-contained ESM
+ * bundle and would start importing a sibling file the manifest does not name. Two runs give two
  * standalone files. `configFile: false` keeps this plugin out of the inner
  * build, so there is no recursion to guard against.
  */
@@ -81,7 +84,7 @@ function serverHalf(): Plugin {
 }
 
 /**
- * The React aliases, applied to the BUILD ONLY (26-T13).
+ * The React aliases, applied to the BUILD ONLY.
  *
  * A top-level `resolve.alias` would apply to vitest as well, because vitest
  * reads this same config — and then the add-on's own source would resolve
@@ -116,7 +119,7 @@ function hostRuntimeAlias(): PluginOption {
 
 
 /**
- * An add-on's client half builds to a SINGLE ESM bundle (24 D7).
+ * An add-on's client half builds to a SINGLE ESM bundle.
  *
  * React, react-dom and lucide-react are external because the host already has
  * them: an add-on that ships its own React would put two copies of the

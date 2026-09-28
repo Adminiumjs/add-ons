@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 /**
- * The generic "rows + Add + per-row remove" shape (34 Appendix E §I3) the
- * comp draws for attachments 903, currencies 946, discount codes 965, tax
- * components 974, payments 984 and delivery steps 1027. The panel owns each
- * row's markup (`renderRow`) and the per-repeater seed (`onAdd`); this owns
- * the list, the remove buttons and the dashed *Add …* row.
+ * The generic "rows + Add + per-row remove" shape the comp draws for
+ * attachments 903, currencies 946, discount codes 965, tax components 974,
+ * payments 984 and delivery steps 1027. The panel owns each row's markup
+ * (`renderRow`) and the per-repeater seed (`onAdd`); this owns the list, the
+ * remove buttons and the dashed *Add …* row.
  */
 import { Plus } from 'lucide-react';
 import type { ReactNode } from 'react';

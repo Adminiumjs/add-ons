@@ -1,5 +1,6 @@
 /**
- * The vocabulary ban (17 §2, extended for add-ons by 24 D12), in one place.
+ * The vocabulary ban (the release sweep's words, extended for add-ons with the
+ * tiering words), in one place.
  *
  * It used to live only in `i18n/strings.test.ts`, where it checked the SOURCE
  * bundle. That is half the job: the release sweep greps BUILT output, and a
@@ -23,8 +24,8 @@
  * were glued to punctuation, and the sweep would not. The answer is to keep the
  * substring run and to forgive, ONE EXACT TOKEN AT A TIME, the whole words that
  * happen to contain it — each with a sentence naming the language and what the
- * word actually means (24 D10). A word not on that list is a failure, and a
- * reviewer can read the list in under a minute.
+ * word actually means. A word not on that list is a failure, and a reviewer can
+ * read the list in under a minute.
  *
  * `TIERING_WORDS` is per-locale, because the ban is on the tiering IDEA and the
  * idea is spelt differently in each language: German advertises `Profi`, Czech
@@ -51,11 +52,10 @@ export type LexiconLocale = (typeof LEXICON_LOCALES)[number];
  * THE SWEEP'S OWN LIST, checked as substrings, case-insensitively, everywhere —
  * source strings and built bytes alike.
  *
- * 17 §2 greps `pricing|tier|billing|upgrade|/mo|free|plan`; 24 D12 adds
- * `premium` and `pro` for add-ons, because an add-on that calls itself the pro
- * version of something is selling a grade whether or not a number follows.
- * `/mo` is here because the sweep bans it as a link path, and a path is not a
- * word.
+ * The release sweep greps `pricing|tier|billing|upgrade|/mo|free|plan`; add-ons
+ * add `premium` and `pro`, because an add-on that calls itself the pro version
+ * of something is selling a grade whether or not a number follows. `/mo` is
+ * here because the sweep bans it as a link path, and a path is not a word.
  *
  * NOTHING IS DROPPED AND NOTHING IS WORD-ANCHORED. `pro` is the run that makes
  * this expensive — see `ALLOWED_TOKENS`, which pays that cost in the one
@@ -76,13 +76,12 @@ export const SUBSTRING_BANNED = [
 /**
  * THE TIERING IDEA, SPELT PER LANGUAGE — and it is NOT written out here.
  *
- * [Rewritten 2026-08-11, wave 4b round 4.] This was a table of one word per
- * language ("premium", and its spellings), and it was a FINGERPRINT: planting
+ * [Rewritten 2026-08-11.] This was a table of one word per language
+ * ("premium", and its spellings), and it was a FINGERPRINT: planting
  * "الترقية إلى الباقة المدفوعة" and "Jetzt auf den bezahlten Tarif wechseln"
- * in two locale bundles left every gate in this repo green. The rule D12 and
- * 17 §2 state is about a set of IDEAS — pricing, plan, tier, billing, upgrade,
- * free, premium — and each of them is spelt differently in each of the eight
- * languages.
+ * in two locale bundles left every gate in this repo green. The rule is about
+ * a set of IDEAS — pricing, plan, tier, billing, upgrade, free, premium — and
+ * each of them is spelt differently in each of the eight languages.
  *
  * The whole `idea × language` table now lives in
  * `@adminium/add-on-host/testing`, once, because there were SIX divergent
@@ -137,7 +136,7 @@ export const CARVE_OUTS: readonly CarveOut[] = [];
  * still be usable: it cannot forgive "Pro" by forgiving "product", and it
  * cannot forgive a new word nobody has read. Every entry names the language and
  * says what the word means, which is what makes the list auditable rather than
- * a regex somebody once needed (24 D10).
+ * a regex somebody once needed.
  *
  * There are no file-level exemptions anywhere in this module, deliberately.
  * Every emitted script, stylesheet, map and page is greped; a file that is hard

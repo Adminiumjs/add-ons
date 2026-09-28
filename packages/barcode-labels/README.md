@@ -12,7 +12,7 @@ network allow-list.
 * It **draws** a number the shop already owns. It does not issue one, does not register one, and
   cannot make one unique beyond the shop it is installed in — that is a numbering authority's job,
   and getting a company prefix is something the shop does directly.
-* It does **not** read a scanner. **The engine owns barcode scanning** (owner ruling O3,
+* It does **not** read a scanner. **The engine owns barcode scanning** (an owner ruling,
   2026-08-28): the register-scan and keyboard-wedge hook is a `barcode-scanner` capability in the
   closed capabilities registry, which point-of-sale declares. There is no camera decode here, no
   wedge listener, and no place for one.
@@ -82,8 +82,8 @@ accent is refused `LATIN_ONLY`, naming the letters, rather than printed with hol
 
 ## The two symbologies
 
-Both are hand-rolled, because 25 D11 allows an add-on no runtime dependency the host has not got,
-and the host has React. A barcode is a lookup table, a weighted sum and a fixed guard pattern; the
+Both are hand-rolled, because an add-on may take no runtime dependency the host has not got, and
+the host has React. A barcode is a lookup table, a weighted sum and a fixed guard pattern; the
 sibling delivery add-on writes a whole PDF from nothing for the same reason.
 
 ### EAN-13
@@ -139,7 +139,7 @@ floored at 0.19 mm, which is where the length limit comes from.
 
 ---
 
-## The two refusals (25 D10)
+## The two refusals
 
 Both exist because the thing they prevent fails **silently at a counter** rather than loudly here.
 
@@ -199,9 +199,10 @@ reads on one machine and not the next.
 
 **The geometry is described rather than named.** A4, twenty-four labels to a sheet, three across and
 eight down, each 63.5 mm by 33.9 mm, with a 2.5 mm gutter between columns. There is a very common
-stationery sheet with those measurements and this add-on does not say whose it is — 24 D12 forbids
-naming a company, and a stationery reference is a company's catalogue number. The measurements are
-more use to a shop anyway: a name only helps somebody who buys that name.
+stationery sheet with those measurements and this add-on does not say whose it is — an add-on may
+not name a company it does not connect to, and a stationery reference is a company's catalogue
+number. The measurements are more use to a shop anyway: a name only helps somebody who buys that
+name.
 
 **Nothing is printed in a label's margin and there is no cut line.** These sheets are cut already, so
 a printed rectangle would land on the sticker rather than between two of them.
@@ -276,7 +277,7 @@ panel says out loud that a sheet covers one row and not a catalogue, and the rec
 the key it looked for where the limit bites. **Where the absence shows, it is in words rather than
 hidden.**
 
-**Anything that reads a scanner**, per O3 above.
+**Anything that reads a scanner**, per the ruling above: the engine owns scanning.
 
 **Allocating or looking up a number.** There is no `network` block, no `outbound-http` capability and
 no address anywhere in the sources — `add-on-facts.ts` declares `INERT_ORIGINS` empty, which is the
@@ -293,7 +294,7 @@ closes is the most useful kind to have written down.
    `maker-shop` now declare the id in their own `HOSTED_SLOTS` and mount it, and this add-on is the
    fill. That makes it the first fill of `record.actions` anywhere — the slot was bought unfilled —
    and, because there are **two** hosts rather than one, the first evidence that the id names a
-   SURFACE rather than an app (24 D21).
+   SURFACE rather than an app.
 
 2. **The published validator predates the slot, and it is a release behind in two steps rather than
    one.** `record.actions` was added to the registry in the Adminium monorepo on 2026-08-28 and that

@@ -14,8 +14,8 @@
  * convention. `built-output.test.ts` asserts that over the built bytes rather
  * than trusting this comment.
  *
- * The vendor endpoints live here too, and only here. §5.6 gives the OAuth flow
- * to the HOST: the add-on declares an authorize URL, a token URL and two
+ * The vendor endpoints live here too, and only here. The OAuth flow belongs to
+ * the HOST: the add-on declares an authorize URL, a token URL and two
  * scopes, and the host performs the exchange. A page therefore has no use for
  * any of them, and `index.ts` deliberately does not re-export them.
  */

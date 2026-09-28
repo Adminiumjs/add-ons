@@ -110,7 +110,7 @@ describe("parity", () => {
 });
 
 /**
- * THE ALLOWANCES THAT TRAVEL WITH THESE STRINGS (24 AC20/D21).
+ * THE ALLOWANCES THAT TRAVEL WITH THESE STRINGS, SO ANY HOST CAN READ THEM.
  *
  * Every add-on exports `NOT_A_QUANTITY` and every host reads it off whatever it
  * has vendored — see the block above the export in `strings.ts`. This bundle
@@ -154,7 +154,7 @@ describe("the allowances travel with the strings", () => {
  * Where a language's natural term carries one, use the plainer phrase a print
  * works would actually say to a customer.
  */
-describe("the vocabulary ban (17 §2, 24 D10), in all eight locales", () => {
+describe("the vocabulary ban, in all eight locales", () => {
   const BANNED = ["pricing", "plan", "tier", "billing", "upgrade", "free", "premium"];
 
   it("says none of the seven banned runs anywhere, as substrings", () => {
@@ -193,7 +193,7 @@ describe("the vocabulary ban (17 §2, 24 D10), in all eight locales", () => {
     }
   });
 
-  it("carries the not-affiliated line in every locale (24 D12)", () => {
+  it("carries the not-affiliated line in every locale", () => {
     for (const locale of LOCALE_TAGS) {
       const line = importCanvaStrings[locale]["addon.import-canva.notAffiliated"];
       expect(line).toContain("Adminium");

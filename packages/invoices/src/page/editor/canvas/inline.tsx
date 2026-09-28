@@ -5,14 +5,14 @@
  * kicker, the status pill, and the image-file reader every upload label
  * shares.
  *
- * THE SHEET IS ALWAYS LIGHT (S6): the paper has one palette whatever the
+ * THE SHEET IS ALWAYS LIGHT: the paper has one palette whatever the
  * theme, so the greys here are light literals like the email `MailShell`'s
  * and the accent is the DOCUMENT's, riding `--adm-invoice-accent` (and its
  * 10 % soft) from `PaperShell` — never the theme's `--accent`.
  *
- * MUTED IS `#6b6b76`, NOT THE COMP'S `#9a9aa5` (39's departure, kept): on
- * white the comp's grey is 2.78:1 and fails WCAG AA; `#6b6b76` is 5.3:1 and
- * the comp's own `--fg-muted` fallback.
+ * MUTED IS `#6b6b76`, NOT THE COMP'S `#9a9aa5` (the email editor's departure,
+ * kept): on white the comp's grey is 2.78:1 and fails WCAG AA; `#6b6b76` is
+ * 5.3:1 and the comp's own `--fg-muted` fallback.
  *
  * A11Y additions invisible at rest: every region carries a visually-hidden
  * *Edit {label}* button so a keyboard selects what a click does; every
@@ -35,10 +35,10 @@ export const KICKER = 'text-[10.5px] font-bold uppercase tracking-[.05em] text-[
 
 /**
  * The sheet's positive green, one step darker than the theme's `--pos`
- * (`#0b7d59`) — the same departure the muted grey above is (39's), for the
- * same reason: on the document's 10 % accent wash `--pos` measures 4.42:1
- * and fails WCAG AA, while this reads 5.3:1 on the lightest wash and 5.2:1
- * on the darkest (the black accent's). Same hue, 14 % darker.
+ * (`#0b7d59`) — the same departure the muted grey above is, for the same
+ * reason: on the document's 10 % accent wash `--pos` measures 4.42:1 and fails
+ * WCAG AA, while this reads 5.3:1 on the lightest wash and 5.2:1 on the darkest
+ * (the black accent's). Same hue, 14 % darker.
  */
 export const POS_TEXT = 'text-[#0a6b4c]';
 

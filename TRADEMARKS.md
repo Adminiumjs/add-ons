@@ -11,11 +11,10 @@ per add-on is now a section of this one, and each package keeps a short pointer
 back here.
 
 **Every add-on in this repository has a section here, including the ones that
-name no company** (24 AC6, as amended 2026-08-09). An add-on that references no
-mark says so in as many words rather than being absent from the list: an absent
-line is indistinguishable from a forgotten one, and so is an absent section. If
-you add a package, add its row to the table and its section below in the same
-commit.
+name no company.** An add-on that references no mark says so in as many words
+rather than being absent from the list: an absent line is indistinguishable from
+a forgotten one, and so is an absent section. If you add a package, add its row
+to the table and its section below in the same commit.
 
 ---
 
@@ -48,7 +47,7 @@ the host application's own design tokens and from nothing else.
 That is a deliberate design constraint rather than a shortcut. A shelf of twenty
 add-ons has to read as one system rather than as twenty logos — and beyond
 taste, reproducing someone else's mark would be a legal problem rather than an
-aesthetic one. The rule (24 D12, amended 2026-08-09) binds every add-on in here,
+aesthetic one. The rule (as amended 2026-08-09) binds every add-on in here,
 including the ones that name no company.
 
 ## Every mark any package in this repository references
@@ -117,12 +116,12 @@ The sentence lives in the add-on rather than in the host because the host names
 no add-on and holds no add-on's copy — a host-side version of it would be the
 host asserting a fact about an add-on it is not supposed to know.
 
-24 AC6 is worded as though every add-on carries the not-affiliated line; taken
-literally that asks this add-on to disclaim a relationship it could not have.
-The criterion should read *"every add-on that names a company"*, with the rule
-above covering the ones that name none. **That amendment has been accepted**,
-and the `namesCompany: false` flag stays as it is; what changed is that the
-surface now says something true where it used to say nothing.
+The not-affiliated rule was first worded as though every add-on carries the
+line; taken literally that asks this add-on to disclaim a relationship it could
+not have. The criterion should read *"every add-on that names a company"*, with
+the rule above covering the ones that name none. **That amendment has been
+accepted**, and the `namesCompany: false` flag stays as it is; what changed is
+that the surface now says something true where it used to say nothing.
 
 If a future version ever names a company — an image library, a font foundry, a
 stock provider — that flag flips to `true`, the table above gains the mark and
@@ -135,7 +134,9 @@ The font list the editor offers is `Manrope`, `JetBrains Mono`, `Georgia` and
 (Manrope: SIL Open Font Licence 1.1; JetBrains Mono: SIL Open Font Licence 1.1).
 The last two are named as generic system families and are not bundled,
 redistributed or embedded by this repository. Custom font upload is out of scope
-by design (24 §6's cutline), which also keeps this list closed.
+by design (cut from Design Studio's first release, along with every other
+feature that would turn a small editor into a design suite), which also keeps
+this list closed.
 
 Icons throughout this repository are [Lucide](https://lucide.dev) (ISC Licence),
 used unmodified.
@@ -241,11 +242,11 @@ production file it writes or on the website.
 
 ## Why it still has a section here
 
-Because 24 AC6 (as amended 2026-08-09) is unconditional: every add-on in this
-repository is listed, and one that references no mark says so rather than being
-missing. This section was missing for the whole of wave 4b, which is exactly the
-failure the amendment is worded to prevent — a reader cannot tell an add-on that
-names nothing from an add-on nobody checked.
+Because the listing rule (as amended 2026-08-09) is unconditional: every add-on
+in this repository is listed, and one that references no mark says so rather
+than being missing. This section was missing for the whole of wave 4b, which is
+exactly the failure the amendment is worded to prevent — a reader cannot tell an
+add-on that names nothing from an add-on nobody checked.
 
 The no-logo rule binds it like every other: the Live Personalizer is represented
 by the monogram tile `LP` (`packages/personalizer/src/index.ts`) — two letters in
@@ -283,7 +284,7 @@ families a browser already has, ending in a generic (`Georgia`, `"Times New
 Roman"`, `serif`, and so on) — named as generic system families, exactly as
 Design Studio's font list is, and for the same two reasons: nothing is
 redistributed, and a demo that fetched a font file would be a real third-party
-call in an add-on whose whole claim is that it calls nothing (24 D11).
+call in an add-on whose whole claim is that it calls nothing.
 
 The letter outlines the production file carries are **drawn in this repository**
 (`packages/personalizer/src/glyphs.ts`) — a hand-built cut alphabet, not an
@@ -308,10 +309,10 @@ or on the website.
 
 ## Why it still has a section here
 
-Because 24 AC6 (as amended 2026-08-09) is unconditional: every add-on in this
-repository is listed, and one that references no mark says so rather than being
-missing. A reader cannot tell an add-on that names nothing from an add-on
-nobody checked.
+Because the listing rule (as amended 2026-08-09) is unconditional: every add-on
+in this repository is listed, and one that references no mark says so rather
+than being missing. A reader cannot tell an add-on that names nothing from an
+add-on nobody checked.
 
 There is a sharper version of that argument in this add-on's own code, and it
 is worth repeating here because it is the reason its checks are shaped the way

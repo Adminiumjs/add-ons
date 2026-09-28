@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 /**
- * The Title & theme panel (comp 783-804; 34 Appendix E §I5): document title,
- * the five swatches (1577), the four currencies (1578), the decimals toggle
- * (788, 1607), the five statuses (1579, `statusMeta` 1393), the five topics
- * with their glyphs (1635-1639; labels per 34 Appendix D.2), the six language
- * re-tag pills (1640-1644) with the comp's own note that the toolbar's
- * language button is the better path, and the background image with its
- * overlay slider capped at 95 % (795-803, 1733).
+ * The Title & theme panel (comp 783-804): document title, the five swatches
+ * (1577), the four currencies (1578), the decimals toggle (788, 1607), the five
+ * statuses (1579, `statusMeta` 1393), the five topics with their glyphs
+ * (1635-1639; labels per the banned-word lexicon), the six language re-tag
+ * pills (1640-1644) with the comp's own note that the toolbar's language button
+ * is the better path, and the background image with its overlay slider capped
+ * at 95 % (795-803, 1733).
  */
 import { Upload } from 'lucide-react';
 import { cn } from '@adminium/ui';
@@ -37,7 +37,7 @@ export function statusLabel(status: InvoiceStatus): string {
   }
 }
 
-/** The comp's `topics()` (1173-1180) with 34 Appendix D.2's first label. */
+/** The comp's `topics()` (1173-1180) with the first label re-worded for the banned-word lexicon. */
 export function topicOption(topic: InvoiceTopic): { label: string; icon: string } {
   switch (topic) {
     case 'recurring':

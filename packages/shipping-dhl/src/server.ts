@@ -1,5 +1,5 @@
 /**
- * The SERVER half's entry point (24 §5.3, D15).
+ * The SERVER half's entry point.
  *
  * Kept apart from `src/index.ts` for one reason, and it is not organisation:
  * `index.ts` is what the client bundle is built from, so everything reachable

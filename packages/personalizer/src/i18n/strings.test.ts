@@ -1,6 +1,7 @@
 /**
  * The string bundle: complete, actually translated, and clean of the banned
- * vocabulary in every one of the eight (24 D10, D10b).
+ * vocabulary in every one of the eight — the monetisation words and the
+ * maker's craft traps.
  *
  * THREE THINGS, AND THE MIDDLE ONE IS THE ONE THAT CATCHES REAL WORK. Parity is
  * easy to satisfy and easy to satisfy dishonestly — eight copies of the English
@@ -145,7 +146,7 @@ describe('all eight locales, complete', () => {
   });
 });
 
-describe('the vocabulary ban, over the source bundle (17 §2, 24 D10b)', () => {
+describe('the vocabulary ban and the craft traps, over the source bundle', () => {
   it('finds no banned run in any locale', () => {
     const offences: string[] = [];
     for (const tag of LOCALE_TAGS) {
@@ -176,7 +177,7 @@ describe('the vocabulary ban, over the source bundle (17 §2, 24 D10b)', () => {
   });
 
   /**
-   * D10b's craft traps, which are this wave's own and are not in the release
+   * The craft traps, which come from a maker's trade and are not in the release
    * sweep's seven. Two of them are words a maker's shop says every day.
    */
   it('avoids the craft traps that a maker’s vocabulary walks straight into', () => {
@@ -193,9 +194,9 @@ describe('the vocabulary ban, over the source bundle (17 §2, 24 D10b)', () => {
   });
 
   /**
-   * D10c, checked rather than remembered. The audience for this add-on sells
-   * somewhere else today and naming that somewhere would be the easiest
-   * sentence in the world to write.
+   * No other marketplace is ever named, checked rather than remembered. The
+   * audience for this add-on sells somewhere else today and naming that
+   * somewhere would be the easiest sentence in the world to write.
    */
   it('names no other online marketplace, in any locale', () => {
     const MARKETPLACES = [/etsy/i, /shopify/i, /amazon/i, /ebay/i, /notonthehighstreet/i, /folksy/i];
@@ -240,7 +241,8 @@ describe('the lookup', () => {
 });
 
 /**
- * THE ALLOWANCES THAT TRAVEL WITH THESE STRINGS (24 AC20/D21).
+ * THE ALLOWANCES THAT TRAVEL WITH THESE STRINGS, so the add-on runs unchanged
+ * in any host.
  *
  * Every add-on exports `NOT_A_QUANTITY` and every host reads it off whatever it
  * has vendored — see the block above the export in `strings.ts`. This bundle

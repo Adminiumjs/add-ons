@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 /**
- * Line items and the totals ladder (comp 424-456, 1550-1559; 34-invoices-
- * add-on.md Appendix E §C8–C9, O25).
+ * Line items and the totals ladder (comp 424-456, 1550-1559).
  *
  * `items`: the `22px 1fr 62px 92px 96px 30px` grid — grip · description ·
  * qty · rate · amount · ×. Rows drag-reorder like blocks (`reorderItem`,
@@ -9,12 +8,12 @@
  * × hides until the row is hovered or holds focus. *Add line item* appends
  * the comp's seed (1356).
  *
- * `totals`: the 280 px right-aligned ladder — Subtotal · Discount ({rate})
- * only when the rate is above zero, in the positive green with a U+2212 ·
- * Tax ({rate}) always · **Total**. "Total", not the comp's "Total due"
- * (452): recorded payments never reduce it and there is no balance model
- * (O25). Every figure is `money.ts`' — a line rounds once, the
- * discount comes off the rounded subtotal, tax on the discounted base.
+ * `totals`: the 280 px right-aligned ladder — Subtotal · Discount ({rate}) only
+ * when the rate is above zero, in the positive green with a U+2212 · Tax
+ * ({rate}) always · **Total**. "Total", not the comp's "Total due" (452):
+ * recorded payments never reduce it and there is no balance model. Every figure
+ * is `money.ts`' — a line rounds once, the discount comes off the rounded
+ * subtotal, tax on the discounted base.
  */
 import { GripVertical, Plus, X } from 'lucide-react';
 import { useState, type DragEvent, type KeyboardEvent } from 'react';

@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 import type { PluginOption } from "vite";
 import { build, defineConfig, type Plugin } from "vite";
 
-/** The host-runtime shims this add-on's React imports are aliased to (26-T13). */
+/** The host-runtime shims this add-on's React imports are aliased to. */
 const HOST_RUNTIME_REACT = fileURLToPath(
   new URL("../host/src/runtime/react.ts", import.meta.url),
 );
@@ -41,9 +41,9 @@ export const OUTPUT = {
 /**
  * React, its DOM renderer and the icon set are `external` because the host
  * already ships them: an add-on takes no runtime dependency the host does not
- * have (D7), and bundling a second React would put two copies of the reconciler
- * in one page — the slot fills render inside the HOST's React tree (§5.7.3), so
- * they must share its instance or hooks throw on mount.
+ * have, and bundling a second React would put two copies of the reconciler in
+ * one page — the slot fills render inside the HOST's React tree, so they must
+ * share its instance or hooks throw on mount.
  *
  * `react/jsx-dev-runtime` is matched alongside the production one on purpose: a
  * build that somehow ran in development mode would otherwise INLINE React's
@@ -55,13 +55,13 @@ const EXTERNAL: never[] = [];
 /**
  * Build the server half after the client half, inside the same `vite build`.
  *
- * TWO ROLLUP RUNS RATHER THAN TWO LIB ENTRIES, and the reason is D7: an add-on's
- * client half builds to a SINGLE ESM bundle. Two entries in one run share their
- * common modules through a generated chunk, so the client would stop being
- * self-contained and would start importing a sibling file the manifest does not
- * name — and the host loads only what the manifest names. Two runs duplicate
- * the import engine and the strings into both files, which is the trade D7
- * asks for.
+ * TWO ROLLUP RUNS RATHER THAN TWO LIB ENTRIES, and the reason is the rule that
+ * an add-on's client half builds to a SINGLE ESM bundle. Two entries in one run
+ * share their common modules through a generated chunk, so the client would
+ * stop being self-contained and would start importing a sibling file the
+ * manifest does not name — and the host loads only what the manifest names.
+ * Two runs duplicate the import engine and the strings into both files, which
+ * is the trade that rule asks for.
  *
  * `configFile: false` keeps this plugin out of the inner build, so there is no
  * recursion to guard against.
@@ -92,7 +92,7 @@ function serverHalf(): Plugin {
 }
 
 /**
- * The React aliases, applied to the BUILD ONLY (26-T13).
+ * The React aliases, applied to the BUILD ONLY.
  *
  * A top-level `resolve.alias` would apply to vitest as well, because vitest
  * reads this same config — and then the add-on's own source would resolve
@@ -140,8 +140,8 @@ export default defineConfig({
       // `client.css` beside `client.js`, so the host links one predictable
       // pair rather than a filename derived from whatever the package is
       // called. In demo mode the host builds this add-on from source and its
-      // own Vite run inlines the CSS; in connected mode (Phase B) the host
-      // serves both from its own origin under `/add-ons/import-canva/`,
+      // own Vite run inlines the CSS; in connected mode the host serves both
+      // from its own origin under `/add-ons/import-canva/`,
       // SRI-checked against the hashes recorded at install.
       cssFileName: "client",
     },

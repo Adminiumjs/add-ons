@@ -2,7 +2,7 @@
  * The SERVER HALF of this add-on — `provides[0].server` in `manifest.json`.
  *
  * WHY THIS FILE EXISTS AS A SEPARATE ENTRY. An add-on declares two kinds of
- * entry point (24 §5.3): a `server` path per provided contract, and a `client`
+ * entry point: a `server` path per provided contract, and a `client`
  * path per filled slot. Until this file landed, the manifest named a server
  * path that the build never emitted, so the split those two fields describe was
  * a claim about the repo rather than a fact about the artefact — nothing failed
@@ -19,9 +19,9 @@
  * The one thing worth being honest about: `createArtworkSource` takes its
  * `open` function by injection, and in THIS add-on the shop's own browser is
  * what supplies it — the editor is in-browser and there is no network call at
- * any point (D11). The server half is therefore the provider registration plus
+ * any point. The server half is therefore the provider registration plus
  * the engine a Phase B install would run when it re-derives a design record or
- * a preview without a browser in the loop (24 §5.10), not a second copy of the
+ * a preview without a browser in the loop, not a second copy of the
  * editor.
  */
 

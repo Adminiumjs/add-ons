@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: AGPL-3.0-only
 /**
- * Copy each package's `package.json` version into its `manifest.json`
- * (32-add-on-distribution.md §2 step 3).
+ * Copy each package's `package.json` version into its `manifest.json`, so the
+ * two versions a build asserts equal stay equal.
  *
  * TWO FILES CARRY THE SAME VERSION, AND ONLY ONE TOOL BUMPS IT. `changeset
  * version` knows about `package.json` and nothing else, so after every bump the

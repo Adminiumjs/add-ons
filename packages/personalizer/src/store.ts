@@ -4,8 +4,8 @@
  * The host owns the basket. What it stores per line is a piece, a size, a
  * finish, a quantity and THE SHOPPER'S OWN WORDS — a plain string, because that
  * is what a shop with no add-on connected has and what its empty state is built
- * around (24 D19). A host that had to grow a `personalization` column the
- * moment an add-on arrived would be a host that knows which add-ons exist.
+ * around. A host that had to grow a `personalization` column the moment an
+ * add-on arrived would be a host that knows which add-ons exist.
  *
  * So the words stay the host's and the rest is ours, and the two are joined by
  * a key derived from BOTH: the piece and the words. That is not a hack, it is
@@ -49,7 +49,8 @@ function keyOf(productKey: string, words: string): string {
  * This is what the host stores in its own note field, so a basket line reads
  * the same whether or not this add-on is connected — and, when it is
  * disconnected, the words the customer asked for are still on the order in
- * plain language rather than inside a picture nobody can open (D16).
+ * plain language rather than inside a picture nobody can open: disconnecting
+ * never destroys data.
  */
 export function summarize(p: Personalization): string {
   const template = templateFor(p.templateId);
@@ -72,7 +73,7 @@ export function recall(productKey: string, words: string): Personalization | und
   return chosen.get(keyOf(productKey, words.trim()));
 }
 
-/** Everything a shopper has configured — what a disconnect would keep (D16). */
+/** Everything a shopper has configured — what a disconnect would keep. */
 export function rememberedCount(): number {
   return chosen.size;
 }
@@ -236,8 +237,9 @@ export function blankFor(productKey: string, sizeMm: number): Personalization | 
  * The two halves are deliberately different:
  *
  *   THE WORDS ARE ALWAYS WRITTEN. They are the customer's, they live in the
- *   HOST's own field, and they are what survives the add-on being switched off
- *   (D16). There is no state of the world in which discarding them is right.
+ *   HOST's own field, and they are what survives the add-on being switched off,
+ *   because disconnecting never destroys data. There is no state of the world
+ *   in which discarding them is right.
  *
  *   THE PICTURE IS FILED ONLY WHEN IT IS MAKEABLE. `remember` keys a
  *   personalization by those words, and a basket line that resolved to a

@@ -1,7 +1,7 @@
 /**
  * `describeDocumentRenderer` — COPIED VERBATIM from
- * `@adminium/add-on-contracts/testing` (24 §5.5, D9; 34-T04), with only the
- * import paths changed to the local mirror.
+ * `@adminium/add-on-contracts/testing`, with only the import paths changed to
+ * the local mirror.
  *
  * The suite is part of the contract, not a courtesy. What it carries for THIS
  * contract is the claim that a document provider is interchangeable: the
@@ -50,7 +50,7 @@ export interface DocumentRendererFixtures {
   settings: Readonly<Record<string, unknown>>;
   /** One subject the provider renders happily, per kind. */
   subject: (kind: DocumentKind) => DocumentSubject;
-  /** The authored composition, for a provider that takes one (34 D54). */
+  /** The authored composition — opaque to the contract — for a provider that takes one. */
   body?: (kind: DocumentKind) => Readonly<Record<string, unknown>> | undefined;
   /**
    * The id of a slot whose value the renderer DRAWS VERBATIM — where the suite
@@ -68,7 +68,7 @@ export interface DocumentRendererFixtures {
    *     is the row key, which is a lookup and appears nowhere on the sheet, so
    *     the accented subject rendered perfectly happily and the coverage
    *     assertion failed with the provider being entirely correct (found
-   *     2026-09-10, 34-T06).
+   *     2026-09-10).
    *
    * A provider with no drawn free-text slot at all returns `undefined` and the
    * escaping and coverage assertions skip — loudly, in the name.
@@ -137,9 +137,9 @@ function expectRefused(
  * This is the assertion that a hand-rolled writer cannot fake. Every offset in
  * the table is a BYTE offset, so a writer that computed them from
  * `String.length` over a stream containing one multi-byte character produces a
- * file every viewer opens and every parser mis-seeks — the exact failure 34's
- * §0.3 trap 8 sends the invoices writer over byte buffers to avoid. Seeking to
- * each offset and requiring `<n> 0 obj` there catches it on the first render.
+ * file every viewer opens and every parser mis-seeks — the exact failure the
+ * invoices writer works over byte buffers to avoid. Seeking to each offset and
+ * requiring `<n> 0 obj` there catches it on the first render.
  *
  * Exported so a writer's own tests can walk its table with the same rules the
  * suite applies, rather than re-deriving a second walker that drifts from
@@ -302,10 +302,10 @@ export function describeDocumentRenderer(
 
     it('is given money as integer minor units and percent as basis points', async () => {
       // The wire law, asserted on the FIXTURE — the provider never sees a
-      // decimal, so a fixture carrying 12.5 would be testing a shape the
-      // engine does not produce. The invoice rounding law is NOT here: it is
-      // the invoices package's own (34 D20), because it is arithmetic a
-      // label-sheet renderer has no opinion about.
+      // decimal, so a fixture carrying 12.5 would be testing a shape the engine
+      // does not produce. The invoice rounding law is NOT here: it is the
+      // invoices package's own, because it is arithmetic a label-sheet renderer
+      // has no opinion about.
       for (const kind of kinds) {
         const outline = impl.describe(kind.id);
         const subject = fixtures.subject(kind);
@@ -353,9 +353,10 @@ export function describeDocumentRenderer(
     });
 
     it('renders one subject to the same bytes twice — and so reads no clock of its own', async () => {
-      // 25 D12. Two renders separated by real time: identical bytes are the
-      // proof that `Date.now()` is not in the code path, which is why this one
-      // assertion carries the whole "byte-identical from a pinned clock" claim.
+      // Determinism is a contract assertion. Two renders separated by real
+      // time: identical bytes are the proof that `Date.now()` is not in the
+      // code path, which is why this one assertion carries the whole
+      // "byte-identical from a pinned clock" claim.
       for (const kind of kinds) {
         const subject = fixtures.subject(kind);
         const first = await renderOf(kind, subject);
@@ -401,14 +402,15 @@ export function describeDocumentRenderer(
          * Two subjects, and the SECOND one is the assertion that has teeth.
          *
          * A writer that collects its cross-reference offsets from
-         * `String.length` over the document text — 34 §0.3 trap 8, and the
-         * shape `barcode-labels`' scaffold is written in (`sheet.ts:441-449`)
-         * — produces a perfectly valid file for as long as every character is
-         * ASCII, because there one character is one byte. It breaks the first
-         * time a customer is called Müller. Parsing the xref back over an
-         * ASCII-only subject therefore proves nothing about the class of bug
-         * it exists to catch: this assertion passed a deliberate mutation to
-         * `String.length` on 2026-09-10 and had to be widened here.
+         * `String.length` over the document text — the trap the invoices writer
+         * avoids with byte buffers, and the shape `barcode-labels`' scaffold is
+         * written in (`sheet.ts:441-449`) — produces a perfectly valid file for
+         * as long as every character is ASCII, because there one character is
+         * one byte. It breaks the first time a customer is called Müller.
+         * Parsing the xref back over an ASCII-only subject therefore proves
+         * nothing about the class of bug it exists to catch: this assertion
+         * passed a deliberate mutation to `String.length` on 2026-09-10 and had
+         * to be widened here.
          *
          * So where the kind's own coverage admits accented text, the table is
          * walked over a subject that HAS some.

@@ -2,10 +2,10 @@
  * The BUILT bytes, which are the only ones that ship.
  *
  * Every other suite in this package reads source. This one reads `dist/`,
- * because the release sweep does — 17 §2 greps built output, and a gate that
- * checked source alone would miss anything a bundler inlines: a dependency's
- * copy, a sourcemap's verbatim `sourcesContent`, a string the compiler
- * synthesised.
+ * because the release sweep does — the banned-word lexicon gate greps built
+ * output, and a gate that checked source alone would miss anything a bundler
+ * inlines: a dependency's copy, a sourcemap's verbatim `sourcesContent`, a
+ * string the compiler synthesised.
  *
  * It builds the bundle itself rather than reading whatever is on disk. `dist/`
  * is gitignored and the verification order is typecheck → test → build, so a
@@ -160,9 +160,9 @@ describe('the server half is a server half', () => {
   });
 
   it('leaves each bundle a single self-contained ESM file', () => {
-    // D7. A second entry sharing a generated chunk would make a bundle import
-    // a sibling the manifest does not name, and the host loads only what the
-    // manifest names. `kinds.ts`, `money.ts` and the renderers are reached
+    // An add-on's client half is ONE ESM file. A second entry sharing a
+    // generated chunk would make a bundle import a sibling the manifest does
+    // not name, and the host loads only what the manifest names. `kinds.ts`, `money.ts` and the renderers are reached
     // from BOTH entries here, so one Rollup run would certainly have hoisted
     // them — which is why `vite.config.ts` runs two.
     for (const file of built()) {

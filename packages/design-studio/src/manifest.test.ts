@@ -15,12 +15,11 @@ import { INERT_ORIGINS, NEVER_IN_A_BROWSER } from "./add-on-facts.ts";
  *
  * The real validator lives in `packages/manifest/src/schema.ts` and this repo
  * cannot reach it — same "copied not imported" bind as `@adminium/add-on-host`,
- * except
- * that copying a 450-line Zod envelope to assert a 90-line JSON document would
- * be a worse trade than restating the rules that actually bite. So this suite
- * checks THE RULES 24 §5.3 names by issue code, plus the two invariants that
- * are specific to this add-on: it declares no egress because it makes no call,
- * and its settings keys are the ones its own fills read.
+ * except that copying a 450-line Zod envelope to assert a 90-line JSON document
+ * would be a worse trade than restating the rules that actually bite. So this
+ * suite checks THE RULES the add-on block names by issue code, plus the two
+ * invariants that are specific to this add-on: it declares no egress because it
+ * makes no call, and its settings keys are the ones its own fills read.
  *
  * What this does NOT catch is a schema change upstream. The mitigation is that
  * the shapes below are the ones the issue codes are written against, and the
@@ -41,18 +40,18 @@ describe("manifest.json", () => {
   it("is an add-on, not an app", () => {
     expect(manifest.kind).toBe("add-on");
     expect(manifest.manifestVersion).toBe(1);
-    // §5.7 item 6: an add-on cannot install pages, roles or a frontend, and the
-    // strongest way to say so is for the fields not to exist.
+    // An add-on cannot install pages, roles or a frontend — those are app
+    // powers — and the strongest way to say so is for the fields not to exist.
     expect(manifest).not.toHaveProperty("pages");
     expect(manifest).not.toHaveProperty("roles");
     expect(manifest).not.toHaveProperty("frontend");
   });
 
-  it("is first-party, which is the only publisher v1 accepts (D13)", () => {
+  it("is first-party, which is the only publisher v1 accepts", () => {
     expect(manifest.publisher.id).toBe("adminium");
   });
 
-  it("takes a category from the add-on vocabulary, not the app facet set (D2)", () => {
+  it("takes a category from the add-on vocabulary, not the app facet set", () => {
     expect(manifest.categories).toEqual(["artwork"]);
   });
 
@@ -93,12 +92,12 @@ describe("manifest.json", () => {
    *
    * These lines used to name `client/artwork-tile.js`, `client/editor-route.js`
    * and `client/settings-panel.js` — a file per slot, none of which any build
-   * ever wrote. §5.7 item 2 says the host serves ONE bundle per add-on from its
-   * own origin and `import()`s it lazily, so one bundle registers both fills;
+   * ever wrote. The host serves ONE bundle per add-on from its own origin and
+   * `import()`s it lazily, so one bundle registers both fills;
    * the per-slot `client` field says WHICH module to load, and for a
    * single-bundle add-on that is the same module twice.
    */
-  it("names entry points in the wave's one convention (§5.7 item 2)", () => {
+  it("names entry points in the wave's one convention", () => {
     expect(addOn.slots.map((fill) => fill.client)).toEqual(["dist/client.js", "dist/client.js"]);
     expect(addOn.provides[0]!.server).toBe("dist/server.js");
     for (const path of [...addOn.slots.map((f) => f.client), addOn.provides[0]!.server]) {
@@ -140,15 +139,15 @@ describe("manifest.json", () => {
     expect(addOn.scopes.some((s) => s.startsWith("records:") && s.endsWith(":write"))).toBe(false);
   });
 
-  it("declares NO egress, because it calls nothing (D14)", () => {
+  it("declares NO egress, because it calls nothing", () => {
     expect(addOn).not.toHaveProperty("network");
     expect(manifest.capabilities).not.toContain("outbound-http");
     // No third party means no demo transport to seed: there is nothing to
-    // simulate when there is nothing to call (D11).
+    // simulate when there is nothing to call.
     expect(addOn).not.toHaveProperty("demoTransport");
   });
 
-  it("connects with one click and no account (§5.6)", () => {
+  it("connects with one click and no account", () => {
     expect(addOn.connect).toEqual({ kind: "none" });
     expect(manifest.capabilities).not.toContain("oauth-connect");
     expect(register().connect).toBe("none");
@@ -188,7 +187,7 @@ describe("manifest.json", () => {
   });
 
   /**
-   * AC6, in the shape this add-on can honestly satisfy.
+   * The "not affiliated" line, in the shape this add-on can honestly satisfy.
    *
    * The criterion asks every add-on's detail surface to be clear about who else
    * is involved. This one names no company, so it has no relationship to
@@ -197,7 +196,7 @@ describe("manifest.json", () => {
    * positive sentence takes the disclaimer's place, in this add-on's own
    * bundle, and the host renders whichever of the two applies.
    */
-  it("states what it connects to in place of a disclaimer it cannot make (AC6)", () => {
+  it("states what it connects to in place of a disclaimer it cannot make", () => {
     const registered = register();
     expect(registered.namesCompany).toBe(false);
     expect(registered.noCompanyKeys).toEqual([
@@ -228,11 +227,12 @@ describe("manifest.json", () => {
  * WHAT THIS ADD-ON TELLS ITS HOSTS TO GREP FOR, CHECKED AGAINST WHAT IT
  * DECLARES.
  *
- * `add-on-facts.ts` carries `NEVER_IN_A_BROWSER` — the strings a host's D15
- * bundle gate looks for in every emitted file — and it exists because that list
- * used to be written out inside each HOST. A host cannot look for a needle
- * nobody told it about, so a credentialled add-on vendored into a shop that had
- * never heard of it shipped its secret setting keys with the gate fully green.
+ * `add-on-facts.ts` carries `NEVER_IN_A_BROWSER` — the strings a host's
+ * no-secrets-in-the-browser bundle gate looks for in every emitted file — and
+ * it exists because that list used to be written out inside each HOST. A host
+ * cannot look for a needle nobody told it about, so a credentialled add-on
+ * vendored into a shop that had never heard of it shipped its secret setting
+ * keys with the gate fully green.
  *
  * Moving the list is only half a repair: a hand-kept list beside a manifest
  * drifts from the manifest. This is the other half. Everything the manifest

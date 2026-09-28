@@ -2,9 +2,10 @@
  * THE SHARED DIGIT SUITE, run against this add-on's own seam and bundle.
  *
  * See `@adminium/add-on-host/testing`'s `numerals.ts`. An add-on cannot use the
- * host's `t` — D7 does not allow the runtime dependency — so every add-on has a
- * seam of its own and therefore had its own copy of the same defect sitting in
- * it. Three of the four in this repository shipped it.
+ * host's `t` — an add-on takes no runtime dependency the host does not already
+ * have — so every add-on has a seam of its own and therefore had its own copy
+ * of the same defect sitting in it. Three of the four in this repository
+ * shipped it.
  *
  * The key this suite substitutes into is `pick.preview`, which is the count of
  * days in a set: the one number this add-on renders that is genuinely a

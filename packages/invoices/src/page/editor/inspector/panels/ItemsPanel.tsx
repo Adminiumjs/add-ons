@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-/** The Line items panel (comp 835-840; 34 Appendix E §I6): the count + subtotal card, the accent *Add line item*, and the hand hint. */
+/** The Line items panel (comp 835-840): the count + subtotal card, the accent *Add line item*, and the hand hint. */
 import { Hand, Plus } from 'lucide-react';
 import { cn } from '@adminium/ui';
 

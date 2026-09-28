@@ -169,8 +169,8 @@ export function Inspector({ section, draft, edits, totals, onSelect, onOpenAdd, 
           <div className="text-[13px] font-extrabold text-accent">{header.title}</div>
           {/* The comp fades the hint to 75 % (731); on `--accent-soft` that is 3.57:1 and
               fails WCAG AA, so the accent runs at full strength and the 10.5 px size
-              beside the 13 px extrabold title carries the hierarchy instead (39's
-              muted-grey departure, same rule). */}
+              beside the 13 px extrabold title carries the hierarchy instead (the
+              email editor's muted-grey departure, same rule). */}
           {header.hint === '' ? null : <div className="text-[10.5px] text-accent">{header.hint}</div>}
         </div>
       </div>

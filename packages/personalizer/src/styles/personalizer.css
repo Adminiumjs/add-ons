@@ -4,11 +4,11 @@
  * EVERY COLOUR IS ONE OF THE HOST'S TOKENS, never a literal, so the add-on
  * arrives in whatever accent and theme the shop is already wearing and follows
  * it when the reader flips to dark. The one exception is the preview's inside,
- * and that is comp L's own critical rule rather than an oversight: what is
- * drawn ON the piece uses the PIECE's colours — the material, the cut, the
- * paint — and the only tokens allowed near it are the guides. Those literals
- * live in `pieces.ts` and `template.ts`, with the geometry, and none of them is
- * in this file.
+ * and that is the design comp's own critical rule rather than an oversight:
+ * what is drawn ON the piece uses the PIECE's colours — the material, the cut,
+ * the paint — and the only tokens allowed near it are the guides. Those
+ * literals live in `pieces.ts` and `template.ts`, with the geometry, and none
+ * of them is in this file.
  *
  * LOGICAL PROPERTIES ONLY. `inline-start`, `block-end`, `margin-inline`: the
  * whole surface mirrors for Arabic with no RTL stylesheet, which is the rule
@@ -35,8 +35,8 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  /* The picture must not move the page as it redraws (comp L, rule 1): the
-     canvas keeps its box whatever the words do. */
+  /* The picture must not move the page as it redraws (a rule from the design
+     comp): the canvas keeps its box whatever the words do. */
   contain: layout paint;
 }
 
@@ -158,12 +158,12 @@
 /*
  * THE FOCUS RING COMES FROM THE HOST, AND IT IS SOLID.
  *
- * [Corrected 2026-08-11, wave 4b round 5.] This drew `3px solid
- * var(--accent-soft)` — the host's accent at 10% (20% in dark) over whatever is
- * behind it, which measures 1.15-1.56:1 against the surfaces it lands on. A
- * keyboard user could not see where they were. `--accent-soft` is a FILL token,
- * for selected rows and hover states; it was reached for here because it had
- * "soft" in its name and it was to hand.
+ * [Corrected 2026-08-11.] This drew `3px solid var(--accent-soft)` — the host's
+ * accent at 10% (20% in dark) over whatever is behind it, which measures
+ * 1.15-1.56:1 against the surfaces it lands on. A keyboard user could not see
+ * where they were. `--accent-soft` is a FILL token, for selected rows and hover
+ * states; it was reached for here because it had "soft" in its name and it was
+ * to hand.
  *
  * `--focus-ring` is the host's accent at full strength (4.08:1 at worst, across
  * both shops, both themes and every surface token; both hosts measure it in
@@ -574,7 +574,8 @@
 
 /*
  * On a narrow viewport the picture pins to the top and the inputs scroll under
- * it, so a shopper can always see what they are typing (comp L, rule 2).
+ * it, so a shopper can always see what they are typing (a rule from the design
+ * comp).
  */
 @media (max-width: 759px) {
   .lp-stage {

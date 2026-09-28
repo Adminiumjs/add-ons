@@ -2,13 +2,12 @@
 /**
  * @vitest-environment happy-dom
  *
- * The editor shell (O19, O22, O24): explicit save with its chip and
- * history, the discard guard, the gate (an off block is absent, and returns
- * through the Add-section modal at the index the chip was opened from),
- * custom sections, the keyboard reorder, the primary's label, the language
- * menu and Delete. Rendered through the real router and shell so the
- * topbar's Back and the blocker are the product's own; the API is a fetch
- * stub keyed on the routes the editor calls.
+ * The editor shell: explicit save with its chip and history, the discard guard,
+ * the gate (an off block is absent, and returns through the Add-section modal
+ * at the index the chip was opened from), custom sections, the keyboard
+ * reorder, the primary's label, the language menu and Delete. Rendered through
+ * the real router and shell so the topbar's Back and the blocker are the
+ * product's own; the API is a fetch stub keyed on the routes the editor calls.
  */
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
@@ -177,7 +176,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('Invoice editor — save, history, guard (O22)', () => {
+describe('Invoice editor — save, history, guard', () => {
   it('typing never issues a request; the chip reads Unsaved changes; Save → one PUT → All changes saved', async () => {
     const { user, calls } = await renderEditor();
     expect(chip().textContent).toBe('All changes saved');
@@ -267,7 +266,7 @@ describe('Invoice editor — save, history, guard (O22)', () => {
   });
 });
 
-describe('Invoice editor — the gate and the Add-section modal (O19)', () => {
+describe('Invoice editor — the gate and the Add-section modal', () => {
   it('an off block is ABSENT from the canvas and a chip in the modal; picking it shows the block and selects its section', async () => {
     const { user } = await renderEditor(detail({}, body({ sigShow: false })));
     expect(blockKeys()).toEqual(['parties', 'meta', 'items', 'totals', 'paynotes']);
@@ -397,7 +396,7 @@ describe('Invoice editor — the gate and the Add-section modal (O19)', () => {
   });
 });
 
-describe('Invoice editor — header (O24)', () => {
+describe('Invoice editor — header', () => {
   it('the primary reads Save template for a template and Save invoice for an invoice (no provider installed)', async () => {
     await renderEditor();
     expect(screen.getByTestId('invoices-save').textContent).toBe('Save template');

@@ -27,8 +27,8 @@
  * to explain itself. The last chip refuses and says why, in the reader's own
  * language, rather than being disabled with no reason given.
  *
- * NO WEBFONT (24 D11): every specimen is drawn in the face's own `css` stack,
- * which is families a browser already has. Nothing is fetched.
+ * NO WEBFONT: every specimen is drawn in the face's own `css` stack, which is
+ * families a browser already has. Nothing is fetched.
  */
 
 import { useState } from 'react';

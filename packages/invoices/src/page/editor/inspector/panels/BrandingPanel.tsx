@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 /**
- * The Branding panel (comp 774-780; `logoIconList` 1580; 34 Appendix E §I4):
- * brand name, the twelve-mark grid, the logo upload with its Remove, the
- * note that an upload replaces the mark, and the pointer to the title
- * section for the accent colour.
+ * The Branding panel (comp 774-780; `logoIconList` 1580): brand name, the
+ * twelve-mark grid, the logo upload with its Remove, the note that an upload
+ * replaces the mark, and the pointer to the title section for the accent
+ * colour.
  */
 import { Palette, Upload } from 'lucide-react';
 import { cn } from '@adminium/ui';

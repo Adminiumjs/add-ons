@@ -5,7 +5,7 @@
  * THEY LIVE UNDER `testing/` RATHER THAN BESIDE THE TYPES for one reason: they
  * are the only part of a contract that needs a runtime dependency, and an
  * add-on's shipped bundle may take no runtime dependency the host does not
- * already have (24 D7). Nothing outside `testing/` imports this module, `zod`
+ * already have. Nothing outside `testing/` imports this module, `zod`
  * is a devDependency, and no add-on's `dist/` contains a byte of it.
  *
  * Both contracts' validators are in one file now. Design Studio and Canva

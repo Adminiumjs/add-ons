@@ -5,17 +5,18 @@
  * primary. Sticky under the shell's topbar, blurred like the comp's.
  *
  * Back is NOT here: the shell's topbar owns the back affordance (published
- * through `PageActions backTo`), and the discard guard is a router blocker,
- * so the topbar's Back, the sidebar and the browser all run it — one Back on
- * screen, not two (39's departure, kept). The comp's theme toggle (343) is
- * shell chrome, dropped at S2. The shell scrolls the PAGE with its own sticky
- * topbar, so this header sticks just under it (`--adm-topbar-h`, measured by
- * the editor) rather than at the comp's `top: 0`.
+ * through `PageActions backTo`), and the discard guard is a router blocker, so
+ * the topbar's Back, the sidebar and the browser all run it — one Back on
+ * screen, not two (the email editor's departure, kept). The comp's theme toggle
+ * (343) is shell chrome, dropped: the topbar owns theme. The shell scrolls the
+ * PAGE with its own sticky topbar, so this header sticks just under it
+ * (`--adm-topbar-h`, measured by the editor) rather than at the comp's
+ * `top: 0`.
  *
- * The primary (comp 360, 1599; O24): a template's is *Save template*; an
- * invoice's is *Send invoice* only when a document provider is installed —
- * with none (always, today: `useProvider`) it reads *Save invoice* and only
- * saves. No Test, no device switch, no campaign chrome (E10).
+ * The primary (comp 360, 1599): a template's is *Save template*; an invoice's
+ * is *Send invoice* only when a document provider is installed — with none
+ * (always, today: `useProvider`) it reads *Save invoice* and only saves. No
+ * Test, no device switch, no campaign chrome (the comp draws none).
  */
 import { Copy, FileText, Image, LayoutTemplate, Redo2, Save, Send, Trash2, Undo2 } from 'lucide-react';
 import type { FocusEvent, Ref } from 'react';
@@ -38,7 +39,7 @@ export interface EditorHeaderProps {
   canUndo: boolean;
   canRedo: boolean;
   addingLang: InvoiceLang | null;
-  /** A document provider is installed: an invoice's primary sends (O24). */
+  /** A document provider is installed: an invoice's primary sends. */
   providerInstalled: boolean;
   onNameFocus: (event: FocusEvent<HTMLInputElement>) => void;
   onNameChange: (name: string) => void;
@@ -54,7 +55,7 @@ export interface EditorHeaderProps {
   ref?: Ref<HTMLElement> | undefined;
 }
 
-/** The comp's primary label (1599) under O24. */
+/** The comp's primary label (1599), reading *Save invoice* until a provider can send. */
 export function primaryLabel(kind: InvoiceDocumentKind, providerInstalled: boolean): string {
   if (kind === 'template') return t('editor.saveTemplate', 'Save template');
   return providerInstalled ? t('editor.sendInvoice', 'Send invoice') : t('editor.saveInvoice', 'Save invoice');

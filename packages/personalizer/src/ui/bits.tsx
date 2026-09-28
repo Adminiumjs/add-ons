@@ -7,12 +7,12 @@
  * plus filing the result under its digest — and set the resulting string as
  * HTML. So "the cart thumbnail, the proof and the order line are the same
  * picture" is not three renderers agreeing: there is one renderer, it produces
- * text, and the same text is what the digest is taken over (criterion 17).
+ * text, and the same text is what the digest is taken over.
  *
  * `LinePicture` is the second half of that. One renderer is not enough on its
  * own — three surfaces calling it with three different `widthPx` values produce
  * three different strings and three different digests — so the three surfaces
- * criterion 17 names go through a component with NO options to pass.
+ * that must match go through a component with NO options to pass.
  *
  * `dangerouslySetInnerHTML` IS THE POINT AND IS SAFE HERE, which is a sentence
  * that deserves the two lines it takes to justify. Everything a shopper types
@@ -21,7 +21,7 @@
  * accessible name through the same function — and the rest of the string is
  * geometry this package computed. Rebuilding the same SVG as JSX would give
  * React a tree to diff and would give us TWO renderers to keep byte-identical,
- * which is exactly the thing the criterion is about.
+ * which is exactly the thing one renderer exists to avoid.
  *
  * THE ONE THING THE SCREEN HAS THAT THE FILE DOES NOT IS THE NAME. `previews`
  * holds the picture; the DOM holds the picture plus an `aria-label` and a
@@ -65,7 +65,7 @@ export function Mono({ children, dir }: { children: ReactNode; dir?: "ltr" }) {
 
 /**
  * IT DRAWS THROUGH `drawPreview`, NOT THROUGH `previewSvg`, and the difference
- * is the whole of criterion 17's invariant.
+ * is the whole of the one-picture invariant.
  *
  * `personalizer.ts` has claimed since the first commit that "every surface goes
  * through `drawPreview`, so the picture a shopper sees is by construction the
@@ -139,12 +139,12 @@ export function pictureName(
  * THE PICTURE THAT TRAVELS — the cart line, the proof and the maker's order
  * line, and it takes no options because none of the three may differ.
  *
- * Criterion 17 says those three are byte-identical for identical values.
- * `widthPx` is written into the SVG string and hashed with it, so a surface
- * free to pass its own would be a surface free to break the criterion by
- * choosing 240 instead of 184 — which is exactly how the order line came to be
- * showing a different picture from the basket. There is no prop to get wrong:
- * hand it the personalization and the template, size it with CSS.
+ * Those three must be byte-identical for identical values. `widthPx` is written
+ * into the SVG string and hashed with it, so a surface free to pass its own
+ * would be a surface free to break that by choosing 240 instead of 184 — which
+ * is exactly how the order line came to be showing a different picture from the
+ * basket. There is no prop to get wrong: hand it the personalization and the
+ * template, size it with CSS.
  */
 export function LinePicture({
   personalization,

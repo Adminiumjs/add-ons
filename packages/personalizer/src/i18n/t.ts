@@ -3,11 +3,11 @@
  * host.
  *
  * A slot fill is handed a payload and nothing else. It cannot import the host's
- * `useT` — that would be a runtime dependency on the host's module graph, which
- * 24 D7 does not allow — so it works out the reader's language for itself. The
- * one thing every host guarantees is `<html lang>` and `<html dir>`, stamped by
- * its own i18n provider; this module reads that attribute and re-renders when
- * it changes.
+ * `useT` — that would be a runtime dependency on the host's module graph, and
+ * an add-on takes nothing from its host but types — so it works out the
+ * reader's language for itself. The one thing every host guarantees is
+ * `<html lang>` and `<html dir>`, stamped by its own i18n provider; this module
+ * reads that attribute and re-renders when it changes.
  *
  * `useSyncExternalStore` over a `MutationObserver` rather than reading the
  * attribute during render: a host sets `lang` in an effect, so a plain read

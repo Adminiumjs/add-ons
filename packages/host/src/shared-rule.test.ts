@@ -22,10 +22,10 @@
  *
  *     export const zzSeed = crypto.getRandomValues(new Uint8Array(4))[0];
  *
- * in `personalizer/src/template.ts`, which is the determinism engine AC17 rests
- * on — the module that makes the cart thumbnail, the proof, the order line and
- * the proof dialog byte-identical. The package stayed at 157 of 157 green and
- * the die was compiled into `dist/client.js` and `dist/server.js`.
+ * in `personalizer/src/template.ts`, which is the determinism engine rendering
+ * rests on — the module that makes the cart thumbnail, the proof, the order
+ * line and the proof dialog byte-identical. The package stayed at 157 of 157
+ * green and the die was compiled into `dist/client.js` and `dist/server.js`.
  *
  * ── SO THE ARRANGEMENT IS THE THING UNDER TEST ──────────────────────────────
  *

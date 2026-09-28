@@ -5,8 +5,8 @@
  * `addOnManifestSchema` and run it. What it CAN do is assert the handful of
  * rules whose violation would be caught late and expensively — an egress
  * wildcard, a secret in `publicSettings`, a slot id that is not in the closed
- * registry — each of which has an issue code in 24 §5.3 and none of which is
- * visible by reading the JSON in a hurry.
+ * registry — each of which has an issue code in the manifest validator and
+ * none of which is visible by reading the JSON in a hurry.
  */
 
 import { existsSync } from "node:fs";
@@ -23,12 +23,13 @@ import { FILLED_SLOTS } from "./slots.ts";
 import { INERT_ORIGINS, NEVER_IN_A_BROWSER } from "./add-on-facts.ts";
 
 /**
- * The closed slot registry of 24 §5.4 — never invent an id.
+ * The closed slot registry — never invent an id.
  *
- * HAND-TYPED, AND IT IS ONE OF THE FOUR SILENT COPIES 25 D2 WARNS ABOUT. It is
- * only read as `SLOT_IDS.has(fill.slot)`, so an id MISSING here fails nothing
- * until some add-on names it — and then it fails as "invented an id", which is
- * the opposite of the truth. Thirteen since 2026-09-01 (33 O1).
+ * HAND-TYPED, AND IT IS ONE OF FOUR COPIES OF THE REGISTRY THAT STAY GREEN WHEN
+ * A NEW SLOT MISSES THEM. It is only read as `SLOT_IDS.has(fill.slot)`, so an
+ * id MISSING here fails nothing until some add-on names it — and then it fails
+ * as "invented an id", which is the opposite of the truth. Thirteen since
+ * 2026-09-01, when `shell.overlay` was added for the live-chat add-on.
  */
 const SLOT_IDS = new Set([
   "artwork.sources",
@@ -65,11 +66,11 @@ describe("the manifest", () => {
     expect(manifest).not.toHaveProperty("roles");
   });
 
-  it("is first-party, because an unsandboxed in-process add-on has to be (D13)", () => {
+  it("is first-party, because an unsandboxed in-process add-on has to be", () => {
     expect(manifest.publisher.id).toBe("adminium");
   });
 
-  it("uses the add-on category vocabulary rather than the app facet set (D2)", () => {
+  it("uses the add-on category vocabulary rather than the app facet set", () => {
     expect(manifest.categories).toEqual(["delivery"]);
     for (const category of manifest.categories) expect(ADD_ON_CATEGORIES.has(category)).toBe(true);
   });
@@ -81,7 +82,7 @@ describe("the manifest", () => {
       "checkout.delivery.methods",
       "order.dispatch.panel",
       "settings.add-on.panel",
-      // The inbound half (31 O4): the prepaid return label, entity-gated to
+      // The inbound half: the prepaid return label, entity-gated to
       // `return` so on every other record the fill draws nothing.
       "record.actions",
     ]);
@@ -104,7 +105,7 @@ describe("the manifest", () => {
     expect(provided.version).toBe(1);
   });
 
-  it("declares an egress allow-list that is one exact https hostname (D14)", () => {
+  it("declares an egress allow-list that is one exact https hostname", () => {
     const allow = manifest.addOn.network.allow;
     expect(allow).toHaveLength(1);
     for (const host of allow) {
@@ -126,7 +127,7 @@ describe("the manifest", () => {
     expect(manifest.addOn.network.allow.length).toBeGreaterThan(0);
   });
 
-  it("never exposes a secret setting to the client (FRONTEND_SECRET_LEAK, D15)", () => {
+  it("never exposes a secret setting to the client (FRONTEND_SECRET_LEAK)", () => {
     const secrets = manifest.settings.filter((s) => s.secret === true).map((s) => s.key);
     expect(secrets).toEqual(["api_key", "account_number"]);
     for (const key of manifest.addOn.publicSettings) {
@@ -135,7 +136,7 @@ describe("the manifest", () => {
     expect(manifest.addOn.publicSettings).toEqual([
       "demo_transport",
       "collection_cutoff",
-      // The returns depot (31 O4): five pieces of display text that end up
+      // The returns depot: five pieces of display text that end up
       // printed on a label. None is a secret, and the client half reads them
       // to know where a customer's return parcel goes.
       "returns_name",
@@ -146,7 +147,7 @@ describe("the manifest", () => {
     ]);
   });
 
-  it("ships a demo transport, and defaults to it (D11)", () => {
+  it("ships a demo transport, and defaults to it", () => {
     expect(manifest.addOn.demoTransport).toBeTruthy();
     const demo = manifest.settings.find((s) => s.key === "demo_transport")!;
     expect(demo.default).toBe(true);
@@ -177,8 +178,9 @@ describe("the manifest", () => {
    *   3. So the manifest could not claim the second host. Adding
    *      `{ app: "maker" }` and running the product's own validator returned
    *      SCOPE_OUT_OF_RANGE — for a permission this add-on did not want. The
-   *      cross-app claim of 24 D21 was demonstrated in the running app and
-   *      contradicted by the artefact that describes it.
+   *      cross-app claim (the add-on runs unchanged in any host) was
+   *      demonstrated in the running app and contradicted by the artefact
+   *      that describes it.
    *
    * A scope is a request for power. The honest length of the list is the length
    * that matches what the code does, which is its own two.
@@ -199,7 +201,7 @@ describe("the manifest", () => {
     }
   });
 
-  it("brings the two tables the works keeps after a disconnect (D16)", () => {
+  it("brings the two tables the works keeps after a disconnect", () => {
     const tables = manifest.requiredSchema.tables.map((t) => t.ref);
     expect(tables).toEqual(["shipments", "shipment_events"]);
     const shipments = manifest.requiredSchema.tables[0]!;
@@ -234,7 +236,7 @@ describe("the manifest", () => {
   });
 
   /**
-   * THE CROSS-APP CLAIM, IN THE ARTEFACT AND NOT ONLY IN THE DEMO (24 AC20, D21).
+   * THE CROSS-APP CLAIM, IN THE ARTEFACT AND NOT ONLY IN THE DEMO.
    *
    * This add-on has been vendored, registered and demonstrably working in the
    * maker studio since wave 4b, and the manifest went on naming one app. An
@@ -246,7 +248,7 @@ describe("the manifest", () => {
    * are checked out — so a `"*"` here would be an unfalsifiable claim replacing
    * a false one.
    *
-   * ── THE THIRD, ADDED 2026-08-28 (31-T06) ────────────────────────────────
+   * ── THE THIRD, ADDED 2026-08-28 ─────────────────────────────────────────
    *
    * `factory` is the works desk, and it is the first host to mount a STRICT
    * SUBSET of this add-on's slots: it has a staff frontend and no customer one,
@@ -254,13 +256,13 @@ describe("the manifest", () => {
    * host `checkout.delivery.methods` or `order.dispatch.panel` at all. Those two
    * fills simply never render there.
    *
-   * That is the sharpest version of D21 this add-on has been put to, and it is
-   * the reason the entry belongs here rather than being withheld: a partial
-   * mount is not a partial installation. The manifest says which apps this
+   * That is the sharpest test of app-neutrality this add-on has been put to,
+   * and it is the reason the entry belongs here rather than being withheld: a
+   * partial mount is not a partial installation. The manifest says which apps this
    * add-on runs in; which of its slots a given app happens to draw is the app's
    * business and is declared in the app, not here.
    *
-   * ── THE FOURTH, ADDED 2026-08-28 (31-T05) ───────────────────────────────
+   * ── THE FOURTH, ADDED 2026-08-28 ────────────────────────────────────────
    *
    * `ecommerce-shop` is the storefront, and it is the works desk's mirror
    * image: a CUSTOMER frontend and no staff one, so it hosts
@@ -273,7 +275,7 @@ describe("the manifest", () => {
    * one host mounting a subset could be a host that had not finished, and two
    * hosts mounting COMPLEMENTARY subsets is a contract doing its job.
    *
-   * ── THE FIFTH, ADDED 2026-09-01 (31-T07, O4) ────────────────────────────
+   * ── THE FIFTH, ADDED 2026-09-01 ─────────────────────────────────────────
    *
    * `helpdesk` is the support desk — a customer frontend and the first host of
    * the INBOUND direction: its returns flow mounts `record.actions` (the
@@ -303,7 +305,7 @@ describe("the manifest", () => {
  * suite asserts the manifest uses exactly those, and `dist.test.ts` asserts the
  * build really put them on disk. Three links, no gap for a guess.
  *
- * THE CONVENTION, STATED ONCE (24 AC10). Every path in the `addOn` block is
+ * THE CONVENTION, STATED ONCE. Every path in the `addOn` block is
  * RELATIVE TO THE REPOSITORY ROOT — the directory a host clones, and the
  * directory `manifest.json` itself sits in. So `dist/client.js` means the file
  * beside the manifest, and nothing downstream has to know what the build's
@@ -328,9 +330,9 @@ describe("the manifest's entry points are the files the build writes", () => {
   }, 180_000);
 
   it("resolves every declared path from the package root, onto a file that exists", () => {
-    // The assertion AC10 asks for, made against the manifest's own strings
-    // rather than against `OUTPUT`: a declared entry point that is not on disk
-    // is an add-on that validates, installs, and then fails to load.
+    // The package-root-relative assertion, made against the manifest's own
+    // strings rather than against `OUTPUT`: a declared entry point that is not
+    // on disk is an add-on that validates, installs, and then fails to load.
     for (const path of declared) {
       expect(path.startsWith("/"), `${path} is absolute, not package-root-relative`).toBe(
         false,
@@ -361,7 +363,7 @@ describe("the manifest's entry points are the files the build writes", () => {
 
   it("keeps the client half out of every server entry, and the reverse", () => {
     // A single bundle serving both halves would put the credential-reading
-    // transport in a page (D15), which is the whole reason there are two.
+    // transport in a page, where no secret may go — the whole reason there are two.
     expect(OUTPUT.client).not.toBe(OUTPUT.server);
   });
 });
@@ -370,8 +372,8 @@ describe("the manifest's entry points are the files the build writes", () => {
  * WHAT THIS ADD-ON TELLS ITS HOSTS TO GREP FOR, CHECKED AGAINST WHAT IT
  * DECLARES.
  *
- * `add-on-facts.ts` carries `NEVER_IN_A_BROWSER` — the strings a host's D15
- * bundle gate looks for in every emitted file — and it exists because that list
+ * `add-on-facts.ts` carries `NEVER_IN_A_BROWSER` — the strings a host's
+ * no-secrets bundle gate looks for in every emitted file — and it exists because that list
  * used to be written out inside each HOST. A host cannot look for a needle
  * nobody told it about, so a credentialled add-on vendored into a shop that had
  * never heard of it shipped its secret setting keys with the gate fully green.

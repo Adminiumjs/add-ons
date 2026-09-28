@@ -1,10 +1,10 @@
 /**
- * THE THREE SURFACES, COMPARED BYTE FOR BYTE (AC17) — and every failing verdict
- * checked for the button that carries its number (AC18).
+ * THE THREE SURFACES, COMPARED BYTE FOR BYTE — and every failing verdict
+ * checked for the button that carries its number.
  *
  * ── WHY THIS FILE EXISTS ────────────────────────────────────────────────────
  *
- * Criterion 17 says the cart thumbnail, the proof and the order line are the
+ * The rule is that the cart thumbnail, the proof and the order line are the
  * same picture. Three things asserted it and none of them looked:
  * `template.ts`'s header said so in prose, `personalizer.ts`'s header said the
  * stronger thing ("every surface goes through `drawPreview`") and was simply
@@ -101,7 +101,7 @@ const order = (line: SlotItem): OrderLinePayload => ({
   line,
 });
 
-describe('one picture, three surfaces (AC17)', () => {
+describe('one picture, three surfaces', () => {
   beforeEach(() => {
     forgetAll();
     resetFiles();
@@ -289,21 +289,21 @@ describe('the customer’s words survive a failing personalization', () => {
   });
 });
 
-// ── AC18, on the surface rather than in the engine ──────────────────────────
+// ── a number on every failing verdict, on the surface, not in the engine ─────
 
 /**
  * EVERY FAILING VERDICT RENDERS ITS NUMBER, AS A BUTTON.
  *
  * `template.test.ts` proves the ENGINE never returns a failure without a
- * numbered remedy. That is half the criterion and it was the half that was
- * true: `no-letter` carried `shortenToChars: 3` for "Café Row", the suite
- * asserted it, and the surface rendered a bare sentence with nothing under it,
- * because the surface reads the machine-readable half of `check` and the number
- * had never been mirrored onto it. A remedy a suite can see and a shopper
- * cannot is not a remedy — so this walks the failing classes and looks at what
- * is on the screen.
+ * numbered remedy. That is half the rule and it was the half that was true:
+ * `no-letter` carried `shortenToChars: 3` for "Café Row", the suite asserted
+ * it, and the surface rendered a bare sentence with nothing under it, because
+ * the surface reads the machine-readable half of `check` and the number had
+ * never been mirrored onto it. A remedy a suite can see and a shopper cannot is
+ * not a remedy — so this walks the failing classes and looks at what is on the
+ * screen.
  */
-describe('every failing verdict carries its number to the screen (AC18)', () => {
+describe('every failing verdict carries its number to the screen', () => {
   const at = (values: Record<string, string>, over: Partial<Personalization> = {}) => ({
     templateId: 'walnut-coasters',
     values,
@@ -373,11 +373,11 @@ describe('every failing verdict carries its number to the screen (AC18)', () => 
        * ── THE ENGINE'S LIST, NOT A NUMBER OF BUTTONS ────────────────────────
        *
        * What this replaces read `expect(buttons.length).toBeGreaterThan(0)` —
-       * one button per FAILING CLASS. An `overrun` carries BOTH remedies (D5c),
-       * so a verifier who wrapped the size button in `false &&` deleted a
-       * working way out for every shopper whose wording will not fit at any
-       * length, and this suite stayed green because the shortening button still
-       * satisfied "more than zero".
+       * one button per FAILING CLASS. An `overrun` carries BOTH remedies, so a
+       * verifier who wrapped the size button in `false &&` deleted a working
+       * way out for every shopper whose wording will not fit at any length, and
+       * this suite stayed green because the shortening button still satisfied
+       * "more than zero".
        *
        * The expectation is the engine's own list, member for member: every
        * remedy `remediesFor` supplies must be on the screen CARRYING ITS OWN
@@ -448,18 +448,19 @@ describe('every failing verdict carries its number to the screen (AC18)', () => 
   });
 
   /**
-   * THE ONE THING THAT IS NOT A VERDICT, and the reason the criterion can be
+   * THE ONE THING THAT IS NOT A VERDICT, and the reason the rule can be
    * absolute about the ones that are. An empty required area has no number to
    * offer — "shorten it to N" is not advice about an empty box — so it is a
    * BLOCK, it is refused in plain words, and the host's own button now carries
    * that refusal (`setBlocked`).
    *
    * IT TAKES A HALF-FINISHED PANEL NOW, NOT AN UNTOUCHED ONE. This case used to
-   * pass `at({})` and that is exactly the D19 defect `check` was repaired for:
-   * an untouched panel is a shopper who wants a PLAIN coaster, which the shop
-   * sells and sold a second earlier with the add-on switched off. The date typed
-   * below is what makes this a personalization with a hole in it — the case the
-   * maker's `:required` flag was written for — and the refusal belongs to that.
+   * pass `at({})` and that is exactly the defect `check` was repaired for: an
+   * untouched panel is a shopper who wants a PLAIN coaster, which the shop
+   * sells and sold a second earlier with the add-on switched off. The date
+   * typed below is what makes this a personalization with a hole in it — the
+   * case the maker's `:required` flag was written for — and the refusal belongs
+   * to that.
    */
   it('refuses an empty required area in words, with no button pretending to fix it', () => {
     const markup = renderToStaticMarkup(
@@ -474,7 +475,7 @@ describe('every failing verdict carries its number to the screen (AC18)', () => 
   });
 
   /**
-   * AND AN UNTOUCHED PANEL REFUSES NOTHING (24 D19).
+   * AND AN UNTOUCHED PANEL REFUSES NOTHING.
    *
    * Switching this add-on ON used to disable "Add to basket" from the moment
    * the page opened, with a `--danger` note reading "Fill in Top line first."
@@ -516,7 +517,7 @@ describe('every failing verdict carries its number to the screen (AC18)', () => 
 // ── the note field, on a piece with no areas drawn on it ────────────────────
 
 /**
- * SWITCHING THE ADD-ON ON MUST NOT TAKE A FIELD AWAY (D19).
+ * SWITCHING THE ADD-ON ON MUST NOT TAKE A FIELD AWAY.
  *
  * `product.options.personalize` is a `single` slot, so the host's own note
  * field disappears the moment a fill mounts. Two of Birch Row's twelve pieces
@@ -527,7 +528,7 @@ describe('every failing verdict carries its number to the screen (AC18)', () => 
  * The third case is what keeps this true for the thirteenth piece: a product
  * key this add-on has never heard of and never will.
  */
-describe('a shopper can always say what they want (D19)', () => {
+describe('a shopper can always say what they want', () => {
   const payloadFor = (key: string, noteLimit?: number): PersonalizePayload => ({
     product: { key, label: 'A piece', ...(noteLimit === undefined ? {} : { noteLimit }) },
     note: '',
@@ -589,7 +590,7 @@ describe('a shopper can always say what they want (D19)', () => {
     }
   });
 
-  it('writes what is typed straight back to the host’s own note field (D16)', () => {
+  it('writes what is typed straight back to the host’s own note field', () => {
     // The words live in the HOST's field on every piece, set up or not, so a
     // disconnect leaves the customer's request in plain language rather than
     // locked inside a picture nobody can open.

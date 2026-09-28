@@ -11,7 +11,8 @@ connects to no outside company, needs no account anywhere, and makes no network
 call of any kind — `src/sources.test.ts` greps for every form of one.
 
 Provides **`product-personalizer@1`**. Attaches to `maker ^0.1.0`, and to the
-generated dashboard's `products` and `order_lines` tables (24 D20).
+generated dashboard's `products` and `order_lines` tables, so a shop that runs
+only the dashboard can use it too.
 
 It used to claim `printing ^1.0.0` as well. The contract is app-neutral and the
 add-on would run there — but the print works mounts none of the surfaces this
@@ -37,13 +38,14 @@ and the first app that hosts `product.options.personalize` gets it back.
 
 ## The metric table, and why it is a table
 
-Comp L measures text with `document.createElement("canvas").getContext("2d")`.
-**24 D5c overrules that**, and the reason is acceptance criterion 17 rather than
-taste: canvas advances depend on the platform, on which fonts happen to be
-installed, and on the browser's own fallback chain. A verdict measured that way
-says "two characters more than fits" on one machine and "it fits" on the next,
-the cart thumbnail and the proof stop being the same picture, and none of it is
-reproducible headlessly.
+The design comp measures text with
+`document.createElement("canvas").getContext("2d")`. **The engine overrules
+that**, and the reason is that the cart thumbnail, the proof and the order line
+must be one picture, not taste: canvas advances depend on the platform, on which
+fonts happen to be installed, and on the browser's own fallback chain. A verdict
+measured that way says "two characters more than fits" on one machine and "it
+fits" on the next, the cart thumbnail and the proof stop being the same picture,
+and none of it is reproducible headlessly.
 
 So the numbers are committed. `tools/measure-faces.html` produced them — canvas
 `measureText` at 1000 px for every printable ASCII character, plus cap height,
@@ -59,7 +61,7 @@ picture agree by construction rather than by luck.
 
 ## One picture, three surfaces
 
-Criterion 17 says the cart thumbnail, **the proof** and the order line are the
+The rule is that the cart thumbnail, **the proof** and the order line are the
 same picture for the same values. Deterministic drawing is necessary for that
 and is not sufficient, and this add-on shipped a release proving it: the engine
 was perfectly deterministic while the basket drew the preview, the order line
@@ -76,7 +78,7 @@ Two structures hold it now, and neither is a comment:
   behind the file id that travels on the order.
 - **One set of options.** `widthPx` is written into the SVG string and hashed
   with it, so three surfaces each choosing their own width are three surfaces
-  each able to break the criterion. `LinePicture` takes no options: the three
+  each able to break that rule. `LinePicture` takes no options: the three
   that must match go through it and size themselves with CSS. The shopper's
   editing canvas is deliberately not one of the three — it draws larger, with
   guides.
@@ -92,9 +94,9 @@ turns it red.
 ## Outlines, never a font
 
 The production file is SVG paths and nothing else — no `<text>`, no
-`font-family`, no `@font-face`, no font file (criterion 19). A file that named a
-face would cut differently depending on what was installed on the machine that
-opened it, which is the one thing this add-on exists to prevent.
+`font-family`, no `@font-face`, no font file. A file that named a face would cut
+differently depending on what was installed on the machine that opened it, which
+is the one thing this add-on exists to prevent.
 
 Outlines need outlines. This package cannot lift them out of somebody's
 typeface, so the studio has its own: a single-stroke skeleton per letter in
@@ -108,29 +110,30 @@ rather than leaving a reader to work it out.
 
 `fit()` returns either a fit or a typed overrun carrying **both** remedies with
 their values: drop to N millimetres, or shorten to N characters. A bare "doesn't
-fit" is a contract violation, not a UI choice (criterion 18), and the surface
-renders each remedy as a button. Both numbers are computed by search rather than
-estimated from a ratio — `template.test.ts` asserts that applying either one
-makes the next `fit` pass, and that each is the *largest* size and the *longest*
-prefix that work.
+fit" is a contract violation, not a UI choice, and the surface renders each
+remedy as a button. Both numbers are computed by search rather than estimated
+from a ratio — `template.test.ts` asserts that applying either one makes the
+next `fit` pass, and that each is the *largest* size and the *longest* prefix
+that work.
 
 **A block is not a verdict.** An empty required area has no number to offer, so
 it stops "Add to basket" with a plain reason instead of producing a verdict with
-an empty `remedies`. That split is what lets criterion 18 be absolute.
+an empty `remedies`. That split is what lets "every failing verdict carries a
+number" be absolute.
 
 ## Phase B: the dashboard mount is declared and not built
 
 `record.editor.panel` is the seventh slot in `manifest.json` and there is **no
 fill for it in this bundle**. Its host is Adminium's generated dashboard rather
 than an example app, and it needs the add-on runtime that `POST /manifests` does
-not yet provide (24 §5.10, D20). Comp L designs those four screens and 24 §8B
-specifies them.
+not yet provide. The design comp draws those four screens and the spec describes
+them.
 
-Shipping a fill nothing can mount is the exact defect §5.4 records against
-`nav.add-on.routes` — an add-on author reads the list and writes code to it — so
+Shipping a fill nothing can mount is the exact defect `nav.add-on.routes` once
+had in another host — an add-on author reads the list and writes code to it — so
 the manifest declares the attachment, the code ships nothing, and
-`manifest.test.ts` asserts the difference **by name** rather than letting it look
-like an oversight.
+`manifest.test.ts` asserts the difference **by name** rather than letting it
+look like an oversight.
 
 ## What else was cut, and why
 
@@ -138,9 +141,9 @@ like an oversight.
   through millimetre steppers rather than corner handles. A drag handle needs a
   pointer and the same panel mounts inside a dashboard record editor in Phase B,
   where the editor is a form; a millimetre is also what a maker measures with.
-  Drag is a P1 addition on top of this, not a replacement for it.
+  Drag is a later addition on top of this, not a replacement for it.
 - **Image and colour zones.** The contract carries all four kinds; this build
-  renders the two text kinds, which is what 24 §8B's cutline says.
+  renders the two text kinds, which is where the scope was cut.
 - **Curved text on a path, and per-angle independent values.** Same cutline.
 
 ## Running it
@@ -160,4 +163,4 @@ watches the plain note field become a live preview and go back again.
 See [`../../TRADEMARKS.md`](../../TRADEMARKS.md). This add-on references no
 company's marks, connects to no outside service, and needs no account anywhere —
 which is what its detail surfaces say in place of a disclaimer it cannot
-honestly make (24 AC6, as amended).
+honestly make.

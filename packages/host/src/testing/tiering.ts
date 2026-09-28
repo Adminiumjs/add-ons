@@ -32,10 +32,12 @@
  *
  * ── WHAT THE RULE IS ────────────────────────────────────────────────────────
  *
- * 17 §2 bans a set of IDEAS and happens to spell them in English:
- * `pricing`, `plan`, `tier`, `billing`, `upgrade`, `free`, plus D12's
- * `premium`/`pro`. Copy in the other seven languages says the same things in
- * its own words and the release grep cannot see any of it.
+ * v1 is free of charge, and the rule that keeps it from ever raising the
+ * subject of paying bans a set of IDEAS and happens to spell them in English:
+ * `pricing`, `plan`, `tier`, `billing`, `upgrade`, `free`, plus
+ * `premium`/`pro`, which ban the idea of a tiered add-on. Copy in the other
+ * seven languages says the same things in its own words and the release grep
+ * cannot see any of it.
  *
  * So the table below is `IDEA × LANGUAGE`, and it is TOTAL BY TYPE: every idea
  * has a cell in every non-English language, and adding a language or an idea is
@@ -116,7 +118,7 @@
  */
 
 /**
- * The ideas 17 §2 and 24 D12 forbid, named once.
+ * The ideas the no-paying and no-tiered-add-on rules forbid, named once.
  *
  * `paid` ON ITS OWN IS DELIBERATELY NOT ONE OF THEM, and the attempt is worth
  * recording. It was in this list for one run and came straight back out: a shop
@@ -280,7 +282,8 @@ export const IDEA_IN_LANGUAGE: Record<
  * The per-locale view the message-bundle suites want.
  *
  * `en-US` is the English substring ban's own job, so its only entry is the pair
- * D12 adds on top: `premium` is not in 17 §2's run of substrings.
+ * the add-on brand rule adds on top: `premium` is not in the release sweep's run
+ * of substrings.
  */
 export const TIERING_WORDS: Record<string, RegExp[]> = {
   /*
@@ -291,10 +294,11 @@ export const TIERING_WORDS: Record<string, RegExp[]> = {
    * is where its English "Pro" is caught.
    */
   /*
-   * English's own cell, which is NOT empty and used to be nearly so. 17 §2's
-   * substring run covers `pricing plan tier billing upgrade free /mo` and D12
-   * adds `premium`; none of them appears in "switch to the paid version for
-   * more", which is the round-6 plant written in English. The hole was in every
+   * English's own cell, which is NOT empty and used to be nearly so. The
+   * release grep's substring run covers
+   * `pricing plan tier billing upgrade free /mo` and the tiered-add-on ban adds
+   * `premium`; none of them appears in "switch to the paid version for more",
+   * which is the round-6 plant written in English. The hole was in every
    * language including this one.
    */
   "en-US": [/premium/i, /\bpro\b/i, /paid version/i, /full version/i, /paid account/i],

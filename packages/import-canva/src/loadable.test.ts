@@ -1,5 +1,5 @@
 /**
- * Can a browser import this add-on's built bundle? (26-T13)
+ * Can a browser import this add-on's built bundle?
  *
  * The suite lives in `@adminium/add-on-host/testing` so all six share one
  * implementation. This package rebuilds per-suite rather than in a

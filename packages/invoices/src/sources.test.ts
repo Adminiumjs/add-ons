@@ -78,9 +78,10 @@ const codeOf = (file: string) =>
 
 describe('nothing here reaches outside itself', () => {
   it('names no address at all, which is the strictest state there is', () => {
-    // A host's D11 net reports every absolute URL in what it ships whose
-    // origin nobody has declared inert. With `INERT_ORIGINS` empty, every
-    // address is a finding — so this asserts there are none to find.
+    // A host's no-live-call net (a demo makes no real network call) reports
+    // every absolute URL in what it ships whose origin nobody has declared
+    // inert. With `INERT_ORIGINS` empty, every address is a finding — so this
+    // asserts there are none to find.
     const found = SHIPPED.flatMap((file) =>
       offendingAddresses(codeOf(file), INERT_ORIGINS as readonly InertOrigin[]).map(
         (address) => `${file}: ${address}`,
@@ -99,10 +100,10 @@ describe('nothing here reaches outside itself', () => {
   it('reads no clock, mints nothing random, and touches no storage', () => {
     /*
      * The determinism claim, and this package needs it more than its siblings:
-     * 25 D12 is that the same subject renders to the same bytes, and the
-     * conformance suite proves it by rendering twice and comparing. One call
-     * to `Date.now()` or `crypto.randomUUID()` anywhere in the path makes that
-     * false SILENTLY — two renders a second apart still look identical to
+     * the contract requires the same subject to render to the same bytes, and
+     * the conformance suite proves it by rendering twice and comparing. One
+     * call to `Date.now()` or `crypto.randomUUID()` anywhere in the path makes
+     * that false SILENTLY — two renders a second apart still look identical to
      * anybody eyeballing them.
      *
      * It is also the rule the copied `document.ts` nearly broke: the server's
@@ -156,7 +157,7 @@ describe('it names no company', () => {
   });
 });
 
-describe('every simulated result is labelled (24 D11, 25 D9)', () => {
+describe('every simulated result is labelled', () => {
   it('pairs each seeded activity line with a demo label', () => {
     /*
      * Both seeded lines describe documents nobody drew. An unlabelled one is a

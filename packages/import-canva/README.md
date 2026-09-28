@@ -36,7 +36,7 @@ named here. See [TRADEMARKS.md](TRADEMARKS.md).
 
 Removing it returns the app to its base state: the artwork screen's "More ways to send artwork"
 panel goes back to its honest empty state, and no orphan button is left behind. Designs already
-imported into an order **stay** (24 D16).
+imported into an order **stay**: switching an add-on off never destroys data.
 
 ## The demo transport — no third-party call, ever
 
@@ -73,8 +73,8 @@ remedy alone, because a button that promises a pass it cannot deliver is worse t
 
 ## OAuth: what this repo declares, and what it does not implement
 
-**The host runs the flow** (24 §5.6). This add-on declares an authorize URL, a token URL and its
-scopes; the host performs the authorization-code exchange with PKCE, stores and refreshes the
+**The host runs the flow**, not the add-on. This add-on declares an authorize URL, a token URL and
+its scopes; the host performs the authorization-code exchange with PKCE, stores and refreshes the
 tokens, and hands back an already-authorized HTTP client. There is **no client secret in this
 repo**, no token endpoint call and no refresh timer — and there must never be one.
 
@@ -113,7 +113,7 @@ wave-4 add-ons use, so a reader who has seen one add-on's `dist/` knows where to
 |---|---|---|
 | `addOn.slots[].client` | `dist/client.js` | both slot fills, the React half — plus `dist/client.css` |
 | `addOn.provides[].server` | `dist/server.js` | the `artwork-source@1` implementation |
-| `addOn.demoTransport` | `dist/server.js` | the four seeded designs (24 D11) |
+| `addOn.demoTransport` | `dist/server.js` | the four seeded designs, so no demo makes a real call |
 
 `vite.config.ts` exports those two names as `OUTPUT` and the build writes exactly them, so the
 manifest and the build cannot drift into a manifest that validates and then fails to load.
@@ -122,7 +122,7 @@ The split is real rather than a naming convention: `dist/server.js` imports no r
 DOM it has not guarded, and is loaded and exercised under Node by the test suite — which is why
 `src/i18n/t.ts` (the translator) and `src/i18n/useT.ts` (its hooks) are two files rather than one.
 The vendor's authorize URL, token URL and API hostname live in the server half and the manifest
-only: the host runs the OAuth flow (24 §5.6), so a page has no use for them, and
+only: the host runs the OAuth flow, so a page has no use for them, and
 `src/built-output.test.ts` asserts none of the three reaches `dist/client.js`.
 `src/manifest.test.ts` asserts that every path above exists in the build output — so a manifest
 that names a file the build stopped producing fails here rather than on someone else's install.

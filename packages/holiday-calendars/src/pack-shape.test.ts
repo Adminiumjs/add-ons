@@ -1,5 +1,6 @@
 /**
- * D1's pack-shape assertion for this package.
+ * The pack-shape assertion for this package: the tarball cannot silently grow
+ * or lose a half.
  *
  * The suite lives in `@adminium/add-on-host/testing` so the six add-ons share
  * one implementation; this file exists because only the owning package's suite

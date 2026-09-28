@@ -1,22 +1,23 @@
 /**
- * WHAT GOES TO THE MACHINE — comp L's screen 5, and the payoff.
+ * WHAT GOES TO THE MACHINE — the design's production screen, and the payoff.
  *
  * The piece's outline as a cut path, the personalization as filled paths, the
  * layers colour-coded and listed with each one's length or area in millimetres,
  * the material and the finished size, and a download.
  *
  * TWO HONEST LINES SHIP HERE AND BOTH ARE LOAD-BEARING. The first is the one
- * 24 §8B quotes verbatim — "This is a file, not a machine — send it to your
- * laser the way you always do" — because this add-on stops at the file and D5c
- * says so. The second says what the letters in it are: the studio's own cut
- * alphabet, at exactly the size and place the customer's picture shows. A
- * reader who compares the two side by side will notice the letterforms differ,
- * and being told why by the interface is better than working it out.
+ * the spec quotes verbatim — "This is a file, not a machine — send it to your
+ * laser the way you always do" — because this add-on stops at the file and
+ * never drives the machine. The second says what the letters in it are: the
+ * studio's own cut alphabet, at exactly the size and place the customer's
+ * picture shows. A reader who compares the two side by side will notice the
+ * letterforms differ, and being told why by the interface is better than
+ * working it out.
  *
  * The file is offered as a download through a `blob:` URL built from bytes this
  * package computed. That is not a network call — nothing leaves the browser and
- * nothing is fetched (24 D11); `sources.test.ts` greps this file for `fetch`
- * along with everything else.
+ * nothing is fetched; `sources.test.ts` greps this file for `fetch` along with
+ * everything else.
  */
 
 import type { Personalization, Template } from '@adminium/add-on-host/contracts';
@@ -100,12 +101,12 @@ export function Production({
           {/*
            * THE MATERIAL'S NAME, NOT ITS KEY.
            *
-           * [Corrected 2026-08-11, wave 4b round 5.] This was
-           * `<Mono>{file.materialId}</Mono>` — the literal string `walnut`, in
-           * every locale, under a label reading `الخامة` and three rows from the
-           * studio's own `جوز` for the same board. A maker reading a production
-           * file wants the material they can pick up, and `walnut` is neither
-           * that nor a code they have any use for.
+           * [Corrected 2026-08-11.] This was `<Mono>{file.materialId}</Mono>` —
+           * the literal string `walnut`, in every locale, under a label reading
+           * `الخامة` and three rows from the studio's own `جوز` for the same
+           * board. A maker reading a production file wants the material they
+           * can pick up, and `walnut` is neither that nor a code they have any
+           * use for.
            *
            * The names are THIS add-on's to give: `MATERIALS` in `pieces.ts` is
            * its own table of four, not a mirror of any host's catalogue, so

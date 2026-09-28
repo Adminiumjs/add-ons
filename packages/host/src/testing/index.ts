@@ -3,10 +3,10 @@
  * they run.
  *
  * TEST-ONLY, AND THE SEPARATE ENTRY POINT IS THE ENFORCEMENT. `zod` is the one
- * runtime dependency the host does not carry, D7 forbids an add-on's shipped
- * bundle from taking it, and nothing under `../` imports anything from here —
- * so no add-on's `dist/` can reach it even by accident. Importing this from a
- * shipped module is the mistake this layout is shaped to prevent.
+ * runtime dependency the host does not carry, an add-on's shipped bundle may
+ * take no dependency its host lacks, and nothing under `../` imports anything
+ * from here — so no add-on's `dist/` can reach it even by accident. Importing
+ * this from a shipped module is the mistake this layout is shaped to prevent.
  */
 
 export {

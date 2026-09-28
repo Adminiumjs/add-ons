@@ -1,8 +1,8 @@
 /**
  * THE MAPPING IS INVERTED — THE HOST MAPS, THIS ADD-ON VALIDATES.
  *
- * This file is the whole of that decision (34 §5.3), and the decision is worth
- * more than the forty lines under it.
+ * This file is the whole of that decision, and the decision is worth more
+ * than the forty lines under it.
  *
  * The obvious design is the other one: the add-on ships a table for each
  * host it knows about — a `sale` becomes a receipt this way, an `order`
@@ -43,7 +43,7 @@ export interface HostMapping {
 }
 
 export interface HostContext {
-  /** The host's own clock fact — never read from `Date` here (25 D12). */
+  /** The host's own clock fact — never read from `Date` here (same subject, same bytes). */
   readonly now: { readonly iso: string; readonly timezone: string };
   readonly locale: string;
   readonly currency: string;
@@ -83,8 +83,8 @@ export class MissingSlotError extends Error {
  * from a host's own mount site, at build time, where a mapping missing a
  * required slot is a MISTAKE IN THE HOST'S CODE and should stop the developer
  * writing it rather than produce a runtime value they then have to inspect.
- * The kit's tier-1 guard (34-T28) asserts the same rule at build time for the
- * same reason.
+ * The kit's tier-1 guard asserts the same rule at build time for the same
+ * reason.
  */
 export function subjectFromHost(
   mapping: HostMapping,

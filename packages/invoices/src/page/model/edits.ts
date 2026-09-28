@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 /**
- * The editing surface every panel and canvas block speaks to (34-invoices-
- * add-on.md Appendix E/F). One interface, implemented once by the editor's
- * `useDocumentEdits`, so the twenty-nine inspector panels and the
- * twenty-seven canvas blocks never touch the draft hook directly.
+ * The editing surface every panel and canvas block speaks to. One interface,
+ * implemented once by the editor's `useDocumentEdits`, so the twenty-nine
+ * inspector panels and the twenty-seven canvas blocks never touch the draft
+ * hook directly.
  *
  * TWO TEMPOS, THE COMP'S (1343-1345): `beginEdit` records a history step and
  * is called on FOCUS, so a run of keystrokes in one field is one undo; the

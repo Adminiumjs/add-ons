@@ -3,8 +3,8 @@
  *
  * ── WHY BY HAND ────────────────────────────────────────────────────────────
  *
- * 25 D11 again: no runtime dependency the host has not got, and the host has
- * React. `packages/shipping-dhl/src/label.ts` writes a complete PDF 1.4 in
+ * The same rule again: no runtime dependency the host has not got, and the host
+ * has React. `packages/shipping-dhl/src/label.ts` writes a complete PDF 1.4 in
  * about twenty-five lines with nothing at all, and this is the same file with
  * more pages and rectangles instead of only text. Six object kinds, offsets
  * collected while they are concatenated so the cross-reference table is exact,
@@ -490,10 +490,10 @@ export function undrawableCharacters(facts: Pick<SheetFacts, 'entity' | 'referen
  * kept apart rather than folded together. That one counts OCCURRENCES, because
  * the record panel renders it as "n characters cannot be printed" and a
  * reference of three identical accented letters loses three of them. This one
- * lists each glyph ONCE, because that is what a `LATIN_ONLY` refusal carries
- * (34 D6) — a refusal saying "some characters" leaves somebody guessing which
- * of two fields to fix, and one saying `['é','é','é']` tells them nothing the
- * first entry did not.
+ * lists each glyph ONCE, because that is what a `LATIN_ONLY` refusal carries —
+ * a refusal saying "some characters" leaves somebody guessing which of two
+ * fields to fix, and one saying `['é','é','é']` tells them nothing the first
+ * entry did not.
  */
 export function undrawnCharacters(
   facts: Pick<SheetFacts, 'entity' | 'reference'>,

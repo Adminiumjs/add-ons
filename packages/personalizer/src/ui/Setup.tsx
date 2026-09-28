@@ -1,20 +1,21 @@
 /**
- * THE MAKER'S SET-UP SURFACE — comp L's screen 4.
+ * THE MAKER'S SET-UP SURFACE — the design's set-up screen.
  *
  * Three steps on one page: the four ANGLES the shopper will see, the AREAS
  * drawn on them with their limits, and a SAMPLE panel that renders exactly what
  * a customer would get, so the maker checks their own set-up without leaving
  * the page.
  *
- * WHAT WAS CUT, AND WHY IT IS SAID HERE RATHER THAN LEFT TO BE NOTICED. Comp L
- * draws the areas being dragged into place with corner handles. This ships the
- * same model — position and size in millimetres, per angle — through STEPPERS
- * instead of drag. The reason is not effort: a drag handle needs a pointer, and
- * the same panel mounts inside the generated dashboard in Phase B (D20), where
- * the record editor is a form. A millimetre is also what a maker measures with,
- * and a number that can be typed is a number that can be checked. Drag is a
- * better gesture and it is a P1 addition on top of this, not a replacement for
- * it — the zone model underneath is the contract's, unchanged.
+ * WHAT WAS CUT, AND WHY IT IS SAID HERE RATHER THAN LEFT TO BE NOTICED. The
+ * design comp draws the areas being dragged into place with corner handles.
+ * This ships the same model — position and size in millimetres, per angle —
+ * through STEPPERS instead of drag. The reason is not effort: a drag handle
+ * needs a pointer, and the same panel mounts inside the generated dashboard in
+ * Phase B, where the record editor is a form. A millimetre is also what a maker
+ * measures with, and a number that can be typed is a number that can be
+ * checked. Drag is a better gesture and it is a later addition on top of this,
+ * not a replacement for it — the zone model underneath is the contract's,
+ * unchanged.
  */
 
 import { useId, useState } from 'react';
@@ -244,10 +245,10 @@ export function Setup({
                 {/*
                  * THE FIELD'S ID, LABELLED AS ONE AND MARKED AS ONE.
                  *
-                 * [Corrected 2026-08-11, wave 4b round 5.] This printed `top`
-                 * bare, under the translated label `السطر العلوي`, so it read as
-                 * one stray English word in the middle of an Arabic sentence
-                 * with nothing to say what it was.
+                 * [Corrected 2026-08-11.] This printed `top` bare, under the
+                 * translated label `السطر العلوي`, so it read as one stray
+                 * English word in the middle of an Arabic sentence with nothing
+                 * to say what it was.
                  *
                  * It is kept, because it IS what a maker wants here: this is the
                  * key the template carries and the one that appears in an

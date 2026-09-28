@@ -16,7 +16,7 @@
  * naming where to change it — not a hidden panel, which is indistinguishable
  * from a broken one.
  *
- * ── IT NEVER WRITES BACK (34 D18) ──────────────────────────────────────────
+ * ── IT NEVER WRITES BACK ───────────────────────────────────────────────────
  *
  * `patchRecord` is optional on this payload and this fill ignores it entirely.
  * Writing a document number back into a record would mean choosing a field
@@ -26,9 +26,9 @@
  *
  * ── AND EVERY RESULT HERE IS A REAL ONE ────────────────────────────────────
  *
- * 24 D11 requires a SIMULATED result to be labelled. Nothing on this surface
- * is simulated: the bytes are drawn from the record in front of you by the
- * same functions the server half uses. The demo label belongs to the settings
+ * A SIMULATED result must always be labelled as one. Nothing on this surface is
+ * simulated: the bytes are drawn from the record in front of you by the same
+ * functions the server half uses. The demo label belongs to the settings
  * panel's sample, and `sources.test.ts` asserts the pairing there.
  */
 
@@ -113,7 +113,7 @@ export function DocumentAction({ payload }: { payload: RecordActionsPayload }) {
       recordId: payload.recordId,
       // THE SHOP'S DAY, NOT A CLOCK. `now` is a host fact, and taking it from
       // here rather than reading one is what keeps the same record giving back
-      // the same bytes (25 D12).
+      // the same bytes.
       now: payload.now,
       settings,
     });

@@ -95,8 +95,8 @@ checkout. Both halves are in that file's header.
 
 ### What is shared, and what stays with an add-on
 
-**The rule this section used to state was wrong, and the correction is the whole
-of 24 D21.** It read:
+**The rule this section used to state was wrong, and the correction is what
+makes an add-on app-neutral.** It read:
 
 > ~~A type the add-on **constructs and hands back** must match the host exactly,
 > so it is shared. A type the add-on **only reads** may be narrowed, so it lives
@@ -143,7 +143,7 @@ fails when either host declares a member this mirror has not heard of.
 `zod` is behind the separate `@adminium/add-on-host/testing` entry point and
 nothing under the other two entry points imports it, so no add-on's `dist/` can
 reach it. **An add-on takes no runtime dependency the host does not already
-have** (24 D7): React, its DOM renderer and `lucide-react`, all `external`.
+have**: React, its DOM renderer and `lucide-react`, all `external`.
 
 ## Commands
 

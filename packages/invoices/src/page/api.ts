@@ -83,7 +83,7 @@ export interface InvoiceDetail extends InvoiceSummary {
   languages: InvoiceLanguageView[];
 }
 
-/** A starter tile of the New modal (comp 1406-1413, Appendix G). */
+/** A starter tile of the New modal (comp 1406-1413). */
 export interface InvoiceStarterCard {
   key: string;
   name: string;

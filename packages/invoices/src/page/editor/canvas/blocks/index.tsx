@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 /**
- * The block registry: every key in `blockOrder` (comp 1114; 34-invoices-add-
- * on.md Appendix F) to the component that draws it, plus the name the grip
- * and the insert chip announce for it. The 23 built-ins are keyed by
- * `BuiltinBlockKey`; a `cus:` key renders `CustomBlock` with its section.
+ * The block registry: every key in `blockOrder` (comp 1114) to the component
+ * that draws it, plus the name the grip and the insert chip announce for it.
+ * The 23 built-ins are keyed by `BuiltinBlockKey`; a `cus:` key renders
+ * `CustomBlock` with its section.
  *
  * The label is the inspector's own word for the section (`sectionText.ts`),
  * so the sheet and the aside never disagree; the two blocks that hold two

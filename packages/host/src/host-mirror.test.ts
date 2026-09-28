@@ -63,7 +63,7 @@ const MIRROR_SRC = fileURLToPath(new URL('.', import.meta.url));
  * `ADMINIUM_PRINT_SHOP` / `ADMINIUM_MAKER_SHOP` override them for a checkout
  * that lives elsewhere.
  *
- * TWO HOSTS, AND THE SECOND ONE IS THE POINT. D21's claim is that a slot id
+ * TWO HOSTS, AND THE SECOND ONE IS THE POINT. The claim is that a slot id
  * names a surface rather than an app, and the only evidence for that claim is a
  * second host mounting the same ids. Checking one host would have let the
  * mirror drift towards whichever app happened to be checked out — which is the
@@ -458,12 +458,13 @@ describe.each(present)('the mirror has not drifted from $name', (host) => {
  *
  * ── WHY THE FILE IS COPIED AT ALL ───────────────────────────────────────────
  *
- * `testing/egress.ts` states D11's rule — can anything here cause a request to
- * a host we do not control — and all three repos need it. None of them can
- * import it from the others: a host app is a standalone Vite SPA published from
- * a clean clone with no sibling checkout of anything, and this repo has to be
- * green with no host beside it. So there are three copies, for the same reason
- * `host.ts` has three, and with the same consequence if nothing watches them.
+ * `testing/egress.ts` states the no-real-call rule — can anything here cause a
+ * request to a host we do not control — and all three repos need it. None of
+ * them can import it from the others: a host app is a standalone Vite SPA
+ * published from a clean clone with no sibling checkout of anything, and this
+ * repo has to be green with no host beside it. So there are three copies, for
+ * the same reason `host.ts` has three, and with the same consequence if nothing
+ * watches them.
  *
  * ── AND WHY THIS IS EQUALITY, WHERE THE MIRROR ABOVE IS CONTAINMENT ─────────
  *

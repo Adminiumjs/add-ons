@@ -37,7 +37,7 @@
  * an add-on on this seam can honestly do.
  *
  * ═════════════════════════════════════════════════════════════════════════════
- * THE TWO REFUSALS (25 D10)
+ * THE TWO REFUSALS
  * ═════════════════════════════════════════════════════════════════════════════
  *
  * Both are refusals by a REAL RULE with a REAL FIX, and both exist because the
@@ -322,8 +322,8 @@ export function forgetCode(
  * the two surfaces. Pure, total, and defined for values it has never seen: an
  * add-on that has just been connected and been given nothing answers
  * `undefined` for every row, and a host handling `undefined` is a host behaving
- * exactly as it did before the add-on existed. That is 24 D6 — the app is
- * designed with the hole already in it — as a return value.
+ * exactly as it did before the add-on existed. That is the app designed with
+ * the hole already in it, as a return value.
  *
  * `undefined` RATHER THAN A `{ found: false }` SENTINEL, and the choice is
  * deliberate. A sentinel reads as more explicit and is not: it lets a caller

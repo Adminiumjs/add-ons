@@ -30,8 +30,8 @@ that hard-codes it is a host that has to be edited to add a fourth add-on.
 
 With the add-on switched off, the host renders its own honest empty state
 ("More ways to send artwork") and nothing here leaves a trace — no orphan
-button, no dead link, no placeholder. That is the point of the slot design (24
-D6): the add-on is optional, not the way the app was always going to work.
+button, no dead link, no placeholder. That is the point of the slot design:
+the add-on is optional, not the way the app was always going to work.
 
 It implements the **`artwork-source@1`** contract and runs that contract's
 conformance suite against itself (`src/artworkSource.test.ts`). The host — never
@@ -42,7 +42,7 @@ marks its own homework.
 
 One table, `artwork_designs`: id, job fk, product, width/height/bleed in
 millimetres, the document as JSON, a preview file, and timestamps.
-**Disconnecting keeps it** (24 D16). Disconnect removes the surfaces and stops
+**Disconnecting keeps it.** Disconnect removes the surfaces and stops
 the add-on; it does not drop the table, delete the files or strip anything from
 the shop's own records. A customer's saved designs outlive the add-on being
 switched off, and the confirm dialog says so.
@@ -50,7 +50,7 @@ switched off, and the confirm dialog says so.
 ## The transport, and why there isn't one
 
 Every add-on in this wave ships a deterministic **demo transport** so that no
-demo makes a real third-party call (24 D11). **This one has nothing to
+demo makes a real third-party call. **This one has nothing to
 simulate.** It calls no API, contacts no company, needs no account and declares
 no `network.allow` — `connect` is `none` and connecting is one click. There is
 no `Date.now()`, no `Math.random()` and no `fetch` anywhere in `src/`:
@@ -153,13 +153,14 @@ emitted list exactly, including that **no sourcemap** is written — a `.map`
 would put every source file, comments and all, into the published artefact.
 
 The client half builds to a single ESM bundle with React, the JSX runtime and
-`lucide-react` external, because the host already has all three (24 D7): the
-host serves it from its own origin at `/add-ons/design-studio/client.js` and
-`import()`s it lazily (§5.7 item 2), which is why both slots point at one
-file rather than at a file each. The server half is a **separate rollup pass**
-for a reason worth knowing before anyone tidies it into one — two entries in a
-single lib build share their common modules through a third, hash-named chunk,
-and the client half then stops being the single bundle D7 requires.
+`lucide-react` external, because the host already has all three and an add-on
+takes no runtime dependency its host lacks: the host serves it from its own
+origin at `/add-ons/design-studio/client.js` and `import()`s it lazily, which is
+why both slots point at one file rather than at a file each. The server half is
+a **separate rollup pass** for a reason worth knowing before anyone tidies it
+into one — two entries in a single lib build share their common modules through
+a third, hash-named chunk, and the client half then stops being the single
+bundle an add-on must ship.
 
 This add-on takes **no runtime dependency the host does not already carry**;
 `zod` appears in devDependencies only, reached only by the conformance suite, and

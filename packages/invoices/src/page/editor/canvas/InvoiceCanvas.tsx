@@ -6,12 +6,12 @@
  * plain elements, edited from the Theme and Invoice-details panels) — then
  * the reorderable block stack and the trailing dashed *Add section*.
  *
- * THE GATE FILTERS, IT NEVER GHOSTS (O19): `visibleBlocks` drops an off block
- * before render, exactly as the comp's `blocks` does (1491-1493); the comp's
- * eighteen in-canvas "Add <section>" ghosts are unreachable and are not
- * built. Every index that leaves this file — a drop target, an insert chip, a
- * keyboard move — is the PRE-FILTER `blockOrder` position, so a hidden block
- * keeps its place while invisible (Appendix F "Ordering rules").
+ * THE GATE FILTERS, IT NEVER GHOSTS: `visibleBlocks` drops an off block before
+ * render, exactly as the comp's `blocks` does (1491-1493); the comp's eighteen
+ * in-canvas "Add <section>" ghosts are unreachable and are not built. Every
+ * index that leaves this file — a drop target, an insert chip, a keyboard move
+ * — is the PRE-FILTER `blockOrder` position, so a hidden block keeps its place
+ * while invisible.
  *
  * Drag/drop is the comp's HTML5 choreography (1494-1508): the grip starts
  * it, the wrapper marks the target on dragover and reorders on drop. The

@@ -2,9 +2,10 @@
  * THE SHARED DIGIT SUITE, run against this add-on's own seam and bundle.
  *
  * See `@adminium/add-on-host/testing`'s `numerals.ts`. An add-on cannot use the
- * host's `t` — D7 does not allow the runtime dependency — so every add-on has a
- * seam of its own and therefore had its own copy of the same defect sitting in
- * it. Three of the four that existed before this one shipped it.
+ * host's `t` — an add-on takes no runtime dependency on its host — so every
+ * add-on has a seam of its own and therefore had its own copy of the same
+ * defect sitting in it. Three of the four that existed before this one shipped
+ * it.
  *
  * The key this suite substitutes into is `held.count`, the number of rows that
  * have been given a number: the plainest quantity in the bundle. Every other
@@ -42,7 +43,7 @@ describeNumerals({
    * READ OFF THE BUNDLE'S OWN DECLARATION rather than written out here. The
    * same list a HOST reads to decide whether an Arabic page carries an
    * unformatted number, so the two can never say different things — which is
-   * the defect AC20/D21 exists to prevent.
+   * the defect that would stop an add-on running unchanged in any host.
    */
   allowed: NOT_A_QUANTITY,
 });

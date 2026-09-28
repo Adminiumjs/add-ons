@@ -3,8 +3,9 @@
  * implementation of the contract, and the one it was designed around.
  *
  * `barcode-labels` runs the same suite in its own package, and the pairing is
- * what 25 D4 asks for: a contract that only ever fitted the add-on it was
- * drawn for has not been shown to be a contract. The two disagree about
+ * the registry's entry rule — a contract enters only with two implementations:
+ * a contract that only ever fitted the add-on it was drawn for has not been
+ * shown to be a contract. The two disagree about
  * `formats`, `paper` and `coverage`, which is exactly why those three fields
  * sit on the KIND.
  */
@@ -114,8 +115,8 @@ describe('the invoices provider draws what it was asked for', () => {
     const page = html(outcome.find((d) => d.format === 'html')!.bytes);
     expect(page).toContain('Acme Corporation');
     expect(page).toContain('80mm auto');
-    // The gratuity is a slot with no field in the authored body (§5.2's second
-    // amendment); it must still reach the ladder.
+    // The gratuity is a slot with no field in the authored body (the design
+    // draws none for it); it must still reach the ladder.
     expect(page).toContain('Gratuity');
     expect(page).toContain('Card ending 6411');
   });
@@ -193,10 +194,10 @@ describe('the invoices provider draws what it was asked for', () => {
 
   it('refuses a Japanese document for PDF and renders it in HTML', async () => {
     /*
-     * 34 O12, re-asked. The surface makes `ja` a first-class DOCUMENT language
-     * (D49) and the base-14 fonts have no Japanese, so this is the pairing the
-     * whole coverage design exists for: a typed refusal naming the glyphs on
-     * one side, a complete document on the other.
+     * Which languages get a PDF, re-asked. The surface makes `ja` a
+     * first-class DOCUMENT language and the base-14 fonts have no Japanese,
+     * so this is the pairing the whole coverage design exists for: a typed
+     * refusal naming the glyphs on one side, a complete document on the other.
      */
     const subject = subjectFor('invoice');
     const japanese = {

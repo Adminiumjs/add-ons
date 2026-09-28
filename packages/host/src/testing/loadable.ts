@@ -1,5 +1,5 @@
 /**
- * THE BUNDLE A BROWSER CAN ACTUALLY IMPORT (26-T13).
+ * THE BUNDLE A BROWSER CAN ACTUALLY IMPORT.
  *
  * ─── The defect this exists to prevent from returning ──────────────────────
  *
@@ -10,8 +10,8 @@
  * wrong answer the moment a BROWSER does: a bare specifier cannot be resolved
  * by `import()` without an import map.
  *
- * So the artefact 26 §6 describes the host "`import()`ing from the server with
- * its SRI hash" could not be imported by a browser at all, and nothing noticed,
+ * So the artefact a connected host is meant to `import()` from the server with
+ * its SRI hash could not be imported by a browser at all, and nothing noticed,
  * because every test that touched `dist/` either read it as text or imported it
  * through a bundler that resolved the externals the same way the demo build
  * does. The gap was invisible precisely to the suites that looked hardest at
@@ -74,7 +74,7 @@ export function bareSpecifiersIn(source: string): string[] {
 
 /** Runs the loadability suite for one add-on. */
 export function describeLoadable(fixtures: LoadableFixtures): void {
-  describe('loadable by a browser (26-T13)', () => {
+  describe('loadable by a browser', () => {
     let source: string;
 
     beforeAll(() => {

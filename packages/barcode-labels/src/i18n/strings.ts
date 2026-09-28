@@ -571,7 +571,8 @@ void _parity;
  * It travels with the strings rather than with the host because a host holding
  * one add-on's allowance would turn red the day a second host vendored the same
  * add-on without it — which is what happened to Design Studio's specimen
- * telephone number, and is the defect AC20/D21 exists to prevent.
+ * telephone number, and is the defect that stops an add-on running unchanged in
+ * any host.
  *
  * ── THIS BUNDLE DECLARES EXACTLY ONE, AND THE ASYMMETRY IS THE INTERESTING
  *    PART ──────────────────────────────────────────────────────────────────

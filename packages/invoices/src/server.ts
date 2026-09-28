@@ -221,7 +221,7 @@ export function renderSync(input: RenderInput): readonly RenderedDocument[] | Do
             // The comp's five image slots are `data:` URIs. HTML carries one
             // directly; a PDF would need an XObject, a decoder for whatever
             // the URI holds and a position on the image formats — all of
-            // which is a runtime dependency this package refuses (25 D11).
+            // which is a runtime dependency this package refuses.
             // So the letterhead is drawn as text, and the caller is TOLD,
             // rather than finding a missing mark on a printed invoice.
             warnings: imageIn(document) ? ['the letterhead image is drawn in HTML only'] : [],

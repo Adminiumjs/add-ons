@@ -1,5 +1,5 @@
 /**
- * THE MANAGE DRAWER'S ACCOUNT ROW IS A SIMULATED RESULT, AND MUST SAY SO (AC7).
+ * THE MANAGE DRAWER'S ACCOUNT ROW IS A SIMULATED RESULT, AND MUST SAY SO.
  *
  * This suite exists because of a real defect. The settings fill printed
  * `DEMO_ACCOUNT` and `DEMO_AUTHORIZED_ON` — "demo-account@example.test ·
@@ -8,10 +8,11 @@
  * `DemoNote`; this one did not, and it is the one a shop owner opens to ask
  * "which accounts are connected?".
  *
- * AC7's test is whether a reviewer could screenshot the panel and take it for
- * real. An account name and an authorization date is exactly the kind of thing
- * a real OAuth connection produces, so the label is not decoration on a happy
- * path — it is the difference between a demo and a claim.
+ * The test of every simulation label is whether a reviewer could screenshot the
+ * panel and take it for real. An account name and an authorization date is
+ * exactly the kind of thing a real OAuth connection produces, so the label is
+ * not decoration on a happy path — it is the difference between a demo and a
+ * claim.
  *
  * Rendered with `renderToStaticMarkup` rather than a DOM harness: this repo
  * ships no jsdom, the panel holds no state, and `useSyncExternalStore` is given
@@ -48,7 +49,7 @@ function simulatedSize() {
   return { widthMm: 85, heightMm: 55, bleedMm: 3, dpi: 300, pages: 2 };
 }
 
-describe("the settings panel labels its fixture account (AC7)", () => {
+describe("the settings panel labels its fixture account", () => {
   it("carries the demo note whenever the transport is simulated", () => {
     const html = renderToStaticMarkup(<SettingsPanel transport={simulated} />);
     expect(html).toContain(DEMO_ACCOUNT);

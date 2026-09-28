@@ -8,15 +8,15 @@
  *     emits them, and a manifest field naming a file no build writes is a 404
  *     at install time that nothing catches before then.
  *
- *  2. Criterion 16 asks that the preview is 2D "verifiable by grep over the
+ *  2. The no-3D rule asks that the preview is 2D "verifiable by grep over the
  *     BUILT BUNDLE, not just the source". A source check cannot see what a
  *     dependency dragged in; this one can.
  *
- *  3. The vocabulary ban (17 §2, 24 D10b) is a grep over BUILT output. Checking
- *     the string bundle catches the copy; it does not catch a class name, a
- *     minified identifier, or a comment that survived minification — and Vite's
- *     library build deliberately keeps comments so that pure annotations
- *     survive.
+ *  3. The vocabulary ban (the monetisation words, plus the craft traps) is a
+ *     grep over BUILT output. Checking the string bundle catches the copy; it
+ *     does not catch a class name, a minified identifier, or a comment that
+ *     survived minification — and Vite's library build deliberately keeps
+ *     comments so that pure annotations survive.
  *
  * IT DOES NOT ASSUME `dist/` IS FRESH. The build runs in vitest global setup
  * (`src/testing/dist.ts`, wired in `vite.config.ts`) once, before any worker
@@ -54,8 +54,8 @@ describe('the manifest’s entry points exist in the build output', () => {
 
   it('emits nothing the manifest does not account for', () => {
     // `dist/client.css` is the one file the manifest cannot name — the slot
-    // schema has no field for a stylesheet, and §5.7 item 2 has the host serve
-    // it beside the bundle. Everything else here is declared above.
+    // schema has no field for a stylesheet, and the host serves it from its own
+    // origin beside the bundle. Everything else here is declared above.
     expect(emitted).toEqual(['dist/client.css', 'dist/client.js', 'dist/server.js']);
   });
 
@@ -63,7 +63,7 @@ describe('the manifest’s entry points exist in the build output', () => {
     expect(emitted.filter((file) => file.endsWith('.map'))).toEqual([]);
   });
 
-  it('keeps the client half a SINGLE ESM bundle (D7)', () => {
+  it('keeps the client half a SINGLE ESM bundle', () => {
     // A THIRD script is what a shared chunk looks like, and it is the exact
     // failure mode that makes this a two-pass build.
     const scripts = emitted.filter((file) => file.endsWith('.js'));
@@ -78,7 +78,7 @@ describe('the manifest’s entry points exist in the build output', () => {
   });
 });
 
-describe('the client/server split is real in the artefact (AC10)', () => {
+describe('the client/server split is real in the artefact', () => {
   it('keeps React, the JSX runtime and the icon set out of the server half', () => {
     const server = readEmitted('dist/server.js');
     expect(server).not.toMatch(/from\s*["']react/);
@@ -104,15 +104,15 @@ describe('the client/server split is real in the artefact (AC10)', () => {
 });
 
 /**
- * CRITERION 16, OVER THE BUNDLE — AND AS A RULE ABOUT WHAT IT CAN DO.
+ * THE NO-3D RULE, OVER THE BUNDLE — AND AS A RULE ABOUT WHAT IT CAN DO.
  *
  * ── WHAT THE SIX PATTERNS THAT STOOD HERE COULD NOT SEE ────────────────────
  *
  * They were `/webgl/i`, three.js identifiers, `/\bgltf\b/i`, `/\.stl\b/i`,
- * `getContext(` and `measureText` — six literals, and D18's claim is that this
+ * `getContext(` and `measureText` — six literals, and the claim is that this
  * preview is a 2D composite and CANNOT be anything else. The gap is not
- * academic: the spec's own O7 names "a GLB with a UV-mapped zone" as the 3D
- * upgrade path D18 defers, and `.glb` is not `gltf`. Nor is `webgpu` `webgl`;
+ * academic: the design itself names "a GLB with a UV-mapped zone" as the 3D
+ * upgrade path it defers, and `.glb` is not `gltf`. Nor is `webgpu` `webgl`;
  * `/webgl/i` does not match it, and WebGPU is how a bundle would reach a GPU
  * today. Neither is CSS's own `transform-style: preserve-3d`, which needs no
  * library and no context at all.
@@ -142,7 +142,7 @@ describe('the client/server split is real in the artefact (AC10)', () => {
  *   `perspective`, `matrix3d`, `translateZ`, `rotate3d` — no library, no
  *   context, and the old check did not read the stylesheet at all.
  *
- * `measureText` stays: it is not 3D, it is the other half of D18's claim — the
+ * `measureText` stays: it is not 3D, it is the other half of the 2D claim — the
  * text metrics are a pure table in this package, never the platform's.
  */
 const THREE_D_FORMATS = [
@@ -182,11 +182,11 @@ const FORBIDDEN: readonly [string, RegExp][] = [
   ['3D linear algebra', /Matrix4|Quaternion|\bmat4\b|\bvec3\b/],
   // ── or the browser's own 3D ──────────────────────────────────────────────
   ['CSS 3D', /preserve-3d|matrix3d|translateZ|translate3d|rotate3d|rotateX|rotateY|\bperspective\b/i],
-  // ── and the other half of D18's claim ────────────────────────────────────
+  // ── and the other half of the 2D claim ───────────────────────────────────
   ['canvas text measurement', /measureText/],
 ];
 
-describe('the preview is 2D in the artefact, not only in the source (AC16, D18)', () => {
+describe('the preview is 2D in the artefact, not only in the source', () => {
   /*
    * THE STYLESHEET IS READ TOO, and it was not. CSS is the one place a bundle
    * can be three-dimensional with no code at all.
@@ -255,7 +255,7 @@ describe('the preview is 2D in the artefact, not only in the source (AC16, D18)'
   });
 });
 
-describe('the vocabulary ban, over built output (17 §2, 24 D10b)', () => {
+describe('the vocabulary ban and the craft traps, over built output', () => {
   const GREPPED = /\.(js|css|html|map)$/;
 
   it('greps every emitted script, stylesheet, map and page — no file exempt', () => {
@@ -276,7 +276,7 @@ describe('the vocabulary ban, over built output (17 §2, 24 D10b)', () => {
   });
 
   /**
-   * D10b's craft traps, which are wave 4b's own and are NOT in the release
+   * The craft traps, which come from a maker's trade and are NOT in the release
    * sweep's seven. Two of them — the word for a thing that grows in a pot, and
    * the word for a cake with two layers — are words a maker's shop says every
    * day, which is exactly why they are checked over the bytes rather than
@@ -319,7 +319,7 @@ describe('the vocabulary ban, over built output (17 §2, 24 D10b)', () => {
 });
 
 /**
- * D11 OVER THE ARTEFACT, WHICH IS WHERE THE MUTANT REACHED.
+ * NO REAL CALL, OVER THE ARTEFACT, WHICH IS WHERE THE MUTANT REACHED.
  *
  * `sources.test.ts` states the rule over the sources; this states it over the
  * bytes a host serves. They are not the same check — an address can arrive from
@@ -332,7 +332,7 @@ describe('the vocabulary ban, over built output (17 §2, 24 D10b)', () => {
  * every picture it draws: an XML namespace names a vocabulary and is never
  * dereferenced. Everything else, in any emitted file, is a finding.
  */
-describe('nothing in the artefact can reach a host we do not control (24 D11)', () => {
+describe('nothing in the artefact can reach a host we do not control', () => {
   const BYTES = /\.(js|css|html|map)$/;
   const INERT = [
     {

@@ -49,17 +49,17 @@ export function register(): AddOn {
     shortName: 'Invoices',
     lineKey: 'addon.invoices.line',
     whatKey: 'addon.invoices.what',
-    // Three letters on a neutral tile. There is no mark to redraw here (24 D12
-    // — this add-on names no company) and the tile is drawn the same way
-    // regardless, because a shelf has to read as one system rather than as
-    // twenty marks.
+    // Three letters on a neutral tile. There is no mark to redraw here (this
+    // add-on names no company, and no real logo is ever drawn) and the tile is
+    // drawn the same way regardless, because a shelf has to read as one system
+    // rather than as twenty marks.
     monogram: 'INV',
     /*
-     * `data` from the closed five (24 D2). Not `payments`, which is the
-     * tempting one and is wrong: this add-on takes no money, moves none, and
-     * knows nothing about whether anything was ever settled. It renders a
-     * document from rows. What it adds to a deployment is a way to draw its
-     * own data, which is what `data` means.
+     * `data` from the add-on categories' closed five. Not `payments`, which is
+     * the tempting one and is wrong: this add-on takes no money, moves none,
+     * and knows nothing about whether anything was ever settled. It renders a
+     * document from rows. What it adds to a deployment is a way to draw its own
+     * data, which is what `data` means.
      */
     category: 'data',
     /*
@@ -75,11 +75,12 @@ export function register(): AddOn {
     // that all eight locales carry every key of the English set.
     messages: strings,
     /*
-     * D16, and it is easy to state honestly here: there is no credential to
-     * remove, so the whole of "what goes" is the buttons, and the whole of
-     * "what stays" is every document already made. Both halves are checked by
-     * `packages/host/src/disconnect-copy.test.ts`, which fails an add-on that
-     * puts a removal under the heading saying things survive.
+     * Disconnecting never destroys data, and it is easy to state honestly here:
+     * there is no credential to remove, so the whole of "what goes" is the
+     * buttons, and the whole of "what stays" is every document already made.
+     * Both halves are checked by `packages/host/src/disconnect-copy.test.ts`,
+     * which fails an add-on that puts a removal under the heading saying things
+     * survive.
      */
     disconnect: {
       goesKey: 'addon.invoices.disconnect.goes',
@@ -90,9 +91,10 @@ export function register(): AddOn {
      * RELATIVE, and pinned to nobody's Wednesday. The host dates these against
      * its own clock with `resolveActivity`.
      *
-     * BOTH LINES ARE SIMULATED RESULTS and both are paired with a demo label
-     * (24 D11, 25 D9). `sources.test.ts` asserts the pairing by counting: a
-     * seeded line without one is a fabricated fact on somebody's screen.
+     * BOTH LINES ARE SIMULATED RESULTS and both are paired with a demo label (a
+     * simulated result is always labelled as one). `sources.test.ts` asserts
+     * the pairing by counting: a seeded line without one is a fabricated fact
+     * on somebody's screen.
      */
     activity: [
       { minutesAgo: 24, messageKey: 'addon.invoices.activity.rendered' },
@@ -128,10 +130,10 @@ export function register(): AddOn {
        * folio, receipt…)".
        *
        * THE READ-ONLY HALF, ON PURPOSE. `patchRecord` is optional on this
-       * payload and this fill ignores it (34 D18) — writing a number back
-       * would mean choosing a field name, which is one shop's vocabulary
-       * pushed onto every host. So it works identically in a host that offers
-       * a write handle and in one that does not.
+       * payload and this fill ignores it — writing a number back would mean
+       * choosing a field name, which is one shop's vocabulary pushed onto every
+       * host. So it works identically in a host that offers a write handle and
+       * in one that does not.
        */
       {
         slot: 'record.actions',

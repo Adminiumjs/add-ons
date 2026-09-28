@@ -1,5 +1,5 @@
 /**
- * This add-on's own settings (34 Appendix C, and the invoicing additions),
+ * This add-on's own settings (the letterhead set, and the invoicing additions),
  * read leniently.
  *
  * ── TWO KINDS OF SETTING LIVE HERE, AND THEY ARE READ BY DIFFERENT THINGS ──
@@ -101,9 +101,9 @@ export interface InvoiceSettings {
 /**
  * The letterhead image cap, in characters of a `data:` URI.
  *
- * It travels inside every document (25 D12 freezes it into every subject), so
- * a 2 MB logo is 2 MB on every invoice ever issued, forever. 32 KB is roughly
- * a clean mark at the size a letterhead is printed.
+ * It travels inside every document (each one keeps a frozen copy of its
+ * subject), so a 2 MB logo is 2 MB on every invoice ever issued, forever. 32 KB
+ * is roughly a clean mark at the size a letterhead is printed.
  */
 export const LOGO_DATA_URL_MAX = 32 * 1024;
 

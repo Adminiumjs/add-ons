@@ -1,15 +1,14 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: AGPL-3.0-only
 /**
- * Pack, X-ray, upload and LEDGER every add-on in this repository
- * (32-add-on-distribution.md §2, D1/D7; 48-self-hosted-downloads.md D1/D5/D6).
+ * Pack, X-ray, upload and LEDGER every add-on in this repository.
  *
  * Add-ons are not published to npm. Each packed file goes into the Adminiumjs
  * downloads bucket at `add-ons/<key>/<key>-<version>.tgz`, is read back from
  * https://downloads.adminium.dev, and only then enters the ledger. `npm pack`
  * survives as the LOCAL packer, because the server's hardened unpacker reads
- * exactly its tar shape (48 D5). The bucket client is `scripts/r2.mjs`,
- * vendored byte for byte from the Adminium monorepo's
+ * exactly its tar shape. The bucket client is `scripts/r2.mjs`, vendored byte
+ * for byte from the Adminium monorepo's
  * `workplan/tools/app-release/r2.mjs` — the same file every app repo releases with.
  *
  * ── WHY A SCRIPT ────────────────────────────────────────────────────────────
@@ -26,7 +25,8 @@
  *    beside each package at pack time and removed afterwards.
  *  - The release LEDGER records the integrity of the exact bytes the public
  *    address serves. The marketplace catalog carries it to every server, which
- *    keeps a download only if its bytes hash to it (48 D3).
+ *    keeps a download only if its bytes hash to it — the fingerprint never
+ *    comes from the bucket the file came from.
  *
  * ── WHAT THIS DELIBERATELY DOES *NOT* COPY FROM THE MONOREPO ────────────────
  *
@@ -59,7 +59,8 @@
  * R2_SECRET_ACCESS_KEY; release.yml maps them from the Adminiumjs organization.
  * Both runs first read the newest published @adminiumjs/adminium from the npm
  * registry, and refuse any manifest whose compatibility.minAdminiumVersion is
- * newer (48-self-hosted-downloads.md A17).
+ * newer: a claim inside a released file is permanent, and one no server can
+ * meet makes the file uninstallable the day a server enforces it.
  */
 
 import { execFileSync } from 'node:child_process';
@@ -91,7 +92,7 @@ if (UNKNOWN.length > 0) {
   throw new Error(`unknown argument(s): ${UNKNOWN.join(' ')} — the only flag is --dry-run`);
 }
 
-/** The `files[]` allow-list every add-on declares (D1). */
+/** The `files[]` allow-list every add-on declares, so nothing else ships. */
 const FILES_FIELD = ['dist', 'manifest.json', 'TRADEMARKS.md', 'README.md', 'LICENSE'];
 
 /** Files every tarball must carry besides its own `dist/`. */
@@ -103,7 +104,8 @@ const mappedName = (key) => `@${SCOPE}/add-on-${key}`;
  * Discovered, never listed — the same rule `trademarks.test.ts` uses: a package
  * is an add-on when it carries a `manifest.json`. `host` and `host-kit` have
  * none and are excluded by construction rather than by a list someone has to
- * remember to update (24 D7 keeps both private permanently).
+ * remember to update (both stay private permanently: an add-on takes no
+ * runtime dependency the host does not already have).
  */
 function addOns() {
   return readdirSync(PACKAGES, { withFileTypes: true })
@@ -144,7 +146,7 @@ function declaredEntryPoints(manifest) {
 /**
  * The X-ray. Refuses a tarball that grew, shrank, or lost a declared half.
  *
- * D1 asks that "the tarball cannot silently grow or lose a half"; both
+ * The rule is that "the tarball cannot silently grow or lose a half"; both
  * directions are checked here because both have already happened once in this
  * repo's history in the abstract: WITHOUT `files[]`, `npm pack` ships all of
  * `src/` — every `.test.ts` included — and NO `dist/` at all, because the root
@@ -280,7 +282,7 @@ async function main() {
   }
 
   // A minimum no published Adminium meets would sit in every released file
-  // forever (48 A17), so it is refused before anything is packed.
+  // forever, so it is refused before anything is packed.
   const newest = await newestAdminium();
   for (const addOn of found) {
     const minimum = assertMinimumReleased(addOn.manifest, newest);
@@ -313,7 +315,8 @@ async function main() {
     await uploadOne(result, config);
   }
 
-  // The ledger last, and only over what the public address serves (48 D6).
+  // The ledger last, and only over what the public address serves: the host
+  // is the receipt, not the upload's 200.
   // Written atomically so an interrupted release cannot leave a half-file that
   // the website would read as the catalog's source of truth.
   const ledger = {

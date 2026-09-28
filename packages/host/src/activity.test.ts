@@ -97,8 +97,8 @@ describe('resolveActivity', () => {
 
   /**
    * Determinism, said as a property rather than trusted. Every date in this
-   * system is a function of a pinned clock (24 D11); a seeded history that
-   * moved between two calls would be a demo nobody can screenshot.
+   * system is a function of a pinned clock; a seeded history that moved
+   * between two calls would be a demo nobody can screenshot.
    */
   it('gives the same answer twice', () => {
     expect(resolveActivity(SEED, MARLOW)).toEqual(resolveActivity(SEED, MARLOW));

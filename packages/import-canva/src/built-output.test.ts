@@ -1,15 +1,15 @@
 /**
  * The release grep, run against the thing that actually ships.
  *
- * The sweep that gates a release (17 §2, 24 D10) greps BUILT output
- * case-insensitively for a set of substrings. Every other check in this repo
- * reads sources, and sources are not what the sweep reads — which matters here
- * more than it looks, because a Vite library build KEEPS COMMENTS. A source
- * comment that spells a banned run out while explaining why it is banned ships
- * that run in `dist/client.js`, passes every string-level test, and
- * fails the release. That is not hypothetical: it is exactly what this file was
- * added to catch, and the two comments it caught are now written so that they
- * name the pattern instead of quoting it.
+ * The sweep that gates a release greps BUILT output case-insensitively for a
+ * set of substrings. Every other check in this repo reads sources, and sources
+ * are not what the sweep reads — which matters here more than it looks,
+ * because a Vite library build KEEPS COMMENTS. A source comment that spells a
+ * banned run out while explaining why it is banned ships that run in
+ * `dist/client.js`, passes every string-level test, and fails the release.
+ * That is not hypothetical: it is exactly what this file was added to catch,
+ * and the two comments it caught are now written so that they name the pattern
+ * instead of quoting it.
  *
  * The check is a SUBSTRING check over whole files, not a word check over
  * translations, because that is how the release grep behaves. Genuine
@@ -48,8 +48,9 @@ const SERVER = join(PACKAGE_ROOT, OUTPUT.server);
 const SHIPPED = distFiles().filter((f) => /\.(js|css|html)$/.test(f));
 
 /**
- * The sweep's set, plus the two D12 adds for add-ons. Case-insensitive
- * substrings, in the order they appear in 17 §2 so a reader can diff the two.
+ * The sweep's set, plus the two words the add-on rules add because no add-on
+ * may imply a tier. Case-insensitive substrings, in the order the release
+ * grep's own list gives them so a reader can diff the two.
  *
  * `/mo` is the ninth run in that list and is checked separately below, because
  * it is the one that is not a run of LETTERS — the tokeniser this file uses
@@ -115,11 +116,11 @@ const TOKENS = /\p{L}+/gu;
 /**
  * WHY TOKENISING IS STILL A SUBSTRING GREP — read this before "simplifying" it.
  *
- * The release gate (17 §2, D10) is a case-insensitive SUBSTRING grep. This file
- * splits the bytes into words first, which looks like a weaker, word-anchored
- * check and is not one: the comparison below is `token.includes(run)`, not
- * `token === run`. A run buried in the middle of a word still matches, which is
- * exactly what catches D10's two named traps — "ex**plan**ation" and
+ * The release gate is a case-insensitive SUBSTRING grep. This file splits the
+ * bytes into words first, which looks like a weaker, word-anchored check and is
+ * not one: the comparison below is `token.includes(run)`, not `token === run`.
+ * A run buried in the middle of a word still matches, which is exactly what
+ * catches the lexicon rules' two named traps — "ex**plan**ation" and
  * "fron**tier**" — and `scan()` is self-tested on both of them further down so
  * that stops being a claim.
  *
@@ -173,7 +174,7 @@ describe("the built output exists to be greppable at all", () => {
     expect(names).toContain("server.js");
   });
 
-  it("leaves the client half a single self-contained ESM file (D7)", () => {
+  it("leaves the client half a single self-contained ESM file", () => {
     // An add-on's client half builds to ONE bundle. A shared chunk between the
     // two halves would make the client import a sibling the manifest does not
     // name — and the host loads only what the manifest names.
@@ -189,7 +190,7 @@ describe("the built output exists to be greppable at all", () => {
   });
 });
 
-describe("the vocabulary ban, over BUILT output (17 §2, 24 D10)", () => {
+describe("the vocabulary ban, over BUILT output", () => {
   it.each(BANNED_RUNS)("has no un-carved-out '%s' anywhere in dist", (run) => {
     const offences: string[] = [];
     for (const file of SHIPPED) {
@@ -203,14 +204,14 @@ describe("the vocabulary ban, over BUILT output (17 §2, 24 D10)", () => {
   /**
    * THE MATCHER'S OWN TEST — the guard on the guard.
    *
-   * D10 names two substring traps precisely because they are the ones a
-   * word-anchored gate misses: "explanation" hides `plan`, "frontier" hides
-   * `tier`. This case feeds them to the same `scan()` every assertion above
-   * uses, so a future edit that anchors the match to word boundaries fails HERE
-   * — loudly, with the reason in the title — instead of silently letting the
-   * next release ship the word it was written to catch.
+   * The lexicon rules name two substring traps precisely because they are the
+   * ones a word-anchored gate misses: "explanation" hides `plan`, "frontier"
+   * hides `tier`. This case feeds them to the same `scan()` every assertion
+   * above uses, so a future edit that anchors the match to word boundaries
+   * fails HERE — loudly, with the reason in the title — instead of silently
+   * letting the next release ship the word it was written to catch.
    */
-  it("catches a banned run hidden INSIDE a longer word (D10's two traps)", () => {
+  it("catches a banned run hidden INSIDE a longer word (the two named traps)", () => {
     expect(scan("An explanation follows.", "plan").map((h) => h.token)).toEqual(["explanation"]);
     expect(scan("the frontier", "tier").map((h) => h.token)).toEqual(["frontier"]);
     // And the carve-out list is per-token, so allowing `propre` does not allow
@@ -230,12 +231,12 @@ describe("the vocabulary ban, over BUILT output (17 §2, 24 D10)", () => {
   });
 
   /**
-   * The ninth run in 17 §2's list, and the only one the tokeniser above cannot
-   * see: `/mo` is a slash and two letters, so no `\p{L}+` token ever contains
-   * it. It gets a plain case-insensitive substring test over the same bytes —
-   * which is what the release grep does to every run, and what catches a
-   * `/models`, `/monogram` or `/monitor` href as well as a literal "$9/mo"
-   * (D10's closing paragraph names all three).
+   * The ninth run in the release grep's list, and the only one the tokeniser
+   * above cannot see: `/mo` is a slash and two letters, so no `\p{L}+` token
+   * ever contains it. It gets a plain case-insensitive substring test over the
+   * same bytes — which is what the release grep does to every run, and what
+   * catches a `/models`, `/monogram` or `/monitor` href as well as a literal
+   * "$9/mo" (the lexicon rules name all three).
    */
   it("has no path or word reading as a per-month charge", () => {
     const offences = SHIPPED.filter((f) => readDist(f).toLowerCase().includes("/mo")).map(
@@ -262,7 +263,7 @@ describe("the vocabulary ban, over BUILT output (17 §2, 24 D10)", () => {
   });
 });
 
-describe("the client / server split survives bundling (24 D15, AC10)", () => {
+describe("the client / server split survives bundling", () => {
   const serverOut = SHIPPED.filter((f) => f === SERVER);
 
   it("emits server entries that import no renderer", () => {
@@ -336,7 +337,7 @@ describe("the client / server split survives bundling (24 D15, AC10)", () => {
 
   it("still puts the renderer in the client bundle, so the split is real and not empty", () => {
     /*
-     * THE PROXY CHANGED WITH THE ABI (26-T13), THE CLAIM DID NOT.
+     * THE PROXY CHANGED WITH THE ABI, THE CLAIM DID NOT.
      *
      * This used to look for `from "react"`, which was a fine stand-in for "the
      * half that renders is really in here" while React was a Rollup external.
@@ -352,7 +353,7 @@ describe("the client / server split survives bundling (24 D15, AC10)", () => {
   });
 
   /**
-   * THE VENDOR'S ENDPOINTS ARE NOT THE PAGE'S BUSINESS (§5.6, AC10).
+   * THE VENDOR'S ENDPOINTS ARE NOT THE PAGE'S BUSINESS.
    *
    * The host runs the OAuth flow — this add-on declares an authorize URL, a
    * token URL and a hostname, and never calls any of them. `index.ts` used to
@@ -374,9 +375,9 @@ describe("the client / server split survives bundling (24 D15, AC10)", () => {
   });
 
   it("ships no secret setting key, because it declares no settings at all", () => {
-    // D15's packer check, run a build early. This add-on has no settings, so
-    // the assertion is that the words a credential would arrive under are
-    // absent from every file that ships.
+    // The packer's secret-leak check, run a build early. This add-on has no
+    // settings, so the assertion is that the words a credential would arrive
+    // under are absent from every file that ships.
     const offenders = SHIPPED.filter((f) =>
       /api_key|apiKey|client_secret|clientSecret|access_token|refresh_token/.test(readDist(f)),
     );
@@ -385,7 +386,8 @@ describe("the client / server split survives bundling (24 D15, AC10)", () => {
 });
 
 /**
- * D11 OVER THE ARTEFACT, AND THE ONE ADD-ON WHERE IT HAS SOMETHING TO SAY.
+ * NO REAL CALL, CHECKED OVER THE ARTEFACT — THE ONE ADD-ON WHERE THAT HAS
+ * SOMETHING TO SAY.
  *
  * `sources.test.ts` states the rule over the sources; this states it over the
  * bytes. They are not the same check: `oauth.ts` writes its token URL as
@@ -399,7 +401,7 @@ describe("the client / server split survives bundling (24 D15, AC10)", () => {
  * is a string. A verifier proved the reverse shape by putting an image beacon
  * into a sibling package and watching every gate in three repos stay green.
  */
-describe("nothing in the artefact can reach a host we do not control (24 D11)", () => {
+describe("nothing in the artefact can reach a host we do not control", () => {
   const INERT = [
     {
       origin: "https://www.canva.com",

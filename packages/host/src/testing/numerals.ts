@@ -4,12 +4,12 @@
  * ── THE DEFECT, AND WHY IT WAS FOUR DEFECTS ─────────────────────────────────
  *
  * Every host fixes "a number substituted into copy is FORMATTED, never
- * `String()`d" at its own `t` seam. An add-on cannot use the host's `t` — D7
- * does not allow the runtime dependency — so every add-on has a seam of its
- * own, and therefore had its own copy of the same bug sitting in it. Three of
- * the four in this repo shipped it. The personalizer's showed: the basket line
- * and the maker's order line drew "8.5 مم" beside the host's own "٣ مم", two
- * renderings of one measurement on one row.
+ * `String()`d" at its own `t` seam. An add-on cannot use the host's `t` — it
+ * may take no runtime dependency its host lacks — so every add-on has a seam of
+ * its own, and therefore had its own copy of the same bug sitting in it. Three
+ * of the four in this repo shipped it. The personalizer's showed: the basket
+ * line and the maker's order line drew "8.5 مم" beside the host's own "٣ مم",
+ * two renderings of one measurement on one row.
  *
  * A per-package test would have been four tests, written four times, and the
  * three packages nobody had looked at yet would have had none. So the suite is

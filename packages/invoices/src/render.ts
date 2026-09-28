@@ -29,7 +29,7 @@ export interface RenderRequest {
   /** The host's mapping: slot ids to values, made at the mount site. */
   readonly record: Readonly<Record<string, unknown>>;
   readonly recordId: string;
-  /** The host's clock fact. Never a clock read here (25 D12). */
+  /** The host's clock fact. Never a clock read here (same subject, same bytes). */
   readonly now: { readonly iso: string; readonly timezone?: string };
   readonly settings: InvoiceSettings | Readonly<Record<string, unknown>>;
   readonly locale?: string;

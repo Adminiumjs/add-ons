@@ -1,11 +1,11 @@
 /**
- * `document-render@1` conformance for this add-on (34-T06).
+ * `document-render@1` conformance for this add-on.
  *
  * The suite comes from `@adminium/add-on-host/testing`, mirrored from the
  * contract package, so this file is a fixture and a call — which is the whole
- * point of 25 D4 asking for two implementations before a contract enters the
- * registry. If the shape only ever fitted the add-on it was designed around,
- * "a second provider is a copy of this one" would be a sentence in a plan.
+ * point of asking for two implementations before a contract enters the
+ * registry. If the shape only ever fitted the add-on it was designed around, "a
+ * second provider is a copy of this one" would be a sentence in a plan.
  *
  * WHAT THIS IMPLEMENTATION DISAGREES WITH THE OTHER ONE ABOUT, and why that is
  * the value it adds: `formats: ['pdf']` where the invoices provider renders
@@ -67,7 +67,7 @@ describeDocumentRenderer(provider, {
 });
 
 describe('the label-sheet provider refuses what it cannot draw', () => {
-  it('names the glyph and writes no sheet at all (34 D6)', async () => {
+  it('names the glyph and writes no sheet at all', async () => {
     const outcome = await provider.render({
       kind: 'label-sheet',
       subject: { ...SUBJECT, fields: { ...SUBJECT.fields, reference: 'zinc-tráy' } },

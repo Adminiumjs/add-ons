@@ -1,10 +1,11 @@
 /**
  * `product-personalizer@1`, run against this implementation.
  *
- * A conformance suite is part of the contract rather than a courtesy (24 §5.5,
- * D9). This one carries the three assertions the other two contracts do not
- * need — deterministic `render`, numbered remedies, no font in the production
- * file — and they are acceptance criteria 17, 18 and 19 in that order.
+ * A conformance suite is part of the contract rather than a courtesy: every
+ * provider runs its contract's suite. This one carries the three assertions the
+ * other two contracts do not need — deterministic `render`, numbered remedies,
+ * no font in the production file — and they are the three promises this add-on
+ * is released against.
  *
  * THE FIXTURES ARE NAMED FOR WHAT THEY DEMONSTRATE. They used to be named for
  * two of a particular shop's order references — "`valid` is `BR-2281` and
@@ -54,7 +55,7 @@ describe('what the contract asks that the suite cannot see', () => {
     ).resolves.toEqual(initial);
   });
 
-  it('stores one picture per set of values, not one per call (AC17, as storage)', async () => {
+  it('stores one picture per set of values, not one per call (one picture, as storage)', async () => {
     const a = await impl.render(sampleThat('comfortable'), {
       angle: 'front',
       widthPx: 320,

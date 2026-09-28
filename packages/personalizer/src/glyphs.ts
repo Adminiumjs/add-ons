@@ -4,7 +4,7 @@
  *
  * ── WHY AN ALPHABET LIVES IN THIS PACKAGE AT ALL ────────────────────────────
  *
- * Acceptance criterion 19: the production file carries OUTLINES, NEVER A FONT.
+ * The rule: the production file carries OUTLINES, NEVER A FONT.
  * Not a `font-family`, not an embedded `.otf`, not a `<text>` element with a
  * name in it — because the moment the file names a face, whether the piece cuts
  * correctly depends on what is installed on the machine that opens it, and the
@@ -13,12 +13,11 @@
  *
  * A file of outlines needs outlines to put in it. This package cannot lift them
  * out of Georgia or anything else — those are somebody's typefaces, and
- * redrawing a mark is exactly what 24 D12 refuses on the visual side. So the
- * studio has its own: a SINGLE-STROKE SKELETON per letter, offset to a closed
- * contour by the face's stroke weight. That is what a small laser studio
- * actually does, it is dependency-free, it is deterministic, and it belongs to
- * nobody but this repo.
- *
+ * redrawing a mark is exactly what the brand rule refuses: nothing of someone
+ * else's is drawn, redrawn, traced or approximated. So the studio has its own:
+ * a SINGLE-STROKE SKELETON per letter, offset to a closed contour by the face's
+ * stroke weight. That is what a small laser studio actually does, it is
+ * dependency-free, it is deterministic, and it belongs to nobody but this repo.
  * ── HOW IT LINES UP WITH THE PREVIEW ────────────────────────────────────────
  *
  * The preview draws real type — the browser's own Georgia, or whatever the

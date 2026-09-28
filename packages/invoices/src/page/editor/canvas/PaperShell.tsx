@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 /**
- * The paper (comp `cardOuter` 1732, `bgScrim` 1733, 367-369, 723; 34-
- * invoices-add-on.md Appendix E §C1, §C11): an 800 px rounded card with an
- * optional full-bleed background image under a white scrim at `bgTint`, the
- * content above it, and the stamp/seal painted as the card's LAST child —
- * absolute, bottom-right, 104 px, 90 %, click-through, above every block and
- * outside `blockOrder`.
+ * The paper (comp `cardOuter` 1732, `bgScrim` 1733, 367-369, 723): an 800 px
+ * rounded card with an optional full-bleed background image under a white scrim
+ * at `bgTint`, the content above it, and the stamp/seal painted as the card's
+ * LAST child — absolute, bottom-right, 104 px, 90 %, click-through, above every
+ * block and outside `blockOrder`.
  *
- * ALWAYS LIGHT (S6): the sheet has one palette in both themes — the comp's
+ * ALWAYS LIGHT: the sheet has one palette in both themes — the comp's
  * dark-mode sheet (a dark scrim at 1733) is not built. The document's accent
  * rides `--adm-invoice-accent` (and its 10 % soft) for every class below;
  * the images ride custom properties too, because a data URL cannot be a

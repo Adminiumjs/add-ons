@@ -154,7 +154,7 @@ function itemsFrom(slot: OutlineSlot | undefined, subject: DocumentSubject, scal
   const rows = subject.collections[slot.id] ?? [];
   return rows.map((row, at) => ({
     // The stored id, or the row's ordinal. NEVER a minted one: a random source
-    // anywhere in a render path makes 25 D12's byte-identical claim false.
+    // anywhere in a render path makes the same-subject, same-bytes claim false.
     id: textOf(row.id) === '' ? `row_${String(at)}` : textOf(row.id),
     desc: textOf(row.desc),
     qty: quantityToText(row.qty ?? 1),
@@ -165,8 +165,8 @@ function itemsFrom(slot: OutlineSlot | undefined, subject: DocumentSubject, scal
 /**
  * The bound values that have NO field in the authored body.
  *
- * §5.2's second amendment, made concrete. Three of this contract's slots —
- * `customerEmail`, `paidWith`, `tip` — are drawn nowhere in
+ * The slots the design draws no field for, made concrete. Three of this
+ * contract's slots — `customerEmail`, `paidWith`, `tip` — are drawn nowhere in
  * `Invoice Builder.dc.html`, and `references` is a credit note's, which that
  * comp does not draw either. That is not a mistake in the comp: it is the
  * invoice AUTHORING surface, and none of these four is something a person

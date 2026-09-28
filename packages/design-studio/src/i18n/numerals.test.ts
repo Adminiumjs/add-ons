@@ -28,7 +28,7 @@ describeNumerals({
   allowed: NOT_A_QUANTITY,
 });
 
-describe("the allowances travel with the strings (24 AC20/D21)", () => {
+describe("the allowances travel with the strings, so any host can take them", () => {
   it("declares the one Latin figure in this bundle, with a reason", () => {
     expect(NOT_A_QUANTITY.map((entry) => entry.phrase)).toEqual(["07700 900 000"]);
     for (const entry of NOT_A_QUANTITY) expect(entry.why.length).toBeGreaterThan(30);

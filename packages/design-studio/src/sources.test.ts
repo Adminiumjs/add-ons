@@ -87,11 +87,11 @@ const codeOf = (file: string) =>
  */
 const INERT: readonly InertOrigin[] = INERT_ORIGINS;
 
-describe("no real third-party call, no real clock (24 D11)", () => {
+describe("no real third-party call, no real clock", () => {
   /*
-   * D11 AS A RULE, NOT A WORD LIST. This was a grep for five spellings until a
-   * verifier put `new Image(); img.src = "https://…"` into a sibling package
-   * and every gate in three repos stayed green. `egress.ts` in
+   * NO REAL CALL AS A RULE, NOT A WORD LIST. This was a grep for five spellings
+   * until a verifier put `new Image(); img.src = "https://…"` into a sibling
+   * package and every gate in three repos stayed green. `egress.ts` in
    * `@adminium/add-on-host/testing` carries the argument; the two nets below
    * are an ADDRESS nobody declared inert and an API whose only purpose is to
    * issue a request, and the third — the value, at run time — is in the hosts.
@@ -129,7 +129,7 @@ describe("no real third-party call, no real clock (24 D11)", () => {
   it("reads no real clock and rolls no dice", () => {
     // The whole editor is deterministic: ids come from a counter on the
     // document, the seeded activity carries its own pinned dates, and two runs
-    // of the same demo produce byte-identical output a year apart (21 D6).
+    // of the same demo produce byte-identical output a year apart.
     const offenders = SHIPPED.flatMap((file) =>
       impuritiesIn(codeOf(file)).map((means) => `${relative(file)} → ${means}`),
     );
@@ -142,7 +142,7 @@ describe("no real third-party call, no real clock (24 D11)", () => {
   });
 });
 
-describe("the job's bleed reaches the document (24 §5.5)", () => {
+describe("the job's bleed reaches the document", () => {
   /*
    * ANOTHER RULE ABOUT AN ABSENCE, which is why it is a grep.
    *
@@ -172,7 +172,7 @@ describe("the job's bleed reaches the document (24 §5.5)", () => {
   });
 });
 
-describe("secrets are server-only (24 D15)", () => {
+describe("secrets are server-only", () => {
   it("has no secret setting to leak in the first place", () => {
     const settings = manifest.settings as { key: string; secret?: boolean }[];
     expect(settings.filter((s) => s.secret === true)).toEqual([]);
@@ -185,11 +185,11 @@ describe("secrets are server-only (24 D15)", () => {
   it("names no credential anywhere in the shipped sources", () => {
     /*
      * Identifier shapes, not the word "api-key": `ConnectKind` in
-     * `@adminium/add-on-host` is
-     * the closed vocabulary of §5.6 and its `"api-key"` member is a way of
-     * connecting, not a secret. What must never appear is a NAME a credential
-     * would be read under — `api_key`, `accessToken`, `clientSecret` — which is
-     * how the packer greps a built bundle one build later.
+     * `@adminium/add-on-host` is the closed vocabulary of connect kinds and its
+     * `"api-key"` member is a way of connecting, not a secret. What must never
+     * appear is a NAME a credential would be read under — `api_key`,
+     * `accessToken`, `clientSecret` — which is how the packer greps a built
+     * bundle one build later.
      */
     const offenders = SHIPPED.filter((file) =>
       /\bapi_key\b|\bapiKey\b|\baccess_token\b|\baccessToken\b|\bclient_secret\b|\bclientSecret\b|\bcredentials?\b/i.test(
@@ -266,9 +266,9 @@ describe("CSS logical properties only", () => {
   });
 
   it("has no link at all, so none of them can contain a banned path", () => {
-    // 17 §2: no href may contain "/mo". This add-on renders no anchors — the
-    // editor is a route inside the host's own shell, reached through the slot
-    // rather than through a URL this repo writes down.
+    // The vocabulary ban: no href may contain "/mo". This add-on renders no
+    // anchors — the editor is a route inside the host's own shell, reached
+    // through the slot rather than through a URL this repo writes down.
     const offenders = SHIPPED.filter((file) => /href=/.test(codeOf(file)));
     expect(offenders.map(relative)).toEqual([]);
   });

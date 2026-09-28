@@ -15,12 +15,12 @@
  * ── AND WHY THE LAYOUT IS DESCRIBED RATHER THAN NAMED ──────────────────────
  *
  * There is a very common label sheet with these measurements, and this file
- * does not say whose it is, because 24 D12 forbids naming a company and a
- * stationery reference is a company's catalogue number. What is written down
- * instead is the geometry itself — the label size, the grid, the margins — so a
- * shop can hold a sheet against it and see whether it is the one they have.
- * That is more useful than a name anyway: a name only helps somebody who buys
- * that name.
+ * does not say whose it is, because an add-on may not name a company it does
+ * not connect to, and a stationery reference is a company's catalogue number.
+ * What is written down instead is the geometry itself — the label size, the
+ * grid, the margins — so a shop can hold a sheet against it and see whether it
+ * is the one they have. That is more useful than a name anyway: a name only
+ * helps somebody who buys that name.
  *
  * ── THE ONE NUMBER THAT IS A STANDARD AND NOT A CHOICE ─────────────────────
  *

@@ -76,9 +76,9 @@ const relative = (file: string) => file.slice(SRC.length);
  */
 const INERT: readonly InertOrigin[] = INERT_ORIGINS;
 
-describe("no real third-party call, no real clock (24 D11)", () => {
+describe("no real third-party call, no real clock", () => {
   /*
-   * D11 AS A RULE, NOT A WORD LIST. This was a grep for four spellings until a
+   * NO LIVE CALL AS A RULE, NOT A WORD LIST. This was a grep for four spellings until a
    * verifier put `new Image(); img.src = "https://…"` inside this package's own
    * `ui/DispatchAction.tsx` and every gate in three repos stayed green. See
    * `@adminium/add-on-host/testing`'s `egress.ts` for the two nets below and
@@ -116,7 +116,7 @@ describe("no real third-party call, no real clock (24 D11)", () => {
   });
 });
 
-describe("secrets are server-only (24 D15)", () => {
+describe("secrets are server-only", () => {
   it("keeps every secret setting out of the client half", () => {
     // The packer greps a built bundle for the keys of settings marked secret;
     // this catches it a build earlier, at the import that would have leaked it.
@@ -167,7 +167,7 @@ describe("CSS logical properties only", () => {
   });
 
   it("has no link at all, so none of them can contain a banned path", () => {
-    // 17 §2: no href may contain "/mo". This add-on renders no anchors — the
+    // The pricing-word sweep: no href may contain "/mo". No anchors here — the
     // one place a link was tempting says in words why there is nothing to link
     // to (`panel.noPage`), which is a stronger answer than a dead link.
     const offenders = UI.filter((file) => /href=/.test(codeOf(file)));
@@ -201,7 +201,7 @@ describe("the vocabulary ban, in all eight locales", () => {
   });
 
   it("has no string containing the banned path fragment", () => {
-    // 17 §2 bans any href containing "/mo". This add-on renders no anchors at
+    // The pricing-word sweep bans any href containing "/mo". No anchors here at
     // all, but a string is where one would arrive first, so the fragment is
     // asserted over the strings as well as over the built output.
     const offenders: string[] = [];
@@ -247,7 +247,7 @@ describe("the vocabulary ban, in all eight locales", () => {
 });
 
 /**
- * AC7, made executable: EVERY PANEL THAT SHOWS A CARRIER RESULT SAYS IT IS ONE.
+ * Made executable: EVERY PANEL THAT SHOWS A CARRIER RESULT SAYS IT IS ONE.
  *
  * The chip is not decoration on the happy path. Rates, a booked collection, a
  * refusal and a scan timeline are all things a real carrier would have produced,
@@ -261,7 +261,7 @@ describe("the vocabulary ban, in all eight locales", () => {
  * not the second fails here, which is what makes deleting a chip a red suite
  * rather than a quiet regression.
  */
-describe("every simulated result is labelled as one (24 D11 / AC7)", () => {
+describe("every simulated result is labelled as one", () => {
   const LABELLED: Readonly<Record<string, readonly [string, string][]>> = {
     "DispatchAction.tsx": [
       ["addon.shipping-dhl.rates.title", "addon.shipping-dhl.rates.simulated"],

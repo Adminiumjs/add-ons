@@ -24,7 +24,7 @@ That is the sentence to carry into every decision below:
 
 | # | The drift | `print-shop` | `maker-shop` | What the kit does |
 |---|---|---|---|---|
-| 1 | **Brand gate** — the check that no shipped file outside the vendor tree and the registration lines names a company (acceptance criterion 5) | has it (`sources.test.ts`, *"the host names no company"*) | **absent** | Ships it to every host. `guards/brand.ts`. |
+| 1 | **Brand gate** — the check that no shipped file outside the vendor tree and the registration lines names a company | has it (`sources.test.ts`, *"the host names no company"*) | **absent** | Ships it to every host. `guards/brand.ts`. |
 | 2 | **Vendored-copy gate** — the check that every vendored file carries its sync header, resolves its imports inside the vendor tree, and vendors the shared contract exactly once | has it (`sources.test.ts`, *"the vendored halves are copies, and say so"*) | **absent** | Ships it to every host, and `scripts/install-host-kit.sh status` applies the same discipline to the kit's own files. |
 | 3 | **The npm entry point** — `add-ons:status` / `add-ons:sync` | declares both | **declares neither**, while shipping the same `scripts/sync-add-ons.sh` | Takes **neither side**: `status` FAILS with `NO-SCRIPTS` until the host declares its own. A gate with no documented way to run it is the same defect as a gate nobody can run. |
 | 4 | **The mount component's generic** | `AddOnSlot<S extends SlotId>` — the closed registry | `AddOnSlot<S extends HostedSlotId>` — the ids this host mounts | Takes **`maker-shop`'s side**: the host's own union, still bounded by `SlotId`. See §6. |
@@ -96,7 +96,7 @@ Three things land, and the split is deliberate:
 
 The two halves do not share a roof because **`guards/lexicon.ts` spells every banned word.** Under
 `src/add-ons/` it would be one ordinary import away from a screen, and the failure would arrive as a
-red release (17 §2 greps the built bundle) rather than as a red test.
+red release (the release sweep greps the built bundle) rather than as a red test.
 
 **Verify:**
 
@@ -493,7 +493,7 @@ the registry at store-init from `demoAddOns()`. The kit takes the first, for thr
 
 ---
 
-## 8. The lexicon gate, and the 31 D4 scoping ruling
+## 8. The lexicon gate, and whose copy it answers for
 
 The gate a retrofit installs asserts **add-on-contributed strings only** — registered message
 bundles, and the copy a slot fill draws. **Pre-existing host copy is reported as debt, not failed.**
@@ -517,8 +517,8 @@ The banned-word list, the company regex and the idea×language table are facts a
 and about languages**, not about a shop. `maker-shop` was allowed its own additions and records what
 happened: registering a portable add-on turned that host's vocabulary gate red until somebody edited a
 list under `src/testing/`, because a Czech phrase had been carved out in one host and not the other.
-**A host that must be edited before a portable add-on passes its gates makes 24 D21 false**, by a
-route nobody would look down.
+**A host that must be edited before a portable add-on passes its gates breaks the promise that an
+add-on runs unchanged in any host**, by a route nobody would look down.
 
 So the lists live in the kit and every host gets all of them. `maker-shop`'s extra `CRAFT_TRAPS` —
 genuinely its own vocabulary, a shop that sells pots — moves to a **host-owned file the kit's gate
@@ -530,7 +530,7 @@ that is the same defect in the other direction.
 ## 9. The level table — and a word this file may not write
 
 **The config field is spelled differently in the code.** `config.ts` names it, its doc comment is the
-ruling, and this document calls it the *level* instead — because the release sweep (17 §2) bans that
+ruling, and this document calls it the *level* instead — because the release sweep bans that
 substring, `packages/host/src/docs-lexicon.test.ts` sweeps **every Markdown file in this repository**
 for the seven runs with no ordinary-English homograph, and it reads raw text with no word boundary
 and no sense of irony. A document that names a banned word while explaining the ban is the first
@@ -552,9 +552,9 @@ exemption field, because an exemption list is where nine of wave 4b's holes came
 what actually rendered. `:empty` is not "drew nothing", and a mount inside a JSX comment satisfies a
 grep.
 
-### Dev dependencies do **not** violate 25 D11 — do not "fix" this later
+### Dev dependencies do **not** violate the no-new-dependency rule — do not "fix" this later
 
-25 D11 says an add-on ships no **runtime** dependency its host lacks. It is about what reaches a
+That rule says an add-on ships no **runtime** dependency its host lacks. It is about what reaches a
 browser. A `devDependencies` entry used by `vitest run` reaches no bundle, and both hosts that already
 carry the seam have had `jsdom` since wave 4b with no change to what they ship.
 

@@ -90,7 +90,7 @@ describe("importing a year", () => {
 
 /**
  * ═════════════════════════════════════════════════════════════════════════════
- * THE REFUSAL (25 D10)
+ * THE REFUSAL
  * ═════════════════════════════════════════════════════════════════════════════
  *
  * A real rule, a named cause, and a fix the reader can carry out — then the

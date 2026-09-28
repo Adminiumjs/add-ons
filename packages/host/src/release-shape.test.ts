@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 /**
- * The packaging invariants, guarded (32-add-on-distribution.md D1/D9, §2).
+ * The packaging invariants, guarded.
  *
  * WHY THIS FILE EXISTS AT ALL. Before it, **no test in this repository read a
  * single `package.json`** — so `private: true`, a missing `files[]`, a name
@@ -8,8 +8,7 @@
  * `package.json` and `manifest.json` were all invisible to the whole suite.
  * That is fine while nothing is released and catastrophic the moment something
  * is, because a released file is immutable — the downloads bucket's lock keeps
- * it for good (48-self-hosted-downloads.md D2): the first release is also the
- * last chance to notice.
+ * it for good: the first release is also the last chance to notice.
  *
  * THE ONE THAT WOULD HAVE SHIPPED. Without `files[]`, `npm pack` here produces
  * an INVERTED tarball — all of `src/` including every `.test.ts`, and no `dist/`
@@ -35,7 +34,10 @@ const REPO = join(PACKAGES, '..');
 /** The `files[]` allow-list every add-on declares, in order. */
 const FILES_FIELD = ['dist', 'manifest.json', 'TRADEMARKS.md', 'README.md', 'LICENSE'];
 
-/** Packages that are deliberately never published (24 D7). */
+/**
+ * Packages that are deliberately never published: TypeScript sources the
+ * add-ons build against, never something an add-on ships.
+ */
 const NEVER_PUBLISHED = ['host', 'host-kit'];
 
 interface AddOn {
@@ -72,9 +74,9 @@ describe('release shape: discovery', () => {
       'barcode-labels',
       'design-studio',
       'holiday-calendars',
-      // The seventh, added 2026-09-10 (34-invoices-add-on.md 34e). It is the
-      // first add-on here that attaches to `*` rather than to a named host
-      // app, and the first to provide `document-render@1`.
+      // The seventh, added 2026-09-10. It is the first add-on here that
+      // attaches to `*` rather than to a named host app, and the first to
+      // provide `document-render@1`.
       'invoices',
       'import-canva',
       'personalizer',
@@ -126,7 +128,7 @@ describe.each(found)('release shape: $name', (addOn) => {
     expect(addOn.pkg['version']).toBe(addOn.manifest['version']);
   });
 
-  it('pins its @adminiumjs dependencies exactly, with no range (D9)', () => {
+  it('pins its @adminiumjs dependencies exactly, with no range', () => {
     const groups = ['dependencies', 'devDependencies', 'peerDependencies'] as const;
     for (const group of groups) {
       const deps = (addOn.pkg[group] ?? {}) as Record<string, string>;
@@ -146,7 +148,7 @@ describe.each(found)('release shape: $name', (addOn) => {
     expect(existsSync(join(addOn.dir, 'TRADEMARKS.md'))).toBe(true);
   });
 
-  it('peer-declares React, and bundles everything else (26-T13)', () => {
+  it('peer-declares React, and bundles everything else', () => {
     const dist = join(addOn.dir, 'dist');
     if (!existsSync(dist)) return; // dist is gitignored; typecheck → test → build
 
@@ -167,9 +169,10 @@ describe.each(found)('release shape: $name', (addOn) => {
      * THE RULE CHANGED WITH THE ABI, AND THE OLD ONE WAS "PEER == IMPORT".
      *
      * That held while React was a Rollup external: an add-on peer-declared
-     * exactly what its bundle imported. 26-T13 broke the equation deliberately —
-     * a browser cannot resolve a bare specifier, so React now arrives through
-     * the host's runtime global and `lucide-react` is bundled outright.
+     * exactly what its bundle imported. Making the bundle loadable by a browser
+     * broke the equation deliberately — a browser cannot resolve a bare
+     * specifier, so React now arrives through the host's runtime global and
+     * `lucide-react` is bundled outright.
      *
      * So the two halves are now asserted separately, because they became
      * different facts:
@@ -243,14 +246,14 @@ describe('release shape: the repo-level pieces the pipeline needs', () => {
   });
 
   /*
-   * 48-self-hosted-downloads.md D6: add-ons are released into the downloads
-   * bucket and read back from downloads.adminium.dev — never published to npm.
+   * Add-ons are released into the downloads bucket and read back from
+   * downloads.adminium.dev — never published to npm.
    * Greps, deliberately, like the LICENSE check above: these are tripwires for
    * the npm pipeline creeping back in, and each names the exact spelling that
    * pipeline used (`execFileSync('npm', ['publish', …])`, `id-token: write`,
    * `registry-url`).
    */
-  it('releases into the downloads bucket, never to npm (48 D6)', () => {
+  it('releases into the downloads bucket, never to npm', () => {
     const workflow = readFileSync(join(REPO, '.github/workflows/release.yml'), 'utf8');
     const script = readFileSync(join(REPO, 'scripts/publish-add-ons.mjs'), 'utf8');
     expect(workflow).not.toMatch(/id-token\s*:/);

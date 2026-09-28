@@ -3,7 +3,7 @@
  *
  * ── THE DEFECT, AS IT WAS FOUND ─────────────────────────────────────────────
  *
- * D21's claim is that a slot id names a SURFACE rather than an app, and the
+ * The claim is that a slot id names a SURFACE rather than an app, and the
  * repo goes to some trouble to keep the TYPES honest about that: the payload
  * registry is shared, the mirror is guarded, `job.dispatch.actions` was renamed.
  * None of that reaches the WORDS, and the words are what a shop owner reads.
@@ -65,9 +65,9 @@
  * The other guards in this wave were fingerprints that could be turned into
  * rules because the category had a structural definition: an outbound request
  * needs an address and a sink; a quantity opens with its figure; a mount is a
- * mount because React called it. D21's line has no structural definition at
- * all. It divides sentences by WHOSE PROCESS THEY DESCRIBE, and both sides of
- * that line are ordinary English about making things:
+ * mount because React called it. The app-neutral line has no structural
+ * definition at all. It divides sentences by WHOSE PROCESS THEY DESCRIBE, and
+ * both sides of that line are ordinary English about making things:
  *
  *     "Send it to your laser the way you always do"   — the add-on's own
  *                                                       output. Fine.
@@ -219,7 +219,7 @@ function literals(source: string): string[] {
     .filter((value) => value.length > 0);
 }
 
-describe('an add-on’s own words are app-neutral (D21) — REGRESSION SET ONLY', () => {
+describe('an add-on’s own words are app-neutral — REGRESSION SET ONLY', () => {
   /*
    * SEE THE HEADER. This case cannot fail for a sentence nobody has written
    * before, and a green run here is not a clearance. The ledger at the foot of
@@ -305,7 +305,7 @@ function allLiterals(source: string): string[] {
   return [...code.matchAll(/(['"`])((?:\\.|(?!\1)[^\\])*)\1/g)].map((m) => m[2]!);
 }
 
-describe('no add-on hard-codes a host’s identity (D21)', () => {
+describe('no add-on hard-codes a host’s identity', () => {
   it.each(bundles())('$pkg names no shop, town or reference of any host', ({ pkg }) => {
     const files = shipped(pkg);
     // The guard has to have READ something, or an empty result reads as a pass.
@@ -337,12 +337,12 @@ describe('no add-on hard-codes a host’s identity (D21)', () => {
  * ── WHY THIS EXISTS ────────────────────────────────────────────────────────
  *
  * The header says plainly that `ONE_SHOP_WORDS` is a regression set and cannot
- * be made complete: D21's line divides sentences by whose process they describe
- * and nothing in the letters tells the two sides apart. The same is true, and
- * with a far worse consequence, of the tiering question 17 asks — v1 ships free
- * of charge and must never raise the subject of paying, in any language — which
- * `testing/tiering.ts` answers with a hand-written table of stems per language
- * and says, in its own header, that it is a regression set too.
+ * be made complete: the app-neutral line divides sentences by whose process
+ * they describe and nothing in the letters tells the two sides apart. The same
+ * is true, and with a far worse consequence, of the tiering question — v1 ships
+ * free of charge and must never raise the subject of paying, in any language —
+ * which `testing/tiering.ts` answers with a hand-written table of stems per
+ * language and says, in its own header, that it is a regression set too.
  *
  * A gate that cannot judge the words should not imply that it has. What CAN be
  * made complete is a gate over CHANGE, and this is it:
@@ -362,9 +362,9 @@ describe('no add-on hard-codes a host’s identity (D21)', () => {
  * each package and nothing else, on the reasoning that the neutrality question
  * is about the SENTENCE rather than about eight spellings of it.]
  *
- * That reasoning was right about D21 and wrong about everything else this
- * ledger is the compensating mechanism for. A verifier planted one plausible
- * tiering sentence in each of the seven non-English blocks of
+ * That reasoning was right about app-neutrality and wrong about everything else
+ * this ledger is the compensating mechanism for. A verifier planted one
+ * plausible tiering sentence in each of the seven non-English blocks of
  * `addon.personalizer.noAccount` — a line that renders on the shelf card, in
  * the manage drawer and beside every surface the add-on fills — and all three
  * repositories stayed green: the English had not moved, so the ledger had
@@ -390,13 +390,12 @@ describe('no add-on hard-codes a host’s identity (D21)', () => {
  *      suite in this repo can ask:
  *        · Does it tell a reader that something costs money, or that more of
  *          the product can be had by paying, in any words at all? v1 is free of
- *          charge and may not raise the subject (17 §2). If yes, it does not
- *          ship.
+ *          charge and may not raise the subject. If yes, it does not ship.
  *        · Is it a claim about how the SHOP works rather than about what the
- *          ADD-ON does? See the header — that is D21's line, and an add-on
- *          installed in a second shop makes such a claim false by construction.
- *        · Does it name a real company as anything other than not affiliated
- *          (AC6)?
+ *          ADD-ON does? See the header — that is the app-neutral line, and an
+ *          add-on installed in a second shop makes such a claim false by
+ *          construction.
+ *        · Does it name a real company as anything other than not affiliated?
  *   3. Only then re-run with `UPDATE_COPY_LEDGER=1`, which rewrites
  *      `reviewed-copy.json` in place, and commit it beside the strings.
  *

@@ -16,9 +16,9 @@
  * when the store does; only where `bytes.get(id)` reads from.
  *
  * KEYED BY DIGEST, NOT BY A COUNTER. Two identical personalizations produce one
- * entry, one id and one picture — which is criterion 17 expressed as storage
- * rather than as an assertion, and it is why the cart thumbnail and the proof
- * cannot drift apart even if the code that asked for them did.
+ * entry, one id and one picture — which is the one-picture rule expressed as
+ * storage rather than as an assertion, and it is why the cart thumbnail and the
+ * proof cannot drift apart even if the code that asked for them did.
  *
  * ── `open` RESOLVES THROUGH THE HOST ────────────────────────────────────────
  *
@@ -70,17 +70,17 @@ export function resetFiles(): void {
 }
 
 /**
- * THE OPTIONS THE THREE SURFACES OF CRITERION 17 DRAW WITH — one object, so
+ * THE OPTIONS THE THREE SURFACES THAT MUST MATCH DRAW WITH — one object, so
  * "the same picture" is a fact about the code rather than a promise about it.
  *
  * `widthPx` IS PART OF THE BYTES. `previewSvg` writes `width="184"` into the
  * string it returns and `digestOf` hashes exactly those bytes, so a thumbnail
  * asked for at 184 and a proof asked for at 240 are two different pictures with
- * two different file ids — which is precisely what criterion 17 forbids across
- * the cart line, the proof and the order line. They therefore do not choose:
- * `LinePicture` in `ui/bits.tsx` takes no options at all and passes this, and
- * a surface that wants to show it larger scales the SVG with CSS, which changes
- * no byte.
+ * two different file ids — which is precisely what the one-picture rule forbids
+ * across the cart line, the proof and the order line. They therefore do not
+ * choose: `LinePicture` in `ui/bits.tsx` takes no options at all and passes
+ * this, and a surface that wants to show it larger scales the SVG with CSS,
+ * which changes no byte.
  *
  * The shopper's editing canvas is deliberately NOT one of the three. It draws
  * at 520 with the maker's guides and the failing areas outlined, because it is
@@ -97,7 +97,7 @@ export const LINE_PICTURE: PreviewOptions = { angle: 'front', widthPx: 184 };
  * drew was ever stored and the id that travelled on an order was written by a
  * different call than the one the shopper looked at. The two agreed only
  * because the same pure function sat under both — which is a coincidence of the
- * arguments, not an invariant, and criterion 17 rests on the invariant.
+ * arguments, not an invariant, and the one-picture rule rests on the invariant.
  *
  * `Preview` calls this now, so drawing a picture and filing it are one act. The
  * store is keyed by the DIGEST, so a re-render of unchanged values writes the
@@ -144,7 +144,7 @@ export function createProductPersonalizer(): ProductPersonalizer {
         // A REASON, NOT A THROW. The host asks this to decide whether to offer
         // the surface at all, and "this piece has no areas drawn on it yet" is
         // an ordinary state of a shop that has just connected the add-on — it
-        // is the empty state comp L draws, not an error.
+        // is the empty state the design comp draws, not an error.
         return { ok: false, reason: 'this piece has no personalization areas yet' };
       }
       if (template.zones.length === 0) {

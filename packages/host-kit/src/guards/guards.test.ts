@@ -109,7 +109,7 @@ afterAll(() => {
 
 // ── the fixtures a real host would hand over ────────────────────────────────
 
-/** A bundle with nothing banned in it, on either side of the 31 D4 split. */
+/** A bundle with nothing banned in it, in host copy or in add-on copy. */
 const MESSAGES: Record<string, string> = {
   'shop.orders.title': 'Your orders',
   'addon.shipping-example.line': 'Book a collection from the shop.',
@@ -182,7 +182,7 @@ labelPairingRenderedGuard(
     tour: (_locale, read) => {
       /*
        * One surface, naming the mark AND carrying the line — the arrangement
-       * AC6 asks for. `label-pairing.test.ts` drives the failing arrangements;
+       * the not-affiliated rule asks for. `label-pairing.test.ts` drives the failing arrangements;
        * what this proves is that the factory reaches the tour at all, which is
        * the half a detector test cannot see.
        */

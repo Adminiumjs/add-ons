@@ -271,7 +271,7 @@ describe("every set's limits are stated in every language", () => {
   });
 });
 
-describe("the vocabulary ban, over the source bundle (17 §2, 24 D12)", () => {
+describe("the vocabulary ban, over the source bundle", () => {
   it("finds no banned substring in any locale", () => {
     const offences: string[] = [];
     for (const tag of LOCALE_TAGS) {
@@ -304,7 +304,8 @@ describe("the vocabulary ban, over the source bundle (17 §2, 24 D12)", () => {
 });
 
 /**
- * THE ALLOWANCES THAT TRAVEL WITH THESE STRINGS (24 AC20/D21).
+ * THE ALLOWANCES THAT TRAVEL WITH THESE STRINGS, SO THE ADD-ON RUNS UNCHANGED IN
+ * ANY HOST.
  *
  * Every add-on exports `NOT_A_QUANTITY` and every host reads it off whatever it
  * has vendored. This bundle declares none, which is a claim worth asserting

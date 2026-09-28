@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 /**
- * The tinted banner blocks (comp 508-517, 536-543, 571-579, 643-651; 34-
- * invoices-add-on.md Appendix F B10, B12, B15, B22): `approval` — a
- * surface-2 card with a status-tinted icon tile, name, title and badge
- * (`apprMeta`, 1685); `latefees` — the warn-soft box with the alarm clock
+ * The tinted banner blocks (comp 508-517, 536-543, 571-579, 643-651):
+ * `approval` — a surface-2 card with a status-tinted icon tile, name, title and
+ * badge (`apprMeta`, 1685); `latefees` — the warn-soft box with the alarm clock
  * and the one-sentence policy; `recurring` — the accent-soft banner with the
  * frequency, the next date, the count and the total; `loyalty` — the
  * accent-soft banner with the balance, the level and the points earned.
  *
- * Every figure the banners print comes from the ONE totals derivation
- * (§C10) and `money.ts`; the level is `loyLevel`, not the comp's
- * field name (34 Appendix D.2).
+ * Every figure the banners print comes from the ONE totals derivation and
+ * `money.ts`; the level is `loyLevel`, not the comp's field name (`loyTier`
+ * carries a banned lexicon word).
  */
 import { AlarmClock, Award, BadgeCheck, CircleX, Clock, Repeat, type LucideIcon } from 'lucide-react';
 import { cn } from '@adminium/ui';

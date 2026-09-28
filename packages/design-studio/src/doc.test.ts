@@ -748,7 +748,7 @@ describe("toArtworkRef", () => {
 
 /**
  * THE ASSERTION THIS WHOLE ADD-ON EXISTS TO EARN. The host runs the checks, not
- * the add-on (24 §5.5), and the output passes because it was built at the
+ * the add-on, and the output passes because it was built at the
  * finished size with the bleed already on it.
  */
 describe("the host's own artwork checks, run against this editor's output", () => {

@@ -75,7 +75,7 @@ const relative = (file: string) => file.slice(SRC.length);
  */
 const INERT: readonly InertOrigin[] = INERT_ORIGINS;
 
-describe("no real third-party call, no real clock (24 D11)", () => {
+describe("no real third-party call, no real clock", () => {
   it("found sources to read at all", () => {
     // A walk that returned nothing would agree with every case below.
     expect(SHIPPED.length).toBeGreaterThan(6);
@@ -190,10 +190,10 @@ describe("CSS logical properties only", () => {
   });
 
   it("has no link at all, so none of them can contain a banned path", () => {
-    // 17 §2: no href may contain "/mo". This add-on renders no anchors — the
-    // one place a link was tempting is the line telling somebody where to
-    // report a wrong date, and it says where in words instead. A URL in a
-    // shipped source would also be the first thing the egress net reports.
+    // The release sweep: no href may contain "/mo". This add-on renders no
+    // anchors — the one place a link was tempting is the line telling somebody
+    // where to report a wrong date, and it says where in words instead. A URL
+    // in a shipped source would also be the first thing the egress net reports.
     const offenders = UI.filter((file) => /href=/.test(codeOf(file)));
     expect(offenders.map(relative)).toEqual([]);
   });
@@ -295,7 +295,7 @@ describe("the vocabulary ban, in all eight locales", () => {
  * this package's row in `TRADEMARKS.md` must say `*(none)*` precisely because
  * this export is empty.
  */
-describe("this add-on names no company (24 AC6, D12)", () => {
+describe("this add-on names no company", () => {
   /**
    * The marks the OTHER add-ons in this repository declare, written here as the
    * needle list this package is swept with.

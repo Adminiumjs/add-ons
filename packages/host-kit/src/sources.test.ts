@@ -112,7 +112,7 @@ describe('the kit is discovered, not assumed', () => {
   });
 });
 
-describe('the runtime half is deterministic (24 D11)', () => {
+describe('the runtime half is deterministic', () => {
   /*
    * THE RULE IS `@adminium/add-on-host/testing`, not a pattern written out
    * here. That is not a style preference: four add-on packages each wrote their
@@ -134,7 +134,7 @@ describe('the runtime half is deterministic (24 D11)', () => {
   });
 });
 
-describe('the runtime half writes no physical direction (10 §4)', () => {
+describe('the runtime half writes no physical direction', () => {
   /*
    * The kit ships a stylesheet rule and a component that sets attributes, so it
    * is exactly the kind of code that reaches for `left`/`right` without

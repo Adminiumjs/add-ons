@@ -3,7 +3,7 @@ import { build, type Plugin, type PluginOption } from "vite";
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
-/** The host-runtime shims this add-on's React imports are aliased to (26-T13). */
+/** The host-runtime shims this add-on's React imports are aliased to. */
 const HOST_RUNTIME_REACT = fileURLToPath(
   new URL("../host/src/runtime/react.ts", import.meta.url),
 );
@@ -15,13 +15,13 @@ const HOST_RUNTIME_JSX = fileURLToPath(
 /**
  * TWO HALVES, AND THE FILENAMES THE MANIFEST NAMES.
  *
- * [Amended 2026-09-10 by 34-T06.] This used to build ONE file, with three
- * sentences borrowed from `holiday-calendars` explaining why the second half
- * would have been a module written to satisfy a schema. Every one of those
+ * [Amended 2026-09-10, with the server half.] This used to build ONE file, with
+ * three sentences borrowed from `holiday-calendars` explaining why the second
+ * half would have been a module written to satisfy a schema. Every one of those
  * sentences is STILL TRUE and none of them has been deleted — read them below
- * before adding anything to `server.ts`, because they still say what may not
- * go in it. What changed is not the reasoning; it is that a second half now
- * has a job those sentences never contemplated.
+ * before adding anything to `server.ts`, because they still say what may not go
+ * in it. What changed is not the reasoning; it is that a second half now has a
+ * job those sentences never contemplated.
  *
  *   IT STILL HAS NO CREDENTIAL. `connect: { kind: "none" }`, no `secret: true`
  *   setting, nothing that would have to be kept out of a page.
@@ -32,8 +32,8 @@ const HOST_RUNTIME_JSX = fileURLToPath(
  *
  *   SO IT STILL HAS NO DEMO TRANSPORT. `demoTransport` exists so that an
  *   add-on which would otherwise make a real third-party call in a demo can
- *   make a stand-in one instead (24 D11). There is no call here to stand in
- *   for, and the manifest still does not carry the field.
+ *   make a stand-in one instead. There is no call here to stand in for, and
+ *   the manifest still does not carry the field.
  *
  * WHAT THE SERVER HALF IS FOR, THEN: it is the entry point ADMINIUM loads when
  * a document profile names this add-on — `addOn.provides[].server`, resolved
@@ -56,12 +56,12 @@ const HOST_RUNTIME_JSX = fileURLToPath(
 export const OUTPUT = {
   /** Built from `src/index.ts` — everything a browser gets. */
   client: 'dist/client.js',
-  /** Built from `src/server.ts` — the `document-render@1` provider (34-T06). */
+  /** Built from `src/server.ts` — the `document-render@1` provider. */
   server: 'dist/server.js',
 } as const;
 
 /**
- * The runtime dependencies the host already has (24 D7), matched by PREFIX
+ * The runtime dependencies the host already has, matched by PREFIX
  * rather than by exact name.
  *
  * `lucide-react` is on the list even though this add-on imports no icon: the
@@ -76,14 +76,15 @@ const EXTERNAL: never[] = [];
 /**
  * Build the server half after the client half, in the same `vite build`.
  *
- * TWO BUILDS RATHER THAN TWO LIB ENTRIES, and the reason is D7: two entries in
- * one Rollup run share their common modules through a generated chunk, so the
- * client would stop being a single self-contained ESM bundle and would start
- * importing a sibling file the manifest does not name. `sheet.ts` and
- * `codes.ts` are reached from BOTH entries here, so this is not hypothetical —
- * one Rollup run would certainly hoist them. Two runs give two standalone
- * files. `configFile: false` keeps this plugin out of the inner build, so
- * there is no recursion to guard against.
+ * TWO BUILDS RATHER THAN TWO LIB ENTRIES, and the reason is that an add-on's
+ * client half is ONE bundle: two entries in one Rollup run share their common
+ * modules through a generated chunk, so the client would stop being a single
+ * self-contained ESM bundle and would start importing a sibling file the
+ * manifest does not name. `sheet.ts` and `codes.ts` are reached from BOTH
+ * entries here, so this is not hypothetical — one Rollup run would certainly
+ * hoist them. Two runs give two standalone files. `configFile: false` keeps
+ * this plugin out of the inner build, so there is no recursion to guard
+ * against.
  *
  * NO REACT ALIAS ON THIS ONE, deliberately. The server half imports no React
  * and must not: it is loaded by Node in the engine's job runner, where the
@@ -118,7 +119,7 @@ function serverHalf(): Plugin {
 }
 
 /**
- * The React aliases, applied to the BUILD ONLY (26-T13).
+ * The React aliases, applied to the BUILD ONLY.
  *
  * A top-level `resolve.alias` would apply to vitest as well, because vitest
  * reads this same config — and then the add-on's own source would resolve
@@ -153,7 +154,7 @@ function hostRuntimeAlias(): PluginOption {
 
 
 /**
- * An add-on's client half builds to a SINGLE ESM bundle (24 D7).
+ * An add-on's client half builds to a SINGLE ESM bundle.
  *
  * React is external because the host already has it: an add-on shipping its own
  * would put two copies of the reconciler in one page, and hooks called across

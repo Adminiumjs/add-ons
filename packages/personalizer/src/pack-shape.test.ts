@@ -1,5 +1,6 @@
 /**
- * D1's pack-shape assertion for this package.
+ * The pack-shape assertion for this package: the published tarball is the
+ * package as it already exists, and it cannot silently grow or lose a half.
  *
  * The suite lives in `@adminium/add-on-host/testing` so the six add-ons share
  * one implementation. This package builds `dist/` in vitest's `globalSetup`

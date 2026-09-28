@@ -1,7 +1,7 @@
 /**
  * The HTTP seam.
  *
- * Add-on server code never receives raw `fetch` (24 D14). It receives a client
+ * Add-on server code never receives raw `fetch`. It receives a client
  * the host built and bound to the hostnames in this add-on's manifest
  * `addOn.network.allow`; a call to anything else is refused, audited and shown
  * to the admin. Declaring the seam as an interface rather than reaching for the
@@ -32,7 +32,7 @@ export interface HttpClient {
 
 /**
  * Credentials, as the host injects them into the SERVER context and nowhere
- * else (24 D15).
+ * else — secrets never reach the browser.
  *
  * These two settings are marked `secret: true` in the manifest, are absent from
  * `publicSettings`, and are therefore never handed to a client bundle. Nothing

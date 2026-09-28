@@ -1,13 +1,13 @@
 /**
- * The pack-shape conformance suite (32-add-on-distribution.md D1).
+ * The pack-shape conformance suite.
  *
- * D1's distributable unit is "the npm tarball of the package as it already
- * exists": `manifest.json` + `dist/` + `README.md` + `TRADEMARKS.md` + a
+ * An add-on's distributable unit is the npm tarball of the package as it
+ * already exists: `manifest.json` + `dist/` + `README.md` + `TRADEMARKS.md` + a
  * copied-in `LICENSE`, `files[]`-allowlisted so nothing else ships. This asserts
- * that the tarball npm ACTUALLY produces is that, so it "cannot silently grow or
- * lose a half". 48-self-hosted-downloads.md D5 keeps that shape: the file
- * uploaded to the downloads bucket is still `npm pack`'s tarball — npm is the
- * local packer, no longer where it is published.
+ * that the tarball npm ACTUALLY produces is that, so it cannot silently grow or
+ * lose a half. Releasing to the downloads bucket keeps that shape: the file
+ * uploaded there is still `npm pack`'s tarball — npm is the local packer, no
+ * longer where it is published.
  *
  * ── WHY THIS IS NOT COVERED BY ASSERTING `files[]` ──────────────────────────
  *
@@ -135,7 +135,7 @@ export function describePackShape(fixtures: PackShapeFixtures): void {
   let paths: string[];
   let distFiles: string[];
 
-  describe('pack shape (32 D1)', () => {
+  describe('pack shape', () => {
     beforeAll(() => {
       fixtures.buildForReal();
       distFiles = distContents(join(fixtures.root, 'dist'));
@@ -160,8 +160,9 @@ export function describePackShape(fixtures: PackShapeFixtures): void {
       // Called out separately from the four beside it because it is the only
       // one of the five npm does NOT force-include: LICENSE, README.md and
       // package.json ship regardless of `files[]`, so this is the single root
-      // file whose presence actually exercises the allow-list. D12 also makes
-      // it the document that must travel with a trademark-bearing package.
+      // file whose presence actually exercises the allow-list. The trademark
+      // rule also makes it the document that must travel with a
+      // trademark-bearing package.
       expect(paths).toContain('TRADEMARKS.md');
     });
 

@@ -98,7 +98,7 @@ describe("the redo remedy, taken", () => {
   });
 });
 
-describe("D11", () => {
+describe("no real third-party call", () => {
   it("says out loud that its answers are simulated", () => {
     expect(createDemoTransport(CLOCK).simulated).toBe(true);
   });

@@ -4,7 +4,7 @@
  *
  * ── WHAT THIS FILE IS NO LONGER ALLOWED TO BE ───────────────────────────────
  *
- * It used to open by saying it checked "the rules 24 §5.3 names by issue code
+ * It used to open by saying it checked the add-on manifest rules "by issue code
  * rather than by importing `@adminium/manifest`", because "this repo cannot
  * reach it". Restating a schema is a copy, and this copy was wrong in three
  * places at once — and worse than wrong, it had written two of them down as
@@ -47,41 +47,41 @@ describe('manifest.json', () => {
   it('is an add-on, not an app', () => {
     expect(manifest.kind).toBe('add-on');
     expect(manifest.manifestVersion).toBe(1);
-    // §5.7 item 6: an add-on cannot install pages, roles or a frontend, and the
-    // strongest way to say so is for the fields not to exist.
+    // An add-on cannot install pages, roles or a frontend — those are app
+    // powers — and the strongest way to say so is for the fields not to exist.
     expect(manifest).not.toHaveProperty('pages');
     expect(manifest).not.toHaveProperty('roles');
     expect(manifest).not.toHaveProperty('frontend');
   });
 
-  it('is first-party, which is the only publisher v1 accepts (D13)', () => {
+  it('is first-party, which is the only publisher v1 accepts', () => {
     expect(manifest.publisher.id).toBe('adminium');
   });
 
-  it('takes a category from the add-on vocabulary, not the app facet set (D2a)', () => {
+  it('takes a category from the add-on vocabulary, not the app facet set', () => {
     expect(manifest.categories).toEqual(['artwork']);
   });
 
   /**
-   * ONE APP AND TWO TABLES, which is what makes this the add-on D20 is about.
-   * The app is the host that mounts the slots; the tables are the generated
-   * dashboard's own, and they are what `record.editor.panel` mounts against —
-   * the first add-on surface that lives in the product rather than in an
-   * example app. (It named two apps once. The second block below is why it
-   * does not.)
+   * ONE APP AND TWO TABLES, which is what makes this the add-on that mounts in
+   * the generated dashboard, for a shop with no app of its own. The app is the
+   * host that mounts the slots; the tables are the generated dashboard's own,
+   * and they are what `record.editor.panel` mounts against — the first add-on
+   * surface that lives in the product rather than in an example app. (It named
+   * two apps once. The second block below is why it does not.)
    *
    * ── `app: "*"` ON THE TWO TABLE TARGETS, AND WHY THE MANIFEST MOVED ────────
    *
-   * 24 §8B writes these two as bare `{ table: "products" }`, and that is the
+   * The spec wrote these two as bare `{ table: "products" }`, and that is the
    * side that was wrong. `attachTargetSchema` REQUIRES `app`, and it is not an
    * oversight in the schema: `"*"` is the value it provides for a target that
    * is not host-specific, `table` is documented there as the qualifier for
    * `record.editor.panel`, and a dashboard mount is precisely "not tied to an
-   * app" — which is the whole of D20's argument, that the thing a shop buys is
-   * not tied to a shop. So the honest reading needed no schema change at all,
-   * and that matters: `manifestVersion: 1` is FROZEN, and relaxing `app` to
-   * optional would have removed a guarantee from every shipped manifest to
-   * spare this one four characters.
+   * app" — which is the whole argument for the dashboard mount, that the thing
+   * a shop buys is not tied to a shop. So the honest reading needed no schema
+   * change at all, and that matters: `manifestVersion: 1` is FROZEN, and
+   * relaxing `app` to optional would have removed a guarantee from every
+   * shipped manifest to spare this one four characters.
    *
    * The rule was invisible here because this suite restated it by hand and
    * restated it wrong — see the header. The real validator is what says so now.
@@ -89,10 +89,10 @@ describe('manifest.json', () => {
   /**
    * ── THE APP IT CLAIMED AND COULD NOT DRAW IN ────────────────────────────
    *
-   * [Amended 2026-08-11, wave 4b round 4.] `attaches` used to name `printing`
-   * as well, on the strength of a sentence in the plan: "both host the slots;
-   * the contract is app-neutral". The contract is app-neutral. The print works
-   * does not host the slots. Its `HOSTED_SLOTS` are `artwork.sources`,
+   * [Amended 2026-08-11.] `attaches` used to name `printing` as well, on the
+   * strength of a sentence in the plan: "both host the slots; the contract is
+   * app-neutral". The contract is app-neutral. The print works does not host
+   * the slots. Its `HOSTED_SLOTS` are `artwork.sources`,
    * `checkout.delivery.methods`, `order.dispatch.panel`,
    * `order.dispatch.actions` and `settings.add-on.panel`; this add-on fills
    * `product.options.personalize`, `cart.line.preview`, `product.admin.panel`,
@@ -102,19 +102,19 @@ describe('manifest.json', () => {
    * nowhere to happen. It was checked: registered in a scratch print-shop it
    * runs cleanly and draws its settings form and no personalization anywhere.
    *
-   * That is not "a slot fill that quietly does not render", which D21 allows
-   * and this repo relies on. It is a promise to an INSTALLER that the installer
-   * cannot keep. The claim is dropped rather than papered over, because the
-   * alternative — making a print works host a shopper-facing personalization
-   * surface — is inventing a shop model the print works has not got, in order
-   * to make a line in a JSON file true.
+   * That is not "a slot fill that quietly does not render", which the
+   * app-neutral slot rule allows and this repo relies on. It is a promise to an
+   * INSTALLER that the installer cannot keep. The claim is dropped rather than
+   * papered over, because the alternative — making a print works host a
+   * shopper-facing personalization surface — is inventing a shop model the
+   * print works has not got, in order to make a line in a JSON file true.
    *
    * `emptyAttachClaims` in `packages/host/src/manifest-schema.test.ts` is the
    * gate that makes this a rule instead of a ruling — and it is deliberately
    * blind to `settings.add-on.panel`, because that slot alone is what the
    * intersection here came to.
    */
-  it('attaches to the host that mounts its slots, AND to the dashboard tables (D20)', () => {
+  it('attaches to the host that mounts its slots, AND to the dashboard tables', () => {
     expect(addOn.attaches).toEqual([
       { app: 'maker', range: '^0.1.0' },
       { app: '*', table: 'products' },
@@ -140,10 +140,11 @@ describe('manifest.json', () => {
    * Six of the seven are rendered by `register()`. The seventh,
    * `record.editor.panel`, is declared and deliberately unmounted: its host is
    * Adminium's generated dashboard and it needs the add-on runtime that
-   * `POST /manifests` does not yet provide (§5.10). Shipping a fill nothing can
-   * mount is the exact defect §5.4 records against `nav.add-on.routes`, so the
-   * manifest declares the attachment and the bundle ships nothing — and this
-   * suite is where that difference is written down.
+   * `POST /manifests` does not yet provide. Shipping a fill nothing can mount
+   * is the exact defect `nav.add-on.routes` once had (a host listed it and
+   * nothing ever mounted it), so the manifest declares the attachment and the
+   * bundle ships nothing — and this suite is where that difference is written
+   * down.
    */
   it('renders six of its seven slots, and names the seventh as Phase B', () => {
     const rendered = register()
@@ -161,7 +162,7 @@ describe('manifest.json', () => {
     expect(addOn.provides[0]!.version).toBe(1);
   });
 
-  it('names entry points in the wave’s one convention (§5.7 item 2)', () => {
+  it('names entry points in the one convention every add-on uses', () => {
     for (const fill of addOn.slots) expect(fill.client).toBe('dist/client.js');
     expect(addOn.provides[0]!.server).toBe('dist/server.js');
     for (const path of [...addOn.slots.map((f) => f.client), addOn.provides[0]!.server]) {
@@ -231,15 +232,15 @@ describe('manifest.json', () => {
     }
   });
 
-  it('declares NO egress, because it calls nothing (D14)', () => {
+  it('declares NO egress, because it calls nothing', () => {
     expect(addOn).not.toHaveProperty('network');
     expect(manifest.capabilities).not.toContain('outbound-http');
     // No third party means no demo transport to seed: there is nothing to
-    // simulate when there is nothing to call (D11).
+    // simulate when there is nothing to call, and a demo never calls anyone.
     expect(addOn).not.toHaveProperty('demoTransport');
   });
 
-  it('connects with one click and no account (§5.6, D3a)', () => {
+  it('connects with one click and no account', () => {
     expect(addOn.connect).toEqual({ kind: 'none' });
     expect(manifest.capabilities).toEqual(['file-storage']);
     expect(register().connect).toBe('none');
@@ -251,7 +252,7 @@ describe('manifest.json', () => {
     expect(register().settings.map((setting) => setting.key)).toEqual(addOn.publicSettings);
   });
 
-  it('brings the two tables 8B names, with the columns the engine writes', () => {
+  it('brings its own two tables, with the columns the engine writes', () => {
     expect(manifest.requiredSchema.tables.map((table) => table.ref)).toEqual([
       'personalization_templates',
       'personalizations',
@@ -288,12 +289,12 @@ describe('manifest.json', () => {
   });
 
   /**
-   * AC6, in the shape this add-on can honestly satisfy: it names no company, so
-   * it has no relationship to disclaim, and rendering nothing where the
-   * disclaimer goes would leave a reader unable to tell "connects to nobody"
-   * from "somebody forgot".
+   * The not-affiliated rule, in the shape this add-on can honestly satisfy: it
+   * names no company, so it has no relationship to disclaim, and rendering
+   * nothing where the disclaimer goes would leave a reader unable to tell
+   * "connects to nobody" from "somebody forgot".
    */
-  it('states what it connects to in place of a disclaimer it cannot make (AC6)', () => {
+  it('states what it connects to in place of a disclaimer it cannot make', () => {
     const registered = register();
     expect(registered.namesCompany).toBe(false);
     expect(registered.noCompanyKeys).toEqual([
@@ -325,11 +326,12 @@ describe('manifest.json', () => {
  * WHAT THIS ADD-ON TELLS ITS HOSTS TO GREP FOR, CHECKED AGAINST WHAT IT
  * DECLARES.
  *
- * `add-on-facts.ts` carries `NEVER_IN_A_BROWSER` — the strings a host's D15
- * bundle gate looks for in every emitted file — and it exists because that list
- * used to be written out inside each HOST. A host cannot look for a needle
- * nobody told it about, so a credentialled add-on vendored into a shop that had
- * never heard of it shipped its secret setting keys with the gate fully green.
+ * `add-on-facts.ts` carries `NEVER_IN_A_BROWSER` — the strings a host's
+ * no-secret-in-the-browser bundle gate looks for in every emitted file — and it
+ * exists because that list used to be written out inside each HOST. A host
+ * cannot look for a needle nobody told it about, so a credentialled add-on
+ * vendored into a shop that had never heard of it shipped its secret setting
+ * keys with the gate fully green.
  *
  * Moving the list is only half a repair: a hand-kept list beside a manifest
  * drifts from the manifest. This is the other half. Everything the manifest

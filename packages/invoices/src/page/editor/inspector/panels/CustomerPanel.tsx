@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 /**
- * The Invoice-to panel (the comp's `billto`, 815-822; 34 Appendix D.2 retires
- * the word from the key and the header — the body copy was already *Client
- * name* / *Address & contact*): the client name over the `customer` line editor.
+ * The Invoice-to panel (the comp's `billto`, 815-822; the banned-word lexicon
+ * retires the word from the key and the header — the body copy was already
+ * *Client name* / *Address & contact*): the client name over the `customer`
+ * line editor.
  */
 import { t } from '../../../messages.js';
 import { LineListEditor } from '../LineListEditor.js';

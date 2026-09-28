@@ -3,12 +3,12 @@
  *
  * ── THE DEFECT ──────────────────────────────────────────────────────────────
  *
- * 24 AC6, as amended 2026-08-09, is unconditional: the repository's trademark
- * file lists every package, and one that references no mark says exactly that
- * rather than being absent. For the whole of wave 4b the Live Personalizer had
- * no row in the table and no section — and the prose around the table still
- * said "three packages" and "what used to be three TRADEMARKS.md files", so the
- * file read as complete while being one add-on short.
+ * The trademark rule is unconditional: the repository's trademark file lists
+ * every package, and one that references no mark says exactly that rather than
+ * being absent. For the whole of wave 4b the Live Personalizer had no row in
+ * the table and no section — and the prose around the table still said "three
+ * packages" and "what used to be three TRADEMARKS.md files", so the file read
+ * as complete while being one add-on short.
  *
  * Nothing could have caught it. The file is prose, nobody asserted anything
  * about it, and the one thing a reader most needs from it — that the list is
@@ -43,8 +43,8 @@ const TRADEMARKS = join(PACKAGES, '..', 'TRADEMARKS.md');
 
 /**
  * Every add-on's declared marks, imported. `COMPANY_MARKS` is what the HOSTS
- * read to decide whether a surface names a company (AC6); this file is what
- * keeps that declaration and the prose from drifting apart.
+ * read to decide whether a surface must carry the not-affiliated line; this
+ * file is what keeps that declaration and the prose from drifting apart.
  */
 const FACTS = import.meta.glob<{ COMPANY_MARKS?: readonly { mark: string; owner: string }[] }>(
   '../../*/src/add-on-facts.ts',
@@ -85,7 +85,7 @@ function sectionFor(text: string, name: string): string | null {
 const FILE = readFileSync(TRADEMARKS, 'utf8');
 const found = addOns();
 
-describe('TRADEMARKS.md lists every add-on in this repository (24 AC6)', () => {
+describe('TRADEMARKS.md lists every add-on in this repository', () => {
   it('found the add-ons at all', () => {
     // Guard on the guard: a discovery that returns nothing would agree with an
     // empty file forever, which is this file's own failure mode.
@@ -104,8 +104,9 @@ describe('TRADEMARKS.md lists every add-on in this repository (24 AC6)', () => {
   it.each(found)('$dir has a section of its own, and it says something', ({ dir, name }) => {
     const section = sectionFor(FILE, name);
     expect(section, `no "# ${name}" section — an add-on that names no company says so`).not.toBeNull();
-    // A heading with nothing under it satisfies the letter of AC6 and none of
-    // its point. Every existing section is thousands of characters.
+    // A heading with nothing under it satisfies the letter of the trademark
+    // rule and none of its point. Every existing section is thousands of
+    // characters.
     expect((section ?? '').length, `the "${name}" section is a stub`).toBeGreaterThan(500);
     // Every section takes a position: it disclaims affiliation, or it states
     // that there is no company to disclaim one with.

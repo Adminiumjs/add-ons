@@ -241,9 +241,9 @@ describe('the limits are on the screen, not only in a header', () => {
   });
 
   it('states the base-14 alphabet, which is the cost of embedding no font', () => {
-    // 25 D11 asks for the cost of a no-dependency decision to be stated where
-    // it is felt, and it is felt by whoever prints a label for a row whose
-    // reference is not written in Latin script.
+    // The cost of a no-dependency decision has to be stated where it is felt,
+    // and it is felt by whoever prints a label for a row whose reference is not
+    // written in Latin script.
     expect(shows(html, EN['addon.barcode-labels.sheet.latin'])).toBe(true);
   });
 
@@ -274,9 +274,9 @@ describe('the styling rules this file has to keep', () => {
   const source = readFileSync(new URL('./SettingsPanel.tsx', import.meta.url), 'utf8');
 
   it('renders no anchor, so no href can carry a banned path', () => {
-    // 17 §2 bans `/mo` in a link. This surface has no link at all, which is the
-    // simplest way to be sure — and a URL in a shipped source would also be the
-    // first thing the egress net reports.
+    // The release sweep bans `/mo` in a link. This surface has no link at all,
+    // which is the simplest way to be sure — and a URL in a shipped source
+    // would also be the first thing the egress net reports.
     expect(/href=/.test(source)).toBe(false);
     expect(renderPanel()).not.toContain('<a ');
   });

@@ -193,8 +193,8 @@ function nonWorkingDays(values: AddOnSettingValues | undefined): readonly NonWor
 
 Pure, total, sorted by date then by name, and defined for values it has never seen: an add-on that
 has just been connected and has imported nothing returns `[]`, and a host merging `[]` behaves
-exactly as it did before the add-on existed. That is 24 D6 — the app is designed with the hole
-already in it — expressed as a return value.
+exactly as it did before the add-on existed. That is the rule that the app is designed with the
+hole already in it, expressed as a return value.
 
 **Nothing else is public.** `StoredDay`, `STORAGE_KEY` and `applyImport` are this package's private
 document. A host that reached into an add-on's storage would be coupled to a shape that is expected
@@ -268,7 +268,7 @@ another application, but because a claim in a README that no code has ever run i
 
 ## The two behaviours
 
-### The refusal (25 D10)
+### The refusal
 
 **Importing a year refuses when one of its days falls on a date the operator has already entered by
 hand.** It names every collision, says what both sides call the day, and the fix is to remove the
@@ -306,7 +306,8 @@ reasons that are not public holidays, and losing one of those loses a real appoi
 that guards it puts a business's own days on 24 December and 17 August and then imports four sets
 across both years twice over.
 
-D16 is the same promise one level up: disconnecting takes the surfaces and leaves every day behind.
+Disconnecting never destroys data, which is the same promise one level up: disconnecting takes the
+surfaces and leaves every day behind.
 
 ---
 
@@ -319,8 +320,8 @@ D16 is the same promise one level up: disconnecting takes the surfaces and leave
 to a hostname this add-on has not declared, and it has declared none.
 
 **No server half, and no demo transport.** Every other add-on here builds two bundles; this one
-builds `dist/client.js` and nothing else. `demoTransport` exists because 24 D11 forbids a real
-third-party call in a demo and an add-on that would otherwise make one needs a stand-in. There is no
+builds `dist/client.js` and nothing else. `demoTransport` exists because no real third-party call
+may happen in a demo and an add-on that would otherwise make one needs a stand-in. There is no
 call here to stand in for, and shipping an empty server module so the manifest could carry the field
 would be a module that exists to satisfy a schema.
 

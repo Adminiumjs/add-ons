@@ -1,6 +1,6 @@
 /**
- * The engine's own suite (24 D9 — every engine ships its vitest suite in the
- * same commit).
+ * The engine's own suite (every engine ships its vitest suite in the same
+ * commit).
  *
  * IT DRIVES THE SAMPLE PERSONALIZATIONS rather than values invented per case,
  * so the wording that overruns in a suite is the wording that overruns on the
@@ -8,16 +8,15 @@
  * rather than for a particular shop's order reference, which is what they used
  * to be named for and which was never true of any second host.
  *
- * The four things this file exists to prove, in the order the criteria are
- * numbered:
+ * The four things this file exists to prove:
  *
- *   17 — the picture is byte-identical for identical values, and different for
- *        different ones, wherever it is drawn.
- *   18 — no failing verdict without a remedy AND its number, and the numbers
- *        are the ones that actually work: applying a remedy makes the next
- *        verdict pass.
- *   19 — the production file carries outlines and names no font.
- *   D18 — the preview is 2D. No WebGL, no mesh, no `.stl`, in the source and in
+ *   ONE PICTURE — the picture is byte-identical for identical values, and
+ *        different for different ones, wherever it is drawn.
+ *   A NUMBER ON EVERY VERDICT — no failing verdict without a remedy AND its
+ *        number, and the numbers are the ones that actually work: applying a
+ *        remedy makes the next verdict pass.
+ *   OUTLINES — the production file carries outlines and names no font.
+ *   2D — the preview is 2D. No WebGL, no mesh, no `.stl`, in the source and in
  *        the bundle (`sources.test.ts` and `built-output.test.ts` carry that
  *        half; this file asserts the shape of what is drawn).
  */
@@ -104,7 +103,7 @@ describe('the measured face table', () => {
   });
 });
 
-// ── fit, and the remedies with their numbers (AC18) ─────────────────────────
+// ── fit, and the remedies with their numbers ────────────────────────────────
 
 describe('fit', () => {
   it('fits the seeded line that is meant to fit, and reports its width', () => {
@@ -300,8 +299,8 @@ describe('check', () => {
   });
 
   /**
-   * THE INVARIANT THAT MAKES CRITERION 18 ABSOLUTE, said once over the whole
-   * engine rather than case by case.
+   * THE INVARIANT THAT MAKES "EVERY FAILING VERDICT CARRIES A NUMBER" ABSOLUTE,
+   * said once over the whole engine rather than case by case.
    *
    * Every failing verdict either carries at least one way out, or is refused in
    * words by a `Block` on the same area. There is no third state — and the
@@ -379,9 +378,10 @@ describe('check', () => {
   });
 
   /**
-   * A BLOCK IS NOT A VERDICT, and this is the assertion that keeps criterion 18
-   * absolute. An empty required area has no number to offer, so it stops the
-   * basket instead of producing a verdict with an empty `remedies`.
+   * A BLOCK IS NOT A VERDICT, and this is the assertion that keeps "every
+   * failing verdict carries a number" absolute. An empty required area has no
+   * number to offer, so it stops the basket instead of producing a verdict with
+   * an empty `remedies`.
    */
   it('blocks an empty required area rather than returning a numberless verdict', () => {
     const { verdicts, blocks } = check(withValues({ [DATE.id]: 'est. 2019' }), COASTER_TEMPLATE);
@@ -409,7 +409,7 @@ describe('check', () => {
   });
 });
 
-// ── the picture (AC17) ──────────────────────────────────────────────────────
+// ── the picture, one wherever it is drawn ───────────────────────────────────
 
 describe('the preview', () => {
   const line = sampleThat('comfortable');
@@ -442,7 +442,7 @@ describe('the preview', () => {
    * THE MECHANISM BEHIND THE DETERMINISM CLAIM. Every `<text>` is told exactly
    * how wide to be, so the browser's font list cannot change the picture's
    * layout — which is what makes a committed metric table safe to rely on and
-   * what D5c chose over `measureText`.
+   * what the engine chose over `measureText`.
    */
   it('tells the browser the width rather than asking it', () => {
     const svg = previewSvg(line, COASTER_TEMPLATE, { angle: 'front', widthPx: 480 });
@@ -456,7 +456,7 @@ describe('the preview', () => {
     expect(svg).toContain(`textLength="${Math.round(width * 100) / 100}"`);
   });
 
-  it('is 2D, and carries nothing that would make it anything else (D18)', () => {
+  it('is 2D, and carries nothing that would make it anything else', () => {
     const svg = previewSvg(line, COASTER_TEMPLATE, { angle: 'three', widthPx: 480 });
     expect(svg.startsWith('<svg')).toBe(true);
     for (const forbidden of ['canvas', 'webgl', 'three', 'gltf', '.stl', 'mesh']) {
@@ -488,7 +488,7 @@ describe('the preview', () => {
   });
 });
 
-// ── what goes to the machine (AC19) ─────────────────────────────────────────
+// ── what goes to the machine: outlines, never a font ────────────────────────
 
 describe('the production file', () => {
   const line = sampleThat('comfortable');

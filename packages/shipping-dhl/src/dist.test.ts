@@ -3,8 +3,8 @@
  *
  * Every other guard in this repo reads sources. That is one inference away from
  * the thing that ships — a minifier inlines a default, a bundler keeps a
- * legal comment, a string arrives from a dependency — and the sweep (17 §2)
- * does not read sources at all. So this suite builds the add-on and greps the
+ * legal comment, a string arrives from a dependency — and the sweep does not
+ * read sources at all. So this suite builds the add-on and greps the
  * bytes, with the FULL release list: `bannedSubstringsIn` (which now carries
  * `pro` as a substring like every other word) plus the union of the per-locale
  * tiering words, which catch the spellings no ASCII fragment can see.
@@ -27,8 +27,8 @@
  * It also closes the manifest's loop. `manifest.test.ts` proves the manifest
  * names the filenames `vite.config.ts` says it writes; this proves the build
  * actually wrote them, at the paths the manifest declares, resolved the way the
- * installer resolves them (24 AC10: package-root-relative — the package
- * directory is what a host installs).
+ * installer resolves them (package-root-relative — the package directory is
+ * what a host installs).
  */
 
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
@@ -78,7 +78,7 @@ describe("the build writes what the manifest promises", () => {
     }
   });
 
-  it("puts a real file at every entry point the manifest declares (AC10)", () => {
+  it("puts a real file at every entry point the manifest declares", () => {
     // Driven from `manifest.json` rather than from `OUTPUT`, so this fails when
     // the manifest names something the build does not write — the failure mode
     // an installer hits at load time and nobody hits before.
@@ -103,15 +103,15 @@ describe("the build writes what the manifest promises", () => {
   });
 
   it("leaves the client half a single self-contained ESM file", () => {
-    // D7. A second entry sharing a generated chunk would make the client import
-    // a sibling the manifest does not name, and the host loads only what the
-    // manifest names.
+    // An add-on's client half is ONE ESM bundle. A second entry sharing a
+    // generated chunk would make the client import a sibling the manifest does
+    // not name, and the host loads only what the manifest names.
     const client = readFileSync(join(ROOT, OUTPUT.client), "utf8");
     const relativeImports = [...client.matchAll(/from\s*"(\.[^"]*)"/g)].map((m) => m[1]);
     expect(relativeImports).toEqual([]);
   });
 
-  it("keeps the credentialled half out of the client bundle (D15)", () => {
+  it("keeps the credentialled half out of the client bundle", () => {
     const client = readFileSync(join(ROOT, OUTPUT.client), "utf8");
     // The secret setting keys, and the one hostname the real transport targets.
     for (const needle of ["api_key", "account_number", "express.api.dhl.com"]) {
@@ -156,7 +156,7 @@ describe("the vocabulary ban, over built output", () => {
 });
 
 /**
- * D11 OVER THE ARTEFACT, WHICH IS WHERE THE MUTANT ACTUALLY REACHED.
+ * NO LIVE CALL, OVER THE ARTEFACT, WHICH IS WHERE THE MUTANT ACTUALLY REACHED.
  *
  * This package's `sources.test.ts` used to hold "no real third-party call" as a
  * grep for four spellings. A verifier put an image beacon into
@@ -175,7 +175,7 @@ describe("the vocabulary ban, over built output", () => {
  * That includes a URL written in a COMMENT — this build keeps them, and a
  * comment in `dist/` is a byte in `dist/`.
  */
-describe("nothing in the artefact can reach a host we do not control (24 D11)", () => {
+describe("nothing in the artefact can reach a host we do not control", () => {
   it("names no address at all, in any emitted file", () => {
     const offences = built().flatMap((file) =>
       offendingAddresses(readFileSync(file, "utf8"), []).map(

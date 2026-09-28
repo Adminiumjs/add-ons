@@ -4,22 +4,23 @@
  * `packages/add-on-contracts/src/testing/index.ts` in the Adminium monorepo.
  *
  * IT CARRIES THREE ASSERTIONS THE OTHER TWO CONTRACTS DO NOT NEED, and each of
- * them is a numbered acceptance criterion rather than a nicety:
+ * them is a release requirement rather than a nicety:
  *
- *   AC17 — `render` is DETERMINISTIC. Same values, same angle ⇒ the same
- *   picture. This is what lets the cart thumbnail, the proof and the order line
- *   be one image instead of three that happen to look alike, and it is why
- *   D5c overruled comp L's `document.createElement("canvas").getContext("2d")`
- *   text measurement: canvas advances depend on the platform and on which fonts
- *   happen to be installed, so a preview measured that way is a different
- *   picture on a different machine.
+ *   `render` is DETERMINISTIC. Same values, same angle ⇒ the same picture.
+ *   This is what lets the cart thumbnail, the proof and the order line be one
+ *   image instead of three that happen to look alike, and it is why the
+ *   template engine overruled the design comp's
+ *   `document.createElement("canvas").getContext("2d")` text measurement:
+ *   canvas advances depend on the platform and on which fonts happen to be
+ *   installed, so a preview measured that way is a different picture on a
+ *   different machine.
  *
- *   AC18 — every FAILING verdict carries a remedy WITH A NUMBER. "It doesn't
- *   fit" is not a verdict, it is a shrug; the surface renders each remedy as a
+ *   Every FAILING verdict carries a remedy WITH A NUMBER. "It doesn't fit" is
+ *   not a verdict, it is a shrug; the surface renders each remedy as a
  *   button and the number is what the button does.
  *
- *   AC19 — the production file carries OUTLINES, NEVER A FONT. The upstream
- *   suite checks the filename's extension, which catches an implementation that
+ *   The production file carries OUTLINES, NEVER A FONT. The upstream suite
+ *   checks the filename's extension, which catches an implementation that
  *   ships a `.otf` beside its geometry and nothing else. This mirror goes
  *   further where the implementation can let it: an optional `readProduction`
  *   fixture hands the suite the file's actual bytes, and the bytes are then
@@ -54,7 +55,8 @@ export interface ProductPersonalizerFixtures {
   angle: string;
   /**
    * The production file's own bytes, for the implementations that can produce
-   * them without a browser. Omit and AC19 falls back to the filename check.
+   * them without a browser. Omit and the outlines check falls back to the
+   * filename check.
    */
   readProduction?: (fileId: string) => string | Promise<string>;
 }
@@ -127,7 +129,7 @@ export function describeProductPersonalizer(
       ).toEqual([]);
     });
 
-    /** AC18 — and the reason a bare "doesn't fit" is a contract violation. */
+    /** A remedy with a number — and the reason a bare "doesn't fit" is a contract violation. */
     it('gives every failing verdict a reason and at least one remedy WITH a number', () => {
       const verdicts = impl.validate(fixtures.overrun, fixtures.template);
       const failures = verdicts.filter((v) => !v.ok);
@@ -145,7 +147,7 @@ export function describeProductPersonalizer(
       }
     });
 
-    /** AC17, both halves: equal input ⇒ equal picture, different ⇒ different. */
+    /** Determinism, both halves: equal input ⇒ equal picture, different ⇒ different. */
     it('renders deterministically — same values and angle give the same picture', async () => {
       const a = await impl.render(fixtures.valid, { angle: fixtures.angle, widthPx: 480 });
       const b = await impl.render(fixtures.valid, { angle: fixtures.angle, widthPx: 480 });
@@ -161,7 +163,7 @@ export function describeProductPersonalizer(
       expect(b.digest).not.toBe(a.digest);
     });
 
-    /** AC19 — outlines, not fonts. */
+    /** Outlines, not fonts. */
     it('produces a production file that names no font', async () => {
       const file = await impl.productionFile(fixtures.valid);
       expect(file.bytes).toBeGreaterThan(0);

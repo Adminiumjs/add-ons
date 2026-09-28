@@ -900,7 +900,7 @@ void _parity;
  *
  * It travels with the strings rather than with the host, because a host
  * holding one add-on's allowance would turn red the day a second host vendored
- * the same add-on without it — the defect AC20/D21 exists to prevent.
+ * the same add-on without it — and an add-on must run unchanged in any host.
  */
 export const NOT_A_QUANTITY: readonly { phrase: string; why: string }[] = [
   {

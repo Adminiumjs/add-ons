@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 /**
- * The address blocks (comp 388-421; B1–B3): `parties` — *From* and *Invoice
- * to* side by side; `shipping` — *Ship to*; `meta` — the four-column Issued
- * · Due · Terms · PO number strip.
+ * The address blocks (comp 388-421): `parties` — *From* and *Invoice to* side
+ * by side; `shipping` — *Ship to*; `meta` — the four-column Issued · Due ·
+ * Terms · PO number strip.
  *
- * *Invoice to*, not the comp's *Bill to* (395): 34 Appendix D.2's standing
- * `"bill" (noun) → "invoice"` row; the field is `customerName` for the same
- * reason.
+ * *Invoice to*, not the comp's *Bill to* (395): the banned-word lexicon's
+ * standing `"bill" (noun) → "invoice"` rule; the field is `customerName` for
+ * the same reason.
  */
 import { t } from '../../../messages.js';
 import { InlineInput, KICKER, Region, lineLabel } from '../inline.js';

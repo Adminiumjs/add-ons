@@ -2,9 +2,9 @@
  * The release sweep's word list, in one executable place.
  *
  * THE GUARD HAS TO BE THE RELEASE GREP, NOT A POLITER VERSION OF IT. The sweep
- * (17 §2) reads BUILT OUTPUT case-insensitively for
- * `pricing|plan|tier|billing|upgrade|/mo|free` as SUBSTRINGS, and 24 D12 adds
- * `premium` and `pro` for add-ons. This list was once anchored with `\b` around
+ * reads BUILT OUTPUT case-insensitively for
+ * `pricing|plan|tier|billing|upgrade|/mo|free` as SUBSTRINGS, and add-ons add
+ * `premium` and `pro`, because no add-on may imply a paid grade of itself. This list was once anchored with `\b` around
  * two of those words, which made it strictly weaker than the thing it claimed
  * to enforce: "freephone", "freight-plan", "explanation" and "frontier" all
  * pass a word boundary and all fail the release. Substrings here, no anchors.
@@ -112,8 +112,8 @@ function maskAllowed(value: string): string {
  * [Rewritten 2026-08-11, wave 4b round 4.] This was a table of one word per
  * language ("premium", and its spellings), and it was a FINGERPRINT: planting
  * "الترقية إلى الباقة المدفوعة" and "Jetzt auf den bezahlten Tarif wechseln"
- * in two locale bundles left every gate in this repo green. The rule D12 and
- * 17 §2 state is about a set of IDEAS — pricing, plan, tier, billing, upgrade,
+ * in two locale bundles left every gate in this repo green. The rule is about
+ * a set of IDEAS — pricing, plan, tier, billing, upgrade,
  * free, premium — and each of them is spelt differently in each of the eight
  * languages.
  *

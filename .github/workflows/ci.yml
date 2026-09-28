@@ -137,11 +137,12 @@ jobs:
 
       # ── THE RETURNS HOST, ADDED IN THE SAME CHANGE AS ITS HOST_ROOTS ENTRY ──
       #
-      # [Added 2026-09-01, 31-T07.] `support-desk` — app key `helpdesk` — is
-      # the carrier's fifth attach target and the first host of the inbound
-      # direction (31 O4). Registered in `HOST_ROOTS` and here in ONE change,
-      # which is this file's own lesson above being applied for the first time
-      # rather than re-learned.
+      # [Added 2026-09-01.] `support-desk` — app key `helpdesk` — is the
+      # carrier's fifth attach target and the first host of the inbound
+      # direction (returns: the same carrier contract, run the other way).
+      # Registered in `HOST_ROOTS` and here in ONE change, which is this file's
+      # own lesson above being applied for the first time rather than
+      # re-learned.
       - name: Check out the support-desk app
         uses: actions/checkout@v4
         with:

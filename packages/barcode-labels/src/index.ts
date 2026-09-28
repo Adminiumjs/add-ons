@@ -6,19 +6,20 @@
  * answers, and everything the host needs to draw a shelf row and two surfaces
  * is in the value it gets back.
  *
- * SCOPE, stated where somebody would come looking to widen it (24 §7): this
- * gives a catalogue row a number, checks that the number is well formed, and
- * draws a sheet of labels for one row. It is not a stock system, not a till,
- * not a numbering authority and not a scanner. The last of those is the one
- * worth naming, because it is what everybody assumes an add-on called this
- * would do — see the header on the record fill below.
+ * SCOPE, stated where somebody would come looking to widen it: this gives a
+ * catalogue row a number, checks that the number is well formed, and draws a
+ * sheet of labels for one row. It is not a stock system, not a till, not a
+ * numbering authority and not a scanner. The last of those is the one worth
+ * naming, because it is what everybody assumes an add-on called this would do —
+ * see the header on the record fill below.
  *
  * ── WHAT THIS OBJECT LEAVES OUT, AND WHY EACH ABSENCE IS A DECISION ────────
  *
  * `demoSwitch` — absent. It exists so a credentialled add-on can offer "use a
- * stand-in instead of calling the real service" (24 D11). Nothing here calls
- * anything, so there is nothing to stand in for, and a switch offering to
- * disable a call that does not happen would be a lie in the connect dialog.
+ * stand-in instead of calling the real service", because no demo may call a
+ * real one. Nothing here calls anything, so there is nothing to stand in for,
+ * and a switch offering to disable a call that does not happen would be a lie
+ * in the connect dialog.
  *
  * `applySettings` — absent. Every engine in this package takes the values as an
  * ARGUMENT — `codeFor(values, sku)`, `assignCode(current, …)` — so there is no
@@ -64,15 +65,16 @@ export function register(): AddOn {
     shortName: 'Labels',
     lineKey: 'addon.barcode-labels.line',
     whatKey: 'addon.barcode-labels.what',
-    // Three letters on a neutral tile. There is no mark to avoid redrawing
-    // here (D12) and the tile is drawn the same way regardless, because a shelf
-    // has to read as one system rather than as twenty marks.
+    // Three letters on a neutral tile. There is no mark to avoid redrawing here
+    // — no real mark is ever drawn — and the tile is drawn the same way
+    // regardless, because a shelf has to read as one system rather than as
+    // twenty marks.
     monogram: 'LBL',
     /*
-     * `data` from the closed five (24 D2). Not `operations`, which is an APP
-     * facet and belongs to the other vocabulary — an add-on is not a vertical.
-     * Of the five, `data` is the one this fits: what it adds to a shop is a
-     * table of numbers and a way to draw them.
+     * `data` from the closed five. Not `operations`, which is an APP facet and
+     * belongs to the other vocabulary — an add-on is not a vertical. Of the
+     * five, `data` is the one this fits: what it adds to a shop is a table of
+     * numbers and a way to draw them.
      */
     category: 'data',
     /*
@@ -88,11 +90,12 @@ export function register(): AddOn {
     // that all eight locales carry every key of the English set.
     messages: strings,
     /*
-     * D16, and it is easy to state honestly here: there is no credential to
-     * remove, so the whole of "what goes" is the two surfaces, and the whole of
-     * "what stays" is the numbers and every label already printed. Both halves
-     * are checked by `packages/host/src/disconnect-copy.test.ts`, which fails an
-     * add-on that puts a removal under the heading saying things survive.
+     * Disconnecting never destroys data, and it is easy to state honestly here:
+     * there is no credential to remove, so the whole of "what goes" is the two
+     * surfaces, and the whole of "what stays" is the numbers and every label
+     * already printed. Both halves are checked by
+     * `packages/host/src/disconnect-copy.test.ts`, which fails an add-on that
+     * puts a removal under the heading saying things survive.
      */
     disconnect: {
       goesKey: 'addon.barcode-labels.disconnect.goes',

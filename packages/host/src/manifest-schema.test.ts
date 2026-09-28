@@ -3,22 +3,23 @@
  *
  * ── WHAT THIS EXISTS TO STOP, WHICH ALREADY HAPPENED ────────────────────────
  *
- * Each add-on carries a `manifest.test.ts` that checks "the rules 24 §5.3 names
- * by issue code", restated by hand, because this repo is not the product's repo
- * and `@adminium/manifest` is not on a registry. Restating a schema is a copy,
- * and a copy with nothing watching it drifts — that is the same argument
+ * Each add-on carries a `manifest.test.ts` that checks the `addOn` block's
+ * rules by issue code, restated by hand, because this repo is not the product's
+ * repo and `@adminium/manifest` is not on a registry. Restating a schema is a
+ * copy, and a copy with nothing watching it drifts — that is the same argument
  * `host-mirror.test.ts` was written for, one file over, and it came true the
  * same way.
  *
- * The personalizer's manifest declared its two dashboard mounts as bare
- * `{ "table": "products" }` / `{ "table": "order_lines" }`, which is what 24
- * §8B writes in prose. `attachTargetSchema` REQUIRES `app` — `"*"` is the value
- * it provides for a target that is not host-specific, and a dashboard mount is
- * exactly that — so `validateManifest` returned `ok: false` on two paths. Its
- * own suite asserted `attaches` EQUALLED the invalid array, so the gate was
- * green precisely because it had written the defect down as the expectation. A
- * third issue nobody had found sat underneath: `default_finish` was declared
- * `"type": "text"`, which is not one of the six the settings union carries.
+ * The personalizer's manifest declared its two dashboard mounts as bare `{
+ * "table": "products" }` / `{ "table": "order_lines" }`, which is how the
+ * dashboard mount reads in prose. `attachTargetSchema` REQUIRES `app` — `"*"`
+ * is the value it provides for a target that is not host-specific, and a
+ * dashboard mount is exactly that — so `validateManifest` returned `ok: false`
+ * on two paths. Its own suite asserted `attaches` EQUALLED the invalid array,
+ * so the gate was green precisely because it had written the defect down as the
+ * expectation. A third issue nobody had found sat underneath: `default_finish`
+ * was declared `"type": "text"`, which is not one of the six the settings union
+ * carries.
  *
  * A hand-restated rule can only ever catch what its author already knew. This
  * runs the actual code the product runs.
@@ -42,7 +43,8 @@
  * NOTE THE SCOPE: the published name is `@adminiumjs/manifest`, NOT
  * `@adminium/manifest` — `npm view @adminium/…` always 404s and means nothing.
  * It is a devDependency and must stay one: `purity.test.ts` forbids a runtime
- * dependency here, because every add-on would inherit it as a D7 violation.
+ * dependency here, because every add-on would inherit it as a runtime
+ * dependency its host does not have.
  *
  * THE HOST APPS below are a different question and still skip. `print-shop` and
  * `maker-shop` are standalone repos, not published packages, so there is
@@ -80,12 +82,12 @@ function issuesOf(result: ReturnType<typeof validateManifest>) {
  * line the validator had already written.
  *
  * It also names the ONE failure that is expected and temporary. A contract
- * this repo has bought but npm has not published yet fails here on purpose
- * (34-invoices-add-on.md §4.3 step 2): the vendored registry knows
- * `document-render`, the installed `@adminiumjs/manifest` does not, and the
- * gap closes when the owner cuts the release (34-T07) and the lockfile is
- * refreshed — with NO source change, which is step 5's whole point and the
- * reason this helper explains the red rather than tolerating it.
+ * this repo has bought but npm has not published yet fails here on purpose:
+ * the vendored registry knows `document-render`, the installed
+ * `@adminiumjs/manifest` does not, and the gap closes when the owner releases
+ * the contract packages and the lockfile is refreshed — with NO source change,
+ * which is the whole point of that release order and the reason this helper
+ * explains the red rather than tolerating it.
  */
 function whyRejected(result: ReturnType<typeof validateManifest>, what: string): string {
   const issues = issuesOf(result);
@@ -187,7 +189,7 @@ interface HostApp {
    * `holiday-calendars` attaches to `hr` (people-ops) and `clinic` (clinic-desk).
    * Both are real apps with real manifests and real tables; neither has a
    * `src/add-ons/` directory, because nothing has retrofitted the host seam into
-   * them yet — the add-on RUNTIME does not exist (26), and that retrofit is its
+   * them yet — the add-on RUNTIME does not exist, and that retrofit is its
    * own task. So there are now three genuinely different things to say:
    *
    *   a list        — this app mounts these slots;
@@ -330,7 +332,7 @@ const HOST_ROOTS: readonly { name: string; root: string }[] = [
       fileURLToPath(new URL('../../../../clinic-desk', import.meta.url)),
   },
   /*
-   * ── THE FIRST HOST THAT MOUNTS A STRICT SUBSET (31-T06) ──────────────────
+   * ── THE FIRST HOST THAT MOUNTS A STRICT SUBSET ───────────────────────────
    *
    * [Added 2026-08-28, wave 6.] `factory-ops` — app key `factory` — hosts
    * `order.dispatch.actions` and `settings.add-on.panel` and nothing else: its
@@ -352,7 +354,7 @@ const HOST_ROOTS: readonly { name: string; root: string }[] = [
       fileURLToPath(new URL('../../../../factory-ops', import.meta.url)),
   },
   /*
-   * ── AND THE OTHER HALF OF THAT SUBSET (31-T05) ───────────────────────────
+   * ── AND THE OTHER HALF OF THAT SUBSET ────────────────────────────────────
    *
    * [Added 2026-08-28, wave 6.] `ecommerce-storefront` — app key
    * `ecommerce-shop` — is `factory-ops`'s mirror image. Its manifest declares
@@ -364,8 +366,8 @@ const HOST_ROOTS: readonly { name: string; root: string }[] = [
    * The two together are what makes the attach-surface gate below worth having
    * rather than merely true. One host mounting a strict subset could be a host
    * that had not finished; two hosts mounting COMPLEMENTARY subsets of one
-   * add-on's four fills, with no change to a line of that add-on, is 24 D21
-   * demonstrated from both ends.
+   * add-on's four fills, with no change to a line of that add-on, is
+   * app-neutrality demonstrated from both ends.
    */
   {
     name: 'ecommerce-storefront',
@@ -374,10 +376,10 @@ const HOST_ROOTS: readonly { name: string; root: string }[] = [
       fileURLToPath(new URL('../../../../ecommerce-storefront', import.meta.url)),
   },
   /*
-   * ── THE FIRST HOST OF THE INBOUND DIRECTION (31-T07, O4) ─────────────────
+   * ── THE FIRST HOST OF THE INBOUND DIRECTION ──────────────────────────────
    *
-   * [Added 2026-09-01, plan-31 close-out.] `support-desk` — app key
-   * `helpdesk` — is a customer help portal whose returns wizard mounts
+   * [Added 2026-09-01.] `support-desk` — app key `helpdesk` — is a customer
+   * help portal whose returns wizard mounts
    * `record.actions` (the carrier's prepaid return label, the twelfth slot's
    * second consumer) and `order.dispatch.panel` (the unmodified tracking
    * panel, now reading a parcel that travels TOWARD the business). Same
@@ -588,11 +590,11 @@ describe.skipIf(HOSTS.length === 0)(
  *
  * ── DIRECTION, AND WHAT IT DELIBERATELY DOES NOT SAY ────────────────────────
  *
- * It does NOT require a host to mount every slot an add-on fills. That is D21's
- * whole point and this repo relies on it: the delivery add-on fills
- * `artwork.sources` in one host and not the other, and a fill nobody mounts is
- * dropped in silence. What is forbidden is claiming an app where the count of
- * mounted, working surfaces is ZERO.
+ * It does NOT require a host to mount every slot an add-on fills. That is the
+ * whole point of a slot id naming a surface rather than an app, and this repo
+ * relies on it: the delivery add-on fills `artwork.sources` in one host and not
+ * the other, and a fill nobody mounts is dropped in silence. What is forbidden
+ * is claiming an app where the count of mounted, working surfaces is ZERO.
  *
  * `app: "*"` is not checked, for the same reason it is not checked above: it
  * names the generated dashboard and every app that does not exist yet, and the
@@ -671,7 +673,7 @@ function emptyAttachClaims(
        * THE SECOND WAY AN ADD-ON DRAWS SOMETHING, and it is an EXTENSION of
        * this rule rather than a hole in it.
        *
-       * [Added 2026-08-28, wave 6. See 31-add-on-candidates.md §12.3e.]
+       * [Added 2026-08-28, wave 6.]
        *
        * Everything above assumes an add-on reaches an app through a SLOT, which
        * was true of every add-on that existed when this gate was written.

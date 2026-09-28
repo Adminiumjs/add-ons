@@ -1,5 +1,6 @@
 /**
- * Can a browser import this add-on's built bundle? (26-T13)
+ * Can a browser import this add-on's built bundle, the way the host's connected
+ * mode loads it?
  *
  * The suite lives in `@adminium/add-on-host/testing` so all six share one
  * implementation; this file exists because only the owning package's suite can

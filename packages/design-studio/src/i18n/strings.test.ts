@@ -229,10 +229,10 @@ describe("locale parity", () => {
 });
 
 /**
- * The release sweep (17 §2) greps BUILT HTML case-insensitively for
+ * The release sweep greps BUILT HTML case-insensitively for
  * `pricing|plan|tier|billing|upgrade|/mo|free`, as SUBSTRINGS — which is why
  * "explanation", "frontier" and French "métier" are traps, and why this test
- * checks substrings rather than words. D12 adds "premium" and "pro" for add-ons
+ * checks substrings rather than words. Add-ons add "premium" and "pro"
  * specifically: the ban is on the tiering IDEA, not only on the word, and this
  * editor is deliberately small rather than a cut-down version of a bigger one.
  *
@@ -263,9 +263,9 @@ describe("the vocabulary ban, in all eight locales", () => {
   });
 
   /**
-   * D12's second half: never call an add-on "premium" or "pro". The ban is on
-   * the TIERING IDEA, so each language is checked against its own marketing
-   * words rather than against the English ones transliterated.
+   * The add-on half of the ban: never call an add-on "premium" or "pro". The
+   * ban is on the TIERING IDEA, so each language is checked against its own
+   * marketing words rather than against the English ones transliterated.
    *
    * Czech is the reason this is a per-locale table instead of one regex. `pro`
    * is the Czech preposition "for" and appears in perfectly ordinary sentences;

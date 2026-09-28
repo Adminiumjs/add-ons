@@ -10,7 +10,7 @@
  *      add-on's own bundle, in the VIEWER's locale.
  *   2. `kinds.ts` — the outline's slot labels. Read by ADMINIUM, in Studio's
  *      profile editor, where this bundle is not loaded and that `t()` does not
- *      exist — which is why a provider carries them itself (34 D14).
+ *      exist — which is why a provider carries them itself.
  *   3. THIS FILE — the chrome printed ON the document. Not the viewer's
  *      language and not the operator's: the DOCUMENT's. An Arabic invoice read
  *      by an English-speaking accountant is still an Arabic invoice.
@@ -18,8 +18,8 @@
  * ── WHAT IS NOT HERE: THE AUTHORED CONTENT ─────────────────────────────────
  *
  * The document's title, terms and notes are AUTHORED, and the surface carries
- * its own six document languages for them (34 D49 — en, de, fr, es, pt, ja,
- * with the comp's dictionaries verbatim). Those live in the body and arrive
+ * its own six document languages for them (en, de, fr, es, pt, ja, with the
+ * comp's dictionaries verbatim). Those live in the body and arrive
  * already in the language the author chose. This file never touches them.
  *
  * That is also why a document language outside these eight is not a hole:

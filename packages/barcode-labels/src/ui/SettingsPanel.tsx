@@ -267,9 +267,9 @@ export function SettingsPanel({ payload }: { payload: SettingsPanelPayload }) {
           `sheet.ts` draws its text with two of the fourteen fonts every PDF
           reader already has, which is what keeps a font out of the bundle and
           the file openable anywhere — and the price is a Latin alphabet and no
-          other. 25 D11 asks for the cost of a no-dependency decision to be
-          stated where it is felt, and it is felt by whoever prints a label for
-          a row whose reference is not written in Latin script.
+          other. The cost of a no-dependency decision has to be stated where it
+          is felt, and it is felt by whoever prints a label for a row whose
+          reference is not written in Latin script.
         */}
         <Note style={{ marginBlockStart: 5 }}>{t('addon.barcode-labels.sheet.latin')}</Note>
         <Note style={{ marginBlockStart: 5 }}>{t('addon.barcode-labels.sheet.noOutline')}</Note>

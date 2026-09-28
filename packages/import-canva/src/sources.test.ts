@@ -69,9 +69,9 @@ const relative = (file: string): string => file.slice(SRC.length);
  * This is the one add-on in the wave that declares a third party at all, so it
  * is the one where the distinction has to be written down rather than assumed.
  * `oauth.ts` holds the vendor's authorize and token endpoints as CONSTANTS the
- * host reads: 24 §5.6 gives the authorization-code exchange to the host, this
- * package has no client secret, performs no exchange, and — see the case below
- * — carries nothing that could issue a request if it wanted to. The manifest's
+ * host reads: the host runs the authorization-code exchange, this package has
+ * no client secret, performs no exchange, and — see the case below — carries
+ * nothing that could issue a request if it wanted to. The manifest's
  * `network.allow` pins the same hostname and the host refuses and audits
  * anything else.
  *
@@ -91,12 +91,12 @@ const relative = (file: string): string => file.slice(SRC.length);
  */
 const INERT: readonly InertOrigin[] = INERT_ORIGINS;
 
-describe("no real third-party call (24 D11)", () => {
+describe("no real third-party call", () => {
   /*
-   * D11 AS A RULE, NOT A WORD LIST. This was a grep for five spellings until a
-   * verifier put `new Image(); img.src = "https://…"` into a sibling package
-   * and every gate in three repos stayed green — an image beacon is a request
-   * and none of the five words appear in one. See `egress.ts` in
+   * NO REAL CALL AS A RULE, NOT A WORD LIST. This was a grep for five spellings
+   * until a verifier put `new Image(); img.src = "https://…"` into a sibling
+   * package and every gate in three repos stayed green — an image beacon is a
+   * request and none of the five words appear in one. See `egress.ts` in
    * `@adminium/add-on-host/testing`.
    */
   it("names no address outside the ones declared inert", () => {
@@ -124,7 +124,7 @@ describe("no real third-party call (24 D11)", () => {
   });
 });
 
-describe("no real clock, no dice (24 D6/D11)", () => {
+describe("no real clock, no dice", () => {
   /*
    * THE RULE IS `@adminium/add-on-host/testing` NOW, not a pattern written out
    * here. There was one of these per package and none of the four checked
@@ -153,7 +153,7 @@ describe("no real clock, no dice (24 D6/D11)", () => {
   });
 });
 
-describe("secrets never reach the browser (24 D15)", () => {
+describe("secrets never reach the browser", () => {
   it("names no credential in any client module", () => {
     const offenders = CLIENT.filter((file) =>
       /api_key|apiKey|client_secret|clientSecret|access_token|accessToken|refresh_token|bearer/i.test(
@@ -197,28 +197,29 @@ describe("CSS logical properties only", () => {
   });
 
   it("renders no anchor, so no href can carry a banned path", () => {
-    // 17 §2: no href may contain the run that reads as a per-month charge. This
-    // add-on links nowhere — it fills a slot inside an app it does not own.
+    // The release lexicon: no href may contain the run that reads as a
+    // per-month charge. This add-on links nowhere — it fills a slot inside an
+    // app it does not own.
     const offenders = SHIPPED.filter((file) => /href=|window\.open\(/.test(codeOf(file)));
     expect(offenders.map(relative)).toEqual([]);
   });
 });
 
 /**
- * AC7: "every simulated result is labelled as such in the UI".
+ * THE RULE: every simulated result is labelled as such in the UI.
  *
  * Every step of this flow shows something a real account would have supplied,
  * and for a while only the last of them said so — which is the version of this
  * rule that is worse than none, because a customer who sees one labelled screen
  * reasonably concludes the unlabelled ones were real.
  *
- * There is no DOM harness in this repo (D7 allows no runtime dependency the
- * host lacks, and a renderer for four assertions is not a dependency worth
+ * There is no DOM harness in this repo (an add-on takes no runtime dependency
+ * the host lacks, and a renderer for four assertions is not a dependency worth
  * taking), so the check is structural: each step's own module must render the
  * label for that step, and must do it behind the transport's `simulated` flag
  * so a self-host build with a real client shows none of them.
  */
-describe("every simulated surface carries its label (24 D11, AC7)", () => {
+describe("every simulated surface carries its label", () => {
   const flow = codeOf(join(SRC, "client/ImportFlow.tsx"));
   const consent = codeOf(join(SRC, "client/ConsentPanel.tsx"));
 
@@ -262,7 +263,7 @@ describe("every simulated surface carries its label (24 D11, AC7)", () => {
   });
 });
 
-describe("no real logo, and no claim of a partnership (24 D12)", () => {
+describe("no real logo, and no claim of a partnership", () => {
   it("draws the company as letters in a tile and nothing else", () => {
     // No `<svg>`, no `<img>`, no background-image: the monogram is text.
     const offenders = CLIENT.filter((file) => /<img\b|<svg\b|background-image/.test(codeOf(file)));

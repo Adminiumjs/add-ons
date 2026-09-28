@@ -1,5 +1,5 @@
 /**
- * A PDF 1.4 writer over BYTE BUFFERS (34-invoices-add-on.md §0.3 trap 8).
+ * A PDF 1.4 writer over BYTE BUFFERS.
  *
  * ── THE TRAP THIS FILE EXISTS TO AVOID, STATED ONCE ────────────────────────
  *
@@ -26,10 +26,10 @@
  *
  * No compression, no encryption, no embedded fonts, no object streams, no
  * incremental updates. It writes the smallest correct PDF that draws text,
- * rules and filled boxes in the base-14 faces every consumer already has.
- * Every one of those absences is what lets this package have ZERO runtime
- * dependencies (25 D11), which is the constraint the whole design answers to —
- * `pdf-lib` and `jsPDF` are design errors here, not shortcuts.
+ * rules and filled boxes in the base-14 faces every consumer already has. Every
+ * one of those absences is what lets this package have ZERO runtime
+ * dependencies, which is the constraint the whole design answers to — `pdf-lib`
+ * and `jsPDF` are design errors here, not shortcuts.
  */
 
 import { CENTRAL_EUROPEAN_DIFFERENCES, centralEuropeanByte, widthOf, winAnsiByte, type FontWeight } from './helvetica.ts';
@@ -47,8 +47,8 @@ export function ascii(text: string): number[] {
  * A character the encoding cannot draw is SKIPPED here, and that is safe only
  * because it is unreachable: `render` refuses the whole document with
  * `LATIN_ONLY` before any of this runs. The skip is the last line of defence,
- * not the policy — a policy of silently dropping letters is the thing 34 D6
- * forbids.
+ * not the policy — a policy of silently dropping letters is exactly what the
+ * typed `LATIN_ONLY` refusal exists to prevent.
  */
 export function literal(text: string): number[] {
   const out: number[] = [0x28];

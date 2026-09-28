@@ -9,9 +9,9 @@
  * Every string is an `invoices:` key with the comp's English as its inline
  * fallback — byte-identical to `locales/en-US/invoices.json` (the deferred
  * namespace gate, `i18n/invoicesNamespace.test.ts`). Three of them are the
- * lexicon's, not the comp's (34 Appendix D.2): *Invoice to* for the comp's
- * column label, *Charge schedule* for the recurring hint, and the two custom
- * hints re-worded so the built bytes pass the substring sweep.
+ * banned-word lexicon's, not the comp's: *Invoice to* for the comp's column
+ * label, *Charge schedule* for the recurring hint, and the two custom hints
+ * re-worded so the built bytes pass the substring sweep.
  */
 import { t } from '../messages.js';
 import type { CustomSectionType } from '../model/envelope.js';
@@ -141,7 +141,7 @@ export function optionalSectionLabel(flag: OptionalFlag): string {
   }
 }
 
-/** The modal's *Build your own* tiles (comp `customDefs()`, 1268-1271; two hints re-worded per 34 Appendix D.2). */
+/** The modal's *Build your own* tiles (comp `customDefs()`, 1268-1271; two hints re-worded for the banned-word lexicon). */
 export function customTypeText(type: CustomSectionType): { label: string; hint: string } {
   switch (type) {
     case 'text':

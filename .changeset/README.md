@@ -9,9 +9,11 @@ changesets onto every package in the group, so one stray `minor` promotes the
 whole fleet. Grep `.changeset/*.md` before releasing.
 
 **The `fixed` group is `@adminium/add-on-*`, not `@adminium/*`.** `host` and
-`host-kit` match the wider glob but are never published (24 D7) and have no
-`manifest.json`, so keeping them out of the group is what stops a version bump
-from claiming to release two packages that no registry will ever see.
+`host-kit` match the wider glob but are never published (they are build-time
+mirrors of the host, and an add-on takes no runtime dependency the host does
+not already have) and have no `manifest.json`, so keeping them out of the group
+is what stops a version bump from claiming to release two packages that no
+registry will ever see.
 
 **A bump touches TWO files per package.** `changeset version` knows only about
 `package.json`; `manifest.json` carries the same version and is what a

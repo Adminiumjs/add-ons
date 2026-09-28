@@ -7,15 +7,16 @@
  * `SlotId` and turns this line red. `manifest.test.ts` closes the loop at the
  * other end.
  *
- * TWO LISTS, AND THE DIFFERENCE IS THE PHASE B SPLIT (§5.10, D20).
- * `FILLED_SLOTS` is what `register()` actually renders — six. `DECLARED_SLOTS`
- * is what `manifest.json` attaches to — seven, the extra being
- * `record.editor.panel`, whose host is Adminium's generated dashboard rather
- * than an example app. Comp L designs those screens and this document specifies
- * them, but the runtime that would mount them does not exist yet, so the
- * manifest declares the attachment and the bundle ships no fill. Shipping one
- * anyway is the exact defect §5.4 records against `nav.add-on.routes`: an
- * add-on author reads the list and writes code against it.
+ * TWO LISTS, AND THE DIFFERENCE IS THE PHASE B SPLIT: the dashboard mount waits
+ * for the add-on runtime. `FILLED_SLOTS` is what `register()` actually renders
+ * — six. `DECLARED_SLOTS` is what `manifest.json` attaches to — seven, the
+ * extra being `record.editor.panel`, whose host is Adminium's generated
+ * dashboard rather than an example app. The design comp draws those screens and
+ * the spec describes them, but the runtime that would mount them does not exist
+ * yet, so the manifest declares the attachment and the bundle ships no fill.
+ * Shipping one anyway is the exact defect `nav.add-on.routes` once had,
+ * declared by a host and never mounted: an add-on author reads the list and
+ * writes code against it.
  */
 
 import type { SlotId } from '@adminium/add-on-host';

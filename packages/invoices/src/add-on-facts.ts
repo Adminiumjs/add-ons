@@ -6,8 +6,9 @@
  * names and cannot call, which of its strings must never reach a browser,
  * which words in it belong to somebody as a mark. Those lists used to live
  * inside each host, which meant making a portable add-on pass required editing
- * an exemption list inside the app receiving it (24 AC20/D21). So the facts
- * travel with the add-on and each host discovers whatever it has vendored.
+ * an exemption list inside the app receiving it — and an add-on must run
+ * unchanged in any host app. So the facts travel with the add-on and each host
+ * discovers whatever it has vendored.
  *
  * All three are empty here, and an empty list is exactly the shape a BROKEN
  * one takes — a glob that stopped matching and a correct declaration both
@@ -19,16 +20,18 @@
 /**
  * ADDRESSES THIS ADD-ON NAMES, AND WHY NONE CAN CAUSE A REQUEST.
  *
- * Empty, and it is the strictest state there is: a host's D11 net reports
- * every absolute URL in what it ships whose origin nobody has declared inert,
- * so with nothing declared here EVERY address is a finding.
+ * Empty, and it is the strictest state there is: a host's no-live-call net (a
+ * demo makes no real network call) reports every absolute URL in what it ships
+ * whose origin nobody has declared inert, so with nothing declared here EVERY
+ * address is a finding.
  *
  * IT IS A PLACE SOMEBODY MIGHT REASONABLY EXPECT ONE, which is worth saying
  * out loud. An invoice is the document most likely to want a live exchange
  * rate, a tax-rate lookup or a delivery receipt from a customer's portal, and
  * each of those is an obvious next feature. Each would also be a different
  * add-on: this one renders numbers that were computed elsewhere, from a
- * subject handed to it, with nothing but the bundle already loaded (25 D11).
+ * subject handed to it, with nothing but the bundle already loaded — it takes
+ * no runtime dependency its host lacks.
  * The day that changes, this list grows an entry and a `network` block appears
  * in the manifest — and `manifest.test.ts` asserts the two agree, so one
  * cannot happen without the other.
@@ -36,7 +39,8 @@
 export const INERT_ORIGINS: readonly { origin: string; why: string }[] = [];
 
 /**
- * STRINGS THAT MUST NEVER APPEAR IN A CLIENT BUNDLE (24 D15, D11).
+ * STRINGS THAT MUST NEVER APPEAR IN A CLIENT BUNDLE (secrets never reach a
+ * browser, and a demo carries no real credential).
  *
  * Empty, and unlike the two lists around it that needs no argument beyond the
  * manifest: `connect: { kind: "none" }`, no setting marked `secret`. There is
@@ -48,12 +52,13 @@ export const INERT_ORIGINS: readonly { origin: string; why: string }[] = [];
 export const NEVER_IN_A_BROWSER: readonly { text: string; why: string }[] = [];
 
 /**
- * COMPANY MARKS THIS ADD-ON'S OWN SCREENS MAY PRINT (24 AC6) — THERE ARE NONE.
+ * COMPANY MARKS THIS ADD-ON'S OWN SCREENS MAY PRINT — THERE ARE NONE.
  *
  * An invoice is a document that exists to name a company, so this deserves the
  * distinction spelled out: the company an invoice names is the OPERATOR'S, and
  * it arrives in the subject at render time. This add-on names none of its own
- * (24 D12 — "this add-on names no company"), and it had three chances to:
+ * (a company is named only to say what an add-on connects to, and this one
+ * connects to nothing), and it had three chances to:
  *
  *   THE PAPER SIZES ARE STANDARDS. `A4` is ISO 216 and `Letter` is ANSI; the
  *   80 mm receipt roll is a MEASUREMENT, given in millimetres in

@@ -2,13 +2,12 @@
 /**
  * @vitest-environment happy-dom
  *
- * The canvas (O25): every one of the 27 kinds draws when
- * its flag is on and one custom section of each type exists; the gate leaves
- * the five permanent blocks with every flag off; the ladder prints the money
- * law's figures with the discount row shown only above zero; the tax
- * breakdown uses the ladder's base; the letterhead is read-only; and every
- * input on the sheet — text fields and file inputs alike — has an accessible
- * name.
+ * The canvas: every one of the 27 kinds draws when its flag is on and one
+ * custom section of each type exists; the gate leaves the five permanent blocks
+ * with every flag off; the ladder prints the money law's figures with the
+ * discount row shown only above zero; the tax breakdown uses the ladder's base;
+ * the letterhead is read-only; and every input on the sheet — text fields and
+ * file inputs alike — has an accessible name.
  *
  * Rendered through the real router (the editor owns selection and the
  * modal). The axe pass runs in the e2e file against the built canvas:
@@ -212,7 +211,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe('InvoiceCanvas — the vocabulary and the gate (Appendix F, O19)', () => {
+describe('InvoiceCanvas — the vocabulary and the gate', () => {
   it('draws all 27 kinds with every flag on and one custom section of each type', async () => {
     const { paper } = await renderCanvas();
     const keys = blockKeys();
@@ -272,7 +271,7 @@ describe('InvoiceCanvas — the vocabulary and the gate (Appendix F, O19)', () =
   });
 });
 
-describe('InvoiceCanvas — the money (O25)', () => {
+describe('InvoiceCanvas — the money', () => {
   it('the ladder prints the law’s figures; the discount row is hidden at 0', async () => {
     const { paper } = await renderCanvas();
     expect(within(paper).getAllByTestId('invoices-item-amount').map((el) => el.textContent)).toEqual(['$300.00', '$90.50']);

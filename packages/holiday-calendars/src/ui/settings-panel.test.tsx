@@ -180,8 +180,8 @@ describe("the panel says who keeps the data current", () => {
   });
 
   it("states that it connects to no company, where the notice would go", () => {
-    // 24 AC6: rendering nothing there is indistinguishable from having
-    // forgotten the not-affiliated line, so the positive fact is stated.
+    // Rendering nothing there is indistinguishable from having forgotten the
+    // not-affiliated line, so the positive fact is stated.
     expect(shows(html, EN["addon.holiday-calendars.noCompany"])).toBe(true);
   });
 });

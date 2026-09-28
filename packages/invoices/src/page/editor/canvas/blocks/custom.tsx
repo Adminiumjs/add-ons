@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 /**
- * The user-authored section (comp 669-718; bindings 1509-1548; 34-invoices-
- * add-on.md Appendix F B24-B27): one selectable region whose header is the
- * title input in kicker style beside a 26 px *Remove section* button, then
- * the type's body — `text`: a three-row textarea; `image`: the picture at its
- * own height with a dark clear button, or the hatched *Click to upload an
- * image* drop, then the caption; `gallery`: a grid of N slots, each a
- * picture with a clear button or a hatched drop; `kv`: a bordered table of
- * label / value inputs with a per-row remove, then *Add row*.
+ * The user-authored section (comp 669-718; bindings 1509-1548): one selectable
+ * region whose header is the title input in kicker style beside a 26 px *Remove
+ * section* button, then the type's body — `text`: a three-row textarea;
+ * `image`: the picture at its own height with a dark clear button, or the
+ * hatched *Click to upload an image* drop, then the caption; `gallery`: a grid
+ * of N slots, each a picture with a clear button or a hatched drop; `kv`: a
+ * bordered table of label / value inputs with a per-row remove, then *Add row*.
  *
  * TEMPOS ARE THE COMP'S (1514-1546): the title, body, caption and cells are
  * keystrokes (`updateCustom`, `updateCustomRow`); an upload, a clear, a row

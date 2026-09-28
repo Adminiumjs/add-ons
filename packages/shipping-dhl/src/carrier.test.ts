@@ -118,10 +118,10 @@ function fakeCarrierApi(): HttpClient & { calls: HttpRequest[] } {
           from: { postcode: string; country: string };
           to: { postcode: string; country: string };
         };
-        // The live service resolves BOTH ends of the route (31 O4) — a label
-        // needs a deliverable recipient and a resolvable sender — so the fake
-        // refuses the seeded bad address whichever end it arrives at, with the
-        // sentence naming which one.
+        // The live service resolves BOTH ends of the route (a return runs it
+        // the other way) — a label needs a deliverable recipient and a
+        // resolvable sender — so the fake refuses the seeded bad address
+        // whichever end it arrives at, with the sentence naming which one.
         const badEnd = (a: { postcode: string; country: string }) =>
           a.country === "IE" && a.postcode.startsWith("ML");
         if (badEnd(route.from) || badEnd(route.to)) {

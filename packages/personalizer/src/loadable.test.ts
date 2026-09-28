@@ -1,5 +1,6 @@
 /**
- * Can a browser import this add-on's built bundle? (26-T13)
+ * Can a browser import this add-on's built bundle, the way a host's connected
+ * mode does?
  *
  * The suite lives in `@adminium/add-on-host/testing` so all six share one
  * implementation. This package builds `dist/` in vitest's `globalSetup`

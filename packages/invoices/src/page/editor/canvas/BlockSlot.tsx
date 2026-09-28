@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 /**
- * One block's slot in the stack (comp 383-387, 1494-1508; 34-invoices-add-
- * on.md Appendix E §C5–C6): the wrapper that fades to 40 % while dragged and
- * paints an inset 3 px accent bar when dragged over, the insert affordance
- * 25 px above it — two accent hairlines flanking an *Add section* pill,
- * revealed on hover — and the grip in the left gutter, 22×26 at −28 px,
- * revealed on hover, that drags the block.
+ * One block's slot in the stack (comp 383-387, 1494-1508): the wrapper that
+ * fades to 40 % while dragged and paints an inset 3 px accent bar when dragged
+ * over, the insert affordance 25 px above it — two accent hairlines flanking an
+ * *Add section* pill, revealed on hover — and the grip in the left gutter,
+ * 22×26 at −28 px, revealed on hover, that drags the block.
  *
  * Indexes are PRE-FILTER (`VisibleBlock.index`): the comp's drag/drop and
  * insert speak `blockOrder` positions so a hidden block keeps its place.

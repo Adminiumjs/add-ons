@@ -74,7 +74,7 @@ const relative = (file: string) => file.slice(SRC.length);
  */
 const INERT: readonly InertOrigin[] = INERT_ORIGINS;
 
-describe('no real third-party call, no real clock (24 D11)', () => {
+describe('no real third-party call, no real clock', () => {
   it('found sources to read at all', () => {
     // A walk that returned nothing would agree with every case below.
     expect(SHIPPED.length).toBeGreaterThan(8);
@@ -204,10 +204,10 @@ describe('CSS logical properties only', () => {
   });
 
   it('renders no anchor, so none of them can contain a banned path', () => {
-    // 17 §2: no href may contain "/mo". Neither surface renders an anchor — the
-    // save button builds one at press time and hands it an object URL, which is
-    // not a link in the tree. A URL in a shipped source would also be the first
-    // thing the egress net reports.
+    // The release sweep: no href may contain "/mo". Neither surface renders an
+    // anchor — the save button builds one at press time and hands it an object
+    // URL, which is not a link in the tree. A URL in a shipped source would
+    // also be the first thing the egress net reports.
     const offenders = UI.filter((file) => /href=/.test(codeOf(file)));
     expect(offenders.map(relative)).toEqual([]);
   });
@@ -276,7 +276,7 @@ describe('the vocabulary ban, in all eight locales', () => {
  * most expects a company — against the three places one could have got into
  * THIS package and did not.
  */
-describe('this add-on names no company (24 AC6, D12)', () => {
+describe('this add-on names no company', () => {
   /**
    * The marks the OTHER add-ons in this repository declare, written here as the
    * needle list this package is swept with.

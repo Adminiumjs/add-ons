@@ -3,16 +3,18 @@
  * letters are, and — for the file that goes to the laser — the outline of every
  * letter it can cut.
  *
- * ── WHY THE WIDTHS ARE A TABLE AND NOT A MEASUREMENT (24 D5c) ───────────────
+ * ── WHY THE WIDTHS ARE A TABLE AND NOT A MEASUREMENT ────────────────────────
  *
- * Comp L measures text with `document.createElement("canvas").getContext("2d")`
- * and `measureText`. D5c overrules that, and the reason is acceptance criterion
- * 17 rather than taste: canvas advances depend on the platform, on which fonts
- * happen to be installed, and on the browser's own fallback chain. A verdict
- * measured that way says "two characters more than fits" on one machine and
- * "it fits" on the next, the cart thumbnail and the proof stop being the same
- * picture, and none of it is reproducible in a headless suite. So the numbers
- * live HERE, committed, and the engine is a pure function of them.
+ * The design comp measures text with
+ * `document.createElement("canvas").getContext("2d")` and `measureText`. The
+ * engine overrules that, and the reason is that the cart thumbnail, the proof
+ * and the order line must be ONE picture, not taste: canvas advances depend on
+ * the platform, on which fonts happen to be installed, and on the browser's own
+ * fallback chain. A verdict measured that way says "two characters more than
+ * fits" on one machine and "it fits" on the next, the cart thumbnail and the
+ * proof stop being the same picture, and none of it is reproducible in a
+ * headless suite. So the numbers live HERE, committed, and the engine is a pure
+ * function of them.
  *
  * ── HOW THE NUMBERS WERE OBTAINED, EXACTLY ──────────────────────────────────
  *
@@ -39,7 +41,7 @@
  * and the production file below is placed from the same numbers, so the file
  * and the picture agree by construction rather than by luck.
  *
- * ── NO WEBFONT IS DOWNLOADED (24 D11) ───────────────────────────────────────
+ * ── NO WEBFONT IS DOWNLOADED ────────────────────────────────────────────────
  *
  * Every `css` stack below is families a browser already has, ending in a
  * generic. A demo that fetched a font file would be a real third-party call in
@@ -57,7 +59,7 @@ export interface Face {
   id: FaceId;
   /** A proper noun. Never translated, never an i18n key. */
   name: string;
-  /** What the preview draws with. Families a browser already has (D11). */
+  /** What the preview draws with: families a browser has, never fetched. */
   css: string;
   weight: number;
   /** A face cut only in capitals. */

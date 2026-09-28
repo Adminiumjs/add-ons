@@ -44,7 +44,7 @@ export function statusLabel(status: InvoiceStatus): string {
   }
 }
 
-/** The comp's `topics()` labels (1173-1182), with the first renamed per 34 Appendix D.2. */
+/** The comp's `topics()` labels (1173-1182), with the first renamed for the banned-word lexicon. */
 export function topicLabel(topic: InvoiceTopic): string {
   switch (topic) {
     case 'recurring':

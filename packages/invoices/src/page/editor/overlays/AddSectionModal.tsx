@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 /**
- * The Add-section modal (comp 71-105, 1645-1655; O19): *Add a section*
- * — *Build your own* (the four custom types, a 2-column grid of tiles with
- * hints) and *Standard blocks* (chips for exactly the sections currently
- * OFF, `offSections`), collapsing to *Every standard block is already on
- * this invoice.* when none remain.
+ * The Add-section modal (comp 71-105, 1645-1655): *Add a section* — *Build your
+ * own* (the four custom types, a 2-column grid of tiles with hints) and
+ * *Standard blocks* (chips for exactly the sections currently OFF,
+ * `offSections`), collapsing to *Every standard block is already on this
+ * invoice.* when none remain.
  *
  * This is THE path an off block comes back by: the comp's in-canvas "Add
  * <section>" ghosts are unreachable and are not built. Where the pick
