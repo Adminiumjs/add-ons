@@ -1,5 +1,11 @@
 # @adminium/add-on-invoices
 
+## 1.0.6
+
+### Patch Changes
+
+- e973000: Invoices & Receipts: a document's lines can carry the day each is for (`items.date`) and the choices made on them (`items.options`, a list of names). The names print under the line one after another, "Farro · Grilled chicken · Avocado", above any reduction; when any line has a day, the lines print it in a column before the description, or under the line on an 80 mm till roll. An invoice gains the period it covers (`serviceFrom`, `serviceTo`, printed as "Period of service", in German "Leistungszeitraum") and a `reference` printed beside its number. Each is optional, and a document that maps none of them draws to exactly the bytes it drew before. At most 40 names print under a line, then how many more. A day the calendar does not have, such as 2026-02-30, now prints as the app stored it on every day of a document, where before it failed the document or printed the day it rolled over to. Holiday Calendars attaches to online ordering (`ordering`, `^0.2.0`), which reads the days from the public setting and writes a closure row for each day on a staff click. A day of the business's own may have a name of at most 120 characters, what such a closure can hold.
+
 ## 1.0.5
 
 ### Patch Changes
