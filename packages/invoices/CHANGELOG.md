@@ -1,5 +1,11 @@
 # @adminium/add-on-invoices
 
+## 1.0.7
+
+### Patch Changes
+
+- c34e4dc: The "Where to send it" field of an invoice, a quote and a receipt no longer says nothing is sent until somebody presses send. That is untrue for a document mapping set to email: it sends the document to this address when it is drawn. The help now says both, in all eight languages.
+
 ## 1.0.6
 
 ### Patch Changes
