@@ -202,7 +202,7 @@ export interface BoundExtras {
   readonly paidWith: string;
   /** A receipt's gratuity, as decimal text in the document's currency. `null` when none was mapped. */
   readonly tip: string | null;
-  /** Stored with the document; nothing is sent until somebody presses send. */
+  /** Stored with the document. A mapping set to email it sends it there when the document is drawn; otherwise nothing is sent until somebody presses send. */
   readonly customerEmail: string;
   /**
    * The day and the names of each MAPPED line, by the line's position in
