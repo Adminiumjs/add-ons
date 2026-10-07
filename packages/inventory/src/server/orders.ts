@@ -40,3 +40,26 @@ export function onOrderClose(book: Book): void {
     if (open > 0n) book.onOrder(line.line, point, -open, inputText(line, 'how') === 'cancelled' ? 'cancelled' : 'closed');
   }
 }
+
+/**
+ * AN ORDER MOVES ON AS ITS LINES ARRIVE: part received while a line is still
+ * to come, received — with the moment — once none is. Asked for each receipt
+ * line as it goes in, after the order line's own total has taken the line in:
+ * a call of its own, because the order is a row this one reads and locks,
+ * and a delivery's call has no read left for it.
+ */
+export function orderProgress(book: Book): void {
+  for (const line of book.input.lines) {
+    const po = inputKey(line, 'po');
+    if (po === null) continue;
+    const order = book.read('order').find((row) => same(row['id'], po));
+    // An order somebody closed or cancelled meanwhile stays as they left it: the stock is in all the same.
+    if (order === undefined || (order['status'] !== 'sent' && order['status'] !== 'part_received')) continue;
+    const open = book
+      .read('order_lines')
+      .filter((row) => same(row['po_id'], po))
+      .reduce((sum, row) => sum + max(0n, readOr0(row['qty'], QTY) - readOr0(row['received'], QTY)), 0n);
+    if (open === 0n) book.update(line.line, 'purchase_orders', order['id'] as never, { status: 'received', received_at: book.input.now });
+    else if (order['status'] !== 'part_received') book.update(line.line, 'purchase_orders', order['id'] as never, { status: 'part_received' });
+  }
+}

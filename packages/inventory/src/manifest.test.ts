@@ -195,11 +195,11 @@ const moveOf = (ref: string, from: string, to: string): Move => {
 const postingsOf = (ref: string): Posting[] => ((tableOf(ref) as unknown as { postings?: Posting[] }).postings ?? []);
 
 describe.skipIf(!tables.some((table) => table.ref === 'receipts'))('the documents', () => {
-  it('make thirty tables in all, and a ledger of thirteen actions over twelve of them', () => {
+  it('make thirty tables in all, and a ledger of fourteen actions over twelve of them', () => {
     expect(tables).toHaveLength(30);
     const [stock] = ledgers;
     expect(Object.keys(stock?.actions ?? {}).sort()).toEqual(
-      ['adopt', 'count', 'count-mark', 'hold', 'on-order', 'on-order-close', 'receive', 'reorder', 'return', 'send-back', 'transfer', 'use', 'use-item'].sort(),
+      ['adopt', 'count', 'count-mark', 'hold', 'on-order', 'on-order-close', 'order-progress', 'receive', 'reorder', 'return', 'send-back', 'transfer', 'use', 'use-item'].sort(),
     );
     expect(Object.keys(stock?.writes ?? {})).toHaveLength(12);
   });
@@ -210,8 +210,10 @@ describe.skipIf(!tables.some((table) => table.ref === 'receipts'))('the document
       [
         'count_lines/count → count',
         'count_marks/mark → count-mark',
+        'po_lines/cancel → on-order-close',
         'po_lines/close → on-order-close',
         'po_lines/on-order → on-order',
+        'receipt_lines/order → order-progress',
         'receipt_lines/receive → receive',
         'receipt_lines/send-back → send-back',
         'reorder_requests/draft → reorder',
@@ -273,10 +275,23 @@ describe.skipIf(!tables.some((table) => table.ref === 'receipts'))('the document
   });
 
   it('put what is on order on the stock point when the order is sent, and take the rest off when a person closes it', () => {
-    const [onOrder, close] = postingsOf('po_lines');
+    const [onOrder, close, cancel] = postingsOf('po_lines');
     expect(onOrder).toMatchObject({ id: 'on-order', via: 'po_id', post: { on: { to: ['sent'] } } });
     expect(onOrder?.reverse).toBeUndefined();
-    expect(close).toMatchObject({ id: 'close', via: 'po_id', post: { on: { to: ['received', 'cancelled'], from: ['sent', 'part_received'] } }, reverse: { on: { to: ['part_received'], from: ['received'] } } });
+    // Closing can be taken back (Reopen); cancelling cannot, so it is a rule of its own with no way back.
+    expect(close).toMatchObject({ id: 'close', via: 'po_id', post: { on: { to: ['received'], from: ['sent', 'part_received'] } }, reverse: { on: { to: ['part_received'], from: ['received'] } }, map: { how: { value: 'received' } } });
+    expect(cancel).toMatchObject({ id: 'cancel', via: 'po_id', post: { on: { to: ['cancelled'], from: ['sent'] } }, map: { how: { value: 'cancelled' } } });
+    expect(cancel?.reverse).toBeUndefined();
+    // Neither hands over a column the order's own move changes: a rule's input may not move while its round is open.
+    for (const posting of [close, cancel]) expect(JSON.stringify((posting as unknown as { map: unknown }).map)).not.toContain('"status"');
+  });
+
+  it('undo a receipt only while its order is still open, and a receipt with no order whenever', () => {
+    const undo = moveOf('receipts', 'posted', 'reversing');
+    expect(undo.requires).toEqual({ where: [{ column: 'can_undo', eq: 1 }] });
+    const column = (ref: string) => tableOf('receipts').columns.find((one) => one.ref === ref);
+    expect(column('order_status')?.rules).toEqual({ copy: { via: 'po_id', from: 'status', mode: 'always', follow: true } });
+    expect(column('can_undo')?.rules).toEqual({ formula: { if: [{ or: [{ isNull: 'order_status' }, { eq: ['order_status', 'sent'] }, { eq: ['order_status', 'part_received'] }] }, 1, 0] } });
   });
 
   it('ask an order sent by email for an address: its supplier\'s, or one typed on the order', () => {

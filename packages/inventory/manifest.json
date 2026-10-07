@@ -2783,8 +2783,7 @@
             "post": {
               "on": {
                 "to": [
-                  "received",
-                  "cancelled"
+                  "received"
                 ],
                 "from": [
                   "sent",
@@ -2808,7 +2807,35 @@
                 "parent": "place_id"
               },
               "how": {
-                "parent": "status"
+                "value": "received"
+              }
+            }
+          },
+          {
+            "id": "cancel",
+            "into": {
+              "addOn": "inventory",
+              "ledger": "stock",
+              "action": "on-order-close"
+            },
+            "via": "po_id",
+            "post": {
+              "on": {
+                "to": [
+                  "cancelled"
+                ],
+                "from": [
+                  "sent"
+                ]
+              }
+            },
+            "map": {
+              "po": "po_id",
+              "place": {
+                "parent": "place_id"
+              },
+              "how": {
+                "value": "cancelled"
               }
             }
           }
@@ -2884,6 +2911,58 @@
               "reversed"
             ],
             "default": "draft"
+          },
+          {
+            "ref": "order_status",
+            "type": "enum",
+            "enum": [
+              "draft",
+              "sent",
+              "part_received",
+              "received",
+              "cancelled"
+            ],
+            "nullable": true,
+            "rules": {
+              "copy": {
+                "via": "po_id",
+                "from": "status",
+                "mode": "always",
+                "follow": true
+              }
+            }
+          },
+          {
+            "ref": "can_undo",
+            "type": "int",
+            "nullable": true,
+            "rules": {
+              "formula": {
+                "if": [
+                  {
+                    "or": [
+                      {
+                        "isNull": "order_status"
+                      },
+                      {
+                        "eq": [
+                          "order_status",
+                          "sent"
+                        ]
+                      },
+                      {
+                        "eq": [
+                          "order_status",
+                          "part_received"
+                        ]
+                      }
+                    ]
+                  },
+                  1,
+                  0
+                ]
+              }
+            }
           },
           {
             "ref": "received_at",
@@ -3034,7 +3113,15 @@
                 "to": "reversing",
                 "roles": [
                   "manager"
-                ]
+                ],
+                "requires": {
+                  "where": [
+                    {
+                      "column": "can_undo",
+                      "eq": 1
+                    }
+                  ]
+                }
               }
             ],
             "reversing": [
@@ -3483,6 +3570,28 @@
               "po_line": "po_line_id",
               "po": "po_id",
               "kind": "kind"
+            }
+          },
+          {
+            "id": "order",
+            "into": {
+              "addOn": "inventory",
+              "ledger": "stock",
+              "action": "order-progress"
+            },
+            "post": {
+              "on": {
+                "to": [
+                  "posted"
+                ]
+              }
+            },
+            "map": {
+              "po": "po_id"
+            },
+            "only": {
+              "column": "po_id",
+              "set": true
             }
           },
           {
@@ -4739,7 +4848,10 @@
                 "create": true
               }
             },
-            "map": {}
+            "map": {
+              "item": "item_id",
+              "point": "stock_point_id"
+            }
           }
         ]
       },
@@ -5212,6 +5324,8 @@
             "place_id",
             "kind",
             "status",
+            "order_status",
+            "can_undo",
             "received_at",
             "by",
             "note",
@@ -8899,6 +9013,16 @@
                     ]
                   }
                 ]
+              },
+              {
+                "as": "reasons",
+                "table": "reasons",
+                "by": [
+                  {
+                    "column": "id",
+                    "from": "input.reason"
+                  }
+                ]
               }
             ],
             "locks": [
@@ -9168,8 +9292,7 @@
               "stock_points",
               "batches",
               "items",
-              "on_order_moves",
-              "purchase_orders"
+              "on_order_moves"
             ]
           },
           "send-back": {
@@ -9533,8 +9656,52 @@
               "on_order_moves"
             ]
           },
+          "order-progress": {
+            "inputs": {
+              "po": "link?"
+            },
+            "phases": [
+              "post"
+            ],
+            "reads": [
+              {
+                "as": "order",
+                "table": "purchase_orders",
+                "by": [
+                  {
+                    "column": "id",
+                    "from": "input.po"
+                  }
+                ]
+              },
+              {
+                "as": "order_lines",
+                "table": "po_lines",
+                "by": [
+                  {
+                    "column": "po_id",
+                    "from": "input.po"
+                  }
+                ],
+                "limit": 200
+              }
+            ],
+            "locks": [
+              {
+                "read": "order",
+                "column": "id",
+                "table": "purchase_orders"
+              }
+            ],
+            "writes": [
+              "purchase_orders"
+            ]
+          },
           "reorder": {
-            "inputs": {},
+            "inputs": {
+              "item": "link",
+              "point": "link"
+            },
             "phases": [
               "post"
             ],
@@ -9555,7 +9722,7 @@
                 "by": [
                   {
                     "column": "id",
-                    "from": "request.item_id"
+                    "from": "input.item"
                   }
                 ]
               },
@@ -9565,7 +9732,7 @@
                 "by": [
                   {
                     "column": "item_id",
-                    "from": "request.item_id"
+                    "from": "input.item"
                   }
                 ],
                 "limit": 1000
@@ -9576,7 +9743,7 @@
                 "by": [
                   {
                     "column": "item_id",
-                    "from": "request.item_id"
+                    "from": "input.item"
                   }
                 ],
                 "where": [
@@ -9609,7 +9776,7 @@
                 "by": [
                   {
                     "column": "item_id",
-                    "from": "request.item_id"
+                    "from": "input.item"
                   }
                 ],
                 "where": [

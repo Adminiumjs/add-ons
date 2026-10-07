@@ -111,11 +111,6 @@ export function receive(book: Book): void {
       const ordered = take > 0n ? book.point(line.line, item, order.place) : null;
       if (ordered !== null) book.onOrder(line.line, ordered, -take, 'received');
     }
-    if (order !== null) {
-      const open = lines.filter((row) => same(row['po_id'], order.id)).reduce((sum, row) => sum + max(0n, readOr0(row['qty'], QTY) - readOr0(row['received'], QTY)), 0n);
-      if (open === 0n) book.update(line.line, 'purchase_orders', order.id as never, { status: 'received', received_at: book.input.now });
-      else if (order.status !== 'part_received') book.update(line.line, 'purchase_orders', order.id as never, { status: 'part_received' });
-    }
     // A reorder that was paused starts again once stock is back above its level.
     if (point.row !== null && yes(point.row['reorder_paused']) && point.row['reorder_level'] !== null && readOr0(point.row['available'], QTY) + qty > readOr0(point.row['reorder_level'], QTY)) {
       book.update(line.line, 'stock_points', point.row['id'] as never, { reorder_paused: false });

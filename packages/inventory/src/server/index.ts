@@ -16,7 +16,7 @@ import { adopt } from './adopt.ts';
 import { Book } from './book.ts';
 import { count, countMark, countReverse } from './count.ts';
 import { giveBack } from './give-back.ts';
-import { onOrder, onOrderClose } from './orders.ts';
+import { onOrder, onOrderClose, orderProgress } from './orders.ts';
 import { receive, receiveReverse, sendBack } from './receive.ts';
 import { reorder } from './reorder.ts';
 import { transfer } from './transfer.ts';
@@ -55,6 +55,9 @@ function rows(input: PostingInput): PostingOutput {
       break;
     case 'send-back':
       sendBack(book);
+      break;
+    case 'order-progress':
+      orderProgress(book);
       break;
     case 'on-order':
       onOrder(book);

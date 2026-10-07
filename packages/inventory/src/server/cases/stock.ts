@@ -30,8 +30,9 @@ const newBatchRows = (expires = '2027-04-30') => [
 ] as Case['expect']['rows'] & object;
 const offOrder = [
   { op: 'insert', table: 'on_order_moves', line: 'L1', values: { stock_point_id: 100, qty: '-50.000', kind: 'received' } },
-  { op: 'update', table: 'purchase_orders', line: 'L1', key: { id: 9002 }, set: { status: 'part_received' } },
 ] as Case['expect']['rows'] & object;
+/** The order's own step, asked beside the delivery's: it reads the order, which the delivery does not. */
+const progress = (status: string, received: [string, string, string]) => call({ action: 'order-progress', lines: [lineFor('L1', { po: 9002 })], reads: { order: [{ id: 9002, status, place_id: PLACE.treatment }], order_lines: orderLines(received) } });
 
 // ── a shop: a shirt with none, and where its stock is reordered from ────────
 const shirtPoint = point(200, I.tshirt, PLACE.shop, '0.000', { reorder_level: '8.000', reorder_qty: '12.000', place_name: 'Shop floor', low: 1 });
@@ -42,7 +43,7 @@ const shirtPref = pref(1, 20, '6.000', '44.4000', 'NG-TS-BM');
 const totePref = pref(2, 21, '10.000', '31.0000', 'NG-TOTE');
 const request = (id: number, at: number, itemId: number) => ({ id, stock_point_id: at, item_id: itemId, status: 'open', qty: null, po_line_id: null, elsewhere: null });
 const DRAFT = { id: 9003, supplier_id: 5, place_id: PLACE.shop, status: 'draft', lines: 1 };
-const reorderCall = (id: number, reads: Record<string, Record<string, string | number | boolean | null>[]>) => call({ action: 'reorder', source: { table: 'inventory:reorder_requests', row: String(id) }, lines: [lineFor(String(id), {})], reads });
+const reorderCall = (id: number, reads: Record<string, Record<string, string | number | boolean | null>[]>) => call({ action: 'reorder', source: { table: 'inventory:reorder_requests', row: String(id) }, lines: [lineFor(String(id), { item: Number(reads['request']?.[0]?.['item_id'] ?? 0), point: Number(reads['request']?.[0]?.['stock_point_id'] ?? 0) })], reads });
 const drafted = (id: number, at: number, qty: string, lineId?: number) =>
   [
     { op: 'update', table: 'reorder_requests', line: String(id), key: { id }, set: lineId === undefined ? { status: 'drafted', qty } : { status: 'drafted', qty, po_line_id: lineId } },
@@ -125,16 +126,24 @@ export const STOCK_CASES: Case[] = [
     expect: { rows: [...newBatchRows('2026-09-30'), movement('L1', { '@row': NEW_LEVEL }, 'opening', '50.000', '1.1000')] },
   },
   {
+    name: 'also · a line of an order arrives: the order reads part received',
+    input: progress('sent', ['50.000', '0.000', '0.000']),
+    expect: { rows: [{ op: 'update', table: 'purchase_orders', line: 'L1', key: { id: 9002 }, set: { status: 'part_received' } }] },
+  },
+  {
+    name: 'also · another line of it arrives: it reads part received already, and nothing is written',
+    input: progress('part_received', ['50.000', '200.000', '0.000']),
+    expect: { rows: [] },
+  },
+  {
     name: 'also · the last of an order arrives: the order reads received, with the moment it did',
-    input: call({ action: 'receive', lines: fivePacks(), reads: { ...delivery, order_lines: orderLines(['50.000', '200.000', '40.000']).map((row) => ({ ...row, order_status: 'part_received' })) } }),
-    expect: {
-      rows: [
-        ...newBatchRows(),
-        movement('L1', { '@row': NEW_LEVEL }, 'received', '50.000', '1.1000'),
-        { op: 'insert', table: 'on_order_moves', line: 'L1', values: { stock_point_id: 100, qty: '-50.000', kind: 'received' } },
-        { op: 'update', table: 'purchase_orders', line: 'L1', key: { id: 9002 }, set: { status: 'received', received_at: NOW } },
-      ],
-    },
+    input: progress('part_received', ['50.000', '200.000', '40.000']),
+    expect: { rows: [{ op: 'update', table: 'purchase_orders', line: 'L1', key: { id: 9002 }, set: { status: 'received', received_at: NOW } }] },
+  },
+  {
+    name: 'also · an order closed while its delivery was typed stays closed, and a line with no order asks nothing',
+    input: call({ action: 'order-progress', lines: [lineFor('L1', { po: 9002 }), lineFor('L2', { po: null })], reads: { order: [{ id: 9002, status: 'received', place_id: PLACE.treatment }], order_lines: orderLines(['50.000', '0.000', '0.000']) } }),
+    expect: { rows: [] },
   },
   {
     name: 'also · a delivery to a place the item was never kept in adds its stock point there',
