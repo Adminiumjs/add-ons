@@ -7848,6 +7848,98 @@
           }
         }
       }
+    ],
+    "words": [
+      {
+        "id": "stock",
+        "ledger": "stock",
+        "action": "use",
+        "input": "what",
+        "showLeftBelow": {
+          "setting": "show_left_below"
+        }
+      },
+      {
+        "id": "item",
+        "ledger": "stock",
+        "action": "use-item",
+        "input": "item",
+        "showLeftBelow": {
+          "setting": "show_left_below"
+        }
+      }
+    ],
+    "recordTabs": [
+      {
+        "id": "stock",
+        "label": {
+          "key": "addon.inventory.tab.stock",
+          "fallback": "Stock"
+        },
+        "table": "links",
+        "match": {
+          "table": "source_table",
+          "row": "source_row"
+        },
+        "on": "linked",
+        "columns": [
+          "item_id",
+          "kit_id",
+          "qty",
+          "per",
+          "action",
+          "place_id",
+          "to_place_id"
+        ],
+        "edit": [
+          "qty",
+          "per",
+          "action",
+          "place_id",
+          "to_place_id"
+        ],
+        "add": {
+          "pick": [
+            {
+              "table": "items",
+              "label": "name"
+            },
+            {
+              "table": "kits",
+              "label": "name"
+            }
+          ]
+        },
+        "remove": true,
+        "empty": {
+          "key": "addon.inventory.tab.stock.empty",
+          "fallback": "Uses nothing from stock. Add the items one of these uses."
+        },
+        "summary": {
+          "words": "stock"
+        },
+        "actions": [
+          {
+            "id": "use-stock",
+            "label": {
+              "key": "addon.inventory.tab.stock.use",
+              "fallback": "Use stock"
+            },
+            "child": {
+              "table": "uses",
+              "form": [
+                "item_id",
+                "qty",
+                "kind",
+                "place_id",
+                "batch_id",
+                "reason_id",
+                "note"
+              ]
+            }
+          }
+        ]
+      }
     ]
   }
 }
