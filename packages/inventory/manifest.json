@@ -6536,6 +6536,491 @@
       }
     }
   ],
+  "automations": [
+    {
+      "key": "low-stock",
+      "name": {
+        "en-US": "Low stock: draft an order and tell the stock manager"
+      },
+      "description": {
+        "en-US": "When an item falls to its reorder level, puts it on a draft order for its preferred supplier and tells the stock manager."
+      },
+      "enabled": true,
+      "trigger": {
+        "kind": "record",
+        "event": "updated",
+        "table": "stock_points",
+        "changedColumn": "to_reorder",
+        "when": [
+          {
+            "left": {
+              "field": "to_reorder"
+            },
+            "op": "is",
+            "right": 1
+          }
+        ]
+      },
+      "graph": {
+        "version": 1,
+        "nodes": [
+          {
+            "id": "t",
+            "kind": "trigger",
+            "title": {
+              "en-US": "An item falls to its reorder level"
+            }
+          },
+          {
+            "id": "request",
+            "kind": "action",
+            "title": {
+              "en-US": "Ask for a reorder"
+            },
+            "action": {
+              "kind": "record.create",
+              "table": "reorder_requests",
+              "values": {
+                "stock_point_id": "{{record.id}}"
+              }
+            }
+          },
+          {
+            "id": "wait",
+            "kind": "wait",
+            "title": {
+              "en-US": "Wait a minute"
+            },
+            "amount": 1,
+            "unit": "minutes"
+          },
+          {
+            "id": "no-supplier",
+            "kind": "branch",
+            "title": {
+              "en-US": "No supplier is set?"
+            },
+            "condition": {
+              "left": {
+                "field": "request_note"
+              },
+              "op": "is",
+              "right": "needs_supplier"
+            },
+            "branches": [
+              {
+                "id": "no-supplier-yes",
+                "label": "Yes",
+                "nodes": [
+                  {
+                    "id": "tell-no-supplier",
+                    "kind": "action",
+                    "title": {
+                      "en-US": "Tell the stock manager"
+                    },
+                    "action": {
+                      "kind": "notification",
+                      "to": {
+                        "roles": [
+                          "manager"
+                        ]
+                      },
+                      "title": {
+                        "en-US": "{{record.item_name}} is low in {{record.place_name}}"
+                      },
+                      "body": {
+                        "en-US": "No supplier is set for it, so no order was drafted. Choose a preferred supplier on the item."
+                      }
+                    }
+                  },
+                  {
+                    "id": "stop-no-supplier",
+                    "kind": "stop",
+                    "title": {
+                      "en-US": "Stop"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "no-supplier-no",
+                "label": "No",
+                "nodes": []
+              }
+            ]
+          },
+          {
+            "id": "elsewhere",
+            "kind": "branch",
+            "title": {
+              "en-US": "Enough in another place?"
+            },
+            "condition": {
+              "left": {
+                "field": "request_note"
+              },
+              "op": "is",
+              "right": "elsewhere"
+            },
+            "branches": [
+              {
+                "id": "elsewhere-yes",
+                "label": "Yes",
+                "nodes": [
+                  {
+                    "id": "tell-elsewhere",
+                    "kind": "action",
+                    "title": {
+                      "en-US": "Tell the stock manager"
+                    },
+                    "action": {
+                      "kind": "notification",
+                      "to": {
+                        "roles": [
+                          "manager"
+                        ]
+                      },
+                      "title": {
+                        "en-US": "{{record.item_name}} is low in {{record.place_name}}"
+                      },
+                      "body": {
+                        "en-US": "{{record.request_elsewhere}} holds enough, so no order was drafted."
+                      }
+                    }
+                  },
+                  {
+                    "id": "stop-elsewhere",
+                    "kind": "stop",
+                    "title": {
+                      "en-US": "Stop"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "elsewhere-no",
+                "label": "No",
+                "nodes": []
+              }
+            ]
+          },
+          {
+            "id": "tell-drafted",
+            "kind": "action",
+            "title": {
+              "en-US": "Tell the stock manager"
+            },
+            "action": {
+              "kind": "notification",
+              "to": {
+                "roles": [
+                  "manager"
+                ]
+              },
+              "title": {
+                "en-US": "{{record.item_name}} is low in {{record.place_name}}"
+              },
+              "body": {
+                "en-US": "{{record.available}} left; the level is {{record.reorder_level}}. It is on a draft order for {{record.request_supplier}}."
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "key": "send-drafts-daily",
+      "name": {
+        "en-US": "Send draft orders at 17:00"
+      },
+      "description": {
+        "en-US": "Every day at 17:00, emails each draft order that is marked to send by itself, has a line and has a supplier address."
+      },
+      "enabled": false,
+      "trigger": {
+        "kind": "schedule",
+        "schedule": {
+          "kind": "daily",
+          "time": "17:00"
+        },
+        "forEach": {
+          "table": "purchase_orders",
+          "where": [
+            {
+              "left": {
+                "field": "status"
+              },
+              "op": "is",
+              "right": "draft"
+            },
+            {
+              "left": {
+                "field": "auto_send"
+              },
+              "op": "is",
+              "right": "true"
+            },
+            {
+              "left": {
+                "field": "line_count"
+              },
+              "op": "gt",
+              "right": 0
+            },
+            {
+              "left": {
+                "field": "supplier_email"
+              },
+              "op": "not_empty"
+            }
+          ],
+          "once": false
+        }
+      },
+      "graph": {
+        "version": 1,
+        "nodes": [
+          {
+            "id": "t",
+            "kind": "trigger",
+            "title": {
+              "en-US": "Every day at 17:00, for each draft order"
+            }
+          },
+          {
+            "id": "send",
+            "kind": "action",
+            "title": {
+              "en-US": "Send the order"
+            },
+            "action": {
+              "kind": "record.update",
+              "values": {
+                "status": "sent",
+                "sent_how": "email"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "key": "send-when-drafted",
+      "name": {
+        "en-US": "Send an order 15 minutes after its last line"
+      },
+      "description": {
+        "en-US": "Emails a draft order that is marked to send by itself once fifteen minutes have passed with no new line."
+      },
+      "enabled": false,
+      "trigger": {
+        "kind": "record",
+        "event": "updated",
+        "table": "purchase_orders",
+        "changedColumn": "line_count",
+        "when": [
+          {
+            "left": {
+              "field": "status"
+            },
+            "op": "is",
+            "right": "draft"
+          },
+          {
+            "left": {
+              "field": "auto_send"
+            },
+            "op": "is",
+            "right": "true"
+          },
+          {
+            "left": {
+              "field": "line_count"
+            },
+            "op": "gt",
+            "right": 0
+          }
+        ]
+      },
+      "graph": {
+        "version": 1,
+        "nodes": [
+          {
+            "id": "t",
+            "kind": "trigger",
+            "title": {
+              "en-US": "A line is added to a draft order"
+            }
+          },
+          {
+            "id": "wait",
+            "kind": "wait",
+            "title": {
+              "en-US": "Wait fifteen minutes"
+            },
+            "amount": 15,
+            "unit": "minutes"
+          },
+          {
+            "id": "still-draft",
+            "kind": "condition",
+            "title": {
+              "en-US": "Still a draft"
+            },
+            "condition": {
+              "left": {
+                "field": "status"
+              },
+              "op": "is",
+              "right": "draft"
+            }
+          },
+          {
+            "id": "still-auto",
+            "kind": "condition",
+            "title": {
+              "en-US": "Still marked to send by itself"
+            },
+            "condition": {
+              "left": {
+                "field": "auto_send"
+              },
+              "op": "is",
+              "right": "true"
+            }
+          },
+          {
+            "id": "quiet",
+            "kind": "condition",
+            "title": {
+              "en-US": "No line added since"
+            },
+            "condition": {
+              "left": {
+                "count": {
+                  "table": "po_lines",
+                  "matchColumn": "po_id",
+                  "equalsField": "id",
+                  "where": {
+                    "left": {
+                      "field": "created_at"
+                    },
+                    "op": "within_last",
+                    "right": {
+                      "amount": 14,
+                      "unit": "minutes"
+                    }
+                  }
+                }
+              },
+              "op": "is",
+              "right": 0
+            }
+          },
+          {
+            "id": "has-address",
+            "kind": "condition",
+            "title": {
+              "en-US": "The supplier has an address"
+            },
+            "condition": {
+              "left": {
+                "field": "supplier_email"
+              },
+              "op": "not_empty"
+            }
+          },
+          {
+            "id": "send",
+            "kind": "action",
+            "title": {
+              "en-US": "Send the order"
+            },
+            "action": {
+              "kind": "record.update",
+              "values": {
+                "status": "sent",
+                "sent_how": "email"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "key": "expiring-soon",
+      "name": {
+        "en-US": "Expiring within 30 days: tell the stock manager"
+      },
+      "description": {
+        "en-US": "Every morning, tells the stock manager once of each batch with stock left that expires within thirty days."
+      },
+      "enabled": true,
+      "trigger": {
+        "kind": "schedule",
+        "schedule": {
+          "kind": "daily",
+          "time": "08:00"
+        },
+        "forEach": {
+          "table": "levels",
+          "where": [
+            {
+              "left": {
+                "field": "qty"
+              },
+              "op": "gt",
+              "right": 0
+            },
+            {
+              "left": {
+                "field": "expires_on"
+              },
+              "op": "within_next",
+              "right": {
+                "amount": 30,
+                "unit": "days"
+              }
+            }
+          ],
+          "once": true
+        }
+      },
+      "graph": {
+        "version": 1,
+        "nodes": [
+          {
+            "id": "t",
+            "kind": "trigger",
+            "title": {
+              "en-US": "Every morning, for each batch that expires soon"
+            }
+          },
+          {
+            "id": "tell",
+            "kind": "action",
+            "title": {
+              "en-US": "Tell the stock manager"
+            },
+            "action": {
+              "kind": "notification",
+              "to": {
+                "roles": [
+                  "manager"
+                ]
+              },
+              "title": {
+                "en-US": "{{record.item_name}}, batch {{record.batch_code}}, expires {{record.expires_on}}"
+              },
+              "body": {
+                "en-US": "{{record.qty}} left in {{record.place_name}}."
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
   "addOn": {
     "attaches": [
       {
