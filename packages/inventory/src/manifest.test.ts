@@ -279,6 +279,13 @@ describe.skipIf(!tables.some((table) => table.ref === 'receipts'))('the document
     expect(close).toMatchObject({ id: 'close', via: 'po_id', post: { on: { to: ['received', 'cancelled'], from: ['sent', 'part_received'] } }, reverse: { on: { to: ['part_received'], from: ['received'] } } });
   });
 
+  it('ask an order sent by email for an address: its supplier\'s, or one typed on the order', () => {
+    const email = tableOf('purchase_orders').columns.find((column) => column.ref === 'supplier_email');
+    // The copy only fills what is left out, so with no address on the supplier a person is still asked.
+    expect(email?.rules).toMatchObject({ copy: { via: 'supplier_id', from: 'email', mode: 'default' }, requiredWhen: { column: 'sent_how', in: ['email'] } });
+    expect(email?.nullable).toBe(true);
+  });
+
   it('hold a draft order to fifty lines, the most its email lists', () => {
     expect((tableOf('po_lines') as unknown as { capacity: unknown }).capacity).toEqual({ kind: 'parent', via: 'po_id', size: 50 });
   });

@@ -2033,7 +2033,13 @@
                 "from": "email",
                 "mode": "default"
               },
-              "personal": false
+              "personal": false,
+              "requiredWhen": {
+                "column": "sent_how",
+                "in": [
+                  "email"
+                ]
+              }
             }
           },
           {
