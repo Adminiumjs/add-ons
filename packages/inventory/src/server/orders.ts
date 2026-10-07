@@ -7,7 +7,7 @@
  * order's own state is the person's move: nothing here changes an order.
  */
 
-import { type Book, inputText, type Row, same } from './book.ts';
+import { type Book, inputKey, inputText, type Row, same } from './book.ts';
 import { max, QTY, readOr0 } from './decimal.ts';
 
 /** The order line a call's line stands for: lines are handed by their own key. */
@@ -20,19 +20,23 @@ function orderLine(book: Book, key: string): Row {
 export function onOrder(book: Book): void {
   for (const line of book.input.lines) {
     const row = orderLine(book, line.line);
-    const place = inputText(line, 'place');
+    const place = inputKey(line, 'place');
     if (place === null) throw new Error('an order with no place');
     const qty = readOr0(row['qty'], QTY);
-    if (qty > 0n) book.onOrder(line.line, book.point(line.line, book.item(row['item_id']), place), qty, 'sent');
+    const point = book.point(line.line, book.item(row['item_id']), place);
+    if (point === null) throw new Error('the place of an order was not read');
+    if (qty > 0n) book.onOrder(line.line, point, qty, 'sent');
   }
 }
 
 export function onOrderClose(book: Book): void {
   for (const line of book.input.lines) {
     const row = orderLine(book, line.line);
-    const place = inputText(line, 'place');
+    const place = inputKey(line, 'place');
     if (place === null) throw new Error('an order with no place');
     const open = max(0n, readOr0(row['qty'], QTY) - readOr0(row['received'], QTY));
-    if (open > 0n) book.onOrder(line.line, book.point(line.line, book.item(row['item_id']), place), -open, inputText(line, 'how') === 'cancelled' ? 'cancelled' : 'closed');
+    const point = book.point(line.line, book.item(row['item_id']), place);
+    if (point === null) throw new Error('the place of an order was not read');
+    if (open > 0n) book.onOrder(line.line, point, -open, inputText(line, 'how') === 'cancelled' ? 'cancelled' : 'closed');
   }
 }

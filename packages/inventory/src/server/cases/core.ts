@@ -299,6 +299,30 @@ export const CORE_CASES: Case[] = [
     },
   },
   {
+    name: 'also · a place the item was never kept in: the stock point is added, naming the place by the key the call handed over',
+    input: call({ action: 'use-item', lines: [lineFor('L1', { item: 22, place: PLACE.back, quantity: 2, kind: 'sold' })], reads: { items: [I.pen], points: [], levels: [], batches: [], places: [{ id: PLACE.back, name: 'Back room' }] } }),
+    expect: {
+      rows: [
+        // The key is the number it came as: Adminium lets an answer name only a row the call was shown, and "3" is not 3.
+        { op: 'insert', table: 'stock_points', label: 'p:22:3', line: 'L1', values: { item_id: 22, place_id: 3, cost_avg: '0.4500' } },
+        { op: 'insert', table: 'batches', label: 'b:22:-', line: 'L1', values: { item_id: 22, code: '-', unassigned: true, expires_on: null, received_on: null } },
+        { op: 'insert', table: 'levels', label: 'l:p:22:3:b:22:-', line: 'L1', values: { stock_point_id: { '@row': 'p:22:3' }, batch_id: { '@row': 'b:22:-' } } },
+        movement('L1', { '@row': 'l:p:22:3:b:22:-' }, 'sold', '-2.000', '0.4500'),
+      ],
+      notes: [{ line: 'L1', note: 'short', item: 'Pen, black' }],
+    },
+  },
+  {
+    name: 'also · a place the call was never shown: no stock point can be added there, so staff are told to look',
+    input: call({ action: 'use', lines: [lineFor('L1', { what: what('tote'), ...ONE, place: 99 })], reads: { ...shopReads, links: [link(2, 'tote', { item_id: 21 })], points: [shirtPoint] } }),
+    expect: { rows: [], notes: [{ line: 'L1', note: 'to-check', item: 'Canvas tote natural' }] },
+  },
+  {
+    name: 'also · a batch named by hand is taken by the key it was named with',
+    input: call({ action: 'use-item', lines: lidLine({ quantity: 3, batch: 501, kind: 'used' }), reads: lidReads('14.000', '50.000') }),
+    expect: { rows: [movement('L1', 1001, 'used', '-3.000', '1.1000')] },
+  },
+  {
     name: 'C29 · words for a stock item: how many, which batch, and that it expires soon',
     input: call({ action: 'use-item', mode: 'words', lines: lidLine(ONE), reads: { ...lidReads('14.000', null), points: [point(100, I.lidocaine, PLACE.treatment, '14.000')] } }),
     expect: { rows: [], words: [{ line: 'L1', state: 'in', left: '14', exact: '14', after: '13', cause: 'stock', batch: 'LD118', expires: '2026-10-20', soon: true }] },

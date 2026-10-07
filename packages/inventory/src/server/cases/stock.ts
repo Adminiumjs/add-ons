@@ -10,13 +10,15 @@ const NOW = '2026-10-01T09:00:00.000Z';
 // ── a delivery against an order: lidocaine, kept by batch ───────────────────
 const lidPoint = point(100, I.lidocaine, PLACE.treatment, '14.000', { on_order: '50.000' });
 const LD118 = batch(500, I.lidocaine, 'LD118', '2026-10-20');
-const ORDER = { id: 9002, status: 'sent', place_id: PLACE.treatment, supplier_id: 5 };
+// Each line of an order carries its order's state and where it is delivered: a receipt reads the lines, not the order.
+const ON_ORDER = { po_id: 9002, order_status: 'sent', order_place_id: PLACE.treatment };
 const orderLines = (received: [string, string, string]) => [
-  { id: 90021, po_id: 9002, item_id: 10, qty: '50.000', received: received[0] },
-  { id: 90022, po_id: 9002, item_id: 41, qty: '200.000', received: received[1] },
-  { id: 90023, po_id: 9002, item_id: 42, qty: '40.000', received: received[2] },
+  { id: 90021, ...ON_ORDER, item_id: 10, qty: '50.000', received: received[0] },
+  { id: 90022, ...ON_ORDER, item_id: 41, qty: '200.000', received: received[1] },
+  { id: 90023, ...ON_ORDER, item_id: 42, qty: '40.000', received: received[2] },
 ];
-const delivery = { items: [I.lidocaine], points: [lidPoint], levels: [level(1000, lidPoint, LD118, '14.000')], batches: [LD118], order: [ORDER], order_lines: orderLines(['50.000', '0.000', '0.000']) };
+const HERE = [{ id: PLACE.treatment, name: 'Treatment room' }];
+const delivery = { items: [I.lidocaine], points: [lidPoint], levels: [level(1000, lidPoint, LD118, '14.000')], batches: [LD118], order_lines: orderLines(['50.000', '0.000', '0.000']), places: HERE };
 const fivePacks = (more: Record<string, string | number | null> = {}) => [
   lineFor('L1', { item: 10, quantity: 50, cost: '1.1000', guessed: 0, place: PLACE.treatment, batch_code: 'LD201', expires: '2027-04-30', po: 9002, po_line: 90021, kind: 'delivery', ...more }),
 ];
@@ -84,7 +86,7 @@ export const STOCK_CASES: Case[] = [
   },
   {
     name: 'C3 · with nothing on hand the average is simply what was paid',
-    input: call({ action: 'receive', lines: [lineFor('L1', { item: 20, quantity: 12, cost: '7.9000', guessed: 0, place: PLACE.shop })], reads: { items: [I.tshirt], points: [shirtPoint], levels: [], batches: [], order: [], order_lines: [] } }),
+    input: call({ action: 'receive', lines: [lineFor('L1', { item: 20, quantity: 12, cost: '7.9000', guessed: 0, place: PLACE.shop })], reads: { items: [I.tshirt], points: [shirtPoint], levels: [], batches: [], order_lines: [], places: [{ id: PLACE.shop, name: 'Shop floor' }] } }),
     expect: {
       rows: [
         { op: 'insert', table: 'batches', label: 'b:20:-', line: 'L1', values: { item_id: 20, code: '-', unassigned: true, expires_on: null, received_on: null } },
@@ -97,7 +99,7 @@ export const STOCK_CASES: Case[] = [
   },
   {
     name: 'C4 · no cost known: taken at the average, which does not move, and said so',
-    input: call({ action: 'receive', lines: [lineFor('L1', { item: 20, quantity: 12, cost: 0, guessed: 1, place: PLACE.shop })], reads: { items: [I.tshirt], points: [shirtPoint], levels: [], batches: [], order: [], order_lines: [] } }),
+    input: call({ action: 'receive', lines: [lineFor('L1', { item: 20, quantity: 12, cost: 0, guessed: 1, place: PLACE.shop })], reads: { items: [I.tshirt], points: [shirtPoint], levels: [], batches: [], order_lines: [], places: [{ id: PLACE.shop, name: 'Shop floor' }] } }),
     expect: {
       rows: [
         { op: 'insert', table: 'batches', label: 'b:20:-', line: 'L1', values: { item_id: 20, code: '-', unassigned: true, expires_on: null, received_on: null } },
@@ -119,8 +121,34 @@ export const STOCK_CASES: Case[] = [
   },
   {
     name: 'C28 · and old stock when it is loaded at opening',
-    input: call({ action: 'receive', lines: fivePacks({ expires: '2026-09-30', kind: 'opening', po: null, po_line: null }), reads: { ...delivery, order: [], order_lines: [] } }),
+    input: call({ action: 'receive', lines: fivePacks({ expires: '2026-09-30', kind: 'opening', po: null, po_line: null }), reads: { ...delivery, order_lines: [] } }),
     expect: { rows: [...newBatchRows('2026-09-30'), movement('L1', { '@row': NEW_LEVEL }, 'opening', '50.000', '1.1000')] },
+  },
+  {
+    name: 'also · the last of an order arrives: the order reads received, with the moment it did',
+    input: call({ action: 'receive', lines: fivePacks(), reads: { ...delivery, order_lines: orderLines(['50.000', '200.000', '40.000']).map((row) => ({ ...row, order_status: 'part_received' })) } }),
+    expect: {
+      rows: [
+        ...newBatchRows(),
+        movement('L1', { '@row': NEW_LEVEL }, 'received', '50.000', '1.1000'),
+        { op: 'insert', table: 'on_order_moves', line: 'L1', values: { stock_point_id: 100, qty: '-50.000', kind: 'received' } },
+        { op: 'update', table: 'purchase_orders', line: 'L1', key: { id: 9002 }, set: { status: 'received', received_at: NOW } },
+      ],
+    },
+  },
+  {
+    name: 'also · a delivery to a place the item was never kept in adds its stock point there',
+    input: call({ action: 'receive', lines: [lineFor('L1', { item: 22, quantity: 5, cost: '0.5000', guessed: 0, place: PLACE.back })], reads: { items: [I.pen], points: [], levels: [], batches: [], order_lines: [], places: [{ id: PLACE.back, name: 'Back room' }] } }),
+    expect: {
+      rows: [
+        // The new point starts at the average this receipt leaves the item with, not the one it found.
+        { op: 'insert', table: 'stock_points', label: 'p:22:3', line: 'L1', values: { item_id: 22, place_id: 3, cost_avg: '0.5000' } },
+        { op: 'insert', table: 'batches', label: 'b:22:-', line: 'L1', values: { item_id: 22, code: '-', unassigned: true, expires_on: null, received_on: null } },
+        { op: 'insert', table: 'levels', label: 'l:p:22:3:b:22:-', line: 'L1', values: { stock_point_id: { '@row': 'p:22:3' }, batch_id: { '@row': 'b:22:-' } } },
+        movement('L1', { '@row': 'l:p:22:3:b:22:-' }, 'received', '5.000', '0.5000'),
+        { op: 'update', table: 'items', line: 'L1', key: { id: 22 }, set: { cost_avg: '0.5000' } },
+      ],
+    },
   },
   {
     name: 'C28 · a transfer to the place it is in',

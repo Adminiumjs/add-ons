@@ -13,9 +13,9 @@
  * nobody has named and the place is marked to be counted.
  */
 
-import type { PostingLine } from '@adminium/add-on-contracts';
+import type { PostingLine, PostingScalar } from '@adminium/add-on-contracts';
 
-import { type Book, inputText, type Point, type Row, textOf, yes } from './book.ts';
+import { type Book, inputKey, inputText, type Point, type Row, textOf, yes } from './book.ts';
 import { pick } from './batches.ts';
 import { min, QTY, read, shown, text } from './decimal.ts';
 import { quantityOf, type Usage, usagesOf } from './expand.ts';
@@ -53,7 +53,8 @@ function writeShort(book: Book, line: string, point: Point, kind: string, shortf
 
 interface Ask {
   kind: string;
-  batch: string | null;
+  /** The batch a person named, by its key as it was handed over. */
+  batch: PostingScalar | null;
   strict: boolean;
   reason: unknown;
   note: unknown;
@@ -72,7 +73,9 @@ function post(book: Book, line: PostingLine, usage: Usage, ask: Ask, promise: bo
   }
   if (usage.action === 'move') {
     if (usage.to === null) throw new Error('a line that moves stock names where to');
-    movePair(book, line.line, point, book.point(line.line, item, usage.to), usage.amount);
+    const to = book.point(line.line, item, usage.to);
+    if (to === null) throw new Error('the place a line moves stock to was not read');
+    movePair(book, line.line, point, to, usage.amount);
     return;
   }
   // Stock put back or made: onto the batch named, else the one nobody has named.
@@ -176,7 +179,7 @@ export function use(book: Book, byItem: boolean): void {
     const asked = inputText(line, 'kind');
     const ask: Ask = {
       kind: asked !== null && (OUT_KINDS.includes(asked) || IN_KINDS[asked] !== undefined) ? asked : 'used',
-      batch: inputText(line, 'batch'),
+      batch: inputKey(line, 'batch'),
       strict: yes(line.inputs['strict']),
       reason: line.inputs['reason'] ?? null,
       note: line.inputs['note'] ?? null,

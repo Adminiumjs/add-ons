@@ -10,7 +10,7 @@
 
 import type { PostingLine } from '@adminium/add-on-contracts';
 
-import { type Book, inputText, type Level, type Point, type Row, same, textOf, yes } from './book.ts';
+import { type Book, inputKey, inputText, type Level, type Point, type Row, same, textOf, type Value, yes } from './book.ts';
 import { averageAfter, averageBefore, onHand, setAverage } from './cost.ts';
 import { COST, max, min, QTY, read, readOr0 } from './decimal.ts';
 import { reverse } from './use.ts';
@@ -32,12 +32,30 @@ function arrived(book: Book, line: PostingLine): Arrived {
   return { item, qty, cost: guessed ? readOr0(item['cost_avg'], COST) : readOr0(line.inputs['cost'] as unknown, COST), guessed };
 }
 
-/** The order a receipt line is against, while it still has something on order. */
-function openOrder(book: Book, line: PostingLine): Row | null {
+/** An order as far as a receipt needs it: its key, how far it has come, and where it is delivered. */
+interface OrderFacts {
+  id: Value;
+  status: string;
+  place: Value;
+}
+
+/**
+ * The order a line is against, while it still has something on order. A
+ * receipt reads the order's lines, each of which carries its order's state
+ * and place; a line sent back reads the order itself.
+ */
+function openOrder(book: Book, line: PostingLine): OrderFacts | null {
   const po = line.inputs['po'];
   if (po === null || po === undefined || po === '') return null;
-  const order = book.read('order').find((row) => same(row['id'], po)) ?? null;
-  return order !== null && OPEN_ORDER.includes(String(order['status'])) ? order : null;
+  const whole = book.read('order').find((row) => same(row['id'], po));
+  const anyLine = book.read('order_lines').find((row) => same(row['po_id'], po));
+  const facts: OrderFacts | null =
+    whole !== undefined
+      ? { id: whole['id'] ?? null, status: String(whole['status']), place: whole['place_id'] ?? null }
+      : anyLine !== undefined
+        ? { id: anyLine['po_id'] ?? null, status: String(anyLine['order_status']), place: anyLine['order_place_id'] ?? null }
+        : null;
+  return facts !== null && OPEN_ORDER.includes(facts.status) ? facts : null;
 }
 
 /** The level a line's batch sits on in a place, as read. A line sent back names a batch that is there. */
@@ -52,11 +70,15 @@ export function receive(book: Book): void {
   for (const line of book.input.lines) {
     const { item, qty, cost, guessed } = arrived(book, line);
     const opening = inputText(line, 'kind') === 'opening';
-    const place = inputText(line, 'place');
+    const place = inputKey(line, 'place');
     if (place === null) throw new Error('a receipt line with no place');
     // The batch: the one nobody names for an item not kept by batch; else the code typed, found or made.
+    // The average this receipt leaves, worked out first: a stock point added for it starts there.
+    const average = averageAfter(onHand(book, item), readOr0(item['cost_avg'], COST), qty, cost);
+    const here = book.point(line.line, item, place, average);
+    if (here === null) throw new Error('the place a receipt line arrives at was not read');
     let level: Level;
-    if (!yes(item['tracks_batches'])) level = book.unassignedLevel(line.line, book.point(line.line, item, place));
+    if (!yes(item['tracks_batches'])) level = book.unassignedLevel(line.line, here);
     else {
       const code = inputText(line, 'batch_code');
       if (code === null) {
@@ -70,14 +92,13 @@ export function receive(book: Book): void {
         book.refuse(line.line, 'expired', textOf(item['name']) === null ? {} : { item: textOf(item['name']) as string });
         continue;
       }
-      const point = book.point(line.line, item, place);
       const batch = book.codedBatch(line.line, item, code, { expires: expires === null ? null : expires.slice(0, 10), received: book.input.today });
-      level = book.level(line.line, point, batch.ref, false);
+      level = book.level(line.line, here, batch.ref, false);
     }
     const point = level.point;
     if (guessed) book.note(line.line, 'cost-to-check', textOf(item['name']) ?? undefined);
     book.move(line.line, level, opening ? 'opening' : 'received', qty, { cost });
-    setAverage(book, line.line, item, averageAfter(onHand(book, item), readOr0(item['cost_avg'], COST), qty, cost));
+    setAverage(book, line.line, item, average);
 
     // What arrived comes off what was on order, and the order moves on.
     const order = openOrder(book, line);
@@ -87,12 +108,13 @@ export function receive(book: Book): void {
       // The line's own total already counts this receipt: it settled before this was asked.
       const before = readOr0(orderLine['received'], QTY) - qty;
       const take = min(qty, max(0n, readOr0(orderLine['qty'], QTY) - before));
-      if (take > 0n) book.onOrder(line.line, book.point(line.line, item, order['place_id']), -take, 'received');
+      const ordered = take > 0n ? book.point(line.line, item, order.place) : null;
+      if (ordered !== null) book.onOrder(line.line, ordered, -take, 'received');
     }
     if (order !== null) {
-      const open = lines.filter((row) => same(row['po_id'], order['id'])).reduce((sum, row) => sum + max(0n, readOr0(row['qty'], QTY) - readOr0(row['received'], QTY)), 0n);
-      if (open === 0n) book.update(line.line, 'purchase_orders', order['id'] as never, { status: 'received', received_at: book.input.now });
-      else if (order['status'] !== 'part_received') book.update(line.line, 'purchase_orders', order['id'] as never, { status: 'part_received' });
+      const open = lines.filter((row) => same(row['po_id'], order.id)).reduce((sum, row) => sum + max(0n, readOr0(row['qty'], QTY) - readOr0(row['received'], QTY)), 0n);
+      if (open === 0n) book.update(line.line, 'purchase_orders', order.id as never, { status: 'received', received_at: book.input.now });
+      else if (order.status !== 'part_received') book.update(line.line, 'purchase_orders', order.id as never, { status: 'part_received' });
     }
     // A reorder that was paused starts again once stock is back above its level.
     if (point.row !== null && yes(point.row['reorder_paused']) && point.row['reorder_level'] !== null && readOr0(point.row['available'], QTY) + qty > readOr0(point.row['reorder_level'], QTY)) {
@@ -115,15 +137,17 @@ export function receiveReverse(book: Book): void {
 export function sendBack(book: Book): void {
   for (const line of book.input.lines) {
     const { item, qty, cost } = arrived(book, line);
-    const place = inputText(line, 'place');
+    const place = inputKey(line, 'place');
     if (place === null) throw new Error('a line sent back with no place');
     const point = book.point(line.line, item, place);
+    if (point === null) throw new Error('the place a line is sent back from was not read');
     const level = levelOf(book, line, item, point);
     if (level === null) throw new Error('the batch a line is sent back from was not read');
     book.move(line.line, level, 'sent_back', -qty, { cost });
     const before = averageBefore(onHand(book, item), readOr0(item['cost_avg'], COST), qty, cost);
     if (before !== null) setAverage(book, line.line, item, before);
     const order = openOrder(book, line);
-    if (order !== null) book.onOrder(line.line, book.point(line.line, item, order['place_id']), qty, 'sent_back');
+    const ordered = order === null ? null : book.point(line.line, item, order.place);
+    if (ordered !== null) book.onOrder(line.line, ordered, qty, 'sent_back');
   }
 }

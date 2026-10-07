@@ -7,9 +7,9 @@
  * used up or moved somewhere (linen goes to the laundry, it is not used).
  */
 
-import type { PostingLine } from '@adminium/add-on-contracts';
+import type { PostingLine, PostingScalar } from '@adminium/add-on-contracts';
 
-import { type Book, inputRow, type Row, same, textOf } from './book.ts';
+import { type Book, inputRow, keyOf, type Row, same } from './book.ts';
 import { mul, QTY, read, readOr0, whole } from './decimal.ts';
 
 export interface Usage {
@@ -17,9 +17,9 @@ export interface Usage {
   /** How much, in thousandths. */
   amount: bigint;
   action: 'use' | 'move';
-  /** The place the link or the kit line names, when it names one. */
-  place: string | null;
-  to: string | null;
+  /** The place the link or the kit line names, when it names one: its key, as it was read. */
+  place: PostingScalar | null;
+  to: PostingScalar | null;
 }
 
 /** How many a line asks for; nothing or zero plans nothing. Below zero is not a quantity. */
@@ -51,7 +51,7 @@ export function usagesOf(book: Book, line: PostingLine): Usage[] {
   const out: Usage[] = [];
   const add = (itemId: unknown, each: bigint, per: unknown, action: unknown, place: unknown, to: unknown): void => {
     const amount = mul(mul(each, QTY, quantity, QTY, QTY), QTY, multiplier(line, per), QTY, QTY);
-    out.push({ item: book.item(itemId), amount, action: action === 'move' ? 'move' : 'use', place: textOf(place), to: textOf(to) });
+    out.push({ item: book.item(itemId), amount, action: action === 'move' ? 'move' : 'use', place: keyOf(place), to: keyOf(to) });
   };
   for (const link of links) {
     const linkQty = readOr0(link['qty'], QTY);

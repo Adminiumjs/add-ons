@@ -2688,6 +2688,20 @@
             }
           },
           {
+            "ref": "order_place_id",
+            "type": "fk",
+            "references": "places",
+            "nullable": true,
+            "rules": {
+              "copy": {
+                "via": "po_id",
+                "from": "place_id",
+                "mode": "always",
+                "follow": true
+              }
+            }
+          },
+          {
             "ref": "created_at",
             "type": "timestamptz",
             "nullable": true,
@@ -3168,14 +3182,22 @@
             "nullable": true,
             "rules": {
               "formula": {
-                "coalesce": [
+                "if": [
+                  {
+                    "isNull": "packs"
+                  },
+                  "qty_typed",
                   {
                     "mul": [
                       "packs",
-                      "pack_size"
+                      {
+                        "coalesce": [
+                          "pack_size",
+                          1
+                        ]
+                      }
                     ]
-                  },
-                  "qty_typed"
+                  }
                 ]
               }
             }
@@ -5081,6 +5103,7 @@
             "item_name",
             "unit",
             "order_status",
+            "order_place_id",
             "created_at",
             "receipt_id"
           ]
@@ -8697,6 +8720,19 @@
                     "eq": true
                   }
                 ]
+              },
+              {
+                "as": "places",
+                "table": "places",
+                "by": [
+                  {
+                    "column": "id",
+                    "from": [
+                      "input.place",
+                      "setting.default_place_id"
+                    ]
+                  }
+                ]
               }
             ],
             "locks": [
@@ -8784,6 +8820,19 @@
                     "eq": true
                   }
                 ]
+              },
+              {
+                "as": "places",
+                "table": "places",
+                "by": [
+                  {
+                    "column": "id",
+                    "from": [
+                      "input.from",
+                      "input.to"
+                    ]
+                  }
+                ]
               }
             ],
             "locks": [
@@ -8801,7 +8850,8 @@
             "writes": [
               "movements",
               "levels",
-              "stock_points"
+              "stock_points",
+              "batches"
             ]
           },
           "adopt": {
@@ -8913,16 +8963,6 @@
                 "limit": 1000
               },
               {
-                "as": "order",
-                "table": "purchase_orders",
-                "by": [
-                  {
-                    "column": "id",
-                    "from": "input.po"
-                  }
-                ]
-              },
-              {
                 "as": "order_lines",
                 "table": "po_lines",
                 "by": [
@@ -8932,6 +8972,16 @@
                   }
                 ],
                 "limit": 200
+              },
+              {
+                "as": "places",
+                "table": "places",
+                "by": [
+                  {
+                    "column": "id",
+                    "from": "input.place"
+                  }
+                ]
               }
             ],
             "locks": [
@@ -9019,6 +9069,16 @@
                   {
                     "column": "id",
                     "from": "input.po"
+                  }
+                ]
+              },
+              {
+                "as": "places",
+                "table": "places",
+                "by": [
+                  {
+                    "column": "id",
+                    "from": "input.place"
                   }
                 ]
               }
@@ -9208,6 +9268,16 @@
                   }
                 ],
                 "limit": 1000
+              },
+              {
+                "as": "places",
+                "table": "places",
+                "by": [
+                  {
+                    "column": "id",
+                    "from": "input.place"
+                  }
+                ]
               }
             ],
             "locks": [
@@ -9269,6 +9339,16 @@
                   }
                 ],
                 "limit": 1000
+              },
+              {
+                "as": "places",
+                "table": "places",
+                "by": [
+                  {
+                    "column": "id",
+                    "from": "input.place"
+                  }
+                ]
               }
             ],
             "locks": [

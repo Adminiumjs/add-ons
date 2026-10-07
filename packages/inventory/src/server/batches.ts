@@ -36,7 +36,7 @@ export const expired = (level: Level, today: string): boolean => {
 };
 
 /** The levels a take would use, in order. */
-export function order(book: Book, point: Point, today: string, options: { batch?: string | null; anyDate?: boolean } = {}): Level[] {
+export function order(book: Book, point: Point, today: string, options: { batch?: unknown; anyDate?: boolean } = {}): Level[] {
   const stocked = book.levelsOf(point).filter((level) => book.left(level) > 0n);
   if (options.batch !== undefined && options.batch !== null) return stocked.filter((level) => same(level.batch, options.batch));
   const real = stocked
@@ -54,7 +54,7 @@ export function order(book: Book, point: Point, today: string, options: { batch?
  * what could not be had. Nothing is recorded here: the movement that takes
  * it is what counts it.
  */
-export function pick(book: Book, point: Point, amount: bigint, today: string, options: { batch?: string | null; anyDate?: boolean } = {}): Picked {
+export function pick(book: Book, point: Point, amount: bigint, today: string, options: { batch?: unknown; anyDate?: boolean } = {}): Picked {
   const takes: Take[] = [];
   let remaining = amount;
   for (const level of order(book, point, today, options)) {

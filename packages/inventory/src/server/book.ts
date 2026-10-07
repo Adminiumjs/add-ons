@@ -46,6 +46,9 @@ export interface Level {
   batch: string;
 }
 
+/** The columns through which a row read names a place. */
+const PLACE_LINKS = ['place_id', 'to_place_id', 'from_place_id', 'order_place_id', 'default_place_id'];
+
 export class Book {
   readonly rows: PlannedRow[] = [];
   readonly refusals: PostingRefusal[] = [];
@@ -110,17 +113,33 @@ export class Book {
     return found;
   }
 
-  /** The stock point of an item in a place: the one read, or one this answer adds (once). */
-  point(line: string, item: Row, place: unknown): Point {
+  /**
+   * Whether a place is one this call was shown: a place it read, or one a row
+   * it read links to. Adminium lets an answer name no other, so a stock point
+   * can be added only there.
+   */
+  private shown(place: unknown): boolean {
+    if (this.read('places').some((row) => same(row['id'], place))) return true;
+    return Object.values(this.input.reads).some((rows) => (rows as Row[]).some((row) => PLACE_LINKS.some((column) => same(row[column], place))));
+  }
+
+  /**
+   * The stock point of an item in a place: the one read, or one this answer
+   * adds (once). Nothing when there is none and the place is not one the call
+   * was shown: such a point cannot be added, and the caller says so.
+   */
+  point(line: string, item: Row, place: unknown, cost?: bigint): Point | null {
     const key = `${String(item['id'])}:${String(place)}`;
     const known = this.points.get(key);
     if (known !== undefined) return known;
     const row = this.read('points').find((one) => same(one['item_id'], item['id']) && same(one['place_id'], place)) ?? null;
     let point: Point;
     if (row !== null) point = { key: `p${String(row['id'])}`, ref: row['id'] as PostingScalar, row, item, place: String(place) };
+    else if (!this.shown(place)) return null;
     else {
       const label = `p:${key}`;
-      this.insert(line, 'stock_points', { item_id: item['id'] as Value, place_id: place as Value, cost_avg: text(readOr0(item['cost_avg'], COST), COST) }, label);
+      // A new stock point starts at the item's average — the one this answer is about to give it, when it moves it.
+      this.insert(line, 'stock_points', { item_id: item['id'] as Value, place_id: place as Value, cost_avg: text(cost ?? readOr0(item['cost_avg'], COST), COST) }, label);
       point = { key: label, ref: { '@row': label }, row: null, item, place: String(place) };
     }
     this.points.set(key, point);
@@ -286,6 +305,19 @@ export const inputText = (line: PostingLine, name: string): string | null => {
   const value = line.inputs[name];
   return value === null || value === undefined || value === '' || typeof value === 'object' ? null : String(value);
 };
+
+/**
+ * A line's input exactly as it was handed over, or nothing. A key is passed on
+ * as it came — a number stays a number — because Adminium lets an answer name
+ * only a row the call was shown, and "1" is not the key 1.
+ */
+export const inputKey = (line: PostingLine, name: string): PostingScalar | null => {
+  const value = line.inputs[name];
+  return value === null || value === undefined || value === '' || typeof value === 'object' ? null : value;
+};
+
+/** A value of a row read, as it is, or nothing when it is empty. */
+export const keyOf = (value: unknown): PostingScalar | null => (blank(value) || typeof value === 'object' ? null : (value as PostingScalar));
 
 /** A line's input that names a row of another table. */
 export const inputRow = (line: PostingLine, name: string): { table: string; row: string } | null => {

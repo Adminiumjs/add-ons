@@ -10,12 +10,12 @@
 
 import type { PostingLine } from '@adminium/add-on-contracts';
 
-import { type Book, inputText, type Point, type Row, same, textOf } from './book.ts';
+import { type Book, inputKey, type Point, type Row, same, textOf } from './book.ts';
 import { pick } from './batches.ts';
 import { QTY, read } from './decimal.ts';
 
 /** Moves an amount of an item between two of its stock points, batch by batch. */
-export function movePair(book: Book, line: string, from: Point, to: Point, amount: bigint, options: { batch?: string | null } = {}): void {
+export function movePair(book: Book, line: string, from: Point, to: Point, amount: bigint, options: { batch?: unknown } = {}): void {
   const today = book.input.today;
   const picked = pick(book, from, amount, today, { batch: options.batch ?? null, anyDate: true });
   let n = book.rows.length;
@@ -40,13 +40,16 @@ export function movePair(book: Book, line: string, from: Point, to: Point, amoun
 export function transfer(book: Book, line: PostingLine): void {
   const quantity = read(line.inputs['quantity'] as unknown, QTY) ?? 0n;
   if (quantity <= 0n) return;
-  const from = inputText(line, 'from');
-  const to = inputText(line, 'to');
+  const from = inputKey(line, 'from');
+  const to = inputKey(line, 'to');
   if (from === null || to === null) throw new Error('a transfer names two places');
   if (same(from, to)) {
     book.refuse(line.line, 'not-allowed');
     return;
   }
   const item: Row = book.item(line.inputs['item']);
-  movePair(book, line.line, book.point(line.line, item, from), book.point(line.line, item, to), quantity, { batch: inputText(line, 'batch') });
+  const out = book.point(line.line, item, from);
+  const into = book.point(line.line, item, to);
+  if (out === null || into === null) throw new Error('a place of a transfer was not read');
+  movePair(book, line.line, out, into, quantity, { batch: inputKey(line, 'batch') });
 }
