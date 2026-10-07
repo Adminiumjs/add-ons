@@ -6,9 +6,10 @@ import type { ReactNode } from 'react';
 
 import { useSearch } from '../shared/host.ts';
 import { wordsFor } from '../shared/messages.ts';
+import { OPENING, REFUSAL, SHARED } from '../strings/index.ts';
 import { Opening } from './Opening.tsx';
 
-const t = wordsFor('shared', 'refusal', 'opening');
+const t = wordsFor(SHARED, REFUSAL, OPENING);
 
 export default function OpeningPage(): ReactNode {
   const value = useSearch({ strict: false })['receipt'];

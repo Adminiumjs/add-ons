@@ -8,10 +8,11 @@ import type { ReactNode } from 'react';
 
 import { useParams, useSearch } from '../shared/host.ts';
 import { wordsFor } from '../shared/messages.ts';
+import { COUNTS, REFUSAL, SHARED } from '../strings/index.ts';
 import { CountSheet } from './CountSheet.tsx';
 import { CountsList } from './CountsList.tsx';
 
-const t = wordsFor('shared', 'refusal', 'counts');
+const t = wordsFor(SHARED, REFUSAL, COUNTS);
 
 export default function CountsPage(): ReactNode {
   const { _splat } = useParams({ strict: false });

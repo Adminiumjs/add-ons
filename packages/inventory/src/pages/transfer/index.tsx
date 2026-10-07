@@ -6,9 +6,10 @@ import type { ReactNode } from 'react';
 
 import { useSearch } from '../shared/host.ts';
 import { wordsFor } from '../shared/messages.ts';
+import { REFUSAL, SHARED, TRANSFER } from '../strings/index.ts';
 import { Transfer } from './Transfer.tsx';
 
-const t = wordsFor('shared', 'refusal', 'transfer');
+const t = wordsFor(SHARED, REFUSAL, TRANSFER);
 
 export default function TransferPage(): ReactNode {
   const value = useSearch({ strict: false })['transfer'];

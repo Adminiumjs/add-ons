@@ -4,9 +4,10 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { Refused, resetWorld, seed, world } from '../testing/host.tsx';
 import { wordsFor } from '../shared/messages.ts';
+import { RECEIVE, REFUSAL, SHARED } from '../strings/index.ts';
 import { Receive } from './Receive.tsx';
 
-const t = wordsFor('shared', 'refusal', 'receive');
+const t = wordsFor(SHARED, REFUSAL, RECEIVE);
 
 /** The sample's PO-1002, as far as this screen reads it. */
 function sample(): void {

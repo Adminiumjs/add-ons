@@ -3,12 +3,13 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { wordsFor } from '../shared/messages.ts';
+import { COUNTS, REFUSAL, SHARED } from '../strings/index.ts';
 import { Refused, resetWorld, seed, world } from '../testing/host.tsx';
 import { CountSheet } from './CountSheet.tsx';
 import { CountsList } from './CountsList.tsx';
 import { COUNT_MAX, levelsInScope } from './scope.ts';
 
-const t = wordsFor('shared', 'refusal', 'counts');
+const t = wordsFor(SHARED, REFUSAL, COUNTS);
 
 const line = (id: number, item: string, more: Record<string, string | number | null> = {}) => ({ id, count_id: 5, level_id: 100 + id, item_id: id, item_name: item, sku: `SKU-${String(id)}`, barcode: `50600001000${String(id)}`, unit: 'each', batch_code: null, counted: null, qty_when_counted: null, counted_at: null, difference: null, value: null, is_counted: 0, differs: 0, status: 'open', ...more });
 

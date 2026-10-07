@@ -3,10 +3,11 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { wordsFor } from '../shared/messages.ts';
+import { REFUSAL, SHARED, TRANSFER } from '../strings/index.ts';
 import { resetWorld, seed, world } from '../testing/host.tsx';
 import { Transfer } from './Transfer.tsx';
 
-const t = wordsFor('shared', 'refusal', 'transfer');
+const t = wordsFor(SHARED, REFUSAL, TRANSFER);
 
 beforeEach(() => {
   resetWorld();

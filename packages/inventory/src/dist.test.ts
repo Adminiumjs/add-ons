@@ -61,6 +61,19 @@ describe('the build writes what the manifest promises', () => {
   });
 });
 
+describe('a screen carries its own words and nobody else\'s', () => {
+  it('holds a sentence of its own in every language, and none of another screen', () => {
+    const file = (name: string) => readFileSync(join(DIST, 'pages', `${name}.js`), 'utf8');
+    // A sentence only the Receive screen says, and one only the Stock rules screen says, in Danish.
+    expect(file('receive')).toContain('Modtag varer');
+    expect(file('receive')).not.toContain('Lagerregler');
+    expect(file('rules')).toContain('Lagerregler');
+    expect(file('rules')).not.toContain('Modtag varer');
+    // Eight languages of five screens' words in each file would be four fifths another screen's.
+    for (const name of ['receive', 'transfer', 'opening', 'counts', 'rules']) expect(statSync(join(DIST, 'pages', `${name}.js`)).size, name).toBeLessThan(160_000);
+  });
+});
+
 describe('the built bytes pass the release sweep', () => {
   it('carries none of the banned substrings', () => {
     for (const file of built()) {

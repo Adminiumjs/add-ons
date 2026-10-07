@@ -8,13 +8,11 @@
  * adds to what another screen of it registered before.
  */
 import { registerMessages, type AddOnTranslate } from './host.ts';
-import { LOCALES, type Section } from '../strings/index.ts';
+import type { InEveryLanguage } from '../strings/index.ts';
 
 /** The translator for a screen that shows these sections, in every language shipped. */
-export function wordsFor(...sections: readonly Section[]): AddOnTranslate {
+export function wordsFor(...sections: readonly InEveryLanguage[]): AddOnTranslate {
   const bundles: Record<string, Record<string, string>> = {};
-  for (const [tag, all] of Object.entries(LOCALES)) {
-    bundles[tag] = Object.assign({}, ...sections.map((section) => all[section] ?? {})) as Record<string, string>;
-  }
+  for (const section of sections) for (const [tag, words] of Object.entries(section)) bundles[tag] = { ...(bundles[tag] ?? {}), ...words };
   return registerMessages('inventory', bundles);
 }

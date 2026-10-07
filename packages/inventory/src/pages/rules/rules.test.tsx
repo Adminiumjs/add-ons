@@ -3,10 +3,11 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { wordsFor } from '../shared/messages.ts';
+import { REFUSAL, RULES, SHARED } from '../strings/index.ts';
 import { Refused, api, resetWorld, seed, world } from '../testing/host.tsx';
 import { Rules } from './Rules.tsx';
 
-const t = wordsFor('shared', 'refusal', 'rules');
+const t = wordsFor(SHARED, REFUSAL, RULES);
 
 const app = { table: 'main.ordering_order_items', tableLabel: 'Order items', id: 'stock', action: 'hold', via: 'order_id', reserve: { on: { to: ['placed'] } }, post: { on: { to: ['preparing'] } }, map: { what: 'menu_item_id', quantity: 'qty' }, owner: 'online-ordering', enabled: true, state: 'live', holding: 2, unplanned: 0 };
 const mine = { table: 'main.jobs', tableLabel: 'Jobs', id: 'stock-1', action: 'use-item', post: { on: { to: ['done'] } }, map: { item: 'item_id', quantity: { value: 1 } }, owner: null, enabled: true, state: 'live', holding: 0, unplanned: 3 };
