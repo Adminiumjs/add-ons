@@ -185,6 +185,30 @@ export class Book {
     return ref;
   }
 
+  /**
+   * A batch with a code, of an item: the one read, or one this answer adds
+   * (once). `made` says which, because only a new batch takes the date typed.
+   */
+  codedBatch(line: string, item: Row, code: string, values: { expires: Value; received: Value }): { ref: Ref; made: boolean; row: Row | null } {
+    const key = `${String(item['id'])}:${code}`;
+    const row = this.read('batches').find((one) => same(one['item_id'], item['id']) && !yes(one['unassigned']) && String(one['code']) === code);
+    if (row !== undefined) return { ref: row['id'] as PostingScalar, made: false, row };
+    const known = this.batches.get(key);
+    if (known !== undefined) return { ref: known, made: true, row: null };
+    const label = `b:${key}`.slice(0, 64);
+    this.insert(line, 'batches', { item_id: item['id'] as Value, code, unassigned: false, expires_on: values.expires, received_on: values.received }, label);
+    const ref: Ref = { '@row': label };
+    this.batches.set(key, ref);
+    return { ref, made: true, row: null };
+  }
+
+  /** The level of a batch in a stock point as it was read, or nothing: for an action that may add none. */
+  levelRead(point: Point, batch: Ref): Level | null {
+    if (point.row === null || typeof batch === 'object') return null;
+    const row = this.read('levels').find((one) => same(one['stock_point_id'], point.row?.['id']) && same(one['batch_id'], batch));
+    return row === undefined ? null : this.levelOfRow(point, row);
+  }
+
   /** The level of the batch nobody has named, in a stock point. */
   unassignedLevel(line: string, point: Point): Level {
     const read = point.row === null ? undefined : this.read('levels').find((one) => same(one['stock_point_id'], point.row?.['id']) && yes(one['unassigned']));
@@ -231,6 +255,16 @@ export class Book {
       more.label,
     );
     this.take(level, -qty);
+  }
+
+  /** One movement of a level known only by its key (a count line names its level outright). */
+  moveAt(line: string, levelId: Value, kind: string, qty: bigint, cost: bigint, more: { reason?: Value; reverses?: Value } = {}): void {
+    this.insert(line, 'movements', { level_id: levelId, kind, qty: text(qty, QTY), unit_cost: text(cost, COST), reason_id: more.reason ?? null, note: null, reverses_id: more.reverses ?? null, pair_id: null });
+  }
+
+  /** A change of what is on order at a stock point. `qty` is signed: more on order is plus. */
+  onOrder(line: string, point: Point, qty: bigint, kind: string): void {
+    this.insert(line, 'on_order_moves', { stock_point_id: point.ref as Value | { '@row': string }, qty: text(qty, QTY), kind });
   }
 
   /** Marks a stock point as one to count again. A point this answer adds cannot be marked yet. */

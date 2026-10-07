@@ -12,8 +12,13 @@
  */
 import type { PostingInput, PostingOutput } from '@adminium/add-on-contracts';
 
+import { adopt } from './adopt.ts';
 import { Book } from './book.ts';
+import { count, countMark, countReverse } from './count.ts';
 import { giveBack } from './give-back.ts';
+import { onOrder, onOrderClose } from './orders.ts';
+import { receive, receiveReverse, sendBack } from './receive.ts';
+import { reorder } from './reorder.ts';
 import { transfer } from './transfer.ts';
 import { reverse, use } from './use.ts';
 import { words } from './words.ts';
@@ -26,7 +31,9 @@ function rows(input: PostingInput): PostingOutput {
   }
   // Whatever the action, a round is undone by the opposite of what it wrote: nothing is worked out again.
   if (input.phase === 'reverse') {
-    reverse(book);
+    if (input.action === 'receive') receiveReverse(book);
+    else if (input.action === 'count') countReverse(book);
+    else reverse(book);
     return book.output();
   }
   switch (input.action) {
@@ -42,6 +49,30 @@ function rows(input: PostingInput): PostingOutput {
       break;
     case 'transfer':
       for (const line of input.lines) transfer(book, line);
+      break;
+    case 'receive':
+      receive(book);
+      break;
+    case 'send-back':
+      sendBack(book);
+      break;
+    case 'on-order':
+      onOrder(book);
+      break;
+    case 'on-order-close':
+      onOrderClose(book);
+      break;
+    case 'count-mark':
+      countMark(book);
+      break;
+    case 'count':
+      count(book);
+      break;
+    case 'reorder':
+      reorder(book);
+      break;
+    case 'adopt':
+      adopt(book);
       break;
     default:
       throw new Error(`the stock ledger has no action "${input.action}"`);

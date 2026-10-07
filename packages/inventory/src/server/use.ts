@@ -125,7 +125,7 @@ function reserve(book: Book, line: PostingLine, usage: Usage): void {
   book.promise(point, usage.amount);
 }
 
-/** The opposite of everything the round wrote: each movement given back, each hold let go. */
+/** The opposite of everything the round wrote: each movement given back, each hold let go, what was on order as it was. */
 export function reverse(book: Book): void {
   const at = book.first();
   for (const row of book.written('movements')) {
@@ -143,6 +143,11 @@ export function reverse(book: Book): void {
   }
   for (const row of book.written('reservations')) {
     if (row['state'] === 'held') book.update(at, 'reservations', row['id'] as never, { state: 'released' });
+  }
+  // What a round took off (or put on) what is on order is put back: the units are expected again.
+  for (const row of book.written('on_order_moves')) {
+    const qty = read(row['qty'], QTY) ?? 0n;
+    if (qty !== 0n) book.insert(at, 'on_order_moves', { stock_point_id: row['stock_point_id'] ?? null, qty: text(-qty, QTY), kind: 'reopened' });
   }
 }
 

@@ -1,0 +1,38 @@
+/**
+ * WHAT IS ON ORDER.
+ *
+ * When an order is sent, each of its lines is on order at the place it will
+ * arrive. A receipt takes off what arrives. When a person closes or cancels
+ * the order, what is still open is taken off; reopening puts it back. The
+ * order's own state is the person's move: nothing here changes an order.
+ */
+
+import { type Book, inputText, type Row, same } from './book.ts';
+import { max, QTY, readOr0 } from './decimal.ts';
+
+/** The order line a call's line stands for: lines are handed by their own key. */
+function orderLine(book: Book, key: string): Row {
+  const found = book.read('order_lines').find((row) => same(row['id'], key));
+  if (found === undefined) throw new Error(`order line ${key} was not read`);
+  return found;
+}
+
+export function onOrder(book: Book): void {
+  for (const line of book.input.lines) {
+    const row = orderLine(book, line.line);
+    const place = inputText(line, 'place');
+    if (place === null) throw new Error('an order with no place');
+    const qty = readOr0(row['qty'], QTY);
+    if (qty > 0n) book.onOrder(line.line, book.point(line.line, book.item(row['item_id']), place), qty, 'sent');
+  }
+}
+
+export function onOrderClose(book: Book): void {
+  for (const line of book.input.lines) {
+    const row = orderLine(book, line.line);
+    const place = inputText(line, 'place');
+    if (place === null) throw new Error('an order with no place');
+    const open = max(0n, readOr0(row['qty'], QTY) - readOr0(row['received'], QTY));
+    if (open > 0n) book.onOrder(line.line, book.point(line.line, book.item(row['item_id']), place), -open, inputText(line, 'how') === 'cancelled' ? 'cancelled' : 'closed');
+  }
+}
