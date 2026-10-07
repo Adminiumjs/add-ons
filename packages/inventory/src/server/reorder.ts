@@ -9,7 +9,7 @@
  * raised if it is short and never added twice.
  */
 
-import { type Book, type Ref, type Row, same, textOf, yes } from './book.ts';
+import { type Book, inputKey, type Ref, type Row, same, textOf, type Value, yes } from './book.ts';
 import { COST, max, QTY, readOr0, text, whole } from './decimal.ts';
 
 /** The most lines a draft order takes. */
@@ -20,9 +20,19 @@ const ceilDiv = (a: bigint, b: bigint): bigint => (a + b - 1n) / b;
 
 export function reorder(book: Book): void {
   const at = book.first();
+  /*
+   * The request itself is read once it is written. Before that — the look
+   * Adminium takes ahead of the save, to learn which locks the answer stands
+   * on — there is no row yet, and the stock point comes from what the request
+   * hands in. What is planned for the order is the same either way; only what
+   * is written back onto the request waits for the request to be there.
+   */
   const request = book.read('request').find((row) => same(row['id'], book.input.source.row));
-  if (request === undefined) throw new Error('the reorder request was not read');
-  const point = book.read('points').find((row) => same(row['id'], request['stock_point_id']));
+  const pointId = request === undefined ? inputKey(book.input.lines[0]!, 'point') : (request['stock_point_id'] ?? null);
+  const settle = (set: Record<string, Value>): void => {
+    if (request !== undefined) book.update(at, 'reorder_requests', request['id'] as never, set);
+  };
+  const point = book.read('points').find((row) => same(row['id'], pointId));
   if (point === undefined) throw new Error('the stock point of a reorder request was not read');
   const item = book.item(point['item_id']);
   const level = readOr0(point['reorder_level'], QTY);
@@ -35,14 +45,14 @@ export function reorder(book: Book): void {
   if (spare > 0n && spare >= need) {
     const most = others.reduce((best, row) => (spareOf(row) > spareOf(best) ? row : best));
     const where = textOf(most['place_name']);
-    book.update(at, 'reorder_requests', request['id'] as never, { status: 'elsewhere', elsewhere: where });
+    settle({ status: 'elsewhere', elsewhere: where });
     book.update(at, 'stock_points', point['id'] as never, { request_note: 'elsewhere', request_elsewhere: where, request_supplier: null });
     return;
   }
 
   const pref = book.read('prefs').find((row) => same(row['item_id'], item['id']));
   if (pref === undefined) {
-    book.update(at, 'reorder_requests', request['id'] as never, { status: 'needs_supplier' });
+    settle({ status: 'needs_supplier' });
     book.update(at, 'stock_points', point['id'] as never, { request_note: 'needs_supplier', request_elsewhere: null, request_supplier: null });
     book.note(at, 'no-supplier', textOf(item['name']) ?? undefined);
     return;
@@ -73,7 +83,7 @@ export function reorder(book: Book): void {
   const qty = text(packs * packSize, QTY);
   if (line !== undefined) {
     if (readOr0(line['packs'], QTY) < whole(Number(packs), QTY)) book.update(at, 'po_lines', line['id'] as never, { packs: text(whole(Number(packs), QTY), QTY) });
-    book.update(at, 'reorder_requests', request['id'] as never, { status: 'drafted', qty, po_line_id: line['id'] ?? null });
+    settle({ status: 'drafted', qty, po_line_id: line['id'] ?? null });
   } else {
     book.insert(at, 'po_lines', {
       po_id: order as never,
@@ -85,7 +95,7 @@ export function reorder(book: Book): void {
       price: text(readOr0(pref['price'], COST), COST),
     });
     // A line this answer adds has no key yet for the request to name: the stock point says where it went.
-    book.update(at, 'reorder_requests', request['id'] as never, { status: 'drafted', qty });
+    settle({ status: 'drafted', qty });
   }
   book.update(at, 'stock_points', point['id'] as never, { request_note: 'drafted', request_supplier: textOf(pref['supplier_name']), request_elsewhere: null });
 }

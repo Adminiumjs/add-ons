@@ -261,6 +261,17 @@ export const STOCK_CASES: Case[] = [
     },
   },
   {
+    name: 'also · the look ahead of the save, before the request is a row: the same order and line, and nothing written onto a request that is not there yet',
+    input: call({ action: 'reorder', source: { table: 'inventory:reorder_requests', row: '' }, lines: [lineFor('new', { item: 20, point: 200 })], reads: { request: [], items: [I.tshirt], points: [shirtPoint], prefs: [shirtPref], drafts: [], draft_lines: [] } }),
+    expect: {
+      rows: [
+        { op: 'insert', table: 'purchase_orders', label: 'po:5:2', line: 'new', values: { supplier_id: 5, place_id: PLACE.shop, status: 'draft', note: null } },
+        { op: 'insert', table: 'po_lines', line: 'new', values: { po_id: { '@row': 'po:5:2' }, item_id: 20, supplier_code: 'NG-TS-BM', pack_name: 'box', packs: '2.000', pack_size: '6.000', price: '44.4000' } },
+        { op: 'update', table: 'stock_points', line: 'new', key: { id: 200 }, set: { request_note: 'drafted', request_supplier: 'Northgate', request_elsewhere: null } },
+      ],
+    },
+  },
+  {
     name: 'also · thirteen wanted, six to a pack: three packs, never two and a bit',
     input: reorderCall(806, { request: [request(806, 200, 20)], items: [I.tshirt], points: [{ ...shirtPoint, reorder_qty: '13.000' }], prefs: [shirtPref], drafts: [DRAFT], draft_lines: [] }),
     expect: {
