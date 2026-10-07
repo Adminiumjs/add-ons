@@ -172,3 +172,114 @@ describe.skipIf(ledgers.length === 0)('the ledger', () => {
     for (const ledger of ledgers) expect(ledger.writes['levels']?.insert).not.toContain('opening');
   });
 });
+
+interface Move {
+  to: string;
+  planned?: boolean;
+  roles?: string[];
+  requires?: { where?: { column: string; eq?: unknown }[]; linked?: { via: string; where: { column: string; eq?: unknown }[] }[]; children?: Record<string, number> };
+}
+interface Posting {
+  id: string;
+  into: { addOn: string; ledger: string; action: string };
+  via?: string;
+  post?: { on: Record<string, unknown> };
+  reverse?: { on: Record<string, unknown> };
+}
+const statesOf = (ref: string) => (tableOf(ref) as unknown as { states: { moves: Record<string, (string | Move)[]> } }).states;
+const moveOf = (ref: string, from: string, to: string): Move => {
+  const found = (statesOf(ref).moves[from] ?? []).map((move) => (typeof move === 'string' ? { to: move } : move)).find((move) => move.to === to);
+  if (found === undefined) throw new Error(`${ref}: no move ${from} → ${to}`);
+  return found;
+};
+const postingsOf = (ref: string): Posting[] => ((tableOf(ref) as unknown as { postings?: Posting[] }).postings ?? []);
+
+describe.skipIf(!tables.some((table) => table.ref === 'receipts'))('the documents', () => {
+  it('make thirty tables in all, and a ledger of thirteen actions over twelve of them', () => {
+    expect(tables).toHaveLength(30);
+    const [stock] = ledgers;
+    expect(Object.keys(stock?.actions ?? {}).sort()).toEqual(
+      ['adopt', 'count', 'count-mark', 'hold', 'on-order', 'on-order-close', 'receive', 'reorder', 'return', 'send-back', 'transfer', 'use', 'use-item'].sort(),
+    );
+    expect(Object.keys(stock?.writes ?? {})).toHaveLength(12);
+  });
+
+  it('post into their own ledger, each posting to an action it has', () => {
+    const own = tables.flatMap((table) => postingsOf(table.ref).map((posting) => ({ table: table.ref, ...posting })));
+    expect(own.map((posting) => `${posting.table}/${posting.id} → ${posting.into.action}`).sort()).toEqual(
+      [
+        'count_lines/count → count',
+        'count_marks/mark → count-mark',
+        'po_lines/close → on-order-close',
+        'po_lines/on-order → on-order',
+        'receipt_lines/receive → receive',
+        'receipt_lines/send-back → send-back',
+        'reorder_requests/draft → reorder',
+        'transfer_lines/move → transfer',
+        'uses/use → use-item',
+      ].sort(),
+    );
+    for (const posting of own) {
+      expect(posting.into).toMatchObject({ addOn: 'inventory', ledger: 'stock' });
+      expect(Object.keys(ledgers[0]?.actions ?? {}), posting.id).toContain(posting.into.action);
+    }
+  });
+
+  it('post line by line: a line moves only while its sheet is being posted, and back only while it is being undone', () => {
+    for (const [lines, via, done] of [
+      ['receipt_lines', 'receipt_id', 'draft'],
+      ['transfer_lines', 'transfer_id', 'draft'],
+      ['count_lines', 'count_id', 'open'],
+    ] as const) {
+      expect(moveOf(lines, done, 'posted').requires?.linked, lines).toEqual([{ via, where: [{ column: 'status', eq: 'posting' }] }]);
+      expect(moveOf(lines, 'posted', 'reversed').requires?.linked, lines).toEqual([{ via, where: [{ column: 'status', eq: 'reversing' }] }]);
+    }
+  });
+
+  it('never call a sheet posted, or undone, while a line of it is left', () => {
+    expect(moveOf('receipts', 'posting', 'posted').requires?.where).toEqual([{ column: 'unposted', eq: 0 }]);
+    expect(moveOf('transfers', 'posting', 'done').requires?.where).toEqual([{ column: 'unposted', eq: 0 }]);
+    expect(moveOf('counts', 'posting', 'posted').requires?.where).toEqual([{ column: 'unposted', eq: 0 }]);
+    for (const [sheet, from] of [['receipts', 'reversing'], ['transfers', 'reversing'], ['counts', 'reversing']] as const) {
+      expect(moveOf(sheet, from, 'reversed').requires?.where, sheet).toEqual([{ column: 'unreversed', eq: 0 }]);
+    }
+    // A count is posted only once every line of it has been counted.
+    expect(moveOf('counts', 'open', 'posting').requires).toEqual({ children: { count_lines: 1 }, where: [{ column: 'uncounted', eq: 0 }] });
+  });
+
+  it('keep the way back for a manager', () => {
+    for (const [ref, from, to] of [
+      ['receipts', 'posted', 'reversing'],
+      ['receipts', 'reversing', 'reversed'],
+      ['transfers', 'done', 'reversing'],
+      ['counts', 'posted', 'reversing'],
+      ['receipt_lines', 'posted', 'reversed'],
+      ['receipt_lines', 'posted', 'sent_back'],
+      ['transfer_lines', 'posted', 'reversed'],
+    ] as const) {
+      expect(moveOf(ref, from, to).roles, `${ref} ${from} → ${to}`).toEqual(['manager']);
+    }
+  });
+
+  it('let only the deciding code say an order has arrived', () => {
+    expect(moveOf('purchase_orders', 'sent', 'part_received').planned).toBe(true);
+    expect(moveOf('purchase_orders', 'sent', 'received').planned).toBe(true);
+    // A person closes a part-received order and reopens a received one; nobody reopens a cancelled one.
+    expect(moveOf('purchase_orders', 'part_received', 'received').planned).toBeUndefined();
+    expect(moveOf('purchase_orders', 'received', 'part_received').planned).toBeUndefined();
+    expect(statesOf('purchase_orders').moves['cancelled']).toBeUndefined();
+    // An order is sent with at least one line, and takes no line after.
+    expect(moveOf('purchase_orders', 'draft', 'sent').requires).toEqual({ children: { po_lines: 1 } });
+  });
+
+  it('put what is on order on the stock point when the order is sent, and take the rest off when a person closes it', () => {
+    const [onOrder, close] = postingsOf('po_lines');
+    expect(onOrder).toMatchObject({ id: 'on-order', via: 'po_id', post: { on: { to: ['sent'] } } });
+    expect(onOrder?.reverse).toBeUndefined();
+    expect(close).toMatchObject({ id: 'close', via: 'po_id', post: { on: { to: ['received', 'cancelled'], from: ['sent', 'part_received'] } }, reverse: { on: { to: ['part_received'], from: ['received'] } } });
+  });
+
+  it('hold a draft order to fifty lines, the most its email lists', () => {
+    expect((tableOf('po_lines') as unknown as { capacity: unknown }).capacity).toEqual({ kind: 'parent', via: 'po_id', size: 50 });
+  });
+});
