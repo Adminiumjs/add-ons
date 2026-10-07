@@ -127,8 +127,10 @@ export function Rules({ t }: { t: AddOnTranslate }): ReactNode {
   if (read === null) return <PageFrame t={t} title={t('rules.title', 'Stock rules')} loading={failed === null} error={failed} onRetry={() => void load()} />;
 
   const base = (rule: { table: string; id: string }): string => `/api/v1/connections/${encodeURIComponent(read.kit.connectionId)}/tables/${encodeURIComponent(rule.table)}/postings/${encodeURIComponent(rule.id)}`;
-  // A rule of an app this add-on is not switched on for does nothing, and is not drawn.
-  const drawn = [...read.rules.filter((rule) => rule.state !== 'idle' && rule.owner !== null), ...read.rules.filter((rule) => rule.state !== 'idle' && rule.owner === null)];
+  // A rule of an app this add-on is not switched on for does nothing, and is not drawn. Nor are the add-on's own:
+  // how a receipt line or a count line posts is how Inventory works, not a rule anybody set or may switch off.
+  const shown = read.rules.filter((rule) => rule.state !== 'idle' && rule.owner !== 'inventory');
+  const drawn = [...shown.filter((rule) => rule.owner !== null), ...shown.filter((rule) => rule.owner === null)];
   const key = (rule: Listed): string => `${rule.table}:${rule.id}`;
 
   const toggle = async (rule: Listed, enabled: boolean): Promise<void> => {

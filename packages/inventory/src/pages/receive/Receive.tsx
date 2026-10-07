@@ -541,7 +541,7 @@ export function Receive({ t, receiptId, poId }: ReceiveProps): ReactNode {
                 {line.status === 'draft' && status === 'draft' && line.ordered === null ? (
                   <Stack direction="row" justify="end">
                     <IconButton label={t('receive.remove', 'Remove {item}', { item: line.itemName })} variant="ghost" disabled={working} onClick={() => remove(line)}>
-                      <Trash />
+                      <Trash className="size-4" />
                     </IconButton>
                   </Stack>
                 ) : null}

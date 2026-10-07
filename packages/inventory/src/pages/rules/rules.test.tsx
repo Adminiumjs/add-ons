@@ -12,6 +12,8 @@ const t = wordsFor(SHARED, REFUSAL, RULES);
 const app = { table: 'main.ordering_order_items', tableLabel: 'Order items', id: 'stock', action: 'hold', via: 'order_id', reserve: { on: { to: ['placed'] } }, post: { on: { to: ['preparing'] } }, map: { what: 'menu_item_id', quantity: 'qty' }, owner: 'online-ordering', enabled: true, state: 'live', holding: 2, unplanned: 0 };
 const mine = { table: 'main.jobs', tableLabel: 'Jobs', id: 'stock-1', action: 'use-item', post: { on: { to: ['done'] } }, map: { item: 'item_id', quantity: { value: 1 } }, owner: null, enabled: true, state: 'live', holding: 0, unplanned: 3 };
 const idle = { ...app, table: 'main.hotel_stays', tableLabel: 'Stays', owner: 'hotel-reservations', state: 'idle' };
+/** How the add-on's own receipt lines post: the ledger lists it, and it is nobody's rule to see or switch. */
+const own = { ...mine, table: 'main.inventory_receipt_lines', tableLabel: 'inventory_receipt_lines', id: 'receive', owner: 'inventory' };
 const sources = {
   tables: [
     { table: 'main.jobs', label: 'Jobs', states: ['open', 'done'], columns: [{ name: 'item_id', label: 'Item', type: 'fk', decided: false }, { name: 'title', label: 'Title', type: 'text', decided: false }, { name: 'qty', label: 'Quantity', type: 'decimal', decided: false }], lineOf: [{ table: 'main.inventory_items', via: 'item_id' }] },
@@ -22,7 +24,7 @@ const sources = {
 };
 
 const sent: { verb: string; path: string; body?: unknown }[] = [];
-function serve(canChange: boolean, postings: unknown[] = [app, mine, idle]): void {
+function serve(canChange: boolean, postings: unknown[] = [app, mine, idle, own]): void {
   seed('settings', [{ id: 1 }]);
   seed('places', [{ id: 2, name: 'Shop floor', active: true }]);
   sent.length = 0;
@@ -64,7 +66,7 @@ describe('Stock rules', () => {
     serve(true);
     render(<Rules t={t} />);
     await screen.findByText('Order items');
-    expect(screen.getAllByText(/^(Order items|Jobs|Stays)$/).map((node) => node.textContent)).toEqual(['Order items', 'Jobs']);
+    expect(screen.getAllByText(/^(Order items|Jobs|Stays|inventory_receipt_lines)$/).map((node) => node.textContent)).toEqual(['Order items', 'Jobs']);
     const theirs = card('Order items');
     expect(within(theirs).getByText('From Online ordering')).toBeTruthy();
     expect(within(theirs).getByText('When its order_id moves to placed, hold the stock.')).toBeTruthy();

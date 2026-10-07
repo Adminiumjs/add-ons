@@ -430,7 +430,6 @@ export function CountSheet({ t, countId }: { t: AddOnTranslate; countId: string 
             lineKey={(line) => text(line['id'])}
             lineLabel={(line) => text(line['item_name'])}
             loading={lines.loading}
-            cardsBelow={900}
             empty={
               <EmptyState
                 compact

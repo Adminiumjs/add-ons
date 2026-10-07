@@ -398,7 +398,7 @@ export function Transfer({ t, transferId }: { t: AddOnTranslate; transferId: str
                       if (line.id !== null) setRemoved((ids) => [...ids, line.id as string]);
                     }}
                   >
-                    <Trash />
+                    <Trash className="size-4" />
                   </IconButton>
                 </Stack>
               ) : null
