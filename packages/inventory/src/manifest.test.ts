@@ -373,8 +373,11 @@ describe.skipIf(roles.length < 3)('the roles', () => {
 
   it('let the viewer read, and only read', () => {
     const viewer = roleOf('viewer');
-    expect(viewer.permissions.every((grant) => /^table:@[a-z_]+:read$/.test(grant))).toBe(true);
-    expect(viewer.permissions).toHaveLength(tables.length - 1);
+    const onTables = viewer.permissions.filter((grant) => grant.startsWith('table:'));
+    expect(onTables.every((grant) => /^table:@[a-z_]+:read$/.test(grant))).toBe(true);
+    expect(onTables).toHaveLength(tables.length - 1);
+    // Beside the tables it holds only the pages it may open.
+    expect(viewer.permissions.filter((grant) => !grant.startsWith('table:')).every((grant) => /^page:@[a-z-]+:view$/.test(grant))).toBe(true);
   });
 });
 

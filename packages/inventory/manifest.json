@@ -1142,6 +1142,23 @@
                     ]
                   }
                 ]
+              },
+              "options": {
+                "values": [
+                  {
+                    "value": "0",
+                    "label": {
+                      "en-US": "No"
+                    }
+                  },
+                  {
+                    "value": "1",
+                    "label": {
+                      "en-US": "Yes"
+                    },
+                    "tone": "warn"
+                  }
+                ]
               }
             }
           },
@@ -1194,7 +1211,24 @@
                   0
                 ]
               },
-              "announce": true
+              "announce": true,
+              "options": {
+                "values": [
+                  {
+                    "value": "0",
+                    "label": {
+                      "en-US": "No"
+                    }
+                  },
+                  {
+                    "value": "1",
+                    "label": {
+                      "en-US": "Yes"
+                    },
+                    "tone": "warn"
+                  }
+                ]
+              }
             }
           },
           {
@@ -1241,7 +1275,39 @@
                   0
                 ]
               },
-              "announce": true
+              "announce": true,
+              "options": {
+                "values": [
+                  {
+                    "value": "0",
+                    "label": {
+                      "en-US": "In stock"
+                    },
+                    "tone": "pos"
+                  },
+                  {
+                    "value": "1",
+                    "label": {
+                      "en-US": "Low"
+                    },
+                    "tone": "warn"
+                  },
+                  {
+                    "value": "2",
+                    "label": {
+                      "en-US": "On order"
+                    },
+                    "tone": "info"
+                  },
+                  {
+                    "value": "3",
+                    "label": {
+                      "en-US": "Out"
+                    },
+                    "tone": "danger"
+                  }
+                ]
+              }
             }
           },
           {
@@ -2340,7 +2406,98 @@
                 "draft"
               ]
             }
-          }
+          },
+          "actions": [
+            {
+              "id": "send",
+              "label": {
+                "en-US": "Send to supplier"
+              },
+              "tone": "primary",
+              "move": {
+                "to": "sent"
+              },
+              "set": {
+                "sent_how": "email"
+              },
+              "confirm": {
+                "en-US": "Email this order to the supplier's address on the order?"
+              }
+            },
+            {
+              "id": "mark-sent",
+              "label": {
+                "en-US": "Mark as sent, no email"
+              },
+              "tone": "neutral",
+              "move": {
+                "to": "sent"
+              },
+              "set": {
+                "sent_how": "none"
+              },
+              "confirm": {
+                "en-US": "The order is marked sent and counts as on order. Nothing is emailed."
+              }
+            },
+            {
+              "id": "send-again",
+              "label": {
+                "en-US": "Send again"
+              },
+              "set": {
+                "resent_at": {
+                  "now": true
+                }
+              },
+              "in": [
+                "sent",
+                "part_received"
+              ],
+              "confirm": {
+                "en-US": "Email this order to the supplier's address again?"
+              }
+            },
+            {
+              "id": "close",
+              "label": {
+                "en-US": "Close: the rest will not come"
+              },
+              "tone": "neutral",
+              "move": {
+                "to": "received"
+              },
+              "confirm": {
+                "en-US": "What is still on order for this order is taken off. The order reads received."
+              }
+            },
+            {
+              "id": "cancel",
+              "label": {
+                "en-US": "Cancel order"
+              },
+              "tone": "danger",
+              "move": {
+                "to": "cancelled"
+              },
+              "confirm": {
+                "en-US": "The order stays on record as cancelled. What it had on order is taken off. The supplier is not emailed."
+              }
+            },
+            {
+              "id": "reopen",
+              "label": {
+                "en-US": "Reopen"
+              },
+              "tone": "neutral",
+              "move": {
+                "to": "part_received"
+              },
+              "confirm": {
+                "en-US": "What was taken off when this order was closed counts as on order again."
+              }
+            }
+          ]
         }
       },
       {
@@ -4674,7 +4831,20 @@
         "table:@reorder_requests:read",
         "table:@reorder_requests:create",
         "table:@reorder_requests:update",
-        "table:@messages:read"
+        "table:@messages:read",
+        "page:@inventory-items:view",
+        "page:@inventory-stock-by-place:view",
+        "page:@inventory-movements:view",
+        "page:@inventory-receipts:view",
+        "page:@inventory-transfers:view",
+        "page:@inventory-purchase-orders:view",
+        "page:@inventory-batches:view",
+        "page:@inventory-suppliers:view",
+        "page:@inventory-places:view",
+        "page:@inventory-categories:view",
+        "page:@inventory-reasons:view",
+        "page:@inventory-kits:view",
+        "page:@inventory-settings:view"
       ],
       "limits": {
         "batches": {
@@ -4768,7 +4938,15 @@
         "table:@count_lines:create",
         "table:@count_marks:read",
         "table:@count_marks:create",
-        "table:@reorder_requests:read"
+        "table:@reorder_requests:read",
+        "page:@inventory-items:view",
+        "page:@inventory-stock-by-place:view",
+        "page:@inventory-movements:view",
+        "page:@inventory-receipts:view",
+        "page:@inventory-transfers:view",
+        "page:@inventory-purchase-orders:view",
+        "page:@inventory-batches:view",
+        "page:@inventory-kits:view"
       ],
       "limits": {
         "suppliers": {
@@ -5119,7 +5297,19 @@
         "table:@count_lines:read",
         "table:@count_marks:read",
         "table:@reorder_requests:read",
-        "table:@messages:read"
+        "table:@messages:read",
+        "page:@inventory-items:view",
+        "page:@inventory-stock-by-place:view",
+        "page:@inventory-movements:view",
+        "page:@inventory-receipts:view",
+        "page:@inventory-transfers:view",
+        "page:@inventory-purchase-orders:view",
+        "page:@inventory-batches:view",
+        "page:@inventory-suppliers:view",
+        "page:@inventory-places:view",
+        "page:@inventory-categories:view",
+        "page:@inventory-reasons:view",
+        "page:@inventory-kits:view"
       ]
     }
   ],
@@ -5308,6 +5498,1042 @@
           }
         }
       ]
+    }
+  ],
+  "navGroups": [
+    {
+      "key": "stock",
+      "label": {
+        "en-US": "Stock"
+      },
+      "order": 30
+    },
+    {
+      "key": "stock-setup",
+      "label": {
+        "en-US": "Stock setup"
+      },
+      "order": 31
+    }
+  ],
+  "pages": [
+    {
+      "ref": "inventory-items",
+      "template": "page-crud",
+      "title": {
+        "key": "addon.inventory.page.items",
+        "fallback": "Items"
+      },
+      "nav": {
+        "group": "manifest:stock",
+        "icon": "package",
+        "order": 20
+      },
+      "bindings": {
+        "rows": "items"
+      },
+      "config": {
+        "form": {
+          "v": 2,
+          "sections": [
+            {
+              "id": "s1",
+              "fields": [
+                {
+                  "column": "name",
+                  "control": "title",
+                  "span": 2
+                },
+                {
+                  "column": "sku"
+                },
+                {
+                  "column": "barcode"
+                },
+                {
+                  "column": "category_id",
+                  "control": "reference"
+                },
+                {
+                  "column": "unit_id",
+                  "control": "reference"
+                },
+                {
+                  "column": "active"
+                }
+              ]
+            },
+            {
+              "id": "s2",
+              "fields": [
+                {
+                  "column": "tracks_batches"
+                },
+                {
+                  "column": "when_out",
+                  "control": "select"
+                },
+                {
+                  "column": "pack_name"
+                },
+                {
+                  "column": "pack_size"
+                },
+                {
+                  "column": "note",
+                  "control": "textarea",
+                  "span": 2
+                }
+              ]
+            },
+            {
+              "id": "s3",
+              "fields": [
+                {
+                  "column": "on_hand",
+                  "control": "readonly"
+                },
+                {
+                  "column": "cost_avg",
+                  "control": "readonly"
+                },
+                {
+                  "column": "value",
+                  "control": "readonly"
+                }
+              ]
+            }
+          ]
+        },
+        "filters": [
+          {
+            "column": "category_id",
+            "control": "record"
+          },
+          {
+            "column": "active",
+            "control": "yes-no"
+          },
+          {
+            "column": "tracks_batches",
+            "control": "yes-no"
+          },
+          {
+            "column": "when_out",
+            "control": "one-of"
+          }
+        ],
+        "tabs": {
+          "stock_points": {
+            "noNew": true
+          },
+          "movements": {
+            "noNew": true
+          },
+          "batches": {
+            "noNew": true
+          }
+        }
+      }
+    },
+    {
+      "ref": "inventory-stock-by-place",
+      "template": "page-crud",
+      "title": {
+        "key": "addon.inventory.page.stock-by-place",
+        "fallback": "Stock by place"
+      },
+      "nav": {
+        "group": "manifest:stock",
+        "icon": "warehouse",
+        "order": 30
+      },
+      "bindings": {
+        "rows": "stock_points"
+      },
+      "config": {
+        "form": {
+          "v": 2,
+          "sections": [
+            {
+              "id": "s1",
+              "fields": [
+                {
+                  "column": "item_name",
+                  "control": "readonly"
+                },
+                {
+                  "column": "place_name",
+                  "control": "readonly"
+                },
+                {
+                  "column": "state",
+                  "control": "readonly"
+                },
+                {
+                  "column": "on_hand",
+                  "control": "readonly"
+                },
+                {
+                  "column": "reserved",
+                  "control": "readonly"
+                },
+                {
+                  "column": "available",
+                  "control": "readonly"
+                },
+                {
+                  "column": "on_order",
+                  "control": "readonly"
+                },
+                {
+                  "column": "value",
+                  "control": "readonly"
+                }
+              ]
+            },
+            {
+              "id": "s2",
+              "fields": [
+                {
+                  "column": "reorder_level"
+                },
+                {
+                  "column": "reorder_qty"
+                },
+                {
+                  "column": "reorder_paused"
+                }
+              ]
+            },
+            {
+              "id": "s3",
+              "fields": [
+                {
+                  "column": "last_counted_at",
+                  "control": "readonly"
+                },
+                {
+                  "column": "needs_count",
+                  "control": "readonly"
+                }
+              ]
+            }
+          ]
+        },
+        "filters": [
+          {
+            "column": "place_id",
+            "control": "record"
+          },
+          {
+            "column": "state",
+            "control": "any-of"
+          },
+          {
+            "column": "low",
+            "control": "one-of"
+          },
+          {
+            "column": "to_reorder",
+            "control": "one-of"
+          },
+          {
+            "column": "category_id",
+            "control": "record"
+          },
+          {
+            "column": "needs_count",
+            "control": "yes-no"
+          }
+        ],
+        "tabs": {
+          "levels": {
+            "noNew": true
+          },
+          "reorder_requests": {
+            "noNew": true
+          }
+        },
+        "bulk": [
+          {
+            "id": "reorder",
+            "label": {
+              "en-US": "Reorder"
+            },
+            "child": {
+              "table": "reorder_requests",
+              "via": "stock_point_id",
+              "form": []
+            },
+            "where": {
+              "column": "to_reorder",
+              "eq": 1
+            },
+            "confirm": {
+              "title": {
+                "en-US": "Reorder {count} items"
+              },
+              "body": {
+                "en-US": "They go onto a draft order you can check before sending."
+              },
+              "columns": [
+                "item_name",
+                "place_name",
+                "available",
+                "reorder_level",
+                "reorder_qty"
+              ]
+            },
+            "done": {
+              "en-US": "{count} items handled. Open Purchase orders to check the drafts."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "ref": "inventory-movements",
+      "template": "page-crud",
+      "title": {
+        "key": "addon.inventory.page.movements",
+        "fallback": "Movements"
+      },
+      "nav": {
+        "group": "manifest:stock",
+        "icon": "arrow-left-right",
+        "order": 40
+      },
+      "bindings": {
+        "rows": "movements"
+      },
+      "config": {
+        "filters": [
+          {
+            "column": "kind",
+            "control": "any-of"
+          },
+          {
+            "column": "place_id",
+            "control": "record"
+          },
+          {
+            "column": "item_id",
+            "control": "record"
+          },
+          {
+            "column": "batch_id",
+            "control": "record"
+          },
+          {
+            "column": "at",
+            "control": "date-range"
+          },
+          {
+            "column": "reason_id",
+            "control": "record"
+          }
+        ]
+      }
+    },
+    {
+      "ref": "inventory-receipts",
+      "template": "page-crud",
+      "title": {
+        "key": "addon.inventory.page.receipts",
+        "fallback": "Receipts"
+      },
+      "nav": {
+        "group": "manifest:stock",
+        "icon": "package-check",
+        "order": 60
+      },
+      "bindings": {
+        "rows": "receipts"
+      },
+      "config": {
+        "filters": [
+          {
+            "column": "status",
+            "control": "any-of"
+          },
+          {
+            "column": "kind",
+            "control": "one-of"
+          },
+          {
+            "column": "place_id",
+            "control": "record"
+          },
+          {
+            "column": "supplier_id",
+            "control": "record"
+          },
+          {
+            "column": "received_at",
+            "control": "date-range"
+          },
+          {
+            "column": "cost_to_check",
+            "control": "number-range"
+          }
+        ],
+        "defaultFilters": [
+          {
+            "column": "status",
+            "op": "in",
+            "value": [
+              "draft",
+              "posting",
+              "posted"
+            ]
+          }
+        ],
+        "tabs": {
+          "receipt_lines": {
+            "noNew": true,
+            "empty": {
+              "en-US": "Nothing received on this receipt."
+            }
+          }
+        }
+      }
+    },
+    {
+      "ref": "inventory-transfers",
+      "template": "page-crud",
+      "title": {
+        "key": "addon.inventory.page.transfers",
+        "fallback": "Transfers"
+      },
+      "nav": {
+        "group": "manifest:stock",
+        "icon": "truck",
+        "order": 80
+      },
+      "bindings": {
+        "rows": "transfers"
+      },
+      "config": {
+        "form": {
+          "v": 2,
+          "sections": [
+            {
+              "id": "s1",
+              "fields": [
+                {
+                  "column": "from_place_id",
+                  "control": "reference"
+                },
+                {
+                  "column": "to_place_id",
+                  "control": "reference"
+                },
+                {
+                  "column": "note",
+                  "control": "textarea",
+                  "span": 2
+                }
+              ]
+            }
+          ]
+        },
+        "filters": [
+          {
+            "column": "status",
+            "control": "any-of"
+          },
+          {
+            "column": "from_place_id",
+            "control": "record"
+          },
+          {
+            "column": "to_place_id",
+            "control": "record"
+          }
+        ],
+        "tabs": {
+          "transfer_lines": {
+            "noNew": true
+          }
+        }
+      }
+    },
+    {
+      "ref": "inventory-purchase-orders",
+      "template": "page-crud",
+      "title": {
+        "key": "addon.inventory.page.purchase-orders",
+        "fallback": "Purchase orders"
+      },
+      "nav": {
+        "group": "manifest:stock",
+        "icon": "clipboard-list",
+        "order": 90
+      },
+      "bindings": {
+        "rows": "purchase_orders"
+      },
+      "config": {
+        "form": {
+          "v": 2,
+          "sections": [
+            {
+              "id": "s1",
+              "fields": [
+                {
+                  "column": "supplier_id",
+                  "control": "reference"
+                },
+                {
+                  "column": "place_id",
+                  "control": "reference"
+                },
+                {
+                  "column": "supplier_email",
+                  "control": "email"
+                },
+                {
+                  "column": "expected_on",
+                  "control": "date"
+                },
+                {
+                  "column": "note",
+                  "control": "textarea",
+                  "span": 2
+                }
+              ]
+            },
+            {
+              "id": "s2",
+              "fields": [
+                {
+                  "column": "show_prices"
+                },
+                {
+                  "column": "auto_send"
+                },
+                {
+                  "column": "language"
+                }
+              ]
+            },
+            {
+              "id": "s3",
+              "fields": [
+                {
+                  "relation": "po_lines",
+                  "control": "child-rows",
+                  "span": 2,
+                  "columns": [
+                    {
+                      "column": "item_id",
+                      "control": "reference",
+                      "width": "3fr"
+                    },
+                    {
+                      "column": "supplier_code",
+                      "width": "1fr"
+                    },
+                    {
+                      "column": "packs",
+                      "width": "1fr"
+                    },
+                    {
+                      "column": "pack_name",
+                      "width": "1fr"
+                    },
+                    {
+                      "column": "pack_size",
+                      "width": "1fr"
+                    },
+                    {
+                      "column": "price",
+                      "width": "1fr"
+                    },
+                    {
+                      "column": "amount",
+                      "width": "1fr",
+                      "readOnly": true
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "s4",
+              "fields": [
+                {
+                  "column": "total",
+                  "control": "readonly"
+                },
+                {
+                  "column": "sent_at",
+                  "control": "readonly"
+                },
+                {
+                  "column": "sent_by",
+                  "control": "readonly"
+                },
+                {
+                  "column": "resent_at",
+                  "control": "readonly"
+                },
+                {
+                  "column": "received_at",
+                  "control": "readonly"
+                },
+                {
+                  "column": "deliver_to",
+                  "control": "readonly"
+                }
+              ]
+            }
+          ]
+        },
+        "filters": [
+          {
+            "column": "status",
+            "control": "any-of"
+          },
+          {
+            "column": "supplier_id",
+            "control": "record"
+          },
+          {
+            "column": "place_id",
+            "control": "record"
+          },
+          {
+            "column": "auto_send",
+            "control": "yes-no"
+          },
+          {
+            "column": "sent_at",
+            "control": "date-range"
+          }
+        ],
+        "tabs": {
+          "receipts": {
+            "noNew": true,
+            "empty": {
+              "en-US": "Nothing received yet."
+            },
+            "emptyBody": {
+              "en-US": "Each delivery you receive against this order is listed here."
+            }
+          },
+          "messages": {
+            "noNew": true,
+            "empty": {
+              "en-US": "Not sent yet."
+            },
+            "emptyBody": {
+              "en-US": "Emails to the supplier about this order are listed here."
+            }
+          }
+        }
+      }
+    },
+    {
+      "ref": "inventory-batches",
+      "template": "page-crud",
+      "title": {
+        "key": "addon.inventory.page.batches",
+        "fallback": "Batches"
+      },
+      "nav": {
+        "group": "manifest:stock",
+        "icon": "layers",
+        "order": 100
+      },
+      "bindings": {
+        "rows": "levels"
+      },
+      "config": {
+        "filters": [
+          {
+            "column": "place_id",
+            "control": "record"
+          },
+          {
+            "column": "item_id",
+            "control": "record"
+          },
+          {
+            "column": "expires_on",
+            "control": "date-range"
+          }
+        ]
+      }
+    },
+    {
+      "ref": "inventory-suppliers",
+      "template": "page-crud",
+      "title": {
+        "key": "addon.inventory.page.suppliers",
+        "fallback": "Suppliers"
+      },
+      "nav": {
+        "group": "manifest:stock-setup",
+        "icon": "building-2",
+        "order": 110
+      },
+      "bindings": {
+        "rows": "suppliers"
+      },
+      "config": {
+        "form": {
+          "v": 2,
+          "sections": [
+            {
+              "id": "s1",
+              "fields": [
+                {
+                  "column": "name",
+                  "control": "title",
+                  "span": 2
+                },
+                {
+                  "column": "email",
+                  "control": "email"
+                },
+                {
+                  "column": "phone",
+                  "control": "phone"
+                },
+                {
+                  "column": "lead_days"
+                },
+                {
+                  "column": "active"
+                },
+                {
+                  "column": "note",
+                  "control": "textarea",
+                  "span": 2
+                }
+              ]
+            }
+          ]
+        },
+        "filters": [
+          {
+            "column": "active",
+            "control": "yes-no"
+          }
+        ],
+        "tabs": {
+          "purchase_orders": {
+            "noNew": true
+          }
+        }
+      }
+    },
+    {
+      "ref": "inventory-places",
+      "template": "page-crud",
+      "title": {
+        "key": "addon.inventory.page.places",
+        "fallback": "Places"
+      },
+      "nav": {
+        "group": "manifest:stock-setup",
+        "icon": "map-pin",
+        "order": 120
+      },
+      "bindings": {
+        "rows": "places"
+      },
+      "config": {
+        "form": {
+          "v": 2,
+          "sections": [
+            {
+              "id": "s1",
+              "fields": [
+                {
+                  "column": "name",
+                  "control": "title",
+                  "span": 2
+                },
+                {
+                  "column": "for_sale"
+                },
+                {
+                  "column": "active"
+                },
+                {
+                  "column": "position"
+                },
+                {
+                  "column": "address",
+                  "control": "textarea",
+                  "span": 2
+                }
+              ]
+            }
+          ]
+        },
+        "filters": [
+          {
+            "column": "active",
+            "control": "yes-no"
+          },
+          {
+            "column": "for_sale",
+            "control": "yes-no"
+          }
+        ]
+      }
+    },
+    {
+      "ref": "inventory-categories",
+      "template": "page-crud",
+      "title": {
+        "key": "addon.inventory.page.categories",
+        "fallback": "Categories"
+      },
+      "nav": {
+        "group": "manifest:stock-setup",
+        "icon": "tags",
+        "order": 130
+      },
+      "bindings": {
+        "rows": "categories"
+      },
+      "config": {
+        "form": {
+          "v": 2,
+          "sections": [
+            {
+              "id": "s1",
+              "fields": [
+                {
+                  "column": "name",
+                  "control": "title",
+                  "span": 2
+                },
+                {
+                  "column": "position"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ref": "inventory-reasons",
+      "template": "page-crud",
+      "title": {
+        "key": "addon.inventory.page.reasons",
+        "fallback": "Reasons"
+      },
+      "nav": {
+        "group": "manifest:stock-setup",
+        "icon": "message-square-warning",
+        "order": 140
+      },
+      "bindings": {
+        "rows": "reasons"
+      },
+      "config": {
+        "form": {
+          "v": 2,
+          "sections": [
+            {
+              "id": "s1",
+              "fields": [
+                {
+                  "column": "label",
+                  "control": "title",
+                  "span": 2
+                },
+                {
+                  "column": "for",
+                  "control": "select"
+                },
+                {
+                  "column": "active"
+                }
+              ]
+            }
+          ]
+        },
+        "filters": [
+          {
+            "column": "for",
+            "control": "one-of"
+          },
+          {
+            "column": "active",
+            "control": "yes-no"
+          }
+        ]
+      }
+    },
+    {
+      "ref": "inventory-kits",
+      "template": "page-crud",
+      "title": {
+        "key": "addon.inventory.page.kits",
+        "fallback": "Kits"
+      },
+      "nav": {
+        "group": "manifest:stock-setup",
+        "icon": "boxes",
+        "order": 150
+      },
+      "bindings": {
+        "rows": "kits"
+      },
+      "config": {
+        "form": {
+          "v": 2,
+          "sections": [
+            {
+              "id": "s1",
+              "fields": [
+                {
+                  "column": "name",
+                  "control": "title",
+                  "span": 2
+                },
+                {
+                  "column": "active"
+                },
+                {
+                  "column": "note",
+                  "control": "textarea",
+                  "span": 2
+                }
+              ]
+            },
+            {
+              "id": "s2",
+              "fields": [
+                {
+                  "relation": "kit_lines",
+                  "control": "child-rows",
+                  "span": 2,
+                  "columns": [
+                    {
+                      "column": "item_id",
+                      "control": "reference",
+                      "width": "3fr"
+                    },
+                    {
+                      "column": "qty",
+                      "width": "1fr"
+                    },
+                    {
+                      "column": "per",
+                      "width": "1fr"
+                    },
+                    {
+                      "column": "action",
+                      "width": "1fr"
+                    },
+                    {
+                      "column": "place_id",
+                      "control": "reference",
+                      "width": "2fr"
+                    },
+                    {
+                      "column": "to_place_id",
+                      "control": "reference",
+                      "width": "2fr"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "filters": [
+          {
+            "column": "active",
+            "control": "yes-no"
+          }
+        ]
+      }
+    },
+    {
+      "ref": "inventory-settings",
+      "template": "page-crud",
+      "title": {
+        "key": "addon.inventory.page.settings",
+        "fallback": "Settings"
+      },
+      "nav": {
+        "group": "manifest:stock-setup",
+        "icon": "settings",
+        "order": 180
+      },
+      "bindings": {
+        "rows": "settings"
+      },
+      "config": {
+        "form": {
+          "v": 2,
+          "sections": [
+            {
+              "id": "s1",
+              "fields": [
+                {
+                  "column": "business_name"
+                },
+                {
+                  "column": "reply_to",
+                  "control": "email"
+                },
+                {
+                  "column": "deliver_to",
+                  "control": "textarea",
+                  "span": 2
+                },
+                {
+                  "column": "supplier_language"
+                },
+                {
+                  "column": "po_show_prices"
+                },
+                {
+                  "column": "po_prefix"
+                }
+              ]
+            },
+            {
+              "id": "s2",
+              "fields": [
+                {
+                  "column": "default_place_id",
+                  "control": "reference"
+                },
+                {
+                  "column": "default_unit_id",
+                  "control": "reference"
+                },
+                {
+                  "column": "when_out_staff",
+                  "control": "select"
+                },
+                {
+                  "column": "when_out_public",
+                  "control": "select"
+                },
+                {
+                  "column": "show_left_below"
+                },
+                {
+                  "column": "count_stale_days"
+                }
+              ]
+            }
+          ]
+        }
+      }
     }
   ],
   "addOn": {
