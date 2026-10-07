@@ -4832,6 +4832,7 @@
         "table:@reorder_requests:create",
         "table:@reorder_requests:update",
         "table:@messages:read",
+        "page:@inventory-overview:view",
         "page:@inventory-items:view",
         "page:@inventory-stock-by-place:view",
         "page:@inventory-movements:view",
@@ -5298,6 +5299,7 @@
         "table:@count_marks:read",
         "table:@reorder_requests:read",
         "table:@messages:read",
+        "page:@inventory-overview:view",
         "page:@inventory-items:view",
         "page:@inventory-stock-by-place:view",
         "page:@inventory-movements:view",
@@ -5517,6 +5519,618 @@
     }
   ],
   "pages": [
+    {
+      "ref": "inventory-overview",
+      "template": "page-dashboard",
+      "title": {
+        "key": "addon.inventory.page.overview",
+        "fallback": "Overview"
+      },
+      "nav": {
+        "group": "manifest:stock",
+        "icon": "layout-dashboard",
+        "order": 10
+      },
+      "config": {
+        "layout": {
+          "version": 1,
+          "toolbar": {
+            "links": [
+              {
+                "label": "Receive stock",
+                "href": "/add-ons/inventory/inventory-receive",
+                "icon": "package-plus",
+                "tone": "primary"
+              },
+              {
+                "label": "Start a count",
+                "href": "/add-ons/inventory/inventory-counts?start=1",
+                "icon": "clipboard-check"
+              }
+            ]
+          },
+          "items": [
+            {
+              "i": "value",
+              "widget": "kpi-stat-card",
+              "x": 0,
+              "y": 0,
+              "w": 4,
+              "h": 3,
+              "config": {
+                "title": "Stock value",
+                "deltaMode": "none",
+                "showSparkline": false,
+                "metricFormat": "currency",
+                "metricLabel": "at average cost",
+                "iconName": "package",
+                "href": "/p/inventory-stock-by-place",
+                "binding": {
+                  "kind": "table-query",
+                  "source": {
+                    "name": "stock_points",
+                    "type": "table"
+                  },
+                  "shape": "metric+delta",
+                  "aggregations": [
+                    {
+                      "fn": "sum",
+                      "column": "value",
+                      "alias": "value"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "i": "low",
+              "widget": "kpi-stat-card",
+              "x": 4,
+              "y": 0,
+              "w": 4,
+              "h": 3,
+              "config": {
+                "title": "Running low",
+                "deltaMode": "none",
+                "showSparkline": false,
+                "metricLabel": "at or below the reorder level",
+                "iconName": "clock-alert",
+                "href": "/p/inventory-stock-by-place?f.low=eq:1",
+                "binding": {
+                  "kind": "table-query",
+                  "source": {
+                    "name": "stock_points",
+                    "type": "table"
+                  },
+                  "shape": "metric+delta",
+                  "aggregations": [
+                    {
+                      "fn": "count",
+                      "alias": "low"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "column": "low",
+                      "op": "eq",
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "i": "out",
+              "widget": "kpi-stat-card",
+              "x": 8,
+              "y": 0,
+              "w": 4,
+              "h": 3,
+              "config": {
+                "title": "Out",
+                "deltaMode": "none",
+                "showSparkline": false,
+                "metricLabel": "nothing on hand",
+                "iconName": "package",
+                "href": "/p/inventory-stock-by-place?f.low=eq:1&f.on_hand=lte:0",
+                "binding": {
+                  "kind": "table-query",
+                  "source": {
+                    "name": "stock_points",
+                    "type": "table"
+                  },
+                  "shape": "metric+delta",
+                  "aggregations": [
+                    {
+                      "fn": "count",
+                      "alias": "out"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "column": "low",
+                      "op": "eq",
+                      "value": 1
+                    },
+                    {
+                      "column": "on_hand",
+                      "op": "lte",
+                      "value": 0
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "i": "expiring",
+              "widget": "kpi-stat-card",
+              "x": 0,
+              "y": 3,
+              "w": 4,
+              "h": 3,
+              "config": {
+                "title": "Expiring within 30 days",
+                "deltaMode": "none",
+                "showSparkline": false,
+                "metricLabel": "batches in a place",
+                "iconName": "calendar-x",
+                "href": "/p/inventory-batches?f.expires_on=lte:today+30&f.qty=gt:0",
+                "binding": {
+                  "kind": "table-query",
+                  "source": {
+                    "name": "levels",
+                    "type": "table"
+                  },
+                  "shape": "metric+delta",
+                  "aggregations": [
+                    {
+                      "fn": "count",
+                      "alias": "expiring"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "column": "qty",
+                      "op": "gt",
+                      "value": 0
+                    },
+                    {
+                      "column": "expires_on",
+                      "op": "gte",
+                      "day": "today"
+                    },
+                    {
+                      "column": "expires_on",
+                      "op": "lte",
+                      "day": "today+30"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "i": "open-orders",
+              "widget": "kpi-stat-card",
+              "x": 4,
+              "y": 3,
+              "w": 4,
+              "h": 3,
+              "config": {
+                "title": "Orders on the way",
+                "deltaMode": "none",
+                "showSparkline": false,
+                "iconName": "receipt",
+                "href": "/p/inventory-purchase-orders?f.status=in:sent,part_received",
+                "binding": {
+                  "kind": "table-query",
+                  "source": {
+                    "name": "purchase_orders",
+                    "type": "table"
+                  },
+                  "shape": "metric+delta",
+                  "aggregations": [
+                    {
+                      "fn": "count",
+                      "alias": "orders"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "column": "status",
+                      "op": "in",
+                      "value": [
+                        "sent",
+                        "part_received"
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "i": "to-reorder",
+              "widget": "kpi-stat-card",
+              "x": 8,
+              "y": 3,
+              "w": 4,
+              "h": 3,
+              "config": {
+                "title": "To reorder",
+                "deltaMode": "none",
+                "showSparkline": false,
+                "iconName": "clipboard-check",
+                "href": "/p/inventory-stock-by-place?f.to_reorder=eq:1",
+                "binding": {
+                  "kind": "table-query",
+                  "source": {
+                    "name": "stock_points",
+                    "type": "table"
+                  },
+                  "shape": "metric+delta",
+                  "aggregations": [
+                    {
+                      "fn": "count",
+                      "alias": "to_reorder"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "column": "to_reorder",
+                      "op": "eq",
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "i": "running-low",
+              "widget": "mini-table",
+              "x": 0,
+              "y": 6,
+              "w": 7,
+              "h": 7,
+              "config": {
+                "title": "Running low",
+                "columns": [
+                  {
+                    "name": "item_name",
+                    "label": "Item"
+                  },
+                  {
+                    "name": "state",
+                    "label": "State"
+                  },
+                  {
+                    "name": "available",
+                    "label": "Available"
+                  }
+                ],
+                "secondary": [
+                  "place_name",
+                  "reorder_level"
+                ],
+                "emptyState": {
+                  "titleKey": "Nothing is running low. Set levels on Stock by place."
+                },
+                "viewAllHref": "/p/inventory-stock-by-place?f.low=eq:1",
+                "subtitle": "Available against the reorder level",
+                "binding": {
+                  "kind": "table-query",
+                  "source": {
+                    "name": "stock_points",
+                    "type": "table"
+                  },
+                  "shape": "record-list",
+                  "select": [
+                    "id",
+                    "item_name",
+                    "state",
+                    "available",
+                    "place_name",
+                    "reorder_level"
+                  ],
+                  "filters": [
+                    {
+                      "column": "low",
+                      "op": "eq",
+                      "value": 1
+                    }
+                  ],
+                  "orderBy": [
+                    {
+                      "column": "available",
+                      "dir": "asc"
+                    }
+                  ],
+                  "limit": 6
+                }
+              }
+            },
+            {
+              "i": "by-place",
+              "widget": "chart-ranking-bars",
+              "x": 7,
+              "y": 6,
+              "w": 5,
+              "h": 7,
+              "config": {
+                "title": "Value by place",
+                "subtitle": "At average cost",
+                "metricFormat": "currency",
+                "emptyState": {
+                  "titleKey": "No stock in any place yet."
+                },
+                "binding": {
+                  "kind": "table-query",
+                  "source": {
+                    "name": "stock_points",
+                    "type": "table"
+                  },
+                  "shape": "categorical",
+                  "groupBy": [
+                    "place_id"
+                  ],
+                  "groupLabel": "place_id.name",
+                  "aggregations": [
+                    {
+                      "fn": "sum",
+                      "column": "value",
+                      "alias": "value"
+                    }
+                  ],
+                  "limit": 6
+                }
+              }
+            },
+            {
+              "i": "expiring-soon",
+              "widget": "mini-table",
+              "x": 0,
+              "y": 13,
+              "w": 4,
+              "h": 7,
+              "config": {
+                "title": "Expiring soon",
+                "columns": [
+                  {
+                    "name": "item_name",
+                    "label": "Item"
+                  },
+                  {
+                    "name": "qty",
+                    "label": "Left"
+                  }
+                ],
+                "secondary": [
+                  "batch_code",
+                  "expires_on"
+                ],
+                "emptyState": {
+                  "titleKey": "Nothing expires in the next 30 days."
+                },
+                "viewAllHref": "/p/inventory-batches?f.expires_on=lte:today+30&f.qty=gt:0",
+                "binding": {
+                  "kind": "table-query",
+                  "source": {
+                    "name": "levels",
+                    "type": "table"
+                  },
+                  "shape": "record-list",
+                  "select": [
+                    "id",
+                    "item_name",
+                    "batch_code",
+                    "expires_on",
+                    "qty"
+                  ],
+                  "filters": [
+                    {
+                      "column": "qty",
+                      "op": "gt",
+                      "value": 0
+                    },
+                    {
+                      "column": "expires_on",
+                      "op": "gte",
+                      "day": "today"
+                    },
+                    {
+                      "column": "expires_on",
+                      "op": "lte",
+                      "day": "today+30"
+                    }
+                  ],
+                  "orderBy": [
+                    {
+                      "column": "expires_on",
+                      "dir": "asc"
+                    }
+                  ],
+                  "limit": 6
+                }
+              }
+            },
+            {
+              "i": "orders",
+              "widget": "mini-table",
+              "x": 4,
+              "y": 13,
+              "w": 4,
+              "h": 7,
+              "config": {
+                "title": "Purchase orders",
+                "columns": [
+                  {
+                    "name": "number",
+                    "label": "Order"
+                  },
+                  {
+                    "name": "status",
+                    "label": "State"
+                  },
+                  {
+                    "name": "total",
+                    "label": "Total"
+                  }
+                ],
+                "secondary": [
+                  "supplier_name",
+                  "sent_at",
+                  "expected_on"
+                ],
+                "emptyState": {
+                  "titleKey": "Orders you send to suppliers show here."
+                },
+                "viewAllHref": "/p/inventory-purchase-orders",
+                "binding": {
+                  "kind": "table-query",
+                  "source": {
+                    "name": "purchase_orders",
+                    "type": "table"
+                  },
+                  "shape": "record-list",
+                  "select": [
+                    "id",
+                    "number",
+                    "status",
+                    "total",
+                    "supplier_name",
+                    "sent_at",
+                    "expected_on"
+                  ],
+                  "orderBy": [
+                    {
+                      "column": "number",
+                      "dir": "desc"
+                    }
+                  ],
+                  "limit": 6
+                }
+              }
+            },
+            {
+              "i": "movements",
+              "widget": "mini-table",
+              "x": 8,
+              "y": 13,
+              "w": 4,
+              "h": 7,
+              "config": {
+                "title": "Latest movements",
+                "columns": [
+                  {
+                    "name": "item",
+                    "label": "Item"
+                  },
+                  {
+                    "name": "kind",
+                    "label": "Kind"
+                  },
+                  {
+                    "name": "qty",
+                    "label": "Quantity"
+                  }
+                ],
+                "secondary": [
+                  "place",
+                  "from"
+                ],
+                "emptyState": {
+                  "titleKey": "Nothing has moved yet."
+                },
+                "viewAllHref": "/p/inventory-movements",
+                "binding": {
+                  "kind": "table-query",
+                  "source": {
+                    "name": "movements",
+                    "type": "table"
+                  },
+                  "shape": "record-list",
+                  "select": [
+                    "id",
+                    "kind",
+                    "qty",
+                    "at"
+                  ],
+                  "lookups": [
+                    "item:item_id.name",
+                    "place:place_id.name",
+                    "from:pair_id.place_id.name"
+                  ],
+                  "filters": [
+                    {
+                      "column": "kind",
+                      "op": "neq",
+                      "value": "moved_out"
+                    }
+                  ],
+                  "orderBy": [
+                    {
+                      "column": "at",
+                      "dir": "desc"
+                    },
+                    {
+                      "column": "id",
+                      "dir": "desc"
+                    }
+                  ],
+                  "limit": 6
+                }
+              }
+            },
+            {
+              "i": "used",
+              "widget": "kpi-stat-card",
+              "x": 0,
+              "y": 20,
+              "w": 4,
+              "h": 3,
+              "config": {
+                "title": "Sold and used last month",
+                "deltaMode": "none",
+                "showSparkline": false,
+                "metricFormat": "currency",
+                "iconName": "receipt",
+                "href": "/p/inventory-movements?f.kind=in:sold,used",
+                "binding": {
+                  "kind": "table-query",
+                  "source": {
+                    "name": "movements",
+                    "type": "table"
+                  },
+                  "shape": "metric+delta",
+                  "aggregations": [
+                    {
+                      "fn": "sum",
+                      "column": "cost_out",
+                      "alias": "cost"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "column": "kind",
+                      "op": "in",
+                      "value": [
+                        "sold",
+                        "used"
+                      ]
+                    }
+                  ],
+                  "window": {
+                    "column": "at",
+                    "last": 1,
+                    "unit": "month",
+                    "calendar": true,
+                    "offset": 1
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
     {
       "ref": "inventory-items",
       "template": "page-crud",

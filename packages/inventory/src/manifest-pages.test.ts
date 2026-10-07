@@ -64,7 +64,8 @@ interface Role {
 }
 
 const tables = manifest.requiredSchema.tables as unknown as Table[];
-const pages = (manifest as unknown as { pages: Page[] }).pages;
+/** The lists Adminium draws; the Overview, a dashboard, has a suite of its own. */
+const pages = (manifest as unknown as { pages: Page[] }).pages.filter((page) => page.template === 'page-crud');
 const roles = (manifest as unknown as { roles: Role[] }).roles;
 const tableOf = (ref: string): Table => {
   const found = tables.find((table) => table.ref === ref);
@@ -215,11 +216,14 @@ describe('the buttons of a purchase order', () => {
 });
 
 describe('who opens which page', () => {
+  /** Every page the manifest declares, the Overview among them. */
+  const everyPage = (manifest as unknown as { pages: Page[] }).pages.map((page) => page.ref);
+
   it('is what the three roles say, and every page has someone', () => {
     for (const page of pages) expect(sees('manager', page.ref), page.ref).toBe(true);
     for (const role of roles) {
       for (const grant of role.permissions.filter((one) => one.startsWith('page:@'))) {
-        expect(pages.map((page) => page.ref), `${role.key} · ${grant}`).toContain(grant.replace(/^page:@|:view$/g, ''));
+        expect(everyPage, `${role.key} · ${grant}`).toContain(grant.replace(/^page:@|:view$/g, ''));
       }
     }
   });
