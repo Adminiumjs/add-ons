@@ -6,7 +6,7 @@
  * built file, and through the contract's own checks.
  */
 
-import { batch, call, type Case, ITEMS, kitLine, level, lineFor, link, movement, PLACE, point, what } from './world.ts';
+import { batch, call, type Case, ITEMS, kitLine, level, lineFor, link, movement, PLACE, point, SETTINGS, what } from './world.ts';
 
 const I = ITEMS;
 const LID = 'Lidocaine 1% ampoule';
@@ -247,6 +247,56 @@ export const CORE_CASES: Case[] = [
     name: 'C25 · a line that used nothing',
     input: call({ action: 'use-item', lines: lidLine({ quantity: 0 }), reads: lidReads('14.000', '50.000') }),
     expect: { rows: [] },
+  },
+  {
+    name: 'also · a named batch goes before the one nobody has named',
+    input: call({
+      action: 'use-item',
+      lines: lidLine({ quantity: 12 }),
+      reads: { items: [I.lidocaine], points: [lidPoint], levels: [level(1002, lidPoint, batch(502, I.lidocaine, '-', null, true), '5.000'), level(1001, lidPoint, LD201, '10.000')], batches: [batch(502, I.lidocaine, '-', null, true)] },
+    }),
+    expect: { rows: [movement('L1', 1001, 'used', '-10.000', '1.1000'), movement('L1', 1002, 'used', '-2.000', '1.1000')] },
+  },
+  {
+    name: 'also · two lines of one save: the second takes what the first left',
+    input: call({ action: 'use-item', lines: [lineFor('L1', { item: 10, place: PLACE.treatment, quantity: 14 }), lineFor('L2', { item: 10, place: PLACE.treatment, quantity: 1 })], reads: lidReads('14.000', '50.000') }),
+    expect: { rows: [movement('L1', 1000, 'used', '-14.000', '1.1000'), movement('L2', 1001, 'used', '-1.000', '1.1000')] },
+  },
+  {
+    name: 'also · a customer cannot be promised stock that is past its date',
+    input: call({ action: 'hold', phase: 'reserve', origin: 'public', today: '2026-10-21', lines: [lineFor('L1', { what: what('visit-7'), ...ONE })], reads: { ...lidReads('14.000', null), points: [point(100, I.lidocaine, PLACE.treatment, '14.000')], links: [link(6, 'visit-7', { item_id: 10, place_id: PLACE.treatment })], kit_lines: [] } }),
+    expect: { rows: [], refusals: [{ line: 'L1', reason: 'expired', left: '0', item: LID }] },
+  },
+  {
+    name: 'also · a fifth bought outright by a customer is refused as a held one is',
+    input: call({ action: 'use', origin: 'public', lines: [lineFor('L1', { what: what('tote'), quantity: 5, kind: 'sold' })], reads: shopReads }),
+    expect: { rows: [], refusals: [{ line: 'L1', reason: 'out-of-stock', left: '4', item: 'Canvas tote natural' }] },
+  },
+  {
+    name: 'also · an item that says stop is stopped though the settings allow',
+    input: call({ action: 'hold', phase: 'reserve', origin: 'public', settings: { ...SETTINGS, when_out_public: 'allow' }, lines: [lineFor('L1', { what: what('shirt'), ...ONE })], reads: shopReads }),
+    expect: { rows: [], refusals: [{ line: 'L1', reason: 'out-of-stock', left: '0', item: 'T-shirt blue M' }] },
+  },
+  {
+    name: 'also · and an item that says allow is promised though the settings stop',
+    input: call({ action: 'hold', phase: 'reserve', origin: 'public', lines: [lineFor('L1', { what: what('tote'), quantity: 9 })], reads: { ...shopReads, items: [I.tshirt, { ...I.tote, when_out: 'allow' }] } }),
+    expect: { rows: [{ op: 'insert', table: 'reservations', line: 'L1', values: { stock_point_id: 201, qty: '9.000', state: 'held' } }] },
+  },
+  {
+    name: 'also · a row linked to two of a kit uses twice of everything',
+    input: call({ action: 'use', lines: [lineFor('L1', { what: what('flu'), ...ONE })], reads: { ...fluReads, links: [link(4, 'flu', { kind: 'kit', kit_id: FLU, place_id: PLACE.treatment, qty: '2.000' })] } }),
+    expect: { rows: [2, 2, 2, 4, 2, 2].map((qty, n) => movement('L1', 4000 + n, 'used', `-${String(qty)}.000`, fluItems[n]!['cost_avg'] as string)) },
+  },
+  {
+    name: 'also · words promise nothing: two questions about one row get one answer',
+    input: call({ action: 'use', mode: 'words', origin: 'public', lines: [lineFor('a', { what: what('tote'), ...ONE }), lineFor('b', { what: what('tote'), ...ONE })], reads: shopReads }),
+    expect: {
+      rows: [],
+      words: [
+        { line: 'a', state: 'low', left: '4', exact: '4', after: '3', cause: 'stock' },
+        { line: 'b', state: 'low', left: '4', exact: '4', after: '3', cause: 'stock' },
+      ],
+    },
   },
   {
     name: 'C29 · words for a stock item: how many, which batch, and that it expires soon',

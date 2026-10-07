@@ -224,6 +224,13 @@ export const STOCK_CASES: Case[] = [
     },
   },
   {
+    name: 'also · thirteen wanted, six to a pack: three packs, never two and a bit',
+    input: reorderCall(806, { request: [request(806, 200, 20)], items: [I.tshirt], points: [{ ...shirtPoint, reorder_qty: '13.000' }], prefs: [shirtPref], drafts: [DRAFT], draft_lines: [] }),
+    expect: {
+      rows: [{ op: 'insert', table: 'po_lines', line: '806', values: { po_id: 9003, item_id: 20, supplier_code: 'NG-TS-BM', pack_name: 'box', packs: '3.000', pack_size: '6.000', price: '44.4000' } }, ...drafted(806, 200, '18.000')],
+    },
+  },
+  {
     name: 'C15 · then on the tote: a line on the same draft',
     input: reorderCall(801, { request: [request(801, 201, 21)], items: [I.tote], points: [totePoint], prefs: [totePref], drafts: [DRAFT], draft_lines: [] }),
     expect: {
