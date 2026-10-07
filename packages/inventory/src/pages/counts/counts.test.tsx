@@ -13,7 +13,7 @@ const t = wordsFor(SHARED, REFUSAL, COUNTS);
 
 const line = (id: number, item: string, more: Record<string, string | number | null> = {}) => ({ id, count_id: 5, level_id: 100 + id, item_id: id, item_name: item, sku: `SKU-${String(id)}`, barcode: `50600001000${String(id)}`, unit: 'each', batch_code: null, counted: null, qty_when_counted: null, counted_at: null, difference: null, value: null, is_counted: 0, differs: 0, status: 'open', ...more });
 
-function sheet(lines = [line(1, 'Alcohol swab'), line(2, 'Gloves, nitrile, L'), line(3, 'Lidocaine 1% ampoule', { batch_code: 'LD118' })]): void {
+function sheet(lines = [line(1, 'Alcohol swab', { batch_code: '-' }), line(2, 'Gloves, nitrile, L'), line(3, 'Lidocaine 1% ampoule', { batch_code: 'LD118' })]): void {
   seed('places', [{ id: 1, name: 'Treatment room', active: true }]);
   seed('categories', []);
   seed('reasons', [{ id: 9, label: 'Count difference', for: 'adjust', active: true }]);
@@ -43,6 +43,9 @@ describe('a count sheet', () => {
     sheet();
     render(<CountSheet t={t} countId="5" />);
     const field = await screen.findByLabelText('Counted, Alcohol swab');
+    // The level nobody put a batch on reads "No batch", never its dash; a real batch reads its code.
+    expect(within(row('Alcohol swab')).getByText('No batch')).toBeTruthy();
+    expect(within(row('Lidocaine 1% ampoule')).getByText('Batch LD118')).toBeTruthy();
     // Before a line is counted, Expected is what the books hold now.
     expect(within(row('Alcohol swab')).getByText(/14\s+each/)).toBeTruthy();
     fireEvent.change(field, { target: { value: '12' } });
