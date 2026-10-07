@@ -1,0 +1,174 @@
+/**
+ * THE MANIFEST, HELD TO WHAT IT PROMISES.
+ *
+ * The manifest is the whole add-on as an installer sees it: the tables it
+ * makes, the rules Adminium keeps on them, the ledger a posting writes into
+ * and the file that decides. This suite validates it with the validator an
+ * install uses, then checks the things a validator cannot know — that the
+ * file it names is the one the build writes, and that the ledger lets the
+ * deciding code write only what is its to write.
+ */
+
+import { validateManifest } from '@adminiumjs/manifest';
+import { describe, expect, it } from 'vitest';
+
+import manifest from '../manifest.json' with { type: 'json' };
+import { OUTPUT } from '../vite.config.ts';
+
+interface Column {
+  ref: string;
+  type: string;
+  role?: string;
+  nullable?: boolean;
+  default?: unknown;
+  maxLength?: number;
+  references?: string;
+  rules?: Record<string, unknown>;
+}
+interface Table {
+  ref: string;
+  columns: Column[];
+  unique?: string[][];
+}
+interface Scope {
+  insert?: string[];
+  update?: { by: string[]; set: string[] };
+}
+interface Ledger {
+  id: string;
+  receipts: string;
+  writes: Record<string, Scope>;
+  actions: Record<string, { writes?: string[]; reads: { as: string; table: string }[] }>;
+}
+
+const tables = manifest.requiredSchema.tables as unknown as Table[];
+const tableOf = (ref: string): Table => {
+  const found = tables.find((table) => table.ref === ref);
+  if (found === undefined) throw new Error(`no table "${ref}"`);
+  return found;
+};
+const ledgers = ((manifest.addOn as { ledgers?: unknown }).ledgers ?? []) as Ledger[];
+
+/** The rules through which Adminium fills a column itself: nothing else may write one. */
+const DECIDING = ['rollup', 'formula', 'copy', 'stamp', 'sequence', 'format', 'code', 'lookup'];
+const decided = (column: Column): boolean => DECIDING.some((rule) => column.rules?.[rule] !== undefined);
+/** Every column a total keeps as its balance. */
+const balances = (table: Table): string[] =>
+  table.columns.flatMap((column) => {
+    const balance = (column.rules?.['rollup'] as { balance?: { column: string } } | undefined)?.balance;
+    return balance === undefined ? [] : [balance.column];
+  });
+
+describe('the manifest', () => {
+  it('is one an install accepts', () => {
+    const result = validateManifest(manifest);
+    const issues = result.ok ? [] : result.issues.map((issue) => `${String(issue.path)}: ${issue.message}`);
+    expect(issues).toEqual([]);
+  });
+
+  it('is an add-on that attaches to every deployment, and to none in particular', () => {
+    expect(manifest.kind).toBe('add-on');
+    expect(manifest.key).toBe('inventory');
+    // It must work with no app at all: stock is received, counted and moved from its own screens.
+    expect(manifest.addOn.attaches).toEqual([{ app: '*' }]);
+    expect(manifest.addOn.connect).toEqual({ kind: 'none' });
+  });
+
+  it('decides what a posting writes, from the file the build writes', () => {
+    expect(manifest.addOn.provides).toEqual([{ contract: 'posting-rows', version: 1, server: OUTPUT.server }]);
+    for (const entry of manifest.addOn.provides) expect(Object.values(OUTPUT)).toContain(entry.server);
+  });
+
+  it('keeps its tables under its own name', () => {
+    expect(manifest.requiredSchema.prefixed).toBe(true);
+  });
+});
+
+describe('the tables', () => {
+  it('each have a key of their own, first, and no two share a name', () => {
+    expect(tables.length).toBeGreaterThan(0);
+    expect(new Set(tables.map((table) => table.ref)).size).toBe(tables.length);
+    for (const table of tables) {
+      expect(table.columns[0], table.ref).toMatchObject({ ref: 'id', role: 'pk' });
+      expect(new Set(table.columns.map((column) => column.ref)).size, table.ref).toBe(table.columns.length);
+    }
+  });
+
+  it('bound every text column, so each can be indexed on every database', () => {
+    for (const table of tables) {
+      for (const column of table.columns.filter((one) => one.type === 'text')) {
+        expect(column.maxLength, `${table.ref}.${column.ref}`).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('keep the catalogue: what is stocked, where, from whom, and what a row of another table uses', () => {
+    for (const ref of ['settings', 'categories', 'units', 'places', 'items', 'suppliers', 'item_suppliers', 'reasons', 'kits', 'kit_lines', 'links']) {
+      expect(tables.map((table) => table.ref), ref).toContain(ref);
+    }
+  });
+
+  it('have one settings row an install can make: every column of it may be empty or has a default', () => {
+    expect((manifest.addOn as { settingsTable?: string }).settingsTable).toBe('settings');
+    for (const column of tableOf('settings').columns.filter((one) => one.role !== 'pk')) {
+      expect(column.nullable === true || column.default !== undefined, `settings.${column.ref}`).toBe(true);
+    }
+  });
+
+  it('name one preferred supplier an item, held by a limit and not by a hope', () => {
+    expect((tableOf('item_suppliers') as unknown as { capacity: unknown }).capacity).toEqual({ kind: 'parent', via: 'item_id', size: 1, countWhere: { column: 'rank', values: ['preferred'] } });
+  });
+
+  it('say which row of another table a link belongs to by a stored table name and a key', () => {
+    const links = tableOf('links');
+    expect(links.columns.find((column) => column.ref === 'source_table')?.rules).toEqual({ tableRef: true });
+    expect(links.unique).toEqual([
+      ['source_table', 'source_row', 'item_id'],
+      ['source_table', 'source_row', 'kit_id'],
+    ]);
+  });
+});
+
+describe.skipIf(ledgers.length === 0)('the ledger', () => {
+  it('lets the deciding code write no column Adminium decides, no balance and no key', () => {
+    for (const ledger of ledgers) {
+      for (const [ref, scope] of Object.entries(ledger.writes)) {
+        const table = tableOf(ref);
+        const kept = new Set([...table.columns.filter(decided).map((column) => column.ref), ...balances(table), 'id', 'receipt_id']);
+        for (const name of [...(scope.insert ?? []), ...(scope.update?.set ?? [])]) {
+          expect(table.columns.map((column) => column.ref), `${ref}.${name}`).toContain(name);
+          expect(kept.has(name), `${ref}.${name} is Adminium's to fill`).toBe(false);
+        }
+      }
+    }
+  });
+
+  it('marks every row the deciding code adds with the receipt that added it', () => {
+    for (const ledger of ledgers) {
+      expect(tableOf(ledger.receipts).ref).toBe('postings');
+      for (const [ref, scope] of Object.entries(ledger.writes)) {
+        if (scope.insert === undefined) continue;
+        expect(tableOf(ref).columns.find((column) => column.ref === 'receipt_id'), ref).toMatchObject({ type: 'fk', references: ledger.receipts, nullable: true });
+      }
+    }
+  });
+
+  it('stays inside the limits a ledger is held to, and no action writes outside it', () => {
+    for (const ledger of ledgers) {
+      expect(Object.keys(ledger.writes).length).toBeLessThanOrEqual(12);
+      expect(Object.keys(ledger.actions).length).toBeLessThanOrEqual(16);
+      for (const [name, action] of Object.entries(ledger.actions)) {
+        expect(action.reads.length, name).toBeLessThanOrEqual(6);
+        expect(action.writes, `${name} says what it writes`).toBeDefined();
+        for (const ref of action.writes ?? []) expect(Object.keys(ledger.writes), `${name} → ${ref}`).toContain(ref);
+      }
+    }
+  });
+
+  it('never lets a level go below nothing, except the batch nobody has named yet', () => {
+    const taken = tableOf('levels').columns.find((column) => column.ref === 'taken');
+    expect(taken?.rules?.['rollup']).toMatchObject({ from: 'movements', sum: 'out_qty', cap: true, capUnless: { column: 'unassigned' }, balance: { column: 'qty', of: 'opening' } });
+    // Nothing writes `opening`: it is there because a cap needs a balance.
+    for (const ledger of ledgers) expect(ledger.writes['levels']?.insert).not.toContain('opening');
+  });
+});

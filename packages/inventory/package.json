@@ -28,6 +28,7 @@
   },
   "devDependencies": {
     "@adminium/add-on-contracts": "npm:@adminiumjs/add-on-contracts@0.3.1",
-    "@adminium/add-on-host": "*"
+    "@adminium/add-on-host": "*",
+    "@adminiumjs/manifest": "0.3.1"
   }
 }

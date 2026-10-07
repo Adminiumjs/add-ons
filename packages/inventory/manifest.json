@@ -4,15 +4,809 @@
   "key": "inventory",
   "name": "Inventory",
   "version": "1.0.8",
-  "publisher": { "id": "adminium", "name": "Adminium", "url": "https://adminium.dev" },
+  "publisher": {
+    "id": "adminium",
+    "name": "Adminium",
+    "url": "https://adminium.dev"
+  },
   "license": "AGPL-3.0-only",
-  "description": { "key": "addon.inventory.description", "fallback": "Stock by place and by batch, counted, received and moved, and taken by the rows of your own tables in the same save." },
-  "categories": ["data"],
-  "compatibility": { "minAdminiumVersion": "0.3.18" },
+  "description": {
+    "key": "addon.inventory.description",
+    "fallback": "Stock by place and by batch, counted, received and moved, and taken by the rows of your own tables in the same save."
+  },
+  "categories": [
+    "data"
+  ],
+  "compatibility": {
+    "minAdminiumVersion": "0.3.18",
+    "requires": []
+  },
   "capabilities": [],
+  "requiredSchema": {
+    "prefixed": true,
+    "tables": [
+      {
+        "ref": "settings",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "default_place_id",
+            "type": "fk",
+            "references": "places",
+            "nullable": true
+          },
+          {
+            "ref": "default_unit_id",
+            "type": "fk",
+            "references": "units",
+            "nullable": true
+          },
+          {
+            "ref": "when_out_staff",
+            "type": "enum",
+            "enum": [
+              "allow",
+              "stop"
+            ],
+            "default": "allow"
+          },
+          {
+            "ref": "when_out_public",
+            "type": "enum",
+            "enum": [
+              "stop",
+              "allow"
+            ],
+            "default": "stop"
+          },
+          {
+            "ref": "show_left_below",
+            "type": "int",
+            "nullable": true
+          },
+          {
+            "ref": "count_stale_days",
+            "type": "int",
+            "default": 90
+          },
+          {
+            "ref": "po_prefix",
+            "type": "text",
+            "maxLength": 12,
+            "default": "PO-"
+          },
+          {
+            "ref": "business_name",
+            "type": "text",
+            "maxLength": 120,
+            "nullable": true
+          },
+          {
+            "ref": "deliver_to",
+            "type": "text",
+            "maxLength": 500,
+            "nullable": true
+          },
+          {
+            "ref": "supplier_language",
+            "type": "text",
+            "maxLength": 12,
+            "nullable": true
+          },
+          {
+            "ref": "po_show_prices",
+            "type": "bool",
+            "default": false
+          },
+          {
+            "ref": "reply_to",
+            "type": "text",
+            "maxLength": 254,
+            "nullable": true,
+            "rules": {
+              "validation": {
+                "format": "email"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "ref": "categories",
+        "keyField": "name",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "name",
+            "type": "text",
+            "maxLength": 80,
+            "unique": true
+          },
+          {
+            "ref": "position",
+            "type": "int",
+            "default": 0
+          }
+        ]
+      },
+      {
+        "ref": "units",
+        "keyField": "code",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "code",
+            "type": "text",
+            "maxLength": 12,
+            "unique": true
+          },
+          {
+            "ref": "name",
+            "type": "text",
+            "maxLength": 40
+          },
+          {
+            "ref": "decimals",
+            "type": "int",
+            "default": 0,
+            "rules": {
+              "validation": {
+                "min": 0,
+                "max": 3
+              }
+            }
+          }
+        ]
+      },
+      {
+        "ref": "places",
+        "keyField": "name",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "name",
+            "type": "text",
+            "maxLength": 80,
+            "unique": true
+          },
+          {
+            "ref": "for_sale",
+            "type": "bool",
+            "default": true
+          },
+          {
+            "ref": "active",
+            "type": "bool",
+            "default": true
+          },
+          {
+            "ref": "position",
+            "type": "int",
+            "default": 0
+          },
+          {
+            "ref": "address",
+            "type": "text",
+            "maxLength": 500,
+            "nullable": true,
+            "rules": {
+              "personal": false
+            }
+          }
+        ]
+      },
+      {
+        "ref": "items",
+        "keyField": "name",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "name",
+            "type": "text",
+            "maxLength": 160
+          },
+          {
+            "ref": "sku",
+            "type": "text",
+            "maxLength": 40,
+            "nullable": true,
+            "unique": true,
+            "rules": {
+              "normalize": "trim"
+            }
+          },
+          {
+            "ref": "barcode",
+            "type": "text",
+            "maxLength": 64,
+            "nullable": true,
+            "rules": {
+              "normalize": "trim"
+            }
+          },
+          {
+            "ref": "category_id",
+            "type": "fk",
+            "references": "categories",
+            "nullable": true
+          },
+          {
+            "ref": "unit_id",
+            "type": "fk",
+            "references": "units",
+            "nullable": true,
+            "rules": {
+              "default": {
+                "from": {
+                  "table": "settings",
+                  "column": "default_unit_id"
+                }
+              }
+            }
+          },
+          {
+            "ref": "unit",
+            "type": "text",
+            "maxLength": 12,
+            "nullable": true,
+            "rules": {
+              "copy": {
+                "via": "unit_id",
+                "from": "code",
+                "mode": "always"
+              }
+            }
+          },
+          {
+            "ref": "decimals",
+            "type": "int",
+            "nullable": true,
+            "rules": {
+              "copy": {
+                "via": "unit_id",
+                "from": "decimals",
+                "mode": "always"
+              }
+            }
+          },
+          {
+            "ref": "tracks_batches",
+            "type": "bool",
+            "default": false
+          },
+          {
+            "ref": "when_out",
+            "type": "enum",
+            "enum": [
+              "default",
+              "stop",
+              "allow"
+            ],
+            "default": "default"
+          },
+          {
+            "ref": "allow_short",
+            "type": "int",
+            "default": 1,
+            "rules": {
+              "formula": {
+                "if": [
+                  {
+                    "eq": [
+                      "when_out",
+                      "stop"
+                    ]
+                  },
+                  0,
+                  1
+                ]
+              }
+            }
+          },
+          {
+            "ref": "active",
+            "type": "bool",
+            "default": true
+          },
+          {
+            "ref": "note",
+            "type": "text",
+            "maxLength": 1000,
+            "nullable": true
+          },
+          {
+            "ref": "pack_name",
+            "type": "text",
+            "maxLength": 40,
+            "nullable": true
+          },
+          {
+            "ref": "pack_size",
+            "type": "decimal",
+            "scale": 3,
+            "nullable": true
+          },
+          {
+            "ref": "cost_avg",
+            "type": "decimal",
+            "scale": 4,
+            "default": 0
+          },
+          {
+            "ref": "supplier_cost",
+            "type": "decimal",
+            "scale": 4,
+            "nullable": true,
+            "rules": {
+              "rollup": {
+                "from": "item_suppliers",
+                "via": "item_id",
+                "sum": "unit_cost",
+                "where": {
+                  "column": "rank",
+                  "eq": "preferred"
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "ref": "suppliers",
+        "keyField": "name",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "name",
+            "type": "text",
+            "maxLength": 120
+          },
+          {
+            "ref": "email",
+            "type": "text",
+            "maxLength": 254,
+            "nullable": true,
+            "rules": {
+              "validation": {
+                "format": "email"
+              },
+              "personal": false
+            }
+          },
+          {
+            "ref": "phone",
+            "type": "text",
+            "maxLength": 40,
+            "nullable": true,
+            "rules": {
+              "personal": false
+            }
+          },
+          {
+            "ref": "lead_days",
+            "type": "int",
+            "nullable": true
+          },
+          {
+            "ref": "note",
+            "type": "text",
+            "maxLength": 1000,
+            "nullable": true
+          },
+          {
+            "ref": "active",
+            "type": "bool",
+            "default": true
+          }
+        ]
+      },
+      {
+        "ref": "item_suppliers",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "item_id",
+            "type": "fk",
+            "references": "items",
+            "index": true
+          },
+          {
+            "ref": "supplier_id",
+            "type": "fk",
+            "references": "suppliers"
+          },
+          {
+            "ref": "supplier_code",
+            "type": "text",
+            "maxLength": 40,
+            "nullable": true
+          },
+          {
+            "ref": "pack_name",
+            "type": "text",
+            "maxLength": 40,
+            "nullable": true
+          },
+          {
+            "ref": "pack_size",
+            "type": "decimal",
+            "scale": 3,
+            "rules": {
+              "validation": {
+                "min": 0.001
+              }
+            }
+          },
+          {
+            "ref": "price",
+            "type": "money",
+            "scale": 4
+          },
+          {
+            "ref": "unit_cost",
+            "type": "decimal",
+            "scale": 4,
+            "nullable": true,
+            "rules": {
+              "formula": {
+                "round": [
+                  {
+                    "div": [
+                      "price",
+                      "pack_size"
+                    ]
+                  },
+                  4
+                ]
+              }
+            }
+          },
+          {
+            "ref": "rank",
+            "type": "enum",
+            "enum": [
+              "preferred",
+              "other"
+            ],
+            "default": "other"
+          },
+          {
+            "ref": "supplier_name",
+            "type": "text",
+            "maxLength": 120,
+            "nullable": true,
+            "rules": {
+              "copy": {
+                "via": "supplier_id",
+                "from": "name",
+                "mode": "always",
+                "follow": true
+              }
+            }
+          }
+        ],
+        "unique": [
+          [
+            "item_id",
+            "supplier_id"
+          ]
+        ],
+        "capacity": {
+          "kind": "parent",
+          "via": "item_id",
+          "size": 1,
+          "countWhere": {
+            "column": "rank",
+            "values": [
+              "preferred"
+            ]
+          }
+        }
+      },
+      {
+        "ref": "reasons",
+        "keyField": "label",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "label",
+            "type": "text",
+            "maxLength": 80
+          },
+          {
+            "ref": "for",
+            "type": "enum",
+            "enum": [
+              "write_off",
+              "adjust",
+              "use"
+            ]
+          },
+          {
+            "ref": "active",
+            "type": "bool",
+            "default": true
+          }
+        ]
+      },
+      {
+        "ref": "kits",
+        "keyField": "name",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "name",
+            "type": "text",
+            "maxLength": 120,
+            "unique": true
+          },
+          {
+            "ref": "active",
+            "type": "bool",
+            "default": true
+          },
+          {
+            "ref": "note",
+            "type": "text",
+            "maxLength": 1000,
+            "nullable": true
+          }
+        ]
+      },
+      {
+        "ref": "kit_lines",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "kit_id",
+            "type": "fk",
+            "references": "kits"
+          },
+          {
+            "ref": "item_id",
+            "type": "fk",
+            "references": "items"
+          },
+          {
+            "ref": "qty",
+            "type": "decimal",
+            "scale": 3,
+            "rules": {
+              "validation": {
+                "min": 0.001
+              }
+            }
+          },
+          {
+            "ref": "per",
+            "type": "enum",
+            "enum": [
+              "unit",
+              "night",
+              "guest",
+              "guest_night"
+            ],
+            "default": "unit"
+          },
+          {
+            "ref": "action",
+            "type": "enum",
+            "enum": [
+              "use",
+              "move"
+            ],
+            "default": "use"
+          },
+          {
+            "ref": "place_id",
+            "type": "fk",
+            "references": "places",
+            "nullable": true
+          },
+          {
+            "ref": "to_place_id",
+            "type": "fk",
+            "references": "places",
+            "nullable": true,
+            "rules": {
+              "requiredWhen": {
+                "column": "action",
+                "in": [
+                  "move"
+                ]
+              }
+            }
+          }
+        ],
+        "unique": [
+          [
+            "kit_id",
+            "item_id"
+          ]
+        ]
+      },
+      {
+        "ref": "links",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "source_table",
+            "type": "text",
+            "maxLength": 120,
+            "rules": {
+              "tableRef": true
+            }
+          },
+          {
+            "ref": "source_row",
+            "type": "text",
+            "maxLength": 64
+          },
+          {
+            "ref": "kind",
+            "type": "enum",
+            "enum": [
+              "item",
+              "kit"
+            ],
+            "default": "item"
+          },
+          {
+            "ref": "item_id",
+            "type": "fk",
+            "references": "items",
+            "nullable": true,
+            "rules": {
+              "requiredWhen": {
+                "column": "kind",
+                "in": [
+                  "item"
+                ]
+              }
+            }
+          },
+          {
+            "ref": "kit_id",
+            "type": "fk",
+            "references": "kits",
+            "nullable": true,
+            "rules": {
+              "requiredWhen": {
+                "column": "kind",
+                "in": [
+                  "kit"
+                ]
+              }
+            }
+          },
+          {
+            "ref": "qty",
+            "type": "decimal",
+            "scale": 3,
+            "default": 1
+          },
+          {
+            "ref": "per",
+            "type": "enum",
+            "enum": [
+              "unit",
+              "night",
+              "guest",
+              "guest_night"
+            ],
+            "default": "unit"
+          },
+          {
+            "ref": "action",
+            "type": "enum",
+            "enum": [
+              "use",
+              "move"
+            ],
+            "default": "use"
+          },
+          {
+            "ref": "place_id",
+            "type": "fk",
+            "references": "places",
+            "nullable": true
+          },
+          {
+            "ref": "to_place_id",
+            "type": "fk",
+            "references": "places",
+            "nullable": true,
+            "rules": {
+              "requiredWhen": {
+                "column": "action",
+                "in": [
+                  "move"
+                ]
+              }
+            }
+          }
+        ],
+        "unique": [
+          [
+            "source_table",
+            "source_row",
+            "item_id"
+          ],
+          [
+            "source_table",
+            "source_row",
+            "kit_id"
+          ]
+        ],
+        "indexes": [
+          [
+            "source_table",
+            "source_row"
+          ]
+        ]
+      }
+    ]
+  },
   "addOn": {
-    "attaches": [{ "app": "*" }],
-    "connect": { "kind": "none" },
-    "provides": [{ "contract": "posting-rows", "version": 1, "server": "dist/server.js" }]
+    "attaches": [
+      {
+        "app": "*"
+      }
+    ],
+    "connect": {
+      "kind": "none"
+    },
+    "provides": [
+      {
+        "contract": "posting-rows",
+        "version": 1,
+        "server": "dist/server.js"
+      }
+    ],
+    "settingsTable": "settings"
   }
 }
