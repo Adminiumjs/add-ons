@@ -186,8 +186,8 @@ describe('the buttons of a purchase order', () => {
 
   it('are the ones each state calls for, and none on a cancelled order', () => {
     expect(shownIn('draft')).toEqual(['send', 'mark-sent', 'cancel']);
-    expect(shownIn('sent')).toEqual(['send-again', 'cancel']);
-    expect(shownIn('part_received')).toEqual(['send-again', 'close']);
+    expect(shownIn('sent')).toEqual(['receive', 'send-again', 'cancel']);
+    expect(shownIn('part_received')).toEqual(['receive', 'send-again', 'close']);
     expect(shownIn('received')).toEqual(['reopen']);
     expect(shownIn('cancelled')).toEqual([]);
   });
@@ -204,7 +204,9 @@ describe('the buttons of a purchase order', () => {
   });
 
   it('ask before every one of them, and mark the one that cannot be taken back', () => {
-    for (const action of actions) expect(action.confirm?.['en-US'], action.id).toBeTruthy();
+    // A button that only opens a screen changes nothing, so it asks nothing.
+    for (const action of actions.filter((one) => one.link === undefined)) expect(action.confirm?.['en-US'], action.id).toBeTruthy();
+    for (const action of actions.filter((one) => one.link !== undefined)) expect(action.confirm, action.id).toBeUndefined();
     expect(actions.filter((action) => action.tone === 'danger').map((action) => action.id)).toEqual(['cancel']);
     expect(actions.filter((action) => action.tone === 'primary').map((action) => action.id)).toEqual(['send']);
   });
@@ -216,8 +218,8 @@ describe('the buttons of a purchase order', () => {
 });
 
 describe('who opens which page', () => {
-  /** Every page the manifest declares, the Overview among them. */
-  const everyPage = (manifest as unknown as { pages: Page[] }).pages.map((page) => page.ref);
+  /** Every page the manifest declares, the Overview among them, and the screens that are code. */
+  const everyPage = [...(manifest as unknown as { pages: Page[] }).pages.map((page) => page.ref), ...manifest.addOn.pages.map((page) => page.ref)];
 
   it('is what the three roles say, and every page has someone', () => {
     for (const page of pages) expect(sees('manager', page.ref), page.ref).toBe(true);

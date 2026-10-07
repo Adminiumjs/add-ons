@@ -15,18 +15,20 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { impuritiesIn } from '@adminium/add-on-host/testing';
 
 import manifest from '../manifest.json' with { type: 'json' };
-import { OUTPUT } from '../vite.config.ts';
+import { BUILT_FILES } from '../vite.config.ts';
 import { buildForReal, DIST } from './testing/build.ts';
 import { bannedHitsIn } from './testing/lexicon.ts';
 import { builtProvider, builtServer, FILE_MAX_BYTES } from './testing/vm.ts';
 
 /** Every built file the manifest names. */
-const DECLARED_ENTRY_POINTS = [...manifest.addOn.provides.map((entry) => entry.server)];
+const DECLARED_ENTRY_POINTS = [...manifest.addOn.provides.map((entry) => entry.server), ...manifest.addOn.pages.map((page) => page.client)];
 
-function built(): string[] {
-  return readdirSync(DIST)
-    .map((entry) => join(DIST, entry))
-    .filter((file) => statSync(file).isFile());
+/** Every file under `dist/`, the screens' folder included. */
+function built(dir = DIST): string[] {
+  return readdirSync(dir).flatMap((entry) => {
+    const path = join(dir, entry);
+    return statSync(path).isDirectory() ? built(path) : [path];
+  });
 }
 
 const asRelative = (file: string) => relative(DIST, file);
@@ -42,13 +44,13 @@ describe('the build writes what the manifest promises', () => {
   it('puts a real file at every entry point the manifest declares', () => {
     expect(DECLARED_ENTRY_POINTS.length).toBeGreaterThan(0);
     for (const path of new Set(DECLARED_ENTRY_POINTS)) {
-      expect(Object.values(OUTPUT), `${path} is declared but the build does not write it`).toContain(path);
+      expect(BUILT_FILES, `${path} is declared but the build does not write it`).toContain(path);
       expect(existsSync(join(DIST, '..', path)), `${path} is declared but not built`).toBe(true);
     }
   });
 
   it('ships the files the build names, and no other', () => {
-    expect(built().map(asRelative).sort()).toEqual(Object.values(OUTPUT).map((path) => path.replace(/^dist\//, '')).sort());
+    expect(built().map(asRelative).sort()).toEqual(BUILT_FILES.map((path) => path.replace(/^dist\//, '')).sort());
   });
 
   it('emits no sourcemap, and no reference to one', () => {

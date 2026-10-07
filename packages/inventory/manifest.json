@@ -2441,6 +2441,20 @@
               }
             },
             {
+              "id": "receive",
+              "label": {
+                "en-US": "Receive"
+              },
+              "link": {
+                "addOnPage": "inventory-receive",
+                "param": "po"
+              },
+              "in": [
+                "sent",
+                "part_received"
+              ]
+            },
+            {
               "id": "send-again",
               "label": {
                 "en-US": "Send again"
@@ -3053,7 +3067,37 @@
                 "reversing"
               ]
             }
-          }
+          },
+          "actions": [
+            {
+              "id": "continue",
+              "label": {
+                "en-US": "Continue"
+              },
+              "link": {
+                "addOnPage": "inventory-receive",
+                "param": "receipt"
+              },
+              "in": [
+                "draft",
+                "posting"
+              ]
+            },
+            {
+              "id": "undo",
+              "label": {
+                "en-US": "Undo or send back"
+              },
+              "link": {
+                "addOnPage": "inventory-receive",
+                "param": "receipt"
+              },
+              "in": [
+                "posted",
+                "reversing"
+              ]
+            }
+          ]
         }
       },
       {
@@ -3663,7 +3707,37 @@
                 "reversing"
               ]
             }
-          }
+          },
+          "actions": [
+            {
+              "id": "continue",
+              "label": {
+                "en-US": "Continue"
+              },
+              "link": {
+                "addOnPage": "inventory-transfer",
+                "param": "transfer"
+              },
+              "in": [
+                "draft",
+                "posting"
+              ]
+            },
+            {
+              "id": "undo",
+              "label": {
+                "en-US": "Undo this transfer"
+              },
+              "link": {
+                "addOnPage": "inventory-transfer",
+                "param": "transfer"
+              },
+              "in": [
+                "done",
+                "reversing"
+              ]
+            }
+          ]
         }
       },
       {
@@ -4872,7 +4946,12 @@
         "page:@inventory-categories:view",
         "page:@inventory-reasons:view",
         "page:@inventory-kits:view",
-        "page:@inventory-settings:view"
+        "page:@inventory-settings:view",
+        "page:@inventory-receive:view",
+        "page:@inventory-transfer:view",
+        "page:@inventory-counts:view",
+        "page:@inventory-opening-stock:view",
+        "page:@inventory-stock-rules:view"
       ],
       "limits": {
         "batches": {
@@ -4974,7 +5053,10 @@
         "page:@inventory-transfers:view",
         "page:@inventory-purchase-orders:view",
         "page:@inventory-batches:view",
-        "page:@inventory-kits:view"
+        "page:@inventory-kits:view",
+        "page:@inventory-receive:view",
+        "page:@inventory-transfer:view",
+        "page:@inventory-counts:view"
       ],
       "limits": {
         "suppliers": {
@@ -5339,7 +5421,8 @@
         "page:@inventory-places:view",
         "page:@inventory-categories:view",
         "page:@inventory-reasons:view",
-        "page:@inventory-kits:view"
+        "page:@inventory-kits:view",
+        "page:@inventory-counts:view"
       ]
     }
   ],
@@ -8121,6 +8204,89 @@
         "contract": "posting-rows",
         "version": 1,
         "server": "dist/server.js"
+      }
+    ],
+    "hostApi": 2,
+    "navGroups": [
+      {
+        "key": "stock",
+        "label": {
+          "key": "addon.inventory.nav.stock",
+          "fallback": "Stock"
+        },
+        "order": 30
+      },
+      {
+        "key": "stock-setup",
+        "label": {
+          "key": "addon.inventory.nav.stockSetup",
+          "fallback": "Stock setup"
+        },
+        "order": 31
+      }
+    ],
+    "pages": [
+      {
+        "ref": "inventory-receive",
+        "title": {
+          "key": "addon.inventory.page.receive",
+          "fallback": "Receive"
+        },
+        "icon": "package-plus",
+        "client": "dist/pages/receive.js",
+        "nav": {
+          "group": "stock",
+          "order": 50
+        }
+      },
+      {
+        "ref": "inventory-transfer",
+        "title": {
+          "key": "addon.inventory.page.transfer",
+          "fallback": "Transfer"
+        },
+        "icon": "truck",
+        "client": "dist/pages/transfer.js"
+      },
+      {
+        "ref": "inventory-counts",
+        "title": {
+          "key": "addon.inventory.page.counts",
+          "fallback": "Counts"
+        },
+        "icon": "clipboard-check",
+        "client": "dist/pages/counts.js",
+        "nav": {
+          "group": "stock",
+          "order": 70
+        },
+        "detail": true
+      },
+      {
+        "ref": "inventory-opening-stock",
+        "title": {
+          "key": "addon.inventory.page.openingStock",
+          "fallback": "Opening stock"
+        },
+        "icon": "file-up",
+        "client": "dist/pages/opening.js",
+        "nav": {
+          "group": "stock-setup",
+          "order": 160
+        }
+      },
+      {
+        "ref": "inventory-stock-rules",
+        "title": {
+          "key": "addon.inventory.page.stockRules",
+          "fallback": "Stock rules"
+        },
+        "icon": "workflow",
+        "client": "dist/pages/rules.js",
+        "nav": {
+          "group": "stock-setup",
+          "order": 170
+        }
       }
     ],
     "settingsTable": "settings",

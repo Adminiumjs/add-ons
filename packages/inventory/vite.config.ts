@@ -1,3 +1,7 @@
+import { fileURLToPath } from 'node:url';
+
+import react from '@vitejs/plugin-react';
+import { build, type Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
 
 /**
@@ -24,9 +28,72 @@ import { defineConfig } from 'vitest/config';
 export const OUTPUT = {
   /** Built from `src/server/index.ts` — the `posting-rows@1` provider. */
   server: 'dist/server.js',
+  /** The screens that are code, each built from `src/pages/<name>/index.tsx` into a file of its own. */
+  pages: {
+    'inventory-receive': 'dist/pages/receive.js',
+    'inventory-transfer': 'dist/pages/transfer.js',
+    'inventory-opening-stock': 'dist/pages/opening.js',
+    'inventory-counts': 'dist/pages/counts.js',
+    'inventory-stock-rules': 'dist/pages/rules.js',
+  },
 } as const;
 
+/**
+ * THE SCREENS, ONE FILE EACH — built after the server file, in the same
+ * `vite build`.
+ *
+ * A screen is served from an address of its own, behind its page's
+ * permission, and nothing beside it can be fetched from there. So each is a
+ * build of its own with everything inlined: two screens sharing a chunk would
+ * be two files importing a third that no address serves. The same goes for
+ * its words — every language rides inside the screen's one file.
+ *
+ * WHAT IS NOT INLINED IS THE HOST. React, the dashboard's parts, its router
+ * and its query cache must each be the one running copy, so those specifiers
+ * are pointed at the published shims, which read the host when the module
+ * loads. The shims themselves ARE inlined: a bare import left in the file
+ * would be resolved by the browser against an address that does not exist.
+ */
+/** Every file the build writes, as the manifest names them. */
+export const BUILT_FILES: readonly string[] = [OUTPUT.server, ...Object.values(OUTPUT.pages)];
+
+function screens(): Plugin {
+  const shim = (name: string): string => fileURLToPath(new URL(`../../node_modules/@adminium/add-on-contracts/dist/runtime/${name}.js`, import.meta.url));
+  return {
+    name: 'add-on-inventory:screens',
+    apply: 'build',
+    async closeBundle() {
+      for (const file of Object.values(OUTPUT.pages)) {
+        const name = file.slice('dist/pages/'.length, -'.js'.length);
+        await build({
+          configFile: false,
+          logLevel: 'warn',
+          plugins: [react()],
+          resolve: {
+            alias: [
+              { find: /^react\/jsx-dev-runtime$/, replacement: shim('jsx-runtime') },
+              { find: /^react\/jsx-runtime$/, replacement: shim('jsx-runtime') },
+              { find: /^react-dom$/, replacement: shim('react-dom') },
+              { find: /^react$/, replacement: shim('react') },
+            ],
+          },
+          build: {
+            // The server file is already in `dist/`: emptying it here would delete what this sits beside.
+            emptyOutDir: false,
+            outDir: 'dist/pages',
+            lib: { entry: `src/pages/${name}/index.tsx`, formats: ['es'], fileName: () => `${name}.js` },
+            rollupOptions: { external: [], output: { inlineDynamicImports: true } },
+            target: 'es2022',
+            sourcemap: false,
+          },
+        });
+      }
+    },
+  };
+}
+
 export default defineConfig({
+  plugins: [screens()],
   build: {
     lib: {
       entry: 'src/server/index.ts',
@@ -44,7 +111,13 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    /*
+     * The screens' suites need a host: `host.tsx` publishes one before any test
+     * file is imported, which is the order the shims require. Each of those
+     * files asks for a DOM itself; everything else here stays headless.
+     */
+    setupFiles: ['src/pages/testing/host.tsx'],
     exclude: ['**/node_modules/**'],
     testTimeout: 120_000,
     fileParallelism: false,

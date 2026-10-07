@@ -13,7 +13,7 @@ import { validateManifest } from '@adminiumjs/manifest';
 import { describe, expect, it } from 'vitest';
 
 import manifest from '../manifest.json' with { type: 'json' };
-import { OUTPUT } from '../vite.config.ts';
+import { BUILT_FILES, OUTPUT } from '../vite.config.ts';
 
 interface Column {
   ref: string;
@@ -76,7 +76,7 @@ describe('the manifest', () => {
 
   it('decides what a posting writes, from the file the build writes', () => {
     expect(manifest.addOn.provides).toEqual([{ contract: 'posting-rows', version: 1, server: OUTPUT.server }]);
-    for (const entry of manifest.addOn.provides) expect(Object.values(OUTPUT)).toContain(entry.server);
+    for (const entry of manifest.addOn.provides) expect(BUILT_FILES).toContain(entry.server);
   });
 
   it('keeps its tables under its own name', () => {
