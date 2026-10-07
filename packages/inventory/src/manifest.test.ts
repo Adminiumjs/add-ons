@@ -283,3 +283,114 @@ describe.skipIf(!tables.some((table) => table.ref === 'receipts'))('the document
     expect((tableOf('po_lines') as unknown as { capacity: unknown }).capacity).toEqual({ kind: 'parent', via: 'po_id', size: 50 });
   });
 });
+
+interface Role {
+  key: string;
+  permissions: string[];
+  limits?: Record<string, { readable?: string[]; writable?: string[]; creatable?: string[]; writableValues?: Record<string, string[]> }>;
+}
+const roles = ((manifest as { roles?: unknown }).roles ?? []) as Role[];
+const roleOf = (key: string): Role => {
+  const found = roles.find((role) => role.key === key);
+  if (found === undefined) throw new Error(`no role "${key}"`);
+  return found;
+};
+const may = (role: Role, table: string, action: string) => role.permissions.includes(`table:@${table}:${action}`);
+
+describe.skipIf(roles.length < 3)('the roles', () => {
+  it('are a manager, a clerk and a viewer — the manager first, because the installer is given the first', () => {
+    expect(roles.map((role) => role.key)).toEqual(['manager', 'clerk', 'viewer']);
+  });
+
+  it('let nobody read the receipts: the only place a row of another table is named', () => {
+    for (const role of roles) {
+      expect(role.permissions.filter((grant) => grant.startsWith('table:@postings:')), role.key).toEqual([]);
+    }
+  });
+
+  it('let no person write what only a posting writes', () => {
+    for (const role of roles) {
+      for (const table of ['levels', 'movements', 'reservations', 'on_order_moves']) {
+        for (const action of ['create', 'update', 'delete']) expect(may(role, table, action), `${role.key} ${table} ${action}`).toBe(false);
+      }
+      // A batch is made by a posting; a manager may only correct its date.
+      expect(may(role, 'batches', 'create'), role.key).toBe(false);
+      expect(may(role, 'batches', 'delete'), role.key).toBe(false);
+    }
+    expect(roleOf('manager').limits?.['batches']).toEqual({ writable: ['expires_on'] });
+    expect(roleOf('manager').limits?.['stock_points']?.writable).toEqual(['reorder_level', 'reorder_qty', 'reorder_paused']);
+  });
+
+  it('keep what things cost from the clerk, column by column', () => {
+    const hidden: Record<string, string[]> = {
+      items: ['cost_avg', 'supplier_cost', 'value'],
+      stock_points: ['cost_avg', 'value'],
+      movements: ['unit_cost', 'amount', 'cost_out'],
+      item_suppliers: ['price', 'unit_cost'],
+      purchase_orders: ['total', 'show_prices'],
+      po_lines: ['price', 'unit_cost', 'amount'],
+      receipts: ['total'],
+      receipt_lines: ['unit_cost', 'po_cost', 'supplier_cost', 'avg_cost', 'cost_used', 'amount'],
+      counts: ['value'],
+      count_lines: ['unit_cost', 'value'],
+    };
+    const clerk = roleOf('clerk');
+    for (const [table, columns] of Object.entries(hidden)) {
+      const readable = clerk.limits?.[table]?.readable;
+      expect(readable, `the clerk's read of ${table} is limited`).toBeDefined();
+      for (const column of columns) {
+        expect(tableOf(table).columns.map((one) => one.ref), `${table}.${column}`).toContain(column);
+        expect(readable, `${table}.${column}`).not.toContain(column);
+      }
+      // Every other column is still read: the list hides by name, it does not shrink by neglect.
+      const rest = tableOf(table).columns.filter((one) => one.role !== 'pk' && !columns.includes(one.ref)).map((one) => one.ref);
+      expect(readable).toEqual(rest);
+    }
+    expect(clerk.limits?.['suppliers']?.readable).toEqual(['name', 'active']);
+    // The clerk types what arrived, never what it cost, and reads no message to a supplier.
+    expect(clerk.limits?.['receipt_lines']?.creatable).not.toContain('unit_cost');
+    expect(clerk.limits?.['receipt_lines']?.writable).not.toContain('unit_cost');
+    expect(may(clerk, 'messages', 'read')).toBe(false);
+  });
+
+  it('let the clerk post a sheet and never take one back', () => {
+    const clerk = roleOf('clerk');
+    expect(clerk.limits?.['receipts']?.writableValues).toEqual({ status: ['posting', 'posted'] });
+    expect(clerk.limits?.['receipt_lines']?.writableValues).toEqual({ status: ['posted'] });
+    expect(clerk.limits?.['transfers']?.writableValues).toEqual({ status: ['posting', 'done'] });
+    expect(clerk.limits?.['transfer_lines']?.writableValues).toEqual({ status: ['posted'] });
+    // A count is started by a clerk and posted by a manager.
+    expect(may(clerk, 'counts', 'update')).toBe(false);
+    expect(may(clerk, 'count_marks', 'create')).toBe(true);
+  });
+
+  it('let the viewer read, and only read', () => {
+    const viewer = roleOf('viewer');
+    expect(viewer.permissions.every((grant) => /^table:@[a-z_]+:read$/.test(grant))).toBe(true);
+    expect(viewer.permissions).toHaveLength(tables.length - 1);
+  });
+});
+
+describe.skipIf((manifest as { seeds?: unknown }).seeds === undefined)('the rows an install starts with', () => {
+  const seeds = ((manifest as { seeds?: unknown }).seeds ?? []) as { table: string; rows: Record<string, unknown>[] }[];
+  const seedOf = (table: string) => seeds.find((seed) => seed.table === table)?.rows ?? [];
+
+  it('are twelve units, seven reasons and the one settings row, in that order', () => {
+    expect(seeds.map((seed) => [seed.table, seed.rows.length])).toEqual([
+      ['units', 12],
+      ['reasons', 7],
+      ['settings', 1],
+    ]);
+  });
+
+  it('start a new item from "each", by the row and not by a number', () => {
+    expect(seedOf('units').filter((row) => row['@label'] !== undefined)).toMatchObject([{ '@label': 'unit:each', code: 'each', decimals: 0 }]);
+    expect(seedOf('settings')).toEqual([{ default_unit_id: { '@ref': 'unit:each' } }]);
+    // Weights, volumes and lengths are kept to three places; things that are counted to none.
+    expect(seedOf('units').filter((row) => row['decimals'] === 3).map((row) => row['code'])).toEqual(['g', 'kg', 'ml', 'l', 'm']);
+  });
+
+  it('never seed a table a posting writes', () => {
+    for (const seed of seeds) expect(Object.keys(ledgers[0]?.writes ?? {}), seed.table).not.toContain(seed.table);
+  });
+});

@@ -409,6 +409,11 @@
             "references": "postings",
             "nullable": true
           }
+        ],
+        "indexes": [
+          [
+            "barcode"
+          ]
         ]
       },
       {
@@ -1956,6 +1961,12 @@
               }
             }
           }
+        ],
+        "indexes": [
+          [
+            "source_table",
+            "source_row"
+          ]
         ]
       },
       {
@@ -4567,7 +4578,730 @@
     {
       "key": "manager",
       "name": "Inventory manager",
-      "permissions": []
+      "permissions": [
+        "table:@settings:read",
+        "table:@settings:update",
+        "table:@categories:read",
+        "table:@categories:create",
+        "table:@categories:update",
+        "table:@categories:delete",
+        "table:@units:read",
+        "table:@units:create",
+        "table:@units:update",
+        "table:@units:delete",
+        "table:@places:read",
+        "table:@places:create",
+        "table:@places:update",
+        "table:@places:delete",
+        "table:@reasons:read",
+        "table:@reasons:create",
+        "table:@reasons:update",
+        "table:@reasons:delete",
+        "table:@kits:read",
+        "table:@kits:create",
+        "table:@kits:update",
+        "table:@kits:delete",
+        "table:@kit_lines:read",
+        "table:@kit_lines:create",
+        "table:@kit_lines:update",
+        "table:@kit_lines:delete",
+        "table:@suppliers:read",
+        "table:@suppliers:create",
+        "table:@suppliers:update",
+        "table:@suppliers:delete",
+        "table:@item_suppliers:read",
+        "table:@item_suppliers:create",
+        "table:@item_suppliers:update",
+        "table:@item_suppliers:delete",
+        "table:@items:read",
+        "table:@items:create",
+        "table:@items:update",
+        "table:@items:delete",
+        "table:@links:read",
+        "table:@links:create",
+        "table:@links:update",
+        "table:@links:delete",
+        "table:@batches:read",
+        "table:@batches:update",
+        "table:@stock_points:read",
+        "table:@stock_points:create",
+        "table:@stock_points:update",
+        "table:@levels:read",
+        "table:@movements:read",
+        "table:@reservations:read",
+        "table:@on_order_moves:read",
+        "table:@uses:read",
+        "table:@uses:create",
+        "table:@uses:update",
+        "table:@purchase_orders:read",
+        "table:@purchase_orders:create",
+        "table:@purchase_orders:update",
+        "table:@purchase_orders:delete",
+        "table:@po_lines:read",
+        "table:@po_lines:create",
+        "table:@po_lines:update",
+        "table:@po_lines:delete",
+        "table:@receipts:read",
+        "table:@receipts:create",
+        "table:@receipts:update",
+        "table:@receipts:delete",
+        "table:@receipt_lines:read",
+        "table:@receipt_lines:create",
+        "table:@receipt_lines:update",
+        "table:@receipt_lines:delete",
+        "table:@transfers:read",
+        "table:@transfers:create",
+        "table:@transfers:update",
+        "table:@transfers:delete",
+        "table:@transfer_lines:read",
+        "table:@transfer_lines:create",
+        "table:@transfer_lines:update",
+        "table:@transfer_lines:delete",
+        "table:@counts:read",
+        "table:@counts:create",
+        "table:@counts:update",
+        "table:@count_lines:read",
+        "table:@count_lines:create",
+        "table:@count_lines:update",
+        "table:@count_marks:read",
+        "table:@count_marks:create",
+        "table:@reorder_requests:read",
+        "table:@reorder_requests:create",
+        "table:@reorder_requests:update",
+        "table:@messages:read"
+      ],
+      "limits": {
+        "batches": {
+          "writable": [
+            "expires_on"
+          ]
+        },
+        "stock_points": {
+          "writable": [
+            "reorder_level",
+            "reorder_qty",
+            "reorder_paused"
+          ],
+          "creatable": [
+            "item_id",
+            "place_id",
+            "reorder_level",
+            "reorder_qty",
+            "reorder_paused"
+          ]
+        },
+        "uses": {
+          "writable": [
+            "voided_at"
+          ]
+        },
+        "count_lines": {
+          "writable": [
+            "status"
+          ],
+          "creatable": [
+            "count_id",
+            "level_id"
+          ]
+        },
+        "reorder_requests": {
+          "writable": [
+            "status"
+          ],
+          "writableValues": {
+            "status": [
+              "dismissed"
+            ]
+          },
+          "creatable": [
+            "stock_point_id"
+          ]
+        }
+      }
+    },
+    {
+      "key": "clerk",
+      "name": "Inventory clerk",
+      "permissions": [
+        "table:@settings:read",
+        "table:@categories:read",
+        "table:@units:read",
+        "table:@places:read",
+        "table:@reasons:read",
+        "table:@kits:read",
+        "table:@kit_lines:read",
+        "table:@suppliers:read",
+        "table:@item_suppliers:read",
+        "table:@items:read",
+        "table:@links:read",
+        "table:@batches:read",
+        "table:@stock_points:read",
+        "table:@levels:read",
+        "table:@movements:read",
+        "table:@reservations:read",
+        "table:@on_order_moves:read",
+        "table:@uses:read",
+        "table:@uses:create",
+        "table:@purchase_orders:read",
+        "table:@po_lines:read",
+        "table:@receipts:read",
+        "table:@receipts:create",
+        "table:@receipts:update",
+        "table:@receipt_lines:read",
+        "table:@receipt_lines:create",
+        "table:@receipt_lines:update",
+        "table:@transfers:read",
+        "table:@transfers:create",
+        "table:@transfers:update",
+        "table:@transfer_lines:read",
+        "table:@transfer_lines:create",
+        "table:@transfer_lines:update",
+        "table:@counts:read",
+        "table:@counts:create",
+        "table:@count_lines:read",
+        "table:@count_lines:create",
+        "table:@count_marks:read",
+        "table:@count_marks:create",
+        "table:@reorder_requests:read"
+      ],
+      "limits": {
+        "suppliers": {
+          "readable": [
+            "name",
+            "active"
+          ]
+        },
+        "item_suppliers": {
+          "readable": [
+            "item_id",
+            "supplier_id",
+            "supplier_code",
+            "pack_name",
+            "pack_size",
+            "rank",
+            "supplier_name"
+          ]
+        },
+        "items": {
+          "readable": [
+            "name",
+            "sku",
+            "barcode",
+            "category_id",
+            "unit_id",
+            "unit",
+            "decimals",
+            "tracks_batches",
+            "when_out",
+            "allow_short",
+            "active",
+            "note",
+            "pack_name",
+            "pack_size",
+            "on_hand",
+            "receipt_id"
+          ]
+        },
+        "stock_points": {
+          "readable": [
+            "item_id",
+            "place_id",
+            "on_hand",
+            "reserved",
+            "on_order",
+            "available",
+            "reorder_level",
+            "reorder_qty",
+            "reorder_paused",
+            "needs_count",
+            "last_counted_at",
+            "for_sale",
+            "item_active",
+            "item_name",
+            "place_name",
+            "category_id",
+            "request_note",
+            "request_elsewhere",
+            "request_supplier",
+            "low",
+            "to_reorder",
+            "state",
+            "receipt_id"
+          ]
+        },
+        "movements": {
+          "readable": [
+            "level_id",
+            "stock_point_id",
+            "item_id",
+            "place_id",
+            "batch_id",
+            "kind",
+            "qty",
+            "out_qty",
+            "reason_id",
+            "note",
+            "receipt_id",
+            "reverses_id",
+            "pair_id",
+            "by",
+            "at"
+          ]
+        },
+        "purchase_orders": {
+          "readable": [
+            "number_seq",
+            "number",
+            "supplier_id",
+            "supplier_name",
+            "supplier_email",
+            "lead_days",
+            "place_id",
+            "place_name",
+            "status",
+            "sent_how",
+            "sent_on",
+            "expected_on",
+            "note",
+            "auto_send",
+            "language",
+            "deliver_to",
+            "units",
+            "lines",
+            "line_count",
+            "sent_at",
+            "sent_by",
+            "received_at",
+            "closed_at",
+            "resent_at",
+            "receipt_id"
+          ]
+        },
+        "po_lines": {
+          "readable": [
+            "po_id",
+            "item_id",
+            "supplier_code",
+            "pack_name",
+            "packs",
+            "pack_size",
+            "qty",
+            "received",
+            "open_qty",
+            "item_name",
+            "unit",
+            "order_status",
+            "created_at",
+            "receipt_id"
+          ]
+        },
+        "uses": {
+          "creatable": [
+            "source_table",
+            "source_row",
+            "item_id",
+            "qty",
+            "place_id",
+            "batch_id",
+            "kind",
+            "reason_id",
+            "note"
+          ]
+        },
+        "receipts": {
+          "readable": [
+            "number_seq",
+            "number",
+            "po_id",
+            "supplier_id",
+            "place_id",
+            "kind",
+            "status",
+            "received_at",
+            "by",
+            "note",
+            "units",
+            "lines",
+            "unposted",
+            "unreversed",
+            "cost_to_check"
+          ],
+          "creatable": [
+            "po_id",
+            "supplier_id",
+            "place_id",
+            "kind",
+            "note"
+          ],
+          "writable": [
+            "status",
+            "note"
+          ],
+          "writableValues": {
+            "status": [
+              "posting",
+              "posted"
+            ]
+          }
+        },
+        "receipt_lines": {
+          "readable": [
+            "receipt_id",
+            "po_line_id",
+            "item_id",
+            "item_name",
+            "unit",
+            "place_id",
+            "po_id",
+            "kind",
+            "packs",
+            "pack_size",
+            "qty_typed",
+            "qty",
+            "cost_guessed",
+            "batch_code",
+            "expires_on",
+            "status"
+          ],
+          "creatable": [
+            "receipt_id",
+            "po_line_id",
+            "item_id",
+            "packs",
+            "pack_size",
+            "qty_typed",
+            "batch_code",
+            "expires_on"
+          ],
+          "writable": [
+            "packs",
+            "pack_size",
+            "qty_typed",
+            "batch_code",
+            "expires_on",
+            "status"
+          ],
+          "writableValues": {
+            "status": [
+              "posted"
+            ]
+          }
+        },
+        "transfers": {
+          "creatable": [
+            "from_place_id",
+            "to_place_id",
+            "note"
+          ],
+          "writable": [
+            "status",
+            "note"
+          ],
+          "writableValues": {
+            "status": [
+              "posting",
+              "done"
+            ]
+          }
+        },
+        "transfer_lines": {
+          "creatable": [
+            "transfer_id",
+            "item_id",
+            "batch_id",
+            "qty"
+          ],
+          "writable": [
+            "batch_id",
+            "qty",
+            "status"
+          ],
+          "writableValues": {
+            "status": [
+              "posted"
+            ]
+          }
+        },
+        "counts": {
+          "readable": [
+            "number_seq",
+            "number",
+            "place_id",
+            "scope",
+            "category_id",
+            "reason_id",
+            "status",
+            "lines",
+            "counted_lines",
+            "uncounted",
+            "unposted",
+            "unreversed",
+            "differences",
+            "by",
+            "at",
+            "posted_at"
+          ],
+          "creatable": [
+            "place_id",
+            "scope",
+            "category_id"
+          ]
+        },
+        "count_lines": {
+          "readable": [
+            "count_id",
+            "level_id",
+            "stock_point_id",
+            "item_id",
+            "batch_id",
+            "item_name",
+            "sku",
+            "barcode",
+            "unit",
+            "batch_code",
+            "expected",
+            "counted",
+            "qty_when_counted",
+            "counted_at",
+            "difference",
+            "is_counted",
+            "differs",
+            "status"
+          ],
+          "creatable": [
+            "count_id",
+            "level_id"
+          ]
+        },
+        "count_marks": {
+          "creatable": [
+            "count_line_id",
+            "counted"
+          ]
+        }
+      }
+    },
+    {
+      "key": "viewer",
+      "name": "Inventory viewer",
+      "permissions": [
+        "table:@settings:read",
+        "table:@categories:read",
+        "table:@units:read",
+        "table:@places:read",
+        "table:@items:read",
+        "table:@suppliers:read",
+        "table:@item_suppliers:read",
+        "table:@reasons:read",
+        "table:@kits:read",
+        "table:@kit_lines:read",
+        "table:@links:read",
+        "table:@batches:read",
+        "table:@stock_points:read",
+        "table:@levels:read",
+        "table:@movements:read",
+        "table:@reservations:read",
+        "table:@on_order_moves:read",
+        "table:@uses:read",
+        "table:@purchase_orders:read",
+        "table:@po_lines:read",
+        "table:@receipts:read",
+        "table:@receipt_lines:read",
+        "table:@transfers:read",
+        "table:@transfer_lines:read",
+        "table:@counts:read",
+        "table:@count_lines:read",
+        "table:@count_marks:read",
+        "table:@reorder_requests:read",
+        "table:@messages:read"
+      ]
+    }
+  ],
+  "seeds": [
+    {
+      "table": "units",
+      "rows": [
+        {
+          "@label": "unit:each",
+          "code": "each",
+          "name": {
+            "@t": {
+              "en-US": "Each"
+            }
+          },
+          "decimals": 0
+        },
+        {
+          "code": "pair",
+          "name": {
+            "@t": {
+              "en-US": "Pair"
+            }
+          },
+          "decimals": 0
+        },
+        {
+          "code": "set",
+          "name": {
+            "@t": {
+              "en-US": "Set"
+            }
+          },
+          "decimals": 0
+        },
+        {
+          "code": "box",
+          "name": {
+            "@t": {
+              "en-US": "Box"
+            }
+          },
+          "decimals": 0
+        },
+        {
+          "code": "pack",
+          "name": {
+            "@t": {
+              "en-US": "Pack"
+            }
+          },
+          "decimals": 0
+        },
+        {
+          "code": "roll",
+          "name": {
+            "@t": {
+              "en-US": "Roll"
+            }
+          },
+          "decimals": 0
+        },
+        {
+          "code": "sheet",
+          "name": {
+            "@t": {
+              "en-US": "Sheet"
+            }
+          },
+          "decimals": 0
+        },
+        {
+          "code": "g",
+          "name": {
+            "@t": {
+              "en-US": "Gram"
+            }
+          },
+          "decimals": 3
+        },
+        {
+          "code": "kg",
+          "name": {
+            "@t": {
+              "en-US": "Kilogram"
+            }
+          },
+          "decimals": 3
+        },
+        {
+          "code": "ml",
+          "name": {
+            "@t": {
+              "en-US": "Millilitre"
+            }
+          },
+          "decimals": 3
+        },
+        {
+          "code": "l",
+          "name": {
+            "@t": {
+              "en-US": "Litre"
+            }
+          },
+          "decimals": 3
+        },
+        {
+          "code": "m",
+          "name": {
+            "@t": {
+              "en-US": "Metre"
+            }
+          },
+          "decimals": 3
+        }
+      ]
+    },
+    {
+      "table": "reasons",
+      "rows": [
+        {
+          "label": {
+            "@t": {
+              "en-US": "Broken"
+            }
+          },
+          "for": "write_off"
+        },
+        {
+          "label": {
+            "@t": {
+              "en-US": "Expired"
+            }
+          },
+          "for": "write_off"
+        },
+        {
+          "label": {
+            "@t": {
+              "en-US": "Lost"
+            }
+          },
+          "for": "write_off"
+        },
+        {
+          "label": {
+            "@t": {
+              "en-US": "Stolen"
+            }
+          },
+          "for": "write_off"
+        },
+        {
+          "label": {
+            "@t": {
+              "en-US": "Sample"
+            }
+          },
+          "for": "write_off"
+        },
+        {
+          "label": {
+            "@t": {
+              "en-US": "Stained"
+            }
+          },
+          "for": "write_off"
+        },
+        {
+          "label": {
+            "@t": {
+              "en-US": "Count difference"
+            }
+          },
+          "for": "adjust"
+        }
+      ]
+    },
+    {
+      "table": "settings",
+      "rows": [
+        {
+          "default_unit_id": {
+            "@ref": "unit:each"
+          }
+        }
+      ]
     }
   ],
   "addOn": {
