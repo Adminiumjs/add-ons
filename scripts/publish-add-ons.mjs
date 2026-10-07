@@ -96,6 +96,13 @@ if (UNKNOWN.length > 0) {
 /** The `files[]` allow-list every add-on declares, so nothing else ships. */
 const FILES_FIELD = ['dist', 'manifest.json', 'TRADEMARKS.md', 'README.md', 'LICENSE'];
 
+/**
+ * An add-on whose manifest names sample data ships its `seeds/` folder too,
+ * and only such an add-on: the file is read from the installed package when
+ * somebody asks for the sample.
+ */
+const filesFor = (manifest) => (typeof manifest.sampleData?.file === 'string' ? ['dist', 'seeds', ...FILES_FIELD.slice(1)] : [...FILES_FIELD]);
+
 /** Files every tarball must carry besides its own `dist/`. */
 const REQUIRED = ['LICENSE', 'README.md', 'TRADEMARKS.md', 'manifest.json', 'package.json'];
 
@@ -129,7 +136,7 @@ function publishManifest({ pkg, manifest }) {
   delete out.private;
   delete out.devDependencies;
   delete out.scripts;
-  out.files = [...FILES_FIELD];
+  out.files = filesFor(manifest);
   return out;
 }
 
@@ -139,7 +146,9 @@ function declaredEntryPoints(manifest) {
   const paths = [
     ...(addOn.slots ?? []).map((slot) => slot.client),
     ...(addOn.provides ?? []).map((provide) => provide.server),
+    ...(addOn.pages ?? []).map((page) => page.client),
     addOn.demoTransport,
+    manifest.sampleData?.file,
   ].filter((path) => typeof path === 'string');
   return [...new Set(paths)];
 }
@@ -184,6 +193,8 @@ function xray(label, entries, { manifest }) {
     if (/\.tests?\./.test(path)) problems.push(`ships a test: ${path}`);
     if (path.endsWith('.map')) problems.push(`ships a sourcemap: ${path}`);
     if (/^tsconfig|^vite\.config/.test(path)) problems.push(`ships build config: ${path}`);
+    // `seeds/` holds the one file the manifest names, and nothing that rode along beside it.
+    if (path.startsWith('seeds/') && path !== manifest.sampleData?.file) problems.push(`ships a seeds file the manifest does not name: ${path}`);
   }
 
   if (problems.length > 0) {

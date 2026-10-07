@@ -113,7 +113,16 @@ describe.each(found)('release shape: $name', (addOn) => {
     // Exact, not a superset: an extra entry is how `src/` creeps back in, and
     // npm SILENTLY DROPS an entry whose file does not exist, so a missing one
     // is invisible at pack time.
-    expect(addOn.pkg['files']).toEqual(FILES_FIELD);
+    // One add-on in, one more entry: sample data the manifest names ships in
+    // `seeds/`, and only where a manifest names it.
+    const sample = (addOn.manifest['sampleData'] as { file?: string } | undefined)?.file;
+    expect(addOn.pkg['files']).toEqual(sample === undefined ? FILES_FIELD : ['dist', 'seeds', ...FILES_FIELD.slice(1)]);
+    if (sample !== undefined) {
+      expect(sample.startsWith('seeds/')).toBe(true);
+      expect(existsSync(join(addOn.dir, sample)), `${addOn.name} names ${sample}`).toBe(true);
+      // Nothing else rides along in the folder that ships whole.
+      expect(readdirSync(join(addOn.dir, 'seeds'))).toEqual([sample.slice('seeds/'.length)]);
+    }
   });
 
   it('has a name the published name is derivable from', () => {
