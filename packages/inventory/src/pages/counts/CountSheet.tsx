@@ -60,6 +60,8 @@ const PAGE_SIZE = 100;
 const LINE = ['id', 'count_id', 'level_id', 'item_id', 'item_name', 'sku', 'barcode', 'unit', 'batch_code', 'counted', 'qty_when_counted', 'counted_at', 'difference', 'is_counted', 'differs', 'status'] as const;
 const text = (value: unknown): string => (value === null || value === undefined ? '' : String(value));
 const isSet = (value: unknown): boolean => value === 1 || value === '1' || value === true;
+/** A batch's code as a person named it: the level nobody put a batch on is kept under a dash, which is no name. */
+const named = (code: unknown): string => (text(code) === '-' ? '' : text(code));
 
 type Saving = 'saving' | 'saved' | 'error';
 
@@ -268,7 +270,7 @@ export function CountSheet({ t, countId }: { t: AddOnTranslate; countId: string 
       cell: (line) => (
         <Stack gap="xs">
           <span className="font-semibold text-fg">{text(line['item_name'])}</span>
-          <span className="text-body-sm text-fg-muted">{text(line['batch_code']) === '' ? t('counts.noBatch', 'No batch') : t('counts.batch', 'Batch {code}', { code: text(line['batch_code']) })}</span>
+          <span className="text-body-sm text-fg-muted">{named(line['batch_code']) === '' ? t('counts.noBatch', 'No batch') : t('counts.batch', 'Batch {code}', { code: named(line['batch_code']) })}</span>
         </Stack>
       ),
     },
@@ -384,7 +386,7 @@ export function CountSheet({ t, countId }: { t: AddOnTranslate; countId: string 
                 <Stack direction="row" gap="xs" wrap>
                   {offer.levels.map((level) => (
                     <Button key={text(level['id'])} variant="secondary" size="sm" onClick={() => void add(level)}>
-                      {text(level['batch_code']) === '' ? t('counts.add.plain', 'Add {item} to this count', { item: offer.item }) : t('counts.add.batch', 'Add batch {code}', { code: text(level['batch_code']) })}
+                      {named(level['batch_code']) === '' ? t('counts.add.plain', 'Add {item} to this count', { item: offer.item }) : t('counts.add.batch', 'Add batch {code}', { code: named(level['batch_code']) })}
                     </Button>
                   ))}
                 </Stack>
@@ -494,7 +496,7 @@ export function CountSheet({ t, countId }: { t: AddOnTranslate; countId: string 
                   <Stack key={text(line['id'])} direction="row" justify="between" gap="md">
                     <span>
                       {text(line['item_name'])}
-                      {text(line['batch_code']) === '' ? '' : ` · ${text(line['batch_code'])}`}
+                      {named(line['batch_code']) === '' ? '' : ` · ${named(line['batch_code'])}`}
                     </span>
                     <Figure>
                       {signed(plain(line['difference'] as DataValue))} {text(line['unit'])}
