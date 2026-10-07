@@ -4657,8 +4657,13 @@
           },
           {
             "ref": "kind",
-            "type": "text",
-            "maxLength": 40
+            "type": "enum",
+            "enum": [
+              "po-sent",
+              "po-sent-priced",
+              "po-again",
+              "po-again-priced"
+            ]
           },
           {
             "ref": "status",
@@ -7635,6 +7640,450 @@
       }
     }
   ],
+  "outbox": {
+    "table": "messages",
+    "columns": {
+      "kind": "kind",
+      "status": "status",
+      "to": "to",
+      "language": "language",
+      "due": "due",
+      "sentAt": "sent_at",
+      "error": "error",
+      "skipReason": "skip_reason",
+      "repeatKey": "repeat_key"
+    },
+    "links": {
+      "purchase_order": "po_id",
+      "supplier": "supplier_id"
+    },
+    "recipient": {
+      "via": "supplier_id",
+      "table": "suppliers",
+      "email": "email",
+      "name": "name"
+    },
+    "settings": {
+      "table": "settings",
+      "name": "business_name",
+      "replyTo": "reply_to"
+    },
+    "kinds": {
+      "po-sent": "inventory-po",
+      "po-sent-priced": "inventory-po-priced",
+      "po-again": "inventory-po",
+      "po-again-priced": "inventory-po-priced"
+    },
+    "producers": [
+      {
+        "kind": "po-sent",
+        "link": "po_id",
+        "recipient": {
+          "column": "supplier_email",
+          "name": "supplier_name",
+          "language": "language"
+        },
+        "onChange": {
+          "table": "purchase_orders",
+          "column": "status",
+          "to": "sent",
+          "where": {
+            "column": "show_prices",
+            "eq": false
+          }
+        },
+        "holdSeconds": 1,
+        "dropWhen": [
+          {
+            "column": "sent_how",
+            "eq": "none",
+            "reason": "no-longer-needed"
+          }
+        ]
+      },
+      {
+        "kind": "po-sent-priced",
+        "link": "po_id",
+        "recipient": {
+          "column": "supplier_email",
+          "name": "supplier_name",
+          "language": "language"
+        },
+        "onChange": {
+          "table": "purchase_orders",
+          "column": "status",
+          "to": "sent",
+          "where": {
+            "column": "show_prices",
+            "eq": true
+          }
+        },
+        "holdSeconds": 1,
+        "dropWhen": [
+          {
+            "column": "sent_how",
+            "eq": "none",
+            "reason": "no-longer-needed"
+          }
+        ]
+      },
+      {
+        "kind": "po-again",
+        "link": "po_id",
+        "recipient": {
+          "column": "supplier_email",
+          "name": "supplier_name",
+          "language": "language"
+        },
+        "repeat": true,
+        "onChange": {
+          "table": "purchase_orders",
+          "columns": [
+            "resent_at"
+          ],
+          "changed": true,
+          "where": {
+            "column": "show_prices",
+            "eq": false
+          }
+        }
+      },
+      {
+        "kind": "po-again-priced",
+        "link": "po_id",
+        "recipient": {
+          "column": "supplier_email",
+          "name": "supplier_name",
+          "language": "language"
+        },
+        "repeat": true,
+        "onChange": {
+          "table": "purchase_orders",
+          "columns": [
+            "resent_at"
+          ],
+          "changed": true,
+          "where": {
+            "column": "show_prices",
+            "eq": true
+          }
+        }
+      }
+    ]
+  },
+  "emailTemplates": [
+    {
+      "key": "inventory-po",
+      "name": {
+        "en-US": "Purchase order"
+      },
+      "vars": [
+        "purchase_order.number",
+        "purchase_order.supplier_name",
+        "purchase_order.place_name",
+        "purchase_order.deliver_to",
+        "purchase_order.expected_on.day_month",
+        "practice.business_name"
+      ],
+      "attach": {
+        "kind": "purchase-order-unpriced",
+        "link": "purchase_order",
+        "optional": true
+      },
+      "locales": {
+        "en-US": {
+          "subject": "Purchase order {{purchase_order.number}}",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Purchase order {{purchase_order.number}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Hello {{purchase_order.supplier_name}}, please supply the items below."
+              }
+            },
+            {
+              "block": "email.rows",
+              "data": {
+                "from": {
+                  "link": "purchase_order",
+                  "table": "po_lines",
+                  "via": "po_id",
+                  "orderBy": "id",
+                  "limit": 50
+                },
+                "row": {
+                  "title": "{{row.item_name}}",
+                  "meta": "{{row.supplier_code}} · {{row.packs}} × {{row.pack_name}}"
+                }
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Please deliver to: {{purchase_order.place_name}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "{{purchase_order.deliver_to}}",
+                "onlyWith": "purchase_order.deliver_to"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Expected by {{purchase_order.expected_on.day_month}}",
+                "onlyWith": "purchase_order.expected_on"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "A PDF copy is attached.",
+                "withAttachment": true
+              }
+            }
+          ],
+          "footer": "{{practice.business_name}}"
+        }
+      }
+    },
+    {
+      "key": "inventory-po-priced",
+      "name": {
+        "en-US": "Purchase order with prices"
+      },
+      "vars": [
+        "purchase_order.number",
+        "purchase_order.supplier_name",
+        "purchase_order.place_name",
+        "purchase_order.deliver_to",
+        "purchase_order.expected_on.day_month",
+        "practice.business_name",
+        "purchase_order.total.money"
+      ],
+      "attach": {
+        "kind": "purchase-order",
+        "link": "purchase_order",
+        "optional": true
+      },
+      "locales": {
+        "en-US": {
+          "subject": "Purchase order {{purchase_order.number}}",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Purchase order {{purchase_order.number}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Hello {{purchase_order.supplier_name}}, please supply the items below."
+              }
+            },
+            {
+              "block": "email.rows",
+              "data": {
+                "from": {
+                  "link": "purchase_order",
+                  "table": "po_lines",
+                  "via": "po_id",
+                  "orderBy": "id",
+                  "limit": 50
+                },
+                "row": {
+                  "title": "{{row.item_name}}",
+                  "meta": "{{row.supplier_code}} · {{row.packs}} × {{row.pack_name}}",
+                  "amount": "{{row.amount.money}}",
+                  "note": "{{row.price.money}} each pack"
+                }
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "Total",
+                "value": "{{purchase_order.total.money}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Please deliver to: {{purchase_order.place_name}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "{{purchase_order.deliver_to}}",
+                "onlyWith": "purchase_order.deliver_to"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Expected by {{purchase_order.expected_on.day_month}}",
+                "onlyWith": "purchase_order.expected_on"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "A PDF copy is attached.",
+                "withAttachment": true
+              }
+            }
+          ],
+          "footer": "{{practice.business_name}}"
+        }
+      }
+    }
+  ],
+  "documents": [
+    {
+      "kind": "purchase-order",
+      "addOn": "invoices",
+      "table": "purchase_orders",
+      "name": {
+        "en-US": "Purchase order"
+      },
+      "where": {
+        "column": "show_prices",
+        "in": [
+          true
+        ]
+      },
+      "mapping": {
+        "number": {
+          "column": "number"
+        },
+        "issuedAt": {
+          "column": "sent_at"
+        },
+        "expectedBy": {
+          "column": "expected_on"
+        },
+        "supplierName": {
+          "column": "supplier_name"
+        },
+        "supplierEmail": {
+          "column": "supplier_email"
+        },
+        "deliverTo": {
+          "column": "place_name"
+        },
+        "deliverLines": {
+          "column": "deliver_to"
+        },
+        "notes": {
+          "column": "note"
+        },
+        "total": {
+          "column": "total"
+        },
+        "items": {
+          "collection": {
+            "table": "po_lines",
+            "via": "po_id",
+            "orderBy": "id",
+            "columns": {
+              "desc": "item_name",
+              "code": "supplier_code",
+              "packs": "packs",
+              "pack": "pack_name",
+              "units": "qty",
+              "unit": "unit",
+              "rate": "price",
+              "amount": "amount"
+            }
+          }
+        }
+      }
+    },
+    {
+      "kind": "purchase-order-unpriced",
+      "addOn": "invoices",
+      "table": "purchase_orders",
+      "name": {
+        "en-US": "Purchase order, no prices"
+      },
+      "where": {
+        "column": "show_prices",
+        "in": [
+          false
+        ]
+      },
+      "mapping": {
+        "number": {
+          "column": "number"
+        },
+        "issuedAt": {
+          "column": "sent_at"
+        },
+        "expectedBy": {
+          "column": "expected_on"
+        },
+        "supplierName": {
+          "column": "supplier_name"
+        },
+        "supplierEmail": {
+          "column": "supplier_email"
+        },
+        "deliverTo": {
+          "column": "place_name"
+        },
+        "deliverLines": {
+          "column": "deliver_to"
+        },
+        "notes": {
+          "column": "note"
+        },
+        "items": {
+          "collection": {
+            "table": "po_lines",
+            "via": "po_id",
+            "orderBy": "id",
+            "columns": {
+              "desc": "item_name",
+              "code": "supplier_code",
+              "packs": "packs",
+              "pack": "pack_name",
+              "units": "qty",
+              "unit": "unit"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "addOns": {
+    "suggests": [
+      {
+        "key": "invoices",
+        "range": ">=1.0.8",
+        "checked": true,
+        "reason": {
+          "en-US": "Draws a purchase order as a PDF for the supplier."
+        }
+      },
+      {
+        "key": "barcode-labels",
+        "range": ">=1.0.7",
+        "checked": false,
+        "reason": {
+          "en-US": "Prints a label for an item from its barcode."
+        }
+      }
+    ]
+  },
   "addOn": {
     "attaches": [
       {
