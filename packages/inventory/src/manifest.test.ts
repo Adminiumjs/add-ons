@@ -409,8 +409,11 @@ describe.skipIf((manifest as { seeds?: unknown }).seeds === undefined)('the rows
   });
 
   it('start a new item from "each", by the row and not by a number', () => {
-    expect(seedOf('units').filter((row) => row['@label'] !== undefined)).toMatchObject([{ '@label': 'unit:each', code: 'each', decimals: 0 }]);
+    expect(seedOf('units')[0]).toMatchObject({ '@label': 'unit:each', code: 'each', decimals: 0 });
     expect(seedOf('settings')).toEqual([{ default_unit_id: { '@ref': 'unit:each' } }]);
+    // Every unit and reason carries a label, so the sample's rows (and an app's) can name the row an install wrote.
+    expect(seedOf('units').map((row) => row['@label'])).toEqual(seedOf('units').map((row) => `unit:${String(row['code'])}`));
+    expect(seedOf('reasons').map((row) => row['@label'])).toEqual(['reason:broken', 'reason:expired', 'reason:lost', 'reason:stolen', 'reason:sample', 'reason:stained', 'reason:count-difference']);
     // Weights, volumes and lengths are kept to three places; things that are counted to none.
     expect(seedOf('units').filter((row) => row['decimals'] === 3).map((row) => row['code'])).toEqual(['g', 'kg', 'ml', 'l', 'm']);
   });

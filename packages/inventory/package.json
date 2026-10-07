@@ -13,6 +13,7 @@
   "bugs": "https://github.com/Adminiumjs/add-ons/issues",
   "files": [
     "dist",
+    "seeds",
     "manifest.json",
     "TRADEMARKS.md",
     "README.md",

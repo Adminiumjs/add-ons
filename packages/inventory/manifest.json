@@ -5557,6 +5557,7 @@
           "decimals": 0
         },
         {
+          "@label": "unit:pair",
           "code": "pair",
           "name": {
             "@t": {
@@ -5566,6 +5567,7 @@
           "decimals": 0
         },
         {
+          "@label": "unit:set",
           "code": "set",
           "name": {
             "@t": {
@@ -5575,6 +5577,7 @@
           "decimals": 0
         },
         {
+          "@label": "unit:box",
           "code": "box",
           "name": {
             "@t": {
@@ -5584,6 +5587,7 @@
           "decimals": 0
         },
         {
+          "@label": "unit:pack",
           "code": "pack",
           "name": {
             "@t": {
@@ -5593,6 +5597,7 @@
           "decimals": 0
         },
         {
+          "@label": "unit:roll",
           "code": "roll",
           "name": {
             "@t": {
@@ -5602,6 +5607,7 @@
           "decimals": 0
         },
         {
+          "@label": "unit:sheet",
           "code": "sheet",
           "name": {
             "@t": {
@@ -5611,6 +5617,7 @@
           "decimals": 0
         },
         {
+          "@label": "unit:g",
           "code": "g",
           "name": {
             "@t": {
@@ -5620,6 +5627,7 @@
           "decimals": 3
         },
         {
+          "@label": "unit:kg",
           "code": "kg",
           "name": {
             "@t": {
@@ -5629,6 +5637,7 @@
           "decimals": 3
         },
         {
+          "@label": "unit:ml",
           "code": "ml",
           "name": {
             "@t": {
@@ -5638,6 +5647,7 @@
           "decimals": 3
         },
         {
+          "@label": "unit:l",
           "code": "l",
           "name": {
             "@t": {
@@ -5647,6 +5657,7 @@
           "decimals": 3
         },
         {
+          "@label": "unit:m",
           "code": "m",
           "name": {
             "@t": {
@@ -5661,6 +5672,7 @@
       "table": "reasons",
       "rows": [
         {
+          "@label": "reason:broken",
           "label": {
             "@t": {
               "en-US": "Broken"
@@ -5669,6 +5681,7 @@
           "for": "write_off"
         },
         {
+          "@label": "reason:expired",
           "label": {
             "@t": {
               "en-US": "Expired"
@@ -5677,6 +5690,7 @@
           "for": "write_off"
         },
         {
+          "@label": "reason:lost",
           "label": {
             "@t": {
               "en-US": "Lost"
@@ -5685,6 +5699,7 @@
           "for": "write_off"
         },
         {
+          "@label": "reason:stolen",
           "label": {
             "@t": {
               "en-US": "Stolen"
@@ -5693,6 +5708,7 @@
           "for": "write_off"
         },
         {
+          "@label": "reason:sample",
           "label": {
             "@t": {
               "en-US": "Sample"
@@ -5701,6 +5717,7 @@
           "for": "write_off"
         },
         {
+          "@label": "reason:stained",
           "label": {
             "@t": {
               "en-US": "Stained"
@@ -5709,6 +5726,7 @@
           "for": "write_off"
         },
         {
+          "@label": "reason:count-difference",
           "label": {
             "@t": {
               "en-US": "Count difference"
@@ -5729,6 +5747,9 @@
       ]
     }
   ],
+  "sampleData": {
+    "file": "seeds/inventory.sample.json"
+  },
   "navGroups": [
     {
       "key": "stock",
