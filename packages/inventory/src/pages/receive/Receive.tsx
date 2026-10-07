@@ -37,8 +37,10 @@ import {
   asDataError,
   listAll,
   lucideByName,
+  money,
   useAccess,
   useAppToasts,
+  useLocaleTag,
   useNavigate,
   useRead,
   useRecords,
@@ -114,6 +116,7 @@ export function Receive({ t, receiptId, poId }: ReceiveProps): ReactNode {
   const toasts = useAppToasts();
   const navigate = useNavigate();
   const [said, say] = useSaid();
+  const locale = useLocaleTag();
   const costs = access.canRead('receipt_lines', LINE_COSTS);
   const totals = access.canRead('receipts', ['total']);
   const mayPost = access.canMove('receipts', 'posting', 'draft');
@@ -439,11 +442,11 @@ export function Receive({ t, receiptId, poId }: ReceiveProps): ReactNode {
             );
           },
         },
-        { key: 'total', label: t('receive.col.total', 'Total'), cell: (line) => (line.saved !== null && !line.dirty ? <Figure>{text(line.saved['amount'])}</Figure> : <span className="text-fg-muted">—</span>) },
+        { key: 'total', label: t('receive.col.total', 'Total'), cell: (line) => (line.saved !== null && !line.dirty ? <Figure>{money(line.saved['amount'], locale)}</Figure> : <span className="text-fg-muted">—</span>) },
       );
     }
     return out;
-  }, [t, order, status, costs, marked, lineSaid, working]);
+  }, [t, order, status, costs, marked, lineSaid, working, locale]);
 
   if (!mayOpen) return <PageFrame t={t} title={t('receive.title', 'Receive stock')} refused />;
   if (loaded === 'missing') {
@@ -556,7 +559,7 @@ export function Receive({ t, receiptId, poId }: ReceiveProps): ReactNode {
         totals={
           receipt !== null && !dirty
             ? totals
-              ? t('receive.totalsMoney', 'Receiving {units} units · {total}', { units: plain(receipt['units']), total: text(receipt['total']) })
+              ? t('receive.totalsMoney', 'Receiving {units} units · {total}', { units: plain(receipt['units']), total: money(receipt['total'], locale) })
               : t('receive.totalsUnits', 'Receiving {units} units', { units: plain(receipt['units']) })
             : t('receive.totalsTyped', '{count, plural, one {# line} other {# lines}} to receive', { count: typed.length })
         }

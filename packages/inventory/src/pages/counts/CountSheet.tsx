@@ -32,6 +32,7 @@ import {
   Switch,
   Tag,
   asDataError,
+  money,
   useAccess,
   useAppToasts,
   useLocaleTag,
@@ -70,7 +71,7 @@ export function CountSheet({ t, countId }: { t: AddOnTranslate; countId: string 
   const locale = useLocaleTag();
   const [said, say] = useSaid();
   const mayOpen = access.canRead('counts');
-  const money = access.canRead('count_lines', ['value']);
+  const seesValue = access.canRead('count_lines', ['value']);
   const mayMark = access.canCreate('count_marks');
   const mayAdd = access.canCreate('count_lines');
   const mayPost = access.canMove('counts', 'posting', 'open');
@@ -88,7 +89,7 @@ export function CountSheet({ t, countId }: { t: AddOnTranslate; countId: string 
     () => [{ column: 'count_id', op: 'eq', value: countId }, ...(onlyDiffer ? [{ column: 'differs', op: 'eq' as const, value: 1 }] : []), ...(onlyOpen ? [{ column: 'is_counted', op: 'eq' as const, value: 0 }] : []), ...(only === null ? [] : [{ column: 'item_id', op: 'eq' as const, value: only.itemId }])],
     [countId, onlyDiffer, onlyOpen, only],
   );
-  const lines = useRecords('count_lines', { filter, sort: [{ column: 'item_name', direction: 'asc' }, { column: 'id', direction: 'asc' }], page, pageSize: PAGE_SIZE, columns: money ? [...LINE, 'value'] : LINE, enabled: mayOpen });
+  const lines = useRecords('count_lines', { filter, sort: [{ column: 'item_name', direction: 'asc' }, { column: 'id', direction: 'asc' }], page, pageSize: PAGE_SIZE, columns: seesValue ? [...LINE, 'value'] : LINE, enabled: mayOpen });
   // What the books hold now, for the lines on this page: a balance is read where it lives, never copied onto a line.
   const levelIds = lines.rows.map((line) => text(line['level_id']));
   const levels = useRecords('levels', { filter: [{ column: 'id', op: 'in', value: levelIds }], pageSize: PAGE_SIZE, columns: ['id', 'qty'], enabled: mayOpen && levelIds.length > 0 && access.canRead('levels') });
@@ -320,7 +321,7 @@ export function CountSheet({ t, countId }: { t: AddOnTranslate; countId: string 
       },
     },
     { key: 'difference', label: t('counts.col.difference', 'Difference'), cell: (line) => (isSet(line['is_counted']) ? <Figure>{signed(plain(line['difference'] as DataValue))}</Figure> : <span className="text-fg-muted">—</span>) },
-    ...(money ? [{ key: 'value', label: t('counts.col.value', 'Value'), cell: (line: DataRow) => (isSet(line['is_counted']) ? <Figure>{text(line['value'])}</Figure> : <span className="text-fg-muted">—</span>) }] : []),
+    ...(seesValue ? [{ key: 'value', label: t('counts.col.value', 'Value'), cell: (line: DataRow) => (isSet(line['is_counted']) ? <Figure>{money(line['value'], locale)}</Figure> : <span className="text-fg-muted">—</span>) }] : []),
   ];
 
   if (!mayOpen) return <PageFrame t={t} title={t('counts.title', 'Counts')} refused />;
@@ -446,7 +447,7 @@ export function CountSheet({ t, countId }: { t: AddOnTranslate; countId: string 
       </Card>
       <TotalsBar
         label={t('counts.bar', 'This count')}
-        totals={money ? t('counts.totalsMoney', '{count, plural, one {# difference} other {# differences}} · {value}', { count: differences, value: text(sheet['value']) }) : t('counts.totals', '{count, plural, one {# difference} other {# differences}}', { count: differences })}
+        totals={seesValue ? t('counts.totalsMoney', '{count, plural, one {# difference} other {# differences}} · {value}', { count: differences, value: money(sheet['value'], locale) }) : t('counts.totals', '{count, plural, one {# difference} other {# differences}}', { count: differences })}
         problem={problem}
         progress={run === null ? null : <ProgressBar value={run.done} max={Math.max(run.all, 1)} label={t('shared.progress', '{done} of {all} lines', { done: run.done, all: run.all })} />}
       >

@@ -20,6 +20,7 @@ import {
   Stack,
   Tag,
   asDataError,
+  money,
   useAccess,
   useAppToasts,
   useLocaleTag,
@@ -118,7 +119,8 @@ export function Posted({ t, receipt, order, lines, costs, totals, note, onChange
     }
   };
 
-  const number = text(order?.['number']);
+  // An order that was never numbered is named by its supplier.
+  const number = text(order?.['number']) || text(order?.['supplier_name']);
   const heading = status === 'reversed' ? t('receive.reversed.title', 'Receipt undone') : status === 'reversing' ? t('receive.reversing.title', 'This receipt is partly undone') : t('receive.posted.title', 'Receipt posted');
   return (
     <PageFrame t={t} title={t('receive.title', 'Receive stock')} backTo={PAGE} testId="inventory-receive-posted">
@@ -157,7 +159,7 @@ export function Posted({ t, receipt, order, lines, costs, totals, note, onChange
                   <Figure>
                     {plain(line.saved?.['qty'])} {line.unit}
                   </Figure>
-                  {costs ? <Figure>{text(line.saved?.['amount'])}</Figure> : null}
+                  {costs ? <Figure>{money(line.saved?.['amount'], locale)}</Figure> : null}
                   {maySendBack && status === 'posted' && line.status === 'posted' ? (
                     <Button variant="ghost" size="sm" disabled={busy} onClick={() => setConfirm(line)}>
                       {t('receive.sendBack', 'Send back to supplier')}
@@ -169,7 +171,7 @@ export function Posted({ t, receipt, order, lines, costs, totals, note, onChange
           ))}
           <Divider />
           <span className="font-semibold text-fg">
-            {totals ? t('receive.posted.totalsMoney', 'Received {units} units · {total}', { units: plain(receipt['units']), total: text(receipt['total']) }) : t('receive.posted.totalsUnits', 'Received {units} units', { units: plain(receipt['units']) })}
+            {totals ? t('receive.posted.totalsMoney', 'Received {units} units · {total}', { units: plain(receipt['units']), total: money(receipt['total'], locale) }) : t('receive.posted.totalsUnits', 'Received {units} units', { units: plain(receipt['units']) })}
           </span>
           {run === null ? null : <ProgressBar value={run.done} max={Math.max(run.all, 1)} label={t('shared.progress', '{done} of {all} lines', { done: run.done, all: run.all })} />}
           {problem === null ? null : <Alert tone="danger" role="alert" title={problem} />}

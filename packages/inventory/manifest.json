@@ -3185,7 +3185,31 @@
               ]
             }
           ]
-        }
+        },
+        "postings": [
+          {
+            "id": "order",
+            "into": {
+              "addOn": "inventory",
+              "ledger": "stock",
+              "action": "order-progress"
+            },
+            "post": {
+              "on": {
+                "to": [
+                  "posted"
+                ]
+              }
+            },
+            "only": {
+              "column": "po_id",
+              "set": true
+            },
+            "map": {
+              "po": "po_id"
+            }
+          }
+        ]
       },
       {
         "ref": "receipt_lines",
@@ -3570,28 +3594,6 @@
               "po_line": "po_line_id",
               "po": "po_id",
               "kind": "kind"
-            }
-          },
-          {
-            "id": "order",
-            "into": {
-              "addOn": "inventory",
-              "ledger": "stock",
-              "action": "order-progress"
-            },
-            "post": {
-              "on": {
-                "to": [
-                  "posted"
-                ]
-              }
-            },
-            "map": {
-              "po": "po_id"
-            },
-            "only": {
-              "column": "po_id",
-              "set": true
             }
           },
           {

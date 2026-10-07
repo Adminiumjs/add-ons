@@ -280,3 +280,18 @@ export function asDataError(caught: unknown): DataError {
   }
   return { code: 'CLIENT_ERROR', message: caught instanceof Error ? caught.message : String(caught) };
 }
+
+/**
+ * A sum of money as a row holds it, with its two places: one database hands
+ * `18` and another `18.00` for the same amount. No currency sign — a screen is
+ * not told the connection's currency — and no arithmetic: only how it reads.
+ */
+export function money(value: unknown, locale: string): string {
+  if (value === null || value === undefined || value === '') return '';
+  const text = String(value);
+  if (!/^-?\d+(\.\d+)?$/.test(text)) return text;
+  const [whole = '0', part = ''] = text.replace('-', '').split('.');
+  const grouped = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(BigInt(whole));
+  const point = new Intl.NumberFormat(locale, { minimumFractionDigits: 1 }).format(1.1).replace(/\p{Nd}/gu, '');
+  return `${text.startsWith('-') ? '-' : ''}${grouped}${point}${part.padEnd(2, '0')}`;
+}

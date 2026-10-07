@@ -42,11 +42,13 @@ export function onOrderClose(book: Book): void {
 }
 
 /**
- * AN ORDER MOVES ON AS ITS LINES ARRIVE: part received while a line is still
- * to come, received — with the moment — once none is. Asked for each receipt
- * line as it goes in, after the order line's own total has taken the line in:
- * a call of its own, because the order is a row this one reads and locks,
- * and a delivery's call has no read left for it.
+ * AN ORDER MOVES ON AS ITS DELIVERIES ARRIVE: part received while a line is
+ * still to come, received — with the moment — once none is. Asked once for a
+ * receipt, when the whole of it is posted and every order line's own total
+ * has taken its lines in: a call of its own, because the order is a row this
+ * one reads and locks and a delivery's call has no read left for it — and
+ * after every line, because a line takes what it brings off what is on order
+ * while its order still reads open.
  */
 export function orderProgress(book: Book): void {
   for (const line of book.input.lines) {

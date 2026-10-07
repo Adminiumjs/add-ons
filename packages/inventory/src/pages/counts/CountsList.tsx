@@ -26,6 +26,7 @@ import {
   Stack,
   StatusPill,
   asDataError,
+  money,
   useAccess,
   useAppToasts,
   useLocaleTag,
@@ -86,10 +87,10 @@ export function CountsList({ t, startOpen }: { t: AddOnTranslate; startOpen: boo
   const locale = useLocaleTag();
   const mayOpen = access.canRead('counts');
   const mayStart = access.canCreate('counts');
-  const money = access.canRead('counts', ['value']);
+  const seesValue = access.canRead('counts', ['value']);
   const [page, setPage] = useState(1);
   const [starting, setStarting] = useState(startOpen);
-  const counts = useRecords('counts', { sort: [{ column: 'id', direction: 'desc' }], page, pageSize: PAGE_SIZE, columns: ['id', 'number', 'place_id', 'scope', 'category_id', 'status', 'differences', 'at', ...(money ? ['value'] : [])], enabled: mayOpen });
+  const counts = useRecords('counts', { sort: [{ column: 'id', direction: 'desc' }], page, pageSize: PAGE_SIZE, columns: ['id', 'number', 'place_id', 'scope', 'category_id', 'status', 'differences', 'at', ...(seesValue ? ['value'] : [])], enabled: mayOpen });
   const places = useRecords('places', { sort: [{ column: 'name', direction: 'asc' }], pageSize: 199, columns: ['id', 'name', 'active'], enabled: mayOpen });
   const categories = useRecords('categories', { sort: [{ column: 'name', direction: 'asc' }], pageSize: 199, columns: ['id', 'name'], enabled: mayOpen });
   const nameOf = (rows: readonly DataRow[], id: unknown): string => text(rows.find((row) => text(row['id']) === text(id))?.['name']);
@@ -103,7 +104,7 @@ export function CountsList({ t, startOpen }: { t: AddOnTranslate; startOpen: boo
     { key: 'at', label: t('counts.col.started', 'Started'), render: (row) => when(row['at']) },
     { key: 'status', label: t('counts.col.status', 'Status'), render: (row) => <StatusPill status={text(row['status'])} tone={STATUS_TONE[text(row['status'])] ?? 'neutral'}>{statusWords(t, text(row['status']))}</StatusPill> },
     { key: 'differences', label: t('counts.col.differences', 'Differences'), align: 'end' },
-    ...(money ? [{ key: 'value', label: t('counts.col.value', 'Value'), align: 'end' as const, render: (row: DataRow) => <Figure>{text(row['value'])}</Figure> }] : []),
+    ...(seesValue ? [{ key: 'value', label: t('counts.col.value', 'Value'), align: 'end' as const, render: (row: DataRow) => <Figure>{money(row['value'], locale)}</Figure> }] : []),
   ];
   return (
     <PageFrame
