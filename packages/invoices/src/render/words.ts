@@ -63,6 +63,8 @@ export interface LayoutWords {
   readonly kindCreditNote: string;
   readonly kindQuote: string;
   readonly kindStatement: string;
+  /** One word for an order to a supplier, with its prices or without them. */
+  readonly kindPurchaseOrder: string;
   readonly description: string;
   readonly quantity: string;
   readonly unit: string;
@@ -126,6 +128,16 @@ export interface LayoutWords {
   readonly servicePeriod: string;
   /** After the names printed under a line, how many more there are. */
   readonly moreOptions: string;
+  /** Whom an order is sent to — the heading over the supplier's name. */
+  readonly supplier: string;
+  /** The heading over the place the goods are to arrive at. */
+  readonly deliverTo: string;
+  /** The day the goods should arrive. */
+  readonly expectedBy: string;
+  /** An order's quantity as the supplier counts it, and as the business does. */
+  readonly packs: string;
+  readonly units: string;
+  readonly pricePerPack: string;
   readonly settledWith: string;
   readonly notes: string;
   readonly payment: string;
@@ -158,6 +170,7 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     kindCreditNote: 'Credit note',
     kindQuote: 'Quote',
     kindStatement: 'Statement',
+    kindPurchaseOrder: 'Purchase order',
     description: 'Description',
     quantity: 'Qty',
     unit: 'Rate',
@@ -216,6 +229,12 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     attendedBy: 'Attended by',
     servicePeriod: 'Period of service',
     moreOptions: '+{count} more',
+    supplier: 'Supplier',
+    deliverTo: 'Deliver to',
+    expectedBy: 'Expected by',
+    packs: 'Packs',
+    units: 'Units',
+    pricePerPack: 'Price per pack',
     settledWith: 'Settled with',
     notes: 'Notes',
     payment: 'How to settle',
@@ -246,6 +265,7 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     kindCreditNote: 'Gutschrift',
     kindQuote: 'Angebot',
     kindStatement: 'Kontoauszug',
+    kindPurchaseOrder: 'Bestellung',
     description: 'Beschreibung',
     quantity: 'Menge',
     unit: 'Einzelbetrag',
@@ -304,6 +324,12 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     attendedBy: 'Betreut von',
     servicePeriod: 'Leistungszeitraum',
     moreOptions: '+{count} weitere',
+    supplier: 'Lieferant',
+    deliverTo: 'Lieferung an',
+    expectedBy: 'Erwartet bis',
+    packs: 'Packungen',
+    units: 'Einheiten',
+    pricePerPack: 'Preis je Packung',
     settledWith: 'Beglichen mit',
     notes: 'Hinweise',
     payment: 'Zahlungsweg',
@@ -334,6 +360,7 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     kindCreditNote: 'Avoir',
     kindQuote: 'Devis',
     kindStatement: 'Relevé',
+    kindPurchaseOrder: 'Bon de commande',
     description: 'Désignation',
     quantity: 'Qté',
     unit: 'Montant unitaire',
@@ -392,6 +419,12 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     attendedBy: 'Pris en charge par',
     servicePeriod: 'Période de prestation',
     moreOptions: '+{count} autres',
+    supplier: 'Fournisseur',
+    deliverTo: 'Livrer à',
+    expectedBy: 'Attendu le',
+    packs: 'Colis',
+    units: 'Unités',
+    pricePerPack: 'Prix par colis',
     settledWith: 'Réglé par',
     notes: 'Notes',
     payment: 'Modalités de règlement',
@@ -422,6 +455,7 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     kindCreditNote: 'Dobropis',
     kindQuote: 'Nabídka',
     kindStatement: 'Výpis z účtu',
+    kindPurchaseOrder: 'Objednávka',
     description: 'Popis',
     quantity: 'Množství',
     unit: 'Za jednotku',
@@ -480,6 +514,12 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     attendedBy: 'Obsluha',
     servicePeriod: 'Období plnění',
     moreOptions: '+{count} další',
+    supplier: 'Dodavatel',
+    deliverTo: 'Místo dodání',
+    expectedBy: 'Očekáváno do',
+    packs: 'Balení',
+    units: 'Jednotky',
+    pricePerPack: 'Cena za balení',
     settledWith: 'Uhrazeno čím',
     notes: 'Poznámky',
     payment: 'Jak uhradit',
@@ -510,6 +550,7 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     kindCreditNote: 'Kreditnota',
     kindQuote: 'Tilbud',
     kindStatement: 'Kontoudtog',
+    kindPurchaseOrder: 'Indkøbsordre',
     description: 'Beskrivelse',
     quantity: 'Antal',
     unit: 'Pr. enhed',
@@ -568,6 +609,12 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     attendedBy: 'Betjent af',
     servicePeriod: 'Leveringsperiode',
     moreOptions: '+{count} flere',
+    supplier: 'Leverandør',
+    deliverTo: 'Leveres til',
+    expectedBy: 'Forventes senest',
+    packs: 'Pakker',
+    units: 'Enheder',
+    pricePerPack: 'Pris pr. pakke',
     settledWith: 'Betalt med',
     notes: 'Noter',
     payment: 'Sådan betales der',
@@ -598,6 +645,7 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     kindCreditNote: '贷记单',
     kindQuote: '报价单',
     kindStatement: '对账表',
+    kindPurchaseOrder: '采购订单',
     description: '说明',
     quantity: '数量',
     unit: '单价',
@@ -656,6 +704,12 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     attendedBy: '服务人员',
     servicePeriod: '服务期间',
     moreOptions: '另 {count} 项',
+    supplier: '供应商',
+    deliverTo: '收货地点',
+    expectedBy: '预计到货',
+    packs: '包装数',
+    units: '单位数量',
+    pricePerPack: '每包价格',
     settledWith: '结算方式',
     notes: '备注',
     payment: '结算办法',
@@ -686,6 +740,7 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     kindCreditNote: '貸記單',
     kindQuote: '報價單',
     kindStatement: '對帳表',
+    kindPurchaseOrder: '採購單',
     description: '說明',
     quantity: '數量',
     unit: '單價',
@@ -744,6 +799,12 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     attendedBy: '服務人員',
     servicePeriod: '服務期間',
     moreOptions: '另 {count} 項',
+    supplier: '供應商',
+    deliverTo: '收貨地點',
+    expectedBy: '預計到貨',
+    packs: '包裝數',
+    units: '單位數量',
+    pricePerPack: '每包價格',
     settledWith: '結算方式',
     notes: '備註',
     payment: '結算辦法',
@@ -774,6 +835,7 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     kindCreditNote: 'إشعار دائن',
     kindQuote: 'عرض سعر',
     kindStatement: 'كشف حساب',
+    kindPurchaseOrder: 'أمر شراء',
     description: 'الوصف',
     quantity: 'الكمية',
     unit: 'سعر الوحدة',
@@ -832,6 +894,12 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     attendedBy: 'مقدّم الخدمة',
     servicePeriod: 'فترة الخدمة',
     moreOptions: '+{count} أخرى',
+    supplier: 'المورّد',
+    deliverTo: 'التسليم إلى',
+    expectedBy: 'متوقع بحلول',
+    packs: 'العبوات',
+    units: 'الوحدات',
+    pricePerPack: 'سعر العبوة',
     settledWith: 'تمت التسوية بـ',
     notes: 'ملاحظات',
     payment: 'طريقة السداد',

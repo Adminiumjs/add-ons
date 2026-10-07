@@ -15,6 +15,7 @@ import { describeDocumentRenderer } from '@adminium/add-on-host/testing';
 import { describe, expect, it } from 'vitest';
 
 import { emptyBody } from './document.ts';
+import { isPurchaseOrder } from './kinds.ts';
 import provider from './server.ts';
 
 /**
@@ -74,13 +75,23 @@ function subjectFor(kind: string) {
       ...(kind === 'invoice' ? { dueAt: '2026-10-01', poNumber: 'PO-88213' } : {}),
       ...(kind === 'receipt' ? { paidWith: 'Card ending 6411', tip: 500 } : {}),
       ...(kind === 'credit-note' ? { references: 'INV-1039' } : {}),
+      // An order is made out to a supplier, and that name is its one required
+      // slot with no default — the one the suite deletes to see the refusal.
+      ...(isPurchaseOrder(kind)
+        ? { supplierName: 'Mill & Grain Supply', supplierEmail: 'orders@example.test', expectedBy: '2026-09-15', deliverTo: 'Harbour kitchen', total: 39_600 }
+        : {}),
     },
     collections: {
-      items: [
-        { id: 'li-1', desc: 'Design system audit', qty: 12, rate: 18_000 },
-        { id: 'li-2', desc: 'Dashboard implementation', qty: 45, rate: 16_500 },
-        { id: 'li-3', desc: 'Schema migration', qty: 12, rate: 21_000 },
-      ],
+      items: isPurchaseOrder(kind)
+        ? [
+            { id: 'li-1', desc: 'Bread flour', code: 'MG-2210', packs: 4, pack: 'Sack 25 kg', units: 100, unit: 'kg', rate: 4_200, amount: 16_800 },
+            { id: 'li-2', desc: 'Olive oil', code: 'MG-0417', packs: 6, pack: 'Case of 12', units: 72, unit: 'bottle', rate: 3_800, amount: 22_800 },
+          ]
+        : [
+            { id: 'li-1', desc: 'Design system audit', qty: 12, rate: 18_000 },
+            { id: 'li-2', desc: 'Dashboard implementation', qty: 45, rate: 16_500 },
+            { id: 'li-3', desc: 'Schema migration', qty: 12, rate: 21_000 },
+          ],
     },
   };
 }
@@ -92,8 +103,9 @@ describeDocumentRenderer(provider, {
    * `customerName`, not the outline's first `text` slot — which is `number`,
    * and `number` is filled by the ENGINE from a sequence. Pushing `é` into it
    * would test a value an operator never maps and the engine always supplies.
+   * An order has no customer: the name it draws is the supplier's.
    */
-  textSlot: () => 'customerName',
+  textSlot: (kind) => (isPurchaseOrder(kind.id) ? 'supplierName' : 'customerName'),
 });
 
 describe('the invoices provider draws what it was asked for', () => {

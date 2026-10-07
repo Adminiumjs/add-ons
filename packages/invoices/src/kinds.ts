@@ -1,5 +1,5 @@
 /**
- * The five kinds this add-on renders, and the outline of each.
+ * The seven kinds this add-on renders, and the outline of each.
  *
  * ── WHAT AN OUTLINE IS, AND WHAT IT IS NOT ─────────────────────────────────
  *
@@ -17,16 +17,19 @@
  * render — a receipt fired by a till, with no authored template behind it —
  * has no body at all and is drawn from the outline's defaults.
  *
- * ── FIVE KINDS, TWELVE STARTERS, AND WHY THOSE ARE DIFFERENT NUMBERS ───────
+ * ── SEVEN KINDS, TWELVE STARTERS, AND WHY THOSE ARE DIFFERENT NUMBERS ──────
  *
  * The surface offers twelve starters over eight titles, four of which
  * (PROFORMA, ESTIMATE, DEPOSIT, COMMERCIAL INVOICE) no kind covers. A starter
  * is a TEMPLATE PRESET, not a kind: as a preset it costs nothing, and as a kind
  * each would have cost another `describe()` outline with eight-locale labels on
- * every slot. `kinds()` is five because five is the number of distinct MAPPING
+ * every slot. `kinds()` is seven because that is the number of distinct MAPPING
  * shapes — money owed, money received, money returned, money offered (a quote),
- * and one client's account over a period (a statement, which is not one row but
- * a read of many).
+ * one client's account over a period (a statement, which is not one row but
+ * a read of many), and goods ordered from a supplier, which is two: the order
+ * with its prices and the same order without them. Those two are separate
+ * kinds rather than one kind with a switch because the difference is in the
+ * OUTLINE — the one without prices has no slot a price could be mapped to.
  *
  * ── WHY THE LABELS ARE HERE AND NOT IN `i18n/strings.ts` ───────────────────
  *
@@ -135,7 +138,36 @@ const KIND_LABELS = {
     'zh-TW': '對帳表',
     'ar-EG': 'كشف حساب',
   },
+  'purchase-order': {
+    'en-US': 'Purchase order',
+    'de-DE': 'Bestellung',
+    'fr-FR': 'Bon de commande',
+    'cs-CZ': 'Objednávka',
+    'da-DK': 'Indkøbsordre',
+    'zh-CN': '采购订单',
+    'zh-TW': '採購單',
+    'ar-EG': 'أمر شراء',
+  },
+  'purchase-order-unpriced': {
+    'en-US': 'Purchase order, no prices',
+    'de-DE': 'Bestellung, ohne Preise',
+    'fr-FR': 'Bon de commande, sans prix',
+    'cs-CZ': 'Objednávka, bez cen',
+    'da-DK': 'Indkøbsordre, uden priser',
+    'zh-CN': '采购订单（不含价格）',
+    'zh-TW': '採購單（不含價格）',
+    'ar-EG': 'أمر شراء، بدون أسعار',
+  },
 } as const satisfies Readonly<Record<string, LocalizedText>>;
+
+/** The order to a supplier with its prices, and the same order without them. */
+export const PURCHASE_ORDER = 'purchase-order';
+export const PURCHASE_ORDER_UNPRICED = 'purchase-order-unpriced';
+
+/** Whether a kind is an order to a supplier, with prices or without. */
+export function isPurchaseOrder(kind: string): boolean {
+  return kind === PURCHASE_ORDER || kind === PURCHASE_ORDER_UNPRICED;
+}
 
 // ── the slots, each defined once and shared by the kinds that carry it ──────
 
@@ -1663,6 +1695,421 @@ const ENTRIES: OutlineSlot = {
   ],
 };
 
+/*
+ * ── WHAT IS ORDERED FROM A SUPPLIER, AND WHERE IT IS TO ARRIVE ─────────────
+ *
+ * A purchase order is the one document here that is made out to somebody the
+ * business BUYS from, so it has a party of its own — the supplier — and none
+ * of the customer's slots. It also says where the goods go, which no other
+ * kind needs: a name for the place, and the lines of its address under it.
+ *
+ * Its lines are a collection of their own rather than `ITEMS`. A line of an
+ * order is counted twice — in the supplier's packs and in the item's own
+ * unit — and `ITEMS` requires one `qty` that an order line does not have. The
+ * two collections share the id `items`, so a mapping names its lines the same
+ * way on every kind.
+ *
+ * The same order is sent with its prices or without them, as two kinds. The
+ * one without lists no `rate`, no `amount`, no total and no currency: what
+ * the outline does not list cannot be mapped, and what is not mapped cannot
+ * reach the page.
+ */
+
+const EXPECTED_BY: OutlineSlot = {
+  id: 'expectedBy',
+  label: {
+    'en-US': 'Expected by',
+    'de-DE': 'Erwartet bis',
+    'fr-FR': 'Attendu le',
+    'cs-CZ': 'Očekáváno do',
+    'da-DK': 'Forventes senest',
+    'zh-CN': '预计到货日期',
+    'zh-TW': '預計到貨日期',
+    'ar-EG': 'متوقع بحلول',
+  },
+  help: {
+    'en-US': 'The day the goods should arrive. Printed beside the day of the order.',
+    'de-DE': 'Der Tag, an dem die Ware eintreffen soll. Neben dem Tag der Bestellung gedruckt.',
+    'fr-FR': 'Le jour où la marchandise doit arriver. Imprimé à côté du jour de la commande.',
+    'cs-CZ': 'Den, kdy má zboží dorazit. Tiskne se vedle dne objednávky.',
+    'da-DK': 'Dagen, varerne skal ankomme. Trykkes ved siden af ordrens dag.',
+    'zh-CN': '货物应到达的日期。印在订单日期旁边。',
+    'zh-TW': '貨物應到達的日期。印在訂單日期旁邊。',
+    'ar-EG': 'اليوم الذي يُفترض أن تصل فيه البضاعة. يُطبع بجانب يوم الطلب.',
+  },
+  type: 'date',
+  required: false,
+};
+
+const SUPPLIER_NAME: OutlineSlot = {
+  id: 'supplierName',
+  label: {
+    'en-US': 'Supplier',
+    'de-DE': 'Lieferant',
+    'fr-FR': 'Fournisseur',
+    'cs-CZ': 'Dodavatel',
+    'da-DK': 'Leverandør',
+    'zh-CN': '供应商',
+    'zh-TW': '供應商',
+    'ar-EG': 'المورّد',
+  },
+  type: 'text',
+  required: true,
+};
+
+const SUPPLIER_EMAIL: OutlineSlot = {
+  id: 'supplierEmail',
+  label: {
+    'en-US': 'Supplier’s email',
+    'de-DE': 'E-Mail des Lieferanten',
+    'fr-FR': 'E-mail du fournisseur',
+    'cs-CZ': 'E-mail dodavatele',
+    'da-DK': 'Leverandørens e-mail',
+    'zh-CN': '供应商邮箱',
+    'zh-TW': '供應商電子郵件',
+    'ar-EG': 'بريد المورّد الإلكتروني',
+  },
+  help: {
+    'en-US': 'Printed under the supplier’s name.',
+    'de-DE': 'Unter dem Namen des Lieferanten gedruckt.',
+    'fr-FR': 'Imprimé sous le nom du fournisseur.',
+    'cs-CZ': 'Tiskne se pod jménem dodavatele.',
+    'da-DK': 'Trykkes under leverandørens navn.',
+    'zh-CN': '印在供应商名称下方。',
+    'zh-TW': '印在供應商名稱下方。',
+    'ar-EG': 'يُطبع تحت اسم المورّد.',
+  },
+  type: 'email',
+  required: false,
+};
+
+const DELIVER_TO: OutlineSlot = {
+  id: 'deliverTo',
+  label: {
+    'en-US': 'Deliver to',
+    'de-DE': 'Lieferung an',
+    'fr-FR': 'Livrer à',
+    'cs-CZ': 'Místo dodání',
+    'da-DK': 'Leveres til',
+    'zh-CN': '收货地点',
+    'zh-TW': '收貨地點',
+    'ar-EG': 'التسليم إلى',
+  },
+  help: {
+    'en-US': 'The name of the place the goods go to — a shop, a stock room, a kitchen.',
+    'de-DE': 'Der Name des Ortes, an den die Ware geht — ein Laden, ein Lager, eine Küche.',
+    'fr-FR': 'Le nom du lieu où va la marchandise — une boutique, une réserve, une cuisine.',
+    'cs-CZ': 'Název místa, kam zboží míří — obchod, sklad, kuchyně.',
+    'da-DK': 'Navnet på stedet, varerne skal hen — en butik, et lager, et køkken.',
+    'zh-CN': '货物送达地点的名称——店铺、库房、厨房。',
+    'zh-TW': '貨物送達地點的名稱——店鋪、庫房、廚房。',
+    'ar-EG': 'اسم المكان الذي تذهب إليه البضاعة — متجر أو مخزن أو مطبخ.',
+  },
+  type: 'text',
+  required: false,
+};
+
+const DELIVER_LINES: OutlineSlot = {
+  id: 'deliverLines',
+  label: {
+    'en-US': 'Delivery address',
+    'de-DE': 'Lieferanschrift',
+    'fr-FR': 'Adresse de livraison',
+    'cs-CZ': 'Dodací adresa',
+    'da-DK': 'Leveringsadresse',
+    'zh-CN': '收货地址',
+    'zh-TW': '收貨地址',
+    'ar-EG': 'عنوان التسليم',
+  },
+  help: {
+    'en-US': 'Printed under the name of the place, each line of the text on a line of its own.',
+    'de-DE': 'Unter dem Namen des Ortes gedruckt, jede Zeile des Textes in einer eigenen Zeile.',
+    'fr-FR': 'Imprimée sous le nom du lieu, chaque ligne du texte sur sa ligne.',
+    'cs-CZ': 'Tiskne se pod názvem místa, každý řádek textu na vlastním řádku.',
+    'da-DK': 'Trykkes under stedets navn, hver linje i teksten på sin egen linje.',
+    'zh-CN': '印在地点名称下方，文本的每一行各占一行。',
+    'zh-TW': '印在地點名稱下方，文字的每一行各占一行。',
+    'ar-EG': 'يُطبع تحت اسم المكان، كل سطر من النص في سطر مستقل.',
+  },
+  type: 'text',
+  required: false,
+};
+
+const NOTES: OutlineSlot = {
+  id: 'notes',
+  label: {
+    'en-US': 'Notes',
+    'de-DE': 'Hinweise',
+    'fr-FR': 'Remarques',
+    'cs-CZ': 'Poznámky',
+    'da-DK': 'Bemærkninger',
+    'zh-CN': '备注',
+    'zh-TW': '備註',
+    'ar-EG': 'ملاحظات',
+  },
+  help: {
+    'en-US': 'Words for the supplier, printed under the lines.',
+    'de-DE': 'Worte an den Lieferanten, unter den Positionen gedruckt.',
+    'fr-FR': 'Quelques mots au fournisseur, imprimés sous les lignes.',
+    'cs-CZ': 'Slova určená dodavateli, vytištěná pod položkami.',
+    'da-DK': 'Ord til leverandøren, trykt under linjerne.',
+    'zh-CN': '写给供应商的话，印在明细下方。',
+    'zh-TW': '寫給供應商的話，印在明細下方。',
+    'ar-EG': 'كلمات للمورّد، تُطبع تحت البنود.',
+  },
+  type: 'text',
+  required: false,
+};
+
+/** A line of an order as both kinds carry it: what it is, and how much of it, counted twice. */
+const ORDER_COLUMNS: NonNullable<OutlineSlot['columns']> = [
+  {
+    id: 'desc',
+    label: {
+      'en-US': 'Item',
+      'de-DE': 'Artikel',
+      'fr-FR': 'Article',
+      'cs-CZ': 'Položka',
+      'da-DK': 'Vare',
+      'zh-CN': '物品',
+      'zh-TW': '品項',
+      'ar-EG': 'الصنف',
+    },
+    type: 'text',
+    required: true,
+  },
+  {
+    id: 'code',
+    label: {
+      'en-US': 'Supplier’s code',
+      'de-DE': 'Artikelnummer des Lieferanten',
+      'fr-FR': 'Référence du fournisseur',
+      'cs-CZ': 'Kód dodavatele',
+      'da-DK': 'Leverandørens varenummer',
+      'zh-CN': '供应商货号',
+      'zh-TW': '供應商貨號',
+      'ar-EG': 'رمز المورّد',
+    },
+    help: {
+      'en-US': 'The number the supplier knows the item by. Printed under the item.',
+      'de-DE': 'Die Nummer, unter der der Lieferant den Artikel führt. Unter dem Artikel gedruckt.',
+      'fr-FR': 'Le numéro sous lequel le fournisseur connaît l’article. Imprimé sous l’article.',
+      'cs-CZ': 'Číslo, pod kterým dodavatel položku vede. Tiskne se pod položkou.',
+      'da-DK': 'Det nummer, leverandøren kender varen under. Trykkes under varen.',
+      'zh-CN': '供应商用来识别该物品的编号。印在物品下方。',
+      'zh-TW': '供應商用來識別該品項的編號。印在品項下方。',
+      'ar-EG': 'الرقم الذي يعرف به المورّد الصنف. يُطبع تحت الصنف.',
+    },
+    type: 'text',
+    required: false,
+  },
+  {
+    id: 'packs',
+    label: {
+      'en-US': 'Packs',
+      'de-DE': 'Packungen',
+      'fr-FR': 'Colis',
+      'cs-CZ': 'Balení',
+      'da-DK': 'Pakker',
+      'zh-CN': '包装数',
+      'zh-TW': '包裝數',
+      'ar-EG': 'عدد العبوات',
+    },
+    help: {
+      'en-US': 'How many of the supplier’s packs are ordered.',
+      'de-DE': 'Wie viele Packungen des Lieferanten bestellt werden.',
+      'fr-FR': 'Combien de colis du fournisseur sont commandés.',
+      'cs-CZ': 'Kolik balení dodavatele se objednává.',
+      'da-DK': 'Hvor mange af leverandørens pakker der bestilles.',
+      'zh-CN': '订购的供应商包装数量。',
+      'zh-TW': '訂購的供應商包裝數量。',
+      'ar-EG': 'عدد عبوات المورّد المطلوبة.',
+    },
+    type: 'number',
+    required: false,
+  },
+  {
+    id: 'pack',
+    label: {
+      'en-US': 'Pack name',
+      'de-DE': 'Name der Packung',
+      'fr-FR': 'Nom du colis',
+      'cs-CZ': 'Název balení',
+      'da-DK': 'Pakkens navn',
+      'zh-CN': '包装名称',
+      'zh-TW': '包裝名稱',
+      'ar-EG': 'اسم العبوة',
+    },
+    help: {
+      'en-US': 'What one pack is called — a case of 12, a sack. Printed after the number of packs.',
+      'de-DE': 'Wie eine Packung heißt — ein Karton mit 12, ein Sack. Nach der Zahl der Packungen gedruckt.',
+      'fr-FR': 'Le nom d’un colis — un carton de 12, un sac. Imprimé après le nombre de colis.',
+      'cs-CZ': 'Jak se jedno balení jmenuje — karton po 12, pytel. Tiskne se za počtem balení.',
+      'da-DK': 'Hvad én pakke hedder — en kasse med 12, en sæk. Trykkes efter antallet af pakker.',
+      'zh-CN': '一个包装的名称——一箱 12 件、一袋。印在包装数之后。',
+      'zh-TW': '一個包裝的名稱——一箱 12 件、一袋。印在包裝數之後。',
+      'ar-EG': 'اسم العبوة الواحدة — صندوق من 12، كيس. يُطبع بعد عدد العبوات.',
+    },
+    type: 'text',
+    required: false,
+  },
+  {
+    id: 'units',
+    label: {
+      'en-US': 'Units',
+      'de-DE': 'Einheiten',
+      'fr-FR': 'Unités',
+      'cs-CZ': 'Jednotky',
+      'da-DK': 'Enheder',
+      'zh-CN': '单位数量',
+      'zh-TW': '單位數量',
+      'ar-EG': 'عدد الوحدات',
+    },
+    help: {
+      'en-US': 'The same quantity counted in the item’s own unit.',
+      'de-DE': 'Dieselbe Menge, in der eigenen Einheit des Artikels gezählt.',
+      'fr-FR': 'La même quantité, comptée dans l’unité de l’article.',
+      'cs-CZ': 'Stejné množství počítané ve vlastní jednotce položky.',
+      'da-DK': 'Den samme mængde talt i varens egen enhed.',
+      'zh-CN': '按物品自身单位计的同一数量。',
+      'zh-TW': '按品項自身單位計的同一數量。',
+      'ar-EG': 'الكمية نفسها محسوبة بوحدة الصنف.',
+    },
+    type: 'number',
+    required: false,
+  },
+  {
+    id: 'unit',
+    label: {
+      'en-US': 'Unit',
+      'de-DE': 'Einheit',
+      'fr-FR': 'Unité',
+      'cs-CZ': 'Jednotka',
+      'da-DK': 'Enhed',
+      'zh-CN': '单位',
+      'zh-TW': '單位',
+      'ar-EG': 'الوحدة',
+    },
+    help: {
+      'en-US': 'What the item is counted in — kg, bottle, piece. Printed after the units.',
+      'de-DE': 'Worin der Artikel gezählt wird — kg, Flasche, Stück. Nach den Einheiten gedruckt.',
+      'fr-FR': 'L’unité dans laquelle l’article est compté — kg, bouteille, pièce. Imprimée après les unités.',
+      'cs-CZ': 'V čem se položka počítá — kg, láhev, kus. Tiskne se za jednotkami.',
+      'da-DK': 'Hvad varen tælles i — kg, flaske, stk. Trykkes efter enhederne.',
+      'zh-CN': '物品的计量单位——千克、瓶、件。印在单位数量之后。',
+      'zh-TW': '品項的計量單位——公斤、瓶、件。印在單位數量之後。',
+      'ar-EG': 'ما يُعدّ به الصنف — كجم، زجاجة، قطعة. تُطبع بعد عدد الوحدات.',
+    },
+    type: 'text',
+    required: false,
+  },
+];
+
+/** What the kind with prices adds to a line: what one pack costs, and what the line comes to. */
+const ORDER_PRICE_COLUMNS: NonNullable<OutlineSlot['columns']> = [
+  {
+    id: 'rate',
+    label: {
+      'en-US': 'Price per pack',
+      'de-DE': 'Preis je Packung',
+      'fr-FR': 'Prix par colis',
+      'cs-CZ': 'Cena za balení',
+      'da-DK': 'Pris pr. pakke',
+      'zh-CN': '每包价格',
+      'zh-TW': '每包價格',
+      'ar-EG': 'سعر العبوة',
+    },
+    type: 'money',
+    required: false,
+  },
+  {
+    id: 'amount',
+    label: {
+      'en-US': 'Line amount',
+      'de-DE': 'Betrag der Position',
+      'fr-FR': 'Montant de la ligne',
+      'cs-CZ': 'Částka položky',
+      'da-DK': 'Linjens beløb',
+      'zh-CN': '本行金额',
+      'zh-TW': '本列金額',
+      'ar-EG': 'مبلغ السطر',
+    },
+    help: {
+      'en-US': 'The amount stored for the line. Mapped, it is printed as stored; unmapped, packs times the price of one.',
+      'de-DE': 'Der gespeicherte Betrag der Position. Zugeordnet wird er so gedruckt; sonst Packungen mal Preis je Packung.',
+      'fr-FR': 'Le montant enregistré de la ligne. Associé, il est imprimé tel quel ; sinon le nombre de colis fois le prix d’un colis.',
+      'cs-CZ': 'Uložená částka položky. Přiřazená se tiskne, jak je; jinak počet balení krát cena za balení.',
+      'da-DK': 'Linjens gemte beløb. Tilknyttet trykkes det som gemt; ellers pakker gange prisen pr. pakke.',
+      'zh-CN': '该行存储的金额。映射时按存储值打印；不映射时为包装数乘每包价格。',
+      'zh-TW': '該列儲存的金額。對應時依儲存值列印；不對應時為包裝數乘每包價格。',
+      'ar-EG': 'المبلغ المخزن للسطر. عند ربطه يُطبع كما هو؛ وإلا فعدد العبوات مضروباً في سعر العبوة.',
+    },
+    type: 'money',
+    required: false,
+  },
+];
+
+const ORDER_ITEMS_LABELS = {
+  label: {
+    'en-US': 'Lines',
+    'de-DE': 'Positionen',
+    'fr-FR': 'Lignes',
+    'cs-CZ': 'Položky',
+    'da-DK': 'Linjer',
+    'zh-CN': '明细',
+    'zh-TW': '明細',
+    'ar-EG': 'البنود',
+  },
+  help: {
+    'en-US': 'The child table holding one row per line of the order.',
+    'de-DE': 'Die untergeordnete Tabelle mit einer Zeile je Position der Bestellung.',
+    'fr-FR': 'La table enfant contenant une ligne par poste de la commande.',
+    'cs-CZ': 'Podřízená tabulka s jedním řádkem na položku objednávky.',
+    'da-DK': 'Undertabellen med én række per linje i ordren.',
+    'zh-CN': '订单每行一条记录的子表。',
+    'zh-TW': '訂單每列一筆記錄的子表。',
+    'ar-EG': 'الجدول الفرعي الذي يحمل سطراً لكل بند في الطلب.',
+  },
+} as const satisfies Pick<OutlineSlot, 'label' | 'help'>;
+
+const ORDER_ITEMS: OutlineSlot = {
+  id: 'items',
+  ...ORDER_ITEMS_LABELS,
+  type: 'collection',
+  required: false,
+  columns: [...ORDER_COLUMNS, ...ORDER_PRICE_COLUMNS],
+};
+
+/** The same lines for the order sent without prices: no column a price could be mapped to. */
+const ORDER_ITEMS_UNPRICED: OutlineSlot = { ...ORDER_ITEMS, columns: ORDER_COLUMNS };
+
+/** An order's total: one stored figure, with none of an invoice's subtotal and tax beside it. */
+const ORDER_TOTAL: OutlineSlot = {
+  ...TOTAL,
+  help: {
+    'en-US': 'Map the stored total and it is printed exactly as stored. Unmapped, the amounts of the lines are added up here.',
+    'de-DE': 'Die gespeicherte Gesamtsumme zuordnen, und sie wird genau so gedruckt. Ohne Zuordnung werden die Beträge der Positionen hier addiert.',
+    'fr-FR': 'Associez le total enregistré : il est imprimé tel quel. Sans correspondance, les montants des lignes sont additionnés ici.',
+    'cs-CZ': 'Přiřaďte uloženou celkovou částku a vytiskne se přesně tak. Bez přiřazení se částky položek sečtou zde.',
+    'da-DK': 'Tilknyt den gemte total, så trykkes den præcis som gemt. Uden tilknytning lægges linjernes beløb sammen her.',
+    'zh-CN': '映射存储的合计，即按存储值原样打印。不映射时在此处合计各行金额。',
+    'zh-TW': '對應儲存的合計，即依儲存值原樣列印。不對應時在此處合計各列金額。',
+    'ar-EG': 'اربط الإجمالي المخزن فيُطبع كما هو تماماً. بدون ربط تُجمع مبالغ البنود هنا.',
+  },
+};
+
+/** What both kinds of order carry: whom it is sent to, where the goods go, and when. */
+const ORDER_SHARED: readonly OutlineSlot[] = [
+  NUMBER,
+  ISSUED_AT,
+  EXPECTED_BY,
+  SUPPLIER_NAME,
+  SUPPLIER_EMAIL,
+  DELIVER_TO,
+  DELIVER_LINES,
+  NOTES,
+];
+
 /** On a receipt the customer is optional: a till receipt names nobody, and a payment's client is two rows away. */
 const CUSTOMER_NAME_OPTIONAL: OutlineSlot = { ...CUSTOMER_NAME, required: false };
 
@@ -1792,6 +2239,15 @@ const OUTLINES: Readonly<Record<string, DocumentOutline>> = {
       PREPARED_BY,
     ],
   },
+  /*
+   * An order to a supplier, twice. The first carries what each pack costs,
+   * what each line comes to and the total, in the order's currency. The second
+   * is the same order for a supplier who is not to be shown the business's
+   * prices: the price columns, the total and the currency are not in it, so
+   * there is no slot for one to arrive through.
+   */
+  [PURCHASE_ORDER]: { slots: [...ORDER_SHARED, CURRENCY, ORDER_ITEMS, ORDER_TOTAL] },
+  [PURCHASE_ORDER_UNPRICED]: { slots: [...ORDER_SHARED, ORDER_ITEMS_UNPRICED] },
 };
 
 export const KINDS: readonly DocumentKind[] = [
@@ -1827,6 +2283,20 @@ export const KINDS: readonly DocumentKind[] = [
   {
     id: 'statement',
     label: KIND_LABELS.statement,
+    formats: ['html', 'pdf'],
+    paper: ['a4', 'letter'],
+    coverage: 'winansi',
+  },
+  {
+    id: PURCHASE_ORDER,
+    label: KIND_LABELS[PURCHASE_ORDER],
+    formats: ['html', 'pdf'],
+    paper: ['a4', 'letter'],
+    coverage: 'winansi',
+  },
+  {
+    id: PURCHASE_ORDER_UNPRICED,
+    label: KIND_LABELS[PURCHASE_ORDER_UNPRICED],
     formats: ['html', 'pdf'],
     paper: ['a4', 'letter'],
     coverage: 'winansi',

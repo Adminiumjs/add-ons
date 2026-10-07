@@ -19,7 +19,9 @@
  * business's own lines and tax number) → who it is for, beside the facts (the
  * kind and its number, the days, the terms) → the title → a quote's scope →
  * the lines → the totals → the payments so far and the amount due → a quote's
- * acceptance → the pay box beside the footer → the signature line. A void
+ * acceptance → the pay box beside the footer → the signature line. An order
+ * to a supplier keeps the same sheet with its own middle: where the goods are
+ * to arrive, the lines counted in packs and in units, and one total. A void
  * document carries the word across the sheet and the day it was voided —
  * NEVER the reason, which is the business's alone.
  *
@@ -33,9 +35,10 @@
  */
 
 import type { InvoiceBody, LineItem } from '../document.ts';
+import { isPurchaseOrder, PURCHASE_ORDER, PURCHASE_ORDER_UNPRICED } from '../kinds.ts';
 import { lineMinor, taxBreakdown, totalsOf } from '../money.ts';
 import { differenceText, isPositive, isZero, productText, sumText } from '../shape-money.ts';
-import type { BoundExtras, LineFacts, StoredLine, SubjectFacts } from '../subject.ts';
+import type { BoundExtras, LineFacts, OrderLine, StoredLine, SubjectFacts } from '../subject.ts';
 import { minorToDecimal, type Formats } from './format.ts';
 import { fill, type LayoutWords } from './words.ts';
 
@@ -226,6 +229,9 @@ const KIND_WORDS: Readonly<Record<string, keyof LayoutWords>> = {
   'credit-note': 'kindCreditNote',
   quote: 'kindQuote',
   statement: 'kindStatement',
+  // One word for both: the sheet a supplier holds says what it is, not what was left off it.
+  [PURCHASE_ORDER]: 'kindPurchaseOrder',
+  [PURCHASE_ORDER_UNPRICED]: 'kindPurchaseOrder',
 };
 
 /** A stored enum value in the document's language, or the value as typed. */
@@ -273,6 +279,8 @@ export function layout(input: LayoutInput): Document {
 
   if (kind === 'statement') {
     blocks.push(...statementBlocks(input));
+  } else if (isPurchaseOrder(kind)) {
+    blocks.push(...purchaseOrderBlocks(input));
   } else if (kind === 'receipt' && facts.receipt.amount !== null && !hasLines(input)) {
     blocks.push(...paymentReceiptBlocks(input));
   } else {
@@ -341,8 +349,12 @@ function drawableImage(value: string): string {
 
 function partiesBlock(input: LayoutInput, kindWord: string, isVoid: boolean, voidDay: string): PartiesBlock {
   const { kind, body, extras, facts, words, formats } = input;
-  const toLabel =
-    kind === 'invoice'
+  // An order is made out to the supplier it is sent to, never to a customer:
+  // the name and the address under it come from the order's own slots.
+  const order = isPurchaseOrder(kind);
+  const toLabel = order
+    ? words.supplier
+    : kind === 'invoice'
       ? words.invoiceTo
       : kind === 'quote'
         ? words.quoteFor
@@ -351,12 +363,17 @@ function partiesBlock(input: LayoutInput, kindWord: string, isVoid: boolean, voi
           : kind === 'statement'
             ? words.statementFor
             : words.to;
-  const toLines = [
-    facts.customerContact,
-    ...body.customer,
-    facts.customerTaxNumber === '' ? '' : fill(words.taxNumber, { number: facts.customerTaxNumber }),
-    extras.customerEmail,
-  ].filter((line) => line !== '');
+  const toName = order ? facts.purchaseOrder.supplierName : body.customerName;
+  const toLines = (
+    order
+      ? [facts.purchaseOrder.supplierEmail]
+      : [
+          facts.customerContact,
+          ...body.customer,
+          facts.customerTaxNumber === '' ? '' : fill(words.taxNumber, { number: facts.customerTaxNumber }),
+          extras.customerEmail,
+        ]
+  ).filter((line) => line !== '');
 
   const day = (value: string) => (value === '' ? '' : formats.day(value));
   let meta: ({ label: string; value: string; words?: boolean } | null)[];
@@ -393,6 +410,15 @@ function partiesBlock(input: LayoutInput, kindWord: string, isVoid: boolean, voi
       ];
       break;
     }
+    case PURCHASE_ORDER:
+    case PURCHASE_ORDER_UNPRICED:
+      // What it is and its number, the day it was sent, the day the goods are wanted.
+      meta = [
+        row(kindWord, body.number),
+        row(words.date, day(body.issued)),
+        row(words.expectedBy, day(facts.purchaseOrder.expectedBy)),
+      ];
+      break;
     default: {
       const { from, to } = facts.servicePeriod;
       /*
@@ -417,11 +443,11 @@ function partiesBlock(input: LayoutInput, kindWord: string, isVoid: boolean, voi
   if (isVoid && voidDay !== '') meta.push(row(words.voided, voidDay));
 
   // A till receipt made out to nobody says nothing about whom it is for.
-  const nobody = body.customerName === '' && toLines.length === 0;
+  const nobody = toName === '' && toLines.length === 0;
   return {
     kind: 'parties',
     toLabel: nobody ? '' : toLabel,
-    toName: body.customerName,
+    toName,
     toLines,
     meta: meta.filter(notEmpty),
   };
@@ -694,11 +720,83 @@ function statementBlocks(input: LayoutInput): Block[] {
   ];
 }
 
+/** A quantity and the name of what is counted, joined as the sheet prints them; `''` with no quantity. */
+function counted(quantity: string | null, name: string, joiner: string, formats: Formats): string {
+  if (quantity === null) return '';
+  return name === '' ? formats.quantity(quantity) : `${formats.quantity(quantity)}${joiner}${name}`;
+}
+
+/** What a line of an order comes to: the stored amount, or packs times the price of one, or `null`. */
+function orderLineAmount(line: OrderLine, scale: number): string | null {
+  if (line.amount !== null) return line.amount;
+  return line.packs === null || line.rate === null ? null : productText(line.packs, line.rate, scale);
+}
+
+/**
+ * An order to a supplier: where the goods are to arrive, every line counted
+ * in the supplier's packs and in the item's own unit, and — on the order sent
+ * with its prices — what a pack costs, what each line comes to and the total.
+ *
+ * WITH PRICES OR WITHOUT IS THE KIND, read once, here. Everything that
+ * touches a price below sits behind that one flag: the two columns, their
+ * cells and the ladder. The order sent without prices is therefore not the
+ * other one with figures blanked out — it has three columns and no ladder,
+ * and a price a caller sent anyway is never looked at.
+ */
+function purchaseOrderBlocks(input: LayoutInput): Block[] {
+  const { facts, words, formats } = input;
+  const order = facts.purchaseOrder;
+  const priced = input.kind === PURCHASE_ORDER;
+  const blocks: Block[] = [];
+
+  const place = [order.deliverTo, ...order.deliverLines].filter((line) => line !== '');
+  if (place.length > 0) blocks.push({ kind: 'passage', heading: words.deliverTo, lines: place });
+
+  const amounts = priced ? order.lines.map((line) => orderLineAmount(line, facts.scale)) : [];
+  blocks.push({
+    kind: 'items',
+    columns: [
+      { label: words.description, align: 'left' },
+      { label: words.packs, align: 'right' },
+      { label: words.units, align: 'right' },
+      ...(priced
+        ? [
+            { label: words.pricePerPack, align: 'right' as const },
+            { label: words.amount, align: 'right' as const },
+          ]
+        : []),
+    ],
+    rows: order.lines.map((line, at) => {
+      const amount = amounts[at] ?? null;
+      return {
+        cells: [
+          line.desc,
+          counted(line.packs, line.pack, ' × ', formats),
+          counted(line.units, line.unit, ' ', formats),
+          ...(priced ? [line.rate === null ? '' : formats.money(line.rate), amount === null ? '' : formats.money(amount)] : []),
+        ],
+        // The number the supplier knows the item by, under the business's own name for it.
+        note: line.code,
+      };
+    }),
+  });
+
+  if (priced) {
+    // The stored total as stored; with none mapped, the lines' amounts added up.
+    const known = amounts.filter(notEmpty);
+    const total = facts.total ?? (known.length > 0 ? sumText(known, facts.scale) : null);
+    if (total !== null) blocks.push({ kind: 'ladder', rows: [{ label: words.total, value: formats.money(total), emphasis: true }] });
+  }
+  return blocks;
+}
+
 /**
  * The pay box and the footer. How to pay (the business's instructions, then
  * the reference to quote) on an invoice or a statement; the thanks on a
  * receipt; a quote's split. Nothing to pay on a void document, and its footer
- * says why the number is still there.
+ * says why the number is still there. Nothing to pay on an order to a supplier
+ * either — the business is the one who will be asked — so it keeps the footer
+ * and has no pay box.
  */
 function footBlock(input: LayoutInput, isVoid: boolean, voidDay: string): FootBlock | null {
   const { kind, body, facts, words, formats } = input;
@@ -723,7 +821,7 @@ function footBlock(input: LayoutInput, isVoid: boolean, voidDay: string): FootBl
   } else if (kind === 'statement') {
     payLabel = words.howToPay;
     payLines = [...instructions.map((line) => ({ text: line, strong: false })), { text: words.referenceInvoiceNumber, strong: true }];
-  } else if (!isVoid && (kind === 'invoice' || instructions.length > 0)) {
+  } else if (!isVoid && !isPurchaseOrder(kind) && (kind === 'invoice' || instructions.length > 0)) {
     payLabel = words.howToPay;
     payLines = instructions.map((line) => ({ text: line, strong: false }));
     if (kind === 'invoice' && body.number !== '') payLines.push({ text: fill(words.referenceLine, { number: body.number }), strong: true });

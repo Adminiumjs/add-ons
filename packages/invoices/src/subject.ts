@@ -42,7 +42,7 @@
 
 import type { DocumentError, DocumentSubject, OutlineSlot } from '@adminium/add-on-host/contracts';
 
-import { describe } from './kinds.ts';
+import { describe, isPurchaseOrder } from './kinds.ts';
 import type { InvoiceBody, LineItem } from './document.ts';
 import { emptyBody, normalizeInvoiceBody } from './document.ts';
 import { currencyDigits, dayIn, isCurrencyCode, minorToDecimal } from './render/format.ts';
@@ -179,6 +179,37 @@ function itemsFrom(slot: OutlineSlot | undefined, subject: DocumentSubject, scal
   }));
 }
 
+/** A count the engine passed through, as the decimal text a figure is printed from, or `null`. */
+function countOf(value: unknown): string | null {
+  const count = numberOf(value);
+  return count === null ? null : quantityToText(count);
+}
+
+/**
+ * The lines of an order to a supplier.
+ *
+ * WHICH COLUMNS ARE READ IS THE OUTLINE'S TO SAY, not the row's. The order
+ * sent without prices lists no `rate` and no `amount`, so neither is read
+ * here for it — a row that carries one anyway (a caller that sent the whole
+ * table) yields the same two `null`s as a row that carries none, and nothing
+ * after this point has a price to print by mistake.
+ */
+function orderLinesFrom(slot: OutlineSlot | undefined, subject: DocumentSubject, scale: number): OrderLine[] {
+  if (slot === undefined) return [];
+  const listed = new Set((slot.columns ?? []).map((column) => column.id));
+  const rows = subject.collections[slot.id] ?? [];
+  return rows.map((row) => ({
+    desc: textOf(row.desc),
+    code: textOf(row.code).trim(),
+    packs: countOf(row.packs),
+    pack: textOf(row.pack).trim(),
+    units: countOf(row.units),
+    unit: textOf(row.unit).trim(),
+    rate: listed.has('rate') ? moneyOf(row.rate, scale) : null,
+    amount: listed.has('amount') ? moneyOf(row.amount, scale) : null,
+  }));
+}
+
 /**
  * The bound values that have NO field in the authored body.
  *
@@ -250,6 +281,25 @@ export interface StatementEntry {
   readonly number: string;
   readonly amount: string;
   readonly balance: string | null;
+}
+
+/**
+ * One line of an order to a supplier. The quantity is there twice, as the
+ * supplier counts it (packs, and what a pack is called) and as the business
+ * does (units, and the unit) — each `null` or empty when its column is
+ * unmapped. The two prices are always `null` on the order sent without them.
+ */
+export interface OrderLine {
+  readonly desc: string;
+  /** The number the supplier knows the item by, or `''`. */
+  readonly code: string;
+  readonly packs: string | null;
+  readonly pack: string;
+  readonly units: string | null;
+  readonly unit: string;
+  /** What one pack costs, as decimal text in the document's currency. */
+  readonly rate: string | null;
+  readonly amount: string | null;
 }
 
 /** The letterhead as the document prints it, from the subject and, behind it, the settings. */
@@ -329,6 +379,17 @@ export interface SubjectFacts {
     readonly closing: string | null;
     readonly entries: readonly StatementEntry[];
   };
+  /** An order to a supplier: whom it goes to, where the goods are to arrive and when, and its lines. */
+  readonly purchaseOrder: {
+    readonly supplierName: string;
+    readonly supplierEmail: string;
+    /** The name of the place the goods go to, and the lines of its address. */
+    readonly deliverTo: string;
+    readonly deliverLines: readonly string[];
+    /** `YYYY-MM-DD`, or `''`. */
+    readonly expectedBy: string;
+    readonly lines: readonly OrderLine[];
+  };
 }
 
 export interface BoundDocument {
@@ -401,11 +462,16 @@ export function documentFrom(
   // Minor units are in the DOCUMENT's currency; an authored symbol falls back to the subject's code.
   const scale = currencyDigits(isCurrencyCode(next.currency) ? next.currency : subject.currency);
 
-  const items = itemsFrom(
-    outline.slots.find((slot) => slot.id === 'items'),
-    subject,
-    scale,
-  );
+  /*
+   * An order's lines are not an invoice's: they have no `qty` and, on the
+   * order sent without prices, no `rate`. They are read once, by their own
+   * reader, and never through the two readers below — which would make up a
+   * quantity of one for every line and read a price off a row whatever the
+   * kind.
+   */
+  const order = isPurchaseOrder(kind);
+  const itemsSlot = outline.slots.find((slot) => slot.id === 'items');
+  const items = order ? [] : itemsFrom(itemsSlot, subject, scale);
 
   const given = subject.number !== null && subject.number !== '' ? subject.number : has('number') ? textOf(subject.fields.number) : '';
   if (given !== '') next.number = kind === 'receipt' ? inSeries(given, settings.prefixes.receipt) : given;
@@ -423,8 +489,10 @@ export function documentFrom(
     next.discountRate = basisPointsToText(Number(subject.fields.discountRate));
   }
   if (items.length > 0) next.items = items;
+  // An order's note is the record's, like its number; other kinds map none.
+  if (order && has('notes')) next.notes = textOf(subject.fields.notes);
 
-  const rows = subject.collections.items ?? [];
+  const rows = order ? [] : (subject.collections.items ?? []);
   const storedLines: StoredLine[] | null = rows.some((row) => typeof row.amount === 'number' || typeof row.share === 'number')
     ? rows.map((row) => ({
         desc: textOf(row.desc),
@@ -508,6 +576,14 @@ export function documentFrom(
       paymentsTotal: moneyOf(field('paymentsTotal'), scale),
       closing: moneyOf(field('closingBalance'), scale),
       entries,
+    },
+    purchaseOrder: {
+      supplierName: textOf(field('supplierName')),
+      supplierEmail: textOf(field('supplierEmail')).trim(),
+      deliverTo: textOf(field('deliverTo')).trim(),
+      deliverLines: linesOf(field('deliverLines')),
+      expectedBy: dateOf(field('expectedBy')).trim(),
+      lines: order ? orderLinesFrom(itemsSlot, subject, scale) : [],
     },
   };
 
