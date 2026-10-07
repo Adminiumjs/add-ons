@@ -368,6 +368,46 @@
                 }
               }
             }
+          },
+          {
+            "ref": "on_hand",
+            "type": "decimal",
+            "scale": 3,
+            "default": 0,
+            "rules": {
+              "rollup": {
+                "from": "stock_points",
+                "via": "item_id",
+                "sum": "on_hand"
+              }
+            }
+          },
+          {
+            "ref": "value",
+            "type": "money",
+            "scale": "currency",
+            "nullable": true,
+            "rules": {
+              "formula": {
+                "round": {
+                  "mul": [
+                    {
+                      "coalesce": [
+                        "on_hand",
+                        0
+                      ]
+                    },
+                    "cost_avg"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "ref": "receipt_id",
+            "type": "fk",
+            "references": "postings",
+            "nullable": true
           }
         ]
       },
@@ -768,6 +808,12 @@
                 ]
               }
             }
+          },
+          {
+            "ref": "receipt_id",
+            "type": "fk",
+            "references": "postings",
+            "nullable": true
           }
         ],
         "unique": [
@@ -788,6 +834,977 @@
             "source_row"
           ]
         ]
+      },
+      {
+        "ref": "batches",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "item_id",
+            "type": "fk",
+            "references": "items"
+          },
+          {
+            "ref": "code",
+            "type": "text",
+            "maxLength": 40
+          },
+          {
+            "ref": "unassigned",
+            "type": "bool",
+            "default": false
+          },
+          {
+            "ref": "expires_on",
+            "type": "date",
+            "nullable": true
+          },
+          {
+            "ref": "received_on",
+            "type": "date",
+            "nullable": true
+          },
+          {
+            "ref": "receipt_id",
+            "type": "fk",
+            "references": "postings",
+            "nullable": true
+          }
+        ],
+        "unique": [
+          [
+            "item_id",
+            "code"
+          ]
+        ]
+      },
+      {
+        "ref": "stock_points",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "item_id",
+            "type": "fk",
+            "references": "items",
+            "index": true
+          },
+          {
+            "ref": "place_id",
+            "type": "fk",
+            "references": "places"
+          },
+          {
+            "ref": "on_hand",
+            "type": "decimal",
+            "scale": 3,
+            "default": 0,
+            "rules": {
+              "rollup": {
+                "from": "levels",
+                "via": "stock_point_id",
+                "sum": "qty"
+              }
+            }
+          },
+          {
+            "ref": "reserved",
+            "type": "decimal",
+            "scale": 3,
+            "default": 0,
+            "rules": {
+              "rollup": {
+                "from": "reservations",
+                "via": "stock_point_id",
+                "sum": "qty",
+                "where": {
+                  "column": "state",
+                  "eq": "held"
+                }
+              }
+            }
+          },
+          {
+            "ref": "on_order",
+            "type": "decimal",
+            "scale": 3,
+            "default": 0,
+            "rules": {
+              "rollup": {
+                "from": "on_order_moves",
+                "via": "stock_point_id",
+                "sum": "qty"
+              }
+            }
+          },
+          {
+            "ref": "available",
+            "type": "decimal",
+            "scale": 3,
+            "nullable": true,
+            "rules": {
+              "formula": {
+                "sub": [
+                  {
+                    "coalesce": [
+                      "on_hand",
+                      0
+                    ]
+                  },
+                  {
+                    "coalesce": [
+                      "reserved",
+                      0
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "ref": "reorder_level",
+            "type": "decimal",
+            "scale": 3,
+            "nullable": true
+          },
+          {
+            "ref": "reorder_qty",
+            "type": "decimal",
+            "scale": 3,
+            "nullable": true
+          },
+          {
+            "ref": "reorder_paused",
+            "type": "bool",
+            "default": false
+          },
+          {
+            "ref": "needs_count",
+            "type": "bool",
+            "default": false
+          },
+          {
+            "ref": "last_counted_at",
+            "type": "timestamptz",
+            "nullable": true
+          },
+          {
+            "ref": "cost_avg",
+            "type": "decimal",
+            "scale": 4,
+            "default": 0
+          },
+          {
+            "ref": "value",
+            "type": "money",
+            "scale": "currency",
+            "nullable": true,
+            "rules": {
+              "formula": {
+                "round": {
+                  "mul": [
+                    {
+                      "coalesce": [
+                        "on_hand",
+                        0
+                      ]
+                    },
+                    "cost_avg"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "ref": "for_sale",
+            "type": "bool",
+            "nullable": true,
+            "rules": {
+              "copy": {
+                "via": "place_id",
+                "from": "for_sale",
+                "mode": "always",
+                "follow": true
+              }
+            }
+          },
+          {
+            "ref": "item_active",
+            "type": "bool",
+            "nullable": true,
+            "rules": {
+              "copy": {
+                "via": "item_id",
+                "from": "active",
+                "mode": "always",
+                "follow": true
+              }
+            }
+          },
+          {
+            "ref": "item_name",
+            "type": "text",
+            "maxLength": 160,
+            "nullable": true,
+            "rules": {
+              "copy": {
+                "via": "item_id",
+                "from": "name",
+                "mode": "always",
+                "follow": true
+              }
+            }
+          },
+          {
+            "ref": "place_name",
+            "type": "text",
+            "maxLength": 80,
+            "nullable": true,
+            "rules": {
+              "copy": {
+                "via": "place_id",
+                "from": "name",
+                "mode": "always",
+                "follow": true
+              }
+            }
+          },
+          {
+            "ref": "category_id",
+            "type": "fk",
+            "references": "categories",
+            "nullable": true,
+            "rules": {
+              "copy": {
+                "via": "item_id",
+                "from": "category_id",
+                "mode": "always",
+                "follow": true
+              }
+            }
+          },
+          {
+            "ref": "request_note",
+            "type": "enum",
+            "enum": [
+              "none",
+              "drafted",
+              "needs_supplier",
+              "elsewhere"
+            ],
+            "default": "none"
+          },
+          {
+            "ref": "request_elsewhere",
+            "type": "text",
+            "maxLength": 80,
+            "nullable": true
+          },
+          {
+            "ref": "request_supplier",
+            "type": "text",
+            "maxLength": 120,
+            "nullable": true
+          },
+          {
+            "ref": "low",
+            "type": "int",
+            "nullable": true,
+            "rules": {
+              "formula": {
+                "if": [
+                  {
+                    "isNull": "reorder_level"
+                  },
+                  0,
+                  {
+                    "if": [
+                      {
+                        "lte": [
+                          "available",
+                          "reorder_level"
+                        ]
+                      },
+                      1,
+                      0
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "ref": "to_reorder",
+            "type": "int",
+            "nullable": true,
+            "rules": {
+              "formula": {
+                "if": [
+                  {
+                    "and": [
+                      {
+                        "eq": [
+                          "low",
+                          1
+                        ]
+                      },
+                      {
+                        "lte": [
+                          {
+                            "add": [
+                              "available",
+                              {
+                                "coalesce": [
+                                  "on_order",
+                                  0
+                                ]
+                              }
+                            ]
+                          },
+                          "reorder_level"
+                        ]
+                      },
+                      {
+                        "eq": [
+                          "reorder_paused",
+                          false
+                        ]
+                      },
+                      {
+                        "eq": [
+                          "item_active",
+                          true
+                        ]
+                      }
+                    ]
+                  },
+                  1,
+                  0
+                ]
+              },
+              "announce": true
+            }
+          },
+          {
+            "ref": "state",
+            "type": "int",
+            "nullable": true,
+            "rules": {
+              "formula": {
+                "if": [
+                  {
+                    "eq": [
+                      "low",
+                      1
+                    ]
+                  },
+                  {
+                    "if": [
+                      {
+                        "lte": [
+                          "available",
+                          0
+                        ]
+                      },
+                      3,
+                      {
+                        "if": [
+                          {
+                            "gt": [
+                              {
+                                "coalesce": [
+                                  "on_order",
+                                  0
+                                ]
+                              },
+                              0
+                            ]
+                          },
+                          2,
+                          1
+                        ]
+                      }
+                    ]
+                  },
+                  0
+                ]
+              },
+              "announce": true
+            }
+          },
+          {
+            "ref": "receipt_id",
+            "type": "fk",
+            "references": "postings",
+            "nullable": true
+          }
+        ],
+        "unique": [
+          [
+            "item_id",
+            "place_id"
+          ]
+        ]
+      },
+      {
+        "ref": "levels",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "stock_point_id",
+            "type": "fk",
+            "references": "stock_points",
+            "index": true
+          },
+          {
+            "ref": "batch_id",
+            "type": "fk",
+            "references": "batches"
+          },
+          {
+            "ref": "item_id",
+            "type": "fk",
+            "references": "items",
+            "nullable": true,
+            "rules": {
+              "copy": {
+                "via": "stock_point_id",
+                "from": "item_id",
+                "mode": "always"
+              }
+            }
+          },
+          {
+            "ref": "place_id",
+            "type": "fk",
+            "references": "places",
+            "nullable": true,
+            "rules": {
+              "copy": {
+                "via": "stock_point_id",
+                "from": "place_id",
+                "mode": "always"
+              }
+            }
+          },
+          {
+            "ref": "unassigned",
+            "type": "bool",
+            "default": false,
+            "rules": {
+              "copy": {
+                "via": "batch_id",
+                "from": "unassigned",
+                "mode": "always"
+              }
+            }
+          },
+          {
+            "ref": "batch_code",
+            "type": "text",
+            "maxLength": 40,
+            "nullable": true,
+            "rules": {
+              "copy": {
+                "via": "batch_id",
+                "from": "code",
+                "mode": "always"
+              }
+            }
+          },
+          {
+            "ref": "expires_on",
+            "type": "date",
+            "nullable": true,
+            "rules": {
+              "copy": {
+                "via": "batch_id",
+                "from": "expires_on",
+                "mode": "always",
+                "follow": true
+              }
+            }
+          },
+          {
+            "ref": "item_name",
+            "type": "text",
+            "maxLength": 160,
+            "nullable": true,
+            "rules": {
+              "copy": {
+                "via": "item_id",
+                "from": "name",
+                "mode": "always",
+                "follow": true
+              }
+            }
+          },
+          {
+            "ref": "place_name",
+            "type": "text",
+            "maxLength": 80,
+            "nullable": true,
+            "rules": {
+              "copy": {
+                "via": "place_id",
+                "from": "name",
+                "mode": "always",
+                "follow": true
+              }
+            }
+          },
+          {
+            "ref": "opening",
+            "type": "decimal",
+            "scale": 3,
+            "default": 0
+          },
+          {
+            "ref": "taken",
+            "type": "decimal",
+            "scale": 3,
+            "default": 0,
+            "rules": {
+              "rollup": {
+                "from": "movements",
+                "via": "level_id",
+                "sum": "out_qty",
+                "balance": {
+                  "column": "qty",
+                  "of": "opening"
+                },
+                "cap": true,
+                "capUnless": {
+                  "column": "unassigned"
+                }
+              }
+            }
+          },
+          {
+            "ref": "qty",
+            "type": "decimal",
+            "scale": 3,
+            "default": 0
+          },
+          {
+            "ref": "receipt_id",
+            "type": "fk",
+            "references": "postings",
+            "nullable": true
+          }
+        ],
+        "unique": [
+          [
+            "stock_point_id",
+            "batch_id"
+          ]
+        ],
+        "indexes": [
+          [
+            "item_id"
+          ]
+        ]
+      },
+      {
+        "ref": "postings",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "source_table",
+            "type": "text",
+            "maxLength": 128,
+            "rules": {
+              "tableRef": true
+            }
+          },
+          {
+            "ref": "source_row",
+            "type": "text",
+            "maxLength": 64
+          },
+          {
+            "ref": "source_line",
+            "type": "text",
+            "maxLength": 64
+          },
+          {
+            "ref": "line_table",
+            "type": "text",
+            "maxLength": 128,
+            "rules": {
+              "tableRef": true
+            }
+          },
+          {
+            "ref": "ledger",
+            "type": "text",
+            "maxLength": 40
+          },
+          {
+            "ref": "action",
+            "type": "text",
+            "maxLength": 40
+          },
+          {
+            "ref": "posting",
+            "type": "text",
+            "maxLength": 40
+          },
+          {
+            "ref": "phase",
+            "type": "enum",
+            "enum": [
+              "reserve",
+              "post",
+              "reverse"
+            ]
+          },
+          {
+            "ref": "round",
+            "type": "int"
+          },
+          {
+            "ref": "state",
+            "type": "enum",
+            "enum": [
+              "planned",
+              "unplanned"
+            ]
+          },
+          {
+            "ref": "rows",
+            "type": "int"
+          },
+          {
+            "ref": "add_on_version",
+            "type": "text",
+            "maxLength": 40
+          },
+          {
+            "ref": "origin",
+            "type": "enum",
+            "enum": [
+              "staff",
+              "public",
+              "system"
+            ]
+          },
+          {
+            "ref": "by",
+            "type": "text",
+            "maxLength": 64
+          },
+          {
+            "ref": "at",
+            "type": "timestamptz"
+          },
+          {
+            "ref": "held_until",
+            "type": "timestamptz",
+            "nullable": true
+          }
+        ]
+      },
+      {
+        "ref": "movements",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "level_id",
+            "type": "fk",
+            "references": "levels",
+            "index": true
+          },
+          {
+            "ref": "stock_point_id",
+            "type": "fk",
+            "references": "stock_points",
+            "nullable": true,
+            "rules": {
+              "copy": {
+                "via": "level_id",
+                "from": "stock_point_id",
+                "mode": "always"
+              }
+            }
+          },
+          {
+            "ref": "item_id",
+            "type": "fk",
+            "references": "items",
+            "nullable": true,
+            "rules": {
+              "copy": {
+                "via": "level_id",
+                "from": "item_id",
+                "mode": "always"
+              }
+            }
+          },
+          {
+            "ref": "place_id",
+            "type": "fk",
+            "references": "places",
+            "nullable": true,
+            "rules": {
+              "copy": {
+                "via": "level_id",
+                "from": "place_id",
+                "mode": "always"
+              }
+            }
+          },
+          {
+            "ref": "batch_id",
+            "type": "fk",
+            "references": "batches",
+            "nullable": true,
+            "rules": {
+              "copy": {
+                "via": "level_id",
+                "from": "batch_id",
+                "mode": "always"
+              }
+            }
+          },
+          {
+            "ref": "kind",
+            "type": "enum",
+            "enum": [
+              "opening",
+              "received",
+              "sold",
+              "used",
+              "returned",
+              "adjusted",
+              "moved_out",
+              "moved_in",
+              "written_off",
+              "made",
+              "consumed",
+              "sent_back"
+            ]
+          },
+          {
+            "ref": "qty",
+            "type": "decimal",
+            "scale": 3
+          },
+          {
+            "ref": "out_qty",
+            "type": "decimal",
+            "scale": 3,
+            "nullable": true,
+            "rules": {
+              "formula": {
+                "sub": [
+                  0,
+                  "qty"
+                ]
+              }
+            }
+          },
+          {
+            "ref": "unit_cost",
+            "type": "decimal",
+            "scale": 4,
+            "nullable": true
+          },
+          {
+            "ref": "amount",
+            "type": "money",
+            "scale": "currency",
+            "nullable": true,
+            "rules": {
+              "formula": {
+                "round": {
+                  "mul": [
+                    "qty",
+                    {
+                      "coalesce": [
+                        "unit_cost",
+                        0
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "ref": "cost_out",
+            "type": "money",
+            "scale": "currency",
+            "nullable": true,
+            "rules": {
+              "formula": {
+                "sub": [
+                  0,
+                  "amount"
+                ]
+              }
+            }
+          },
+          {
+            "ref": "reason_id",
+            "type": "fk",
+            "references": "reasons",
+            "nullable": true
+          },
+          {
+            "ref": "note",
+            "type": "text",
+            "maxLength": 500,
+            "nullable": true
+          },
+          {
+            "ref": "receipt_id",
+            "type": "fk",
+            "references": "postings",
+            "nullable": true
+          },
+          {
+            "ref": "reverses_id",
+            "type": "fk",
+            "references": "movements",
+            "nullable": true
+          },
+          {
+            "ref": "pair_id",
+            "type": "fk",
+            "references": "movements",
+            "nullable": true
+          },
+          {
+            "ref": "by",
+            "type": "text",
+            "maxLength": 120,
+            "nullable": true,
+            "rules": {
+              "stamp": {
+                "set": "user-name",
+                "on": "create"
+              }
+            }
+          },
+          {
+            "ref": "at",
+            "type": "timestamptz",
+            "nullable": true,
+            "rules": {
+              "stamp": {
+                "set": "now",
+                "on": "create"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "ref": "reservations",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "stock_point_id",
+            "type": "fk",
+            "references": "stock_points",
+            "index": true
+          },
+          {
+            "ref": "qty",
+            "type": "decimal",
+            "scale": 3
+          },
+          {
+            "ref": "state",
+            "type": "enum",
+            "enum": [
+              "held",
+              "fulfilled",
+              "released"
+            ],
+            "default": "held"
+          },
+          {
+            "ref": "receipt_id",
+            "type": "fk",
+            "references": "postings",
+            "nullable": true
+          }
+        ]
+      },
+      {
+        "ref": "on_order_moves",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "stock_point_id",
+            "type": "fk",
+            "references": "stock_points",
+            "index": true
+          },
+          {
+            "ref": "qty",
+            "type": "decimal",
+            "scale": 3
+          },
+          {
+            "ref": "kind",
+            "type": "enum",
+            "enum": [
+              "sent",
+              "received",
+              "closed",
+              "cancelled",
+              "reopened",
+              "sent_back"
+            ]
+          },
+          {
+            "ref": "receipt_id",
+            "type": "fk",
+            "references": "postings",
+            "nullable": true
+          },
+          {
+            "ref": "at",
+            "type": "timestamptz",
+            "nullable": true,
+            "rules": {
+              "stamp": {
+                "set": "now",
+                "on": "create"
+              }
+            }
+          }
+        ]
       }
     ]
   },
@@ -807,6 +1824,697 @@
         "server": "dist/server.js"
       }
     ],
-    "settingsTable": "settings"
+    "settingsTable": "settings",
+    "ledgers": [
+      {
+        "id": "stock",
+        "receipts": "postings",
+        "refusal": "stock",
+        "writes": {
+          "movements": {
+            "insert": [
+              "level_id",
+              "kind",
+              "qty",
+              "unit_cost",
+              "reason_id",
+              "note",
+              "reverses_id",
+              "pair_id"
+            ]
+          },
+          "reservations": {
+            "insert": [
+              "stock_point_id",
+              "qty",
+              "state"
+            ],
+            "update": {
+              "by": [
+                "id"
+              ],
+              "set": [
+                "state"
+              ]
+            }
+          },
+          "on_order_moves": {
+            "insert": [
+              "stock_point_id",
+              "qty",
+              "kind"
+            ]
+          },
+          "levels": {
+            "insert": [
+              "stock_point_id",
+              "batch_id"
+            ]
+          },
+          "stock_points": {
+            "insert": [
+              "item_id",
+              "place_id",
+              "cost_avg"
+            ],
+            "update": {
+              "by": [
+                "id"
+              ],
+              "set": [
+                "cost_avg",
+                "reorder_paused",
+                "needs_count",
+                "last_counted_at",
+                "request_note",
+                "request_elsewhere",
+                "request_supplier"
+              ]
+            }
+          },
+          "batches": {
+            "insert": [
+              "item_id",
+              "code",
+              "unassigned",
+              "expires_on",
+              "received_on"
+            ]
+          },
+          "items": {
+            "insert": [
+              "name",
+              "sku",
+              "unit_id"
+            ],
+            "update": {
+              "by": [
+                "id"
+              ],
+              "set": [
+                "cost_avg"
+              ]
+            }
+          },
+          "links": {
+            "insert": [
+              "source_table",
+              "source_row",
+              "kind",
+              "item_id",
+              "qty",
+              "per",
+              "action"
+            ]
+          }
+        },
+        "actions": {
+          "use": {
+            "inputs": {
+              "what": "rowRef",
+              "quantity": "number",
+              "place": "link?",
+              "batch": "link?",
+              "kind": "text?"
+            },
+            "phases": [
+              "post",
+              "reverse"
+            ],
+            "reads": [
+              {
+                "as": "links",
+                "table": "links",
+                "by": [
+                  {
+                    "column": "source_table",
+                    "from": "input.what.table"
+                  },
+                  {
+                    "column": "source_row",
+                    "from": "input.what.row"
+                  }
+                ],
+                "limit": 200
+              },
+              {
+                "as": "kit_lines",
+                "table": "kit_lines",
+                "by": [
+                  {
+                    "column": "kit_id",
+                    "from": "links.kit_id"
+                  }
+                ]
+              },
+              {
+                "as": "items",
+                "table": "items",
+                "by": [
+                  {
+                    "column": "id",
+                    "from": [
+                      "links.item_id",
+                      "kit_lines.item_id"
+                    ]
+                  }
+                ]
+              },
+              {
+                "as": "points",
+                "table": "stock_points",
+                "by": [
+                  {
+                    "column": "item_id",
+                    "from": [
+                      "links.item_id",
+                      "kit_lines.item_id"
+                    ]
+                  }
+                ],
+                "limit": 1000
+              },
+              {
+                "as": "levels",
+                "table": "levels",
+                "by": [
+                  {
+                    "column": "item_id",
+                    "from": [
+                      "links.item_id",
+                      "kit_lines.item_id"
+                    ]
+                  }
+                ],
+                "limit": 1000
+              },
+              {
+                "as": "batches",
+                "table": "batches",
+                "by": [
+                  {
+                    "column": "item_id",
+                    "from": [
+                      "links.item_id",
+                      "kit_lines.item_id"
+                    ]
+                  }
+                ],
+                "where": [
+                  {
+                    "column": "unassigned",
+                    "eq": true
+                  }
+                ]
+              }
+            ],
+            "locks": [
+              {
+                "read": "items",
+                "column": "id",
+                "table": "items"
+              },
+              {
+                "read": "points",
+                "column": "id",
+                "table": "stock_points"
+              }
+            ],
+            "writes": [
+              "movements",
+              "levels",
+              "stock_points",
+              "batches"
+            ],
+            "unavailable": {
+              "allow": {
+                "read": "items",
+                "column": "allow_short"
+              }
+            }
+          },
+          "return": {
+            "inputs": {
+              "what": "rowRef",
+              "quantity": "number",
+              "to": "text?",
+              "place": "link?"
+            },
+            "phases": [
+              "post"
+            ],
+            "reads": [
+              {
+                "as": "links",
+                "table": "links",
+                "by": [
+                  {
+                    "column": "source_table",
+                    "from": "input.what.table"
+                  },
+                  {
+                    "column": "source_row",
+                    "from": "input.what.row"
+                  }
+                ],
+                "limit": 200
+              },
+              {
+                "as": "kit_lines",
+                "table": "kit_lines",
+                "by": [
+                  {
+                    "column": "kit_id",
+                    "from": "links.kit_id"
+                  }
+                ]
+              },
+              {
+                "as": "items",
+                "table": "items",
+                "by": [
+                  {
+                    "column": "id",
+                    "from": [
+                      "links.item_id",
+                      "kit_lines.item_id"
+                    ]
+                  }
+                ]
+              },
+              {
+                "as": "points",
+                "table": "stock_points",
+                "by": [
+                  {
+                    "column": "item_id",
+                    "from": [
+                      "links.item_id",
+                      "kit_lines.item_id"
+                    ]
+                  }
+                ],
+                "limit": 1000
+              },
+              {
+                "as": "levels",
+                "table": "levels",
+                "by": [
+                  {
+                    "column": "item_id",
+                    "from": [
+                      "links.item_id",
+                      "kit_lines.item_id"
+                    ]
+                  }
+                ],
+                "limit": 1000
+              },
+              {
+                "as": "batches",
+                "table": "batches",
+                "by": [
+                  {
+                    "column": "item_id",
+                    "from": [
+                      "links.item_id",
+                      "kit_lines.item_id"
+                    ]
+                  }
+                ],
+                "where": [
+                  {
+                    "column": "unassigned",
+                    "eq": true
+                  }
+                ]
+              }
+            ],
+            "locks": [
+              {
+                "read": "items",
+                "column": "id",
+                "table": "items"
+              },
+              {
+                "read": "points",
+                "column": "id",
+                "table": "stock_points"
+              }
+            ],
+            "writes": [
+              "movements",
+              "levels",
+              "stock_points",
+              "batches"
+            ]
+          },
+          "hold": {
+            "inputs": {
+              "what": "rowRef",
+              "quantity": "number",
+              "place": "link?",
+              "batch": "link?",
+              "kind": "text?"
+            },
+            "phases": [
+              "reserve",
+              "post",
+              "reverse"
+            ],
+            "reads": [
+              {
+                "as": "links",
+                "table": "links",
+                "by": [
+                  {
+                    "column": "source_table",
+                    "from": "input.what.table"
+                  },
+                  {
+                    "column": "source_row",
+                    "from": "input.what.row"
+                  }
+                ],
+                "limit": 200
+              },
+              {
+                "as": "kit_lines",
+                "table": "kit_lines",
+                "by": [
+                  {
+                    "column": "kit_id",
+                    "from": "links.kit_id"
+                  }
+                ]
+              },
+              {
+                "as": "items",
+                "table": "items",
+                "by": [
+                  {
+                    "column": "id",
+                    "from": [
+                      "links.item_id",
+                      "kit_lines.item_id"
+                    ]
+                  }
+                ]
+              },
+              {
+                "as": "points",
+                "table": "stock_points",
+                "by": [
+                  {
+                    "column": "item_id",
+                    "from": [
+                      "links.item_id",
+                      "kit_lines.item_id"
+                    ]
+                  }
+                ],
+                "limit": 1000
+              },
+              {
+                "as": "levels",
+                "table": "levels",
+                "by": [
+                  {
+                    "column": "item_id",
+                    "from": [
+                      "links.item_id",
+                      "kit_lines.item_id"
+                    ]
+                  }
+                ],
+                "limit": 1000
+              },
+              {
+                "as": "batches",
+                "table": "batches",
+                "by": [
+                  {
+                    "column": "item_id",
+                    "from": [
+                      "links.item_id",
+                      "kit_lines.item_id"
+                    ]
+                  }
+                ],
+                "where": [
+                  {
+                    "column": "unassigned",
+                    "eq": true
+                  }
+                ]
+              }
+            ],
+            "locks": [
+              {
+                "read": "items",
+                "column": "id",
+                "table": "items"
+              },
+              {
+                "read": "points",
+                "column": "id",
+                "table": "stock_points"
+              }
+            ],
+            "holds": true,
+            "writes": [
+              "movements",
+              "levels",
+              "stock_points",
+              "batches",
+              "reservations"
+            ],
+            "unavailable": {
+              "allow": {
+                "read": "items",
+                "column": "allow_short"
+              }
+            }
+          },
+          "use-item": {
+            "inputs": {
+              "item": "link",
+              "quantity": "number",
+              "place": "link?",
+              "batch": "link?",
+              "kind": "text?",
+              "reason": "link?",
+              "note": "text?",
+              "strict": "bool?"
+            },
+            "phases": [
+              "post",
+              "reverse"
+            ],
+            "reads": [
+              {
+                "as": "items",
+                "table": "items",
+                "by": [
+                  {
+                    "column": "id",
+                    "from": "input.item"
+                  }
+                ]
+              },
+              {
+                "as": "points",
+                "table": "stock_points",
+                "by": [
+                  {
+                    "column": "item_id",
+                    "from": "items.id"
+                  }
+                ],
+                "limit": 1000
+              },
+              {
+                "as": "levels",
+                "table": "levels",
+                "by": [
+                  {
+                    "column": "stock_point_id",
+                    "from": "points.id"
+                  }
+                ],
+                "limit": 1000
+              },
+              {
+                "as": "batches",
+                "table": "batches",
+                "by": [
+                  {
+                    "column": "item_id",
+                    "from": "items.id"
+                  }
+                ],
+                "where": [
+                  {
+                    "column": "unassigned",
+                    "eq": true
+                  }
+                ]
+              }
+            ],
+            "locks": [
+              {
+                "read": "items",
+                "column": "id",
+                "table": "items"
+              },
+              {
+                "read": "points",
+                "column": "id",
+                "table": "stock_points"
+              }
+            ],
+            "writes": [
+              "movements",
+              "levels",
+              "stock_points",
+              "batches"
+            ],
+            "unavailable": {
+              "allow": {
+                "read": "items",
+                "column": "allow_short"
+              }
+            }
+          },
+          "transfer": {
+            "inputs": {
+              "item": "link",
+              "quantity": "number",
+              "from": "link",
+              "to": "link",
+              "batch": "link?"
+            },
+            "phases": [
+              "post",
+              "reverse"
+            ],
+            "reads": [
+              {
+                "as": "items",
+                "table": "items",
+                "by": [
+                  {
+                    "column": "id",
+                    "from": "input.item"
+                  }
+                ]
+              },
+              {
+                "as": "points",
+                "table": "stock_points",
+                "by": [
+                  {
+                    "column": "item_id",
+                    "from": "items.id"
+                  }
+                ],
+                "limit": 1000
+              },
+              {
+                "as": "levels",
+                "table": "levels",
+                "by": [
+                  {
+                    "column": "stock_point_id",
+                    "from": "points.id"
+                  }
+                ],
+                "limit": 1000
+              },
+              {
+                "as": "batches",
+                "table": "batches",
+                "by": [
+                  {
+                    "column": "item_id",
+                    "from": "items.id"
+                  }
+                ],
+                "where": [
+                  {
+                    "column": "unassigned",
+                    "eq": true
+                  }
+                ]
+              }
+            ],
+            "locks": [
+              {
+                "read": "items",
+                "column": "id",
+                "table": "items"
+              },
+              {
+                "read": "points",
+                "column": "id",
+                "table": "stock_points"
+              }
+            ],
+            "writes": [
+              "movements",
+              "levels",
+              "stock_points"
+            ]
+          },
+          "adopt": {
+            "inputs": {
+              "what": "rowRef",
+              "name": "text"
+            },
+            "phases": [
+              "post"
+            ],
+            "reads": [
+              {
+                "as": "links",
+                "table": "links",
+                "by": [
+                  {
+                    "column": "source_table",
+                    "from": "input.what.table"
+                  },
+                  {
+                    "column": "source_row",
+                    "from": "input.what.row"
+                  }
+                ],
+                "limit": 200
+              },
+              {
+                "as": "unit",
+                "table": "units",
+                "by": [
+                  {
+                    "column": "id",
+                    "from": "setting.default_unit_id"
+                  }
+                ]
+              }
+            ],
+            "locks": [
+              {
+                "read": "links",
+                "column": "id",
+                "table": "links"
+              }
+            ],
+            "writes": [
+              "items",
+              "links"
+            ]
+          }
+        }
+      }
+    ]
   }
 }
