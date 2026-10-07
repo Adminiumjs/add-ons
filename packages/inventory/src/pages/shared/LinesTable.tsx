@@ -5,7 +5,8 @@
  * second row under some of them (a batch and its expiry). So this is the
  * screens' own: a row of cells under a row of headings while there is room,
  * and one card a line — a label and its field to a line, with fields a thumb
- * can hit — below `cardsBelow` pixels of its own box. Built from the kit's
+ * can hit — below `cardsBelow` pixels of its own box (the box, not the
+ * window: beside the dashboard's rail a 1280-pixel window leaves about 920). Built from the kit's
  * layout parts only: an add-on ships no stylesheet.
  *
  * A column the reader may not read is not passed in at all.
@@ -38,7 +39,7 @@ export interface LinesTableProps<Line> {
 
 const tracks = (count: number): 1 | 2 | 3 | 4 | 6 => (count <= 1 ? 1 : count === 2 ? 2 : count === 3 ? 3 : count === 4 ? 4 : 6);
 
-export function LinesTable<Line>({ label, columns, lines, lineKey, lineLabel, under, loading, empty, cardsBelow = 1100 }: LinesTableProps<Line>): ReactNode {
+export function LinesTable<Line>({ label, columns, lines, lineKey, lineLabel, under, loading, empty, cardsBelow = 760 }: LinesTableProps<Line>): ReactNode {
   const box = useRef<HTMLDivElement | null>(null);
   const [narrow, setNarrow] = useState(false);
   // Measured before the first paint: a phone never sees the wide form flash by.

@@ -460,7 +460,8 @@ export function Receive({ t, receiptId, poId }: ReceiveProps): ReactNode {
   }
 
   const placeName = text(places.rows.find((place) => text(place['id']) === placeId)?.['name']) || text(order?.['place_name']);
-  const orderLabel = (row: DataRow): string => t('receive.orderLabel', '{number} · {supplier}', { number: text(row['number']), supplier: text(row['supplier_name']) });
+  // An order with no number of its own yet is named by its supplier alone.
+  const orderLabel = (row: DataRow): string => (text(row['number']) === '' ? text(row['supplier_name']) : t('receive.orderLabel', '{number} · {supplier}', { number: text(row['number']), supplier: text(row['supplier_name']) }));
   const orderOptions = [{ value: '', label: t('receive.noOrder', 'No purchase order') }, ...orders.rows.map((row) => ({ value: text(row['id']), label: orderLabel(row) })), ...(order !== null && !orders.rows.some((row) => text(row['id']) === text(order['id'])) ? [{ value: text(order['id']), label: orderLabel(order) }] : [])];
   const pick = (next: string): void => {
     if (typed.length > 0) setSwitchTo(next);

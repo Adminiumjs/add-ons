@@ -669,7 +669,8 @@ installAddOnRuntime({
       Link: ({ to, children }: Props) => <a href={to}>{children}</a>,
       useRecords,
       useRecord,
-      useRead: () => reads,
+      // A new object every draw, as a host may hand one: a screen that keyed an effect on it would never settle.
+      useRead: () => ({ ...reads }),
       useWrite: writes,
       useTreeWrite: treeWrites,
       useStateMove,

@@ -19,6 +19,7 @@
 import type { ChangeEventHandler, ComponentType, FocusEventHandler, KeyboardEventHandler, MouseEventHandler, ReactElement, ReactNode, Ref } from 'react';
 import type { AddOnDataHooks, DataError, DataRow, DataValue, EachResult, UseRecordsOptions, UseWriteResult } from '@adminium/add-on-contracts/runtime';
 import dataKit from '@adminium/add-on-contracts/runtime/data';
+import { useMemo, useRef } from 'react';
 import router from '@adminium/add-on-contracts/runtime/router';
 import uiKit from '@adminium/add-on-contracts/runtime/ui';
 
@@ -236,7 +237,18 @@ export interface Reads {
   list: (table: string, options?: Omit<UseRecordsOptions, 'enabled'>) => Promise<{ rows: readonly DataRow[]; hasMore: boolean }>;
   get: (table: string, key: string | number) => Promise<DataRow | null>;
 }
-export const useRead = (data as unknown as { useRead: () => Reads }).useRead;
+const hostRead = (data as unknown as { useRead: () => Reads }).useRead;
+/**
+ * The same reads on every draw. The host may hand a new object each time it
+ * draws; a screen keys its loading on this one, and an effect keyed on an
+ * object that is new every draw would read, draw, and read again without end.
+ */
+export function useRead(): Reads {
+  const live = hostRead();
+  const latest = useRef(live);
+  latest.current = live;
+  return useMemo<Reads>(() => ({ list: (table, options) => latest.current.list(table, options), get: (table, key) => latest.current.get(table, key) }), []);
+}
 
 /** Every row a question answers, page by page, up to `max`. */
 export async function listAll(read: Reads, table: string, options: Omit<UseRecordsOptions, 'enabled' | 'page' | 'pageSize'> = {}, max = 5000): Promise<DataRow[]> {
