@@ -80,6 +80,8 @@ describe('release shape: discovery', () => {
       // provide `document-render@1`.
       'invoices',
       'import-canva',
+      // The first that keeps tables of its own and decides what a posting writes.
+      'inventory',
       'personalizer',
       'shipping-dhl',
     ].sort());

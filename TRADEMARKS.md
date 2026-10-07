@@ -61,6 +61,7 @@ including the ones that name no company.
 | Holiday Calendars | `packages/holiday-calendars` | `CAL` | *(none)* | — |
 | Barcode Labels | `packages/barcode-labels` | `LBL` | *(none)* | — |
 | Invoices & Receipts | `packages/invoices` | `INV` | *(none)* | — |
+| Inventory | `packages/inventory` | `STK` | *(none)* | — |
 
 Adminium and the Adminium name are marks of the Adminium project. Every add-on
 here is published by the project itself (`publisher.id: adminium`), which in v1
@@ -519,3 +520,45 @@ rather than an empty one.
 
 The day any of the three paragraphs above stops being true, that suite turns red
 and this section has to grow an entry.
+
+---
+
+# Inventory — references no third-party trademarks
+
+## Why an add-on full of suppliers and products references no mark
+
+A stock list is made of other people's names: the supplier a crate came from,
+the brand on a bottle, the carrier that brought it. **Every one of those names
+belongs to the operator and is typed by them**, into rows of their own database.
+None of them is in this repository and none is compiled into the package. The
+sample rows the add-on ships are invented for it: a shop, a clinic and a linen
+room that belong to nobody, with suppliers at reserved example addresses.
+
+What this section is about is the marks the PACKAGE ITSELF could have named, in
+its own code, its manifest and its eight locale bundles, and did not:
+
+- **No scanner, label or barcode scheme by name.** A code is typed or scanned as
+  text; which device read it, and under whose numbering scheme it was issued, is
+  not something the add-on knows or says.
+- **No carrier and no marketplace.** A receipt records what arrived, not who
+  drove it. Nothing is ordered through, or synchronised with, anybody's service.
+- **No accounting or point-of-sale product.** The rows of an operator's own
+  tables post into the stock ledger through Adminium; no other product is named
+  as a source or a destination.
+
+## Affiliation
+
+The add-on is not affiliated with, endorsed by or sponsored by any company,
+because it deals with none: it connects to nothing, holds no credential, names
+no service and reaches no address. The affiliation line therefore has nothing
+to attach itself to, which is exactly why the fact is stated here rather than
+left as an absence.
+
+## How the claim is kept true
+
+`COMPANY_MARKS` in `packages/inventory/src/add-on-facts.ts` is the executable
+half of this section, and it is empty. The package's `sources.test.ts` checks
+that list, that the manifest declares no connection, and that no source file
+names an address; the release sweep reads every built byte for the words that
+may not ship. The day a paragraph above stops being true, one of those turns
+red.

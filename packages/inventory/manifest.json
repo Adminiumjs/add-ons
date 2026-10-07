@@ -1,0 +1,18 @@
+{
+  "kind": "add-on",
+  "manifestVersion": 1,
+  "key": "inventory",
+  "name": "Inventory",
+  "version": "1.0.8",
+  "publisher": { "id": "adminium", "name": "Adminium", "url": "https://adminium.dev" },
+  "license": "AGPL-3.0-only",
+  "description": { "key": "addon.inventory.description", "fallback": "Stock by place and by batch, counted, received and moved, and taken by the rows of your own tables in the same save." },
+  "categories": ["data"],
+  "compatibility": { "minAdminiumVersion": "0.3.18" },
+  "capabilities": [],
+  "addOn": {
+    "attaches": [{ "app": "*" }],
+    "connect": { "kind": "none" },
+    "provides": [{ "contract": "posting-rows", "version": 1, "server": "dist/server.js" }]
+  }
+}
