@@ -68,6 +68,28 @@ describe('Receive', () => {
     expect(screen.getByText('Treatment room')).toBeTruthy();
   });
 
+  it('says what the packs typed come to, and how that stands against what the order still expects', async () => {
+    render(<Receive t={t} receiptId={null} poId="7" />);
+    await screen.findByRole('group', { name: 'Gloves, nitrile, L' });
+    const gloves = line('Gloves, nitrile, L');
+    // Nothing typed: nothing is worked out.
+    expect(within(gloves).queryByText(/=\s*\d+\s+pairs/)).toBeNull();
+    expect(within(gloves).queryByText(/still to come|more than ordered/)).toBeNull();
+    // One box of the two ordered: 100 pairs, and a box still to come.
+    type('Receiving now', '1', gloves);
+    expect(within(gloves).getByText(/=\s*100\s+pairs/)).toBeTruthy();
+    expect(within(gloves).getByText('1 box still to come')).toBeTruthy();
+    // Both boxes: nothing to say.
+    type('Receiving now', '2', gloves);
+    expect(within(gloves).getByText(/=\s*200\s+pairs/)).toBeTruthy();
+    expect(within(gloves).queryByText(/still to come|more than ordered/)).toBeNull();
+    // Three: a box more than ordered, said before anything is saved.
+    type('Receiving now', '3', gloves);
+    expect(within(gloves).getByText('1 box more than ordered')).toBeTruthy();
+    // None of it is sent: the save carries what was typed.
+    expect(world.calls.filter((call) => call.kind === 'create' || call.kind === 'tree')).toEqual([]);
+  });
+
   it('shows what the order says one costs beside an empty cost, read from the order and sent to nobody', async () => {
     render(<Receive t={t} receiptId={null} poId="7" />);
     await screen.findByRole('group', { name: 'Lidocaine 1% ampoule' });
@@ -105,7 +127,7 @@ describe('Receive', () => {
     }
   });
 
-  it('shows the server\'s figures after a save, never its own', async () => {
+  it('shows the server\'s figures after a save, and its own sum only while a line is being typed', async () => {
     seed('receipts', [{ id: 90, number: 'RC-0001', po_id: 7, supplier_id: 1, place_id: 1, kind: 'delivery', status: 'draft', lines: 1, unposted: 1, unreversed: 0, units: '51.000', total: '56.10', lines_to_check: 0 }]);
     seed('receipt_lines', [{ id: 91, receipt_id: 90, po_line_id: 71, item_id: 11, item_name: 'Lidocaine 1% ampoule', unit: 'each', packs: '5.000', pack_size: '10.000', qty_typed: null, qty: '51.000', unit_cost: null, cost_used: '1.1000', amount: '56.10', batch_code: 'LD201', expires_on: '2027-04-30', status: 'draft' }]);
     render(<Receive t={t} receiptId="90" poId={null} />);
@@ -116,9 +138,10 @@ describe('Receive', () => {
     expect(within(row).getByText('56.10')).toBeTruthy();
     expect(within(row).getByText('Adminium used 1.1')).toBeTruthy();
     expect(screen.getByText('Receiving 51 units · 56.10')).toBeTruthy();
-    // Typing takes the server's figure away until the next save: the screen does not guess the new one.
+    // Typing takes the server's figure away until the next save: what stands there meanwhile is what the packs typed come to.
     type('Receiving now', '6', row);
-    expect(within(row).queryByText(/=\s*\d+\s+each/)).toBeNull();
+    expect(within(row).queryByText(/=\s*51\s+each/)).toBeNull();
+    expect(within(row).getByText(/=\s*60\s+each/)).toBeTruthy();
     expect(screen.getByText('1 line to receive')).toBeTruthy();
   });
 
@@ -143,8 +166,12 @@ describe('Receive', () => {
     await scan('5060000100028');
     expect((within(line('Gloves, nitrile, L')).getByLabelText('Receiving now') as HTMLInputElement).value).toBe('2');
     expect(within(line('Gloves, nitrile, L')).getByText('box')).toBeTruthy();
+    // What the scan did is written under the field, for someone who hears nothing; the polite region has the same words.
+    const seen = (): string => document.querySelector('[data-part="inventory-scanned"]')?.textContent ?? '';
+    expect(seen()).toBe('Gloves, nitrile, L · now 2 box');
     await scan('SWB');
     expect((within(line('Alcohol swab')).getByLabelText('Receiving now') as HTMLInputElement).value).toBe('1');
+    expect(seen()).toBe('Alcohol swab added · 1 each');
     // With no order, the place starts as the settings' default and can be chosen.
     expect((screen.getByLabelText(/Into/) as HTMLSelectElement).value).toBe('2');
   });

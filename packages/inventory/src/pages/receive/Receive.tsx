@@ -57,7 +57,8 @@ import { QtyInput } from '../shared/QtyInput.tsx';
 import { refusal } from '../shared/refusal.ts';
 import { RECEIPT_POST, runSheet } from '../shared/runSheet.ts';
 import { TotalsBar } from '../shared/TotalsBar.tsx';
-import { countProblems, lineForItem, lineValues, mergeLines, plain, plusOne, problemsOf, typedOn, type Line, type Problems } from './lines.ts';
+import { countProblems, lineForItem, lineValues, mergeLines, plain, plusOne, positive, problemsOf, typedOn, type Line, type Problems } from './lines.ts';
+import { against, times, wholeTimes } from '../shared/sums.ts';
 import { NewItemSheet } from './NewItemSheet.tsx';
 import { Posted } from './Posted.tsx';
 
@@ -116,6 +117,7 @@ export function Receive({ t, receiptId, poId }: ReceiveProps): ReactNode {
   const toasts = useAppToasts();
   const navigate = useNavigate();
   const [said, say] = useSaid();
+  const [scanned, setScanned] = useState('');
   const locale = useLocaleTag();
   const cash = useMoney();
   const costs = access.canRead('receipt_lines', LINE_COSTS);
@@ -191,6 +193,12 @@ export function Receive({ t, receiptId, poId }: ReceiveProps): ReactNode {
     setLineSaid((all) => (all[key] === undefined ? all : Object.fromEntries(Object.entries(all).filter(([k]) => k !== key))));
   };
 
+  /** What a scan did: said to a screen reader, and written under the field for everybody else. */
+  const scanSaid = (words: string): void => {
+    say(words);
+    setScanned(words);
+  };
+
   const found = (item: DataRow): void => {
     const itemId = text(item['id']);
     // The last line of this item that can still be typed on takes one more; a tracked item's second batch is its own line.
@@ -198,12 +206,12 @@ export function Receive({ t, receiptId, poId }: ReceiveProps): ReactNode {
     if (last !== undefined) {
       const qty = plusOne(last.qty);
       change(last.key, { qty });
-      say(t('receive.scan.raised', '{item} · now {qty} {unit}', { item: last.itemName, qty, unit: last.inPacks ? last.packName || t('receive.packs', 'packs') : last.unit }));
+      scanSaid(t('receive.scan.raised', '{item} · now {qty} {unit}', { item: last.itemName, qty, unit: last.inPacks ? last.packName || t('receive.packs', 'packs') : last.unit }));
       return;
     }
     const line = lineForItem(item);
     setLines((all) => [...all, line]);
-    say(t('receive.scan.added', '{item} added · 1 {unit}', { item: line.itemName, unit: line.inPacks ? line.packName || t('receive.pack', 'pack') : line.unit }));
+    scanSaid(t('receive.scan.added', '{item} added · 1 {unit}', { item: line.itemName, unit: line.inPacks ? line.packName || t('receive.pack', 'pack') : line.unit }));
   };
 
   const anotherBatch = (line: Line): void => {
@@ -393,6 +401,13 @@ export function Receive({ t, receiptId, poId }: ReceiveProps): ReactNode {
       label: t('receive.col.now', 'Receiving now'),
       cell: (line, _index, narrow) => {
         const stored = line.saved !== null && !line.dirty ? plain(line.saved['qty']) : '';
+        const pack = line.packName || t('receive.packs', 'packs');
+        const comes = stored !== '' ? stored : line.inPacks && positive(line.qty) ? (times(line.qty, line.packSize) ?? '') : '';
+        // What this line brings, in units. A draft is not yet in what the order has received, saved or not.
+        const brings = line.inPacks ? comes : line.qty.trim();
+        const open = line.ordered === null || line.status !== 'draft' || !positive(brings) ? null : against(line.ordered.open, brings);
+        const inPacks = open === null || !line.inPacks ? null : wholeTimes(open.by, line.packSize);
+        const gap = open === null ? null : { side: open.side, qty: inPacks ?? open.by, unit: inPacks === null ? line.unit : pack };
         return (
           <Stack gap="xs">
             <QtyInput
@@ -405,10 +420,21 @@ export function Receive({ t, receiptId, poId }: ReceiveProps): ReactNode {
               disabled={working || line.status !== 'draft' || fixed}
               {...(marked[line.key]?.qty === undefined && lineSaid[line.key]?.field !== 'qty' ? {} : { error: lineSaid[line.key]?.field === 'qty' ? lineSaid[line.key]?.message : line.inPacks ? t('receive.err.whole', 'Enter a whole number') : t('receive.err.qty', 'Enter how many you are receiving') })}
             />
-            {/* The units a line of packs comes to are Adminium's figure, shown once it has saved the line. */}
-            {line.inPacks && stored !== '' ? (
-              <span className="text-body-sm text-fg-muted">
-                = {stored} {line.unit}
+            {/* The units a line of packs comes to: Adminium's figure once it has saved the line, the screen's own sum of what is typed before. */}
+            {line.inPacks && comes !== '' ? (
+              <span className="text-body-sm text-fg-muted" data-part="inventory-comes-to">
+                = {comes} {line.unit}
+              </span>
+            ) : null}
+            {/* Against what the order still expects, while it can still be typed: a short delivery and an over-delivery are both said before the save. */}
+            {gap !== null && gap.side === 'short' ? (
+              <span className="text-body-sm text-fg-muted" data-part="inventory-against-order">
+                {t('receive.toCome', '{qty} {unit} still to come', { qty: gap.qty, unit: gap.unit })}
+              </span>
+            ) : null}
+            {gap !== null && gap.side === 'over' ? (
+              <span className="text-body-sm font-semibold text-fg" data-part="inventory-against-order">
+                {t('receive.overOrder', '{qty} {unit} more than ordered', { qty: gap.qty, unit: gap.unit })}
               </span>
             ) : null}
             {line.packSize !== '' && line.status === 'draft' && !fixed && !narrow ? (
@@ -511,6 +537,12 @@ export function Receive({ t, receiptId, poId }: ReceiveProps): ReactNode {
               hint={anyPack ? t('receive.scan.hintPack', 'A scanner types into this field. Each scan adds one pack.') : t('receive.scan.hintUnit', 'A scanner types into this field. Each scan adds one.')}
               {...(mayAddItem ? { onAddNew: (code: string) => setNewItem(code) } : {})}
             />
+          ) : null}
+          {/* The polite region has said it already: this copy is for the eye. */}
+          {status === 'draft' && scanned !== '' ? (
+            <span aria-hidden="true" className="text-body-sm text-fg" data-part="inventory-scanned">
+              {scanned}
+            </span>
           ) : null}
           <LinesTable
             label={t('receive.lines', 'Lines')}
