@@ -1,12 +1,16 @@
-/** The screen's module: what the manifest's page points at. */
+/**
+ * The Issue sheet's module: what the manifest's page `offers-issue` points
+ * at. `?tab=gift-card|voucher|batch` opens that tab; `?back=<path>` is where
+ * closing goes.
+ */
 import type { ReactNode } from 'react';
 
 import { wordsFor } from '../shared/messages.ts';
-import { PageFrame } from '../shared/PageFrame.tsx';
 import { ISSUE, REFUSAL, SHARED } from '../strings/index.ts';
+import { Issue } from './Issue.tsx';
 
 const t = wordsFor(SHARED, REFUSAL, ISSUE);
 
 export default function IssuePage(): ReactNode {
-  return <PageFrame t={t} title={t('issue.title', 'Issue')} />;
+  return <Issue t={t} />;
 }

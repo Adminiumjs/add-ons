@@ -34,7 +34,9 @@ export function wordOf(kind: 'gift-card' | 'pack' | 'voucher'): string {
 
 /** A whole code, drawn large in its groups — the "shown once" result. */
 export function CodeChips({ code, word, label }: { code: string; word: string; label: string }): ReactNode {
-  const groups = [word, ...groupsOf(code)];
+  // A card's code is kept with its two letters; a voucher's is the twelve characters alone.
+  const bare = code.replace(/[\s-]/g, '').toUpperCase();
+  const groups = [word, ...groupsOf(bare.length === 14 && bare.startsWith(word) ? bare.slice(2) : bare)];
   return (
     <span dir="ltr" role="group" aria-label={label} data-part="code-chips">
       {groups.map((group, index) => (

@@ -23,8 +23,6 @@ export interface Role {
   editOffers: boolean;
   /** Change how Adminium works out a table's columns. */
   changeRules: boolean;
-  /** Add columns to a table. */
-  makeColumns: boolean;
 }
 
 export function useRole(): Role {
@@ -42,6 +40,5 @@ export function useRole(): Role {
     readsBalance: access.canRead('gift_cards', ['balance']),
     editOffers: access.canCreate('offers'),
     changeRules: access.has('system:schema:remap'),
-    makeColumns: access.has('system:schema:ddl'),
   };
 }
