@@ -57,6 +57,9 @@ describe('what Offers prints', () => {
     expect(page).not.toContain('Balance');
     // The amount comes in the currency's smallest unit: a currency with none is not divided.
     expect(await html('gift-card', { ...CARD, first: '1' }, { currency: 'JPY' })).toContain('<bdi>¥1,900</bdi>');
+    // A currency the language data writes with no decimals and Adminium counts with two: 500000 is 5,000.00, not 500,000.
+    expect(await html('gift-card', { ...CARD, amount: 500000, first: '1' }, { currency: 'RSD' })).toMatch(/5,000\.00/);
+    expect(await html('gift-card', { ...CARD, amount: 19000, first: '1' }, { currency: 'KWD' })).toMatch(/19\.000/);
   });
 
   it('a re-print shows the balance and the day', async () => {

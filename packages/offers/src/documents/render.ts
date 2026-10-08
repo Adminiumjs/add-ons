@@ -39,8 +39,19 @@ export function groupedCode(stored: string, word: string): string {
 function money(value: unknown, subject: DocumentSubject, locale: string, minor: boolean): string {
   const amount = Number(text(value));
   if (text(value) === '' || !Number.isFinite(amount)) return '';
-  const format = new Intl.NumberFormat(locale, { style: 'currency', currency: subject.currency });
-  return format.format(minor ? amount / 10 ** (format.resolvedOptions().maximumFractionDigits ?? 2) : amount);
+  // Adminium's own count of a currency's decimals, never the language data's: the two differ for a few currencies,
+  // and a figure divided by the wrong one is out by a hundred.
+  const scale = currencyScale(subject.currency);
+  const format = new Intl.NumberFormat(locale, { style: 'currency', currency: subject.currency, minimumFractionDigits: scale, maximumFractionDigits: scale });
+  return format.format(minor ? amount / 10 ** scale : amount);
+}
+
+/** The decimals a currency's smallest unit stands for, as Adminium counts them when it hands money over (ISO 4217). */
+const NO_DECIMALS = new Set(['BIF', 'CLP', 'DJF', 'GNF', 'ISK', 'JPY', 'KMF', 'KRW', 'PYG', 'RWF', 'UGX', 'UYI', 'VND', 'VUV', 'XAF', 'XOF', 'XPF']);
+const THREE_DECIMALS = new Set(['BHD', 'IQD', 'JOD', 'KWD', 'LYD', 'OMR', 'TND']);
+export function currencyScale(code: string): number {
+  const upper = code.toUpperCase();
+  return NO_DECIMALS.has(upper) ? 0 : THREE_DECIMALS.has(upper) ? 3 : 2;
 }
 
 /** A day as the language writes it. A bare day is that day; a moment is the day it was on the venue's clock. */
