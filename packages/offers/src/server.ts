@@ -7,18 +7,9 @@
  * are plain functions of what they are handed: nothing is read from anywhere,
  * no clock is looked at, and the same input always gives the same answer.
  * Adminium reads, checks the answer and writes; this file only decides.
- *
- * A posting makes no row yet.
  */
 
-import type { PostingInput, PostingOutput } from '@adminium/add-on-contracts';
-
 import { adjust } from './adjust/index.ts';
-
-/** The rows a posting makes. */
-function rows(input: PostingInput): PostingOutput {
-  void input;
-  return { rows: [] };
-}
+import { rows } from './rows/index.ts';
 
 export default { rows, adjust };

@@ -432,7 +432,13 @@ describe('the ledger', () => {
       redeem: {
         inputs: 'reason link?, label text?',
         phases: 'reserve, post, reverse',
-        reads: ['offers: offers by id ← uses.offer', 'codes: codes by id ← uses.code', 'vouchers: vouchers by id ← uses.voucher', 'held: redemptions by source_table ← source.table, source_row ← source.row where state in held'],
+        // What this round wrote, then the rows a use — or a row this round wrote — counts on: a reverse hands no uses, and still reads them.
+        reads: [
+          'mine: redemptions by receipt_id ← receipt.id',
+          'offers: offers by id ← uses.offer,mine.offer_id',
+          'codes: codes by id ← uses.code,mine.code_id',
+          'vouchers: vouchers by id ← uses.voucher,mine.voucher_id',
+        ],
         locks: 'offers.id of offers, codes.id of codes, vouchers.id of vouchers',
         writes: 'redemptions, vouchers, offers',
       },

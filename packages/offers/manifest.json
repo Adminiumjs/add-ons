@@ -484,7 +484,7 @@
                 ]
               },
               "validation": {
-                "min": 1
+                "min": 2
               }
             }
           },
@@ -4408,12 +4408,25 @@
             ],
             "reads": [
               {
+                "as": "mine",
+                "table": "redemptions",
+                "by": [
+                  {
+                    "column": "receipt_id",
+                    "from": "receipt.id"
+                  }
+                ]
+              },
+              {
                 "as": "offers",
                 "table": "offers",
                 "by": [
                   {
                     "column": "id",
-                    "from": "uses.offer"
+                    "from": [
+                      "uses.offer",
+                      "mine.offer_id"
+                    ]
                   }
                 ]
               },
@@ -4423,7 +4436,10 @@
                 "by": [
                   {
                     "column": "id",
-                    "from": "uses.code"
+                    "from": [
+                      "uses.code",
+                      "mine.code_id"
+                    ]
                   }
                 ]
               },
@@ -4433,28 +4449,9 @@
                 "by": [
                   {
                     "column": "id",
-                    "from": "uses.voucher"
-                  }
-                ]
-              },
-              {
-                "as": "held",
-                "table": "redemptions",
-                "by": [
-                  {
-                    "column": "source_table",
-                    "from": "source.table"
-                  },
-                  {
-                    "column": "source_row",
-                    "from": "source.row"
-                  }
-                ],
-                "where": [
-                  {
-                    "column": "state",
-                    "in": [
-                      "held"
+                    "from": [
+                      "uses.voucher",
+                      "mine.voucher_id"
                     ]
                   }
                 ]
