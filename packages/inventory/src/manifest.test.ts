@@ -422,3 +422,14 @@ describe.skipIf((manifest as { seeds?: unknown }).seeds === undefined)('the rows
     for (const seed of seeds) expect(Object.keys(ledgers[0]?.writes ?? {}), seed.table).not.toContain(seed.table);
   });
 });
+
+describe('who may change a stock rule', () => {
+  it('no role of the add-on: a rule changes what an owner\'s table means, and that takes the right to change the schema', () => {
+    // The rule routes ask for `system:schema:remap` (the engine's own test holds that); none of the three roles is given
+    // it, nor any other right outside the add-on's own tables and pages — so a manager reads the rules and changes none.
+    const roles = manifest.roles as unknown as { key: string; permissions: string[] }[];
+    expect(roles.map((role) => role.key)).toEqual(['manager', 'clerk', 'viewer']);
+    for (const role of roles) expect(role.permissions.filter((permission) => !/^(table|page):@[a-z_-]+:[a-z_]+$/.test(permission)), role.key).toEqual([]);
+  });
+});
+
