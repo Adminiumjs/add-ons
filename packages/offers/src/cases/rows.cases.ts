@@ -347,7 +347,7 @@ export const ROWS_CASES: readonly RowsCase[] = [
   },
   {
     name: 'P17a an old card nobody has made yet is made by its first row, under its old code, and the row points at it',
-    input: call({ action: 'move', source: { table: 'pos:gift_card_ledger', row: 'b1' }, lines: [line('', { old_card: '9', old_code: 'gc-48219930', old_table: 'pos:gift_cards', kind: 'issue', amount: '50.00', at: '2026-03-02T09:00:00.000Z' })], reads: { card: [] } }),
+    input: call({ action: 'move', source: { table: 'pos:gift_card_ledger', row: 'b1' }, lines: [line('', { old_card: '9', old_code: 'gc-48219930', old_table: 'pos:gift_cards', kind: 'issue', amount: '50.00', at: '2026-03-02T09:00:00.000Z' })], reads: { card: [] }, settings: { ...SETTINGS, cards_paused: true } }),
     expect: {
       rows: [
         { op: 'insert', table: 'gift_cards', label: 'card:9', values: { kind: 'card', code: 'GC-48219930', status: 'active', issued_at: '2026-03-02T09:00:00.000Z', moved_from: '9', moved_table: 'pos:gift_cards', moving: true } },
@@ -357,7 +357,7 @@ export const ROWS_CASES: readonly RowsCase[] = [
   },
   {
     name: 'P17a …two old rows of one new card in one call make one card, and the second row counts on the first',
-    input: call({ action: 'move', source: { table: 'pos:gift_card_ledger', row: 'b1' }, lines: [line('r1', { old_card: '9', old_code: 'GC-48219930', kind: 'issue', amount: '50.00', at: '2026-03-02T09:00:00.000Z' }), line('r2', { old_card: '9', old_code: 'GC-48219930', kind: 'redeem', amount: '-21.50', at: '2026-03-09T09:00:00.000Z' })], reads: { card: [] } }),
+    input: call({ action: 'move', source: { table: 'pos:gift_card_ledger', row: 'b1' }, lines: [line('r1', { old_card: '9', old_code: 'GC-48219930', kind: 'issue', amount: '50.00', at: '2026-03-02T09:00:00.000Z' }), line('r2', { old_card: '9', old_code: 'GC-48219930', kind: 'redeem', amount: '-21.50', at: '2026-03-09T09:00:00.000Z' })], reads: { card: [] }, settings: { ...SETTINGS, cards_paused: true } }),
     expect: {
       rows: [
         { op: 'insert', table: 'gift_cards', label: 'card:9', values: { code: 'GC-48219930', moved_table: '' } },
@@ -368,8 +368,23 @@ export const ROWS_CASES: readonly RowsCase[] = [
   },
   {
     name: 'P17a …a code the till kept with no word in front gets the word',
-    input: call({ action: 'move', source: { table: 'pos:gift_card_ledger', row: 'b3' }, lines: [line('', { old_card: '11', old_code: ' 4821 9930 ', kind: 'issue', amount: '5.00', at: '2026-03-02T09:00:00.000Z' })], reads: { card: [] } }),
+    input: call({ action: 'move', source: { table: 'pos:gift_card_ledger', row: 'b3' }, lines: [line('', { old_card: '11', old_code: ' 4821 9930 ', kind: 'issue', amount: '5.00', at: '2026-03-02T09:00:00.000Z' })], reads: { card: [] }, settings: { ...SETTINGS, cards_paused: true } }),
     expect: { rows: [{ op: 'insert', table: 'gift_cards', label: 'card:11', values: { code: 'GC-48219930' } }, insert('card_ledger', { kind: 'issue' })] },
+  },
+  {
+    name: 'P17b …with the move not running, a row for a card nobody made makes none: it is refused',
+    input: call({ action: 'move', source: { table: 'scratch:rows', row: 'x1' }, lines: [line('', { old_card: '9', old_code: 'GC-48219930', kind: 'issue', amount: '99999.00', at: '2026-03-02T09:00:00.000Z' })], reads: { card: [] } }),
+    expect: { rows: [], refusals: [{ line: '', reason: 'not-allowed' }] },
+  },
+  {
+    name: 'P17b …nor from a guest, latch or no latch',
+    input: call({ action: 'move', more: { origin: 'public' }, lines: [line('', { old_card: '9', old_code: 'GC-48219930', kind: 'issue', amount: '5.00', at: '2026-03-02T09:00:00.000Z' })], reads: { card: [] }, settings: { ...SETTINGS, cards_paused: true } }),
+    expect: { rows: [], refusals: [{ line: '', reason: 'not-allowed' }] },
+  },
+  {
+    name: 'P17b …a till code that begins GC with no dash keeps its letters; dashes and spaces inside one are dropped',
+    input: call({ action: 'move', lines: [line('a', { old_card: '12', old_code: 'gcxk4421', kind: 'issue', amount: '5.00', at: '2026-03-02T09:00:00.000Z' }), line('b', { old_card: '13', old_code: 'GC-4821-99 30', kind: 'issue', amount: '5.00', at: '2026-03-02T09:00:00.000Z' })], reads: { card: [] }, settings: { ...SETTINGS, cards_paused: true } }),
+    expect: { rows: [{ op: 'insert', table: 'gift_cards', label: 'card:12', values: { code: 'GC-GCXK4421' } }, insert('card_ledger', { kind: 'issue' }), { op: 'insert', table: 'gift_cards', label: 'card:13', values: { code: 'GC-48219930' } }, insert('card_ledger', { kind: 'issue' })] },
   },
   {
     name: 'P19 a cash payment in a table that also takes cards writes nothing',

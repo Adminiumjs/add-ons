@@ -272,6 +272,16 @@ export function move(input: PostingInput, answer: Answer): void {
        */
       const code = oldCode(line.inputs['old_code']);
       if (old === null || code === null) throw new Error('an old row was brought in for a card that was not made, and it names no code to make it with');
+      /*
+       * A card is made only while the move runs: its latch (`cards_paused`) is
+       * the one thing only a Super Admin sets, and nothing a guest or a rule
+       * of somebody's own can stand in for. Without it a row written into a
+       * table that posts here would mint a card of any worth under any code.
+       */
+      if (!yes(input.settings['cards_paused']) || input.origin === 'public') {
+        answer.refuse(line.line, 'not-allowed');
+        continue;
+      }
       if (amount === null || kind === undefined) throw new Error('an old row with no amount, or of an unknown kind');
       let label = made.get(old);
       if (label === undefined) {
@@ -294,9 +304,13 @@ export function move(input: PostingInput, answer: Answer): void {
   }
 }
 
-/** An old card's code as it is kept: capitals, no spaces, behind the word every card's code has. */
+/**
+ * An old card's code as it is kept: capitals, letters and digits only, behind
+ * the word every card's code has. Only a written `GC-` is that word: a till's
+ * code that happens to begin with the two letters keeps them.
+ */
 function oldCode(given: unknown): string | null {
-  const bare = (textOf(given) ?? '').replace(/\s/g, '').toUpperCase();
-  if (bare === '' || bare === 'GC-' || bare === 'GC') return null;
-  return bare.startsWith('GC-') ? bare : `GC-${bare.replace(/^GC/, '')}`;
+  const raw = (textOf(given) ?? '').trim().toUpperCase();
+  const body = (raw.startsWith('GC-') ? raw.slice(3) : raw).replace(/[^0-9A-Z]/g, '');
+  return body === '' ? null : `GC-${body}`;
 }
