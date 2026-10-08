@@ -44,6 +44,8 @@ const LEDGER = '/api/v1/ledgers/offers/value';
 const NUMBERS = new Set(['int', 'integer', 'bigint', 'decimal', 'number', 'float', 'money']);
 const MONEY = new Set(['decimal', 'number', 'float', 'money']);
 const YES_NO = new Set(['bool', 'boolean']);
+/** A column that can hold a word. */
+const TEXT = new Set(['text', 'varchar', 'char', 'string', 'enum']);
 
 interface Kit {
   connectionId: string;
@@ -422,9 +424,10 @@ function RuleSheet({ t, editing, sources, ownTables, names, tableAt, postingAt, 
                 <>
                   <Select label={t('rules.part.price', "The line's price")} value={form.cols['price'] ?? ''} onChange={(event) => pick('price', event.target.value)} options={options(lineColumns, money, choose)} disabled={working} required {...needed('price')} />
                   <Select label={t('rules.part.quantity', "The line's quantity")} value={form.cols['quantity'] ?? ''} onChange={(event) => pick('quantity', event.target.value)} options={options(lineColumns, (column) => NUMBERS.has(column.type), t('rules.sheet.one', 'One each'))} disabled={working} />
-                  <Select label={t('rules.part.item', 'What the line sells')} hint={t('rules.part.itemHint', 'A link to the thing sold. Without one, a discount for named things cannot apply here; one for the whole order still does.')} value={form.cols['item'] ?? ''} onChange={(event) => pick('item', event.target.value)} options={[{ value: '', label: notNeeded }, ...linksTo(lines, (table) => table !== form.table)]} disabled={working} />
+                  <Select label={t('rules.part.item', 'What the line sells')} hint={t('rules.part.itemHint', 'A link to the thing sold. Choose this, a category, a type or a word on the line: one of them at least.')} value={form.cols['item'] ?? ''} onChange={(event) => pick('item', event.target.value)} options={[{ value: '', label: notNeeded }, ...linksTo(lines, (table) => table !== form.table)]} disabled={working} {...(marked.includes('item') ? { error: t('rules.sheet.err.what', 'Say what a line sells: a link, or a word on the line.') } : {})} />
                   <Select label={t('rules.part.category', 'Its category, where the line names one')} value={form.cols['category'] ?? ''} onChange={(event) => pick('category', event.target.value)} options={[{ value: '', label: notNeeded }, ...linksTo(lines, (table) => table !== form.table)]} disabled={working} />
                   <Select label={t('rules.part.type', 'Its type, where the line names one')} value={form.cols['type'] ?? ''} onChange={(event) => pick('type', event.target.value)} options={[{ value: '', label: notNeeded }, ...linksTo(lines, (table) => table !== form.table)]} disabled={working} />
+                  <Select label={t('rules.part.tag', 'A word on the line that says what it is')} hint={t('rules.part.tagHint', 'A text column. A discount can then be for lines with a given word.')} value={form.cols['tag'] ?? ''} onChange={(event) => pick('tag', event.target.value)} options={options(lineColumns, (column) => TEXT.has(column.type), notNeeded)} disabled={working} />
                   <Select label={t('rules.part.lineDiscount', "The line's reduction")} hint={t('rules.part.written', 'Adminium writes it.')} value={form.cols['lineDiscount'] ?? ''} onChange={(event) => pick('lineDiscount', event.target.value)} options={options(lineColumns, (column) => money(column) && writable(column), choose)} disabled={working} required {...(form.making.amounts ? {} : missing('lineDiscount'))} />
                   <Select label={t('rules.part.orderDiscount', "The row's own reduction")} hint={t('rules.part.written', 'Adminium writes it.')} value={form.cols['orderDiscount'] ?? ''} onChange={(event) => pick('orderDiscount', event.target.value)} options={options(columns, (column) => money(column) && writable(column), choose)} disabled={working} required {...(form.making.amounts ? {} : missing('orderDiscount'))} />
                   <Select label={t('rules.part.total', "The row's total")} value={form.cols['total'] ?? ''} onChange={(event) => pick('total', event.target.value)} options={options(columns, money, notNeeded)} disabled={working} />

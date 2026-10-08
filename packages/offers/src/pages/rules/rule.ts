@@ -180,8 +180,9 @@ export const PARTS: Readonly<Record<Addable, readonly { part: string; required: 
     { part: 'lines', required: true },
     { part: 'price', required: true },
     { part: 'quantity', required: false },
-    // A table whose lines link to nothing they sell (a typed description and a price) still takes every discount on the whole order.
+    // What a line sells: a link to the item, its category or its type, or a word kept on the line itself — one of the four at least (below).
     { part: 'item', required: false },
+    { part: 'tag', required: false },
     { part: 'category', required: false },
     { part: 'type', required: false },
     { part: 'lineDiscount', required: true, makes: 'amounts' },
@@ -217,6 +218,8 @@ export function formProblems(form: Form): string[] {
     if (makes !== undefined && form.making[makes]) continue;
     out.push(part);
   }
+  // A price rule says at least one thing about what a line sells: the server takes none that says nothing.
+  if (form.kind === 'discounts' && form.base === undefined && ['item', 'category', 'type', 'tag'].every((part) => (form.cols[part] ?? '') === '')) out.push('item');
   // A line of an order needs the price and the link that makes it a line.
   if (form.kind !== 'discounts' && form.when.kind === 'never') out.push('when');
   if (unfinished(form.when) || unfinished(form.back)) out.push('when');
@@ -266,7 +269,8 @@ export function sentOf(form: Form, refOf: (table: string) => string): Sent {
     const base = (form.base ?? {}) as { lines?: Record<string, unknown>[]; order?: Record<string, unknown>; uses?: unknown; frozen?: unknown; expect?: unknown };
     const { uses: _uses, frozen: _frozen, expect: _expect, lines: baseLines = [], order: baseOrder = {}, ...kept } = base;
     const { quantity: _quantity, what: baseWhat, ...keptPart } = (baseLines[0] ?? {}) as { quantity?: unknown; what?: { column: string; as: string }[] };
-    const tags = (baseWhat ?? []).filter((entry) => entry.as === 'tag');
+    // The word the sheet chose, then any further ones the rule already had.
+    const tags = [...(col(form, 'tag') === '' ? [] : [{ column: col(form, 'tag'), as: 'tag' }]), ...(baseWhat ?? []).filter((entry) => entry.as === 'tag' && entry.column !== col(form, 'tag'))];
     const adjust: Record<string, unknown> = {
       ...kept,
       by: { addOn: 'offers' },
@@ -310,7 +314,7 @@ export function formOf(card: Card): Form | null {
     return {
       kind: 'discounts',
       table: card.table,
-      cols: { lines: `${part.table} ${part.via ?? ''}`, price: part.price ?? '', quantity: part.quantity ?? '', item: what('item'), category: what('category'), type: what('type'), lineDiscount: part.discount ?? '', orderDiscount: adjust.order?.discount ?? '', total: adjust.expect ?? '' },
+      cols: { lines: `${part.table} ${part.via ?? ''}`, price: part.price ?? '', quantity: part.quantity ?? '', item: what('item'), category: what('category'), type: what('type'), tag: what('tag'), lineDiscount: part.discount ?? '', orderDiscount: adjust.order?.discount ?? '', total: adjust.expect ?? '' },
       when: whenOf(card.uses?.post),
       back: whenOf(card.uses?.reverse),
       making: { amounts: false, codes: false },
