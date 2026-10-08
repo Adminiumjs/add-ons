@@ -22,7 +22,9 @@ const SOURCES = {
 };
 const APP_ADJUST: Priced = { table: 'shop_orders', tableLabel: 'Shop orders', owner: 'online-ordering', ownerName: 'Online ordering', enabled: true, state: 'live', holding: 3, adjust: { by: { addOn: 'offers' }, lines: [{ table: 'shop_lines', via: 'order_id', price: 'unit_price', discount: 'discount', what: [] }], order: { discount: 'discount' }, uses: 'uses' } };
 const APP_USES: Posted = { id: 'uses', action: 'redeem', table: 'shop_orders', tableLabel: 'Shop orders', owner: 'online-ordering', enabled: true, state: 'live', holding: 2, post: { on: { to: ['paid'] } }, reverse: { on: { to: ['cancelled'] } }, map: {} };
-const OWN_PAYS: Posted = { id: 'offers-card', action: 'spend', table: 'payments', tableLabel: 'Payments', owner: null, enabled: true, state: 'live', holding: 4, via: 'order_id', post: { on: { create: true } }, reverse: { on: { column: 'voided_at', set: true, own: true } }, map: { card: 'card_id', amount: 'amount', balance_after: 'card_left', due: { parent: 'due' } } };
+const OWN_PAYS: Posted = { id: 'offers-card', action: 'spend', table: 'payments', tableLabel: 'Payments', owner: null, enabled: true, state: 'live', holding: 4, post: { on: { create: true } }, reverse: { on: { column: 'voided_at', set: true } }, map: { card: 'card_id', amount: 'amount', balance_after: 'card_left' } };
+// The same rule as a project file draws it: its rows are payments of an order, which a sheet cannot say.
+const FILE_PAYS: Posted = { ...OWN_PAYS, via: 'order_id', reverse: { on: { column: 'voided_at', set: true, own: true } }, map: { ...OWN_PAYS.map, due: { parent: 'due' } } };
 const MOVED: Posted = { id: 'moved', action: 'move', table: 'pos_card_rows', tableLabel: 'Till card rows', owner: 'point-of-sale', enabled: true, state: 'live', holding: 0, map: {} };
 // One of the add-on's own tables posting into its own ledger, under an action a card would be drawn for.
 const OWN_HAND: Posted = { id: 'card-action', action: 'issue', table: 'tbl_actions', tableLabel: 'Card actions', owner: 'offers', enabled: true, state: 'live', holding: 0, map: {} };
@@ -72,8 +74,10 @@ describe('offer rules as they are stored and said', () => {
   it('a rule read back into the form sends the same rule again', () => {
     const [pays] = cardsOf([], [OWN_PAYS]);
     const form = formOf(pays!);
-    expect(form).toMatchObject({ kind: 'pays', table: 'payments', cols: { card: 'card_id', amount: 'amount', balanceAfter: 'card_left', order: 'order_id', due: 'due' }, when: { kind: 'create' }, back: { kind: 'set', column: 'voided_at', own: true } });
-    expect(sentOf(form!, (table) => table).postings).toEqual([{ table: 'payments', id: 'offers-card', body: { into: { addOn: 'offers', ledger: 'value', action: 'spend' }, via: 'order_id', post: { on: { create: true } }, reverse: { on: { column: 'voided_at', set: true, own: true } }, map: OWN_PAYS.map } }]);
+    expect(form).toMatchObject({ kind: 'pays', table: 'payments', cols: { card: 'card_id', amount: 'amount', balanceAfter: 'card_left' }, when: { kind: 'create' }, back: { kind: 'set', column: 'voided_at' } });
+    expect(sentOf(form!, (table) => table).postings).toEqual([{ table: 'payments', id: 'offers-card', body: { into: { addOn: 'offers', ledger: 'value', action: 'spend' }, post: { on: { create: true } }, reverse: { on: { column: 'voided_at', set: true } }, map: OWN_PAYS.map } }]);
+    // One drawn in a file, with its link to the order, is not taken apart here: it would lose the link.
+    expect(formOf(cardsOf([], [FILE_PAYS])[0]!)).toBeNull();
     // An app's price rule can be read, never an old till's rows.
     expect(formOf(cardsOf([APP_ADJUST], [APP_USES])[0]!)).toMatchObject({ kind: 'discounts', cols: { lines: 'shop_lines order_id', price: 'unit_price', lineDiscount: 'discount', orderDiscount: 'discount' }, when: { kind: 'moves', to: ['paid'] } });
     expect(formOf(cardsOf([], [MOVED])[0]!)).toBeNull();
@@ -162,8 +166,8 @@ describe('Offer rules', () => {
     choose(/^The gift card that pays/, 'card_id');
     choose(/^What the card paid/, 'amount');
     choose(/^What the card holds afterwards/, 'card_left');
-    choose(/^The row it belongs to/, 'order_id');
-    choose(/^What is still to pay/, 'due');
+    // A sheet draws a rule on the row itself: it offers no link to an order, and sends none (the server takes none).
+    expect(screen.queryByLabelText(/^The row it belongs to/)).toBeNull();
     choose(/^The card pays/, 'create');
     choose(/^It is undone/, 'set');
     choose(/^It is undone: which column/, 'voided_at');
@@ -174,7 +178,7 @@ describe('Offer rules', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save rule' }));
     await waitFor(() => expect(world.toasts.map((toast) => toast.title)).toEqual(['Rule added for Payments']));
     expect(writes()).toEqual([
-      { call: 'put /api/v1/connections/c1/tables/payments/postings/offers-card', body: { into: { addOn: 'offers', ledger: 'value', action: 'spend' }, via: 'order_id', post: { on: { create: true } }, reverse: { on: { column: 'voided_at', set: true, own: true } }, map: { card: 'card_id', amount: 'amount', balance_after: 'card_left', due: { parent: 'due' } } } },
+      { call: 'put /api/v1/connections/c1/tables/payments/postings/offers-card', body: { into: { addOn: 'offers', ledger: 'value', action: 'spend' }, post: { on: { create: true } }, reverse: { on: { column: 'voided_at', set: true } }, map: { card: 'card_id', amount: 'amount', balance_after: 'card_left' } } },
       // The refund names the payments table by its stored name.
       { call: 'put /api/v1/connections/c1/tables/refunds/postings/offers-card-back', body: { into: { addOn: 'offers', ledger: 'value', action: 'refund' }, post: { on: { create: true } }, map: { against_table: { value: 'shop:payments' }, against_row: 'payment_id', amount: 'amount' } } },
     ]);

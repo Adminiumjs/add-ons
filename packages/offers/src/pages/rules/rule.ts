@@ -192,8 +192,6 @@ export const PARTS: Readonly<Record<Addable, readonly { part: string; required: 
     { part: 'card', required: true },
     { part: 'amount', required: true },
     { part: 'balanceAfter', required: true },
-    { part: 'order', required: false },
-    { part: 'due', required: false },
     { part: 'refunds', required: false },
     { part: 'refundRow', required: false },
     { part: 'refundAmount', required: false },
@@ -201,13 +199,11 @@ export const PARTS: Readonly<Record<Addable, readonly { part: string; required: 
   'sells-cards': [
     { part: 'card', required: true },
     { part: 'amount', required: true },
-    { part: 'order', required: false },
   ],
   'sells-vouchers': [
     { part: 'voucher', required: true },
     { part: 'amount', required: true },
     { part: 'taxLater', required: false },
-    { part: 'order', required: false },
   ],
 };
 
@@ -287,15 +283,20 @@ export function sentOf(form: Form, refOf: (table: string) => string): Sent {
       postings: final === null ? [] : [{ table: form.table, id: usesId, body: { into: into('redeem'), ...phases(form), map: {} } }],
     };
   }
-  const via = col(form, 'order') === '' ? {} : { via: col(form, 'order') };
+  /*
+   * A rule drawn here hears its own row and nothing else: when it is made,
+   * when one of its own columns is set or becomes a value. One that reads its
+   * rows as lines of an order (`via`) is an app's, drawn in its file — the
+   * server takes none from a sheet, so the sheet offers none.
+   */
   if (form.kind === 'pays') {
-    const map: Record<string, Mapping> = { card: col(form, 'card'), amount: col(form, 'amount'), balance_after: col(form, 'balanceAfter'), ...(col(form, 'due') === '' || col(form, 'order') === '' ? {} : { due: { parent: col(form, 'due') } }) };
-    const postings = [{ table: form.table, id: POSTING.pays, body: { into: into(ACTION.pays), ...via, ...phases(form), map } }];
+    const map: Record<string, Mapping> = { card: col(form, 'card'), amount: col(form, 'amount'), balance_after: col(form, 'balanceAfter') };
+    const postings = [{ table: form.table, id: POSTING.pays, body: { into: into(ACTION.pays), ...phases(form), map } }];
     if (col(form, 'refunds') !== '') postings.push({ table: col(form, 'refunds'), id: POSTING.refunds, body: { into: into('refund'), post: { on: { create: true } }, map: { against_table: { value: refOf(form.table) }, against_row: col(form, 'refundRow'), amount: col(form, 'refundAmount') } } });
     return { postings };
   }
   const map: Record<string, Mapping> = form.kind === 'sells-cards' ? { card: col(form, 'card'), amount: col(form, 'amount') } : { voucher: col(form, 'voucher'), amount: col(form, 'amount'), ...(col(form, 'taxLater') === '' ? {} : { tax_later: col(form, 'taxLater') }) };
-  return { postings: [{ table: form.table, id: POSTING[form.kind], body: { into: into(ACTION[form.kind]), ...via, ...phases(form), map } }] };
+  return { postings: [{ table: form.table, id: POSTING[form.kind], body: { into: into(ACTION[form.kind]), ...phases(form), map } }] };
 }
 
 /** The form of a rule an owner made, to change it. */
@@ -317,11 +318,12 @@ export function formOf(card: Card): Form | null {
   }
   if (card.kind !== 'pays' && card.kind !== 'sells-cards' && card.kind !== 'sells-vouchers') return null;
   const rule = card.posted;
-  const due = rule.map['due'];
-  const cols: Record<string, string> = { order: rule.via ?? '', amount: one(rule.map['amount']) ?? '' };
+  // A rule that reads its rows as lines of another row was drawn in a file, and is changed there.
+  if (rule.via !== undefined) return null;
+  const cols: Record<string, string> = { amount: one(rule.map['amount']) ?? '' };
   if (card.kind === 'sells-vouchers') Object.assign(cols, { voucher: one(rule.map['voucher']) ?? '', taxLater: one(rule.map['tax_later']) ?? '' });
   else Object.assign(cols, { card: one(rule.map['card']) ?? '' });
-  if (card.kind === 'pays') Object.assign(cols, { balanceAfter: one(rule.map['balance_after']) ?? '', due: typeof due === 'object' && 'parent' in due ? due.parent : '' });
+  if (card.kind === 'pays') Object.assign(cols, { balanceAfter: one(rule.map['balance_after']) ?? '' });
   return { kind: card.kind, table: card.table, cols, when: whenOf(rule.post), back: whenOf(rule.reverse), making: { amounts: false, codes: false } };
 }
 

@@ -179,7 +179,9 @@ export function Rules({ t }: { t: AddOnTranslate }): ReactNode {
       {read.cards.length === 0 ? <EmptyState title={t('rules.none.title', 'No table has anything to do with offers yet')} body={t('rules.none.body', 'An app that takes discounts or gift cards brings its rules with it. For a table of your own, add a rule.')} /> : null}
       {read.cards.map((card) => {
         const locked = card.owner !== null || card.kind === 'moved';
-        const changeable = read.canChange && !locked && card.kind !== 'refunds' && card.kind !== 'uses';
+        // A rule that reads its rows as lines of another row was drawn in a file: it is shown, and changed there.
+        const inFile = card.kind !== 'discounts' && card.posted.via !== undefined;
+        const changeable = read.canChange && !locked && !inFile && card.kind !== 'refunds' && card.kind !== 'uses';
         const removable = read.canChange && !locked && (card.kind === 'refunds' || card.kind === 'uses');
         return (
           <Panel
@@ -206,6 +208,7 @@ export function Rules({ t }: { t: AddOnTranslate }): ReactNode {
               ))}
               {card.state === 'unavailable' ? <Alert tone="warn" title={t('rules.unavailable', 'This rule cannot run right now: Offers is switched off or not answering.')} /> : null}
               {card.holding > 0 ? <span className="text-body-sm text-fg-muted">{t('rules.holding', '{rows, plural, one {# row is} other {# rows are}} holding a use or a card payment.', { rows: card.holding })}</span> : null}
+              {inFile && !locked ? <span className="text-body-sm text-fg-muted">{t('rules.inFile', 'This rule was drawn in a project file. Change it there.')}</span> : null}
               {said[key(card)] === undefined ? null : <Alert tone="danger" role="alert" title={said[key(card)]} />}
               {changeable ? (
                 <Stack direction="row" gap="sm">
@@ -289,7 +292,6 @@ function RuleSheet({ t, editing, sources, ownTables, names, tableAt, postingAt, 
   /** The tables whose rows are lines of this one, each with the link that makes them so. */
   const lineTables = sources.flatMap((table) => (table.lineOf ?? []).filter((link) => link.table === form.table).map((link) => ({ value: `${table.table} ${link.via}`, label: table.label, table })));
   const lines = form.kind === 'discounts' ? lineTables.find((one) => one.value === (form.cols['lines'] ?? ''))?.table : undefined;
-  const parent = form.kind !== 'discounts' && (form.cols['order'] ?? '') !== '' ? sources.find((table) => table.table === source?.lineOf?.find((link) => link.via === form.cols['order'])?.table) : undefined;
   const refunds = sources.find((table) => table.table === (form.cols['refunds'] ?? ''));
 
   const options = (columns: readonly SourceColumn[], kept: (column: SourceColumn) => boolean, none: string): { value: string; label: string }[] => [{ value: '', label: none }, ...columns.filter(kept).map((column) => ({ value: column.name, label: column.label }))];
@@ -454,10 +456,8 @@ function RuleSheet({ t, editing, sources, ownTables, names, tableAt, postingAt, 
               />
               {form.kind === 'pays' ? <Select label={t('rules.part.balanceAfter', 'What the card holds afterwards')} hint={t('rules.part.written', 'Adminium writes it.')} value={form.cols['balanceAfter'] ?? ''} onChange={(event) => pick('balanceAfter', event.target.value)} options={options(columns, (column) => money(column) && writable(column), choose)} disabled={working} required {...needed('balanceAfter')} /> : null}
               {form.kind === 'sells-vouchers' ? <Select label={t('rules.part.taxLater', 'Tax is charged when it is used')} value={form.cols['taxLater'] ?? ''} onChange={(event) => pick('taxLater', event.target.value)} options={options(columns, (column) => YES_NO.has(column.type), notNeeded)} disabled={working} /> : null}
-              <Select label={t('rules.part.order', 'The row it belongs to')} hint={t('rules.part.orderHint', 'For a line or a payment of an order: the link to the order.')} value={form.cols['order'] ?? ''} onChange={(event) => set({ cols: { ...form.cols, order: event.target.value, due: '' }, when: { kind: 'never' }, back: { kind: 'never' } })} options={[{ value: '', label: t('rules.sheet.itself', 'It stands by itself') }, ...linksTo(source, (table) => !Object.values(ownTables).some((own) => own.id === table))]} disabled={working} />
-              {form.kind === 'pays' && parent !== undefined ? <Select label={t('rules.part.due', 'What is still to pay')} value={form.cols['due'] ?? ''} onChange={(event) => pick('due', event.target.value)} options={options(parent.columns, money, notNeeded)} disabled={working} /> : null}
-              <WhenField t={t} label={form.kind === 'pays' ? t('rules.part.whenPays', 'The card pays') : form.kind === 'sells-cards' ? t('rules.part.whenLoads', 'The card is loaded') : t('rules.part.whenSold', 'The voucher is sold')} when={form.when} source={parent ?? source} {...(parent === undefined ? {} : { own: source })} disabled={working} onChange={(when) => set({ when })} {...(marked.includes('when') ? { error: t('rules.sheet.err.whenNeeded', 'Choose when, and finish it.') } : {})} />
-              <WhenField t={t} label={t('rules.part.back', 'It is undone')} when={form.back} source={parent ?? source} {...(parent === undefined ? {} : { own: source })} disabled={working} onChange={(back) => set({ back })} />
+              <WhenField t={t} label={form.kind === 'pays' ? t('rules.part.whenPays', 'The card pays') : form.kind === 'sells-cards' ? t('rules.part.whenLoads', 'The card is loaded') : t('rules.part.whenSold', 'The voucher is sold')} when={form.when} source={source} disabled={working} onChange={(when) => set({ when })} {...(marked.includes('when') ? { error: t('rules.sheet.err.whenNeeded', 'Choose when, and finish it.') } : {})} />
+              <WhenField t={t} label={t('rules.part.back', 'It is undone')} when={form.back} source={source} disabled={working} onChange={(back) => set({ back })} />
               {form.kind === 'pays' ? (
                 <>
                   <Select label={t('rules.part.refunds', 'Money given back is a row of')} value={form.cols['refunds'] ?? ''} onChange={(event) => set({ cols: { ...form.cols, refunds: event.target.value, refundRow: '', refundAmount: '' } })} options={[{ value: '', label: t('rules.sheet.noRefunds', 'No table of refunds') }, ...sources.filter((table) => (table.lineOf ?? []).some((link) => link.table === form.table)).map((table) => ({ value: table.table, label: table.label }))]} disabled={working} {...(marked.includes('refunds') ? { error: t('rules.sheet.err.refunds', 'Choose the link to the payment and the amount too.') } : {})} />
