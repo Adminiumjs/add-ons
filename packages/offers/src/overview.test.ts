@@ -153,5 +153,7 @@ describe('the Overview', () => {
     }
     expect(page.config.layout.toolbar.links.map((link) => `${link.label} ${link.href} ${link.tone ?? ''}`.trim())).toEqual(['New discount /add-ons/offers/offers-discounts/new primary', 'Issue /add-ons/offers/offers-issue']);
     for (const link of page.config.layout.toolbar.links) expect(Object.keys(link.labels).sort()).toEqual(LOCALES);
+    // A toolbar link draws one of the few icons a dashboard's toolbar has; any other and the page is refused at install.
+    for (const link of page.config.layout.toolbar.links as unknown as { icon?: string }[]) expect(['arrow-right', 'clipboard-list', 'external-link', 'package-plus', 'clipboard-check', 'plus', 'gift']).toContain(link.icon);
   });
 });

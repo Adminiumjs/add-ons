@@ -3258,7 +3258,7 @@
                   "zh-TW": "新增折扣"
                 },
                 "href": "/add-ons/offers/offers-discounts/new",
-                "icon": "percent",
+                "icon": "plus",
                 "tone": "primary"
               },
               {
@@ -3274,7 +3274,7 @@
                   "zh-TW": "發放"
                 },
                 "href": "/add-ons/offers/offers-issue",
-                "icon": "circle-plus"
+                "icon": "gift"
               }
             ]
           },
