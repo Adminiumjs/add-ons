@@ -437,7 +437,23 @@ export function CountSheet({ t, countId }: { t: AddOnTranslate; countId: string 
               <EmptyState
                 compact
                 title={onlyDiffer ? t('counts.empty.differ', 'No differences so far') : onlyOpen ? t('counts.empty.open', 'Every line is counted') : t('counts.empty.lines', 'This count has no lines')}
-                {...(onlyOpen ? { body: t('counts.empty.openBody', 'Nothing is left to count here.') } : {})}
+                {...(onlyOpen ? { body: t('counts.empty.openBody', 'Nothing is left to count here.') } : onlyDiffer ? { body: t('counts.empty.differBody', 'Every line counted so far matches what was expected.') } : {})}
+                {...(onlyDiffer || onlyOpen
+                  ? {
+                      actions: (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => {
+                            setOnlyDiffer(false);
+                            setOnlyOpen(false);
+                          }}
+                        >
+                          {t('counts.empty.showAll', 'Show all lines')}
+                        </Button>
+                      ),
+                    }
+                  : {})}
               />
             }
           />

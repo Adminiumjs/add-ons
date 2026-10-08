@@ -37,7 +37,7 @@ describe("the screens' looks", () => {
    * kit's parts, each one the dashboard uses itself. A new one here must be
    * found in the dashboard's sources first.
    */
-  const KNOWN = ['font-semibold', 'leading-[normal]', 'min-w-0', 'size-4', 'sr-only', 'text-body-sm', 'text-fg', 'text-fg-muted'];
+  const KNOWN = ['bg-surface', 'border-border', 'border-t', 'flex-1', 'font-semibold', 'leading-[normal]', 'min-w-0', 'overflow-y-auto', 'px-5', 'py-3.5', 'py-4', 'shrink-0', 'size-4', 'sr-only', 'text-body-sm', 'text-fg', 'text-fg-muted'];
 
   it('use no class the dashboard does not already draw', () => {
     const used = new Set<string>();

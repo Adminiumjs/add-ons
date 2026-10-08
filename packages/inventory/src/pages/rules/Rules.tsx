@@ -242,8 +242,9 @@ export function Rules({ t }: { t: AddOnTranslate }): ReactNode {
           onSaved={async (rule, fresh) => {
             setEditing(null);
             await load();
-            // A new rule on a table that is not Inventory's own: its rows can be made into stock items.
-            if (fresh && rule.action !== 'use-item') setOfferItems(`${rule.table}:${rule.id}`);
+            const table = read.sources?.tables.find((one) => one.table === rule.table)?.label ?? rule.table;
+            toasts.push({ variant: 'success', title: fresh ? t('rules.added', '{table} rule added', { table }) : t('rules.saved', '{table} rule saved', { table }) });
+            // Making stock items from the table's rows is offered on the card, as a link: it is a second job, not a step of this one.
           }}
         />
       )}
@@ -370,6 +371,8 @@ function RuleSheet({ t, editing, sources, itemsTable, places, names, taken, path
     <Sheet open onOpenChange={(next) => (next || working ? undefined : onClose())} maxWidth={560}>
       <SheetHeader icon={<Icon />} title={editing.rule === null ? t('rules.sheet.add', 'Add a rule') : t('rules.sheet.edit', 'Edit rule')} closeLabel={t('shared.close', 'Close')} />
       <SheetBody>
+        {/* The sheet's body clips what it holds: the form scrolls inside it, with the sheet's own gutter. */}
+        <div className="min-w-0 flex-1 overflow-y-auto px-5 py-4">
         <Stack gap="md">
           {said === null ? null : <Alert tone="danger" role="alert" title={said} />}
           <Select
@@ -414,14 +417,6 @@ function RuleSheet({ t, editing, sources, itemsTable, places, names, taken, path
                 options={[{ value: '', label: t('rules.sheet.defaultPlace', 'The default place') }, ...places.map((place) => ({ value: `place:${place.id}`, label: place.name })), ...links.map((link) => ({ value: `column:${link.value}`, label: t('rules.sheet.placeColumn', 'The place in {column}', { column: link.label }) }))]}
                 disabled={working}
               />
-              <div aria-live="polite">
-                <Stack gap="xs">
-                  <span className="text-body-sm text-fg-muted">{t('rules.sheet.reads', 'Reads as')}</span>
-                  {reads.map((line) => (
-                    <span key={line}>{line}</span>
-                  ))}
-                </Stack>
-              </div>
             </>
           )}
           {confirmRemove ? (
@@ -441,18 +436,33 @@ function RuleSheet({ t, editing, sources, itemsTable, places, names, taken, path
             />
           ) : null}
         </Stack>
+        </div>
       </SheetBody>
+      {/* The rule read back, above the buttons and always in view: what is about to be saved is read before it is. */}
+      {source === undefined ? null : (
+        <div aria-live="polite" className="shrink-0 border-t border-border bg-surface px-5 py-3.5" data-part="inventory-rule-reads">
+          <Stack gap="xs">
+            <span className="text-body-sm text-fg-muted">{t('rules.sheet.reads', 'Reads as')}</span>
+            {reads.map((line) => (
+              <span key={line} className="text-fg">
+                {line}
+              </span>
+            ))}
+          </Stack>
+        </div>
+      )}
       <SheetFooter>
         {editing.rule === null ? null : (
           <Button variant="ghost" loading={busy === 'remove'} disabled={working} onClick={() => setConfirmRemove(true)}>
             {t('rules.remove', 'Remove rule')}
           </Button>
         )}
+        <span className="flex-1" />
         <Button variant="secondary" disabled={working} onClick={() => onClose()}>
           {t('shared.cancel', 'Cancel')}
         </Button>
         <Button variant="primary" loading={busy === 'save'} disabled={working} onClick={() => void save()}>
-          {t('rules.sheet.save', 'Save rule')}
+          {editing.rule === null ? t('rules.sheet.addRule', 'Add rule') : t('rules.sheet.save', 'Save rule')}
         </Button>
       </SheetFooter>
     </Sheet>

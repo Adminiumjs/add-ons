@@ -318,7 +318,7 @@ export function Opening({ t, receiptId }: { t: AddOnTranslate; receiptId: string
         <Alert
           tone="warn"
           title={t('opening.unmatched.title', '{count, plural, one {# row matches} other {# rows match}} no item', { count: unmatched.length })}
-          body={t('opening.unmatched.body', 'Rows {rows}{more}. They are left out unless you make the items.', { rows: unmatched.slice(0, 12).map((row) => row.at).join(', '), more: unmatched.length > 12 ? ' …' : '' })}
+          body={t('opening.unmatched.body', '{count, plural, one {Row {rows}. It is} other {Rows {rows}{more}. They are}} left out unless you make the items.', { count: unmatched.length, rows: unmatched.slice(0, 12).map((row) => row.at).join(', '), more: unmatched.length > 12 ? ' …' : '' })}
           action={
             <Stack direction="row" gap="xs">
               {mayAddItems && unmatched.some((row) => row.name !== '') ? (

@@ -82,7 +82,7 @@ export async function loadReceipt(read: Reads, at: { receiptId: string | null; p
   const orderId = receipt === null ? at.poId : text(receipt['po_id']) || null;
   const order = orderId === null ? null : await read.get('purchase_orders', orderId);
   if (receipt === null && at.poId !== null && order === null) return 'missing';
-  const poLines = order === null ? [] : await listAll(read, 'po_lines', { filter: [{ column: 'po_id', op: 'eq', value: text(order['id']) }], sort: [{ column: 'id', direction: 'asc' }], columns: PO_LINE });
+  const poLines = order === null ? [] : await listAll(read, 'po_lines', { filter: [{ column: 'po_id', op: 'eq', value: text(order['id']) }], sort: [{ column: 'id', direction: 'asc' }], columns: costs ? [...PO_LINE, 'unit_cost'] : PO_LINE });
   const saved =
     receipt === null
       ? []
@@ -438,6 +438,8 @@ export function Receive({ t, receiptId, poId }: ReceiveProps): ReactNode {
                   {...(lineSaid[line.key]?.field === 'unit_cost' ? { error: lineSaid[line.key]?.message } : {})}
                 />
                 {line.unitCost === '' && used !== '' && !line.dirty ? <span className="text-body-sm text-fg-muted">{t('receive.costUsed', 'Adminium used {cost}', { cost: used })}</span> : null}
+                {/* Before anything is saved: the order's own cost, which is what an empty field takes. Read from the order, never worked out here. */}
+                {line.unitCost === '' && line.saved === null && line.status === 'draft' && (line.ordered?.cost ?? '') !== '' ? <span className="text-body-sm text-fg-muted">{t('receive.costOrdered', 'The order says {cost}', { cost: money(line.ordered?.cost, locale) })}</span> : null}
               </Stack>
             );
           },

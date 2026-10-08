@@ -127,7 +127,9 @@ export function Posted({ t, receipt, order, lines, costs, totals, note, onChange
       {note === null ? null : <Alert tone="warn" title={note} />}
       <Card title={heading} description={t('receive.posted.where', 'Into {place} · {when} · {by}', { place: text(place.rows[0]?.['name']), when, by: text(receipt['by']) })}>
         <Stack gap="md">
-          {order === null ? (
+          {status === 'reversed' ? (
+            <span>{t('receive.reversed.body', 'Every line was taken out of stock again. The receipt stays on record.')}</span>
+          ) : order === null ? (
             <span>{text(receipt['supplier_id']) === '' ? t('receive.posted.plain', 'Stock received.') : t('receive.posted.noOrder', 'Stock received from its supplier.')}</span>
           ) : order['status'] === 'received' ? (
             <span>{t('receive.posted.full', '{order} is fully received.', { order: number })}</span>

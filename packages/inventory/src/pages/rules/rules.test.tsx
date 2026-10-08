@@ -101,12 +101,18 @@ describe('Stock rules', () => {
     const sheet = screen.getByRole('dialog');
     fireEvent.change(within(sheet).getByLabelText(/^Table/), { target: { value: 'main.jobs' } });
     fireEvent.click(within(sheet).getByRole('radio', { name: /A linked column/ }));
-    fireEvent.click(within(sheet).getByRole('button', { name: 'Save rule' }));
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Add rule' }));
     expect(await within(sheet).findByText('Choose when stock is held or taken')).toBeTruthy();
     expect(sent.some((call) => call.verb === 'put')).toBe(false);
     fireEvent.change(within(sheet).getByLabelText('Take'), { target: { value: 'moves' } });
     fireEvent.click(within(sheet).getByRole('switch', { name: 'done' }));
-    fireEvent.click(within(sheet).getByRole('button', { name: 'Save rule' }));
+    // The rule read back sits outside the scrolling form, above the buttons: it is in view while the form is filled.
+    const reads = sheet.querySelector('[data-part="inventory-rule-reads"]');
+    expect(reads?.textContent).toContain('Reads as');
+    // (It follows the form a moment after it stops changing.)
+    await waitFor(() => expect(reads?.textContent).toMatch(/take/i), { timeout: 2000 });
+    expect(reads?.closest('.overflow-y-auto')).toBeNull();
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Add rule' }));
     await waitFor(() => expect(sent.some((call) => call.verb === 'put')).toBe(true));
     // A column into Inventory's own items names the stock item itself.
     expect(sent.find((call) => call.verb === 'put')).toEqual({ verb: 'put', path: '/api/v1/connections/c1/tables/main.jobs/postings/stock-1', body: { into: { addOn: 'inventory', ledger: 'stock', action: 'use-item' }, post: { on: { to: ['done'] } }, map: { item: 'item_id', quantity: { value: 1 } } } });

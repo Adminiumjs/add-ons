@@ -408,7 +408,7 @@ export function Transfer({ t, transferId }: { t: AddOnTranslate; transferId: str
       </Card>
       <TotalsBar
         label={t('transfer.bar', 'This transfer')}
-        totals={saved !== null && !dirty ? t('transfer.totals', 'Moving {count, plural, one {# line} other {# lines}}', { count: Number(saved['lines'] ?? lines.length) }) : t('transfer.totalsTyped', '{count, plural, one {# line} other {# lines}} to move', { count: typed.length })}
+        totals={status === 'done' ? t('transfer.totalsDone', 'Moved {count, plural, one {# line} other {# lines}}', { count: Number(saved?.['lines'] ?? lines.length) }) : status === 'reversed' ? t('transfer.totalsUndone', 'Undone · {count, plural, one {# line} other {# lines}}', { count: Number(saved?.['lines'] ?? lines.length) }) : saved !== null && !dirty ? t('transfer.totals', 'Moving {count, plural, one {# line} other {# lines}}', { count: Number(saved['lines'] ?? lines.length) }) : t('transfer.totalsTyped', '{count, plural, one {# line} other {# lines}} to move', { count: typed.length })}
         problem={problem}
         progress={run === null ? null : <ProgressBar value={run.done} max={Math.max(run.all, 1)} label={t('shared.progress', '{done} of {all} lines', { done: run.done, all: run.all })} />}
       >

@@ -19,8 +19,8 @@ function sample(): void {
   seed('settings', [{ id: 1, default_place_id: 2 }]);
   seed('purchase_orders', [{ id: 7, number: 'PO-1002', supplier_id: 1, supplier_name: 'Medisupply Direct', sent_at: '2026-09-29T09:00:00Z', expected_on: '2026-10-01', place_id: 1, place_name: 'Treatment room', status: 'sent', closed_at: null }]);
   seed('po_lines', [
-    { id: 71, po_id: 7, item_id: 11, item_name: 'Lidocaine 1% ampoule', unit: 'each', supplier_code: 'LID-10', pack_name: 'box', packs: '5.000', pack_size: '10.000', qty: '50.000', received: '0.000', open_qty: '50.000' },
-    { id: 72, po_id: 7, item_id: 12, item_name: 'Gloves, nitrile, L', unit: 'pairs', supplier_code: 'GLV', pack_name: 'box', packs: '2.000', pack_size: '100.000', qty: '200.000', received: '0.000', open_qty: '200.000' },
+    { id: 71, po_id: 7, item_id: 11, item_name: 'Lidocaine 1% ampoule', unit: 'each', supplier_code: 'LID-10', pack_name: 'box', packs: '5.000', pack_size: '10.000', qty: '50.000', received: '0.000', open_qty: '50.000', unit_cost: '1.1000' },
+    { id: 72, po_id: 7, item_id: 12, item_name: 'Gloves, nitrile, L', unit: 'pairs', supplier_code: 'GLV', pack_name: 'box', packs: '2.000', pack_size: '100.000', qty: '200.000', received: '0.000', open_qty: '200.000', unit_cost: '0.0900' },
   ]);
   seed('items', [
     { id: 11, name: 'Lidocaine 1% ampoule', sku: 'LID-1', barcode: '5060000100011', unit: 'each', decimals: 0, tracks_batches: true, pack_name: 'box', pack_size: '10.000', active: true },
@@ -68,12 +68,26 @@ describe('Receive', () => {
     expect(screen.getByText('Treatment room')).toBeTruthy();
   });
 
+  it('shows what the order says one costs beside an empty cost, read from the order and sent to nobody', async () => {
+    render(<Receive t={t} receiptId={null} poId="7" />);
+    await screen.findByRole('group', { name: 'Lidocaine 1% ampoule' });
+    // The order's own figure, as it is stored: nothing is multiplied on the screen.
+    expect(within(line('Lidocaine 1% ampoule')).getByText(/^The order says .*1\.10/)).toBeTruthy();
+    expect(within(line('Gloves, nitrile, L')).getByText(/^The order says .*0\.09/)).toBeTruthy();
+    // A cost typed by the person replaces the hint: the field says what will be used.
+    type('Unit cost', '1.25', line('Lidocaine 1% ampoule'));
+    expect(within(line('Lidocaine 1% ampoule')).queryByText(/^The order says/)).toBeNull();
+  });
+
   it('a clerk sees no cost, sends no cost, and the bar reads units only', async () => {
     world.unreadable = { receipt_lines: ['unit_cost', 'cost_used', 'amount'], receipts: ['total'] };
     render(<Receive t={t} receiptId={null} poId="7" />);
     await screen.findByRole('group', { name: 'Lidocaine 1% ampoule' });
     expect(screen.queryByText('Unit cost')).toBeNull();
     expect(screen.queryByText('Total')).toBeNull();
+    expect(screen.queryByText(/The order says/)).toBeNull();
+    // The order's cost is not even asked for.
+    for (const call of world.calls.filter((made) => made.kind === 'list' && made.table === 'po_lines')) expect((call.options as { columns: string[] }).columns).not.toContain('unit_cost');
     type('Receiving now', '5', line('Lidocaine 1% ampoule'));
     type('Batch', 'LD201', line('Lidocaine 1% ampoule'));
     type('Expires', '2027-04-30', line('Lidocaine 1% ampoule'));

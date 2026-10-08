@@ -18,6 +18,8 @@ export interface Ordered {
   received: string;
   open: string;
   supplierCode: string;
+  /** What one unit costs on the order, where the reader may see it: shown beside an empty cost, never sent. */
+  cost: string;
 }
 
 export interface Line {
@@ -140,6 +142,7 @@ export function orderedOf(poLine: DataRow): Ordered {
     received: plain(poLine['received']),
     open: plain(poLine['open_qty']),
     supplierCode: text(poLine['supplier_code']),
+    cost: plain(poLine['unit_cost']),
   };
 }
 
