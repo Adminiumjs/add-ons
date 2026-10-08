@@ -22,6 +22,8 @@ describe('a sum of money on a screen', () => {
     expect(money('-18', 'en-US', 'usd')).toBe('\u2212$18.00');
     expect(money('1490.6', 'de-DE', 'EUR')).toBe('1.490,60\u00a0€');
     expect(money('12345678901234567.89', 'en-US', 'USD')).toBe('$12,345,678,901,234,567.89');
+    // A language with digits of its own writes them on both sides of the point.
+    expect(money('0.95', 'ar-EG')).toBe('\u0660\u066b\u0669\u0665');
     expect(money('18', 'en-US', null)).toBe('18.00');
     expect(money('18', 'en-US', 'not a code')).toBe('18.00');
   });

@@ -55,13 +55,13 @@ describe('a count sheet', () => {
     expect(world.calls.find((call) => call.kind === 'create')).toMatchObject({ table: 'count_marks', values: { count_line_id: '1', counted: '12' } });
     expect(world.calls.some((call) => call.table === 'count_lines' && call.kind !== 'list' && call.kind !== 'get')).toBe(false);
     // 12 − 14 is −2; Adminium said −1 against 13, and that is what is shown.
-    await waitFor(() => expect(within(row('Alcohol swab')).getByText('-1')).toBeTruthy());
-    expect(within(row('Alcohol swab')).getByText('\u22121.10')).toBeTruthy();
+    await waitFor(() => expect(within(row('Alcohol swab')).getByText('\u22121')).toBeTruthy());
+    expect(within(row('Alcohol swab')).getByText('\u2212$1.10')).toBeTruthy();
     expect(within(row('Alcohol swab')).getByText(/13\s+each/)).toBeTruthy();
     // The books moved since: said under what was expected, read from the level, not from the line.
     expect(within(row('Alcohol swab')).getByText('On hand now 14')).toBeTruthy();
     expect(screen.getAllByText('1 of 3 lines counted').length).toBeGreaterThan(0);
-    expect(screen.getByText('1 difference · \u22121.10')).toBeTruthy();
+    expect(screen.getByText('1 difference · \u2212$1.10')).toBeTruthy();
   });
 
   it('a cleared count un-counts the line, and a refused mark says so on its line and keeps what was typed', async () => {

@@ -135,9 +135,9 @@ describe('Receive', () => {
     // 5 × 10 is 50; Adminium said 51, and 51 is what is shown.
     expect(within(row).getByText(/=\s*51\s+each/)).toBeTruthy();
     expect(within(row).queryByText(/=\s*50\s+each/)).toBeNull();
-    expect(within(row).getByText('56.10')).toBeTruthy();
+    expect(within(row).getByText('$56.10')).toBeTruthy();
     expect(within(row).getByText('Adminium used 1.1')).toBeTruthy();
-    expect(screen.getByText('Receiving 51 units · 56.10')).toBeTruthy();
+    expect(screen.getByText('Receiving 51 units · $56.10')).toBeTruthy();
     // Typing takes the server's figure away until the next save: what stands there meanwhile is what the packs typed come to.
     type('Receiving now', '6', row);
     expect(within(row).queryByText(/=\s*51\s+each/)).toBeNull();

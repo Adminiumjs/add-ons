@@ -328,7 +328,10 @@ export function CountSheet({ t, countId }: { t: AddOnTranslate; countId: string 
         );
       },
     },
-    { key: 'difference', label: t('counts.col.difference', 'Difference'), cell: (line) => (isSet(line['is_counted']) ? <Figure>{signed(plain(line['difference'] as DataValue))}</Figure> : <span className="text-fg-muted">—</span>) },
+    { key: 'difference', label: t('counts.col.difference', 'Difference'), cell: (line) => (isSet(line['is_counted']) ? <Figure>
+          {/* Its own run, left to right: in a right-to-left page a sign would otherwise fall behind its figure. */}
+          <span dir="ltr">{signed(plain(line['difference'] as DataValue))}</span>
+        </Figure> : <span className="text-fg-muted">—</span>) },
     ...(seesValue ? [{ key: 'value', label: t('counts.col.value', 'Value'), cell: (line: DataRow) => (isSet(line['is_counted']) ? <Figure>{cash(line['value'])}</Figure> : <span className="text-fg-muted">—</span>) }] : []),
   ];
 
@@ -521,7 +524,7 @@ export function CountSheet({ t, countId }: { t: AddOnTranslate; countId: string 
                       {named(line['batch_code']) === '' ? '' : ` · ${named(line['batch_code'])}`}
                     </span>
                     <Figure>
-                      {signed(plain(line['difference'] as DataValue))} {text(line['unit'])}
+                      <span dir="ltr">{signed(plain(line['difference'] as DataValue))}</span> {text(line['unit'])}
                     </Figure>
                   </Stack>
                 ))}
@@ -547,5 +550,6 @@ export function CountSheet({ t, countId }: { t: AddOnTranslate; countId: string 
 
 /** A difference keeps its sign beside the figure: more than the books held reads `+2`. */
 function signed(value: string): string {
-  return value === '' || value.startsWith('-') || !/[1-9]/.test(value) ? value : `+${value}`;
+  if (value.startsWith('-')) return `\u2212${value.slice(1)}`;
+  return value === '' || !/[1-9]/.test(value) ? value : `+${value}`;
 }

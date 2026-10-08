@@ -300,29 +300,40 @@ export function money(value: unknown, locale: string, currency?: string | null):
   const [whole = '0', part = ''] = text.replace('-', '').split('.');
   const grouped = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(BigInt(whole));
   const point = new Intl.NumberFormat(locale, { minimumFractionDigits: 1 }).format(1.1).replace(/\p{Nd}/gu, '');
-  const figure = `${grouped}${point}${part.padEnd(2, '0')}`;
-  const minus = text.startsWith('-') ? '\u2212' : '';
-  let before = '';
+  // The places after the point in the same digits as the whole part: a language that writes its own digits writes them on both sides.
+  const digits = [...new Intl.NumberFormat(locale, { useGrouping: false }).format(9876543210)].reverse();
+  const places = part.padEnd(2, '0').replace(/\d/g, (digit) => digits[Number(digit)] ?? digit);
+  const figure = `${grouped}${point}${places}`;
+  const negative = text.startsWith('-');
+  const known = typeof currency === 'string' && /^[A-Za-z]{3}$/.test(currency);
+  let before = negative ? '\u2212' : '';
   let after = '';
-  if (typeof currency === 'string' && /^[A-Za-z]{3}$/.test(currency)) {
-    try {
-      // Where this language puts the sign, and what it puts between: read off a figure Intl wrote, never the amount itself.
-      const parts = new Intl.NumberFormat(locale, { style: 'currency', currency: currency.toUpperCase() }).formatToParts(1);
-      const first = parts.findIndex((piece) => piece.type === 'integer');
-      const last = parts.reduce((at, piece, index) => (piece.type === 'integer' || piece.type === 'fraction' ? index : at), first);
-      const words = (pieces: Intl.NumberFormatPart[]): string => pieces.filter((piece) => piece.type === 'currency' || piece.type === 'literal').map((piece) => piece.value).join('');
-      before = words(parts.slice(0, first));
-      after = words(parts.slice(last + 1));
-    } catch {
-      // A code Intl does not know: the bare figure.
-    }
+  try {
+    // Where this language puts the currency's sign and a minus, and what it puts between them: read off a figure
+    // Intl wrote for one (or for one less than nothing), never off the amount itself.
+    const parts = new Intl.NumberFormat(locale, known ? { style: 'currency', currency: (currency as string).toUpperCase() } : {}).formatToParts(negative ? -1 : 1);
+    const first = parts.findIndex((piece) => piece.type === 'integer');
+    const last = parts.reduce((at, piece, index) => (piece.type === 'integer' || piece.type === 'fraction' ? index : at), first);
+    const words = (pieces: Intl.NumberFormatPart[]): string =>
+      pieces
+        .filter((piece) => piece.type === 'currency' || piece.type === 'literal' || piece.type === 'minusSign')
+        .map((piece) => (piece.type === 'minusSign' ? piece.value.replace(/[-\u2212]/u, '\u2212') : piece.value))
+        .join('');
+    before = words(parts.slice(0, first));
+    after = words(parts.slice(last + 1));
+  } catch {
+    // A code Intl does not know: the bare figure.
   }
-  return `${minus}${before}${figure}${after}`;
+  return `${before}${figure}${after}`;
 }
 
-/** Money on a screen of this add-on: the reader's language, the database's currency. */
+/**
+ * Money on a screen of this add-on: the reader's language, the database's
+ * currency. Where the owner set none — or the host does not say — it reads in
+ * US dollars, as the lists beside these screens do.
+ */
 export function useMoney(): (value: unknown) => string {
   const locale = useLocaleTag();
-  const currency = (useAccess() as { currency?: string | null }).currency ?? null;
+  const currency = (useAccess() as { currency?: string | null }).currency ?? 'USD';
   return useCallback((value: unknown) => money(value, locale, currency), [locale, currency]);
 }

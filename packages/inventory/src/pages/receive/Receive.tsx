@@ -417,13 +417,18 @@ export function Receive({ t, receiptId, poId }: ReceiveProps): ReactNode {
       label: t('receive.col.now', 'Receiving now'),
       cell: (line, _index, narrow) => {
         const stored = line.saved !== null && !line.dirty ? plain(line.saved['qty']) : '';
-        const pack = line.packName || t('receive.packs', 'packs');
         const comes = stored !== '' ? stored : line.inPacks && positive(line.qty) ? (times(line.qty, line.packSize) ?? '') : '';
         // What this line brings, in units. A draft is not yet in what the order has received, saved or not.
         const brings = line.inPacks ? comes : line.qty.trim();
         const open = line.ordered === null || line.status !== 'draft' || !positive(brings) ? null : against(line.ordered.open, brings);
         const inPacks = open === null || !line.inPacks ? null : wholeTimes(open.by, line.packSize);
-        const gap = open === null ? null : { side: open.side, qty: inPacks ?? open.by, unit: inPacks === null ? line.unit : pack };
+        // In packs where none is broken — by the pack's own name, or counted as "packs" where it has none — else in units.
+        const gap =
+          open === null || open.side === 'even'
+            ? null
+            : inPacks !== null && line.packName === ''
+              ? { side: open.side, words: open.side === 'short' ? t('receive.toComePacks', '{count, plural, one {# pack} other {# packs}} still to come', { count: Number(inPacks) }) : t('receive.overOrderPacks', '{count, plural, one {# pack} other {# packs}} more than ordered', { count: Number(inPacks) }) }
+              : { side: open.side, words: open.side === 'short' ? t('receive.toCome', '{qty} {unit} still to come', { qty: inPacks ?? open.by, unit: inPacks === null ? line.unit : line.packName }) : t('receive.overOrder', '{qty} {unit} more than ordered', { qty: inPacks ?? open.by, unit: inPacks === null ? line.unit : line.packName }) };
         return (
           <Stack gap="xs">
             <QtyInput
@@ -445,12 +450,12 @@ export function Receive({ t, receiptId, poId }: ReceiveProps): ReactNode {
             {/* Against what the order still expects, while it can still be typed: a short delivery and an over-delivery are both said before the save. */}
             {gap !== null && gap.side === 'short' ? (
               <span className="text-body-sm text-fg-muted" data-part="inventory-against-order">
-                {t('receive.toCome', '{qty} {unit} still to come', { qty: gap.qty, unit: gap.unit })}
+                {gap.words}
               </span>
             ) : null}
             {gap !== null && gap.side === 'over' ? (
               <span className="text-body-sm font-semibold text-fg" data-part="inventory-against-order">
-                {t('receive.overOrder', '{qty} {unit} more than ordered', { qty: gap.qty, unit: gap.unit })}
+                {gap.words}
               </span>
             ) : null}
             {line.packSize !== '' && line.status === 'draft' && !fixed && !narrow ? (
