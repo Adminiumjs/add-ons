@@ -62,6 +62,7 @@ including the ones that name no company.
 | Barcode Labels | `packages/barcode-labels` | `LBL` | *(none)* | — |
 | Invoices & Receipts | `packages/invoices` | `INV` | *(none)* | — |
 | Inventory | `packages/inventory` | `STK` | *(none)* | — |
+| Offers & gift cards | `packages/offers` | `OFF` | *(none)* | — |
 
 Adminium and the Adminium name are marks of the Adminium project. Every add-on
 here is published by the project itself (`publisher.id: adminium`), which in v1
@@ -562,3 +563,43 @@ that list, that the manifest declares no connection, and that no source file
 names an address; the release sweep reads every built byte for the words that
 may not ship. The day a paragraph above stops being true, one of those turns
 red.
+
+---
+
+# Offers & gift cards — references no third-party trademarks
+
+## Why an add-on about cards and codes references no mark
+
+"Gift card" and "voucher" are ordinary words for a thing a shop issues itself.
+**Every card, voucher, code and offer here is the operator's own row**, issued
+by them, named by them and kept in their own database. Nothing is issued
+through, or redeemed with, anybody's card scheme, and no code is checked
+against anybody's service.
+
+What this section is about is the marks the PACKAGE ITSELF could have named, in
+its code and its manifest, and did not:
+
+- **No card scheme and no payment service.** A gift card is a balance in the
+  operator's database; paying with one moves no money anywhere. How a card was
+  paid for is recorded as cash, card or other, in those words.
+- **No voucher or loyalty network.** A code is made by Adminium or typed by the
+  operator; none is bought from, listed on or settled with a third party.
+- **No point-of-sale or shop product.** The rows of an operator's own tables —
+  an order, a payment, a sale line — post into the add-on's ledger through
+  Adminium; no other product is named as a source or a destination.
+
+## Affiliation
+
+The add-on is not affiliated with, endorsed by or sponsored by any company,
+because it deals with none: it connects to nothing, holds no credential, names
+no service and reaches no address. The affiliation line therefore has nothing
+to attach itself to, which is exactly why the fact is stated here rather than
+left as an absence.
+
+## How the claim is kept true
+
+`COMPANY_MARKS` in `packages/offers/src/add-on-facts.ts` is the executable half
+of this section, and it is empty. The package's `sources.test.ts` checks that
+list, that the manifest declares no connection, and that no source file names
+an address; the release sweep reads every built byte for the words that may
+not ship. The day a paragraph above stops being true, one of those turns red.

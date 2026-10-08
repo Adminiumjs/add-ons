@@ -82,6 +82,8 @@ describe('release shape: discovery', () => {
       'import-canva',
       // The first that keeps tables of its own and decides what a posting writes.
       'inventory',
+      // The first that answers what an order's reductions come to (`price-adjust@1`), from the same file as its postings.
+      'offers',
       'personalizer',
       'shipping-dhl',
     ].sort());
