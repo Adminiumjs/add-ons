@@ -12,9 +12,9 @@
 
 import type { PostingInput, PostingUse } from '@adminium/add-on-contracts';
 
-import { fromUnits, toUnits } from '../units.ts';
+import { toUnits } from '../units.ts';
 import { addDays } from './dates.ts';
-import { actedBy, Answer, read, same, scaleOf, textOf, wholeOf, written, yes, type Row } from './ledger.ts';
+import { actedBy, amountText, Answer, read, same, scaleOf, textOf, wholeOf, written, yes, type Row } from './ledger.ts';
 
 /** Why a voucher or a pack cannot be used; null when it can. `units`: how many uses are asked of it. */
 function unusable(voucher: Row, today: string, units: number): 'void' | 'expired' | 'inactive' | 'used-up' | null {
@@ -38,7 +38,7 @@ function prepaidBy(voucher: Row, uses: number, scale: number): string | null {
   if (price === null || total < 1) return null;
   const before = Math.max(0, total - (wholeOf(voucher['uses_left']) ?? total));
   const through = (count: number): bigint => (price * BigInt(Math.min(count, total))) / BigInt(total);
-  return fromUnits(through(before + uses) - through(before), scale);
+  return amountText(through(before + uses) - through(before), scale);
 }
 
 const kindOf = (use: PostingUse, voucher: Row | undefined): string => (voucher !== undefined ? (textOf(voucher['worth']) === 'pack' ? 'pack' : 'voucher') : use.code !== null ? 'code' : use.offer !== null ? 'offer' : 'staff');
@@ -124,7 +124,7 @@ export function redeem(input: PostingInput, answer: Answer): void {
       source_row: acted?.source_row ?? input.source.row,
       source_label: acted?.source_label ?? null,
       customer: use.customer ?? null,
-      amount: fromUnits(amount, scale),
+      amount: amountText(amount, scale),
       uses: units,
       prepaid,
       state: input.phase === 'reserve' ? 'held' : 'counted',
@@ -166,7 +166,7 @@ export function voucherAction(input: PostingInput, answer: Answer): void {
         reason_id: null,
         ...actedBy(input, line),
         customer: null,
-        amount: fromUnits(0n, scale),
+        amount: amountText(0n, scale),
         uses: 1,
         prepaid: prepaidBy(voucher, 1, scale),
         state: 'counted',
@@ -212,7 +212,7 @@ export function sell(input: PostingInput, answer: Answer): void {
       answer.refuse(line.line, 'not-allowed');
       continue;
     }
-    answer.update('vouchers', line.line, voucher['id'] ?? null, { sold: true, awaiting_sale: false, sale_price: fromUnits(amount, scale), tax_later: yes(line.inputs['tax_later']) });
+    answer.update('vouchers', line.line, voucher['id'] ?? null, { sold: true, awaiting_sale: false, sale_price: amountText(amount, scale), tax_later: yes(line.inputs['tax_later']) });
   }
 }
 

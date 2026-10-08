@@ -14,9 +14,9 @@
 
 import type { PostingInput, PostingLine } from '@adminium/add-on-contracts';
 
-import { fromUnits, least, toUnits } from '../units.ts';
+import { least, toUnits } from '../units.ts';
 import { addDays, addMonths } from './dates.ts';
-import { actedBy, Answer, Balances, read, same, scaleOf, textOf, wholeOf, yes, type Row } from './ledger.ts';
+import { actedBy, amountText, Answer, Balances, read, same, scaleOf, textOf, wholeOf, yes, type Row } from './ledger.ts';
 
 /** Why a card cannot be used as it stands; null when it can. A card not yet sold holds nothing to use. */
 function unusable(card: Row, today: string): 'inactive' | 'void' | 'expired' | null {
@@ -108,7 +108,7 @@ export function refund(input: PostingInput, answer: Answer): void {
     const returned = given.filter((row) => same(row['against_id'], spent['id'])).reduce((total, row) => total - (toUnits(row['taken'], scale) ?? 0n), 0n) + (back.get(String(spent['id'])) ?? 0n);
     const left = (toUnits(spent['value'], scale) ?? 0n) - returned;
     if (amount > left) {
-      answer.refuse(line.line, 'refund-over', fromUnits(left < 0n ? 0n : left, scale));
+      answer.refuse(line.line, 'refund-over', amountText(left < 0n ? 0n : left, scale));
       continue;
     }
     back.set(String(spent['id']), (back.get(String(spent['id'])) ?? 0n) + amount);

@@ -32,6 +32,18 @@ export function scaleOf(...figures: unknown[]): number {
   return Math.min(6, Math.max(2, ...figures.map(decimals)));
 }
 
+/**
+ * An amount as an answer writes it: at the scale it was worked at, less the
+ * noughts past the cents. One database hands a balance over as `62.0000` and
+ * another as `62`; what is left on a card is told as `2.00` on both.
+ */
+export function amountText(units: bigint, scale: number): string {
+  const text = fromUnits(units, scale);
+  const trimmed = scale > 2 ? text.replace(/0+$/, '') : text;
+  const [whole, fraction = ''] = trimmed.split('.');
+  return `${whole!}.${fraction.padEnd(2, '0')}`;
+}
+
 /** The answer of one call, as it is built. */
 export class Answer {
   readonly rows: PlannedRow[] = [];
@@ -103,7 +115,7 @@ export class Balances {
     return after;
   }
   text(amount: bigint): string {
-    return fromUnits(amount, this.scale);
+    return amountText(amount, this.scale);
   }
 }
 
@@ -130,8 +142,8 @@ export function reverseCardRows(input: PostingInput, answer: Answer, kind: strin
     answer.insert('card_ledger', line, {
       card_id: row['card_id'] ?? null,
       kind,
-      taken: fromUnits(-back, scale),
-      value: fromUnits(value, scale),
+      taken: amountText(-back, scale),
+      value: amountText(value, scale),
       balance_after: balances.text(balances.move(row['card_id'], -back)),
       against_id: row['id'] ?? null,
       source_table: textOf(row['source_table']) ?? input.source.table,

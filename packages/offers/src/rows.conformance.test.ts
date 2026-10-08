@@ -152,6 +152,14 @@ describe('what the shared suite does not compare', () => {
   it('works at the finest scale a figure came in, and never coarser than cents', () => {
     const fine = provider.rows(call({ action: 'spend', lines: [line('p', { card: 3, due: '1.2345' }, PAYMENTS)], reads: { card: [card(3, 'X', '10.0000')] } }));
     expect(inserted(fine, 'card_ledger')[0]).toMatchObject({ taken: '1.2345', balance_after: '8.7655' });
+    // A balance one database hands over with four decimals is told as another tells it with two.
+    const padded = provider.rows(call({ action: 'spend', lines: [line('p', { card: 3, due: '10.1200', ask: '20.0000' }, PAYMENTS)], reads: { card: [card(3, 'X', '62.0000')] } }));
+    expect(padded.refusals).toEqual([{ line: 'p', reason: 'not-allowed' }]);
+    const short = provider.rows(call({ action: 'spend', lines: [line('p', { card: 3, due: '99.0000', ask: '70.0000' }, PAYMENTS)], reads: { card: [card(3, 'X', '62.5000')] } }));
+    expect(short.refusals).toEqual([{ line: 'p', reason: 'empty', left: '62.50' }]);
+    const exact = provider.rows(call({ action: 'spend', lines: [line('p', { card: 3, due: '10.1200' }, PAYMENTS)], reads: { card: [card(3, 'X', '62.0000')] } }));
+    expect(inserted(exact, 'card_ledger')[0]).toMatchObject({ taken: '10.12', balance_after: '51.88' });
+    expect(exact.decides).toEqual([{ line: 'p', input: 'amount', value: '10.12' }, { line: 'p', input: 'balance_after', value: '51.88' }]);
     const whole = provider.rows(call({ action: 'spend', lines: [line('p', { card: 3, due: 1900 }, PAYMENTS)], reads: { card: [card(3, 'X', 5000 as never)] } }));
     expect(inserted(whole, 'card_ledger')[0]).toMatchObject({ taken: '1900.00', balance_after: '3100.00' });
   });
