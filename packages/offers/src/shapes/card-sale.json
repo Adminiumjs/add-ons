@@ -77,7 +77,10 @@
           "scale": "currency",
           "nullable": true
         }
-      ]
+      ],
+      "inAdjust": {
+        "excludes": "gift_card_id"
+      }
     }
   }
 }

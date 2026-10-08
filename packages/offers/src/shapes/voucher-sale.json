@@ -84,7 +84,10 @@
           "default": false,
           "nullable": true
         }
-      ]
+      ],
+      "inAdjust": {
+        "paidBy": "voucher_id"
+      }
     }
   }
 }
