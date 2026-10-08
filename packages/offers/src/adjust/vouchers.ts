@@ -47,7 +47,7 @@ export function things(question: Question, standing: Standing, vouchers: readonl
       continue;
     }
     // An order priced again for a return had its uses already: a pack covers what is kept, whatever it has left by now.
-    const most = worth === 'pack' ? (question.earned ? Number.MAX_SAFE_INTEGER : (wholeOf(voucher.row['uses_left']) ?? 0) + ownUnits(question.input, voucher.id)) : Math.max(1, wholeOf(voucher.row['units']) ?? 1);
+    const most = worth === 'pack' ? (question.earned ? Number.MAX_SAFE_INTEGER : (wholeOf(voucher.row['uses_left']) ?? wholeOf(voucher.row['uses_total']) ?? 1) + ownUnits(question.input, voucher.id)) : Math.max(1, wholeOf(voucher.row['units']) ?? 1);
     // The dearest unit first; of two as dear, the one on the earlier line.
     const runs = matching.flatMap((line) => runsOf(standing, line.at).map((run, index) => ({ at: line.at, index, run }))).filter((one) => one.run.value > 0n);
     runs.sort((a, b) => (a.run.value === b.run.value ? a.at - b.at || a.index - b.index : a.run.value > b.run.value ? -1 : 1));

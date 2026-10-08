@@ -84,7 +84,7 @@ export function typedOf(input: AdjustInput, offers: Offer[]): { vouchers: TypedV
           ? 'expired'
           : yes(row['awaiting_sale'])
             ? 'inactive'
-            : (wholeOf(row['uses_left']) ?? 0) + own(id) < 1
+            : (wholeOf(row['uses_left']) ?? wholeOf(row['uses_total']) ?? 1) + own(id) < 1
               ? 'used-up'
               : holder !== null && input.customer?.key !== holder
                 ? // A named voucher is its holder's: staff are told so, and nobody else is told it exists.

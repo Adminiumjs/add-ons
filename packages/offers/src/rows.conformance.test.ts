@@ -246,8 +246,20 @@ describe('what the shared suite does not compare', () => {
   });
 
   it('what staff took off by hand is a use with its reason, and names no offer', () => {
-    const out = provider.rows(call({ action: 'redeem', lines: [line('', { reason: 2 })], uses: [{ offer: null, code: null, voucher: null, amount: '4.98' }, { offer: '1', code: '1', voucher: null, amount: '4.95' }], reads: { mine: [], offers: [{ id: 1, max_uses: null, uses: 0, budget_open: true }], codes: [{ id: 1, max_uses: null, uses: 0 }], vouchers: [] } }));
-    expect(inserted(out, 'redemptions').map((row) => `${String(row['kind'])} ${String(row['reason_id'])} ${String(row['amount'])}`)).toEqual(['staff 2 4.98', 'code null 4.95']);
+    const used = (reasons: Record<string, string | number>[]) =>
+      provider.rows(call({ action: 'redeem', lines: [line('', { reason: 2 })], uses: [{ offer: null, code: null, voucher: null, amount: '4.98' }, { offer: '1', code: '1', voucher: null, amount: '4.95' }], reads: { mine: [], offers: [{ id: 1, max_uses: null, uses: 0, budget_open: true }], codes: [{ id: 1, max_uses: null, uses: 0 }], vouchers: [], reasons } }));
+    expect(inserted(used([{ id: 2, label: 'Goodwill' }]), 'redemptions').map((row) => `${String(row['kind'])} ${String(row['reason_id'])} ${String(row['amount'])}`)).toEqual(['staff 2 4.98', 'code null 4.95']);
+    // A reason that is no row any more is written as none: a row the ledger writes points only at rows it was shown.
+    expect(inserted(used([]), 'redemptions')[0]).toMatchObject({ kind: 'staff', reason_id: null });
+  });
+
+  it('a voucher a batch made, with no balance worked out yet, has every use it was made with', () => {
+    const fresh = classes(10, { uses_left: null, sold: false, sale_price: null });
+    const used = provider.rows(call({ action: 'voucher-action', lines: [line('1', { voucher: 5, action: 'use' }, 'offers:voucher_actions')], reads: { voucher: [fresh], last: [], none: [] } }));
+    expect(used.refusals).toBeUndefined();
+    expect(updates(used, 'vouchers')).toEqual([]);
+    const single = provider.rows(call({ action: 'voucher-action', lines: [line('1', { voucher: 5, action: 'use' }, 'offers:voucher_actions')], reads: { voucher: [{ ...fresh, uses_total: 1, worth: 'amount' }], last: [], none: [] } }));
+    expect(updates(single, 'vouchers')).toEqual([{ id: 5, status: 'used' }]);
   });
 
   it('an offer\'s budget covers a use whole or not at all, and the use that spends it marks the offer', () => {

@@ -4455,6 +4455,16 @@
                     ]
                   }
                 ]
+              },
+              {
+                "as": "reasons",
+                "table": "reasons",
+                "by": [
+                  {
+                    "column": "id",
+                    "from": "input.reason"
+                  }
+                ]
               }
             ],
             "locks": [

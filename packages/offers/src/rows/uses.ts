@@ -23,8 +23,14 @@ function unusable(voucher: Row, today: string, units: number): 'void' | 'expired
   const lastDay = textOf(voucher['expires_on']);
   if (status === 'expired' || (lastDay !== null && lastDay < today)) return 'expired';
   if (yes(voucher['awaiting_sale'])) return 'inactive';
-  return (wholeOf(voucher['uses_left']) ?? 0) < units ? 'used-up' : null;
+  return usesLeft(voucher) < units ? 'used-up' : null;
 }
+
+/**
+ * The uses a voucher has left. A voucher a batch made has had no use and no
+ * balance worked out for it yet: it has all it was made with.
+ */
+export const usesLeft = (voucher: Row): number => wholeOf(voucher['uses_left']) ?? wholeOf(voucher['uses_total']) ?? 1;
 
 /**
  * What of a sold voucher's price a use takes up: its share by uses, rounded
@@ -36,7 +42,7 @@ function prepaidBy(voucher: Row, uses: number, scale: number): string | null {
   const price = toUnits(voucher['sale_price'], scale);
   const total = wholeOf(voucher['uses_total']) ?? 1;
   if (price === null || total < 1) return null;
-  const before = Math.max(0, total - (wholeOf(voucher['uses_left']) ?? total));
+  const before = Math.max(0, total - usesLeft(voucher));
   const through = (count: number): bigint => (price * BigInt(Math.min(count, total))) / BigInt(total);
   return amountText(through(before + uses) - through(before), scale);
 }
@@ -103,7 +109,7 @@ export function redeem(input: PostingInput, answer: Answer): void {
     let prepaid: string | null = null;
     if (voucher !== undefined) {
       const before = taken.get(String(voucher['id'])) ?? 0;
-      const row = { ...voucher, uses_left: (wholeOf(voucher['uses_left']) ?? 0) - before };
+      const row = { ...voucher, uses_left: usesLeft(voucher) - before };
       const state = unusable(row, input.today, units);
       if (state !== null) {
         answer.refuse(line, state);
@@ -111,15 +117,15 @@ export function redeem(input: PostingInput, answer: Answer): void {
       }
       taken.set(String(voucher['id']), before + units);
       prepaid = prepaidBy(row, units, scale);
-      if ((wholeOf(row['uses_left']) ?? 0) - units <= 0 && textOf(voucher['status']) !== 'used') answer.update('vouchers', line, voucher['id'] ?? null, { status: 'used' });
+      if (usesLeft(row) - units <= 0 && textOf(voucher['status']) !== 'used') answer.update('vouchers', line, voucher['id'] ?? null, { status: 'used' });
     }
     answer.insert('redemptions', line, {
       kind: kindOf(use, voucher),
       offer_id: offer?.['id'] ?? null,
       code_id: code?.['id'] ?? null,
       voucher_id: voucher?.['id'] ?? null,
-      // Why staff took something off: the reason on the order, for a reduction that is nobody's but theirs.
-      reason_id: use.offer === null && use.voucher === null ? (input.lines[0]?.inputs['reason'] as Row[string] | undefined) ?? null : null,
+      // Why staff took something off: the reason on the order, for a reduction that is nobody's but theirs — where it is a reason there is.
+      reason_id: use.offer === null && use.voucher === null ? (read(input, 'reasons').find((row) => same(row['id'], input.lines[0]?.inputs['reason']))?.['id'] ?? null) : null,
       source_table: acted?.source_table ?? input.source.table,
       source_row: acted?.source_row ?? input.source.row,
       source_label: acted?.source_label ?? null,
@@ -171,7 +177,7 @@ export function voucherAction(input: PostingInput, answer: Answer): void {
         prepaid: prepaidBy(voucher, 1, scale),
         state: 'counted',
       });
-      if ((wholeOf(voucher['uses_left']) ?? 0) - 1 <= 0) answer.update('vouchers', line.line, voucher['id'] ?? null, { status: 'used' });
+      if (usesLeft(voucher) - 1 <= 0) answer.update('vouchers', line.line, voucher['id'] ?? null, { status: 'used' });
     } else if (action === 'give_back') {
       // The newest counted use of this voucher.
       const last = counted.filter((row) => same(row['voucher_id'], voucher['id'])).sort((a, b) => (String(a['at'] ?? '') === String(b['at'] ?? '') ? Number(b['id']) - Number(a['id']) : String(a['at'] ?? '') < String(b['at'] ?? '') ? 1 : -1))[0];
@@ -204,7 +210,7 @@ export function sell(input: PostingInput, answer: Answer): void {
     if (voucher === undefined) throw new Error('a sale line names a voucher that was not read');
     if (input.phase === 'reverse') {
       // The sale undone: waiting again, unless somebody has used it since.
-      if ((wholeOf(voucher['uses_left']) ?? 0) < (wholeOf(voucher['uses_total']) ?? 1) || textOf(voucher['status']) !== 'issued') answer.note(line.line, 'to-check');
+      if (usesLeft(voucher) < (wholeOf(voucher['uses_total']) ?? 1) || textOf(voucher['status']) !== 'issued') answer.note(line.line, 'to-check');
       else if (yes(voucher['sold'])) answer.update('vouchers', line.line, voucher['id'] ?? null, { sold: false, awaiting_sale: true, sale_price: null });
       continue;
     }

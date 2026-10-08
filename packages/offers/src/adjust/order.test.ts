@@ -282,6 +282,11 @@ describe('vouchers and packs', () => {
     expect(reasons({ ...ONE_CANDLE, holder_key: 'k-ada' }, {}, NEW_CUSTOMER)).toEqual([]);
   });
 
+  it('a voucher a batch made, with no balance worked out yet, has every use it was made with', () => {
+    expect(off(typed({ ...ONE_CANDLE, uses_left: null }))).toBe('18.00');
+    expect(typed({ ...ONE_CANDLE, uses_left: 0 }).refused).toEqual([{ typed: 'VC-X', reason: 'used-up' }]);
+  });
+
   it('a voucher for a thing covers as many units as it says, the dearest first', () => {
     expect(off(typed({ ...ONE_CANDLE, units: 2 }))).toBe('36.00');
     expect(off(typed({ ...ONE_CANDLE, units: 5 }))).toBe('36.00');

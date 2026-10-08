@@ -438,6 +438,8 @@ describe('the ledger', () => {
           'offers: offers by id ← uses.offer,mine.offer_id',
           'codes: codes by id ← uses.code,mine.code_id',
           'vouchers: vouchers by id ← uses.voucher,mine.voucher_id',
+          // A row the ledger writes may point only at rows the call was shown: the reason staff gave is one.
+          'reasons: reasons by id ← input.reason',
         ],
         locks: 'offers.id of offers, codes.id of codes, vouchers.id of vouchers',
         writes: 'redemptions, vouchers, offers',
