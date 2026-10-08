@@ -4293,6 +4293,136 @@
         "server": "dist/server.js"
       }
     ],
+    "hostApi": 2,
+    "navGroups": [
+      {
+        "key": "offers",
+        "label": {
+          "key": "addon.offers.nav.offers",
+          "fallback": "Offers"
+        },
+        "labels": {
+          "en-US": "Offers",
+          "de-DE": "Angebote",
+          "fr-FR": "Offres",
+          "da-DK": "Tilbud",
+          "cs-CZ": "Nabídky",
+          "ar-EG": "العروض",
+          "zh-CN": "优惠",
+          "zh-TW": "優惠"
+        },
+        "order": 40
+      },
+      {
+        "key": "offers-setup",
+        "label": {
+          "key": "addon.offers.nav.offersSetup",
+          "fallback": "Offers setup"
+        },
+        "labels": {
+          "en-US": "Offers setup",
+          "de-DE": "Angebote einrichten",
+          "fr-FR": "Réglages des offres",
+          "da-DK": "Opsætning af tilbud",
+          "cs-CZ": "Nastavení nabídek",
+          "ar-EG": "إعداد العروض",
+          "zh-CN": "优惠设置",
+          "zh-TW": "優惠設定"
+        },
+        "order": 41
+      }
+    ],
+    "pages": [
+      {
+        "ref": "offers-discounts",
+        "title": {
+          "key": "addon.offers.page.discounts",
+          "fallback": "Discounts"
+        },
+        "titles": {
+          "en-US": "Discounts",
+          "de-DE": "Rabatte",
+          "fr-FR": "Remises",
+          "da-DK": "Rabatter",
+          "cs-CZ": "Slevy",
+          "ar-EG": "الخصومات",
+          "zh-CN": "折扣",
+          "zh-TW": "折扣"
+        },
+        "icon": "percent",
+        "client": "dist/pages/discounts.js",
+        "nav": {
+          "group": "offers",
+          "order": 10
+        },
+        "detail": true
+      },
+      {
+        "ref": "offers-look-up",
+        "title": {
+          "key": "addon.offers.page.lookUp",
+          "fallback": "Look up"
+        },
+        "titles": {
+          "en-US": "Look up",
+          "de-DE": "Nachschlagen",
+          "fr-FR": "Rechercher",
+          "da-DK": "Slå op",
+          "cs-CZ": "Vyhledat",
+          "ar-EG": "بحث",
+          "zh-CN": "查询",
+          "zh-TW": "查詢"
+        },
+        "icon": "scan-line",
+        "client": "dist/pages/look-up.js",
+        "nav": {
+          "group": "offers",
+          "order": 50
+        }
+      },
+      {
+        "ref": "offers-issue",
+        "title": {
+          "key": "addon.offers.page.issue",
+          "fallback": "Issue"
+        },
+        "titles": {
+          "en-US": "Issue",
+          "de-DE": "Ausstellen",
+          "fr-FR": "Émettre",
+          "da-DK": "Udsted",
+          "cs-CZ": "Vystavit",
+          "ar-EG": "إصدار",
+          "zh-CN": "发放",
+          "zh-TW": "發放"
+        },
+        "icon": "circle-plus",
+        "client": "dist/pages/issue.js"
+      },
+      {
+        "ref": "offers-rules",
+        "title": {
+          "key": "addon.offers.page.rules",
+          "fallback": "Offer rules"
+        },
+        "titles": {
+          "en-US": "Offer rules",
+          "de-DE": "Angebotsregeln",
+          "fr-FR": "Règles des offres",
+          "da-DK": "Tilbudsregler",
+          "cs-CZ": "Pravidla nabídek",
+          "ar-EG": "قواعد العروض",
+          "zh-CN": "优惠规则",
+          "zh-TW": "優惠規則"
+        },
+        "icon": "workflow",
+        "client": "dist/pages/rules.js",
+        "nav": {
+          "group": "offers-setup",
+          "order": 100
+        }
+      }
+    ],
     "ledgers": [
       {
         "id": "value",

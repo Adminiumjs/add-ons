@@ -60,13 +60,19 @@ export const WHOLE_WORD_BANNED: readonly string[] = ['pro', 'plan', 'tier', 'fre
  * "Pro", "Profi" and "Professional" are not on this list and never will be:
  * each is its own token, so each still fails.
  *
- * This package ships one file that decides and no screen of its own yet, so
- * the list holds one word. A new one turns the gate red until somebody either
+ * The list is short. A new word turns the gate red until somebody either
  * rewords the source or adds it here on purpose, which is the intended cost.
  */
 export const ALLOWED_TOKENS: readonly string[] = [
   /** `Promise` — the JavaScript built-in, named by the check that an answer is not one. */
   'promise',
+  /**
+   * React's own export name. A screen's file inlines the host's React shim,
+   * which re-exports every name React has, this one included: an identifier
+   * nobody reads and nobody can rename. Allowing the bare word instead would
+   * turn the ban off for the word most likely to appear in real sales copy.
+   */
+  '__client_internals_do_not_use_or_warn_users_they_cannot_upgrade',
 ];
 
 const ALLOWED = new Set(ALLOWED_TOKENS.map((word) => word.toLowerCase()));
