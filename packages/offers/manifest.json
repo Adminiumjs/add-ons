@@ -2789,7 +2789,23 @@
         "table:@ceilings:create",
         "table:@ceilings:update",
         "table:@messages:read",
-        "table:@messages:update"
+        "table:@messages:update",
+        "page:@offers-overview:view",
+        "page:@offers-discounts:view",
+        "page:@offers-codes:view",
+        "page:@offers-vouchers:view",
+        "page:@offers-voucher-batches:view",
+        "page:@offers-gift-cards:view",
+        "page:@offers-look-up:view",
+        "page:@offers-issue:view",
+        "page:@offers-activity:view",
+        "page:@offers-uses:view",
+        "page:@offers-groups:view",
+        "page:@offers-reasons:view",
+        "page:@offers-staff-limits:view",
+        "page:@offers-rules:view",
+        "page:@offers-messages:view",
+        "page:@offers-settings:view"
       ],
       "limits": {
         "settings": {
@@ -2939,7 +2955,14 @@
         "table:@card_ledger:read",
         "table:@redemptions:read",
         "table:@applied:read",
-        "table:@reasons:read"
+        "table:@reasons:read",
+        "page:@offers-overview:view",
+        "page:@offers-vouchers:view",
+        "page:@offers-gift-cards:view",
+        "page:@offers-look-up:view",
+        "page:@offers-issue:view",
+        "page:@offers-activity:view",
+        "page:@offers-uses:view"
       ],
       "limits": {
         "gift_cards": {
@@ -3088,7 +3111,16 @@
         "table:@group_members:read",
         "table:@reasons:read",
         "table:@ceilings:read",
-        "table:@messages:read"
+        "table:@messages:read",
+        "page:@offers-overview:view",
+        "page:@offers-discounts:view",
+        "page:@offers-codes:view",
+        "page:@offers-vouchers:view",
+        "page:@offers-voucher-batches:view",
+        "page:@offers-gift-cards:view",
+        "page:@offers-look-up:view",
+        "page:@offers-activity:view",
+        "page:@offers-uses:view"
       ],
       "limits": {
         "gift_cards": {

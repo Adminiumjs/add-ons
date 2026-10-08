@@ -54,6 +54,8 @@ describe('the three roles', () => {
     expect(roles.map((role) => role.key)).toEqual(['manager', 'desk', 'viewer']);
     for (const role of roles) {
       for (const permission of role.permissions) {
+        // A page it opens (below), or a table it reads or writes.
+        if (/^page:@offers-[a-z-]+:view$/.test(permission)) continue;
         const [, table, action] = /^table:@([a-z_]+):(read|create|update|delete)$/.exec(permission) ?? [];
         expect(action, `${role.key}: ${permission}`).toBeDefined();
         expect(tables.map((one) => one.ref), `${role.key}: ${permission}`).toContain(table);
@@ -64,6 +66,17 @@ describe('the three roles', () => {
         }
       }
     }
+  });
+
+  it('open the pages the design shows each: without a page nobody but a Super Admin sees the add-on at all', () => {
+    const pages = [...(manifest.pages as unknown as { ref: string }[]), ...(manifest.addOn.pages as unknown as { ref: string }[])].map((page) => page.ref.replace(/^offers-/, '')).sort();
+    const sees = (role: Role): string[] => role.permissions.flatMap((permission) => /^page:@offers-([a-z-]+):view$/.exec(permission)?.[1] ?? []).sort();
+    // The manager opens every page there is — a new page with no grant fails here.
+    expect(sees(manager)).toEqual(pages);
+    expect(sees(desk)).toEqual(['activity', 'gift-cards', 'issue', 'look-up', 'overview', 'uses', 'vouchers']);
+    expect(sees(viewer)).toEqual(['activity', 'codes', 'discounts', 'gift-cards', 'look-up', 'overview', 'uses', 'voucher-batches', 'vouchers']);
+    // A page a role opens is one whose table it reads: a list it could open and not read would be an empty promise.
+    for (const role of roles) for (const ref of sees(role)) expect(pages, `${role.key}: ${ref}`).toContain(ref);
   });
 
   it('hold what the design gives each, table by table', () => {
@@ -201,7 +214,7 @@ describe('desk and viewer', () => {
   });
 
   it('the viewer writes nothing at all', () => {
-    expect(viewer.permissions.filter((permission) => !permission.endsWith(':read'))).toEqual([]);
+    expect(viewer.permissions.filter((permission) => !permission.endsWith(':read') && !permission.startsWith('page:'))).toEqual([]);
   });
 });
 
