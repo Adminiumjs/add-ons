@@ -43,7 +43,8 @@ describe('the sources carry nothing that may not ship', () => {
   });
 
   it('uses no banned word, in the sources or in the manifest', () => {
-    for (const file of [...SHIPPED, join(ROOT, 'manifest.json')]) {
+    // The sample ships too: its names and labels are read by an owner on their first day.
+    for (const file of [...SHIPPED, join(ROOT, 'manifest.json'), join(ROOT, 'seeds', 'offers.sample.json')]) {
       const hits = bannedHitsIn(read(file));
       const shown = hits
         .slice(0, 5)
