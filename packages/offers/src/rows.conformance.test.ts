@@ -16,7 +16,7 @@ import type { PostingInput, PostingOutput } from '@adminium/add-on-contracts';
 import { describe, expect, it } from 'vitest';
 
 import manifest from '../manifest.json' with { type: 'json' };
-import { call, card, classes, line, LINES, PAYMENTS, ROWS_CASES, SETTINGS } from './cases/rows.cases.ts';
+import { call, card, classes, line, LINES, NOW, PAYMENTS, REFUNDS, ROWS_CASES, SETTINGS } from './cases/rows.cases.ts';
 import { buildForReal } from './testing/build.ts';
 import { builtProvider, builtServer } from './testing/vm.ts';
 
@@ -80,7 +80,8 @@ describe('what the shared suite does not compare', () => {
       expect(undone, one.name).toHaveLength(rows.length);
       // What was taken, taken back to the cent; each row against the one it undoes.
       expect(rows.reduce((total, values) => total + cents(values['taken']), 0) + undone.reduce((total, values) => total + cents(values['taken']), 0), one.name).toBe(0);
-      expect(undone.map((values) => values['against_id']), one.name).toEqual(written.map((row) => row['id']));
+      // A row that undoes a refund is written against the payment the refund was for: that payment's rows then add up to what it still holds.
+      expect(undone.map((values) => values['against_id']), one.name).toEqual(written.map((row) => row['against_id'] ?? row['id']));
       for (const row of cards) {
         const before = ((one.input.reads['card'] ?? []) as Record<string, unknown>[]).find((candidate) => candidate['id'] === row['id'])!;
         const last = [...undone].reverse().find((values) => String(values['card_id']) === String(row['id']));
@@ -210,7 +211,15 @@ describe('what the shared suite does not compare', () => {
     expect(provider.rows(call({ action: 'sell', lines: [line('l', { voucher: 5, amount: '120.00' }, LINES)], reads: { voucher: [classes(10)] } })).refusals).toEqual([{ line: 'l', reason: 'not-allowed' }]);
     expect(provider.rows(call({ action: 'sell', lines: [line('l', { voucher: 5, amount: null }, LINES)], reads: { voucher: [waiting] } })).refusals).toEqual([{ line: 'l', reason: 'not-allowed' }]);
     const undo = (voucher: Record<string, string | number | boolean | null>) => provider.rows(call({ action: 'sell', phase: 'reverse', lines: [line('l', { voucher: 5, amount: '120.00' }, LINES)], reads: { voucher: [voucher] } }));
-    expect(updates(undo(classes(10)), 'vouchers')).toEqual([{ id: 5, sold: false, awaiting_sale: true, sale_price: null }]);
+    expect(updates(undo(classes(10)), 'vouchers')).toEqual([{ id: 5, sold: false, awaiting_sale: true, sale_price: null, tax_later: false }]);
+    // One cancelled or past its day while it waited is not sold, and nothing is sold for less than nothing.
+    const sell = (voucher: Record<string, string | number | boolean | null>, amount = '120.00') => provider.rows(call({ action: 'sell', lines: [line('l', { voucher: 5, amount }, LINES)], reads: { voucher: [voucher] } })).refusals;
+    expect(sell({ ...waiting, status: 'voided' })).toEqual([{ line: 'l', reason: 'void' }]);
+    expect(sell({ ...waiting, status: 'expired' })).toEqual([{ line: 'l', reason: 'expired' }]);
+    expect(sell({ ...waiting, expires_on: '2026-09-30' })).toEqual([{ line: 'l', reason: 'expired' }]);
+    expect(sell({ ...waiting, expires_on: '2026-10-01' })).toBeUndefined();
+    expect(sell(waiting, '-5.00')).toEqual([{ line: 'l', reason: 'not-allowed' }]);
+    expect(sell(waiting, '0.00')).toBeUndefined();
     // Used since: it is left as it is, and staff are told to look.
     expect(undo(classes(9))).toEqual({ rows: [], notes: [{ line: 'l', note: 'to-check' }] });
   });
@@ -297,6 +306,128 @@ describe('what the shared suite does not compare', () => {
       { op: 'update', table: 'redemptions', line: '', key: { id: 7 }, set: { state: 'given_back', given_back_at: '2026-10-01T10:00:00.000Z' } },
       { op: 'update', table: 'offers', line: '', key: { id: 5 }, set: { used_up: false } },
     ]);
+  });
+
+  it('a payment undone after part of it went back gives back the rest, not the whole of it again', () => {
+    const spent = { id: 70, card_id: 1, kind: 'spend', taken: '19.00', value: '19.00', source_table: PAYMENTS, source_row: 'p10' };
+    const undo = (given: Record<string, string | number | null>[], balance: string) =>
+      provider.rows(call({ action: 'spend', phase: 'reverse', lines: [line('p10', { card: 1, due: '19.00' }, PAYMENTS)], reads: { card: [card(1, 'Q4XP', balance)], mine: [spent], given }, written: { card_ledger: [spent] } }));
+    // Nothing given back yet: all nineteen.
+    expect(inserted(undo([], '0.00'), 'card_ledger')).toEqual([expect.objectContaining({ kind: 'refund', taken: '-19.00', value: '19.00', balance_after: '19.00', against_id: 70 })]);
+    // 9.80 went back by a refund: the 9.20 still out, and no word to staff — nothing is amiss.
+    const refunded = { id: 71, card_id: 1, kind: 'refund', taken: '-9.80', value: '9.80', against_id: 70 };
+    const rest = undo([refunded], '9.80');
+    expect(inserted(rest, 'card_ledger')).toEqual([expect.objectContaining({ taken: '-9.20', value: '9.20', balance_after: '19.00', against_id: 70 })]);
+    expect(rest.notes).toBeUndefined();
+    // That refund itself undone since: the whole nineteen again.
+    expect(inserted(undo([refunded, { id: 72, card_id: 1, kind: 'adjust', taken: '9.80', value: '9.80', against_id: 70 }], '0.00'), 'card_ledger')).toEqual([expect.objectContaining({ taken: '-19.00', balance_after: '19.00' })]);
+    // All of it gone back already: nothing is written, and a row against another payment counts for nothing.
+    expect(undo([{ ...refunded, taken: '-19.00', value: '19.00' }], '19.00').rows).toEqual([]);
+    expect(inserted(undo([{ ...refunded, against_id: 99 }], '0.00'), 'card_ledger')).toEqual([expect.objectContaining({ taken: '-19.00' })]);
+    // More said to have gone back than was taken: nothing, never a row the other way.
+    expect(undo([{ ...refunded, taken: '-25.00', value: '25.00' }], '25.00').rows).toEqual([]);
+  });
+
+  it('a refund undone can be made again: the row that undoes it is written against the payment', () => {
+    const refunded = { id: 71, card_id: 1, kind: 'refund', taken: '-9.80', value: '9.80', against_id: 70, source_table: REFUNDS, source_row: 'r1' };
+    const spent = { id: 70, card_id: 1, kind: 'spend', taken: '9.80', value: '9.80', source_table: PAYMENTS, source_row: 'p10' };
+    const undone = inserted(provider.rows(call({ action: 'refund', phase: 'reverse', lines: [line('r1', { against_table: PAYMENTS, against_row: 'p10', amount: '9.80' })], reads: { spend: [spent], card: [card(1, 'Q4XP', '9.80')], given: [refunded] }, written: { card_ledger: [refunded] } })), 'card_ledger');
+    expect(undone).toEqual([expect.objectContaining({ kind: 'adjust', taken: '9.80', balance_after: '0.00', against_id: 70 })]);
+    // The payment's rows now: 9.80 back, 9.80 taken again. All of it may go back once more, and no more than that.
+    const again = (amount: string) => provider.rows(call({ action: 'refund', lines: [line('r2', { against_table: PAYMENTS, against_row: 'p10', amount })], reads: { spend: [spent], card: [card(1, 'Q4XP', '0.00')], given: [refunded, { id: 72, ...undone[0] } as Record<string, string | number | null>] } }));
+    expect(inserted(again('9.80'), 'card_ledger')).toEqual([expect.objectContaining({ taken: '-9.80', balance_after: '9.80', against_id: 70 })]);
+    expect(again('9.81').refusals).toEqual([{ line: 'r2', reason: 'refund-over', left: '9.80' }]);
+  });
+
+  it('a refund of a payment posted, undone and posted again goes to the row that still holds the money, whatever order they were read in', () => {
+    const first = { id: 70, card_id: 1, kind: 'spend', taken: '19.00', value: '19.00', source_table: PAYMENTS, source_row: 'p10' };
+    const second = { ...first, id: 75 };
+    const undone = { id: 71, card_id: 1, kind: 'refund', taken: '-19.00', value: '19.00', against_id: 70 };
+    for (const spends of [[first, second], [second, first]]) {
+      const back = provider.rows(call({ action: 'refund', lines: [line('r', { against_table: PAYMENTS, against_row: 'p10', amount: '5.00' })], reads: { spend: spends, card: [card(1, 'Q4XP', '0.00')], given: [undone] } }));
+      expect(back.refusals).toBeUndefined();
+      expect(inserted(back, 'card_ledger')).toEqual([expect.objectContaining({ against_id: 75, taken: '-5.00' })]);
+    }
+  });
+
+  it('undoing value put on a card that stands below nothing takes nothing, and never gives it money', () => {
+    const loaded = { id: 9, card_id: 40, kind: 'top_up', taken: '-20.00', value: '20.00', balance_after: '-10.00', source_table: 'offers:card_actions', source_row: '4' };
+    const back = provider.rows(call({ action: 'issue', phase: 'reverse', lines: [line('4', { card: 40, amount: '20.00' }, LINES)], reads: { card: [card(40, '9930', '-10.00')] }, written: { card_ledger: [loaded] } }));
+    expect(inserted(back, 'card_ledger')).toEqual([expect.objectContaining({ taken: '0.00', value: '0.00', balance_after: '-10.00' })]);
+    expect(back.notes).toEqual([{ line: '4', note: 'to-check' }]);
+  });
+
+  it('two lines of one order that load the same new card make it active once: the second is a top-up', () => {
+    const fresh = card(3, 'X', '0.00', { status: 'inactive' });
+    const out = provider.rows(call({ action: 'issue', lines: [line('a', { card: 3, amount: '20.00' }, LINES), line('b', { card: 3, amount: '30.00' }, LINES)], reads: { card: [fresh] } }));
+    expect(inserted(out, 'card_ledger').map((row) => `${String(row['kind'])} ${String(row['balance_after'])}`)).toEqual(['issue 20.00', 'top_up 50.00']);
+    expect(updates(out, 'gift_cards').filter((row) => 'notify' in row)).toHaveLength(1);
+    expect(updates(out, 'gift_cards').filter((row) => row['status'] === 'active')).toHaveLength(1);
+  });
+
+  it('a card closed is the one its line names', () => {
+    const out = provider.rows(call({ action: 'void', lines: [line('7', { card: { table: 'offers:gift_cards', row: '7' } }), line('3', { card: { table: 'offers:gift_cards', row: '3' } })], reads: { card: [card(3, 'X', '5.00'), card(7, 'Y', '8.00')] } }));
+    expect(inserted(out, 'card_ledger').map((row) => `${String(row['card_id'])} ${String(row['taken'])}`)).toEqual(['7 8.00', '3 5.00']);
+  });
+
+  it('a held use is the order\'s own only for the same amount: changed since, the old one is given back and the new one judged with its room', () => {
+    const offers = [{ id: 1, max_uses: 50, uses: 50, used_up: true, budget_open: true }];
+    const codes = [{ id: 1, max_uses: 50, uses: 50 }];
+    const held = { id: 900, kind: 'code', offer_id: 1, code_id: 1, voucher_id: null, amount: '4.95', uses: 1, state: 'held' };
+    const post = (amount: string) => provider.rows(call({ action: 'redeem', lines: [line('', {})], uses: [{ offer: '1', code: '1', voucher: null, amount }], reads: { mine: [held], offers, codes, vouchers: [] }, written: { redemptions: [held] } }));
+    // The same use for the same amount: counted, and nothing else.
+    expect(post('4.95').rows).toEqual([{ op: 'update', table: 'redemptions', line: '', key: { id: 900 }, set: { state: 'counted', at: NOW } }]);
+    // The order grew: the fiftieth use is still this order's — given back and taken again at what it is now worth.
+    const grown = post('9.90');
+    expect(grown.refusals).toBeUndefined();
+    expect(inserted(grown, 'redemptions')).toEqual([expect.objectContaining({ offer_id: 1, code_id: 1, amount: '9.90', state: 'counted' })]);
+    expect(updates(grown, 'redemptions')).toEqual([{ id: 900, state: 'given_back', given_back_at: NOW }]);
+    // Still the fiftieth of fifty: the mark is set, and is not taken off again in the same answer.
+    expect(updates(grown, 'offers')).toEqual([{ id: 1, used_up: true }]);
+    // A stranger's order at the same moment has no room.
+    expect(provider.rows(call({ action: 'redeem', lines: [line('', {})], uses: [{ offer: '1', code: '1', voucher: null, amount: '4.95' }], reads: { mine: [], offers, codes, vouchers: [] } })).refusals).toEqual([{ line: '', reason: 'used-up' }]);
+  });
+
+  it('a pack held for one class and paid for three takes three, and one held for three and paid for one gives two back', () => {
+    const held = (uses: number) => ({ id: 901, kind: 'pack', offer_id: null, code_id: null, voucher_id: 5, amount: '15.00', uses, prepaid: '12.00', state: 'held' });
+    const post = (was: number, now: number, left: number) => provider.rows(call({ action: 'redeem', lines: [line('', {})], uses: [{ offer: null, code: null, voucher: '5', amount: '15.00', units: now }], reads: { mine: [held(was)], offers: [], codes: [], vouchers: [classes(left)], spent: [held(was)] }, written: { redemptions: [held(was)] } }));
+    // One of two left is held; three are asked for: the held one counts as room, and three is still one too many.
+    expect(post(1, 3, 1).refusals).toEqual([{ line: '', reason: 'used-up' }]);
+    // Two left beside the held one: three fit, and the pack is used.
+    const three = post(1, 3, 2);
+    expect(inserted(three, 'redemptions')).toEqual([expect.objectContaining({ voucher_id: 5, uses: 3 })]);
+    expect(updates(three, 'redemptions')).toEqual([{ id: 901, state: 'given_back', given_back_at: NOW }]);
+    expect(updates(three, 'vouchers')).toEqual([{ id: 5, status: 'used' }]);
+    // Three held of a pack now empty, one paid for: one is taken and the pack is in use again.
+    const one = post(3, 1, 0);
+    expect(inserted(one, 'redemptions')).toEqual([expect.objectContaining({ uses: 1 })]);
+    expect(updates(one, 'vouchers')).toEqual([]);
+  });
+
+  it('a use given back and taken again never adds a cent to what a sold pack\'s uses come to', () => {
+    // Three uses of a pack sold for $100.00. Two stand at 33.33 each; the third was 33.33 and was given back.
+    const pack = classes(1, { uses_total: 3, sale_price: '100.00' });
+    const stands = [
+      { id: 1, voucher_id: 5, state: 'counted', prepaid: '33.33' },
+      { id: 2, voucher_id: 5, state: 'given_back', prepaid: '33.33' },
+      { id: 3, voucher_id: 5, state: 'counted', prepaid: '33.33' },
+    ];
+    const byHand = provider.rows(call({ action: 'voucher-action', lines: [line('1', { voucher: 5, action: 'use' }, 'offers:voucher_actions')], reads: { voucher: [pack], last: [], none: [], spent: stands } }));
+    expect(inserted(byHand, 'redemptions')[0]).toMatchObject({ prepaid: '33.34' });
+    // The emptying use takes what is not yet taken, whatever the others were given: 33.34 and 33.33 leave 33.33.
+    const uneven = stands.map((row) => (row.id === 3 ? { ...row, prepaid: '33.34' } : row));
+    const onOrder = provider.rows(call({ action: 'redeem', lines: [line('', {})], uses: [{ offer: null, code: null, voucher: '5', amount: '0.00', units: 1 }], reads: { mine: [], offers: [], codes: [], vouchers: [pack], spent: uneven } }));
+    expect(inserted(onOrder, 'redemptions')[0]).toMatchObject({ prepaid: '33.33' });
+    // Two uses of the same pack in one order: the first by its share, the last the rest.
+    const two = provider.rows(call({ action: 'redeem', lines: [line('', {})], uses: [{ offer: null, code: null, voucher: '5', amount: '0.00', units: 1 }, { offer: null, code: null, voucher: '5', amount: '1.00', units: 1 }], reads: { mine: [], offers: [], codes: [], vouchers: [classes(2, { uses_total: 3, sale_price: '100.00' })], spent: [stands[0]!] } }));
+    expect(inserted(two, 'redemptions').map((row) => row['prepaid'])).toEqual(['33.33', '33.34']);
+  });
+
+  it('a use of no whole number of uses, or of no amount, is no use at all', () => {
+    const used = (use: Record<string, unknown>) => () => provider.rows(call({ action: 'redeem', lines: [line('', {})], uses: [{ offer: null, code: null, voucher: '5', amount: '1.00', ...use } as never], reads: { mine: [], offers: [], codes: [], vouchers: [classes(5)] } }));
+    for (const units of [0, -1, 1.5]) expect(used({ units }), String(units)).toThrow();
+    for (const amount of ['-1.00', 'ten', null]) expect(used({ amount }), String(amount)).toThrow();
+    expect(used({ units: 2 })).not.toThrow();
   });
 
   it('fails loudly on what it was never meant to be asked', () => {

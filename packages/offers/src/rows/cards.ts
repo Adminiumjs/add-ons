@@ -93,9 +93,9 @@ export function refund(input: PostingInput, answer: Answer): void {
   /** What each spend has had back in this call, beside what its rows say. */
   const back = new Map<string, bigint>();
   for (const line of input.lines) {
-    const spent = spends.find((row) => same(row['source_table'], line.inputs['against_table']) && same(row['source_row'], line.inputs['against_row']));
+    const paid = spends.filter((row) => same(row['source_table'], line.inputs['against_table']) && same(row['source_row'], line.inputs['against_row']));
     // The payment this goes back to was not a card's.
-    if (spent === undefined) {
+    if (paid.length === 0) {
       answer.note(line.line, 'not-linked');
       continue;
     }
@@ -104,9 +104,12 @@ export function refund(input: PostingInput, answer: Answer): void {
       answer.refuse(line.line, 'not-allowed');
       continue;
     }
-    // Every row against the spend: what was given back (a row that gives to the card), less what was taken again.
-    const returned = given.filter((row) => same(row['against_id'], spent['id'])).reduce((total, row) => total - (toUnits(row['taken'], scale) ?? 0n), 0n) + (back.get(String(spent['id'])) ?? 0n);
-    const left = (toUnits(spent['value'], scale) ?? 0n) - returned;
+    // Every row against a spend: what was given back (a row that gives to the card), less what was taken again.
+    const leftOf = (row: Row): bigint => (toUnits(row['value'], scale) ?? 0n) - given.filter((one) => same(one['against_id'], row['id'])).reduce((total, one) => total - (toUnits(one['taken'], scale) ?? 0n), 0n) - (back.get(String(row['id'])) ?? 0n);
+    // A payment posted, undone and posted again has a row for each time: the one that still holds the money, whatever order they were read in.
+    const byLeft = [...paid].sort((a, b) => (leftOf(a) === leftOf(b) ? (String(a['id']) < String(b['id']) ? -1 : 1) : leftOf(a) > leftOf(b) ? -1 : 1));
+    const spent = byLeft[0] as Row;
+    const left = leftOf(spent);
     if (amount > left) {
       answer.refuse(line.line, 'refund-over', amountText(left < 0n ? 0n : left, scale));
       continue;
@@ -146,7 +149,8 @@ function load(input: PostingInput, answer: Answer, line: PostingLine, balances: 
   const [low, high] = [toUnits(input.settings['card_min'], scale), toUnits(input.settings['card_max'], scale)];
   if (amount <= 0n || (!credit && low !== null && amount < low) || (high !== null && (balance + amount > high || (!credit && amount > high)))) return answer.refuse(line.line, 'not-allowed');
   const after = balances.move(card['id'], -amount);
-  const first = status === 'inactive';
+  const first = status === 'inactive' && !balances.activated.has(String(card['id']));
+  if (first) balances.activated.add(String(card['id']));
   answer.insert('card_ledger', line.line, {
     card_id: card['id'] ?? null,
     kind: credit ? 'refund' : first ? 'issue' : 'top_up',
@@ -230,7 +234,8 @@ export function close(input: PostingInput, answer: Answer, kind: 'void' | 'expir
   const cards = read(input, 'card');
   const balances = new Balances(cards, scaleFor(input, [], cards));
   for (const line of input.lines) {
-    const card = cards[0];
+    const named = line.inputs['card'] as { row?: unknown } | null | undefined;
+    const card = cards.find((one) => same(one['id'], named?.row)) ?? (cards.length === 1 ? cards[0] : undefined);
     if (card === undefined) throw new Error('a card was closed that was not read');
     const balance = balances.of(card['id']);
     if (balance <= 0n) continue;

@@ -440,11 +440,13 @@ describe('the ledger', () => {
           'vouchers: vouchers by id ← uses.voucher,mine.voucher_id',
           // A row the ledger writes may point only at rows the call was shown: the reason staff gave is one.
           'reasons: reasons by id ← input.reason',
+          // What a sold voucher's standing uses have taken up of its price: the use that empties it takes the rest.
+          'spent: redemptions by voucher_id ← uses.voucher,mine.voucher_id',
         ],
         locks: 'offers.id of offers, codes.id of codes, vouchers.id of vouchers',
         writes: 'redemptions, vouchers, offers',
       },
-      spend: { inputs: 'card link?, due decimal?, ask decimal?, amount decimal, balance_after decimal, label text?', phases: 'post, reverse', reads: [card], locks: cardLock, writes: 'card_ledger' },
+      spend: { inputs: 'card link?, due decimal?, ask decimal?, amount decimal, balance_after decimal, label text?', phases: 'post, reverse', reads: [card, 'mine: card_ledger by receipt_id ← receipt.id', 'given: card_ledger by against_id ← mine.id'], locks: cardLock, writes: 'card_ledger' },
       refund: {
         inputs: 'against_table text, against_row text, amount decimal?, label text?',
         phases: 'post, reverse',
@@ -457,7 +459,7 @@ describe('the ledger', () => {
       'voucher-action': {
         inputs: 'voucher link, action text',
         phases: 'post',
-        reads: ['voucher: vouchers by id ← input.voucher', 'last: redemptions by voucher_id ← input.voucher where state = counted', 'none: offers by id ← last.offer_id'],
+        reads: ['voucher: vouchers by id ← input.voucher', 'last: redemptions by voucher_id ← input.voucher where state = counted', 'none: offers by id ← last.offer_id', 'spent: redemptions by voucher_id ← input.voucher'],
         locks: 'voucher.id of vouchers, none.id of offers',
         writes: 'redemptions, vouchers',
       },

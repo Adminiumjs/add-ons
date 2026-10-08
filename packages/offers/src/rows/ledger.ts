@@ -98,6 +98,8 @@ export class Balances {
   private readonly now = new Map<string, bigint>();
   private readonly cards: readonly Row[];
   readonly scale: number;
+  /** Cards this call has made active: a second line that loads one of them is a top-up. */
+  readonly activated = new Set<string>();
   constructor(cards: readonly Row[], scale: number) {
     this.cards = cards;
     this.scale = scale;
@@ -124,18 +126,32 @@ export class Balances {
  * the opposite one. Where the card no longer holds what would be taken off
  * it, what it holds is taken and staff are told to check — a card never goes
  * below nothing, and a reverse is never refused.
+ *
+ * A payment that has had some of its money back already (`given`: every row
+ * written against one of these) gives back the rest, not the whole of it
+ * again. And the row that takes a refund back is written against the payment
+ * the refund was for, so that payment's rows always add up to what it still
+ * holds of the card's money.
  */
 export function reverseCardRows(input: PostingInput, answer: Answer, kind: string): void {
   const rows = written(input, 'card_ledger');
   const cards = read(input, 'card');
   const scale = scaleOf(...rows.flatMap((row) => [row['taken'], row['value']]), ...cards.map((card) => card['balance']));
   const balances = new Balances(cards, scale);
+  const given = read(input, 'given');
   for (const row of rows) {
-    const taken = toUnits(row['taken'], scale) ?? 0n;
+    const wrote = toUnits(row['taken'], scale) ?? 0n;
+    // What the card has had back against this row since, or has had taken again.
+    const since = given.filter((one) => same(one['against_id'], row['id'])).reduce((total, one) => total + (toUnits(one['taken'], scale) ?? 0n), 0n);
+    const still = wrote + since;
+    // Only what is still out is undone: never past nothing, and never the other way.
+    const taken = wrote > 0n ? (still < 0n ? 0n : still > wrote ? wrote : still) : wrote < 0n ? (still > 0n ? 0n : still < wrote ? wrote : still) : 0n;
     if (taken === 0n) continue;
     const line = textOf(row['source_row']) !== null && input.lines.some((one) => one.line === String(row['source_row'])) ? String(row['source_row']) : (input.lines[0]?.line ?? '');
     // Giving back what was taken is always possible; taking back what was given stops at what is there.
-    const held = balances.card(row['card_id']) === undefined ? null : balances.of(row['card_id']);
+    const there = balances.card(row['card_id']) === undefined ? null : balances.of(row['card_id']);
+    // A card brought in below nothing has nothing to take, and is never given money for it.
+    const held = there !== null && there < 0n ? 0n : there;
     const back = taken < 0n && held !== null && -taken > held ? -held : taken;
     if (back !== taken) answer.note(line, 'to-check');
     const value = back < 0n ? -back : back;
@@ -145,7 +161,7 @@ export function reverseCardRows(input: PostingInput, answer: Answer, kind: strin
       taken: amountText(-back, scale),
       value: amountText(value, scale),
       balance_after: balances.text(balances.move(row['card_id'], -back)),
-      against_id: row['id'] ?? null,
+      against_id: row['against_id'] ?? row['id'] ?? null,
       source_table: textOf(row['source_table']) ?? input.source.table,
       source_row: textOf(row['source_row']) ?? input.source.row,
       source_label: textOf(row['source_label']),

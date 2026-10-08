@@ -4465,6 +4465,19 @@
                     "from": "input.reason"
                   }
                 ]
+              },
+              {
+                "as": "spent",
+                "table": "redemptions",
+                "by": [
+                  {
+                    "column": "voucher_id",
+                    "from": [
+                      "uses.voucher",
+                      "mine.voucher_id"
+                    ]
+                  }
+                ]
               }
             ],
             "locks": [
@@ -4512,6 +4525,26 @@
                   {
                     "column": "id",
                     "from": "input.card"
+                  }
+                ]
+              },
+              {
+                "as": "mine",
+                "table": "card_ledger",
+                "by": [
+                  {
+                    "column": "receipt_id",
+                    "from": "receipt.id"
+                  }
+                ]
+              },
+              {
+                "as": "given",
+                "table": "card_ledger",
+                "by": [
+                  {
+                    "column": "against_id",
+                    "from": "mine.id"
                   }
                 ]
               }
@@ -4726,6 +4759,16 @@
                   {
                     "column": "id",
                     "from": "last.offer_id"
+                  }
+                ]
+              },
+              {
+                "as": "spent",
+                "table": "redemptions",
+                "by": [
+                  {
+                    "column": "voucher_id",
+                    "from": "input.voucher"
                   }
                 ]
               }
