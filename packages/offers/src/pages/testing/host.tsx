@@ -555,8 +555,9 @@ function TabsTrigger({ value, disabled, children }: Props) {
     </button>
   );
 }
-function TabsContent({ value, children }: Props) {
+function TabsContent({ value, forceMount, hidden, children }: Props) {
   const tabs = React.useContext(TabsContext);
+  if (forceMount === true) return <div role="tabpanel" hidden={hidden === true}>{children}</div>;
   return tabs.value === value ? <div role="tabpanel">{children}</div> : null;
 }
 const Textarea = ({ error, ...rest }: Props) => {

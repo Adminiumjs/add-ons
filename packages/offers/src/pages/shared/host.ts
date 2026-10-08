@@ -100,7 +100,8 @@ export const SegmentedControl = part<{ options: readonly { value: string; label:
 export const Tabs = part<{ value: string; onValueChange: (value: string) => void; variant?: 'underline' | 'pill'; children?: ReactNode }>(ui, 'Tabs');
 export const TabsList = part<{ 'aria-label'?: string; children?: ReactNode }>(ui, 'TabsList');
 export const TabsTrigger = part<{ value: string; disabled?: boolean; children?: ReactNode }>(ui, 'TabsTrigger');
-export const TabsContent = part<{ value: string; children?: ReactNode }>(ui, 'TabsContent');
+/** `forceMount` keeps a panel drawn while another tab shows; it is then put out of sight with `hidden`. */
+export const TabsContent = part<{ value: string; forceMount?: true; hidden?: boolean; children?: ReactNode }>(ui, 'TabsContent');
 export const AutosaveIndicator = part<{ status: 'idle' | 'dirty' | 'saving' | 'saved' | 'error'; savingLabel: string; savedLabel: string; errorLabel?: string }>(ui, 'AutosaveIndicator');
 
 /* ── the data kit: layout ──────────────────────────────────────────────── */

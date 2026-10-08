@@ -10,7 +10,7 @@
  */
 import { useState, type ReactNode } from 'react';
 
-import { Alert, Sheet, SheetHeader, Tabs, TabsList, TabsTrigger, lucideByName, useNavigate, useSearch, type AddOnTranslate } from '../shared/host.ts';
+import { Alert, Sheet, SheetHeader, Tabs, TabsContent, TabsList, TabsTrigger, lucideByName, useNavigate, useSearch, type AddOnTranslate } from '../shared/host.ts';
 import { PageFrame } from '../shared/PageFrame.tsx';
 import { LOOK_UP } from '../shared/paths.ts';
 import { useRole } from '../shared/role.ts';
@@ -58,9 +58,10 @@ export function Issue({ t }: { t: AddOnTranslate }): ReactNode {
               batch being made is not thrown away by a look at another tab.
             */}
             {may.map((one) => (
-              <div key={one} role="tabpanel" hidden={tab !== one}>
+              // The host's own panel, so each tab names the panel it shows (a panel of our own left the tabs pointing at nothing).
+              <TabsContent key={one} value={one} forceMount hidden={tab !== one}>
                 {one === 'gift-card' ? <CardTab t={t} onDone={close} /> : one === 'voucher' ? <VoucherTab t={t} onDone={close} /> : <BatchTab t={t} onDone={close} />}
-              </div>
+              </TabsContent>
             ))}
           </Tabs>
         )}
