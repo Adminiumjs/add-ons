@@ -53,10 +53,10 @@ describe('what Offers prints', () => {
 
   it('a first print shows the amount', async () => {
     const page = await html('gift-card', { ...CARD, first: '1' });
-    expect(page).toContain('<div class="figure"><span dir="ltr">$19.00</span></div>');
+    expect(page).toContain('<div class="figure"><bdi>$19.00</bdi></div>');
     expect(page).not.toContain('Balance');
     // The amount comes in the currency's smallest unit: a currency with none is not divided.
-    expect(await html('gift-card', { ...CARD, first: '1' }, { currency: 'JPY' })).toContain('<span dir="ltr">¥1,900</span>');
+    expect(await html('gift-card', { ...CARD, first: '1' }, { currency: 'JPY' })).toContain('<bdi>¥1,900</bdi>');
   });
 
   it('a re-print shows the balance and the day', async () => {
@@ -82,6 +82,8 @@ describe('what Offers prints', () => {
     expect(groupedCode('AAAABBBB7K2M', 'VC')).toBe('VC-AAAA-BBBB-7K2M');
     // Twelve characters that happen to begin with the letters are all code.
     expect(groupedCode('GCAABBBB7K2M', 'GC')).toBe('GC-GCAA-BBBB-7K2M');
+    // An older card from a till: its letters and eight characters, printed as it is typed.
+    expect(groupedCode('GC-48219930', 'GC')).toBe('GC-4821-9930');
     expect(await html('gift-card', CARD)).toContain('<div class="code" dir="ltr">GC-7K2M-W3HN-Q4XP</div>');
     expect(await html('voucher', VOUCHER)).toContain('>PK-AAAA-BBBB-7K2M<');
     expect(await html('voucher', { ...VOUCHER, worth: 'amount', value: '5.000', usesTotal: 1, usesLeft: 1 })).toContain('>VC-AAAA-BBBB-7K2M<');
@@ -92,7 +94,7 @@ describe('what Offers prints', () => {
     expect(page).toContain('<html lang="ar-EG" dir="rtl">');
     expect(page).toContain('<div class="code" dir="ltr">GC-7K2M-W3HN-Q4XP</div>');
     expect(page).toContain('بطاقة هدية');
-    expect(page).toMatch(/<div class="figure"><span dir="ltr">[^<]+<\/span><\/div>/);
+    expect(page).toMatch(/<div class="figure"><bdi>[^<]+<\/bdi><\/div>/);
   });
 
   it('the strip is 80 mm wide, the card A6, and neither is drawn on the other\'s paper', async () => {

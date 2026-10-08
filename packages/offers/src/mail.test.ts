@@ -80,14 +80,18 @@ describe('the outbox', () => {
     expect(m.outbox.producers.filter((producer) => producer.repeat === true).map((producer) => producer.kind).sort()).toEqual(['gift_card_again', 'voucher_again']);
     // A cancelled card is not sent again.
     expect(m.outbox.producers.find((one) => one.kind === 'gift_card_again')!.onChange!.where).toEqual({ column: 'status', eq: 'active' });
+    // Nor a voucher that is cancelled, used or past its day.
+    expect(m.outbox.producers.find((one) => one.kind === 'voucher_again')!.onChange!.where).toEqual({ column: 'status', eq: 'issued' });
   });
 
   it('the reminder is dated by the card and dropped for a card that is cancelled, expired or empty', () => {
     const reminder = m.outbox.producers.find((one) => one.kind === 'gift_card_expiring')!;
-    expect(reminder.onChange).toEqual({ table: 'gift_cards', column: 'status', to: 'active', where: { column: 'remind_on', isNull: false } });
+    // Heard when the day to remind on is first set or moves — at the sale, or at a top-up after the owner gave cards a last day.
+    expect(reminder.onChange).toEqual({ table: 'gift_cards', columns: ['remind_on'], changed: true, where: { column: 'status', eq: 'active' } });
     expect(reminder.due).toEqual({ date: 'remind_on', days: 0, at: '09:00' });
     expect(reminder.dropWhen).toEqual([{ column: 'status', in: ['void', 'expired'], reason: 'void' }, { column: 'balance', lte: 0, reason: 'no-longer-needed' }]);
-    expect(m.outbox.producers.find((one) => one.kind === 'gift_card_dated')!.dropWhen).toEqual([{ column: 'status', in: ['void', 'expired'], reason: 'void' }]);
+    // A card dated for a later day whose sale was undone holds nothing: it is not sent.
+    expect(m.outbox.producers.find((one) => one.kind === 'gift_card_dated')!.dropWhen).toEqual([{ column: 'status', in: ['void', 'expired'], reason: 'void' }, { column: 'balance', lte: 0, reason: 'no-longer-needed' }]);
   });
 
   it('every mail is addressed from the row it is about: a card to its recipient, credit to its owner, a voucher to its holder', () => {

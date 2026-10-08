@@ -18,10 +18,16 @@ import { RTL, localeOf, say } from './words.ts';
 const escape = (text: string): string => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const text = (value: unknown): string => (value === null || value === undefined ? '' : String(value)).trim();
 
-/** A code as a person reads it: its two letters, then fours. A card's code is kept with its letters; a voucher's is not. */
+/**
+ * A code as a person reads it: its two letters, then fours. A card's code is
+ * kept with its letters, a voucher's without. Twelve characters are a whole
+ * code with no letters before it, even where they begin as the word does;
+ * any other length that begins with the word has the word on it — an older
+ * card brought in from a till is kept as `GC-` and eight characters.
+ */
 export function groupedCode(stored: string, word: string): string {
   const bare = stored.replace(/[\s-]/g, '').toUpperCase();
-  const body = bare.startsWith(word) && bare.length > 12 ? bare.slice(word.length) : bare;
+  const body = bare.startsWith(word) && bare.length !== 12 ? bare.slice(word.length) : bare;
   return [word, ...(body.match(/.{1,4}/g) ?? [])].join('-');
 }
 
@@ -103,7 +109,7 @@ body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", "Noto Sans"
 <div class="card">
 <div class="from">${escape(subject.business.name)}</div>
 <div class="title">${escape(title)}</div>
-${figure === '' ? '' : `<div class="figure"><span dir="ltr">${escape(figure)}</span></div>\n`}${qr === undefined ? '' : `<img class="qr" alt="" src="${escape(qr.png)}">\n`}<div class="code" dir="ltr">${escape(code)}</div>
+${figure === '' ? '' : `<div class="figure"><bdi>${escape(figure)}</bdi></div>\n`}${qr === undefined ? '' : `<img class="qr" alt="" src="${escape(qr.png)}">\n`}<div class="code" dir="ltr">${escape(code)}</div>
 ${useBy === '' ? '' : `<div class="small">${escape(say('useBy', locale, { date: useBy }))}</div>\n`}<div class="small">${escape(say('show', locale))}</div>
 </div>
 </body>

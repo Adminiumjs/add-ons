@@ -5428,6 +5428,11 @@
               "expired"
             ],
             "reason": "void"
+          },
+          {
+            "column": "balance",
+            "lte": 0,
+            "reason": "no-longer-needed"
           }
         ],
         "recipient": {
@@ -5462,11 +5467,13 @@
         "link": "card_id",
         "onChange": {
           "table": "gift_cards",
-          "column": "status",
-          "to": "active",
+          "columns": [
+            "remind_on"
+          ],
+          "changed": true,
           "where": {
-            "column": "remind_on",
-            "isNull": false
+            "column": "status",
+            "eq": "active"
           }
         },
         "due": {
@@ -5533,7 +5540,11 @@
           "columns": [
             "resent_at"
           ],
-          "changed": true
+          "changed": true,
+          "where": {
+            "column": "status",
+            "eq": "issued"
+          }
         },
         "recipient": {
           "column": "holder_email",
@@ -6139,7 +6150,7 @@
             {
               "block": "email.box",
               "data": {
-                "label": "您的卡号",
+                "label": "您的代码",
                 "value": "{{card.code.grouped}}"
               }
             },
@@ -6153,7 +6164,7 @@
             {
               "block": "email.text",
               "data": {
-                "text": "在收银台出示二维码，或在结账时输入卡号。"
+                "text": "在收银台出示二维码，或在结账时输入代码。"
               }
             },
             {
@@ -6228,7 +6239,7 @@
             {
               "block": "email.box",
               "data": {
-                "label": "您的卡號",
+                "label": "您的代碼",
                 "value": "{{card.code.grouped}}"
               }
             },
@@ -6242,7 +6253,7 @@
             {
               "block": "email.text",
               "data": {
-                "text": "在櫃檯出示 QR 碼，或於結帳時輸入卡號。"
+                "text": "在櫃檯出示 QR 碼，或於結帳時輸入代碼。"
               }
             },
             {
@@ -6715,7 +6726,7 @@
             {
               "block": "email.box",
               "data": {
-                "label": "您的卡号",
+                "label": "您的代码",
                 "value": "{{card.code.grouped}}"
               }
             },
@@ -6729,7 +6740,7 @@
             {
               "block": "email.text",
               "data": {
-                "text": "在收银台出示二维码，或在结账时输入卡号。"
+                "text": "在收银台出示二维码，或在结账时输入代码。"
               }
             },
             {
@@ -6779,7 +6790,7 @@
             {
               "block": "email.box",
               "data": {
-                "label": "您的卡號",
+                "label": "您的代碼",
                 "value": "{{card.code.grouped}}"
               }
             },
@@ -6793,7 +6804,7 @@
             {
               "block": "email.text",
               "data": {
-                "text": "在櫃檯出示 QR 碼，或於結帳時輸入卡號。"
+                "text": "在櫃檯出示 QR 碼，或於結帳時輸入代碼。"
               }
             },
             {
@@ -7117,7 +7128,7 @@
             {
               "block": "email.box",
               "data": {
-                "label": "您的卡号",
+                "label": "您的代码",
                 "value": "{{voucher.code.grouped}}"
               }
             },
@@ -7162,7 +7173,7 @@
             {
               "block": "email.box",
               "data": {
-                "label": "您的卡號",
+                "label": "您的代碼",
                 "value": "{{voucher.code.grouped}}"
               }
             },
