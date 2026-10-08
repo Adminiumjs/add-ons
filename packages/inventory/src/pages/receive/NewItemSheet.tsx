@@ -70,25 +70,28 @@ export function NewItemSheet({ t, code, onClose, onMade }: NewItemSheetProps): R
     <Sheet open={open} onOpenChange={(next) => (next ? undefined : onClose())} maxWidth={480}>
       <SheetHeader icon={<Icon />} title={t('receive.newItem.title', 'New item')} subtitle={t('receive.newItem.subtitle', "It's added to Items and to this delivery.")} closeLabel={t('shared.close', 'Close')} />
       <SheetBody>
-        <Stack gap="md">
-          {said !== null && said.field === undefined ? <Alert tone="danger" role="alert" title={said.message} /> : null}
-          <Input
-            label={t('receive.newItem.name', 'Name')}
-            value={name}
-            onChange={(event) => {
-              setName(event.target.value);
-              setNameMissing(false);
-            }}
-            placeholder={t('receive.newItem.nameHint', "As you'd like it to appear on counts")}
-            maxLength={120}
-            required
-            {...(nameMissing ? { error: t('receive.newItem.nameMissing', 'Give the item a name') } : on('name'))}
-          />
-          <Input label={t('receive.newItem.barcode', 'Barcode')} value={barcode} onChange={(event) => setBarcode(event.target.value)} dir="ltr" maxLength={64} {...on('barcode')} />
-          <Select label={t('receive.newItem.unit', 'Counted in')} value={unitId} onChange={(event) => setUnitId(event.target.value)} options={units.rows.map((unit) => ({ value: String(unit['id']), label: String(unit['name'] ?? unit['code'] ?? '') }))} {...on('unit_id')} />
-          <NumberInput label={t('receive.newItem.pack', 'Units in a box (optional)')} value={packSize} onChange={setPackSize} decimals={3} {...on('pack_size')} />
-          <Switch label={t('receive.newItem.tracks', 'Tracks batches — asks for a batch and expiry date each time it is received')} checked={tracks} onCheckedChange={setTracks} />
-        </Stack>
+        {/* The sheet's body clips what it holds: the form scrolls inside it, with the sheet's own gutter. */}
+        <div className="min-w-0 flex-1 overflow-y-auto px-5 py-4">
+          <Stack gap="md">
+            {said !== null && said.field === undefined ? <Alert tone="danger" role="alert" title={said.message} /> : null}
+            <Input
+              label={t('receive.newItem.name', 'Name')}
+              value={name}
+              onChange={(event) => {
+                setName(event.target.value);
+                setNameMissing(false);
+              }}
+              placeholder={t('receive.newItem.nameHint', "As you'd like it to appear on counts")}
+              maxLength={120}
+              required
+              {...(nameMissing ? { error: t('receive.newItem.nameMissing', 'Give the item a name') } : on('name'))}
+            />
+            <Input label={t('receive.newItem.barcode', 'Barcode')} value={barcode} onChange={(event) => setBarcode(event.target.value)} dir="ltr" maxLength={64} {...on('barcode')} />
+            <Select label={t('receive.newItem.unit', 'Counted in')} value={unitId} onChange={(event) => setUnitId(event.target.value)} options={units.rows.map((unit) => ({ value: String(unit['id']), label: String(unit['name'] ?? unit['code'] ?? '') }))} {...on('unit_id')} />
+            <NumberInput label={t('receive.newItem.pack', 'Units in a box (optional)')} value={packSize} onChange={setPackSize} decimals={3} {...on('pack_size')} />
+            <Switch label={t('receive.newItem.tracks', 'Tracks batches — asks for a batch and expiry date each time it is received')} checked={tracks} onCheckedChange={setTracks} />
+          </Stack>
+        </div>
       </SheetBody>
       <SheetFooter>
         <Button variant="secondary" onClick={() => onClose()}>
