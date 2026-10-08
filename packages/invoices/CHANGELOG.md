@@ -1,5 +1,11 @@
 # @adminium/add-on-invoices
 
+## 1.0.8
+
+### Patch Changes
+
+- 7abe23e: Invoices & Receipts draws a purchase order for a supplier, with or without prices, for the Inventory add-on.
+
 ## 1.0.7
 
 ### Patch Changes

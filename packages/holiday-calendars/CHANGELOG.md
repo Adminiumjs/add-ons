@@ -1,5 +1,11 @@
 # @adminium/add-on-holiday-calendars
 
+## 1.0.8
+
+### Patch Changes
+
+- 6edde71: Holiday Calendars also attaches to Clinic Desk and Online ordering at 0.3, and Barcode Labels to Point of Sale at 0.3, so an install that has one of them keeps it when the app is updated.
+
 ## 1.0.7
 
 ## 1.0.6
