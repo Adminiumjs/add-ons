@@ -1,0 +1,5536 @@
+{
+  "kind": "add-on",
+  "manifestVersion": 1,
+  "key": "offers",
+  "name": "Offers & gift cards",
+  "version": "1.0.9",
+  "publisher": {
+    "id": "adminium",
+    "name": "Adminium",
+    "url": "https://adminium.dev"
+  },
+  "license": "AGPL-3.0-only",
+  "description": {
+    "key": "addon.offers.description",
+    "fallback": "Discounts, codes, vouchers, packs and gift cards, worked out and recorded in the same save as the order they belong to."
+  },
+  "categories": [
+    "data"
+  ],
+  "compatibility": {
+    "minAdminiumVersion": "0.3.19",
+    "requires": []
+  },
+  "capabilities": [],
+  "requiredSchema": {
+    "prefixed": true,
+    "tables": [
+      {
+        "ref": "settings",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "combine_default",
+            "type": "bool",
+            "default": false
+          },
+          {
+            "ref": "card_expiry_months",
+            "type": "int",
+            "nullable": true,
+            "rules": {
+              "validation": {
+                "min": 1,
+                "max": 120
+              }
+            }
+          },
+          {
+            "ref": "card_reminder_days",
+            "type": "int",
+            "default": 30,
+            "rules": {
+              "validation": {
+                "min": 0,
+                "max": 365
+              }
+            }
+          },
+          {
+            "ref": "card_min",
+            "type": "money",
+            "scale": "currency",
+            "default": 10
+          },
+          {
+            "ref": "card_max",
+            "type": "money",
+            "scale": "currency",
+            "default": 500
+          },
+          {
+            "ref": "pack_expiry_months",
+            "type": "int",
+            "nullable": true,
+            "rules": {
+              "validation": {
+                "min": 1,
+                "max": 120
+              }
+            }
+          },
+          {
+            "ref": "from_name",
+            "type": "text",
+            "maxLength": 80,
+            "nullable": true
+          },
+          {
+            "ref": "tax_later",
+            "type": "bool",
+            "default": false
+          },
+          {
+            "ref": "cards_paused",
+            "type": "bool",
+            "default": false
+          }
+        ]
+      },
+      {
+        "ref": "groups",
+        "keyField": "name",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "name",
+            "type": "text",
+            "maxLength": 80,
+            "unique": true
+          },
+          {
+            "ref": "note",
+            "type": "text",
+            "maxLength": 200,
+            "nullable": true
+          },
+          {
+            "ref": "members",
+            "type": "int",
+            "nullable": true,
+            "rules": {
+              "rollup": {
+                "from": "group_members",
+                "via": "group_id",
+                "count": true
+              }
+            }
+          }
+        ]
+      },
+      {
+        "ref": "group_members",
+        "unique": [
+          [
+            "group_id",
+            "email"
+          ]
+        ],
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "group_id",
+            "type": "fk",
+            "references": "groups",
+            "index": true
+          },
+          {
+            "ref": "email",
+            "type": "text",
+            "maxLength": 254,
+            "rules": {
+              "personal": true,
+              "normalize": "email",
+              "validation": {
+                "format": "email"
+              }
+            }
+          },
+          {
+            "ref": "member_key",
+            "type": "text",
+            "maxLength": 64,
+            "nullable": true,
+            "rules": {
+              "customerKey": {
+                "of": "email"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "ref": "reasons",
+        "keyField": "label",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "label",
+            "type": "text",
+            "maxLength": 80,
+            "unique": true
+          },
+          {
+            "ref": "active",
+            "type": "bool",
+            "default": true
+          },
+          {
+            "ref": "position",
+            "type": "int",
+            "default": 0
+          }
+        ]
+      },
+      {
+        "ref": "ceilings",
+        "keyField": "role",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "role",
+            "type": "text",
+            "maxLength": 80,
+            "unique": true
+          },
+          {
+            "ref": "max_percent",
+            "type": "decimal",
+            "scale": 2,
+            "default": 0,
+            "rules": {
+              "validation": {
+                "min": 0,
+                "max": 100
+              }
+            }
+          },
+          {
+            "ref": "max_amount",
+            "type": "money",
+            "scale": "currency",
+            "nullable": true
+          },
+          {
+            "ref": "may_comp",
+            "type": "bool",
+            "default": false
+          }
+        ]
+      },
+      {
+        "ref": "offers",
+        "keyField": "name",
+        "states": {
+          "column": "status",
+          "initial": "draft",
+          "moves": {
+            "draft": [
+              {
+                "to": "active",
+                "roles": [
+                  "manager"
+                ]
+              }
+            ],
+            "active": [
+              {
+                "to": "paused",
+                "roles": [
+                  "manager"
+                ]
+              },
+              {
+                "to": "ended",
+                "roles": [
+                  "manager"
+                ]
+              }
+            ],
+            "paused": [
+              {
+                "to": "active",
+                "roles": [
+                  "manager"
+                ]
+              },
+              {
+                "to": "ended",
+                "roles": [
+                  "manager"
+                ]
+              }
+            ],
+            "ended": [
+              {
+                "to": "active",
+                "roles": [
+                  "manager"
+                ]
+              }
+            ]
+          },
+          "timed": [
+            {
+              "from": "active",
+              "to": "ended",
+              "at": {
+                "column": "ends_on",
+                "time": "00:00",
+                "plus": {
+                  "days": 1
+                }
+              }
+            },
+            {
+              "from": "paused",
+              "to": "ended",
+              "at": {
+                "column": "ends_on",
+                "time": "00:00",
+                "plus": {
+                  "days": 1
+                }
+              }
+            }
+          ],
+          "lock": {
+            "when": [
+              "ended"
+            ],
+            "except": [
+              "ends_on"
+            ]
+          },
+          "actions": [
+            {
+              "id": "switch-on",
+              "label": {
+                "en-US": "Switch on",
+                "de-DE": "Einschalten",
+                "fr-FR": "Activer",
+                "da-DK": "Slå til",
+                "cs-CZ": "Zapnout",
+                "ar-EG": "تشغيل",
+                "zh-CN": "启用",
+                "zh-TW": "啟用"
+              },
+              "move": {
+                "to": "active"
+              },
+              "tone": "primary"
+            },
+            {
+              "id": "pause",
+              "label": {
+                "en-US": "Pause",
+                "de-DE": "Pausieren",
+                "fr-FR": "Mettre en pause",
+                "da-DK": "Sæt på pause",
+                "cs-CZ": "Pozastavit",
+                "ar-EG": "إيقاف مؤقت",
+                "zh-CN": "暂停",
+                "zh-TW": "暫停"
+              },
+              "move": {
+                "to": "paused"
+              }
+            },
+            {
+              "id": "resume",
+              "label": {
+                "en-US": "Resume",
+                "de-DE": "Fortsetzen",
+                "fr-FR": "Reprendre",
+                "da-DK": "Genoptag",
+                "cs-CZ": "Obnovit",
+                "ar-EG": "استئناف",
+                "zh-CN": "恢复",
+                "zh-TW": "恢復"
+              },
+              "move": {
+                "to": "active"
+              }
+            },
+            {
+              "id": "end-now",
+              "label": {
+                "en-US": "End now",
+                "de-DE": "Jetzt beenden",
+                "fr-FR": "Terminer maintenant",
+                "da-DK": "Afslut nu",
+                "cs-CZ": "Ukončit nyní",
+                "ar-EG": "إنهاء الآن",
+                "zh-CN": "立即结束",
+                "zh-TW": "立即結束"
+              },
+              "move": {
+                "to": "ended"
+              },
+              "tone": "danger",
+              "confirm": {
+                "en-US": "End this discount now? It stops applying at once.",
+                "de-DE": "Diesen Rabatt jetzt beenden? Er wird sofort nicht mehr angewendet.",
+                "fr-FR": "Terminer cette remise maintenant ? Elle cesse de s’appliquer immédiatement.",
+                "da-DK": "Afslut denne rabat nu? Den holder op med at gælde med det samme.",
+                "cs-CZ": "Ukončit tuto slevu nyní? Okamžitě se přestane uplatňovat.",
+                "ar-EG": "هل تريد إنهاء هذا الخصم الآن؟ سيتوقف تطبيقه فورًا.",
+                "zh-CN": "现在结束此折扣吗？它将立即停止生效。",
+                "zh-TW": "現在結束此折扣嗎？它將立即停止生效。"
+              }
+            },
+            {
+              "id": "run-again",
+              "label": {
+                "en-US": "Run again",
+                "de-DE": "Erneut starten",
+                "fr-FR": "Relancer",
+                "da-DK": "Kør igen",
+                "cs-CZ": "Spustit znovu",
+                "ar-EG": "تشغيل مرة أخرى",
+                "zh-CN": "再次启用",
+                "zh-TW": "再次啟用"
+              },
+              "move": {
+                "to": "active"
+              },
+              "ask": [
+                "ends_on"
+              ]
+            }
+          ]
+        },
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "name",
+            "type": "text",
+            "maxLength": 80
+          },
+          {
+            "ref": "public_name",
+            "type": "json"
+          },
+          {
+            "ref": "gives",
+            "type": "enum",
+            "enum": [
+              "percent",
+              "amount",
+              "fixed_price",
+              "bonus_item",
+              "quantity_price"
+            ]
+          },
+          {
+            "ref": "value",
+            "type": "decimal",
+            "scale": 3,
+            "nullable": true,
+            "rules": {
+              "requiredWhen": {
+                "column": "gives",
+                "in": [
+                  "percent",
+                  "amount",
+                  "fixed_price"
+                ]
+              }
+            }
+          },
+          {
+            "ref": "buy_qty",
+            "type": "int",
+            "nullable": true,
+            "rules": {
+              "requiredWhen": {
+                "column": "gives",
+                "in": [
+                  "bonus_item"
+                ]
+              },
+              "validation": {
+                "min": 1
+              }
+            }
+          },
+          {
+            "ref": "bonus_qty",
+            "type": "int",
+            "nullable": true,
+            "rules": {
+              "requiredWhen": {
+                "column": "gives",
+                "in": [
+                  "bonus_item"
+                ]
+              },
+              "validation": {
+                "min": 1
+              }
+            }
+          },
+          {
+            "ref": "trigger",
+            "type": "enum",
+            "enum": [
+              "automatic",
+              "code",
+              "staff"
+            ]
+          },
+          {
+            "ref": "applies_to",
+            "type": "enum",
+            "enum": [
+              "order",
+              "lines"
+            ]
+          },
+          {
+            "ref": "starts_on",
+            "type": "date",
+            "nullable": true
+          },
+          {
+            "ref": "ends_on",
+            "type": "date",
+            "nullable": true,
+            "rules": {
+              "notBefore": {
+                "column": "starts_on"
+              }
+            }
+          },
+          {
+            "ref": "weekdays",
+            "type": "text",
+            "maxLength": 13,
+            "nullable": true
+          },
+          {
+            "ref": "from_time",
+            "type": "text",
+            "maxLength": 5,
+            "nullable": true
+          },
+          {
+            "ref": "to_time",
+            "type": "text",
+            "maxLength": 5,
+            "nullable": true
+          },
+          {
+            "ref": "min_spend",
+            "type": "money",
+            "scale": "currency",
+            "nullable": true
+          },
+          {
+            "ref": "min_qty",
+            "type": "int",
+            "nullable": true,
+            "rules": {
+              "validation": {
+                "min": 1
+              }
+            }
+          },
+          {
+            "ref": "first_order_only",
+            "type": "bool",
+            "default": false
+          },
+          {
+            "ref": "group_id",
+            "type": "fk",
+            "references": "groups",
+            "nullable": true
+          },
+          {
+            "ref": "max_uses",
+            "type": "int",
+            "nullable": true,
+            "rules": {
+              "validation": {
+                "min": 1
+              }
+            }
+          },
+          {
+            "ref": "max_per_customer",
+            "type": "int",
+            "nullable": true,
+            "rules": {
+              "validation": {
+                "min": 1
+              }
+            }
+          },
+          {
+            "ref": "budget_open",
+            "type": "bool",
+            "default": true
+          },
+          {
+            "ref": "budget",
+            "type": "money",
+            "scale": "currency",
+            "nullable": true,
+            "rules": {
+              "requiredWhen": {
+                "column": "budget_open",
+                "in": [
+                  false
+                ]
+              }
+            }
+          },
+          {
+            "ref": "combinable",
+            "type": "bool",
+            "nullable": true,
+            "rules": {
+              "default": {
+                "from": {
+                  "table": "settings",
+                  "column": "combine_default"
+                }
+              }
+            }
+          },
+          {
+            "ref": "status",
+            "type": "enum",
+            "enum": [
+              "draft",
+              "active",
+              "paused",
+              "ended"
+            ],
+            "default": "draft"
+          },
+          {
+            "ref": "uses",
+            "type": "int",
+            "nullable": true,
+            "rules": {
+              "rollup": {
+                "from": "redemptions",
+                "via": "offer_id",
+                "count": true,
+                "unlessSet": "given_back_at"
+              }
+            }
+          },
+          {
+            "ref": "given",
+            "type": "money",
+            "scale": "currency",
+            "nullable": true,
+            "rules": {
+              "rollup": {
+                "from": "redemptions",
+                "via": "offer_id",
+                "sum": "amount",
+                "unlessSet": "given_back_at",
+                "balance": {
+                  "column": "budget_left",
+                  "of": "budget"
+                },
+                "cap": true,
+                "capUnless": {
+                  "column": "budget_open"
+                }
+              }
+            }
+          },
+          {
+            "ref": "budget_left",
+            "type": "money",
+            "scale": "currency",
+            "nullable": true
+          },
+          {
+            "ref": "used_up",
+            "type": "bool",
+            "default": false
+          }
+        ]
+      },
+      {
+        "ref": "offer_breaks",
+        "unique": [
+          [
+            "offer_id",
+            "from_qty"
+          ]
+        ],
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "offer_id",
+            "type": "fk",
+            "references": "offers"
+          },
+          {
+            "ref": "from_qty",
+            "type": "int",
+            "rules": {
+              "validation": {
+                "min": 1
+              }
+            }
+          },
+          {
+            "ref": "value",
+            "type": "decimal",
+            "scale": 3,
+            "rules": {
+              "validation": {
+                "min": 0,
+                "max": 100
+              }
+            }
+          }
+        ]
+      },
+      {
+        "ref": "offer_targets",
+        "unique": [
+          [
+            "offer_id",
+            "kind",
+            "source_table",
+            "source_row"
+          ]
+        ],
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "offer_id",
+            "type": "fk",
+            "references": "offers"
+          },
+          {
+            "ref": "kind",
+            "type": "enum",
+            "enum": [
+              "item",
+              "category",
+              "type",
+              "tag"
+            ]
+          },
+          {
+            "ref": "source_table",
+            "type": "text",
+            "maxLength": 96,
+            "default": "",
+            "rules": {
+              "tableRef": true
+            }
+          },
+          {
+            "ref": "source_row",
+            "type": "text",
+            "maxLength": 64
+          },
+          {
+            "ref": "label",
+            "type": "text",
+            "maxLength": 120
+          }
+        ]
+      },
+      {
+        "ref": "codes",
+        "keyField": "code",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "offer_id",
+            "type": "fk",
+            "references": "offers"
+          },
+          {
+            "ref": "code",
+            "type": "text",
+            "maxLength": 24,
+            "unique": true,
+            "rules": {
+              "normalize": "code"
+            }
+          },
+          {
+            "ref": "max_uses",
+            "type": "int",
+            "nullable": true,
+            "rules": {
+              "validation": {
+                "min": 1
+              }
+            }
+          },
+          {
+            "ref": "valid_until",
+            "type": "date",
+            "nullable": true
+          },
+          {
+            "ref": "active",
+            "type": "bool",
+            "default": true
+          },
+          {
+            "ref": "uses",
+            "type": "int",
+            "nullable": true,
+            "rules": {
+              "rollup": {
+                "from": "redemptions",
+                "via": "code_id",
+                "count": true,
+                "unlessSet": "given_back_at"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "ref": "voucher_batches",
+        "keyField": "name",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "name",
+            "type": "text",
+            "maxLength": 80
+          },
+          {
+            "ref": "count",
+            "type": "int",
+            "rules": {
+              "validation": {
+                "min": 1,
+                "max": 5000
+              }
+            }
+          },
+          {
+            "ref": "worth",
+            "type": "enum",
+            "enum": [
+              "amount",
+              "percent",
+              "thing",
+              "pack"
+            ]
+          },
+          {
+            "ref": "value",
+            "type": "decimal",
+            "scale": 3,
+            "nullable": true,
+            "rules": {
+              "requiredWhen": {
+                "column": "worth",
+                "in": [
+                  "amount",
+                  "percent"
+                ]
+              }
+            }
+          },
+          {
+            "ref": "what",
+            "type": "enum",
+            "enum": [
+              "item",
+              "category",
+              "type",
+              "tag"
+            ],
+            "nullable": true,
+            "rules": {
+              "requiredWhen": {
+                "column": "worth",
+                "in": [
+                  "thing",
+                  "pack"
+                ]
+              }
+            }
+          },
+          {
+            "ref": "source_table",
+            "type": "text",
+            "maxLength": 96,
+            "default": "",
+            "rules": {
+              "tableRef": true
+            }
+          },
+          {
+            "ref": "source_row",
+            "type": "text",
+            "maxLength": 64,
+            "default": ""
+          },
+          {
+            "ref": "units",
+            "type": "int",
+            "default": 1,
+            "rules": {
+              "validation": {
+                "min": 1
+              }
+            }
+          },
+          {
+            "ref": "public_name",
+            "type": "text",
+            "maxLength": 120
+          },
+          {
+            "ref": "uses_total",
+            "type": "int",
+            "default": 1,
+            "rules": {
+              "validation": {
+                "min": 1,
+                "max": 50
+              }
+            }
+          },
+          {
+            "ref": "expires_on",
+            "type": "date",
+            "nullable": true
+          },
+          {
+            "ref": "note",
+            "type": "text",
+            "maxLength": 200,
+            "nullable": true
+          },
+          {
+            "ref": "asked",
+            "type": "int",
+            "nullable": true,
+            "rules": {
+              "rollup": {
+                "from": "batch_chunks",
+                "via": "batch_id",
+                "sum": "size",
+                "balance": {
+                  "column": "to_make",
+                  "of": "count"
+                },
+                "cap": true
+              }
+            }
+          },
+          {
+            "ref": "to_make",
+            "type": "int",
+            "nullable": true
+          },
+          {
+            "ref": "made",
+            "type": "int",
+            "nullable": true,
+            "rules": {
+              "rollup": {
+                "from": "vouchers",
+                "via": "batch_id",
+                "count": true
+              }
+            }
+          },
+          {
+            "ref": "used",
+            "type": "int",
+            "nullable": true,
+            "rules": {
+              "rollup": {
+                "from": "vouchers",
+                "via": "batch_id",
+                "count": true,
+                "where": {
+                  "column": "status",
+                  "eq": "used"
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "ref": "batch_chunks",
+        "postings": [
+          {
+            "id": "make",
+            "into": {
+              "addOn": "offers",
+              "ledger": "value",
+              "action": "make"
+            },
+            "post": {
+              "on": {
+                "create": true
+              }
+            },
+            "map": {
+              "batch": "batch_id",
+              "size": "size"
+            }
+          }
+        ],
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "batch_id",
+            "type": "fk",
+            "references": "voucher_batches",
+            "index": true
+          },
+          {
+            "ref": "size",
+            "type": "int",
+            "rules": {
+              "validation": {
+                "min": 1,
+                "max": 500
+              }
+            }
+          },
+          {
+            "ref": "made_at",
+            "type": "timestamptz",
+            "nullable": true,
+            "rules": {
+              "stamp": {
+                "set": "now",
+                "on": "create"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "ref": "vouchers",
+        "keyField": "public_name",
+        "states": {
+          "column": "status",
+          "initial": "issued",
+          "moves": {
+            "issued": [
+              {
+                "to": "used",
+                "planned": true
+              },
+              {
+                "to": "expired",
+                "roles": [
+                  "manager"
+                ]
+              },
+              {
+                "to": "voided",
+                "planned": true
+              }
+            ],
+            "used": [
+              {
+                "to": "issued",
+                "planned": true
+              },
+              {
+                "to": "voided",
+                "planned": true
+              }
+            ],
+            "expired": [
+              {
+                "to": "issued",
+                "planned": true
+              },
+              {
+                "to": "voided",
+                "planned": true
+              }
+            ],
+            "voided": []
+          },
+          "timed": [
+            {
+              "from": "issued",
+              "to": "expired",
+              "at": {
+                "column": "expires_on",
+                "time": "00:00",
+                "plus": {
+                  "days": 1
+                }
+              }
+            }
+          ],
+          "actions": [
+            {
+              "id": "use-one",
+              "label": {
+                "en-US": "Mark as used",
+                "de-DE": "Als eingelöst markieren",
+                "fr-FR": "Marquer comme utilisé",
+                "da-DK": "Markér som brugt",
+                "cs-CZ": "Označit jako použitý",
+                "ar-EG": "تحديد كمستخدَمة",
+                "zh-CN": "标记为已使用",
+                "zh-TW": "標記為已使用"
+              },
+              "in": [
+                "issued"
+              ],
+              "child": {
+                "table": "voucher_actions",
+                "via": "voucher_id",
+                "form": []
+              },
+              "set": {
+                "action": "use"
+              }
+            },
+            {
+              "id": "give-back",
+              "label": {
+                "en-US": "Give a use back",
+                "de-DE": "Eine Einlösung zurückgeben",
+                "fr-FR": "Rendre une utilisation",
+                "da-DK": "Giv en brug tilbage",
+                "cs-CZ": "Vrátit jedno použití",
+                "ar-EG": "إرجاع استخدام واحد",
+                "zh-CN": "退回一次使用",
+                "zh-TW": "退回一次使用"
+              },
+              "in": [
+                "issued",
+                "used",
+                "expired"
+              ],
+              "child": {
+                "table": "voucher_actions",
+                "via": "voucher_id",
+                "form": []
+              },
+              "set": {
+                "action": "give_back"
+              }
+            },
+            {
+              "id": "cancel-voucher",
+              "label": {
+                "en-US": "Cancel the voucher",
+                "de-DE": "Gutschein stornieren",
+                "fr-FR": "Annuler le bon",
+                "da-DK": "Annullér voucheren",
+                "cs-CZ": "Zrušit poukaz",
+                "ar-EG": "إلغاء القسيمة",
+                "zh-CN": "作废此代金券",
+                "zh-TW": "作廢此兌換券"
+              },
+              "in": [
+                "issued",
+                "used",
+                "expired"
+              ],
+              "child": {
+                "table": "voucher_actions",
+                "via": "voucher_id",
+                "form": [
+                  "note"
+                ]
+              },
+              "set": {
+                "action": "void"
+              },
+              "tone": "danger",
+              "confirm": {
+                "en-US": "It can no longer be used. This cannot be undone.",
+                "de-DE": "Er kann nicht mehr eingelöst werden. Dies kann nicht rückgängig gemacht werden.",
+                "fr-FR": "Il ne pourra plus être utilisé. Cette action est irréversible.",
+                "da-DK": "Den kan ikke længere bruges. Dette kan ikke fortrydes.",
+                "cs-CZ": "Už ho nepůjde použít. Tuto akci nelze vrátit zpět.",
+                "ar-EG": "لن يمكن استخدامها بعد الآن. لا يمكن التراجع عن هذا الإجراء.",
+                "zh-CN": "此券将无法再使用。此操作无法撤销。",
+                "zh-TW": "此券將無法再使用。此操作無法復原。"
+              }
+            },
+            {
+              "id": "send-again",
+              "label": {
+                "en-US": "Send again",
+                "de-DE": "Erneut senden",
+                "fr-FR": "Renvoyer",
+                "da-DK": "Send igen",
+                "cs-CZ": "Odeslat znovu",
+                "ar-EG": "إعادة الإرسال",
+                "zh-CN": "重新发送",
+                "zh-TW": "重新寄送"
+              },
+              "in": [
+                "issued"
+              ],
+              "confirm": {
+                "en-US": "Send the voucher again to the address on it?",
+                "de-DE": "Den Gutschein erneut an die hinterlegte Adresse senden?",
+                "fr-FR": "Renvoyer le bon à l’adresse qui y figure ?",
+                "da-DK": "Send voucheren igen til adressen på den?",
+                "cs-CZ": "Odeslat poukaz znovu na adresu, která je u něj uvedena?",
+                "ar-EG": "هل تريد إرسال القسيمة مرة أخرى إلى العنوان المسجَّل عليها؟",
+                "zh-CN": "要将此代金券重新发送到券上登记的地址吗？",
+                "zh-TW": "要將此兌換券重新寄送到券上登記的地址嗎？"
+              },
+              "set": {
+                "resent_at": {
+                  "now": true
+                }
+              }
+            }
+          ]
+        },
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "code",
+            "type": "text",
+            "maxLength": 16,
+            "unique": true,
+            "rules": {
+              "code": {
+                "length": 12
+              }
+            }
+          },
+          {
+            "ref": "code_last4",
+            "type": "text",
+            "maxLength": 4,
+            "nullable": true,
+            "rules": {
+              "codeLast4": {
+                "of": "code"
+              }
+            }
+          },
+          {
+            "ref": "worth",
+            "type": "enum",
+            "enum": [
+              "amount",
+              "percent",
+              "thing",
+              "pack"
+            ]
+          },
+          {
+            "ref": "value",
+            "type": "decimal",
+            "scale": 3,
+            "nullable": true,
+            "rules": {
+              "requiredWhen": {
+                "column": "worth",
+                "in": [
+                  "amount",
+                  "percent"
+                ]
+              }
+            }
+          },
+          {
+            "ref": "what",
+            "type": "enum",
+            "enum": [
+              "item",
+              "category",
+              "type",
+              "tag"
+            ],
+            "nullable": true,
+            "rules": {
+              "requiredWhen": {
+                "column": "worth",
+                "in": [
+                  "thing",
+                  "pack"
+                ]
+              }
+            }
+          },
+          {
+            "ref": "source_table",
+            "type": "text",
+            "maxLength": 96,
+            "default": "",
+            "rules": {
+              "tableRef": true
+            }
+          },
+          {
+            "ref": "source_row",
+            "type": "text",
+            "maxLength": 64,
+            "default": ""
+          },
+          {
+            "ref": "units",
+            "type": "int",
+            "default": 1,
+            "rules": {
+              "validation": {
+                "min": 1
+              }
+            }
+          },
+          {
+            "ref": "public_name",
+            "type": "text",
+            "maxLength": 120
+          },
+          {
+            "ref": "uses_total",
+            "type": "int",
+            "default": 1,
+            "rules": {
+              "validation": {
+                "min": 1,
+                "max": 50
+              }
+            }
+          },
+          {
+            "ref": "uses_taken",
+            "type": "int",
+            "nullable": true,
+            "rules": {
+              "rollup": {
+                "from": "redemptions",
+                "via": "voucher_id",
+                "sum": "uses",
+                "unlessSet": "given_back_at",
+                "balance": {
+                  "column": "uses_left",
+                  "of": "uses_total"
+                },
+                "cap": true
+              }
+            }
+          },
+          {
+            "ref": "uses_left",
+            "type": "int",
+            "nullable": true
+          },
+          {
+            "ref": "holder_email",
+            "type": "text",
+            "maxLength": 254,
+            "nullable": true,
+            "rules": {
+              "personal": true,
+              "normalize": "email",
+              "validation": {
+                "format": "email"
+              }
+            }
+          },
+          {
+            "ref": "holder_key",
+            "type": "text",
+            "maxLength": 64,
+            "nullable": true,
+            "rules": {
+              "customerKey": {
+                "of": "holder_email"
+              }
+            }
+          },
+          {
+            "ref": "holder_name",
+            "type": "text",
+            "maxLength": 80,
+            "nullable": true,
+            "rules": {
+              "personal": true,
+              "plainText": true
+            }
+          },
+          {
+            "ref": "language",
+            "type": "text",
+            "maxLength": 12,
+            "nullable": true
+          },
+          {
+            "ref": "resent_at",
+            "type": "timestamptz",
+            "nullable": true
+          },
+          {
+            "ref": "batch_id",
+            "type": "fk",
+            "references": "voucher_batches",
+            "nullable": true,
+            "index": true
+          },
+          {
+            "ref": "sold",
+            "type": "bool",
+            "default": false
+          },
+          {
+            "ref": "awaiting_sale",
+            "type": "bool",
+            "default": false
+          },
+          {
+            "ref": "sale_price",
+            "type": "money",
+            "scale": "currency",
+            "nullable": true
+          },
+          {
+            "ref": "tax_later",
+            "type": "bool",
+            "default": false
+          },
+          {
+            "ref": "status",
+            "type": "enum",
+            "enum": [
+              "issued",
+              "used",
+              "expired",
+              "voided"
+            ],
+            "default": "issued"
+          },
+          {
+            "ref": "expires_on",
+            "type": "date",
+            "nullable": true
+          },
+          {
+            "ref": "note",
+            "type": "text",
+            "maxLength": 200,
+            "nullable": true
+          },
+          {
+            "ref": "issued_by",
+            "type": "text",
+            "maxLength": 120,
+            "nullable": true,
+            "rules": {
+              "stamp": {
+                "set": "user-name",
+                "on": "create"
+              }
+            }
+          },
+          {
+            "ref": "issued_at",
+            "type": "timestamptz",
+            "nullable": true,
+            "rules": {
+              "stamp": {
+                "set": "now",
+                "on": "create"
+              }
+            }
+          },
+          {
+            "ref": "receipt_id",
+            "type": "fk",
+            "references": "postings",
+            "nullable": true
+          }
+        ]
+      },
+      {
+        "ref": "voucher_actions",
+        "indexes": [
+          [
+            "voucher_id"
+          ]
+        ],
+        "postings": [
+          {
+            "id": "voucher-action",
+            "into": {
+              "addOn": "offers",
+              "ledger": "value",
+              "action": "voucher-action"
+            },
+            "via": "voucher_id",
+            "post": {
+              "on": {
+                "create": true
+              }
+            },
+            "map": {
+              "voucher": "voucher_id",
+              "action": "action"
+            }
+          }
+        ],
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "voucher_id",
+            "type": "fk",
+            "references": "vouchers"
+          },
+          {
+            "ref": "action",
+            "type": "enum",
+            "enum": [
+              "use",
+              "give_back",
+              "void"
+            ]
+          },
+          {
+            "ref": "note",
+            "type": "text",
+            "maxLength": 200,
+            "nullable": true,
+            "rules": {
+              "requiredWhen": {
+                "column": "action",
+                "in": [
+                  "void"
+                ]
+              }
+            }
+          },
+          {
+            "ref": "by",
+            "type": "text",
+            "maxLength": 120,
+            "nullable": true,
+            "rules": {
+              "stamp": {
+                "set": "user-name",
+                "on": "create"
+              }
+            }
+          },
+          {
+            "ref": "at",
+            "type": "timestamptz",
+            "nullable": true,
+            "rules": {
+              "stamp": {
+                "set": "now",
+                "on": "create"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "ref": "gift_cards",
+        "keyField": "label",
+        "states": {
+          "column": "status",
+          "initial": "inactive",
+          "moves": {
+            "inactive": [
+              {
+                "to": "active",
+                "planned": true
+              },
+              {
+                "to": "void",
+                "roles": [
+                  "manager"
+                ]
+              }
+            ],
+            "active": [
+              {
+                "to": "void",
+                "roles": [
+                  "manager"
+                ]
+              },
+              {
+                "to": "expired",
+                "roles": [
+                  "manager"
+                ]
+              }
+            ],
+            "void": [],
+            "expired": []
+          },
+          "timed": [
+            {
+              "from": "active",
+              "to": "expired",
+              "at": {
+                "column": "expires_on",
+                "time": "00:00",
+                "plus": {
+                  "days": 1
+                }
+              }
+            }
+          ],
+          "actions": [
+            {
+              "id": "top-up",
+              "label": {
+                "en-US": "Top up",
+                "de-DE": "Aufladen",
+                "fr-FR": "Recharger",
+                "da-DK": "Fyld op",
+                "cs-CZ": "Dobít",
+                "ar-EG": "إعادة الشحن",
+                "zh-CN": "充值",
+                "zh-TW": "儲值"
+              },
+              "in": [
+                "active"
+              ],
+              "child": {
+                "table": "card_actions",
+                "via": "card_id",
+                "form": [
+                  "amount",
+                  "paid_by",
+                  "reason"
+                ]
+              },
+              "set": {
+                "action": "top_up"
+              }
+            },
+            {
+              "id": "adjust",
+              "label": {
+                "en-US": "Adjust",
+                "de-DE": "Anpassen",
+                "fr-FR": "Ajuster",
+                "da-DK": "Justér",
+                "cs-CZ": "Upravit",
+                "ar-EG": "تعديل",
+                "zh-CN": "调整",
+                "zh-TW": "調整"
+              },
+              "in": [
+                "active"
+              ],
+              "child": {
+                "table": "card_actions",
+                "via": "card_id",
+                "form": [
+                  "amount",
+                  "reason"
+                ]
+              },
+              "set": {
+                "action": "adjust"
+              }
+            },
+            {
+              "id": "cancel-card",
+              "label": {
+                "en-US": "Cancel the card",
+                "de-DE": "Karte stornieren",
+                "fr-FR": "Annuler la carte",
+                "da-DK": "Annullér kortet",
+                "cs-CZ": "Zrušit kartu",
+                "ar-EG": "إلغاء البطاقة",
+                "zh-CN": "作废此卡",
+                "zh-TW": "作廢此卡"
+              },
+              "move": {
+                "to": "void"
+              },
+              "tone": "danger",
+              "confirm": {
+                "en-US": "What is left on it can no longer be spent. This cannot be undone.",
+                "de-DE": "Das Restguthaben kann nicht mehr ausgegeben werden. Dies kann nicht rückgängig gemacht werden.",
+                "fr-FR": "Le solde restant ne pourra plus être dépensé. Cette action est irréversible.",
+                "da-DK": "Det, der står tilbage på kortet, kan ikke længere bruges. Dette kan ikke fortrydes.",
+                "cs-CZ": "Zbývající zůstatek už nepůjde utratit. Tuto akci nelze vrátit zpět.",
+                "ar-EG": "لن يمكن إنفاق ما تبقّى عليها. لا يمكن التراجع عن هذا الإجراء.",
+                "zh-CN": "卡内余额将无法再使用。此操作无法撤销。",
+                "zh-TW": "卡內餘額將無法再使用。此操作無法復原。"
+              },
+              "ask": [
+                "void_reason"
+              ]
+            },
+            {
+              "id": "send-again",
+              "label": {
+                "en-US": "Send again",
+                "de-DE": "Erneut senden",
+                "fr-FR": "Renvoyer",
+                "da-DK": "Send igen",
+                "cs-CZ": "Odeslat znovu",
+                "ar-EG": "إعادة الإرسال",
+                "zh-CN": "重新发送",
+                "zh-TW": "重新寄送"
+              },
+              "in": [
+                "active"
+              ],
+              "confirm": {
+                "en-US": "Send the card again to the address on it?",
+                "de-DE": "Die Karte erneut an die hinterlegte Adresse senden?",
+                "fr-FR": "Renvoyer la carte à l’adresse qui y figure ?",
+                "da-DK": "Send kortet igen til adressen på det?",
+                "cs-CZ": "Odeslat kartu znovu na adresu, která je u ní uvedena?",
+                "ar-EG": "هل تريد إرسال البطاقة مرة أخرى إلى العنوان المسجَّل عليها؟",
+                "zh-CN": "要将此卡重新发送到卡上登记的地址吗？",
+                "zh-TW": "要將此卡重新寄送到卡上登記的地址嗎？"
+              },
+              "set": {
+                "resent_at": {
+                  "now": true
+                }
+              }
+            }
+          ]
+        },
+        "postings": [
+          {
+            "id": "void",
+            "into": {
+              "addOn": "offers",
+              "ledger": "value",
+              "action": "void"
+            },
+            "post": {
+              "on": {
+                "to": [
+                  "void"
+                ]
+              }
+            },
+            "map": {
+              "card": {
+                "row": true
+              }
+            }
+          },
+          {
+            "id": "expire",
+            "into": {
+              "addOn": "offers",
+              "ledger": "value",
+              "action": "expire"
+            },
+            "post": {
+              "on": {
+                "to": [
+                  "expired"
+                ]
+              }
+            },
+            "map": {
+              "card": {
+                "row": true
+              }
+            }
+          }
+        ],
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "kind",
+            "type": "enum",
+            "enum": [
+              "card",
+              "credit"
+            ],
+            "default": "card"
+          },
+          {
+            "ref": "code",
+            "type": "text",
+            "maxLength": 16,
+            "nullable": true,
+            "unique": true,
+            "rules": {
+              "code": {
+                "prefix": "GC-",
+                "length": 12
+              }
+            }
+          },
+          {
+            "ref": "label",
+            "type": "text",
+            "maxLength": 4,
+            "nullable": true,
+            "rules": {
+              "codeLast4": {
+                "of": "code"
+              }
+            }
+          },
+          {
+            "ref": "link_token",
+            "type": "text",
+            "maxLength": 16,
+            "nullable": true,
+            "unique": true,
+            "rules": {
+              "code": {
+                "length": 16,
+                "hiddenFromStaff": true
+              }
+            }
+          },
+          {
+            "ref": "owner_email",
+            "type": "text",
+            "maxLength": 254,
+            "nullable": true,
+            "rules": {
+              "personal": true,
+              "normalize": "email",
+              "validation": {
+                "format": "email"
+              },
+              "requiredWhen": {
+                "column": "kind",
+                "in": [
+                  "credit"
+                ]
+              }
+            }
+          },
+          {
+            "ref": "owner_key",
+            "type": "text",
+            "maxLength": 64,
+            "nullable": true,
+            "rules": {
+              "customerKey": {
+                "of": "owner_email"
+              }
+            }
+          },
+          {
+            "ref": "status",
+            "type": "enum",
+            "enum": [
+              "inactive",
+              "active",
+              "void",
+              "expired"
+            ],
+            "default": "inactive"
+          },
+          {
+            "ref": "notify",
+            "type": "enum",
+            "enum": [
+              "card",
+              "card_dated",
+              "credit"
+            ],
+            "nullable": true
+          },
+          {
+            "ref": "opening",
+            "type": "money",
+            "scale": "currency",
+            "default": 0
+          },
+          {
+            "ref": "taken",
+            "type": "money",
+            "scale": "currency",
+            "nullable": true,
+            "rules": {
+              "rollup": {
+                "from": "card_ledger",
+                "via": "card_id",
+                "sum": "taken",
+                "balance": {
+                  "column": "balance",
+                  "of": "opening"
+                },
+                "cap": true,
+                "capUnless": {
+                  "column": "moving"
+                }
+              }
+            }
+          },
+          {
+            "ref": "balance",
+            "type": "money",
+            "scale": "currency",
+            "nullable": true
+          },
+          {
+            "ref": "expires_on",
+            "type": "date",
+            "nullable": true
+          },
+          {
+            "ref": "remind_on",
+            "type": "date",
+            "nullable": true
+          },
+          {
+            "ref": "recipient_name",
+            "type": "text",
+            "maxLength": 80,
+            "nullable": true,
+            "rules": {
+              "personal": true,
+              "plainText": true
+            }
+          },
+          {
+            "ref": "sender_name",
+            "type": "text",
+            "maxLength": 80,
+            "nullable": true,
+            "rules": {
+              "personal": true,
+              "plainText": true
+            }
+          },
+          {
+            "ref": "recipient_email",
+            "type": "text",
+            "maxLength": 254,
+            "nullable": true,
+            "rules": {
+              "personal": true,
+              "normalize": "email",
+              "validation": {
+                "format": "email"
+              }
+            }
+          },
+          {
+            "ref": "message",
+            "type": "text",
+            "maxLength": 200,
+            "nullable": true,
+            "rules": {
+              "plainText": {
+                "digits": 20,
+                "max": 200
+              }
+            }
+          },
+          {
+            "ref": "language",
+            "type": "text",
+            "maxLength": 12,
+            "nullable": true
+          },
+          {
+            "ref": "send_on",
+            "type": "date",
+            "nullable": true
+          },
+          {
+            "ref": "resent_at",
+            "type": "timestamptz",
+            "nullable": true
+          },
+          {
+            "ref": "issued_at",
+            "type": "timestamptz",
+            "nullable": true
+          },
+          {
+            "ref": "void_reason",
+            "type": "text",
+            "maxLength": 200,
+            "nullable": true,
+            "rules": {
+              "requiredWhen": {
+                "column": "status",
+                "in": [
+                  "void"
+                ]
+              }
+            }
+          },
+          {
+            "ref": "moved_from",
+            "type": "text",
+            "maxLength": 64,
+            "nullable": true,
+            "unique": true
+          },
+          {
+            "ref": "moved_table",
+            "type": "text",
+            "maxLength": 96,
+            "default": "",
+            "rules": {
+              "tableRef": true
+            }
+          },
+          {
+            "ref": "moving",
+            "type": "bool",
+            "default": false
+          },
+          {
+            "ref": "note",
+            "type": "text",
+            "maxLength": 200,
+            "nullable": true
+          }
+        ]
+      },
+      {
+        "ref": "card_ledger",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "card_id",
+            "type": "fk",
+            "references": "gift_cards",
+            "index": true
+          },
+          {
+            "ref": "kind",
+            "type": "enum",
+            "enum": [
+              "issue",
+              "top_up",
+              "spend",
+              "refund",
+              "adjust",
+              "void",
+              "expire"
+            ]
+          },
+          {
+            "ref": "taken",
+            "type": "money",
+            "scale": "currency"
+          },
+          {
+            "ref": "value",
+            "type": "money",
+            "scale": "currency"
+          },
+          {
+            "ref": "amount",
+            "type": "money",
+            "scale": "currency",
+            "nullable": true,
+            "rules": {
+              "formula": {
+                "sub": [
+                  0,
+                  "taken"
+                ]
+              }
+            }
+          },
+          {
+            "ref": "balance_after",
+            "type": "money",
+            "scale": "currency"
+          },
+          {
+            "ref": "against_id",
+            "type": "fk",
+            "references": "card_ledger",
+            "nullable": true
+          },
+          {
+            "ref": "source_table",
+            "type": "text",
+            "maxLength": 96,
+            "default": "",
+            "rules": {
+              "tableRef": true
+            }
+          },
+          {
+            "ref": "source_row",
+            "type": "text",
+            "maxLength": 64,
+            "default": ""
+          },
+          {
+            "ref": "source_label",
+            "type": "text",
+            "maxLength": 80,
+            "nullable": true
+          },
+          {
+            "ref": "note",
+            "type": "text",
+            "maxLength": 200,
+            "nullable": true
+          },
+          {
+            "ref": "at",
+            "type": "timestamptz"
+          },
+          {
+            "ref": "by",
+            "type": "text",
+            "maxLength": 120,
+            "nullable": true,
+            "rules": {
+              "stamp": {
+                "set": "user-name",
+                "on": "create"
+              }
+            }
+          },
+          {
+            "ref": "receipt_id",
+            "type": "fk",
+            "references": "postings",
+            "nullable": true
+          }
+        ]
+      },
+      {
+        "ref": "card_actions",
+        "indexes": [
+          [
+            "card_id"
+          ]
+        ],
+        "postings": [
+          {
+            "id": "card-action",
+            "into": {
+              "addOn": "offers",
+              "ledger": "value",
+              "action": "card-action"
+            },
+            "via": "card_id",
+            "post": {
+              "on": {
+                "create": true
+              }
+            },
+            "map": {
+              "card": "card_id",
+              "action": "action",
+              "amount": "amount",
+              "reason": "reason"
+            }
+          }
+        ],
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "card_id",
+            "type": "fk",
+            "references": "gift_cards"
+          },
+          {
+            "ref": "action",
+            "type": "enum",
+            "enum": [
+              "issue",
+              "top_up",
+              "adjust"
+            ]
+          },
+          {
+            "ref": "amount",
+            "type": "money",
+            "scale": "currency"
+          },
+          {
+            "ref": "reason",
+            "type": "text",
+            "maxLength": 200,
+            "rules": {
+              "plainText": {
+                "digits": 20,
+                "max": 200
+              }
+            }
+          },
+          {
+            "ref": "paid_by",
+            "type": "enum",
+            "enum": [
+              "cash",
+              "card",
+              "other"
+            ],
+            "nullable": true
+          },
+          {
+            "ref": "by",
+            "type": "text",
+            "maxLength": 120,
+            "nullable": true,
+            "rules": {
+              "stamp": {
+                "set": "user-name",
+                "on": "create"
+              }
+            }
+          },
+          {
+            "ref": "at",
+            "type": "timestamptz",
+            "nullable": true,
+            "rules": {
+              "stamp": {
+                "set": "now",
+                "on": "create"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "ref": "redemptions",
+        "indexes": [
+          [
+            "source_table",
+            "source_row"
+          ],
+          [
+            "customer",
+            "offer_id"
+          ]
+        ],
+        "capacity": [
+          {
+            "kind": "parent",
+            "via": "code_id",
+            "size": {
+              "column": "max_uses"
+            },
+            "countWhere": {
+              "column": "state",
+              "values": [
+                "held",
+                "counted"
+              ]
+            },
+            "lockBy": "code_id"
+          },
+          {
+            "kind": "parent",
+            "via": "offer_id",
+            "size": {
+              "column": "max_uses"
+            },
+            "countWhere": {
+              "column": "state",
+              "values": [
+                "held",
+                "counted"
+              ]
+            },
+            "lockBy": "offer_id"
+          }
+        ],
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "kind",
+            "type": "enum",
+            "enum": [
+              "offer",
+              "code",
+              "voucher",
+              "pack",
+              "staff"
+            ]
+          },
+          {
+            "ref": "offer_id",
+            "type": "fk",
+            "references": "offers",
+            "nullable": true,
+            "index": true
+          },
+          {
+            "ref": "code_id",
+            "type": "fk",
+            "references": "codes",
+            "nullable": true,
+            "index": true
+          },
+          {
+            "ref": "voucher_id",
+            "type": "fk",
+            "references": "vouchers",
+            "nullable": true,
+            "index": true
+          },
+          {
+            "ref": "reason_id",
+            "type": "fk",
+            "references": "reasons",
+            "nullable": true
+          },
+          {
+            "ref": "source_table",
+            "type": "text",
+            "maxLength": 96,
+            "default": "",
+            "rules": {
+              "tableRef": true
+            }
+          },
+          {
+            "ref": "source_row",
+            "type": "text",
+            "maxLength": 64,
+            "default": ""
+          },
+          {
+            "ref": "source_label",
+            "type": "text",
+            "maxLength": 80,
+            "nullable": true
+          },
+          {
+            "ref": "customer",
+            "type": "text",
+            "maxLength": 64,
+            "nullable": true
+          },
+          {
+            "ref": "amount",
+            "type": "money",
+            "scale": "currency"
+          },
+          {
+            "ref": "uses",
+            "type": "int",
+            "default": 1
+          },
+          {
+            "ref": "prepaid",
+            "type": "money",
+            "scale": "currency",
+            "nullable": true
+          },
+          {
+            "ref": "state",
+            "type": "enum",
+            "enum": [
+              "held",
+              "counted",
+              "given_back"
+            ]
+          },
+          {
+            "ref": "at",
+            "type": "timestamptz"
+          },
+          {
+            "ref": "given_back_at",
+            "type": "timestamptz",
+            "nullable": true
+          },
+          {
+            "ref": "receipt_id",
+            "type": "fk",
+            "references": "postings",
+            "nullable": true
+          }
+        ]
+      },
+      {
+        "ref": "applied",
+        "indexes": [
+          [
+            "source_table",
+            "source_row"
+          ]
+        ],
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "source_table",
+            "type": "text",
+            "maxLength": 96,
+            "default": "",
+            "rules": {
+              "tableRef": true
+            }
+          },
+          {
+            "ref": "source_row",
+            "type": "text",
+            "maxLength": 64
+          },
+          {
+            "ref": "source_line",
+            "type": "text",
+            "maxLength": 64,
+            "default": ""
+          },
+          {
+            "ref": "offer_id",
+            "type": "fk",
+            "references": "offers",
+            "nullable": true
+          },
+          {
+            "ref": "code_id",
+            "type": "fk",
+            "references": "codes",
+            "nullable": true
+          },
+          {
+            "ref": "voucher_id",
+            "type": "fk",
+            "references": "vouchers",
+            "nullable": true
+          },
+          {
+            "ref": "name",
+            "type": "json"
+          },
+          {
+            "ref": "kind",
+            "type": "enum",
+            "enum": [
+              "offer",
+              "code",
+              "voucher",
+              "pack",
+              "staff"
+            ]
+          },
+          {
+            "ref": "amount",
+            "type": "money",
+            "scale": "currency"
+          },
+          {
+            "ref": "reason_id",
+            "type": "fk",
+            "references": "reasons",
+            "nullable": true
+          },
+          {
+            "ref": "typed",
+            "type": "bool",
+            "default": false
+          },
+          {
+            "ref": "at",
+            "type": "timestamptz"
+          }
+        ]
+      },
+      {
+        "ref": "postings",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "source_table",
+            "type": "text",
+            "maxLength": 96,
+            "rules": {
+              "tableRef": true
+            }
+          },
+          {
+            "ref": "source_row",
+            "type": "text",
+            "maxLength": 64
+          },
+          {
+            "ref": "source_line",
+            "type": "text",
+            "maxLength": 64
+          },
+          {
+            "ref": "line_table",
+            "type": "text",
+            "maxLength": 96,
+            "rules": {
+              "tableRef": true
+            }
+          },
+          {
+            "ref": "ledger",
+            "type": "text",
+            "maxLength": 40
+          },
+          {
+            "ref": "action",
+            "type": "text",
+            "maxLength": 40
+          },
+          {
+            "ref": "posting",
+            "type": "text",
+            "maxLength": 40
+          },
+          {
+            "ref": "phase",
+            "type": "enum",
+            "enum": [
+              "reserve",
+              "post",
+              "reverse"
+            ]
+          },
+          {
+            "ref": "round",
+            "type": "int"
+          },
+          {
+            "ref": "state",
+            "type": "enum",
+            "enum": [
+              "planned",
+              "unplanned"
+            ]
+          },
+          {
+            "ref": "rows",
+            "type": "int"
+          },
+          {
+            "ref": "add_on_version",
+            "type": "text",
+            "maxLength": 32
+          },
+          {
+            "ref": "origin",
+            "type": "enum",
+            "enum": [
+              "staff",
+              "public",
+              "system"
+            ]
+          },
+          {
+            "ref": "by",
+            "type": "text",
+            "maxLength": 64
+          },
+          {
+            "ref": "at",
+            "type": "timestamptz"
+          },
+          {
+            "ref": "held_until",
+            "type": "timestamptz",
+            "nullable": true
+          }
+        ]
+      },
+      {
+        "ref": "messages",
+        "indexes": [
+          [
+            "card_id"
+          ],
+          [
+            "voucher_id"
+          ]
+        ],
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "kind",
+            "type": "enum",
+            "enum": [
+              "gift_card",
+              "gift_card_dated",
+              "gift_card_again",
+              "gift_card_expiring",
+              "credit",
+              "voucher",
+              "voucher_again"
+            ]
+          },
+          {
+            "ref": "status",
+            "type": "enum",
+            "enum": [
+              "queued",
+              "sent",
+              "failed",
+              "skipped"
+            ],
+            "default": "queued"
+          },
+          {
+            "ref": "to_address",
+            "type": "text",
+            "maxLength": 254,
+            "nullable": true,
+            "rules": {
+              "personal": true
+            }
+          },
+          {
+            "ref": "language",
+            "type": "text",
+            "maxLength": 12,
+            "nullable": true
+          },
+          {
+            "ref": "due",
+            "type": "timestamptz",
+            "nullable": true
+          },
+          {
+            "ref": "sent_at",
+            "type": "timestamptz",
+            "nullable": true
+          },
+          {
+            "ref": "error",
+            "type": "text",
+            "maxLength": 500,
+            "nullable": true
+          },
+          {
+            "ref": "skip_reason",
+            "type": "text",
+            "maxLength": 40,
+            "nullable": true
+          },
+          {
+            "ref": "repeat_key",
+            "type": "text",
+            "maxLength": 120,
+            "nullable": true
+          },
+          {
+            "ref": "card_id",
+            "type": "fk",
+            "references": "gift_cards",
+            "nullable": true
+          },
+          {
+            "ref": "voucher_id",
+            "type": "fk",
+            "references": "vouchers",
+            "nullable": true
+          }
+        ]
+      }
+    ]
+  },
+  "roles": [
+    {
+      "key": "manager",
+      "name": "Offers manager",
+      "permissions": [
+        "table:@settings:read",
+        "table:@settings:update",
+        "table:@offers:read",
+        "table:@offers:create",
+        "table:@offers:update",
+        "table:@offer_breaks:read",
+        "table:@offer_breaks:create",
+        "table:@offer_breaks:update",
+        "table:@offer_breaks:delete",
+        "table:@offer_targets:read",
+        "table:@offer_targets:create",
+        "table:@offer_targets:update",
+        "table:@offer_targets:delete",
+        "table:@codes:read",
+        "table:@codes:create",
+        "table:@codes:update",
+        "table:@codes:delete",
+        "table:@vouchers:read",
+        "table:@vouchers:create",
+        "table:@vouchers:update",
+        "table:@voucher_batches:read",
+        "table:@voucher_batches:create",
+        "table:@batch_chunks:read",
+        "table:@batch_chunks:create",
+        "table:@voucher_actions:read",
+        "table:@voucher_actions:create",
+        "table:@gift_cards:read",
+        "table:@gift_cards:create",
+        "table:@gift_cards:update",
+        "table:@card_ledger:read",
+        "table:@card_actions:read",
+        "table:@card_actions:create",
+        "table:@redemptions:read",
+        "table:@applied:read",
+        "table:@postings:read",
+        "table:@groups:read",
+        "table:@groups:create",
+        "table:@groups:update",
+        "table:@group_members:read",
+        "table:@group_members:create",
+        "table:@group_members:update",
+        "table:@group_members:delete",
+        "table:@reasons:read",
+        "table:@reasons:create",
+        "table:@reasons:update",
+        "table:@ceilings:read",
+        "table:@ceilings:create",
+        "table:@ceilings:update",
+        "table:@messages:read",
+        "table:@messages:update"
+      ],
+      "limits": {
+        "settings": {
+          "writable": [
+            "combine_default",
+            "card_expiry_months",
+            "card_reminder_days",
+            "card_min",
+            "card_max",
+            "pack_expiry_months",
+            "from_name",
+            "tax_later"
+          ]
+        },
+        "vouchers": {
+          "writable": [
+            "holder_email",
+            "holder_name",
+            "language",
+            "note",
+            "expires_on",
+            "resent_at"
+          ],
+          "creatable": [
+            "worth",
+            "value",
+            "what",
+            "source_table",
+            "source_row",
+            "units",
+            "public_name",
+            "uses_total",
+            "holder_email",
+            "holder_name",
+            "language",
+            "expires_on",
+            "note",
+            "awaiting_sale"
+          ]
+        },
+        "gift_cards": {
+          "writable": [
+            "recipient_name",
+            "recipient_email",
+            "sender_name",
+            "message",
+            "language",
+            "send_on",
+            "note",
+            "owner_email",
+            "status",
+            "void_reason",
+            "resent_at"
+          ],
+          "creatable": [
+            "kind",
+            "owner_email",
+            "recipient_name",
+            "recipient_email",
+            "sender_name",
+            "message",
+            "language",
+            "send_on",
+            "note"
+          ]
+        },
+        "messages": {
+          "writable": [
+            "status"
+          ],
+          "writableValues": {
+            "status": [
+              "queued"
+            ]
+          }
+        },
+        "offers": {
+          "writable": [
+            "name",
+            "public_name",
+            "gives",
+            "value",
+            "buy_qty",
+            "bonus_qty",
+            "trigger",
+            "applies_to",
+            "starts_on",
+            "ends_on",
+            "weekdays",
+            "from_time",
+            "to_time",
+            "min_spend",
+            "min_qty",
+            "first_order_only",
+            "group_id",
+            "max_uses",
+            "max_per_customer",
+            "budget_open",
+            "budget",
+            "combinable",
+            "status"
+          ],
+          "creatable": [
+            "name",
+            "public_name",
+            "gives",
+            "value",
+            "buy_qty",
+            "bonus_qty",
+            "trigger",
+            "applies_to",
+            "starts_on",
+            "ends_on",
+            "weekdays",
+            "from_time",
+            "to_time",
+            "min_spend",
+            "min_qty",
+            "first_order_only",
+            "group_id",
+            "max_uses",
+            "max_per_customer",
+            "budget_open",
+            "budget",
+            "combinable"
+          ]
+        }
+      }
+    },
+    {
+      "key": "desk",
+      "name": "Offers desk",
+      "permissions": [
+        "table:@settings:read",
+        "table:@offers:read",
+        "table:@offer_breaks:read",
+        "table:@offer_targets:read",
+        "table:@codes:read",
+        "table:@vouchers:read",
+        "table:@vouchers:create",
+        "table:@vouchers:update",
+        "table:@voucher_actions:read",
+        "table:@voucher_actions:create",
+        "table:@gift_cards:read",
+        "table:@gift_cards:create",
+        "table:@gift_cards:update",
+        "table:@card_ledger:read",
+        "table:@redemptions:read",
+        "table:@applied:read",
+        "table:@reasons:read"
+      ],
+      "limits": {
+        "gift_cards": {
+          "readable": [
+            "kind",
+            "label",
+            "status",
+            "balance",
+            "expires_on",
+            "issued_at",
+            "send_on",
+            "resent_at",
+            "recipient_name",
+            "sender_name",
+            "language",
+            "moved_table"
+          ],
+          "creatable": [
+            "kind",
+            "owner_email",
+            "recipient_name",
+            "recipient_email",
+            "sender_name",
+            "message",
+            "language",
+            "send_on"
+          ],
+          "writable": [
+            "resent_at"
+          ]
+        },
+        "vouchers": {
+          "readable": [
+            "code_last4",
+            "worth",
+            "value",
+            "what",
+            "source_table",
+            "source_row",
+            "units",
+            "public_name",
+            "uses_total",
+            "uses_taken",
+            "uses_left",
+            "holder_name",
+            "language",
+            "resent_at",
+            "batch_id",
+            "sold",
+            "awaiting_sale",
+            "tax_later",
+            "status",
+            "expires_on",
+            "note",
+            "issued_by",
+            "issued_at",
+            "receipt_id"
+          ],
+          "creatable": [
+            "worth",
+            "value",
+            "what",
+            "source_table",
+            "source_row",
+            "units",
+            "public_name",
+            "uses_total",
+            "holder_email",
+            "holder_name",
+            "language",
+            "expires_on",
+            "note",
+            "awaiting_sale"
+          ],
+          "writable": [
+            "resent_at"
+          ]
+        },
+        "card_ledger": {
+          "readable": [
+            "card_id",
+            "kind",
+            "taken",
+            "value",
+            "amount",
+            "balance_after",
+            "against_id",
+            "source_table",
+            "source_row",
+            "source_label",
+            "at",
+            "by",
+            "receipt_id"
+          ]
+        },
+        "redemptions": {
+          "readable": [
+            "kind",
+            "offer_id",
+            "code_id",
+            "voucher_id",
+            "reason_id",
+            "source_table",
+            "source_row",
+            "source_label",
+            "amount",
+            "uses",
+            "prepaid",
+            "state",
+            "at",
+            "given_back_at",
+            "receipt_id"
+          ]
+        },
+        "voucher_actions": {
+          "creatable": [
+            "voucher_id",
+            "action",
+            "note"
+          ],
+          "creatableValues": {
+            "action": [
+              "use"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "key": "viewer",
+      "name": "Offers viewer",
+      "permissions": [
+        "table:@settings:read",
+        "table:@offers:read",
+        "table:@offer_breaks:read",
+        "table:@offer_targets:read",
+        "table:@codes:read",
+        "table:@vouchers:read",
+        "table:@voucher_batches:read",
+        "table:@voucher_actions:read",
+        "table:@gift_cards:read",
+        "table:@card_ledger:read",
+        "table:@redemptions:read",
+        "table:@applied:read",
+        "table:@groups:read",
+        "table:@group_members:read",
+        "table:@reasons:read",
+        "table:@ceilings:read",
+        "table:@messages:read"
+      ],
+      "limits": {
+        "gift_cards": {
+          "readable": [
+            "kind",
+            "label",
+            "status",
+            "balance",
+            "expires_on",
+            "issued_at",
+            "send_on",
+            "resent_at",
+            "recipient_name",
+            "sender_name",
+            "language",
+            "moved_table"
+          ]
+        },
+        "vouchers": {
+          "readable": [
+            "code_last4",
+            "worth",
+            "value",
+            "what",
+            "source_table",
+            "source_row",
+            "units",
+            "public_name",
+            "uses_total",
+            "uses_taken",
+            "uses_left",
+            "holder_name",
+            "language",
+            "resent_at",
+            "batch_id",
+            "sold",
+            "awaiting_sale",
+            "tax_later",
+            "status",
+            "expires_on",
+            "note",
+            "issued_by",
+            "issued_at",
+            "receipt_id"
+          ]
+        },
+        "card_ledger": {
+          "readable": [
+            "card_id",
+            "kind",
+            "taken",
+            "value",
+            "amount",
+            "balance_after",
+            "against_id",
+            "source_table",
+            "source_row",
+            "source_label",
+            "at",
+            "by",
+            "receipt_id"
+          ]
+        },
+        "redemptions": {
+          "readable": [
+            "kind",
+            "offer_id",
+            "code_id",
+            "voucher_id",
+            "reason_id",
+            "source_table",
+            "source_row",
+            "source_label",
+            "amount",
+            "uses",
+            "prepaid",
+            "state",
+            "at",
+            "given_back_at",
+            "receipt_id"
+          ]
+        },
+        "messages": {
+          "readable": [
+            "kind",
+            "status",
+            "language",
+            "due",
+            "sent_at",
+            "error",
+            "skip_reason",
+            "repeat_key",
+            "card_id",
+            "voucher_id"
+          ]
+        },
+        "group_members": {
+          "readable": [
+            "group_id"
+          ]
+        }
+      }
+    }
+  ],
+  "navGroups": [
+    {
+      "key": "offers",
+      "label": {
+        "en-US": "Offers",
+        "de-DE": "Angebote",
+        "fr-FR": "Offres",
+        "da-DK": "Tilbud",
+        "cs-CZ": "Nabídky",
+        "ar-EG": "العروض",
+        "zh-CN": "优惠",
+        "zh-TW": "優惠"
+      },
+      "order": 40
+    },
+    {
+      "key": "offers-setup",
+      "label": {
+        "en-US": "Offers setup",
+        "de-DE": "Angebote einrichten",
+        "fr-FR": "Réglages des offres",
+        "da-DK": "Opsætning af tilbud",
+        "cs-CZ": "Nastavení nabídek",
+        "ar-EG": "إعداد العروض",
+        "zh-CN": "优惠设置",
+        "zh-TW": "優惠設定"
+      },
+      "order": 41
+    }
+  ],
+  "pages": [
+    {
+      "ref": "offers-codes",
+      "template": "page-crud",
+      "title": {
+        "key": "addon.offers.page.codes",
+        "fallback": "Codes"
+      },
+      "titles": {
+        "en-US": "Codes",
+        "de-DE": "Codes",
+        "fr-FR": "Codes",
+        "da-DK": "Koder",
+        "cs-CZ": "Kódy",
+        "ar-EG": "الأكواد",
+        "zh-CN": "优惠码",
+        "zh-TW": "優惠碼"
+      },
+      "nav": {
+        "group": "manifest:offers",
+        "icon": "tag",
+        "order": 20
+      },
+      "bindings": {
+        "rows": "codes"
+      },
+      "config": {
+        "form": {
+          "v": 2,
+          "sections": [
+            {
+              "id": "s1",
+              "fields": [
+                {
+                  "column": "code",
+                  "control": "title",
+                  "span": 2
+                },
+                {
+                  "column": "offer_id",
+                  "control": "reference"
+                },
+                {
+                  "column": "active"
+                },
+                {
+                  "column": "max_uses"
+                },
+                {
+                  "column": "valid_until",
+                  "control": "date"
+                }
+              ]
+            },
+            {
+              "id": "s2",
+              "fields": [
+                {
+                  "column": "uses",
+                  "control": "readonly"
+                }
+              ]
+            }
+          ]
+        },
+        "filters": [
+          {
+            "column": "active",
+            "control": "yes-no"
+          },
+          {
+            "column": "offer_id",
+            "control": "record"
+          }
+        ]
+      }
+    },
+    {
+      "ref": "offers-vouchers",
+      "template": "page-crud",
+      "title": {
+        "key": "addon.offers.page.vouchers",
+        "fallback": "Vouchers"
+      },
+      "titles": {
+        "en-US": "Vouchers",
+        "de-DE": "Gutscheine",
+        "fr-FR": "Bons",
+        "da-DK": "Vouchere",
+        "cs-CZ": "Poukazy",
+        "ar-EG": "القسائم",
+        "zh-CN": "代金券",
+        "zh-TW": "兌換券"
+      },
+      "nav": {
+        "group": "manifest:offers",
+        "icon": "ticket",
+        "order": 30
+      },
+      "bindings": {
+        "rows": "vouchers"
+      },
+      "config": {
+        "form": {
+          "v": 2,
+          "sections": [
+            {
+              "id": "s1",
+              "fields": [
+                {
+                  "column": "holder_name"
+                },
+                {
+                  "column": "holder_email",
+                  "control": "email"
+                },
+                {
+                  "column": "language"
+                },
+                {
+                  "column": "expires_on",
+                  "control": "date"
+                },
+                {
+                  "column": "note",
+                  "control": "textarea",
+                  "span": 2
+                }
+              ]
+            },
+            {
+              "id": "s2",
+              "fields": [
+                {
+                  "column": "code_last4",
+                  "control": "readonly"
+                },
+                {
+                  "column": "public_name",
+                  "control": "readonly"
+                },
+                {
+                  "column": "worth",
+                  "control": "readonly"
+                },
+                {
+                  "column": "value",
+                  "control": "readonly"
+                },
+                {
+                  "column": "uses_left",
+                  "control": "readonly"
+                },
+                {
+                  "column": "uses_total",
+                  "control": "readonly"
+                },
+                {
+                  "column": "status",
+                  "control": "readonly"
+                },
+                {
+                  "column": "batch_id",
+                  "control": "readonly"
+                },
+                {
+                  "column": "sold",
+                  "control": "readonly"
+                },
+                {
+                  "column": "issued_at",
+                  "control": "readonly"
+                }
+              ]
+            }
+          ]
+        },
+        "filters": [
+          {
+            "column": "status",
+            "control": "any-of"
+          },
+          {
+            "column": "worth",
+            "control": "one-of"
+          },
+          {
+            "column": "batch_id",
+            "control": "record"
+          },
+          {
+            "column": "sold",
+            "control": "yes-no"
+          }
+        ],
+        "tabs": {
+          "redemptions": {
+            "noNew": true,
+            "empty": {
+              "en-US": "Not used yet",
+              "de-DE": "Noch nicht eingelöst",
+              "fr-FR": "Pas encore utilisé",
+              "da-DK": "Ikke brugt endnu",
+              "cs-CZ": "Zatím nepoužito",
+              "ar-EG": "لم تُستخدم بعد",
+              "zh-CN": "尚未使用",
+              "zh-TW": "尚未使用"
+            },
+            "emptyBody": {
+              "en-US": "Each use of this voucher is listed here.",
+              "de-DE": "Jede Einlösung dieses Gutscheins wird hier aufgeführt.",
+              "fr-FR": "Chaque utilisation de ce bon est listée ici.",
+              "da-DK": "Hver brug af denne voucher vises her.",
+              "cs-CZ": "Každé použití tohoto poukazu se zobrazí zde.",
+              "ar-EG": "يُدرج هنا كل استخدام لهذه القسيمة.",
+              "zh-CN": "此代金券的每次使用都会列在这里。",
+              "zh-TW": "此兌換券的每次使用都會列在這裡。"
+            }
+          },
+          "voucher_actions": {
+            "noNew": true
+          },
+          "messages": {
+            "noNew": true
+          }
+        }
+      }
+    },
+    {
+      "ref": "offers-voucher-batches",
+      "template": "page-crud",
+      "title": {
+        "key": "addon.offers.page.voucherBatches",
+        "fallback": "Voucher batches"
+      },
+      "titles": {
+        "en-US": "Voucher batches",
+        "de-DE": "Gutscheinserien",
+        "fr-FR": "Séries de bons",
+        "da-DK": "Voucherserier",
+        "cs-CZ": "Série poukazů",
+        "ar-EG": "دفعات القسائم",
+        "zh-CN": "代金券批次",
+        "zh-TW": "兌換券批次"
+      },
+      "nav": {
+        "group": "manifest:offers",
+        "icon": "layers",
+        "order": 35
+      },
+      "bindings": {
+        "rows": "voucher_batches"
+      },
+      "config": {
+        "form": {
+          "v": 2,
+          "sections": [
+            {
+              "id": "s1",
+              "fields": [
+                {
+                  "column": "name",
+                  "control": "title",
+                  "span": 2
+                }
+              ]
+            },
+            {
+              "id": "s2",
+              "fields": [
+                {
+                  "column": "public_name",
+                  "control": "readonly"
+                },
+                {
+                  "column": "worth",
+                  "control": "readonly"
+                },
+                {
+                  "column": "value",
+                  "control": "readonly"
+                },
+                {
+                  "column": "count",
+                  "control": "readonly"
+                },
+                {
+                  "column": "made",
+                  "control": "readonly"
+                },
+                {
+                  "column": "to_make",
+                  "control": "readonly"
+                },
+                {
+                  "column": "used",
+                  "control": "readonly"
+                },
+                {
+                  "column": "expires_on",
+                  "control": "readonly"
+                }
+              ]
+            }
+          ]
+        },
+        "tabs": {
+          "vouchers": {
+            "noNew": true
+          },
+          "batch_chunks": {
+            "empty": {
+              "en-US": "Nothing made yet",
+              "de-DE": "Noch nichts erstellt",
+              "fr-FR": "Rien de créé pour l’instant",
+              "da-DK": "Intet lavet endnu",
+              "cs-CZ": "Zatím nic nevytvořeno",
+              "ar-EG": "لم يُنشأ شيء بعد",
+              "zh-CN": "尚未生成",
+              "zh-TW": "尚未產生"
+            },
+            "emptyBody": {
+              "en-US": "Vouchers are made in parts of up to 500. Add a part to make more.",
+              "de-DE": "Gutscheine werden in Teilen von bis zu 500 erstellt. Fügen Sie einen Teil hinzu, um weitere zu erstellen.",
+              "fr-FR": "Les bons sont créés par lots de 500 au plus. Ajoutez un lot pour en créer d’autres.",
+              "da-DK": "Vouchere laves i dele på op til 500. Tilføj en del for at lave flere.",
+              "cs-CZ": "Poukazy se vytvářejí po částech nejvýše po 500. Další vytvoříte přidáním části.",
+              "ar-EG": "تُنشأ القسائم على أجزاء، بحد أقصى 500 في الجزء. أضف جزءًا لإنشاء المزيد.",
+              "zh-CN": "代金券按每份最多 500 张分批生成。添加一份即可生成更多。",
+              "zh-TW": "兌換券以每份最多 500 張分批產生。新增一份即可產生更多。"
+            }
+          }
+        }
+      }
+    },
+    {
+      "ref": "offers-gift-cards",
+      "template": "page-crud",
+      "title": {
+        "key": "addon.offers.page.giftCards",
+        "fallback": "Gift cards and credit"
+      },
+      "titles": {
+        "en-US": "Gift cards and credit",
+        "de-DE": "Geschenkkarten und Guthaben",
+        "fr-FR": "Cartes cadeaux et avoirs",
+        "da-DK": "Gavekort og tilgodehavender",
+        "cs-CZ": "Dárkové karty a kredit",
+        "ar-EG": "بطاقات الهدايا والرصيد",
+        "zh-CN": "礼品卡与储值",
+        "zh-TW": "禮品卡與儲值"
+      },
+      "nav": {
+        "group": "manifest:offers",
+        "icon": "gift",
+        "order": 40
+      },
+      "bindings": {
+        "rows": "gift_cards"
+      },
+      "config": {
+        "form": {
+          "v": 2,
+          "sections": [
+            {
+              "id": "s1",
+              "fields": [
+                {
+                  "column": "recipient_name"
+                },
+                {
+                  "column": "recipient_email",
+                  "control": "email"
+                },
+                {
+                  "column": "sender_name"
+                },
+                {
+                  "column": "language"
+                },
+                {
+                  "column": "send_on",
+                  "control": "date"
+                },
+                {
+                  "column": "message",
+                  "control": "textarea",
+                  "span": 2
+                },
+                {
+                  "column": "note",
+                  "control": "textarea",
+                  "span": 2
+                }
+              ]
+            },
+            {
+              "id": "s2",
+              "fields": [
+                {
+                  "column": "kind",
+                  "control": "readonly"
+                },
+                {
+                  "column": "label",
+                  "control": "readonly"
+                },
+                {
+                  "column": "status",
+                  "control": "readonly"
+                },
+                {
+                  "column": "balance",
+                  "control": "readonly"
+                },
+                {
+                  "column": "issued_at",
+                  "control": "readonly"
+                },
+                {
+                  "column": "expires_on",
+                  "control": "readonly"
+                }
+              ]
+            }
+          ]
+        },
+        "filters": [
+          {
+            "column": "kind",
+            "control": "one-of"
+          },
+          {
+            "column": "status",
+            "control": "any-of"
+          }
+        ],
+        "defaultFilters": [
+          {
+            "column": "status",
+            "op": "in",
+            "value": [
+              "active",
+              "inactive"
+            ]
+          }
+        ],
+        "tabs": {
+          "card_ledger": {
+            "noNew": true,
+            "empty": {
+              "en-US": "Nothing on this card yet",
+              "de-DE": "Auf dieser Karte ist noch nichts",
+              "fr-FR": "Rien sur cette carte pour l’instant",
+              "da-DK": "Intet på dette kort endnu",
+              "cs-CZ": "Na této kartě zatím nic není",
+              "ar-EG": "لا شيء على هذه البطاقة بعد",
+              "zh-CN": "此卡尚无记录",
+              "zh-TW": "此卡尚無紀錄"
+            },
+            "emptyBody": {
+              "en-US": "Every amount put on this card or taken from it is listed here.",
+              "de-DE": "Jeder Betrag, der auf diese Karte geladen oder von ihr abgebucht wird, wird hier aufgeführt.",
+              "fr-FR": "Chaque montant crédité sur cette carte ou débité de celle-ci est listé ici.",
+              "da-DK": "Hvert beløb, der sættes ind på eller trækkes fra dette kort, vises her.",
+              "cs-CZ": "Každá částka připsaná na tuto kartu nebo z ní odečtená se zobrazí zde.",
+              "ar-EG": "يُدرج هنا كل مبلغ أُضيف إلى هذه البطاقة أو خُصم منها.",
+              "zh-CN": "存入此卡或从此卡扣除的每笔金额都会列在这里。",
+              "zh-TW": "存入此卡或從此卡扣除的每筆金額都會列在這裡。"
+            }
+          },
+          "card_actions": {
+            "noNew": true
+          },
+          "messages": {
+            "noNew": true
+          }
+        }
+      }
+    },
+    {
+      "ref": "offers-activity",
+      "template": "page-crud",
+      "title": {
+        "key": "addon.offers.page.activity",
+        "fallback": "Activity"
+      },
+      "titles": {
+        "en-US": "Activity",
+        "de-DE": "Aktivität",
+        "fr-FR": "Activité",
+        "da-DK": "Aktivitet",
+        "cs-CZ": "Aktivita",
+        "ar-EG": "النشاط",
+        "zh-CN": "动态",
+        "zh-TW": "動態"
+      },
+      "nav": {
+        "group": "manifest:offers",
+        "icon": "history",
+        "order": 60
+      },
+      "bindings": {
+        "rows": "card_ledger"
+      },
+      "config": {
+        "filters": [
+          {
+            "column": "kind",
+            "control": "any-of"
+          },
+          {
+            "column": "at",
+            "control": "date-range"
+          }
+        ]
+      }
+    },
+    {
+      "ref": "offers-uses",
+      "template": "page-crud",
+      "title": {
+        "key": "addon.offers.page.uses",
+        "fallback": "Uses"
+      },
+      "titles": {
+        "en-US": "Uses",
+        "de-DE": "Einlösungen",
+        "fr-FR": "Utilisations",
+        "da-DK": "Indløsninger",
+        "cs-CZ": "Uplatnění",
+        "ar-EG": "مرات الاستخدام",
+        "zh-CN": "使用记录",
+        "zh-TW": "使用紀錄"
+      },
+      "nav": {
+        "group": "manifest:offers",
+        "icon": "list-checks",
+        "order": 65
+      },
+      "bindings": {
+        "rows": "redemptions"
+      },
+      "config": {
+        "filters": [
+          {
+            "column": "state",
+            "control": "one-of"
+          },
+          {
+            "column": "kind",
+            "control": "any-of"
+          },
+          {
+            "column": "offer_id",
+            "control": "record"
+          },
+          {
+            "column": "at",
+            "control": "date-range"
+          }
+        ],
+        "defaultFilters": [
+          {
+            "column": "state",
+            "op": "eq",
+            "value": "counted"
+          }
+        ]
+      }
+    },
+    {
+      "ref": "offers-groups",
+      "template": "page-crud",
+      "title": {
+        "key": "addon.offers.page.groups",
+        "fallback": "Groups"
+      },
+      "titles": {
+        "en-US": "Groups",
+        "de-DE": "Gruppen",
+        "fr-FR": "Groupes",
+        "da-DK": "Grupper",
+        "cs-CZ": "Skupiny",
+        "ar-EG": "المجموعات",
+        "zh-CN": "分组",
+        "zh-TW": "群組"
+      },
+      "nav": {
+        "group": "manifest:offers-setup",
+        "icon": "users",
+        "order": 70
+      },
+      "bindings": {
+        "rows": "groups"
+      },
+      "config": {
+        "form": {
+          "v": 2,
+          "sections": [
+            {
+              "id": "s1",
+              "fields": [
+                {
+                  "column": "name",
+                  "control": "title",
+                  "span": 2
+                },
+                {
+                  "column": "note",
+                  "control": "textarea",
+                  "span": 2
+                }
+              ]
+            },
+            {
+              "id": "s2",
+              "fields": [
+                {
+                  "column": "members",
+                  "control": "readonly"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ref": "offers-reasons",
+      "template": "page-crud",
+      "title": {
+        "key": "addon.offers.page.reasons",
+        "fallback": "Reasons"
+      },
+      "titles": {
+        "en-US": "Reasons",
+        "de-DE": "Gründe",
+        "fr-FR": "Motifs",
+        "da-DK": "Årsager",
+        "cs-CZ": "Důvody",
+        "ar-EG": "الأسباب",
+        "zh-CN": "原因",
+        "zh-TW": "原因"
+      },
+      "nav": {
+        "group": "manifest:offers-setup",
+        "icon": "message-square",
+        "order": 80
+      },
+      "bindings": {
+        "rows": "reasons"
+      },
+      "config": {
+        "form": {
+          "v": 2,
+          "sections": [
+            {
+              "id": "s1",
+              "fields": [
+                {
+                  "column": "label",
+                  "control": "title",
+                  "span": 2
+                },
+                {
+                  "column": "active"
+                },
+                {
+                  "column": "position"
+                }
+              ]
+            }
+          ]
+        },
+        "filters": [
+          {
+            "column": "active",
+            "control": "yes-no"
+          }
+        ]
+      }
+    },
+    {
+      "ref": "offers-staff-limits",
+      "template": "page-crud",
+      "title": {
+        "key": "addon.offers.page.staffLimits",
+        "fallback": "Staff limits"
+      },
+      "titles": {
+        "en-US": "Staff limits",
+        "de-DE": "Mitarbeiterlimits",
+        "fr-FR": "Plafonds du personnel",
+        "da-DK": "Grænser for personale",
+        "cs-CZ": "Limity personálu",
+        "ar-EG": "حدود الموظفين",
+        "zh-CN": "员工限额",
+        "zh-TW": "員工限額"
+      },
+      "nav": {
+        "group": "manifest:offers-setup",
+        "icon": "shield",
+        "order": 90
+      },
+      "bindings": {
+        "rows": "ceilings"
+      },
+      "config": {
+        "form": {
+          "v": 2,
+          "sections": [
+            {
+              "id": "s1",
+              "fields": [
+                {
+                  "column": "role",
+                  "control": "title",
+                  "span": 2
+                },
+                {
+                  "column": "max_percent"
+                },
+                {
+                  "column": "max_amount"
+                },
+                {
+                  "column": "may_comp"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ref": "offers-messages",
+      "template": "page-crud",
+      "title": {
+        "key": "addon.offers.page.messages",
+        "fallback": "Messages"
+      },
+      "titles": {
+        "en-US": "Messages",
+        "de-DE": "Nachrichten",
+        "fr-FR": "Messages",
+        "da-DK": "Beskeder",
+        "cs-CZ": "Zprávy",
+        "ar-EG": "الرسائل",
+        "zh-CN": "消息",
+        "zh-TW": "訊息"
+      },
+      "nav": {
+        "group": "manifest:offers-setup",
+        "icon": "mail",
+        "order": 105
+      },
+      "bindings": {
+        "rows": "messages"
+      },
+      "config": {
+        "form": {
+          "v": 2,
+          "sections": [
+            {
+              "id": "s1",
+              "fields": [
+                {
+                  "column": "status",
+                  "control": "select"
+                }
+              ]
+            },
+            {
+              "id": "s2",
+              "fields": [
+                {
+                  "column": "kind",
+                  "control": "readonly"
+                },
+                {
+                  "column": "to_address",
+                  "control": "readonly"
+                },
+                {
+                  "column": "language",
+                  "control": "readonly"
+                },
+                {
+                  "column": "due",
+                  "control": "readonly"
+                },
+                {
+                  "column": "sent_at",
+                  "control": "readonly"
+                },
+                {
+                  "column": "error",
+                  "control": "readonly"
+                },
+                {
+                  "column": "skip_reason",
+                  "control": "readonly"
+                }
+              ]
+            }
+          ]
+        },
+        "filters": [
+          {
+            "column": "status",
+            "control": "any-of"
+          },
+          {
+            "column": "kind",
+            "control": "any-of"
+          }
+        ],
+        "defaultFilters": [
+          {
+            "column": "status",
+            "op": "in",
+            "value": [
+              "queued",
+              "failed",
+              "sent"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "ref": "offers-settings",
+      "template": "page-crud",
+      "title": {
+        "key": "addon.offers.page.settings",
+        "fallback": "Settings"
+      },
+      "titles": {
+        "en-US": "Settings",
+        "de-DE": "Einstellungen",
+        "fr-FR": "Réglages",
+        "da-DK": "Indstillinger",
+        "cs-CZ": "Nastavení",
+        "ar-EG": "الإعدادات",
+        "zh-CN": "设置",
+        "zh-TW": "設定"
+      },
+      "nav": {
+        "group": "manifest:offers-setup",
+        "icon": "settings",
+        "order": 110
+      },
+      "bindings": {
+        "rows": "settings"
+      },
+      "config": {
+        "form": {
+          "v": 2,
+          "sections": [
+            {
+              "id": "s1",
+              "fields": [
+                {
+                  "column": "card_expiry_months"
+                },
+                {
+                  "column": "card_reminder_days"
+                },
+                {
+                  "column": "card_min"
+                },
+                {
+                  "column": "card_max"
+                },
+                {
+                  "column": "pack_expiry_months"
+                }
+              ]
+            },
+            {
+              "id": "s2",
+              "fields": [
+                {
+                  "column": "combine_default"
+                },
+                {
+                  "column": "tax_later"
+                },
+                {
+                  "column": "from_name"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "addOns": {
+    "suggests": [
+      {
+        "key": "invoices",
+        "range": ">=1.0.8",
+        "checked": true,
+        "reason": {
+          "en-US": "Draws a gift card or a voucher as a PDF to print or to send.",
+          "de-DE": "Erstellt eine Geschenkkarte oder einen Gutschein als PDF zum Drucken oder Versenden.",
+          "fr-FR": "Génère une carte cadeau ou un bon en PDF, à imprimer ou à envoyer.",
+          "da-DK": "Laver et gavekort eller en voucher som PDF til at udskrive eller sende.",
+          "cs-CZ": "Vytvoří dárkovou kartu nebo poukaz ve formátu PDF k tisku nebo odeslání.",
+          "ar-EG": "يرسم بطاقة هدية أو قسيمة بصيغة PDF للطباعة أو الإرسال.",
+          "zh-CN": "将礼品卡或代金券生成 PDF，用于打印或发送。",
+          "zh-TW": "將禮品卡或兌換券繪製成 PDF，用於列印或寄送。"
+        }
+      }
+    ]
+  },
+  "addOn": {
+    "attaches": [
+      {
+        "app": "*"
+      }
+    ],
+    "connect": {
+      "kind": "none"
+    },
+    "settingsTable": "settings",
+    "lookUp": {
+      "kinds": [
+        {
+          "id": "gift-card",
+          "table": "gift_cards",
+          "code": "code",
+          "prefix": "GC-",
+          "show": [
+            "kind",
+            "label",
+            "status",
+            "balance",
+            "expires_on",
+            "issued_at",
+            "send_on",
+            "resent_at",
+            "recipient_name",
+            "sender_name",
+            "recipient_email",
+            "moved_table"
+          ],
+          "rows": {
+            "table": "card_ledger",
+            "via": "card_id",
+            "columns": [
+              "at",
+              "kind",
+              "amount",
+              "balance_after",
+              "note",
+              "source_label"
+            ]
+          }
+        },
+        {
+          "id": "pack",
+          "table": "vouchers",
+          "code": "code",
+          "prefix": "PK-",
+          "where": [
+            {
+              "column": "worth",
+              "eq": "pack"
+            }
+          ],
+          "show": [
+            "code_last4",
+            "worth",
+            "what",
+            "public_name",
+            "uses_left",
+            "uses_total",
+            "status",
+            "expires_on",
+            "holder_name",
+            "sold",
+            "awaiting_sale",
+            "batch_id"
+          ],
+          "rows": {
+            "table": "redemptions",
+            "via": "voucher_id",
+            "columns": [
+              "at",
+              "state",
+              "amount",
+              "uses",
+              "source_label"
+            ]
+          }
+        },
+        {
+          "id": "voucher",
+          "table": "vouchers",
+          "code": "code",
+          "prefix": "VC-",
+          "where": [
+            {
+              "column": "worth",
+              "in": [
+                "amount",
+                "percent",
+                "thing"
+              ]
+            }
+          ],
+          "show": [
+            "code_last4",
+            "worth",
+            "value",
+            "what",
+            "units",
+            "public_name",
+            "status",
+            "expires_on",
+            "holder_name",
+            "sold",
+            "awaiting_sale",
+            "batch_id"
+          ],
+          "rows": {
+            "table": "redemptions",
+            "via": "voucher_id",
+            "columns": [
+              "at",
+              "state",
+              "amount",
+              "uses",
+              "source_label"
+            ]
+          }
+        },
+        {
+          "id": "code",
+          "table": "codes",
+          "code": "code",
+          "show": [
+            "offer_id",
+            "active",
+            "valid_until",
+            "max_uses",
+            "uses"
+          ]
+        }
+      ],
+      "address": {
+        "table": "gift_cards",
+        "column": "owner_email",
+        "show": [
+          "kind",
+          "status",
+          "balance",
+          "issued_at"
+        ]
+      }
+    },
+    "provides": [
+      {
+        "contract": "posting-rows",
+        "version": 1,
+        "server": "dist/server.js"
+      },
+      {
+        "contract": "price-adjust",
+        "version": 1,
+        "server": "dist/server.js"
+      }
+    ],
+    "ledgers": [
+      {
+        "id": "value",
+        "receipts": "postings",
+        "refusal": "value",
+        "writes": {
+          "card_ledger": {
+            "insert": [
+              "card_id",
+              "kind",
+              "taken",
+              "value",
+              "balance_after",
+              "against_id",
+              "source_table",
+              "source_row",
+              "source_label",
+              "note",
+              "at"
+            ]
+          },
+          "redemptions": {
+            "insert": [
+              "kind",
+              "offer_id",
+              "code_id",
+              "voucher_id",
+              "reason_id",
+              "source_table",
+              "source_row",
+              "source_label",
+              "customer",
+              "amount",
+              "uses",
+              "prepaid",
+              "state",
+              "at"
+            ],
+            "update": {
+              "by": [
+                "id"
+              ],
+              "set": [
+                "state",
+                "at",
+                "given_back_at"
+              ]
+            }
+          },
+          "gift_cards": {
+            "update": {
+              "by": [
+                "id"
+              ],
+              "set": [
+                "status",
+                "issued_at",
+                "expires_on",
+                "remind_on",
+                "notify"
+              ]
+            }
+          },
+          "vouchers": {
+            "insert": [
+              "batch_id",
+              "worth",
+              "value",
+              "what",
+              "source_table",
+              "source_row",
+              "units",
+              "public_name",
+              "uses_total",
+              "expires_on",
+              "note"
+            ],
+            "update": {
+              "by": [
+                "id"
+              ],
+              "set": [
+                "status",
+                "sold",
+                "awaiting_sale",
+                "sale_price",
+                "tax_later",
+                "expires_on"
+              ]
+            }
+          },
+          "offers": {
+            "update": {
+              "by": [
+                "id"
+              ],
+              "set": [
+                "used_up"
+              ]
+            }
+          }
+        },
+        "actions": {
+          "redeem": {
+            "inputs": {
+              "reason": "link?",
+              "label": "text?"
+            },
+            "phases": [
+              "reserve",
+              "post",
+              "reverse"
+            ],
+            "reads": [
+              {
+                "as": "offers",
+                "table": "offers",
+                "by": [
+                  {
+                    "column": "id",
+                    "from": "uses.offer"
+                  }
+                ]
+              },
+              {
+                "as": "codes",
+                "table": "codes",
+                "by": [
+                  {
+                    "column": "id",
+                    "from": "uses.code"
+                  }
+                ]
+              },
+              {
+                "as": "vouchers",
+                "table": "vouchers",
+                "by": [
+                  {
+                    "column": "id",
+                    "from": "uses.voucher"
+                  }
+                ]
+              },
+              {
+                "as": "held",
+                "table": "redemptions",
+                "by": [
+                  {
+                    "column": "source_table",
+                    "from": "source.table"
+                  },
+                  {
+                    "column": "source_row",
+                    "from": "source.row"
+                  }
+                ],
+                "where": [
+                  {
+                    "column": "state",
+                    "in": [
+                      "held"
+                    ]
+                  }
+                ]
+              }
+            ],
+            "locks": [
+              {
+                "read": "offers",
+                "column": "id",
+                "table": "offers"
+              },
+              {
+                "read": "codes",
+                "column": "id",
+                "table": "codes"
+              },
+              {
+                "read": "vouchers",
+                "column": "id",
+                "table": "vouchers"
+              }
+            ],
+            "holds": true,
+            "writes": [
+              "redemptions",
+              "vouchers",
+              "offers"
+            ]
+          },
+          "spend": {
+            "inputs": {
+              "card": "link?",
+              "due": "decimal?",
+              "ask": "decimal?",
+              "amount": "decimal",
+              "balance_after": "decimal",
+              "label": "text?"
+            },
+            "phases": [
+              "post",
+              "reverse"
+            ],
+            "reads": [
+              {
+                "as": "card",
+                "table": "gift_cards",
+                "by": [
+                  {
+                    "column": "id",
+                    "from": "input.card"
+                  }
+                ]
+              }
+            ],
+            "locks": [
+              {
+                "read": "card",
+                "column": "id",
+                "table": "gift_cards"
+              }
+            ],
+            "decides": [
+              {
+                "input": "amount",
+                "min": "0",
+                "max": {
+                  "input": "due"
+                }
+              },
+              {
+                "input": "amount",
+                "min": "0",
+                "max": {
+                  "read": "card",
+                  "column": "balance"
+                }
+              },
+              {
+                "input": "balance_after",
+                "min": "0",
+                "max": {
+                  "read": "card",
+                  "column": "balance"
+                }
+              }
+            ],
+            "writes": [
+              "card_ledger"
+            ]
+          },
+          "refund": {
+            "inputs": {
+              "against_table": "text",
+              "against_row": "text",
+              "amount": "decimal?",
+              "label": "text?"
+            },
+            "phases": [
+              "post",
+              "reverse"
+            ],
+            "reads": [
+              {
+                "as": "spend",
+                "table": "card_ledger",
+                "by": [
+                  {
+                    "column": "source_table",
+                    "from": "input.against_table"
+                  },
+                  {
+                    "column": "source_row",
+                    "from": "input.against_row"
+                  }
+                ],
+                "where": [
+                  {
+                    "column": "kind",
+                    "eq": "spend"
+                  }
+                ]
+              },
+              {
+                "as": "card",
+                "table": "gift_cards",
+                "by": [
+                  {
+                    "column": "id",
+                    "from": "spend.card_id"
+                  }
+                ]
+              },
+              {
+                "as": "given",
+                "table": "card_ledger",
+                "by": [
+                  {
+                    "column": "against_id",
+                    "from": "spend.id"
+                  }
+                ]
+              }
+            ],
+            "locks": [
+              {
+                "read": "card",
+                "column": "id",
+                "table": "gift_cards"
+              }
+            ],
+            "writes": [
+              "card_ledger"
+            ]
+          },
+          "issue": {
+            "inputs": {
+              "card": "link?",
+              "amount": "decimal?",
+              "label": "text?"
+            },
+            "phases": [
+              "post",
+              "reverse"
+            ],
+            "reads": [
+              {
+                "as": "card",
+                "table": "gift_cards",
+                "by": [
+                  {
+                    "column": "id",
+                    "from": "input.card"
+                  }
+                ]
+              }
+            ],
+            "locks": [
+              {
+                "read": "card",
+                "column": "id",
+                "table": "gift_cards"
+              }
+            ],
+            "writes": [
+              "card_ledger",
+              "gift_cards"
+            ]
+          },
+          "card-action": {
+            "inputs": {
+              "card": "link",
+              "action": "text",
+              "amount": "decimal",
+              "reason": "text"
+            },
+            "phases": [
+              "post"
+            ],
+            "reads": [
+              {
+                "as": "card",
+                "table": "gift_cards",
+                "by": [
+                  {
+                    "column": "id",
+                    "from": "input.card"
+                  }
+                ]
+              }
+            ],
+            "locks": [
+              {
+                "read": "card",
+                "column": "id",
+                "table": "gift_cards"
+              }
+            ],
+            "writes": [
+              "card_ledger",
+              "gift_cards"
+            ]
+          },
+          "voucher-action": {
+            "inputs": {
+              "voucher": "link",
+              "action": "text"
+            },
+            "phases": [
+              "post"
+            ],
+            "reads": [
+              {
+                "as": "voucher",
+                "table": "vouchers",
+                "by": [
+                  {
+                    "column": "id",
+                    "from": "input.voucher"
+                  }
+                ]
+              },
+              {
+                "as": "last",
+                "table": "redemptions",
+                "by": [
+                  {
+                    "column": "voucher_id",
+                    "from": "input.voucher"
+                  }
+                ],
+                "where": [
+                  {
+                    "column": "state",
+                    "eq": "counted"
+                  }
+                ]
+              },
+              {
+                "as": "none",
+                "table": "offers",
+                "by": [
+                  {
+                    "column": "id",
+                    "from": "last.offer_id"
+                  }
+                ]
+              }
+            ],
+            "locks": [
+              {
+                "read": "voucher",
+                "column": "id",
+                "table": "vouchers"
+              },
+              {
+                "read": "none",
+                "column": "id",
+                "table": "offers"
+              }
+            ],
+            "writes": [
+              "redemptions",
+              "vouchers"
+            ]
+          },
+          "sell": {
+            "inputs": {
+              "voucher": "link?",
+              "amount": "decimal?",
+              "tax_later": "bool?"
+            },
+            "phases": [
+              "post",
+              "reverse"
+            ],
+            "reads": [
+              {
+                "as": "voucher",
+                "table": "vouchers",
+                "by": [
+                  {
+                    "column": "id",
+                    "from": "input.voucher"
+                  }
+                ]
+              }
+            ],
+            "locks": [
+              {
+                "read": "voucher",
+                "column": "id",
+                "table": "vouchers"
+              }
+            ],
+            "writes": [
+              "vouchers"
+            ]
+          },
+          "expire": {
+            "inputs": {
+              "card": "rowRef"
+            },
+            "phases": [
+              "post"
+            ],
+            "reads": [
+              {
+                "as": "card",
+                "table": "gift_cards",
+                "by": [
+                  {
+                    "column": "id",
+                    "from": "input.card.row"
+                  }
+                ]
+              }
+            ],
+            "locks": [
+              {
+                "read": "card",
+                "column": "id",
+                "table": "gift_cards"
+              }
+            ],
+            "writes": [
+              "card_ledger"
+            ]
+          },
+          "void": {
+            "inputs": {
+              "card": "rowRef"
+            },
+            "phases": [
+              "post"
+            ],
+            "reads": [
+              {
+                "as": "card",
+                "table": "gift_cards",
+                "by": [
+                  {
+                    "column": "id",
+                    "from": "input.card.row"
+                  }
+                ]
+              }
+            ],
+            "locks": [
+              {
+                "read": "card",
+                "column": "id",
+                "table": "gift_cards"
+              }
+            ],
+            "writes": [
+              "card_ledger"
+            ]
+          },
+          "make": {
+            "inputs": {
+              "batch": "link",
+              "size": "number"
+            },
+            "phases": [
+              "post"
+            ],
+            "reads": [
+              {
+                "as": "batch",
+                "table": "voucher_batches",
+                "by": [
+                  {
+                    "column": "id",
+                    "from": "input.batch"
+                  }
+                ]
+              }
+            ],
+            "locks": [
+              {
+                "read": "batch",
+                "column": "id",
+                "table": "voucher_batches"
+              }
+            ],
+            "writes": [
+              "vouchers"
+            ]
+          },
+          "move": {
+            "inputs": {
+              "old_card": "text",
+              "kind": "text",
+              "amount": "decimal",
+              "at": "text",
+              "note": "text?"
+            },
+            "phases": [
+              "post"
+            ],
+            "reads": [
+              {
+                "as": "card",
+                "table": "gift_cards",
+                "by": [
+                  {
+                    "column": "moved_from",
+                    "from": "input.old_card"
+                  }
+                ]
+              }
+            ],
+            "locks": [
+              {
+                "read": "card",
+                "column": "id",
+                "table": "gift_cards"
+              }
+            ],
+            "writes": [
+              "card_ledger",
+              "gift_cards"
+            ]
+          }
+        }
+      }
+    ],
+    "adjuster": {
+      "offers": [
+        {
+          "as": "offers",
+          "table": "offers",
+          "by": [],
+          "limit": 500
+        },
+        {
+          "as": "breaks",
+          "table": "offer_breaks",
+          "by": [
+            {
+              "column": "offer_id",
+              "from": "offers.id"
+            }
+          ]
+        },
+        {
+          "as": "targets",
+          "table": "offer_targets",
+          "by": [
+            {
+              "column": "offer_id",
+              "from": "offers.id"
+            }
+          ]
+        },
+        {
+          "as": "reasons",
+          "table": "reasons",
+          "by": [],
+          "limit": 200
+        }
+      ],
+      "codes": {
+        "table": "codes",
+        "column": "code",
+        "where": [
+          {
+            "column": "active",
+            "eq": true
+          }
+        ],
+        "reserved": [
+          "GC",
+          "VC",
+          "PK"
+        ]
+      },
+      "vouchers": {
+        "table": "vouchers",
+        "column": "code",
+        "prefixes": [
+          "VC-",
+          "PK-"
+        ]
+      },
+      "applied": {
+        "table": "applied",
+        "source": {
+          "table": "source_table",
+          "row": "source_row",
+          "line": "source_line"
+        },
+        "columns": {
+          "offer": "offer_id",
+          "code": "code_id",
+          "voucher": "voucher_id",
+          "name": "name",
+          "kind": "kind",
+          "amount": "amount",
+          "reason": "reason_id",
+          "typed": "typed",
+          "at": "at"
+        }
+      },
+      "person": {
+        "groups": {
+          "table": "group_members",
+          "member": "member_key",
+          "group": "group_id"
+        },
+        "uses": {
+          "table": "redemptions",
+          "customer": "customer",
+          "offer": "offer_id",
+          "state": "state",
+          "counted": [
+            "held",
+            "counted"
+          ]
+        },
+        "orders": true
+      },
+      "ceilings": {
+        "table": "ceilings",
+        "role": "role",
+        "maxPercent": "max_percent",
+        "maxAmount": "max_amount",
+        "comp": "may_comp"
+      },
+      "customerKey": "hash"
+    },
+    "shapes": [
+      {
+        "name": "discountable",
+        "version": 1,
+        "parts": {
+          "order": {
+            "adjust": {
+              "by": {
+                "addOn": "offers"
+              },
+              "lines": [
+                {
+                  "table": "lines",
+                  "via": "order_id",
+                  "price": "amount",
+                  "discount": "discount",
+                  "what": [
+                    {
+                      "column": "item",
+                      "as": "item"
+                    }
+                  ]
+                }
+              ],
+              "order": {
+                "discount": "discount",
+                "staff": {
+                  "kind": "discount_kind",
+                  "value": "discount_value",
+                  "reason": "discount_reason",
+                  "by": "discount_by"
+                }
+              },
+              "codes": {
+                "table": "codes",
+                "via": "order_id",
+                "typed": "typed",
+                "code": "code_id",
+                "voucher": "voucher_id",
+                "removed": "removed_at"
+              },
+              "uses": "uses"
+            },
+            "postings": [
+              {
+                "id": "uses",
+                "into": {
+                  "addOn": "offers",
+                  "ledger": "value",
+                  "action": "redeem"
+                },
+                "post": {
+                  "on": {
+                    "column": "paid_at",
+                    "set": true
+                  }
+                },
+                "reverse": {
+                  "on": {
+                    "column": "cancelled_at",
+                    "set": true
+                  }
+                },
+                "map": {
+                  "reason": "discount_reason"
+                }
+              }
+            ],
+            "columns": [
+              {
+                "ref": "id",
+                "type": "int",
+                "role": "pk"
+              },
+              {
+                "ref": "subtotal",
+                "type": "money",
+                "scale": "currency",
+                "nullable": true,
+                "rules": {
+                  "rollup": {
+                    "from": "lines",
+                    "via": "order_id",
+                    "sum": "amount"
+                  }
+                }
+              },
+              {
+                "ref": "discount",
+                "type": "money",
+                "scale": "currency",
+                "default": 0
+              },
+              {
+                "ref": "net",
+                "type": "money",
+                "scale": "currency",
+                "nullable": true,
+                "rules": {
+                  "formula": {
+                    "sub": [
+                      "subtotal",
+                      "discount"
+                    ]
+                  }
+                }
+              },
+              {
+                "ref": "discount_kind",
+                "type": "enum",
+                "enum": [
+                  "percent",
+                  "amount"
+                ],
+                "nullable": true
+              },
+              {
+                "ref": "discount_value",
+                "type": "decimal",
+                "scale": 3,
+                "nullable": true
+              },
+              {
+                "ref": "discount_reason",
+                "type": "int",
+                "nullable": true,
+                "rules": {
+                  "addOnLink": {
+                    "addOn": "offers",
+                    "table": "reasons"
+                  }
+                }
+              },
+              {
+                "ref": "discount_by",
+                "type": "text",
+                "maxLength": 120,
+                "nullable": true
+              },
+              {
+                "ref": "paid_at",
+                "type": "timestamptz",
+                "nullable": true
+              },
+              {
+                "ref": "cancelled_at",
+                "type": "timestamptz",
+                "nullable": true
+              }
+            ]
+          },
+          "lines": {
+            "columns": [
+              {
+                "ref": "id",
+                "type": "int",
+                "role": "pk"
+              },
+              {
+                "ref": "order_id",
+                "type": "fk",
+                "references": "order"
+              },
+              {
+                "ref": "item",
+                "type": "text",
+                "maxLength": 64,
+                "nullable": true
+              },
+              {
+                "ref": "amount",
+                "type": "money",
+                "scale": "currency",
+                "nullable": true
+              },
+              {
+                "ref": "discount",
+                "type": "money",
+                "scale": "currency",
+                "default": 0
+              }
+            ]
+          },
+          "codes": {
+            "columns": [
+              {
+                "ref": "id",
+                "type": "int",
+                "role": "pk"
+              },
+              {
+                "ref": "order_id",
+                "type": "fk",
+                "references": "order"
+              },
+              {
+                "ref": "typed",
+                "type": "text",
+                "maxLength": 64,
+                "nullable": true
+              },
+              {
+                "ref": "code_id",
+                "type": "int",
+                "nullable": true,
+                "rules": {
+                  "addOnLink": {
+                    "addOn": "offers",
+                    "table": "codes"
+                  }
+                }
+              },
+              {
+                "ref": "voucher_id",
+                "type": "int",
+                "nullable": true,
+                "rules": {
+                  "addOnLink": {
+                    "addOn": "offers",
+                    "table": "vouchers"
+                  }
+                }
+              },
+              {
+                "ref": "removed_at",
+                "type": "timestamptz",
+                "nullable": true
+              }
+            ]
+          }
+        }
+      },
+      {
+        "name": "card-payment",
+        "version": 1,
+        "parts": {
+          "order": {
+            "columns": [
+              {
+                "ref": "id",
+                "type": "int",
+                "role": "pk"
+              },
+              {
+                "ref": "due",
+                "type": "money",
+                "scale": "currency",
+                "nullable": true
+              }
+            ]
+          },
+          "payments": {
+            "postings": [
+              {
+                "id": "card",
+                "into": {
+                  "addOn": "offers",
+                  "ledger": "value",
+                  "action": "spend"
+                },
+                "via": "order_id",
+                "post": {
+                  "on": {
+                    "create": true
+                  }
+                },
+                "reverse": {
+                  "on": {
+                    "column": "voided_at",
+                    "set": true,
+                    "own": true
+                  }
+                },
+                "map": {
+                  "card": "card_id",
+                  "due": {
+                    "parent": "due"
+                  },
+                  "amount": "amount",
+                  "balance_after": "card_balance_after"
+                }
+              }
+            ],
+            "columns": [
+              {
+                "ref": "id",
+                "type": "int",
+                "role": "pk"
+              },
+              {
+                "ref": "order_id",
+                "type": "fk",
+                "references": "order"
+              },
+              {
+                "ref": "card_code",
+                "type": "text",
+                "maxLength": 64,
+                "nullable": true
+              },
+              {
+                "ref": "card_id",
+                "type": "int",
+                "nullable": true,
+                "rules": {
+                  "addOnLink": {
+                    "addOn": "offers",
+                    "table": "gift_cards"
+                  },
+                  "lookup": {
+                    "from": "card_code",
+                    "table": {
+                      "addOn": "offers",
+                      "table": "gift_cards"
+                    },
+                    "column": "code",
+                    "where": [
+                      {
+                        "column": "status",
+                        "eq": "active"
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "ref": "card_last4",
+                "type": "text",
+                "maxLength": 4,
+                "nullable": true
+              },
+              {
+                "ref": "amount",
+                "type": "money",
+                "scale": "currency",
+                "nullable": true
+              },
+              {
+                "ref": "card_balance_after",
+                "type": "money",
+                "scale": "currency",
+                "nullable": true
+              },
+              {
+                "ref": "voided_at",
+                "type": "timestamptz",
+                "nullable": true
+              }
+            ]
+          }
+        }
+      },
+      {
+        "name": "card-sale",
+        "version": 1,
+        "parts": {
+          "order": {
+            "columns": [
+              {
+                "ref": "id",
+                "type": "int",
+                "role": "pk"
+              },
+              {
+                "ref": "paid_at",
+                "type": "timestamptz",
+                "nullable": true
+              },
+              {
+                "ref": "cancelled_at",
+                "type": "timestamptz",
+                "nullable": true
+              }
+            ]
+          },
+          "lines": {
+            "postings": [
+              {
+                "id": "card-load",
+                "into": {
+                  "addOn": "offers",
+                  "ledger": "value",
+                  "action": "issue"
+                },
+                "via": "order_id",
+                "post": {
+                  "on": {
+                    "column": "paid_at",
+                    "set": true
+                  }
+                },
+                "reverse": {
+                  "on": {
+                    "column": "cancelled_at",
+                    "set": true
+                  }
+                },
+                "map": {
+                  "card": "gift_card_id",
+                  "amount": "load_amount"
+                }
+              }
+            ],
+            "columns": [
+              {
+                "ref": "id",
+                "type": "int",
+                "role": "pk"
+              },
+              {
+                "ref": "order_id",
+                "type": "fk",
+                "references": "order"
+              },
+              {
+                "ref": "gift_card_id",
+                "type": "int",
+                "nullable": true,
+                "rules": {
+                  "addOnLink": {
+                    "addOn": "offers",
+                    "table": "gift_cards"
+                  }
+                }
+              },
+              {
+                "ref": "load_amount",
+                "type": "money",
+                "scale": "currency",
+                "nullable": true
+              }
+            ]
+          }
+        }
+      },
+      {
+        "name": "voucher-sale",
+        "version": 1,
+        "parts": {
+          "order": {
+            "columns": [
+              {
+                "ref": "id",
+                "type": "int",
+                "role": "pk"
+              },
+              {
+                "ref": "paid_at",
+                "type": "timestamptz",
+                "nullable": true
+              },
+              {
+                "ref": "cancelled_at",
+                "type": "timestamptz",
+                "nullable": true
+              }
+            ]
+          },
+          "lines": {
+            "postings": [
+              {
+                "id": "voucher-sold",
+                "into": {
+                  "addOn": "offers",
+                  "ledger": "value",
+                  "action": "sell"
+                },
+                "via": "order_id",
+                "post": {
+                  "on": {
+                    "column": "paid_at",
+                    "set": true
+                  }
+                },
+                "reverse": {
+                  "on": {
+                    "column": "cancelled_at",
+                    "set": true
+                  }
+                },
+                "map": {
+                  "voucher": "voucher_id",
+                  "amount": "amount",
+                  "tax_later": "tax_later"
+                }
+              }
+            ],
+            "columns": [
+              {
+                "ref": "id",
+                "type": "int",
+                "role": "pk"
+              },
+              {
+                "ref": "order_id",
+                "type": "fk",
+                "references": "order"
+              },
+              {
+                "ref": "voucher_id",
+                "type": "int",
+                "nullable": true,
+                "rules": {
+                  "addOnLink": {
+                    "addOn": "offers",
+                    "table": "vouchers"
+                  }
+                }
+              },
+              {
+                "ref": "amount",
+                "type": "money",
+                "scale": "currency",
+                "nullable": true
+              },
+              {
+                "ref": "tax_later",
+                "type": "bool",
+                "default": false,
+                "nullable": true
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

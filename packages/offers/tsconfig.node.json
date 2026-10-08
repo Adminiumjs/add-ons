@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    /* The build-tooling side runs in Node and never renders. */
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "erasableSyntaxOnly": false,
+    "types": ["node"]
+  },
+  "include": ["vite.config.ts"]
+}
