@@ -161,7 +161,8 @@ describe('the templates', () => {
     for (const one of m.emailTemplates) for (const words of Object.values(one.locales)) expect(variablesIn(words.subject).filter((variable) => variable !== 'appName'), one.key).toEqual([]);
     // The card's own link is only ever the end of the balance button's address.
     const tokens = m.emailTemplates.flatMap((one) => Object.values(one.locales).flatMap((words) => words.blocks.filter((block) => JSON.stringify(block.data).includes('link_token'))));
-    for (const block of tokens) expect(block).toMatchObject({ block: 'email.button', data: { url: '{{app_url.balance}}#{{card.link_token}}' } });
+    // And the button is there only where an app serves a balance page: a link to nowhere with a card's token on it is never sent.
+    for (const block of tokens) expect(block).toMatchObject({ block: 'email.button', data: { url: '{{app_url.balance}}#{{card.link_token}}', onlyWith: 'app_url.balance' } });
   });
 
   it('a credit is told what it holds and how to use it, with no code, no QR and no link', () => {
@@ -181,7 +182,7 @@ describe('the templates', () => {
       'email.box',
       'email.image',
       'email.text',
-      'email.button',
+      'email.button with app_url.balance',
       'email.text without app_url.balance',
       'email.text with card.expires_on',
       'email.list',
@@ -194,6 +195,11 @@ describe('the templates', () => {
   });
 
   it('a voucher for one person says so, and a voucher with a last day says which', () => {
-    expect(shape(english('offers-voucher'))).toEqual(['email.heading', 'email.box', 'email.image', 'email.text', 'email.text with voucher.holder_email', 'email.text with voucher.expires_on']);
+    // This mail goes only for a voucher made for somebody, so it always says so.
+    expect(shape(english('offers-voucher'))).toEqual(['email.heading', 'email.box', 'email.image', 'email.text', 'email.text', 'email.text with voucher.expires_on']);
+    // A mail prints no column marked personal: who gave a card is told to its recipient, so that name is not marked so.
+    const cards = (manifest.requiredSchema.tables as unknown as { ref: string; columns: { ref: string; rules?: { personal?: boolean } }[] }[]).find((table) => table.ref === 'gift_cards')!;
+    const personal = new Set(cards.columns.filter((column) => column.rules?.personal === true).map((column) => column.ref));
+    for (const one of m.emailTemplates.filter((candidate) => candidate.key !== 'offers-voucher')) for (const variable of one.vars) if (variable.startsWith('card.')) expect([...personal], `${one.key} prints ${variable}`).not.toContain(variable.split('.')[1]);
   });
 });

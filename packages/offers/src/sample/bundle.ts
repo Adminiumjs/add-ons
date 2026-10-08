@@ -38,12 +38,16 @@ const on = (month: number, day: number) => ({ '@month': month, '@dom': day });
 const at = (month: number, day: number, time: string) => ({ '@month': month, '@dom': day, '@time': time });
 const cents = (text: unknown): number => Math.round(Number(text) * 100);
 const money = (value: number): string => (value / 100).toFixed(2);
+/** Sixty days on: the end of next month, counted from the first of this one. */
+const AHEAD = { '@day': 60 };
 /** A date of the cases, as a day counted from the sample's month (September is −1). */
 const day = (date: unknown) => {
   if (typeof date !== 'string') return null;
   const [, month = '9', dom = '1'] = /^\d{4}-(\d{2})-(\d{2})/.exec(date) ?? [];
-  return on(Number(month) - 10, Number(dom));
+  // A day still to come is so many days from the day the sample is added: a sample names no month ahead of its own.
+  return Number(month) > 10 ? AHEAD : on(Number(month) - 10, Number(dom));
 };
+
 
 /* ── codes: fixed, so the file is the same every time it is written ─────── */
 
@@ -84,7 +88,8 @@ export const CARDS: readonly Card[] = [
   { name: 'ada@daybreak.example', credit: true, status: 'active', rows: [[-1, 11, '15:00', 'refund', '42.00'], [-1, 25, '14:35', 'spend', '-20.00']] },
   { name: 'tomas@daybreak.example', credit: true, status: 'active', rows: [[-1, 17, '11:10', 'refund', '16.50']] },
 ];
-const cardLabel = (card: Card): string => `card:${card.credit === true ? card.name : card.name.slice(-4)}`;
+/** A card by its last four; a credit by the name before the @ (a label is letters, digits and : . _ -). */
+const cardLabel = (card: Card): string => `card:${card.credit === true ? `credit-${card.name.split('@')[0] ?? ''}` : card.name.slice(-4)}`;
 
 /* ── vouchers ───────────────────────────────────────────────────────────── */
 
@@ -175,11 +180,11 @@ export function buildSample(): Bundle {
   const usedLeaflets = new Set(month.flatMap((ran) => ran.answer.uses.flatMap((use) => (use.voucher !== null && Number(use.voucher) > 100 ? [Number(use.voucher) - 100] : []))));
   const candleUsed = month.some((ran) => ran.answer.uses.some((use) => use.voucher === '1'));
   const voucherLabel = (id: string): string => (id === '1' ? 'voucher:one-candle-1' : `voucher:leaflet:${String(Number(id) - 100)}`);
-  const batches = [{ '@label': 'batch:leaflet', name: LEAFLET_NAME, count: 200, worth: 'amount', value: '5.000', public_name: LEAFLET_NAME, uses_total: 1, expires_on: on(1, 30) }];
+  const batches = [{ '@label': 'batch:leaflet', name: LEAFLET_NAME, count: 200, worth: 'amount', value: '5.000', public_name: LEAFLET_NAME, uses_total: 1, expires_on: AHEAD }];
   const single = (label: string, n: number, more: Row): Row => ({ '@label': label, code: sampleCode(n), code_last4: sampleCode(n).slice(-4), uses_total: 1, status: 'issued', issued_at: at(-1, 1, '09:00'), ...more });
   const thing = (tag: string): Row => ({ worth: 'thing', what: 'tag', source_table: '', source_row: tag, units: 1 });
   const vouchers: Row[] = [
-    ...Array.from({ length: 200 }, (_, index) => single(`voucher:leaflet:${String(index + 1)}`, index + 1, { worth: 'amount', value: '5.000', public_name: LEAFLET_NAME, batch_id: ref('batch:leaflet'), expires_on: on(1, 30), status: usedLeaflets.has(index + 1) ? 'used' : 'issued', issued_at: at(-1, 19, '09:00') })),
+    ...Array.from({ length: 200 }, (_, index) => single(`voucher:leaflet:${String(index + 1)}`, index + 1, { worth: 'amount', value: '5.000', public_name: LEAFLET_NAME, batch_id: ref('batch:leaflet'), expires_on: AHEAD, status: usedLeaflets.has(index + 1) ? 'used' : 'issued', issued_at: at(-1, 19, '09:00') })),
     single('voucher:one-candle-1', 201, { ...thing('candles'), public_name: 'One candle', status: candleUsed ? 'used' : 'issued' }),
     single('voucher:one-candle-2', 202, { ...thing('candles'), public_name: 'One candle' }),
     single('voucher:15-off', 203, { worth: 'amount', value: '15.000', public_name: '$15.00 off' }),

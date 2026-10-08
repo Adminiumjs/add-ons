@@ -8,6 +8,7 @@
  * are in.
  */
 import { readFileSync } from 'node:fs';
+import { sampleBundleIssues } from '@adminiumjs/manifest';
 import { describe, expect, it } from 'vitest';
 
 import manifest from '../manifest.json' with { type: 'json' };
@@ -33,6 +34,10 @@ describe('the sample file', () => {
     expect(readFileSync(TARGET as string, 'utf8')).toBe(written(buildSample()));
     expect(file).toMatchObject({ format: 'adminium.sample/1', app: 'offers' });
     expect((manifest as unknown as { sampleData: { file: string } }).sampleData).toEqual({ file: 'seeds/offers.sample.json' });
+  });
+
+  it('fits the manifest, by the check Adminium itself runs before it adds a row', () => {
+    expect(sampleBundleIssues(file as never, manifest as never).map((issue) => `${String(issue.path)}: ${issue.message}`)).toEqual([]);
   });
 
   it('holds these rows, and settings only where there are none yet', () => {
@@ -195,7 +200,7 @@ describe('the figures the sample shows', () => {
 
   it('the last six card rows are the sample\'s last six, newest first', () => {
     const newest = [...rows('card_ledger')].sort((a, b) => (stamp(a) < stamp(b) ? 1 : -1)).slice(0, 6);
-    expect(newest.map((row) => `${String(refOf(row['card_id'])).slice(5)} ${String(row['kind'])} ${String(row['amount'])}`)).toEqual(['6VXQ void -30.00', 'T7QF spend -88.00', 'R2MC refund 9.80', 'R2MC spend -9.80', 'K4WD issue 100.00', 'ada@daybreak.example spend -20.00']);
+    expect(newest.map((row) => `${String(refOf(row['card_id'])).slice(5)} ${String(row['kind'])} ${String(row['amount'])}`)).toEqual(['6VXQ void -30.00', 'T7QF spend -88.00', 'R2MC refund 9.80', 'R2MC spend -9.80', 'K4WD issue 100.00', 'credit-ada spend -20.00']);
   });
 
   it('the six largest balances keep the sample\'s order', () => {
