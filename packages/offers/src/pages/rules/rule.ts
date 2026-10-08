@@ -180,7 +180,8 @@ export const PARTS: Readonly<Record<Addable, readonly { part: string; required: 
     { part: 'lines', required: true },
     { part: 'price', required: true },
     { part: 'quantity', required: false },
-    { part: 'item', required: true },
+    // A table whose lines link to nothing they sell (a typed description and a price) still takes every discount on the whole order.
+    { part: 'item', required: false },
     { part: 'category', required: false },
     { part: 'type', required: false },
     { part: 'lineDiscount', required: true, makes: 'amounts' },

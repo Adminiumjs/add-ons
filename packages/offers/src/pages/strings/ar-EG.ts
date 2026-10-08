@@ -534,6 +534,7 @@ export const rules: Readonly<Record<string, string>> = {
   "rules.part.final": "الصف نهائي",
   "rules.part.finalHint": "عندها يُسجَّل ما استُخدم، ولا يُحسب السعر مرة أخرى أبدًا.",
   "rules.part.item": "ما يبيعه السطر",
+  "rules.part.itemHint": "رابط إلى الصنف المباع. بدونه لا يُطبَّق هنا خصم على أصناف محددة، أما الخصم على الطلب كله فيظل ساريًا.",
   "rules.part.lineDiscount": "تخفيض السطر",
   "rules.part.lines": "سطوره صفوف في",
   "rules.part.load": "المبلغ الذي يشحنه",

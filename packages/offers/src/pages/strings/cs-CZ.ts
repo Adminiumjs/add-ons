@@ -534,6 +534,7 @@ export const rules: Readonly<Record<string, string>> = {
   "rules.part.final": "Záznam je konečný",
   "rules.part.finalHint": "V tu chvíli se zaznamená, co bylo použito, a cena se už nikdy nepřepočítá.",
   "rules.part.item": "Co řádek prodává",
+  "rules.part.itemHint": "Odkaz na prodávanou položku. Bez něj se zde sleva na vybrané položky neuplatní; sleva na celou objednávku platí dál.",
   "rules.part.lineDiscount": "Sleva na řádku",
   "rules.part.lines": "Jeho řádky jsou záznamy tabulky",
   "rules.part.load": "Částka, kterou nabíjí",

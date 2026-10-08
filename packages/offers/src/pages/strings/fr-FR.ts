@@ -534,6 +534,7 @@ export const rules: Readonly<Record<string, string>> = {
   "rules.part.final": "L’enregistrement est définitif",
   "rules.part.finalHint": "Ce qui a été utilisé est alors enregistré, et le prix n’est plus jamais recalculé.",
   "rules.part.item": "Ce que vend la ligne",
+  "rules.part.itemHint": "Un lien vers l’article vendu. Sans lui, une remise sur des articles précis ne s’applique pas ici ; une remise sur toute la commande s’applique toujours.",
   "rules.part.lineDiscount": "La réduction de la ligne",
   "rules.part.lines": "Ses lignes sont des enregistrements de",
   "rules.part.load": "Le montant qu’elle charge",

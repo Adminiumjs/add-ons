@@ -534,6 +534,7 @@ export const rules: Readonly<Record<string, string>> = {
   "rules.part.final": "行已最终确定",
   "rules.part.finalHint": "届时会记录使用情况，价格此后不再重新计算。",
   "rules.part.item": "明细行出售的内容",
+  "rules.part.itemHint": "指向所售商品的关联。没有它，针对指定商品的折扣在此不适用；整单折扣仍然适用。",
   "rules.part.lineDiscount": "明细行的优惠",
   "rules.part.lines": "它的明细行所在的表",
   "rules.part.load": "它充值的金额",

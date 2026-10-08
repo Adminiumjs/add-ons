@@ -534,6 +534,7 @@ export const rules: Readonly<Record<string, string>> = {
   "rules.part.final": "Die Zeile ist endgültig",
   "rules.part.finalHint": "Dann wird erfasst, was eingelöst wurde, und der Preis wird nie wieder neu berechnet.",
   "rules.part.item": "Was die Position verkauft",
+  "rules.part.itemHint": "Eine Verknüpfung zum verkauften Artikel. Ohne sie gilt hier kein Rabatt auf bestimmte Artikel; ein Rabatt auf die ganze Bestellung gilt weiterhin.",
   "rules.part.lineDiscount": "Der Nachlass der Position",
   "rules.part.lines": "Ihre Positionen sind Zeilen von",
   "rules.part.load": "Der Betrag, den sie auflädt",

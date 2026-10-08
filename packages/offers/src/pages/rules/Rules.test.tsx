@@ -62,9 +62,9 @@ describe('offer rules as they are stored and said', () => {
 
   it('says what a form cannot send yet, part by part', () => {
     const form = (patch: Partial<Form>): Form => ({ ...EMPTY, ...patch });
-    expect(formProblems(form({}))).toEqual(['table', 'lines', 'price', 'item', 'lineDiscount', 'orderDiscount']);
+    expect(formProblems(form({}))).toEqual(['table', 'lines', 'price', 'lineDiscount', 'orderDiscount']);
     // With Adminium adding the amounts, only what it cannot guess is asked for.
-    expect(formProblems(form({ table: 'orders', making: { amounts: true, codes: false } }))).toEqual(['lines', 'price', 'item']);
+    expect(formProblems(form({ table: 'orders', making: { amounts: true, codes: false } }))).toEqual(['lines', 'price']);
     expect(formProblems(form({ kind: 'pays', table: 'payments', cols: { card: 'card_id', amount: 'amount', balanceAfter: 'card_left' } }))).toEqual(['when']);
     expect(formProblems(form({ kind: 'pays', table: 'payments', cols: { card: 'card_id', amount: 'amount', balanceAfter: 'card_left', refunds: 'refunds' }, when: { kind: 'create' } }))).toEqual(['refunds']);
     expect(formProblems(form({ kind: 'sells-cards', table: 'order_lines', cols: { card: 'gift_card_id', amount: 'unit_price' }, when: { kind: 'moves', to: [] } }))).toEqual(['when']);

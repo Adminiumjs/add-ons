@@ -534,6 +534,7 @@ export const rules: Readonly<Record<string, string>> = {
   "rules.part.final": "The row is final",
   "rules.part.finalHint": "What was used is recorded then, and the price is never worked out again.",
   "rules.part.item": "What the line sells",
+  "rules.part.itemHint": "A link to the thing sold. Without one, a discount for named things cannot apply here; one for the whole order still does.",
   "rules.part.lineDiscount": "The line's reduction",
   "rules.part.lines": "Its lines are rows of",
   "rules.part.load": "The amount it loads",

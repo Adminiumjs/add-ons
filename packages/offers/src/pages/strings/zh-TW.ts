@@ -534,6 +534,7 @@ export const rules: Readonly<Record<string, string>> = {
   "rules.part.final": "該列定案的時機",
   "rules.part.finalHint": "屆時會記錄使用情形，價格也不會再重新計算。",
   "rules.part.item": "該行販售的項目",
+  "rules.part.itemHint": "指向所售商品的關聯。沒有它，針對指定商品的折扣在此不適用；整筆訂單的折扣仍然適用。",
   "rules.part.lineDiscount": "該行的折抵",
   "rules.part.lines": "它的明細行存放在",
   "rules.part.load": "儲值的金額",

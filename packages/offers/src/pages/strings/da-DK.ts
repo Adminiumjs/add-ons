@@ -534,6 +534,7 @@ export const rules: Readonly<Record<string, string>> = {
   "rules.part.final": "Rækken er endelig",
   "rules.part.finalHint": "Da registreres det, der blev brugt, og prisen regnes aldrig ud igen.",
   "rules.part.item": "Hvad linjen sælger",
+  "rules.part.itemHint": "Et link til den solgte vare. Uden det gælder en rabat på bestemte varer ikke her; en rabat på hele ordren gælder stadig.",
   "rules.part.lineDiscount": "Linjens nedslag",
   "rules.part.lines": "Dens linjer er rækker i",
   "rules.part.load": "Det beløb, den fylder på",
