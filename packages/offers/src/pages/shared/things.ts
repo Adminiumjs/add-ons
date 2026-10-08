@@ -36,6 +36,8 @@ export interface Mapped {
   canChange: boolean;
   /** Every table a thing can be picked from, once each. */
   what: readonly WhatTable[];
+  /** Whether some table's lines carry a tag a discount can be for. */
+  tags: boolean;
 }
 
 const KIT = '/api/v1/add-ons/offers/kit';
@@ -55,7 +57,8 @@ export async function mapped(): Promise<Mapped> {
       what.set(`${entry.table} ${entry.as}`, { table: entry.table, ref: entry.ref ?? entry.table, label: entry.label, as: entry.as });
     }
   }
-  return { connectionId, adjusts: reply.adjusts, canChange: reply.canChange, what: [...what.values()] };
+  const tags = reply.adjusts.some((adjusted) => ((adjusted.adjust['lines'] ?? []) as { what?: { as?: string }[] }[]).some((part) => (part.what ?? []).some((entry) => entry.as === 'tag')));
+  return { connectionId, adjusts: reply.adjusts, canChange: reply.canChange, what: [...what.values()], tags };
 }
 
 export interface Thing {
@@ -70,9 +73,10 @@ export function nameOf(row: DataRow): string {
 }
 
 /** Rows of a table things are picked from, searched by the server; twenty-five at a time. */
-export async function things(connectionId: string, table: string, search: string): Promise<Thing[]> {
+export async function things(connectionId: string, table: string, search: string, newest = false): Promise<Thing[]> {
   const query = new URLSearchParams({ limit: '25' });
   if (search.trim() !== '') query.set('q', search.trim());
+  if (newest) query.set('order', 'id.desc');
   const reply = await api.get<{ data: DataRow[] }>(`/api/v1/data/${encodeURIComponent(connectionId)}/${encodeURIComponent(table)}?${query.toString()}`);
   return reply.data.map((row) => ({ key: String(row['id'] ?? ''), label: nameOf(row) })).filter((thing) => thing.key !== '');
 }

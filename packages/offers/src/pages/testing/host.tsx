@@ -650,9 +650,10 @@ export function format(message: string, args: Record<string, unknown> = {}): str
 
 const app = {
   ApiError: Refused,
-  PageActions: ({ title, subtitle, children }: Props) => (
+  PageActions: ({ title, subtitle, titleAdornment, children }: Props) => (
     <div data-part="page-actions">
       {title === undefined ? null : <h1>{title}</h1>}
+      {titleAdornment}
       {subtitle === undefined ? null : <p>{subtitle}</p>}
       {children}
     </div>
@@ -718,7 +719,7 @@ installAddOnRuntime({
       cn: (...parts: unknown[]) => parts.filter((part) => typeof part === 'string').join(' '),
     },
     router: {
-      useBlocker: () => undefined,
+      useBlocker: () => ({ status: 'idle' }),
       useNavigate: () => (to: { to: string; search?: Record<string, unknown>; replace?: boolean }) => {
         world.navigated.push(to);
       },

@@ -284,6 +284,8 @@ export async function listAll(read: Reads, table: string, options: Omit<UseRecor
 const routes = router as Readonly<Record<string, unknown>>;
 export const useNavigate = routes['useNavigate'] as () => (options: { to: string; search?: Record<string, string | undefined>; replace?: boolean }) => Promise<void> | void;
 export const useSearch = routes['useSearch'] as (options: { strict: false }) => Readonly<Record<string, unknown>>;
+/** Holds a move to another screen while there is something unsaved; `blocked` until the person says keep or leave. */
+export const useBlocker = routes['useBlocker'] as (options: { shouldBlockFn: () => boolean; enableBeforeUnload?: () => boolean; withResolver: true }) => { status: 'idle' | 'blocked'; proceed?: () => void; reset?: () => void } | undefined;
 export const useParams = routes['useParams'] as (options: { strict: false }) => Readonly<Record<string, string | undefined>>;
 
 /** A refusal's own words, whatever threw it. */
