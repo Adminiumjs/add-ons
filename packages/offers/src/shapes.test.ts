@@ -134,6 +134,9 @@ describe('the fit check', () => {
     // Money at a second scale.
     expect(broken((app) => Object.assign(columnOf(app, 'ticket_lines', 'line_discount'), { scale: 4 }))[0]).toBe('ticket_lines as discountable@1/lines: "ticket_lines.line_discount" is money at another scale than the order\'s');
     expect(broken((app) => Object.assign(columnOf(app, 'tickets', 'discount_total'), { type: 'decimal', scale: 2 }))[0]).toBe('tickets as discountable@1/order: "tickets.discount_total" is money at another scale than the order\'s');
+    // Money a released app keeps as a decimal at the currency's places is the same money: the database keeps the two alike.
+    expect(broken((app) => Object.assign(columnOf(app, 'tickets', 'discount_total'), { type: 'decimal', scale: 'currency' }))).toEqual([]);
+    expect(broken((app) => Object.assign(columnOf(app, 'ticket_lines', 'line_discount'), { type: 'decimal', scale: 'currency' }))).toEqual([]);
   });
 
   it('a column that is Adminium\'s own is in no role\'s list of what it may write', () => {

@@ -26,6 +26,8 @@
  * WHAT MAY DIFFER, each a column that was there before the app adopted the
  * part: a decided reduction that may be empty in place of one that starts at
  * zero; a staff value kept as money; a list with more members; a wider text;
+ * money kept as a decimal at the currency's places (the database keeps the
+ * two alike, and a released column does not change its type to be paired);
  * a net worked out the app's own way, as long as it takes the reduction off;
  * a subtotal added up the app's own way, as long as it adds up the lines; a
  * column the host fills itself that it never leaves empty (a card payment's
@@ -260,7 +262,7 @@ export function shapeFit(manifest: { requiredSchema?: { tables: unknown[] }; rol
         say(`"${pairing.table}" has no column "${String(hostOf(column.ref))}" to play "${column.ref}"`);
         continue;
       }
-      if (column.type === 'money' && (host.type !== 'money' || host.scale !== column.scale)) say(`"${pairing.table}.${host.ref}" is money at another scale than the order's`);
+      if (column.type === 'money' && ((host.type !== 'money' && host.type !== 'decimal') || host.scale !== column.scale)) say(`"${pairing.table}.${host.ref}" is money at another scale than the order's`);
       const link = column.rules?.['addOnLink'];
       if (link !== undefined && canonical(host.rules?.['addOnLink']) !== canonical(link)) say(`"${pairing.table}.${host.ref}" is not a link into ${String((link as { table: string }).table)} of Offers`);
       if (!owned.has(column.ref)) continue;
@@ -323,6 +325,7 @@ export function shapeFit(manifest: { requiredSchema?: { tables: unknown[] }; rol
           fitted.type = want.type;
           fitted.scale = want.scale as number;
         }
+        if (want.type === 'money' && column.type === 'decimal' && column.scale === want.scale) fitted.type = 'money';
         if (want.enum !== undefined && column.enum !== undefined && want.enum.every((member) => column.enum!.includes(member))) fitted.enum = want.enum;
         if (want.maxLength !== undefined && column.maxLength !== undefined && column.maxLength >= want.maxLength) fitted.maxLength = want.maxLength;
         if (ref === 'net' && rules['formula'] !== undefined && kept['formula'] !== undefined) {
