@@ -94,7 +94,7 @@ describe('the Overview', () => {
     expect(item('batches').config.binding).toMatchObject({ select: ['id', 'name', 'used', 'count', 'expires_on'], orderBy: [{ column: 'id', dir: 'desc' }] });
     expect(item('packs').config.binding).toMatchObject({ filters: [{ column: 'worth', op: 'eq', value: 'pack' }, { column: 'uses_left', op: 'gt', value: 0 }] });
     // Newest first by the moment it happened, not by the order rows were written in.
-    expect(item('activity').config.binding).toMatchObject({ lookups: ['card:card_id.label'], orderBy: [{ column: 'at', dir: 'desc' }, { column: 'id', dir: 'desc' }], limit: 6 });
+    expect(item('activity').config.binding).toMatchObject({ lookups: ['card:card_id.label', 'what:card_id.kind'], orderBy: [{ column: 'at', dir: 'desc' }, { column: 'id', dir: 'desc' }], limit: 6 });
     for (const one of items.filter((candidate) => candidate.widget === 'mini-table')) expect(one.config.binding.limit, one.i).toBeLessThanOrEqual(6);
     // A list draws five rows unless it says six itself, and its first three columns: the amount is one of them, as money, and
     // what happened reads as a word, not as the stored value.

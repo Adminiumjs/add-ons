@@ -4282,7 +4282,8 @@
                     "at"
                   ],
                   "lookups": [
-                    "card:card_id.label"
+                    "card:card_id.label",
+                    "what:card_id.kind"
                   ],
                   "orderBy": [
                     {
