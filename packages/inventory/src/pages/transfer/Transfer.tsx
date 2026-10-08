@@ -432,7 +432,7 @@ export function Transfer({ t, transferId }: { t: AddOnTranslate; transferId: str
         <DialogHeader tone="danger" title={t('transfer.undo.title', 'Undo this transfer?')} closeLabel={t('shared.close', 'Close')} />
         <DialogBody>{t('transfer.undo.body', 'Every line is moved back, one by one. A line whose stock has already been used cannot be undone, and is named.')}</DialogBody>
         <DialogFooter>
-          <Button variant="secondary" onClick={() => setConfirmUndo(false)}>
+          <Button variant="secondary" autoFocus onClick={() => setConfirmUndo(false)}>
             {t('shared.cancel', 'Cancel')}
           </Button>
           <Button variant="destructive" onClick={() => void go('undo')}>

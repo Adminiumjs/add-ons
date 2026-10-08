@@ -55,6 +55,8 @@ export interface ButtonProps {
   onClick?: MouseEventHandler<HTMLButtonElement>;
   iconLeft?: ReactNode;
   'aria-label'?: string;
+  /** Where the keyboard stands when a dialog opens: the host's own would be its close button. */
+  autoFocus?: boolean;
   children?: ReactNode;
 }
 export const Button = part<ButtonProps>(ui, 'Button');

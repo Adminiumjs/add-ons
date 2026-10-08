@@ -176,6 +176,11 @@ export function CountSheet({ t, countId }: { t: AddOnTranslate; countId: string 
       if (outcome.finished) {
         const after = await read.get('counts', countId);
         toasts.push({ variant: 'success', title: t('counts.posted', 'Count posted · {count, plural, one {# line} other {# lines}} adjusted', { count: Number(after?.['differences'] ?? 0) }) });
+        // Done: back to the list, unless a line was marked to check — that is said on this sheet, and is read here first.
+        if (noted.length === 0) {
+          await navigate({ to: COUNTS });
+          return;
+        }
       } else {
         const first = outcome.refused[0];
         const at = first === undefined ? null : await read.get('count_lines', first.id);
@@ -522,15 +527,16 @@ export function CountSheet({ t, countId }: { t: AddOnTranslate; countId: string 
                 ))}
                 {differences > differing.rows.length ? <span className="text-body-sm text-fg-muted">{t('counts.post.more', 'and {count} more', { count: differences - differing.rows.length })}</span> : null}
               </Stack>
-              {dialog === 'post' ? <Select label={t('counts.post.reason', 'Reason')} value={reasonId} onChange={(event) => setReasonId(event.target.value)} options={reasons.rows.map((reason) => ({ value: text(reason['id']), label: text(reason['label']) }))} /> : null}
+              {dialog === 'post' && differences > 0 ? <Select label={t('counts.post.reason', 'Reason')} value={reasonId} onChange={(event) => setReasonId(event.target.value)} options={reasons.rows.map((reason) => ({ value: text(reason['id']), label: text(reason['label']) }))} /> : null}
             </Stack>
           )}
         </DialogBody>
         <DialogFooter>
-          <Button variant="secondary" onClick={() => setDialog(null)}>
+          {/* Posting is the thing asked for; reversing and cancelling start on the way out. */}
+          <Button variant="secondary" autoFocus={dialog !== 'post'} onClick={() => setDialog(null)}>
             {t('shared.cancel', 'Cancel')}
           </Button>
-          <Button variant={dialog === 'post' ? 'primary' : 'destructive'} onClick={() => (dialog === 'post' ? void post() : dialog === 'reverse' ? void reverse() : void cancel())}>
+          <Button variant={dialog === 'post' ? 'primary' : 'destructive'} autoFocus={dialog === 'post'} onClick={() => (dialog === 'post' ? void post() : dialog === 'reverse' ? void reverse() : void cancel())}>
             {dialog === 'post' ? t('counts.post', 'Post count') : dialog === 'reverse' ? t('counts.reverse.yes', 'Reverse count') : t('counts.cancel', 'Cancel count')}
           </Button>
         </DialogFooter>

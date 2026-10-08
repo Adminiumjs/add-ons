@@ -200,7 +200,7 @@ export function Posted({ t, receipt, order, lines, costs, totals, note, onChange
             : t('receive.sendBack.body', 'The whole line leaves stock at its cost and counts as on order again. To write off part of a line, use "Use stock" on the item instead.')}
         </DialogBody>
         <DialogFooter>
-          <Button variant="secondary" onClick={() => setConfirm(null)}>
+          <Button variant="secondary" autoFocus onClick={() => setConfirm(null)}>
             {t('shared.cancel', 'Cancel')}
           </Button>
           <Button variant="destructive" onClick={() => (confirm === 'undo' ? void undo() : confirm !== null ? void sendBack(confirm) : undefined)}>

@@ -642,7 +642,7 @@ export function Receive({ t, receiptId, poId }: ReceiveProps): ReactNode {
         <DialogHeader title={t('receive.discard.title', 'Discard what you have entered?')} closeLabel={t('shared.close', 'Close')} />
         <DialogBody>{t('receive.discard.body', 'The lines you typed are not saved. Changing the order starts again.')}</DialogBody>
         <DialogFooter>
-          <Button variant="secondary" onClick={() => setSwitchTo(null)}>
+          <Button variant="secondary" autoFocus onClick={() => setSwitchTo(null)}>
             {t('shared.cancel', 'Cancel')}
           </Button>
           <Button

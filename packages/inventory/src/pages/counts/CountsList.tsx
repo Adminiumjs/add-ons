@@ -6,7 +6,7 @@
  * sales made while a count is under way are kept: each line is compared with
  * what the books held at the moment its count was typed.
  */
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 import {
   Alert,
@@ -45,6 +45,7 @@ import { COUNT_MAX, levelsInScope, type Scope } from './scope.ts';
 
 export const COUNTS = '/add-ons/inventory/inventory-counts';
 const PAGE_SIZE = 25;
+const PLACE_FIELD = 'inventory-count-place';
 const text = (value: unknown): string => (value === null || value === undefined ? '' : String(value));
 
 export const STATUS_TONE: Readonly<Record<string, Tone>> = { open: 'info', posting: 'info', posted: 'pos', reversing: 'warn', cancelled: 'neutral', reversed: 'warn' };
@@ -190,12 +191,18 @@ function StartDialog({ t, open, onClose, places, categories }: { t: AddOnTransla
   };
 
   const on = (field: string): { error?: string } => (said?.field === field ? { error: said.message } : {});
+  // The host's dialog starts the keyboard on its close button: a form starts on its first field.
+  useEffect(() => {
+    if (!open) return undefined;
+    const frame = requestAnimationFrame(() => document.getElementById(PLACE_FIELD)?.focus());
+    return () => cancelAnimationFrame(frame);
+  }, [open]);
   return (
     <Dialog open={open} onOpenChange={(next) => (next || reading !== null ? undefined : onClose())} size="md">
       <DialogHeader title={t('counts.start.title', 'Start a count')} closeLabel={t('shared.close', 'Close')} />
       <DialogBody>
         <Stack gap="md">
-          <Select label={t('counts.start.place', 'Place')} value={place} onChange={(event) => setPlaceId(event.target.value)} options={[{ value: '', label: t('counts.start.choosePlace', 'Choose a place') }, ...places.map((row) => ({ value: text(row['id']), label: text(row['name']) }))]} disabled={reading !== null} required {...on('place_id')} />
+          <Select id={PLACE_FIELD} label={t('counts.start.place', 'Place')} value={place} onChange={(event) => setPlaceId(event.target.value)} options={[{ value: '', label: t('counts.start.choosePlace', 'Choose a place') }, ...places.map((row) => ({ value: text(row['id']), label: text(row['name']) }))]} disabled={reading !== null} required {...on('place_id')} />
           <RadioGroup value={scope} onValueChange={(next) => setScope(next as Scope)} aria-label={t('counts.start.what', 'What to count')}>
             <RadioCard value="all" title={t('counts.scope.all', 'Everything in this place')} />
             <RadioCard value="category" title={t('counts.scope.category', 'One category')} />

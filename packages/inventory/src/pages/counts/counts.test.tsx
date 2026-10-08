@@ -134,6 +134,18 @@ describe('a count sheet', () => {
     expect((run?.values as { ids: string[] }).ids).toEqual(['2', '1']);
     expect(run?.options).toEqual({ from: 'open' });
     expect(world.toasts.at(-1)?.title).toBe('Count posted · 1 line adjusted');
+    // Done: the sheet gives way to the list.
+    await waitFor(() => expect(world.navigated.at(-1)?.to).toBe('/add-ons/inventory/inventory-counts'));
+  });
+
+  it('asks for a reason only where something differs, and the keyboard starts on Post', async () => {
+    sheet([line(1, 'Alcohol swab', { counted: '14.000', qty_when_counted: '14.000', difference: '0.000', is_counted: 1 })]);
+    Object.assign(world.tables['counts']?.[0] ?? {}, { counted_lines: 1, uncounted: 0, differences: 0 });
+    render(<CountSheet t={t} countId="5" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Post count' }));
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).queryByLabelText('Reason')).toBeNull();
+    expect(document.activeElement).toBe(within(dialog).getByRole('button', { name: 'Post count' }));
   });
 
   it('gives a clerk the fields and no Post, and a viewer neither', async () => {
