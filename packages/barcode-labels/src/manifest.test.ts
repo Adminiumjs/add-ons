@@ -242,7 +242,7 @@ describe('the manifest', () => {
     expect(manifest.addOn.attaches).toEqual([
       { app: 'factory', range: '^0.1.0' },
       { app: 'maker', range: '^0.1.0' },
-      { app: 'pos', range: '^0.2.0' },
+      { app: 'pos', range: '^0.2.0 || ^0.3.0' },
     ]);
   });
 

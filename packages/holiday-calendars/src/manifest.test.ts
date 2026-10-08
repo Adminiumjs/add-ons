@@ -198,9 +198,9 @@ describe("the manifest", () => {
   it("attaches to the four apps that use its days", () => {
     expect(manifest.addOn.attaches).toEqual([
       { app: "hr", range: "^0.1.0" },
-      { app: "clinic", range: "^0.2.0" },
+      { app: "clinic", range: "^0.2.0 || ^0.3.0" },
       { app: "clients", range: "^0.2.0" },
-      { app: "ordering", range: "^0.2.0" },
+      { app: "ordering", range: "^0.2.0 || ^0.3.0" },
     ]);
     // The portal reads the days through the public setting, so it must stay public.
     expect(manifest.addOn.publicSettings).toContain(STORAGE_KEY);

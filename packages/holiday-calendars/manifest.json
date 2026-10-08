@@ -22,9 +22,9 @@
   "addOn": {
     "attaches": [
       { "app": "hr", "range": "^0.1.0" },
-      { "app": "clinic", "range": "^0.2.0" },
+      { "app": "clinic", "range": "^0.2.0 || ^0.3.0" },
       { "app": "clients", "range": "^0.2.0" },
-      { "app": "ordering", "range": "^0.2.0" }
+      { "app": "ordering", "range": "^0.2.0 || ^0.3.0" }
     ],
     "provides": [],
     "consumes": [],
