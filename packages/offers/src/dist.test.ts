@@ -21,7 +21,7 @@ import { bannedHitsIn } from './testing/lexicon.ts';
 import { builtProvider, builtServer, FILE_MAX_BYTES, providerFrom } from './testing/vm.ts';
 
 /** Every built file the manifest names. */
-const DECLARED_ENTRY_POINTS = manifest.addOn.provides.map((entry) => entry.server);
+const DECLARED_ENTRY_POINTS = [...manifest.addOn.provides.map((entry) => entry.server), ...manifest.addOn.pages.map((page) => page.client)];
 
 /** Every file under `dist/`. */
 function built(dir = DIST): string[] {
@@ -56,6 +56,34 @@ describe('the build writes what the manifest promises', () => {
   it('emits no sourcemap, and no reference to one', () => {
     expect(built().filter((file) => file.endsWith('.map')).map(asRelative)).toEqual([]);
     for (const file of built()) expect(readFileSync(file, 'utf8')).not.toContain('sourceMappingURL');
+  });
+});
+
+describe("a screen carries its own words and nobody else's", () => {
+  const file = (name: string) => readFileSync(join(DIST, 'pages', `${name}.js`), 'utf8');
+
+  it('holds a sentence of its own, and none of another screen', () => {
+    const OWN: Readonly<Record<string, string>> = { discounts: 'Can be combined', 'look-up': 'Type or scan a code first.', issue: 'Your role cannot issue.', rules: 'Takes a gift card as payment' };
+    for (const [name, sentence] of Object.entries(OWN)) {
+      expect(file(name), name).toContain(sentence);
+      for (const [other, theirs] of Object.entries(OWN)) if (other !== name) expect(file(name), `${name} carries a sentence of ${other}`).not.toContain(theirs);
+    }
+  });
+
+  it('is one file with everything in it but the host, and of a size a browser loads at once', () => {
+    for (const name of ['discounts', 'look-up', 'issue', 'rules']) {
+      // Nothing left for the browser to fetch from an address that serves one file.
+      expect(codeOf(file(name)), name).not.toMatch(/^\s*import\s[^;]*\bfrom\b|^\s*import\s*['"]|\bimport\s*\(/m);
+      expect(statSync(join(DIST, 'pages', `${name}.js`)).size, name).toBeLessThan(160_000);
+    }
+  });
+
+  it('never keeps a code in the address bar or in the browser', () => {
+    // A code is typed into the screen's own state and sent in the body of one call: no screen writes storage but the
+    // try pane's last picked row, and none builds an address from what was typed.
+    for (const name of ['look-up', 'issue', 'rules']) expect(file(name), name).not.toMatch(/localStorage|sessionStorage/);
+    expect(file('discounts').match(/localStorage/g)?.length ?? 0).toBeLessThanOrEqual(2);
+    for (const name of ['discounts', 'look-up', 'issue', 'rules']) expect(file(name), name).not.toMatch(/sessionStorage|document\.cookie/);
   });
 });
 

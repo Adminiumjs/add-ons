@@ -603,3 +603,37 @@ describe('what a price is worked out from', () => {
     expect(columnOf('ceilings', 'may_comp')).toMatchObject({ type: 'bool', default: false });
   });
 });
+
+describe('the screens that are code', () => {
+  type CodePage = { ref: string; title: { key: string; fallback: string }; titles: Record<string, string>; icon: string; client: string; nav?: { group: string; order: number }; detail?: boolean };
+  const pages = manifest.addOn.pages as unknown as CodePage[];
+
+  it('are four, each built to a file of its own, and the Issue sheet is in no rail', () => {
+    expect(manifest.addOn.hostApi).toBe(2);
+    expect(pages.map((page) => `${page.ref} ${page.client} ${page.nav === undefined ? 'unlisted' : `${page.nav.group} ${String(page.nav.order)}`}${page.detail === true ? ' detail' : ''}`)).toEqual([
+      'offers-discounts dist/pages/discounts.js offers 10 detail',
+      'offers-look-up dist/pages/look-up.js offers 50',
+      'offers-issue dist/pages/issue.js unlisted',
+      'offers-rules dist/pages/rules.js offers-setup 100',
+    ]);
+    expect(pages.map((page) => page.client).sort()).toEqual(Object.values(OUTPUT.pages).sort());
+    expect(Object.keys(OUTPUT.pages).sort()).toEqual(pages.map((page) => page.ref).sort());
+  });
+
+  it('are named in eight languages, and sit in the groups the generated lists sit in', () => {
+    const LOCALES = ['ar-EG', 'cs-CZ', 'da-DK', 'de-DE', 'en-US', 'fr-FR', 'zh-CN', 'zh-TW'];
+    for (const page of pages) {
+      expect(Object.keys(page.titles).sort(), page.ref).toEqual(LOCALES);
+      expect(page.titles['en-US'], page.ref).toBe(page.title.fallback);
+      for (const title of Object.values(page.titles)) expect(title.trim(), page.ref).not.toBe('');
+    }
+    const groups = manifest.addOn.navGroups as unknown as { key: string; labels: Record<string, string>; order: number }[];
+    const listed = manifest.navGroups as unknown as { key: string; label: Record<string, string>; order: number }[];
+    // The same two groups, with the same words and in the same place, whichever kind of page is in them.
+    expect(groups.map((group) => [group.key, group.order, group.labels])).toEqual(listed.map((group) => [group.key, group.order, group.label]));
+    for (const page of pages) if (page.nav !== undefined) expect(groups.map((group) => group.key), page.ref).toContain(page.nav.group);
+    // One rail, one order: no code page takes the place of a generated list.
+    const taken = (manifest.pages as unknown as { nav: { order: number } }[]).map((page) => page.nav.order);
+    for (const page of pages) if (page.nav !== undefined) expect(taken, page.ref).not.toContain(page.nav.order);
+  });
+});
