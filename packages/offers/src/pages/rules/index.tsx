@@ -1,12 +1,12 @@
-/** The screen's module: what the manifest's page points at. */
+/** The Offer rules screen's module: what the manifest's page `offers-rules` points at. */
 import type { ReactNode } from 'react';
 
 import { wordsFor } from '../shared/messages.ts';
-import { PageFrame } from '../shared/PageFrame.tsx';
-import { RULES, REFUSAL, SHARED } from '../strings/index.ts';
+import { REFUSAL, RULES, SHARED } from '../strings/index.ts';
+import { Rules } from './Rules.tsx';
 
 const t = wordsFor(SHARED, REFUSAL, RULES);
 
 export default function RulesPage(): ReactNode {
-  return <PageFrame t={t} title={t('rules.title', 'Rules')} />;
+  return <Rules t={t} />;
 }
