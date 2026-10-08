@@ -33,7 +33,7 @@ const ALL = walk(SRC).filter((file) => /\.(ts|tsx)$/.test(file));
 const SHIPPED = ALL.filter((file) => !file.includes('.test.') && !file.includes(`${'testing'}/`));
 /** The files whose code is compiled into the file that decides: its entry, and the folders it is built from. */
 const DECIDING = ['adjust/', 'rows/'];
-const SERVER = SHIPPED.filter((file) => ['server.ts', 'money.ts'].includes(relative(SRC, file)) || DECIDING.some((folder) => relative(SRC, file).startsWith(folder)));
+const SERVER = SHIPPED.filter((file) => ['server.ts', 'units.ts'].includes(relative(SRC, file)) || DECIDING.some((folder) => relative(SRC, file).startsWith(folder)));
 
 describe('the sources carry nothing that may not ship', () => {
   it('finds the sources it is about to read', () => {

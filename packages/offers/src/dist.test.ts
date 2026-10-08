@@ -127,7 +127,7 @@ describe('the deciding file is one Adminium can run', () => {
       currency: 'USD',
       scale: 2,
       locale: 'en-US',
-      lines: [{ key: 'p0:1' }, { key: 'p0:2' }],
+      lines: ['p0:1', 'p0:2'].map((key, index) => ({ key, part: 0, index, price: '4.00', quantity: '1', amount: '4.00', what: [], excluded: false, paidBy: null, kept: true })),
       codes: [],
       customer: null,
       guest: true,
@@ -139,7 +139,8 @@ describe('the deciding file is one Adminium can run', () => {
     } as never);
     // One entry for every line handed in, and no other.
     expect(adjusted.lines.map((line) => line.key)).toEqual(['p0:1', 'p0:2']);
-    expect(adjusted.order).toEqual({ discount: '0' });
+    // No offer, no code, nobody's hand: nothing off, written with the order's own decimals.
+    expect(adjusted).toEqual({ lines: [{ key: 'p0:1', discount: '0.00' }, { key: 'p0:2', discount: '0.00' }], order: { discount: '0.00' }, applied: [], uses: [], refused: [] });
   });
 
   it('is refused by the loader when it reaches for a clock, and when it exports no such question', () => {

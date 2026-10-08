@@ -8,21 +8,17 @@
  * no clock is looked at, and the same input always gives the same answer.
  * Adminium reads, checks the answer and writes; this file only decides.
  *
- * Neither decides anything yet: an order keeps its price and a posting makes
- * no row.
+ * A posting makes no row yet.
  */
 
-import type { AdjustInput, AdjustOutput, PostingInput, PostingOutput } from '@adminium/add-on-contracts';
+import type { PostingInput, PostingOutput } from '@adminium/add-on-contracts';
+
+import { adjust } from './adjust/index.ts';
 
 /** The rows a posting makes. */
 function rows(input: PostingInput): PostingOutput {
   void input;
   return { rows: [] };
-}
-
-/** What an order's reductions come to. */
-function adjust(input: AdjustInput): AdjustOutput {
-  return { lines: input.lines.map((line) => ({ key: line.key, discount: '0' })), order: { discount: '0' }, applied: [], uses: [], refused: [] };
 }
 
 export default { rows, adjust };
