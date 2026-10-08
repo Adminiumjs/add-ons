@@ -11645,7 +11645,7 @@
         "zh-TW": "總覽"
       },
       "nav": {
-        "group": "manifest:stock",
+        "group": "workspace",
         "icon": "layout-dashboard",
         "order": 10
       },
@@ -12517,7 +12517,7 @@
         "zh-TW": "品項"
       },
       "nav": {
-        "group": "manifest:stock",
+        "group": "stock",
         "icon": "package",
         "order": 20
       },
@@ -12646,7 +12646,7 @@
         "zh-TW": "各地點庫存"
       },
       "nav": {
-        "group": "manifest:stock",
+        "group": "stock",
         "icon": "warehouse",
         "order": 30
       },
@@ -12840,7 +12840,7 @@
         "zh-TW": "異動"
       },
       "nav": {
-        "group": "manifest:stock",
+        "group": "stock",
         "icon": "arrow-left-right",
         "order": 40
       },
@@ -12894,7 +12894,7 @@
         "zh-TW": "收貨單"
       },
       "nav": {
-        "group": "manifest:stock",
+        "group": "stock",
         "icon": "package-check",
         "order": 60
       },
@@ -12974,7 +12974,7 @@
         "zh-TW": "調撥"
       },
       "nav": {
-        "group": "manifest:stock",
+        "group": "stock",
         "icon": "truck",
         "order": 80
       },
@@ -13044,7 +13044,7 @@
         "zh-TW": "採購單"
       },
       "nav": {
-        "group": "manifest:stock",
+        "group": "stock",
         "icon": "clipboard-list",
         "order": 90
       },
@@ -13258,7 +13258,7 @@
         "zh-TW": "批次"
       },
       "nav": {
-        "group": "manifest:stock",
+        "group": "stock",
         "icon": "layers",
         "order": 100
       },
@@ -13300,7 +13300,7 @@
         "zh-TW": "供應商"
       },
       "nav": {
-        "group": "manifest:stock-setup",
+        "group": "stock-setup",
         "icon": "building-2",
         "order": 110
       },
@@ -13373,7 +13373,7 @@
         "zh-TW": "地點"
       },
       "nav": {
-        "group": "manifest:stock-setup",
+        "group": "stock-setup",
         "icon": "map-pin",
         "order": 120
       },
@@ -13440,7 +13440,7 @@
         "zh-TW": "類別"
       },
       "nav": {
-        "group": "manifest:stock-setup",
+        "group": "stock-setup",
         "icon": "tags",
         "order": 130
       },
@@ -13486,7 +13486,7 @@
         "zh-TW": "原因"
       },
       "nav": {
-        "group": "manifest:stock-setup",
+        "group": "stock-setup",
         "icon": "message-square-warning",
         "order": 140
       },
@@ -13546,7 +13546,7 @@
         "zh-TW": "套組"
       },
       "nav": {
-        "group": "manifest:stock-setup",
+        "group": "stock-setup",
         "icon": "boxes",
         "order": 150
       },
@@ -13642,7 +13642,7 @@
         "zh-TW": "設定"
       },
       "nav": {
-        "group": "manifest:stock-setup",
+        "group": "stock-setup",
         "icon": "settings",
         "order": 180
       },

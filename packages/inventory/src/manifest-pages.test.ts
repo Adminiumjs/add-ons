@@ -83,21 +83,31 @@ const linksTo = (child: string, parent: string) => tableOf(child).columns.some((
 const sees = (role: string, page: string) => roles.find((one) => one.key === role)?.permissions.includes(`page:@${page}:view`) === true;
 
 describe('the generated pages', () => {
+  it('every list sits under a group the manifest declares, by the group\'s own key: the sidebar matches the two as written', () => {
+    // A group written any other way ("manifest:stock") is no group the section knows, and the page lands under no heading.
+    const declared = (manifest.navGroups as { key: string }[]).map((group) => group.key);
+    expect(declared).toEqual(['stock', 'stock-setup']);
+    for (const page of pages) expect(declared, page.ref).toContain(page.nav.group);
+    // The Overview alone stands above the groups.
+    const overview = (manifest.pages as unknown as { ref: string; nav: { group: string } }[]).find((page) => page.ref === 'inventory-overview');
+    expect(declared).not.toContain(overview?.nav.group);
+  });
+
   it('are thirteen lists over the add-on\'s own tables, in two groups of the rail, each in its place', () => {
     expect(pages.map((page) => [page.ref, page.bindings.rows, page.nav.group])).toEqual([
-      ['inventory-items', 'items', 'manifest:stock'],
-      ['inventory-stock-by-place', 'stock_points', 'manifest:stock'],
-      ['inventory-movements', 'movements', 'manifest:stock'],
-      ['inventory-receipts', 'receipts', 'manifest:stock'],
-      ['inventory-transfers', 'transfers', 'manifest:stock'],
-      ['inventory-purchase-orders', 'purchase_orders', 'manifest:stock'],
-      ['inventory-batches', 'levels', 'manifest:stock'],
-      ['inventory-suppliers', 'suppliers', 'manifest:stock-setup'],
-      ['inventory-places', 'places', 'manifest:stock-setup'],
-      ['inventory-categories', 'categories', 'manifest:stock-setup'],
-      ['inventory-reasons', 'reasons', 'manifest:stock-setup'],
-      ['inventory-kits', 'kits', 'manifest:stock-setup'],
-      ['inventory-settings', 'settings', 'manifest:stock-setup'],
+      ['inventory-items', 'items', 'stock'],
+      ['inventory-stock-by-place', 'stock_points', 'stock'],
+      ['inventory-movements', 'movements', 'stock'],
+      ['inventory-receipts', 'receipts', 'stock'],
+      ['inventory-transfers', 'transfers', 'stock'],
+      ['inventory-purchase-orders', 'purchase_orders', 'stock'],
+      ['inventory-batches', 'levels', 'stock'],
+      ['inventory-suppliers', 'suppliers', 'stock-setup'],
+      ['inventory-places', 'places', 'stock-setup'],
+      ['inventory-categories', 'categories', 'stock-setup'],
+      ['inventory-reasons', 'reasons', 'stock-setup'],
+      ['inventory-kits', 'kits', 'stock-setup'],
+      ['inventory-settings', 'settings', 'stock-setup'],
     ]);
     const orders = pages.map((page) => page.nav.order);
     expect([...orders].sort((a, b) => a - b)).toEqual(orders);
