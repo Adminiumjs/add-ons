@@ -288,12 +288,12 @@ function RuleSheet({ t, editing, sources, ownTables, names, tableAt, postingAt, 
         const making = sent.adjust.body.make !== undefined;
         if (making && asked === null) {
           // Adminium says what it would add; nothing is added until that is read and said yes to.
-          const plan = await api.put<{ checksum: string; made: { columns: Asked['columns']; tables: string[] }; refusals: { table?: string; column?: string; reason: string }[] }>(`${tableAt(form.table)}/adjust`, { ...sent.adjust.body, dryRun: true });
-          if (plan.refusals.length > 0) {
-            setSaid(t('rules.sheet.cannotMake', 'Adminium cannot add what is missing here: {reasons}', { reasons: names.list(plan.refusals.map((refused) => refused.reason)) }));
+          const answered = await api.put<{ checksum: string; made: { columns: Asked['columns']; tables: string[] }; refusals: { table?: string; column?: string; reason: string }[] }>(`${tableAt(form.table)}/adjust`, { ...sent.adjust.body, dryRun: true });
+          if (answered.refusals.length > 0) {
+            setSaid(t('rules.sheet.cannotMake', 'Adminium cannot add what is missing here: {reasons}', { reasons: names.list(answered.refusals.map((refused) => refused.reason)) }));
             return;
           }
-          setAsked({ checksum: plan.checksum, columns: plan.made.columns.filter((column) => column.made), tables: plan.made.tables });
+          setAsked({ checksum: answered.checksum, columns: answered.made.columns.filter((column) => column.made), tables: answered.made.tables });
           return;
         }
         await api.put(`${tableAt(form.table)}/adjust`, { ...sent.adjust.body, ...(making && asked !== null ? { checksum: asked.checksum } : {}) });
@@ -337,7 +337,7 @@ function RuleSheet({ t, editing, sources, ownTables, names, tableAt, postingAt, 
   const columns = source?.columns ?? [];
   const lineColumns = lines?.columns ?? [];
   const money = (column: SourceColumn): boolean => MONEY.has(column.type);
-  const free = (column: SourceColumn): boolean => !column.decided;
+  const writable = (column: SourceColumn): boolean => !column.decided;
   const canMakeAmounts = form.kind === 'discounts' && PARTS.discounts.some(({ part, makes }) => makes === 'amounts' && (form.cols[part] ?? '') === '');
 
   return (
@@ -371,8 +371,8 @@ function RuleSheet({ t, editing, sources, ownTables, names, tableAt, postingAt, 
                   <Select label={t('rules.part.item', 'What the line sells')} value={form.cols['item'] ?? ''} onChange={(event) => pick('item', event.target.value)} options={[{ value: '', label: choose }, ...linksTo(lines, (table) => table !== form.table)]} disabled={working} required {...needed('item')} />
                   <Select label={t('rules.part.category', 'Its category, where the line names one')} value={form.cols['category'] ?? ''} onChange={(event) => pick('category', event.target.value)} options={[{ value: '', label: notNeeded }, ...linksTo(lines, (table) => table !== form.table)]} disabled={working} />
                   <Select label={t('rules.part.type', 'Its type, where the line names one')} value={form.cols['type'] ?? ''} onChange={(event) => pick('type', event.target.value)} options={[{ value: '', label: notNeeded }, ...linksTo(lines, (table) => table !== form.table)]} disabled={working} />
-                  <Select label={t('rules.part.lineDiscount', "The line's reduction")} hint={t('rules.part.written', 'Adminium writes it.')} value={form.cols['lineDiscount'] ?? ''} onChange={(event) => pick('lineDiscount', event.target.value)} options={options(lineColumns, (column) => money(column) && free(column), choose)} disabled={working} required {...(form.making.amounts ? {} : missing('lineDiscount'))} />
-                  <Select label={t('rules.part.orderDiscount', "The row's own reduction")} hint={t('rules.part.written', 'Adminium writes it.')} value={form.cols['orderDiscount'] ?? ''} onChange={(event) => pick('orderDiscount', event.target.value)} options={options(columns, (column) => money(column) && free(column), choose)} disabled={working} required {...(form.making.amounts ? {} : missing('orderDiscount'))} />
+                  <Select label={t('rules.part.lineDiscount', "The line's reduction")} hint={t('rules.part.written', 'Adminium writes it.')} value={form.cols['lineDiscount'] ?? ''} onChange={(event) => pick('lineDiscount', event.target.value)} options={options(lineColumns, (column) => money(column) && writable(column), choose)} disabled={working} required {...(form.making.amounts ? {} : missing('lineDiscount'))} />
+                  <Select label={t('rules.part.orderDiscount', "The row's own reduction")} hint={t('rules.part.written', 'Adminium writes it.')} value={form.cols['orderDiscount'] ?? ''} onChange={(event) => pick('orderDiscount', event.target.value)} options={options(columns, (column) => money(column) && writable(column), choose)} disabled={working} required {...(form.making.amounts ? {} : missing('orderDiscount'))} />
                   <Select label={t('rules.part.total', "The row's total")} value={form.cols['total'] ?? ''} onChange={(event) => pick('total', event.target.value)} options={options(columns, money, notNeeded)} disabled={working} />
                   {canMakeAmounts ? <Switch label={t('rules.make.amounts', 'Make it: let Adminium add the amount, subtotal, reduction and total, and the rules that work them out')} checked={form.making.amounts} disabled={working} onCheckedChange={(amounts) => set({ making: { ...form.making, amounts } })} /> : null}
                   <Switch label={t('rules.make.codes', 'Make it: add a table for the codes typed on a row')} checked={form.making.codes} disabled={working} onCheckedChange={(codes) => set({ making: { ...form.making, codes } })} />
@@ -395,12 +395,12 @@ function RuleSheet({ t, editing, sources, ownTables, names, tableAt, postingAt, 
                 {...(form.kind === 'pays' ? { hint: t('rules.part.written', 'Adminium writes it.') } : {})}
                 value={form.cols['amount'] ?? ''}
                 onChange={(event) => pick('amount', event.target.value)}
-                options={options(columns, form.kind === 'pays' ? (column) => money(column) && free(column) : money, choose)}
+                options={options(columns, form.kind === 'pays' ? (column) => money(column) && writable(column) : money, choose)}
                 disabled={working}
                 required
                 {...needed('amount')}
               />
-              {form.kind === 'pays' ? <Select label={t('rules.part.balanceAfter', 'What the card holds afterwards')} hint={t('rules.part.written', 'Adminium writes it.')} value={form.cols['balanceAfter'] ?? ''} onChange={(event) => pick('balanceAfter', event.target.value)} options={options(columns, (column) => money(column) && free(column), choose)} disabled={working} required {...needed('balanceAfter')} /> : null}
+              {form.kind === 'pays' ? <Select label={t('rules.part.balanceAfter', 'What the card holds afterwards')} hint={t('rules.part.written', 'Adminium writes it.')} value={form.cols['balanceAfter'] ?? ''} onChange={(event) => pick('balanceAfter', event.target.value)} options={options(columns, (column) => money(column) && writable(column), choose)} disabled={working} required {...needed('balanceAfter')} /> : null}
               {form.kind === 'sells-vouchers' ? <Select label={t('rules.part.taxLater', 'Tax is charged when it is used')} value={form.cols['taxLater'] ?? ''} onChange={(event) => pick('taxLater', event.target.value)} options={options(columns, (column) => YES_NO.has(column.type), notNeeded)} disabled={working} /> : null}
               <Select label={t('rules.part.order', 'The row it belongs to')} hint={t('rules.part.orderHint', 'For a line or a payment of an order: the link to the order.')} value={form.cols['order'] ?? ''} onChange={(event) => set({ cols: { ...form.cols, order: event.target.value, due: '' }, when: { kind: 'never' }, back: { kind: 'never' } })} options={[{ value: '', label: t('rules.sheet.itself', 'It stands by itself') }, ...linksTo(source, (table) => !Object.values(ownTables).some((own) => own.id === table))]} disabled={working} />
               {form.kind === 'pays' && parent !== undefined ? <Select label={t('rules.part.due', 'What is still to pay')} value={form.cols['due'] ?? ''} onChange={(event) => pick('due', event.target.value)} options={options(parent.columns, money, notNeeded)} disabled={working} /> : null}
