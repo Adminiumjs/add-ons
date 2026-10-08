@@ -13,7 +13,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { todayOf } from '../look-up/read.ts';
 import { formatDay } from '../look-up/LookUp.tsx';
 import { Alert, Button, DateInput, Field, Input, Link, NumberInput, ProgressBar, SheetBody, SheetFooter, Stack, asDataError, useExport, useLocaleTag, useRecord, useWrite, type AddOnTranslate, type DataValue, type EachResult } from '../shared/host.ts';
-import { BATCHES } from '../shared/paths.ts';
+import { BATCHES, recordAt } from '../shared/paths.ts';
 import { refusal } from '../shared/refusal.ts';
 import { Fixes, wrongOf, type Wrong } from './form.tsx';
 import { NO_WORTH, WorthFields, checkWorth, useWhat, worthValues, type Worth } from './Worth.tsx';
@@ -118,7 +118,7 @@ export function BatchTab({ t, onDone }: { t: AddOnTranslate; onDone: () => void 
             {stage.at === 'making' ? <Alert tone="info" role="status" title={t('issue.batch.making', 'Making the codes')} body={t('issue.batch.progress', '{made} of {count}', { made: shown, count: stage.count })} /> : null}
             {stage.at === 'done' && whole ? <Alert tone="pos" role="status" title={t('issue.batch.made', '{count} codes made', { count: stage.count })} body={t('issue.batch.again', 'You can download them again from Voucher batches.')} /> : null}
             {stage.at === 'done' && !whole ? (
-              <Alert tone="warn" role="alert" title={t('issue.batch.part', '{made} of {count} made. Finish it under Voucher batches.', { made: stage.made, count: stage.count })} action={<Link to={`${BATCHES}/${encodeURIComponent(stage.batch)}`}>{t('issue.batch.open', 'Open the batch')}</Link>} />
+              <Alert tone="warn" role="alert" title={t('issue.batch.part', '{made} of {count} made. Finish it under Voucher batches.', { made: stage.made, count: stage.count })} action={<Link to={recordAt(BATCHES, stage.batch)}>{t('issue.batch.open', 'Open the batch')}</Link>} />
             ) : null}
             <ProgressBar value={shown} max={stage.count} label={t('issue.batch.progress', '{made} of {count}', { made: shown, count: stage.count })} />
             {said === null ? null : <Alert tone="danger" role="alert" title={said} />}

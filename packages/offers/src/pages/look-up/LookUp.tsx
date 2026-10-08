@@ -40,7 +40,7 @@ import {
   type TableColumn,
 } from '../shared/host.ts';
 import { PageFrame, useSaid } from '../shared/PageFrame.tsx';
-import { BATCHES, DISCOUNTS, ISSUE, LOOK_UP } from '../shared/paths.ts';
+import { BATCHES, DISCOUNTS, ISSUE, LOOK_UP, recordAt } from '../shared/paths.ts';
 import { refusal } from '../shared/refusal.ts';
 import { useRole, type Role } from '../shared/role.ts';
 import { CancelDialog, CreditDialog, MoneyDialog } from './Dialogs.tsx';
@@ -307,7 +307,7 @@ function VoucherResult({ t, typed, shown, role, locale, date, busy, act }: Resul
             ...(shown.value === null || pack ? [] : [{ label: t('lookup.worth', 'Worth'), value: shown.worth === 'percent' ? <span dir="ltr">{`${trimmed(shown.value)}%`}</span> : <Amount value={shown.value} locale={locale} /> }]),
             { label: t('lookup.useBy', 'Use it by'), value: shown.expires === null ? t('lookup.never', 'Never expires') : date(shown.expires) },
             ...(shown.holder === null ? [] : [{ label: t('lookup.for', 'For'), value: shown.holder }]),
-            ...(shown.batch === null ? [] : [{ label: t('lookup.batch', 'Batch'), value: <Link to={`${BATCHES}/${encodeURIComponent(shown.batch)}`}>{text(batch.row?.['name']) ?? t('lookup.openBatch', 'Open the batch')}</Link> }]),
+            ...(shown.batch === null ? [] : [{ label: t('lookup.batch', 'Batch'), value: <Link to={recordAt(BATCHES, shown.batch)}>{text(batch.row?.['name']) ?? t('lookup.openBatch', 'Open the batch')}</Link> }]),
           ]}
         />
         <Stack direction="row" gap="sm" wrap>

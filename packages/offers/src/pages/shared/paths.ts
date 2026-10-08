@@ -3,4 +3,6 @@ export const DISCOUNTS = '/add-ons/offers/offers-discounts';
 export const LOOK_UP = '/add-ons/offers/offers-look-up';
 export const ISSUE = '/add-ons/offers/offers-issue';
 export const RULES = '/add-ons/offers/offers-rules';
-export const BATCHES = '/pages/offers-voucher-batches';
+/** A generated list, and a row of it: `<list>/r/<key>`. */
+export const BATCHES = '/p/offers-voucher-batches';
+export const recordAt = (list: string, key: string): string => `${list}/r/${encodeURIComponent(key)}`;

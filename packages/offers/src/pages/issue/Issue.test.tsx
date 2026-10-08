@@ -256,7 +256,7 @@ describe('Issue', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Make the codes' }));
     expect(await screen.findByText('1000 of 1200 made. Finish it under Voucher batches.')).toBeTruthy();
     expect(world.calls.filter((call) => call.kind === 'createEach')).toHaveLength(2);
-    expect(screen.getByRole('link', { name: 'Open the batch' }).getAttribute('href')).toBe(`/pages/offers-voucher-batches/${String(world.tables['voucher_batches']?.[0]?.['id'])}`);
+    expect(screen.getByRole('link', { name: 'Open the batch' }).getAttribute('href')).toBe(`/p/offers-voucher-batches/r/${String(world.tables['voucher_batches']?.[0]?.['id'])}`);
   });
 
   it('download asks Adminium for the file', async () => {

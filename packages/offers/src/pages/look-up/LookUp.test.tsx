@@ -24,6 +24,7 @@ beforeEach(() => {
   seed('gift_cards', [{ id: 1, kind: 'card', status: 'active', balance: '19.00' }]);
   seed('card_actions', []);
   seed('voucher_actions', []);
+  seed('voucher_batches', [{ id: 3, name: 'Leaflet drop' }]);
 });
 afterEach(() => cleanup());
 
@@ -212,12 +213,14 @@ describe('Look up', () => {
 
   it('a pack shows its uses, and using one records a use and looks up again', async () => {
     let left = 6;
-    world.lookUp = () => ({ kind: 'pack', table: 'vouchers', key: '5', last4: '7K2M', row: { worth: 'pack', public_name: '10 classes', status: 'issued', uses_total: 10, uses_left: left, expires_on: null, awaiting_sale: false, holder_name: 'Ana', batch_id: null }, rows: [] });
+    world.lookUp = () => ({ kind: 'pack', table: 'vouchers', key: '5', last4: '7K2M', row: { worth: 'pack', public_name: '10 classes', status: 'issued', uses_total: 10, uses_left: left, expires_on: null, awaiting_sale: false, holder_name: 'Ana', batch_id: 3 }, rows: [] });
     render(<LookUp t={t} />);
     await lookUp('PK-AAAA-BBBB-7K2M');
     expect(await screen.findByText('Pack')).toBeTruthy();
     expect(screen.getByText('6 of 10')).toBeTruthy();
     expect(screen.getByRole('progressbar').getAttribute('aria-valuenow')).toBe('6');
+    // Its batch opens as a row of the generated list.
+    expect(screen.getByRole('link', { name: 'Leaflet drop' }).getAttribute('href')).toBe('/p/offers-voucher-batches/r/3');
     world.before = () => {
       left = 5;
     };
