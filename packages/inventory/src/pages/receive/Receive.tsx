@@ -128,6 +128,7 @@ export function Receive({ t, receiptId, poId }: ReceiveProps): ReactNode {
 
   const receipts = useTreeWrite('receipts');
   const lineWrites = useWrite('receipt_lines');
+  const receiptWrites = useWrite('receipts');
   const moveReceipt = useStateMove('receipts');
 
   const places = useRecords('places', { filter: [{ column: 'active', op: 'eq', value: true }], sort: [{ column: 'name', direction: 'asc' }], pageSize: 199, columns: ['id', 'name'], enabled: mayOpen });
@@ -185,7 +186,10 @@ export function Receive({ t, receiptId, poId }: ReceiveProps): ReactNode {
   const order = loaded !== null && loaded !== 'missing' ? loaded.order : null;
   const status = text(receipt?.['status']) || 'draft';
   const typed = lines.filter((line) => line.status === 'draft' && typedOn(line));
-  const dirty = removed.length > 0 || lines.some((line) => line.dirty);
+  // A draft with no order behind it can still be told where it goes and who it came from.
+  const headOpen = order === null && (receipt === null || status === 'draft');
+  const headDirty = receipt !== null && headOpen && (placeId !== text(receipt['place_id']) || supplierId !== text(receipt['supplier_id']));
+  const dirty = headDirty || removed.length > 0 || lines.some((line) => line.dirty);
   const working = busy !== null;
 
   const change = (key: string, patch: Partial<Line>): void => {
@@ -253,6 +257,18 @@ export function Receive({ t, receiptId, poId }: ReceiveProps): ReactNode {
       }
     }
     const id = text(receipt['id']);
+    if (headDirty) {
+      if (placeId === '') {
+        setProblem(t('receive.choosePlace', 'Choose where this delivery goes'));
+        return null;
+      }
+      try {
+        await receiptWrites.update(id, { place_id: placeId, supplier_id: supplierId === '' ? null : supplierId });
+      } catch (caught) {
+        setProblem(refusal(t, asDataError(caught)).message);
+        return null;
+      }
+    }
     for (const gone of removed) {
       try {
         await lineWrites.remove(gone);
@@ -512,12 +528,12 @@ export function Receive({ t, receiptId, poId }: ReceiveProps): ReactNode {
           ) : (
             <Fixed label={t('receive.order', 'Purchase order')} value={order === null ? t('receive.noOrder', 'No purchase order') : orderLabel(order)} />
           )}
-          {receipt === null && order === null ? (
+          {headOpen ? (
             <Select label={t('receive.into', 'Into')} value={placeId} onChange={(event) => setPlaceId(event.target.value)} options={[{ value: '', label: t('receive.choose', 'Choose a place') }, ...places.rows.map((place) => ({ value: text(place['id']), label: text(place['name']) }))]} disabled={working} required />
           ) : (
             <Fixed label={t('receive.into', 'Into')} value={placeName} />
           )}
-          {receipt === null && order === null ? (
+          {headOpen ? (
             <Select label={t('receive.supplier', 'Supplier (optional)')} value={supplierId} onChange={(event) => setSupplierId(event.target.value)} options={[{ value: '', label: t('receive.noSupplier', 'No supplier') }, ...suppliers.rows.map((supplier) => ({ value: text(supplier['id']), label: text(supplier['name']) }))]} disabled={working} />
           ) : order !== null ? (
             <Fixed label={t('receive.supplierOf', 'Supplier')} value={text(order['supplier_name'])} />

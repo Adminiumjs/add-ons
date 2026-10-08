@@ -145,6 +145,19 @@ describe('Receive', () => {
     expect(screen.getByText('1 line to receive')).toBeTruthy();
   });
 
+  it('a saved draft with no order behind it can still be told where it goes, and the save says so', async () => {
+    seed('receipts', [{ id: 90, number: 'RC-0001', po_id: null, supplier_id: null, place_id: 1, kind: 'delivery', status: 'draft', lines: 1, unposted: 1, unreversed: 0, units: '51.000', total: '56.10', lines_to_check: 0 }]);
+    seed('receipt_lines', [{ id: 91, receipt_id: 90, po_line_id: null, item_id: 13, item_name: 'Alcohol swab', unit: 'each', packs: null, pack_size: null, qty_typed: '51.000', qty: '51.000', amount: '56.10', batch_code: null, expires_on: null, status: 'draft' }]);
+    render(<Receive t={t} receiptId="90" poId={null} />);
+    const into = (await screen.findByLabelText(/Into/)) as HTMLSelectElement;
+    expect(into.value).toBe('1');
+    expect(screen.getByLabelText(/Supplier/)).toBeTruthy();
+    fireEvent.change(into, { target: { value: '2' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save as draft' }));
+    await waitFor(() => expect(world.calls.some((call) => call.kind === 'update' && call.table === 'receipts')).toBe(true));
+    expect(world.calls.find((call) => call.kind === 'update' && call.table === 'receipts')).toMatchObject({ key: '90', values: { place_id: '2', supplier_id: null } });
+  });
+
   it('a saved receipt reads units only to someone who may not see its total', async () => {
     world.unreadable = { receipt_lines: ['unit_cost', 'cost_used', 'amount'], receipts: ['total'] };
     seed('receipts', [{ id: 90, number: 'RC-0001', po_id: null, supplier_id: null, place_id: 1, kind: 'delivery', status: 'draft', lines: 1, unposted: 1, unreversed: 0, units: '51.000', total: '56.10', lines_to_check: 0 }]);
