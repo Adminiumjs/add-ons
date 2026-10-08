@@ -5132,6 +5132,2098 @@
       }
     }
   ],
+  "outbox": {
+    "table": "messages",
+    "columns": {
+      "kind": "kind",
+      "status": "status",
+      "to": "to_address",
+      "language": "language",
+      "due": "due",
+      "sentAt": "sent_at",
+      "error": "error",
+      "skipReason": "skip_reason",
+      "repeatKey": "repeat_key"
+    },
+    "links": {
+      "card": "card_id",
+      "voucher": "voucher_id"
+    },
+    "recipient": {
+      "via": "card_id",
+      "table": "gift_cards",
+      "email": "recipient_email",
+      "name": "recipient_name",
+      "language": {
+        "column": "language"
+      }
+    },
+    "settings": {
+      "table": "settings",
+      "name": "from_name"
+    },
+    "pages": {
+      "app": {
+        "balance": "giftCard"
+      }
+    },
+    "kinds": {
+      "gift_card": "offers-gift-card",
+      "gift_card_dated": "offers-gift-card",
+      "gift_card_again": "offers-gift-card",
+      "gift_card_expiring": "offers-gift-card-expiring",
+      "credit": "offers-credit",
+      "voucher": "offers-voucher",
+      "voucher_again": "offers-voucher"
+    },
+    "producers": [
+      {
+        "kind": "gift_card",
+        "link": "card_id",
+        "onChange": {
+          "table": "gift_cards",
+          "column": "notify",
+          "to": "card"
+        },
+        "recipient": {
+          "column": "recipient_email",
+          "name": "recipient_name",
+          "language": "language"
+        }
+      },
+      {
+        "kind": "gift_card_dated",
+        "link": "card_id",
+        "onChange": {
+          "table": "gift_cards",
+          "column": "notify",
+          "to": "card_dated"
+        },
+        "due": {
+          "date": "send_on",
+          "days": 0,
+          "at": "09:00"
+        },
+        "dropWhen": [
+          {
+            "column": "status",
+            "in": [
+              "void",
+              "expired"
+            ],
+            "reason": "void"
+          }
+        ],
+        "recipient": {
+          "column": "recipient_email",
+          "name": "recipient_name",
+          "language": "language"
+        }
+      },
+      {
+        "kind": "gift_card_again",
+        "link": "card_id",
+        "repeat": true,
+        "onChange": {
+          "table": "gift_cards",
+          "columns": [
+            "resent_at"
+          ],
+          "changed": true,
+          "where": {
+            "column": "status",
+            "eq": "active"
+          }
+        },
+        "recipient": {
+          "column": "recipient_email",
+          "name": "recipient_name",
+          "language": "language"
+        }
+      },
+      {
+        "kind": "gift_card_expiring",
+        "link": "card_id",
+        "onChange": {
+          "table": "gift_cards",
+          "column": "status",
+          "to": "active",
+          "where": {
+            "column": "remind_on",
+            "isNull": false
+          }
+        },
+        "due": {
+          "date": "remind_on",
+          "days": 0,
+          "at": "09:00"
+        },
+        "dropWhen": [
+          {
+            "column": "status",
+            "in": [
+              "void",
+              "expired"
+            ],
+            "reason": "void"
+          },
+          {
+            "column": "balance",
+            "lte": 0,
+            "reason": "no-longer-needed"
+          }
+        ],
+        "recipient": {
+          "column": "recipient_email",
+          "name": "recipient_name",
+          "language": "language"
+        }
+      },
+      {
+        "kind": "credit",
+        "link": "card_id",
+        "onChange": {
+          "table": "gift_cards",
+          "column": "notify",
+          "to": "credit"
+        },
+        "recipient": {
+          "column": "owner_email",
+          "language": "language"
+        }
+      },
+      {
+        "kind": "voucher",
+        "link": "voucher_id",
+        "onCreate": {
+          "table": "vouchers",
+          "where": {
+            "column": "holder_email",
+            "isNull": false
+          }
+        },
+        "recipient": {
+          "column": "holder_email",
+          "name": "holder_name",
+          "language": "language"
+        }
+      },
+      {
+        "kind": "voucher_again",
+        "link": "voucher_id",
+        "repeat": true,
+        "onChange": {
+          "table": "vouchers",
+          "columns": [
+            "resent_at"
+          ],
+          "changed": true
+        },
+        "recipient": {
+          "column": "holder_email",
+          "name": "holder_name",
+          "language": "language"
+        }
+      }
+    ]
+  },
+  "emailTemplates": [
+    {
+      "key": "offers-gift-card",
+      "name": {
+        "en-US": "Gift card",
+        "de-DE": "Geschenkkarte",
+        "fr-FR": "Carte cadeau",
+        "da-DK": "Gavekort",
+        "cs-CZ": "Dárková karta",
+        "ar-EG": "بطاقة هدية",
+        "zh-CN": "礼品卡",
+        "zh-TW": "禮品卡"
+      },
+      "vars": [
+        "card.sender_name",
+        "card.balance.money",
+        "card.message",
+        "card.code.grouped",
+        "card.code.qr",
+        "card.link_token",
+        "card.expires_on.date",
+        "app_url.balance"
+      ],
+      "locales": {
+        "en-US": {
+          "subject": "Your gift card from {{appName}}",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "{{card.sender_name}} sent you a gift card",
+                "onlyWith": "card.sender_name"
+              }
+            },
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "You have a gift card",
+                "onlyWithout": "card.sender_name"
+              }
+            },
+            {
+              "block": "email.stats",
+              "data": {
+                "stats": [
+                  {
+                    "value": "{{card.balance.money}}",
+                    "label": "Gift card balance"
+                  }
+                ]
+              }
+            },
+            {
+              "block": "email.quote",
+              "data": {
+                "text": "{{card.message}}",
+                "author": "{{card.sender_name}}"
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "Your code",
+                "value": "{{card.code.grouped}}"
+              }
+            },
+            {
+              "block": "email.image",
+              "data": {
+                "qr": "{{card.code.qr}}",
+                "size": 160
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Show the QR code at the counter, or type the code at checkout."
+              }
+            },
+            {
+              "block": "email.button",
+              "data": {
+                "label": "See your balance",
+                "url": "{{app_url.balance}}#{{card.link_token}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Ask at the counter for your balance.",
+                "onlyWithout": "app_url.balance"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Use it by {{card.expires_on.date}}.",
+                "onlyWith": "card.expires_on"
+              }
+            },
+            {
+              "block": "email.list",
+              "data": {
+                "items": [
+                  "Use it at {{appName}}.",
+                  "Use it as often as you like until it is empty."
+                ]
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "de-DE": {
+          "subject": "Ihre Geschenkkarte von {{appName}}",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "{{card.sender_name}} hat Ihnen eine Geschenkkarte geschickt",
+                "onlyWith": "card.sender_name"
+              }
+            },
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Sie haben eine Geschenkkarte",
+                "onlyWithout": "card.sender_name"
+              }
+            },
+            {
+              "block": "email.stats",
+              "data": {
+                "stats": [
+                  {
+                    "value": "{{card.balance.money}}",
+                    "label": "Guthaben der Geschenkkarte"
+                  }
+                ]
+              }
+            },
+            {
+              "block": "email.quote",
+              "data": {
+                "text": "{{card.message}}",
+                "author": "{{card.sender_name}}"
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "Ihr Code",
+                "value": "{{card.code.grouped}}"
+              }
+            },
+            {
+              "block": "email.image",
+              "data": {
+                "qr": "{{card.code.qr}}",
+                "size": 160
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Zeigen Sie den QR-Code an der Kasse vor oder geben Sie den Code beim Bezahlen ein."
+              }
+            },
+            {
+              "block": "email.button",
+              "data": {
+                "label": "Guthaben ansehen",
+                "url": "{{app_url.balance}}#{{card.link_token}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Fragen Sie an der Kasse nach Ihrem Guthaben.",
+                "onlyWithout": "app_url.balance"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Einlösbar bis {{card.expires_on.date}}.",
+                "onlyWith": "card.expires_on"
+              }
+            },
+            {
+              "block": "email.list",
+              "data": {
+                "items": [
+                  "Einlösbar bei {{appName}}.",
+                  "Sie können sie beliebig oft nutzen, bis das Guthaben aufgebraucht ist."
+                ]
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "fr-FR": {
+          "subject": "Votre carte cadeau {{appName}}",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "{{card.sender_name}} vous a envoyé une carte cadeau",
+                "onlyWith": "card.sender_name"
+              }
+            },
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Vous avez une carte cadeau",
+                "onlyWithout": "card.sender_name"
+              }
+            },
+            {
+              "block": "email.stats",
+              "data": {
+                "stats": [
+                  {
+                    "value": "{{card.balance.money}}",
+                    "label": "Solde de la carte cadeau"
+                  }
+                ]
+              }
+            },
+            {
+              "block": "email.quote",
+              "data": {
+                "text": "{{card.message}}",
+                "author": "{{card.sender_name}}"
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "Votre code",
+                "value": "{{card.code.grouped}}"
+              }
+            },
+            {
+              "block": "email.image",
+              "data": {
+                "qr": "{{card.code.qr}}",
+                "size": 160
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Présentez le QR code en caisse ou saisissez le code au moment de payer."
+              }
+            },
+            {
+              "block": "email.button",
+              "data": {
+                "label": "Voir votre solde",
+                "url": "{{app_url.balance}}#{{card.link_token}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Demandez votre solde en caisse.",
+                "onlyWithout": "app_url.balance"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "À utiliser avant le {{card.expires_on.date}}.",
+                "onlyWith": "card.expires_on"
+              }
+            },
+            {
+              "block": "email.list",
+              "data": {
+                "items": [
+                  "Valable chez {{appName}}.",
+                  "Utilisez-la autant de fois que vous le souhaitez, jusqu’à épuisement du solde."
+                ]
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "da-DK": {
+          "subject": "Dit gavekort fra {{appName}}",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "{{card.sender_name}} har sendt dig et gavekort",
+                "onlyWith": "card.sender_name"
+              }
+            },
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Du har et gavekort",
+                "onlyWithout": "card.sender_name"
+              }
+            },
+            {
+              "block": "email.stats",
+              "data": {
+                "stats": [
+                  {
+                    "value": "{{card.balance.money}}",
+                    "label": "Saldo på gavekortet"
+                  }
+                ]
+              }
+            },
+            {
+              "block": "email.quote",
+              "data": {
+                "text": "{{card.message}}",
+                "author": "{{card.sender_name}}"
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "Din kode",
+                "value": "{{card.code.grouped}}"
+              }
+            },
+            {
+              "block": "email.image",
+              "data": {
+                "qr": "{{card.code.qr}}",
+                "size": 160
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Vis QR-koden ved kassen, eller indtast koden, når du betaler."
+              }
+            },
+            {
+              "block": "email.button",
+              "data": {
+                "label": "Se din saldo",
+                "url": "{{app_url.balance}}#{{card.link_token}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Spørg efter din saldo ved kassen.",
+                "onlyWithout": "app_url.balance"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Brug det senest {{card.expires_on.date}}.",
+                "onlyWith": "card.expires_on"
+              }
+            },
+            {
+              "block": "email.list",
+              "data": {
+                "items": [
+                  "Kan bruges hos {{appName}}.",
+                  "Brug det så mange gange, du vil, indtil saldoen er brugt."
+                ]
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "cs-CZ": {
+          "subject": "Vaše dárková karta od {{appName}}",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "{{card.sender_name}} vám posílá dárkovou kartu",
+                "onlyWith": "card.sender_name"
+              }
+            },
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Máte dárkovou kartu",
+                "onlyWithout": "card.sender_name"
+              }
+            },
+            {
+              "block": "email.stats",
+              "data": {
+                "stats": [
+                  {
+                    "value": "{{card.balance.money}}",
+                    "label": "Zůstatek na dárkové kartě"
+                  }
+                ]
+              }
+            },
+            {
+              "block": "email.quote",
+              "data": {
+                "text": "{{card.message}}",
+                "author": "{{card.sender_name}}"
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "Váš kód",
+                "value": "{{card.code.grouped}}"
+              }
+            },
+            {
+              "block": "email.image",
+              "data": {
+                "qr": "{{card.code.qr}}",
+                "size": 160
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Ukažte QR kód u pokladny, nebo kód zadejte při placení."
+              }
+            },
+            {
+              "block": "email.button",
+              "data": {
+                "label": "Zobrazit zůstatek",
+                "url": "{{app_url.balance}}#{{card.link_token}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Na zůstatek se zeptejte u pokladny.",
+                "onlyWithout": "app_url.balance"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Využijte ji do {{card.expires_on.date}}.",
+                "onlyWith": "card.expires_on"
+              }
+            },
+            {
+              "block": "email.list",
+              "data": {
+                "items": [
+                  "Platí u {{appName}}.",
+                  "Můžete ji použít opakovaně, dokud zůstatek nevyčerpáte."
+                ]
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "ar-EG": {
+          "subject": "بطاقة هديتك من {{appName}}",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "أرسل لك {{card.sender_name}} بطاقة هدية",
+                "onlyWith": "card.sender_name"
+              }
+            },
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "لديك بطاقة هدية",
+                "onlyWithout": "card.sender_name"
+              }
+            },
+            {
+              "block": "email.stats",
+              "data": {
+                "stats": [
+                  {
+                    "value": "{{card.balance.money}}",
+                    "label": "رصيد بطاقة الهدية"
+                  }
+                ]
+              }
+            },
+            {
+              "block": "email.quote",
+              "data": {
+                "text": "{{card.message}}",
+                "author": "{{card.sender_name}}"
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "الرمز الخاص بك",
+                "value": "{{card.code.grouped}}"
+              }
+            },
+            {
+              "block": "email.image",
+              "data": {
+                "qr": "{{card.code.qr}}",
+                "size": 160
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "اعرض رمز QR عند الكاشير، أو اكتب الرمز عند الدفع."
+              }
+            },
+            {
+              "block": "email.button",
+              "data": {
+                "label": "عرض رصيدك",
+                "url": "{{app_url.balance}}#{{card.link_token}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "اسأل عن رصيدك عند الكاشير.",
+                "onlyWithout": "app_url.balance"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "استخدمها قبل {{card.expires_on.date}}.",
+                "onlyWith": "card.expires_on"
+              }
+            },
+            {
+              "block": "email.list",
+              "data": {
+                "items": [
+                  "تُستخدم لدى {{appName}}.",
+                  "استخدمها بقدر ما تشاء حتى ينفد رصيدها."
+                ]
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "zh-CN": {
+          "subject": "您的 {{appName}} 礼品卡",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "{{card.sender_name}} 送给您一张礼品卡",
+                "onlyWith": "card.sender_name"
+              }
+            },
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "您有一张礼品卡",
+                "onlyWithout": "card.sender_name"
+              }
+            },
+            {
+              "block": "email.stats",
+              "data": {
+                "stats": [
+                  {
+                    "value": "{{card.balance.money}}",
+                    "label": "礼品卡余额"
+                  }
+                ]
+              }
+            },
+            {
+              "block": "email.quote",
+              "data": {
+                "text": "{{card.message}}",
+                "author": "{{card.sender_name}}"
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "您的卡号",
+                "value": "{{card.code.grouped}}"
+              }
+            },
+            {
+              "block": "email.image",
+              "data": {
+                "qr": "{{card.code.qr}}",
+                "size": 160
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "在收银台出示二维码，或在结账时输入卡号。"
+              }
+            },
+            {
+              "block": "email.button",
+              "data": {
+                "label": "查看余额",
+                "url": "{{app_url.balance}}#{{card.link_token}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "可在收银台查询余额。",
+                "onlyWithout": "app_url.balance"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "请在 {{card.expires_on.date}} 前使用。",
+                "onlyWith": "card.expires_on"
+              }
+            },
+            {
+              "block": "email.list",
+              "data": {
+                "items": [
+                  "可在 {{appName}} 使用。",
+                  "余额用完前可多次使用。"
+                ]
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "zh-TW": {
+          "subject": "您的 {{appName}} 禮品卡",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "{{card.sender_name}} 送您一張禮品卡",
+                "onlyWith": "card.sender_name"
+              }
+            },
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "您有一張禮品卡",
+                "onlyWithout": "card.sender_name"
+              }
+            },
+            {
+              "block": "email.stats",
+              "data": {
+                "stats": [
+                  {
+                    "value": "{{card.balance.money}}",
+                    "label": "禮品卡餘額"
+                  }
+                ]
+              }
+            },
+            {
+              "block": "email.quote",
+              "data": {
+                "text": "{{card.message}}",
+                "author": "{{card.sender_name}}"
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "您的卡號",
+                "value": "{{card.code.grouped}}"
+              }
+            },
+            {
+              "block": "email.image",
+              "data": {
+                "qr": "{{card.code.qr}}",
+                "size": 160
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "在櫃檯出示 QR 碼，或於結帳時輸入卡號。"
+              }
+            },
+            {
+              "block": "email.button",
+              "data": {
+                "label": "查看餘額",
+                "url": "{{app_url.balance}}#{{card.link_token}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "可在櫃檯查詢餘額。",
+                "onlyWithout": "app_url.balance"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "請於 {{card.expires_on.date}} 前使用。",
+                "onlyWith": "card.expires_on"
+              }
+            },
+            {
+              "block": "email.list",
+              "data": {
+                "items": [
+                  "可在 {{appName}} 使用。",
+                  "餘額用完前可多次使用。"
+                ]
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        }
+      }
+    },
+    {
+      "key": "offers-gift-card-expiring",
+      "name": {
+        "en-US": "Gift card about to expire",
+        "de-DE": "Geschenkkarte läuft bald ab",
+        "fr-FR": "Carte cadeau bientôt expirée",
+        "da-DK": "Gavekort udløber snart",
+        "cs-CZ": "Dárková karta před koncem platnosti",
+        "ar-EG": "بطاقة هدية توشك على الانتهاء",
+        "zh-CN": "礼品卡即将到期",
+        "zh-TW": "禮品卡即將到期"
+      },
+      "vars": [
+        "card.balance.money",
+        "card.code.grouped",
+        "card.code.qr",
+        "card.link_token",
+        "card.expires_on.date",
+        "app_url.balance"
+      ],
+      "locales": {
+        "en-US": {
+          "subject": "Your gift card expires soon",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Your gift card expires soon"
+              }
+            },
+            {
+              "block": "email.stats",
+              "data": {
+                "stats": [
+                  {
+                    "value": "{{card.balance.money}}",
+                    "label": "Gift card balance"
+                  }
+                ]
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Use it by {{card.expires_on.date}}."
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "Your code",
+                "value": "{{card.code.grouped}}"
+              }
+            },
+            {
+              "block": "email.image",
+              "data": {
+                "qr": "{{card.code.qr}}",
+                "size": 160
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Show the QR code at the counter, or type the code at checkout."
+              }
+            },
+            {
+              "block": "email.button",
+              "data": {
+                "label": "See your balance",
+                "url": "{{app_url.balance}}#{{card.link_token}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Ask at the counter for your balance.",
+                "onlyWithout": "app_url.balance"
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "de-DE": {
+          "subject": "Ihre Geschenkkarte läuft bald ab",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Ihre Geschenkkarte läuft bald ab"
+              }
+            },
+            {
+              "block": "email.stats",
+              "data": {
+                "stats": [
+                  {
+                    "value": "{{card.balance.money}}",
+                    "label": "Guthaben der Geschenkkarte"
+                  }
+                ]
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Einlösbar bis {{card.expires_on.date}}."
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "Ihr Code",
+                "value": "{{card.code.grouped}}"
+              }
+            },
+            {
+              "block": "email.image",
+              "data": {
+                "qr": "{{card.code.qr}}",
+                "size": 160
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Zeigen Sie den QR-Code an der Kasse vor oder geben Sie den Code beim Bezahlen ein."
+              }
+            },
+            {
+              "block": "email.button",
+              "data": {
+                "label": "Guthaben ansehen",
+                "url": "{{app_url.balance}}#{{card.link_token}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Fragen Sie an der Kasse nach Ihrem Guthaben.",
+                "onlyWithout": "app_url.balance"
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "fr-FR": {
+          "subject": "Votre carte cadeau expire bientôt",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Votre carte cadeau expire bientôt"
+              }
+            },
+            {
+              "block": "email.stats",
+              "data": {
+                "stats": [
+                  {
+                    "value": "{{card.balance.money}}",
+                    "label": "Solde de la carte cadeau"
+                  }
+                ]
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "À utiliser avant le {{card.expires_on.date}}."
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "Votre code",
+                "value": "{{card.code.grouped}}"
+              }
+            },
+            {
+              "block": "email.image",
+              "data": {
+                "qr": "{{card.code.qr}}",
+                "size": 160
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Présentez le QR code en caisse ou saisissez le code au moment de payer."
+              }
+            },
+            {
+              "block": "email.button",
+              "data": {
+                "label": "Voir votre solde",
+                "url": "{{app_url.balance}}#{{card.link_token}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Demandez votre solde en caisse.",
+                "onlyWithout": "app_url.balance"
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "da-DK": {
+          "subject": "Dit gavekort udløber snart",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Dit gavekort udløber snart"
+              }
+            },
+            {
+              "block": "email.stats",
+              "data": {
+                "stats": [
+                  {
+                    "value": "{{card.balance.money}}",
+                    "label": "Saldo på gavekortet"
+                  }
+                ]
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Brug det senest {{card.expires_on.date}}."
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "Din kode",
+                "value": "{{card.code.grouped}}"
+              }
+            },
+            {
+              "block": "email.image",
+              "data": {
+                "qr": "{{card.code.qr}}",
+                "size": 160
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Vis QR-koden ved kassen, eller indtast koden, når du betaler."
+              }
+            },
+            {
+              "block": "email.button",
+              "data": {
+                "label": "Se din saldo",
+                "url": "{{app_url.balance}}#{{card.link_token}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Spørg efter din saldo ved kassen.",
+                "onlyWithout": "app_url.balance"
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "cs-CZ": {
+          "subject": "Platnost vaší dárkové karty brzy skončí",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Platnost vaší dárkové karty brzy skončí"
+              }
+            },
+            {
+              "block": "email.stats",
+              "data": {
+                "stats": [
+                  {
+                    "value": "{{card.balance.money}}",
+                    "label": "Zůstatek na dárkové kartě"
+                  }
+                ]
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Využijte ji do {{card.expires_on.date}}."
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "Váš kód",
+                "value": "{{card.code.grouped}}"
+              }
+            },
+            {
+              "block": "email.image",
+              "data": {
+                "qr": "{{card.code.qr}}",
+                "size": 160
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Ukažte QR kód u pokladny, nebo kód zadejte při placení."
+              }
+            },
+            {
+              "block": "email.button",
+              "data": {
+                "label": "Zobrazit zůstatek",
+                "url": "{{app_url.balance}}#{{card.link_token}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Na zůstatek se zeptejte u pokladny.",
+                "onlyWithout": "app_url.balance"
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "ar-EG": {
+          "subject": "بطاقة هديتك تنتهي قريبًا",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "بطاقة هديتك تنتهي قريبًا"
+              }
+            },
+            {
+              "block": "email.stats",
+              "data": {
+                "stats": [
+                  {
+                    "value": "{{card.balance.money}}",
+                    "label": "رصيد بطاقة الهدية"
+                  }
+                ]
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "استخدمها قبل {{card.expires_on.date}}."
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "الرمز الخاص بك",
+                "value": "{{card.code.grouped}}"
+              }
+            },
+            {
+              "block": "email.image",
+              "data": {
+                "qr": "{{card.code.qr}}",
+                "size": 160
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "اعرض رمز QR عند الكاشير، أو اكتب الرمز عند الدفع."
+              }
+            },
+            {
+              "block": "email.button",
+              "data": {
+                "label": "عرض رصيدك",
+                "url": "{{app_url.balance}}#{{card.link_token}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "اسأل عن رصيدك عند الكاشير.",
+                "onlyWithout": "app_url.balance"
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "zh-CN": {
+          "subject": "您的礼品卡即将到期",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "您的礼品卡即将到期"
+              }
+            },
+            {
+              "block": "email.stats",
+              "data": {
+                "stats": [
+                  {
+                    "value": "{{card.balance.money}}",
+                    "label": "礼品卡余额"
+                  }
+                ]
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "请在 {{card.expires_on.date}} 前使用。"
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "您的卡号",
+                "value": "{{card.code.grouped}}"
+              }
+            },
+            {
+              "block": "email.image",
+              "data": {
+                "qr": "{{card.code.qr}}",
+                "size": 160
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "在收银台出示二维码，或在结账时输入卡号。"
+              }
+            },
+            {
+              "block": "email.button",
+              "data": {
+                "label": "查看余额",
+                "url": "{{app_url.balance}}#{{card.link_token}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "可在收银台查询余额。",
+                "onlyWithout": "app_url.balance"
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "zh-TW": {
+          "subject": "您的禮品卡即將到期",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "您的禮品卡即將到期"
+              }
+            },
+            {
+              "block": "email.stats",
+              "data": {
+                "stats": [
+                  {
+                    "value": "{{card.balance.money}}",
+                    "label": "禮品卡餘額"
+                  }
+                ]
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "請於 {{card.expires_on.date}} 前使用。"
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "您的卡號",
+                "value": "{{card.code.grouped}}"
+              }
+            },
+            {
+              "block": "email.image",
+              "data": {
+                "qr": "{{card.code.qr}}",
+                "size": 160
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "在櫃檯出示 QR 碼，或於結帳時輸入卡號。"
+              }
+            },
+            {
+              "block": "email.button",
+              "data": {
+                "label": "查看餘額",
+                "url": "{{app_url.balance}}#{{card.link_token}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "可在櫃檯查詢餘額。",
+                "onlyWithout": "app_url.balance"
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        }
+      }
+    },
+    {
+      "key": "offers-voucher",
+      "name": {
+        "en-US": "Voucher",
+        "de-DE": "Gutschein",
+        "fr-FR": "Bon",
+        "da-DK": "Voucher",
+        "cs-CZ": "Poukaz",
+        "ar-EG": "قسيمة",
+        "zh-CN": "代金券",
+        "zh-TW": "兌換券"
+      },
+      "vars": [
+        "voucher.public_name",
+        "voucher.code.grouped",
+        "voucher.code.qr",
+        "voucher.expires_on.date"
+      ],
+      "locales": {
+        "en-US": {
+          "subject": "Your voucher from {{appName}}",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "{{voucher.public_name}}"
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "Your code",
+                "value": "{{voucher.code.grouped}}"
+              }
+            },
+            {
+              "block": "email.image",
+              "data": {
+                "qr": "{{voucher.code.qr}}",
+                "size": 160
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Show the QR code at the counter, or say the code."
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Only for you, signed in or named by our staff.",
+                "onlyWith": "voucher.holder_email"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Use it by {{voucher.expires_on.date}}.",
+                "onlyWith": "voucher.expires_on"
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "de-DE": {
+          "subject": "Ihr Gutschein von {{appName}}",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "{{voucher.public_name}}"
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "Ihr Code",
+                "value": "{{voucher.code.grouped}}"
+              }
+            },
+            {
+              "block": "email.image",
+              "data": {
+                "qr": "{{voucher.code.qr}}",
+                "size": 160
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Zeigen Sie den QR-Code an der Kasse vor oder nennen Sie den Code."
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Nur für Sie – angemeldet oder von unserem Personal namentlich erfasst.",
+                "onlyWith": "voucher.holder_email"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Einlösbar bis {{voucher.expires_on.date}}.",
+                "onlyWith": "voucher.expires_on"
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "fr-FR": {
+          "subject": "Votre bon {{appName}}",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "{{voucher.public_name}}"
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "Votre code",
+                "value": "{{voucher.code.grouped}}"
+              }
+            },
+            {
+              "block": "email.image",
+              "data": {
+                "qr": "{{voucher.code.qr}}",
+                "size": 160
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Présentez le QR code en caisse ou indiquez le code."
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Réservé à vous : connecté à votre compte ou identifié par notre personnel.",
+                "onlyWith": "voucher.holder_email"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "À utiliser avant le {{voucher.expires_on.date}}.",
+                "onlyWith": "voucher.expires_on"
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "da-DK": {
+          "subject": "Din voucher fra {{appName}}",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "{{voucher.public_name}}"
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "Din kode",
+                "value": "{{voucher.code.grouped}}"
+              }
+            },
+            {
+              "block": "email.image",
+              "data": {
+                "qr": "{{voucher.code.qr}}",
+                "size": 160
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Vis QR-koden ved kassen, eller oplys koden."
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Kun til dig, når du er logget ind eller nævnt af vores personale.",
+                "onlyWith": "voucher.holder_email"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Brug den senest {{voucher.expires_on.date}}.",
+                "onlyWith": "voucher.expires_on"
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "cs-CZ": {
+          "subject": "Váš poukaz od {{appName}}",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "{{voucher.public_name}}"
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "Váš kód",
+                "value": "{{voucher.code.grouped}}"
+              }
+            },
+            {
+              "block": "email.image",
+              "data": {
+                "qr": "{{voucher.code.qr}}",
+                "size": 160
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Ukažte QR kód u pokladny, nebo kód nadiktujte."
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Určeno jen vám – po přihlášení nebo po ověření naším personálem.",
+                "onlyWith": "voucher.holder_email"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Využijte jej do {{voucher.expires_on.date}}.",
+                "onlyWith": "voucher.expires_on"
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "ar-EG": {
+          "subject": "قسيمتك من {{appName}}",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "{{voucher.public_name}}"
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "الرمز الخاص بك",
+                "value": "{{voucher.code.grouped}}"
+              }
+            },
+            {
+              "block": "email.image",
+              "data": {
+                "qr": "{{voucher.code.qr}}",
+                "size": 160
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "اعرض رمز QR عند الكاشير، أو اذكر الرمز."
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "لك وحدك، عند تسجيل الدخول أو عندما يسجّل موظفونا اسمك.",
+                "onlyWith": "voucher.holder_email"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "استخدمها قبل {{voucher.expires_on.date}}.",
+                "onlyWith": "voucher.expires_on"
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "zh-CN": {
+          "subject": "您的 {{appName}} 代金券",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "{{voucher.public_name}}"
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "您的卡号",
+                "value": "{{voucher.code.grouped}}"
+              }
+            },
+            {
+              "block": "email.image",
+              "data": {
+                "qr": "{{voucher.code.qr}}",
+                "size": 160
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "在收银台出示二维码，或报出券码。"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "仅限您本人使用：登录后使用，或由店员登记您的姓名。",
+                "onlyWith": "voucher.holder_email"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "请在 {{voucher.expires_on.date}} 前使用。",
+                "onlyWith": "voucher.expires_on"
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "zh-TW": {
+          "subject": "您的 {{appName}} 兌換券",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "{{voucher.public_name}}"
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "您的卡號",
+                "value": "{{voucher.code.grouped}}"
+              }
+            },
+            {
+              "block": "email.image",
+              "data": {
+                "qr": "{{voucher.code.qr}}",
+                "size": 160
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "在櫃檯出示 QR 碼，或報出券碼。"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "僅限您本人使用：登入後使用，或由店員登記您的姓名。",
+                "onlyWith": "voucher.holder_email"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "請於 {{voucher.expires_on.date}} 前使用。",
+                "onlyWith": "voucher.expires_on"
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        }
+      }
+    },
+    {
+      "key": "offers-credit",
+      "name": {
+        "en-US": "Credit",
+        "de-DE": "Guthaben",
+        "fr-FR": "Avoir",
+        "da-DK": "Tilgodehavende",
+        "cs-CZ": "Kredit",
+        "ar-EG": "رصيد",
+        "zh-CN": "储值余额",
+        "zh-TW": "儲值金"
+      },
+      "vars": [
+        "card.balance.money"
+      ],
+      "locales": {
+        "en-US": {
+          "subject": "You have credit at {{appName}}",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "You have credit with us"
+              }
+            },
+            {
+              "block": "email.stats",
+              "data": {
+                "stats": [
+                  {
+                    "value": "{{card.balance.money}}",
+                    "label": "Your credit"
+                  }
+                ]
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Tell our staff your email address to use it. It never expires."
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "de-DE": {
+          "subject": "Sie haben ein Guthaben bei {{appName}}",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Sie haben ein Guthaben bei uns"
+              }
+            },
+            {
+              "block": "email.stats",
+              "data": {
+                "stats": [
+                  {
+                    "value": "{{card.balance.money}}",
+                    "label": "Ihr Guthaben"
+                  }
+                ]
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Nennen Sie unserem Personal Ihre E-Mail-Adresse, um es einzulösen. Es verfällt nie."
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "fr-FR": {
+          "subject": "Vous avez un avoir chez {{appName}}",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Vous avez un avoir chez nous"
+              }
+            },
+            {
+              "block": "email.stats",
+              "data": {
+                "stats": [
+                  {
+                    "value": "{{card.balance.money}}",
+                    "label": "Votre avoir"
+                  }
+                ]
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Indiquez votre adresse e-mail à notre personnel pour l’utiliser. Il n’expire jamais."
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "da-DK": {
+          "subject": "Du har et tilgodehavende hos {{appName}}",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Du har et tilgodehavende hos os"
+              }
+            },
+            {
+              "block": "email.stats",
+              "data": {
+                "stats": [
+                  {
+                    "value": "{{card.balance.money}}",
+                    "label": "Dit tilgodehavende"
+                  }
+                ]
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Oplys din e-mailadresse til vores personale for at bruge det. Det udløber aldrig."
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "cs-CZ": {
+          "subject": "Máte kredit u {{appName}}",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Máte u nás kredit"
+              }
+            },
+            {
+              "block": "email.stats",
+              "data": {
+                "stats": [
+                  {
+                    "value": "{{card.balance.money}}",
+                    "label": "Váš kredit"
+                  }
+                ]
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Chcete-li jej využít, sdělte našemu personálu svou e-mailovou adresu. Jeho platnost nikdy nekončí."
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "ar-EG": {
+          "subject": "لديك رصيد لدى {{appName}}",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "لديك رصيد لدينا"
+              }
+            },
+            {
+              "block": "email.stats",
+              "data": {
+                "stats": [
+                  {
+                    "value": "{{card.balance.money}}",
+                    "label": "رصيدك"
+                  }
+                ]
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "أخبر موظفينا بعنوان بريدك الإلكتروني لاستخدامه. لا تنتهي صلاحيته أبدًا."
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "zh-CN": {
+          "subject": "您在 {{appName}} 有储值余额",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "您在本店有储值余额"
+              }
+            },
+            {
+              "block": "email.stats",
+              "data": {
+                "stats": [
+                  {
+                    "value": "{{card.balance.money}}",
+                    "label": "您的储值余额"
+                  }
+                ]
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "使用时请向店员提供您的电子邮箱。永不过期。"
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "zh-TW": {
+          "subject": "您在 {{appName}} 有儲值金",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "您在本店有儲值金"
+              }
+            },
+            {
+              "block": "email.stats",
+              "data": {
+                "stats": [
+                  {
+                    "value": "{{card.balance.money}}",
+                    "label": "您的儲值金"
+                  }
+                ]
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "使用時請向店員提供您的電子郵件地址。永不過期。"
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        }
+      }
+    }
+  ],
   "addOns": {
     "suggests": [
       {
