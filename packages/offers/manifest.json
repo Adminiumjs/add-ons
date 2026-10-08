@@ -7224,6 +7224,60 @@
       }
     }
   ],
+  "publicKeys": {
+    "offers-link": {}
+  },
+  "publicAccess": [
+    {
+      "table": "gift_cards",
+      "methods": [
+        "GET"
+      ],
+      "select": [
+        "status",
+        "balance",
+        "expires_on"
+      ],
+      "unlockBy": {
+        "header": true,
+        "column": "code",
+        "self": true,
+        "length": 12,
+        "where": [
+          {
+            "column": "kind",
+            "eq": "card"
+          },
+          {
+            "column": "status",
+            "eq": "active"
+          },
+          {
+            "column": "expires_on",
+            "notBefore": "today",
+            "orEmpty": true
+          }
+        ]
+      }
+    },
+    {
+      "table": "gift_cards",
+      "key": "offers-link",
+      "methods": [
+        "GET"
+      ],
+      "select": [
+        "status",
+        "balance",
+        "expires_on"
+      ],
+      "claim": {
+        "by": "token",
+        "column": "link_token",
+        "expires": "expires_on"
+      }
+    }
+  ],
   "addOns": {
     "suggests": [
       {
