@@ -24,14 +24,17 @@ export function staffReduction(question: Question, standing: Standing): Refused 
   const goods = goodsLeft(question, standing);
   // A comp arrives as one hundred percent, already allowed by Adminium.
   const percent = staff.kind !== 'amount';
-  const asked = percent ? percentOf(goods, staff.kind === 'comp' ? '100' : staff.value) : least(toUnits(staff.value, scale) ?? 0n, goods);
+  const value = staff.kind === 'comp' ? '100' : staff.value;
+  const asked = percent ? percentOf(goods, value) : least(toUnits(value, scale) ?? 0n, goods);
   if (staff.judge && staff.ceiling !== null) {
     const limit = staff.ceiling;
     const amountMost = toUnits(limit.amount, scale);
-    if (percent && (toUnits(staff.value, PERCENT) ?? 0n) > (toUnits(limit.percent, PERCENT) ?? 0n)) return { typed: '', reason: 'over-ceiling', params: { max: String(limit.percent) } };
-    // An amount is held to the giver's limit in money, or — with none — to what their percent of the goods comes to.
-    const most = amountMost ?? percentOf(goods, limit.percent);
-    const typedAmount = percent ? asked : (toUnits(staff.value, scale) ?? 0n);
+    if (percent && (toUnits(value, PERCENT) ?? 0n) > (toUnits(limit.percent, PERCENT) ?? 0n)) return { typed: '', reason: 'over-ceiling', params: { max: String(limit.percent) } };
+    // An amount is held to the giver's limit in money, or — with none — to what their percent comes to of the goods as
+    // they came (the base Adminium itself judges by: every line kept and not left out, before any reduction).
+    const came = question.lines.reduce((total, line, at) => (question.input.lines[at]!.kept && !question.input.lines[at]!.excluded ? total + line.amount : total), 0n);
+    const most = amountMost ?? percentOf(came, limit.percent);
+    const typedAmount = percent ? asked : (toUnits(value, scale) ?? 0n);
     if ((percent && amountMost !== null && asked > amountMost) || (!percent && typedAmount > most)) return { typed: '', reason: 'over-ceiling', params: { max: fromUnits(most, scale) } };
   }
   const lines = question.lines.filter((line) => line.goods);

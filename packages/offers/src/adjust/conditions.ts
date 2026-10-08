@@ -10,38 +10,54 @@
 
 import type { AdjustInput, ExplainReason } from '@adminium/add-on-contracts';
 
-import { keyOf, textOf, wholeOf, yes, type Offer, type Row } from './standing.ts';
+import { dayOf, keyOf, textOf, wholeOf, yes, type Offer, type Refused, type Row } from './standing.ts';
 
 /** How many of the order's own held uses name an offer or a code: they are this order's, and are not counted against it. */
 export function ownUses(input: AdjustInput, column: 'offer_id' | 'code_id', id: string): number {
   return ((input.held?.['redemptions'] ?? []) as Row[]).filter((row) => keyOf(row[column]) === id).length;
 }
 
-/** `HH:MM` text, or null for anything else. */
-const clock = (value: unknown): string | null => (typeof value === 'string' && /^\d{2}:\d{2}/.test(value) ? value.slice(0, 5) : null);
+/** `HH:MM` text, from a time as a column may hold one (`9:00`, `09:00:00`); null for anything else. */
+function clock(value: unknown): string | null {
+  const match = typeof value === 'string' ? /^(\d{1,2}):(\d{2})/.exec(value.trim()) : null;
+  return match === null ? null : `${match[1]!.padStart(2, '0')}:${match[2]!}`;
+}
+
+/**
+ * The code an offer is applied by: the first typed for it that still has uses
+ * of its own. A code that has none is refused by itself — another code of the
+ * same offer may stand where it does not.
+ */
+export function chooseCode(offer: Offer, input: AdjustInput, earned: boolean): Refused[] {
+  const refused: Refused[] = [];
+  for (const code of offer.codes) {
+    const most = wholeOf(code.row['max_uses']);
+    if (!earned && most !== null && (wholeOf(code.row['uses']) ?? 0) - ownUses(input, 'code_id', code.code) >= most) refused.push({ typed: code.typed, reason: 'used-up' });
+    else if (offer.typed === null) offer.typed = code;
+  }
+  return refused;
+}
 
 /** Whether the offer is running at all, now, at this door, with uses left. Null: it is. */
 export function standing(offer: Offer, input: AdjustInput): ExplainReason | null {
   const row = offer.row;
   const status = textOf(row['status']);
   if (status === 'draft' || status === 'paused' || status === 'ended') return status;
-  const [starts, ends] = [textOf(row['starts_on']), textOf(row['ends_on'])];
+  const [starts, ends] = [dayOf(row['starts_on']), dayOf(row['ends_on'])];
   if (starts !== null && starts > input.today) return 'not-yet';
   if (ends !== null && ends < input.today) return 'ended';
+  // The days of the week, as digits however they are written down: `1,4`, `1, 4`, `[1,4]`.
   const days = textOf(row['weekdays']);
-  if (days !== null && !days.split(',').map((day) => day.trim()).includes(String(input.weekday))) return 'outside-days';
+  if (days !== null && !Array.from(days.match(/[0-6]/g) ?? []).includes(String(input.weekday))) return 'outside-days';
   const [from, to] = [clock(row['from_time']), clock(row['to_time'])];
   // From the first minute to just before the last. Hours that end at or before they begin hold at no time of day.
   if ((from !== null && input.time < from) || (to !== null && input.time >= to)) return 'outside-hours';
   const trigger = textOf(row['trigger']);
   if (trigger === 'staff' && input.origin !== 'staff') return 'no-code-typed';
-  if (trigger === 'code' && offer.typed === null) return 'no-code-typed';
+  // A code offer whose every typed code has run out is used up; one nobody typed a code for has no code typed.
+  if (trigger === 'code' && offer.typed === null) return offer.codes.length > 0 ? 'used-up' : 'no-code-typed';
   const most = wholeOf(row['max_uses']);
   if (most !== null && (wholeOf(row['uses']) ?? 0) - ownUses(input, 'offer_id', offer.id) >= most) return 'used-up';
-  if (offer.typed !== null) {
-    const codeMost = wholeOf(offer.typed.row['max_uses']);
-    if (codeMost !== null && (wholeOf(offer.typed.row['uses']) ?? 0) - ownUses(input, 'code_id', offer.typed.code) >= codeMost) return 'used-up';
-  }
   return null;
 }
 

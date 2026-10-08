@@ -80,6 +80,9 @@ describe('a kind of offer', () => {
     expect(off(answer({ lines: [line('1', 'TOTE-NAT', 4)], offers: [offer(1, { gives: 'bonus_item', value: null, buy_qty: 3, bonus_qty: 1 })] }))).toBe('15.00');
     // Five at "buy three, two on us": one full group gives its two cheapest; the two left over are no group.
     expect(off(answer({ lines: [line('1', 'TOTE-NAT', 5)], offers: [offer(1, { gives: 'bonus_item', value: null, buy_qty: 3, bonus_qty: 2 })] }))).toBe('30.00');
+    // Three different things at "buy three, two on us": the two cheaper ones, each from its own line.
+    const three = [other('1', 'Lamp', '20.00'), other('2', 'Vase', '10.00'), other('3', 'Card', '5.00')];
+    expect(byLine(answer({ lines: three, offers: [offer(1, { gives: 'bonus_item', value: null, buy_qty: 3, bonus_qty: 2 })] }))).toEqual(['0.00', '10.00', '5.00']);
     // One alone is no pair.
     const one = answer({ lines: [line('1', 'TOTE-NAT')], offers: [pair] }, { explain: true });
     expect(why(one)).toEqual({ '1': 'needs-quantity' });
@@ -297,6 +300,15 @@ describe('vouchers and packs', () => {
     expect(classes(2, { ...CLASSES, uses_left: 0 }).refused).toEqual([{ typed: 'PK-X', reason: 'used-up' }]);
   });
 
+  it('a pack counts only the units it paid for: one a voucher already covered is no use of it', () => {
+    const one = voucher(8, 'One class', { worth: 'thing', what: 'item', source_table: 'shop:items', source_row: 'Class' });
+    const out = answer({ lines: [other('1', 'Class', '15.00', 2)], codes: [typedVoucher('VC-ONE', one), typedVoucher('PK-X', CLASSES)], offers: [] }, { point: 'post' });
+    expect(out.uses).toEqual([
+      { offer: null, code: null, voucher: '8', amount: '15.00' },
+      { offer: null, code: null, voucher: '5', amount: '15.00', units: 1 },
+    ]);
+  });
+
   it('a sold voucher is named as what paid, and the same voucher typed twice is one', () => {
     const sold = answer({ lines: [line('1', 'CNDL-FIG')], codes: [typedVoucher('VC-A', { ...ONE_CANDLE, sold: true }), typedVoucher('vc a', { ...ONE_CANDLE, sold: true })], offers: [] });
     expect(sold.applied).toHaveLength(1);
@@ -428,7 +440,7 @@ describe('an offer tried before it is saved', () => {
 describe('an order priced again for a return', () => {
   it('asks nothing again about who was buying or whether the offer still runs', () => {
     const ended = offer(1, { value: '10', trigger: 'code', status: 'ended', first_order_only: true, max_uses: 1, uses: 1 });
-    const out = answer({ lines: [line('1', 'MUG-SPK', 1), line('2', 'MUG-WHT', 1, { kept: false })], codes: [code('GONE', codeFor(1, 'GONE', { valid_until: '2026-01-01' }))], offers: [ended] }, { mode: 'refund' });
+    const out = answer({ lines: [line('1', 'MUG-SPK', 1), line('2', 'MUG-WHT', 1, { kept: false })], codes: [code('GONE', codeFor(1, 'GONE', { valid_until: '2026-01-01', max_uses: 1, uses: 1 }))], offers: [ended] }, { mode: 'refund' });
     // Ten percent of the mug that was kept; the one given back counts for nothing.
     expect(byLine(out)).toEqual(['1.40', '0.00']);
     expect(out.refused).toEqual([]);
@@ -437,6 +449,221 @@ describe('an order priced again for a return', () => {
   it('still asks what depends on the basket: a minimum no longer met', () => {
     const out = answer({ lines: [line('1', 'MUG-SPK', 1)], codes: [code('AUTUMN5')], offers: [OFFERS[3]!] }, { mode: 'refund' });
     expect(off(out)).toBe('0.00');
+  });
+});
+
+describe('units, one by one', () => {
+  const candle = (id: number): Row => voucher(id, 'One candle', { worth: 'thing', what: 'item', source_table: 'shop:items', source_row: 'CNDL-FIG' });
+
+  it('a second voucher takes the second candle whole, not half of what the first left', () => {
+    const out = answer({ lines: [line('1', 'CNDL-FIG', 2)], codes: [typedVoucher('VC-A', candle(1)), typedVoucher('VC-B', candle(2))], offers: [] }, { point: 'post' });
+    expect(off(out)).toBe('36.00');
+    expect(out.uses.map((use) => `${String(use.voucher)} ${use.amount}`)).toEqual(['1 18.00', '2 18.00']);
+    // A third finds nothing left to take, and is left out.
+    const three = answer({ lines: [line('1', 'CNDL-FIG', 2)], codes: [typedVoucher('VC-A', candle(1)), typedVoucher('VC-B', candle(2)), typedVoucher('VC-C', candle(3))], offers: [] });
+    expect(three.applied).toHaveLength(2);
+  });
+
+  it('two vouchers for a night take the dearer night, then the other', () => {
+    const night = (id: number): Row => voucher(id, 'One night', { worth: 'thing', what: 'type', source_table: 'hotel:room_types', source_row: '3' });
+    const stay = { ...other('70', 'Stay', '390.00'), what: [{ as: 'type' as const, table: 'hotel:room_types', row: '3' }], nights: [{ date: '2026-11-02', price: '185.00' }, { date: '2026-11-07', price: '205.00' }] };
+    const out = answer({ lines: [stay], codes: [typedVoucher('VC-A', night(1)), typedVoucher('VC-B', night(2))], offers: [] }, { point: 'post' });
+    expect(out.uses.map((use) => use.amount)).toEqual(['205.00', '185.00']);
+    // Two rooms for those two nights are four room-nights: one voucher is one of them.
+    const rooms = { ...stay, quantity: '2', amount: '780.00' };
+    expect(off(answer({ lines: [rooms], codes: [typedVoucher('VC-A', night(1))], offers: [] }))).toBe('205.00');
+  });
+
+  it('a unit a voucher paid for is the one a pair gives away, and a fixed price takes the other down', () => {
+    const tote = voucher(8, 'One tote', { worth: 'thing', what: 'item', source_table: 'shop:items', source_row: 'TOTE-NAT' });
+    const pair = offer(1, { gives: 'bonus_item', value: null, buy_qty: 2, bonus_qty: 1 });
+    // Two totes, one by voucher: of the pair, the cheaper is the one already at nothing.
+    expect(off(answer({ lines: [line('1', 'TOTE-NAT', 2)], codes: [typedVoucher('VC-T', tote)], offers: [pair] }))).toBe('15.00');
+    // Two candles, one by voucher, each for $15.00: the other comes down by three.
+    expect(off(answer({ lines: [line('1', 'CNDL-FIG', 2)], codes: [typedVoucher('VC-A', candle(1))], offers: [offer(1, { gives: 'fixed_price', value: '15.00' })] }))).toBe('21.00');
+  });
+
+  it('a share of the whole line is spread over its units before a unit is taken', () => {
+    // Three mugs at $14.00: a quarter off by quantity (−10.50, three at 10.50), then "buy three, one on us" gives one of them.
+    const breaks: Row[] = [{ id: 1, offer_id: 1, from_qty: 3, value: '25' }];
+    const offers = [offer(1, { gives: 'quantity_price', value: null }), offer(2, { gives: 'bonus_item', value: null, buy_qty: 3, bonus_qty: 1 })];
+    expect(off(answer({ lines: [line('1', 'MUG-SPK', 3)], offers, breaks }))).toBe('21.00');
+  });
+
+  it('counts a hundred million units without listing them', () => {
+    const screws = other('1', 'Screw', '0.10', 100_000_000);
+    expect(screws.amount).toBe('10000000.00');
+    expect(off(answer({ lines: [screws], offers: [offer(1, { gives: 'bonus_item', value: null, buy_qty: 2, bonus_qty: 1 })] }))).toBe('5000000.00');
+    expect(off(answer({ lines: [screws], offers: [offer(1, { gives: 'fixed_price', value: '0.08' })] }))).toBe('2000000.00');
+    const one = voucher(8, 'One screw', { worth: 'thing', what: 'item', source_table: 'shop:items', source_row: 'Screw', units: 3 });
+    expect(off(answer({ lines: [screws], codes: [typedVoucher('VC-S', one)], offers: [] }))).toBe('0.30');
+    // An amount that does not divide evenly is still the line's amount, to the cent.
+    const odd = { ...other('1', 'Thing', '0.00', 3), amount: '10.00' };
+    expect(off(answer({ lines: [odd], offers: [offer(1, { gives: 'fixed_price', value: '0.00' })] }))).toBe('10.00');
+    expect(off(answer({ lines: [odd], offers: [offer(1, { gives: 'bonus_item', value: null, buy_qty: 3, bonus_qty: 1 })] }))).toBe('3.33');
+  });
+
+  it('a quantity that is no whole number, nothing or less is one unit', () => {
+    for (const quantity of ['1.5', '0', '-2', '', 'abc', '99999999999999999999']) {
+      const cheese = { ...other('1', 'Cheese', '12.00'), quantity };
+      expect(off(answer({ lines: [cheese], offers: [offer(1, { gives: 'fixed_price', value: '10.00' })] })), quantity).toBe('2.00');
+    }
+  });
+});
+
+describe('what the review found', () => {
+  const lines = () => [line('1', 'TS-BLU-M', 2)];
+
+  it('one code to an order, also where one of two typed does not combine', () => {
+    const offers = [offer(1, { value: '10', trigger: 'code' }), offer(2, { value: '20', trigger: 'code', combinable: false })];
+    const out = answer({ lines: lines(), codes: [code('TEN', codeFor(1, 'TEN')), code('TWENTY', codeFor(2, 'TWENTY'))], offers }, { point: 'post' });
+    expect(out.uses.map((use) => `${String(use.offer)} ${use.amount}`)).toEqual(['2 9.60']);
+    expect(out.told).toEqual([{ typed: 'TEN', note: 'better-offer-applied', name: 'Offer 2' }]);
+    expect(out.refused).toEqual([]);
+  });
+
+  it('what staff give and what a voucher is worth never decide which offer applies', () => {
+    // A hundred dollars of goods; five percent that does not combine; $9.60 by hand from somebody who may give ten percent.
+    const goods = [other('1', 'Lamp', '100.00')];
+    const out = answer({ lines: goods, offers: [offer(1, { value: '5', combinable: false })], staff: { kind: 'amount', value: '9.60', reason: null, ceiling: { percent: '10', amount: null }, judge: true } }, { point: 'post' });
+    expect(out.uses.map((use) => `${use.offer ?? 'staff'} ${use.amount}`)).toEqual(['1 5.00', 'staff 9.60']);
+    expect(out.refused).toEqual([]);
+    // Ten dollars of goods, half off, and a ten-dollar voucher: the offer takes its five, and the voucher only the rest.
+    const ten = answer({ lines: [other('1', 'Lamp', '10.00')], codes: [typedVoucher('VC-TEN', voucher(9, 'Ten dollars', { value: '10.00' }))], offers: [offer(1, { value: '50', combinable: false })] }, { point: 'post' });
+    expect(ten.uses.map((use) => `${use.offer ?? use.voucher ?? ''} ${use.amount}`)).toEqual(['1 5.00', '9 5.00']);
+  });
+
+  it('a code that lost to offers that combine is told so, by the name of the one that gave most', () => {
+    // $32.00: ten percent by a code that does not combine ($3.20) loses to five dollars off that came by itself.
+    const offers = [offer(1, { value: '10', trigger: 'code', combinable: false }), offer(2, { gives: 'amount', value: '5.00', min_spend: '30.00' })];
+    const out = answer({ lines: [line('1', 'MUG-SPK', 2), line('2', 'PEN-BLK', 2)], codes: [code('T', codeFor(1, 'T'))], offers });
+    expect(off(out)).toBe('5.00');
+    expect(out.told).toEqual([{ typed: 'T', note: 'better-offer-applied', name: 'Offer 2' }]);
+    expect(out.refused).toEqual([]);
+  });
+
+  it('a code typed on an order with nothing left to reduce is not for these items', () => {
+    const candle = voucher(1, 'One candle', { worth: 'thing', what: 'item', source_table: 'shop:items', source_row: 'CNDL-FIG' });
+    for (const combinable of [true, false]) {
+      const out = answer({ lines: [line('1', 'CNDL-FIG')], codes: [typedVoucher('VC-A', candle), code('T', codeFor(1, 'T'))], offers: [offer(1, { trigger: 'code', combinable })] }, { explain: true });
+      expect(out.refused, String(combinable)).toEqual([{ typed: 'T', reason: 'not-for-these-items' }]);
+      expect(why(out), String(combinable)).toEqual({ '1': 'not-for-these-items' });
+      expect(out.told).toBeUndefined();
+    }
+  });
+
+  it('a code that lost is told the name of the offer that beat it, not of another that also applied', () => {
+    // Codes X and Y combine, code T does not; nor does A, which came by itself and gives most.
+    const offers = [offer(1, { value: '5', trigger: 'code' }), offer(2, { value: '3', trigger: 'code' }), offer(3, { value: '20', trigger: 'code', combinable: false }), offer(4, { value: '40', combinable: false })];
+    const out = answer({ lines: lines(), codes: [code('X', codeFor(1, 'X')), code('Y', codeFor(2, 'Y')), code('T', codeFor(3, 'T'))], offers }, { point: 'post' });
+    expect(out.uses.map((use) => String(use.offer))).toEqual(['1', '4']);
+    expect(out.told).toEqual([
+      { typed: 'Y', note: 'better-offer-applied', name: 'Offer 1' },
+      { typed: 'T', note: 'better-offer-applied', name: 'Offer 4' },
+    ]);
+  });
+
+  it('a second code of an offer applies where the first has run out', () => {
+    const out = answer({ lines: lines(), codes: [code('FIRST', codeFor(1, 'FIRST', { max_uses: 5, uses: 5 })), code('SECOND', { ...codeFor(1, 'SECOND'), id: 2 })], offers: [offer(1, { trigger: 'code' })] }, { point: 'post' });
+    expect(out.refused).toEqual([{ typed: 'FIRST', reason: 'used-up' }]);
+    expect(out.uses).toEqual([{ offer: '1', code: '2', voucher: null, amount: '4.80' }]);
+    // Both run out: each is refused once, and nothing is taken.
+    const none = answer({ lines: lines(), codes: [code('FIRST', codeFor(1, 'FIRST', { max_uses: 5, uses: 5 })), code('SECOND', { ...codeFor(1, 'SECOND', { max_uses: 1, uses: 1 }), id: 2 })], offers: [offer(1, { trigger: 'code' })] }, { explain: true });
+    expect(none.refused).toEqual([{ typed: 'FIRST', reason: 'used-up' }, { typed: 'SECOND', reason: 'used-up' }]);
+    expect(why(none)).toEqual({ '1': 'used-up' });
+  });
+
+  it('a code that does not combine is tried before the offers that came by themselves, however many there are', () => {
+    const offers = [...Array.from({ length: 13 }, (_, at) => offer(at + 1, { value: String(at + 1), combinable: false })), offer(50, { value: '30', trigger: 'code', combinable: false })];
+    const out = answer({ lines: lines(), codes: [code('BEST', codeFor(50, 'BEST'))], offers }, { point: 'post' });
+    expect(out.uses.map((use) => `${String(use.offer)} ${use.amount}`)).toEqual(['50 14.40']);
+  });
+
+  it('a fixed price with no price, and "buy one, that one on us", give nothing', () => {
+    for (const more of [{ gives: 'fixed_price', value: null }, { gives: 'fixed_price', value: '12,50' }, { gives: 'bonus_item', value: null, buy_qty: 1, bonus_qty: 1 }, { gives: 'something_new', value: '5' }] as Row[]) {
+      const out = answer({ lines: [line('1', 'TOTE-NAT', 2)], offers: [offer(1, more)] }, { explain: true });
+      expect(off(out), JSON.stringify(more)).toBe('0.00');
+      expect(why(out), JSON.stringify(more)).toEqual({ '1': 'not-for-these-items' });
+    }
+    // A bonus that asks for as many as it gives still leaves one of every group paid for.
+    expect(off(answer({ lines: [line('1', 'TOTE-NAT', 4)], offers: [offer(1, { gives: 'bonus_item', value: null, buy_qty: 2, bonus_qty: 2 })] }))).toBe('30.00');
+  });
+
+  it('an order priced again for a return keeps the washes its pack already paid for', () => {
+    const washes = voucher(6, '5 car washes', { worth: 'pack', what: 'item', source_table: 'shop:items', source_row: 'Wash', uses_total: 5, uses_taken: 5, uses_left: 0, status: 'used' });
+    const kept = [other('1', 'Wash', '9.00', 2), { ...other('2', 'Air freshener', '4.00'), kept: false }];
+    const out = answer({ lines: kept, codes: [typedVoucher('PK-W', washes)], offers: [] }, { mode: 'refund' });
+    expect(byLine(out)).toEqual(['18.00', '0.00']);
+    expect(out.refused).toEqual([]);
+  });
+
+  it('reads a date kept as a moment, days of the week kept as a list, and an hour written short', () => {
+    const one = (more: Row, when: Partial<AdjustInput> = {}) => why(answer({ lines: lines(), offers: [offer(1, more)] }, { explain: true, ...when }));
+    expect(one({ starts_on: '2026-10-01T00:00:00.000Z', ends_on: '2026-10-01T00:00:00.000Z' })).toEqual({ '1': 'applies 4.80' });
+    expect(one({ weekdays: '[1,4]' })).toEqual({ '1': 'applies 4.80' });
+    expect(one({ weekdays: '[1,5]' })).toEqual({ '1': 'outside-days' });
+    expect(one({ from_time: '9:00', to_time: '9:30' })).toEqual({ '1': 'outside-hours' });
+    expect(one({ from_time: '9:00:00', to_time: '10:30:00' })).toEqual({ '1': 'applies 4.80' });
+    const expired = answer({ lines: lines(), codes: [code('OLD', codeFor(1, 'OLD', { valid_until: '2026-09-30T23:59:59Z' }))], offers: [offer(1, { trigger: 'code' })] });
+    expect(expired.refused).toEqual([{ typed: 'OLD', reason: 'expired' }]);
+  });
+
+  it('a comp is a hundred percent whatever its value column holds, and is judged as that', () => {
+    const comp = (judge: boolean) => answer({ lines: lines(), offers: [], staff: { kind: 'comp', value: '', reason: null, ceiling: judge ? { percent: '10', amount: null } : null, judge } });
+    expect(off(comp(false))).toBe('48.00');
+    expect(comp(true).refused).toEqual([{ typed: '', reason: 'over-ceiling', params: { max: '10' } }]);
+  });
+
+  it('an amount by hand with no limit in money is held to the giver\'s percent of the goods as they came', () => {
+    // Ten percent of $48.00 is $4.80, whatever an offer took first.
+    const given = (value: string) => answer({ lines: lines(), offers: [offer(1, { value: '50' })], staff: { kind: 'amount', value, reason: null, ceiling: { percent: '10', amount: null }, judge: true } });
+    expect(off(given('4.80'))).toBe('28.80');
+    expect(given('4.81').refused).toEqual([{ typed: '', reason: 'over-ceiling', params: { max: '4.80' } }]);
+  });
+
+  it('a voucher whose row says nothing of what it is worth is not known', () => {
+    for (const worth of [null, 'gold']) expect(answer({ lines: lines(), codes: [typedVoucher('VC-X', voucher(3, 'x', { worth }))], offers: [] }).refused, String(worth)).toEqual([{ typed: 'VC-X', reason: 'unknown' }]);
+  });
+
+  it('an offer row with no key is nobody\'s to apply or to explain', () => {
+    const out = answer({ lines: lines(), offers: [{ ...offer(1, {}), id: null }, offer(2, {})] }, { explain: true });
+    expect(why(out)).toEqual({ '2': 'applies 4.80' });
+  });
+
+  it('an amount finer than the order keeps is cut where Adminium cuts it', () => {
+    // $10.005 at two decimals is $10.00 to Adminium: all of it off is ten dollars, never ten and a cent.
+    const fine = { ...other('1', 'Thing', '10.00'), amount: '10.005' };
+    expect(off(answer({ lines: [fine], offers: [offer(1, { value: '100' })] }))).toBe('10.00');
+  });
+
+  it('never lists more than an answer may carry, and what it leaves out it says', () => {
+    const many = Array.from({ length: 200 }, (_, at) => other(String(at + 1), `Thing ${String(at + 1)}`, '10.00'));
+    const offers = Array.from({ length: 6 }, (_, at) => offer(at + 1, { value: '10' }));
+    const out = answer({ lines: many, offers }, { explain: true });
+    expect(out.applied.length).toBe(800);
+    const reasons = why(out);
+    expect([reasons['5'], reasons['6']]).toEqual(['not-combinable', 'not-combinable']);
+    // What is listed still adds up, line by line.
+    const perLine = new Map<string, number>();
+    for (const one of out.applied) perLine.set(one.line, (perLine.get(one.line) ?? 0) + Math.round(Number(one.amount) * 100));
+    for (const one of out.lines) expect(perLine.get(one.key) ?? 0, one.key).toBe(Math.round(Number(one.discount) * 100));
+  });
+
+  it('answers the largest question it may be asked in good time', () => {
+    const many = Array.from({ length: 200 }, (_, at) => line(String(at + 1), at % 2 === 0 ? 'MUG-SPK' : 'TOTE-NAT', 3));
+    const offers = [
+      ...Array.from({ length: 12 }, (_, at) => offer(at + 1, { value: '1', combinable: false })),
+      ...Array.from({ length: 12 }, (_, at) => offer(100 + at, { value: '1', trigger: 'code' })),
+      ...Array.from({ length: 476 }, (_, at) => offer(1000 + at, { value: '1', status: at % 2 === 0 ? 'paused' : 'active', starts_on: '2027-01-01' })),
+    ];
+    const codes = Array.from({ length: 12 }, (_, at) => code(`C${String(at)}`, codeFor(100 + at, `C${String(at)}`)));
+    const started = performance.now();
+    const out = answer({ lines: many, codes, offers }, { explain: true });
+    const took = performance.now() - started;
+    expect(out.explain).toHaveLength(500);
+    expect(out.told).toHaveLength(11);
+    // A save allows a quarter of a second in a bare context; here, with room for a busy machine.
+    expect(took).toBeLessThan(1500);
   });
 });
 
@@ -453,6 +680,10 @@ describe('what an answer never does', () => {
     expect(named('Ten off')).toBe('Ten off');
     expect(named('{not json')).toBe('{not json');
     expect(named('{"en-US":5}')).toBe('{"en-US":5}');
+    // A name kept as a quoted text is that text, without its quotes; a key that is no language is no name.
+    expect(named('"Ten off"')).toBe('Ten off');
+    expect(named('{"en-US":"Ten off","__proto__":"x","constructor":"y"}')).toEqual({ 'en-US': 'Ten off' });
+    expect(answer({ lines: MUGS(), offers: [{ ...offer(1, {}), public_name: { 'en-US': 'Ten off' } as never }] }).applied[0]!.name).toEqual({ 'en-US': 'Ten off' });
     expect(named(null)).toBe('Inside name');
     expect(named('x'.repeat(300))).toHaveLength(200);
   });
@@ -467,7 +698,7 @@ describe('what an answer never does', () => {
   });
 
   it('holds every reduction to what its line has left, whatever a step asks for', () => {
-    const standing: Standing = { left: [500n, 0n, 300n], taken: [] };
+    const standing: Standing = { left: [500n, 0n, 300n], runs: [[{ value: 500n, count: 1 }], [], [{ value: 300n, count: 1 }]], taken: [] };
     const source = { kind: 'offer' as const, offer: '1', code: null, voucher: null, name: 'x', typed: false };
     const taken = take(standing, source, new Map([[0, 900n], [1, 50n], [2, -20n]]));
     expect(taken).toMatchObject({ total: 500n });

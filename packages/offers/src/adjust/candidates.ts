@@ -10,7 +10,7 @@
 
 import type { AdjustInput } from '@adminium/add-on-contracts';
 
-import { keyOf, textOf, wholeOf, yes, type Offer, type Refused, type Row, type TypedVoucher } from './standing.ts';
+import { dayOf, keyOf, textOf, wholeOf, yes, type Offer, type Refused, type Row, type TypedVoucher } from './standing.ts';
 import { offerName } from './names.ts';
 import { earned } from './refund.ts';
 
@@ -26,8 +26,11 @@ function byKey(a: Offer, b: Offer): number {
 export function offersOf(input: AdjustInput): Offer[] {
   const rows = (name: string): Row[] => (input.offers[name] ?? []) as Row[];
   const of = (name: string, id: string): Row[] => rows(name).filter((row) => keyOf(row['offer_id']) === id);
-  const build = (row: Row, id: string, draft: boolean): Offer => ({ id, row: draft ? { ...row, status: 'active' } : row, breaks: of('breaks', id), targets: of('targets', id), name: offerName(row['public_name'], textOf(row['name']) ?? ''), typed: null, draft });
-  const out = rows('offers').map((row) => build(row, keyOf(row['id']), false));
+  const build = (row: Row, id: string, draft: boolean): Offer => ({ id, row: draft ? { ...row, status: 'active' } : row, breaks: of('breaks', id), targets: of('targets', id), name: offerName(row['public_name'], textOf(row['name']) ?? ''), codes: [], typed: null, draft });
+  // A row with no key is no offer anybody could name.
+  const out = rows('offers')
+    .filter((row) => textOf(row['id']) !== null)
+    .map((row) => build(row, keyOf(row['id']), false));
   if (input.mode === 'try' && input.draft !== undefined) {
     const tried = input.draft as Row;
     const id = textOf(tried['id']) ?? 'draft';
@@ -61,17 +64,21 @@ export function typedOf(input: AdjustInput, offers: Offer[]): { vouchers: TypedV
     if (code.kind === 'code') {
       const offer = offers.find((one) => one.id === keyOf(row['offer_id']));
       if (offer === undefined) refused.push({ typed: code.typed, reason: 'unknown' });
-      else if (!earned(input) && textOf(row['valid_until']) !== null && String(row['valid_until']) < input.today) refused.push({ typed: code.typed, reason: 'expired' });
-      else if (offer.typed === null) offer.typed = { typed: code.typed, code: id, row };
+      else if (!earned(input) && (dayOf(row['valid_until']) ?? '9999') < input.today) refused.push({ typed: code.typed, reason: 'expired' });
+      else offer.codes.push({ typed: code.typed, code: id, row });
       continue;
     }
     // A voucher or a pack: which, the row says — never the word in front of what was typed.
     const status = textOf(row['status']);
-    const lastDay = textOf(row['expires_on']);
+    const lastDay = dayOf(row['expires_on']);
+    const worth = textOf(row['worth']);
     const holder = textOf(row['holder_key']);
-    const reason = earned(input)
-      ? null
-      : status === 'voided'
+    // What it is worth is one of four things; a row that says none of them is nothing anybody can use.
+    const reason = !['amount', 'percent', 'thing', 'pack'].includes(worth ?? '')
+      ? 'unknown'
+      : earned(input)
+        ? null
+        : status === 'voided'
         ? 'void'
         : status === 'expired' || (lastDay !== null && lastDay < input.today)
           ? 'expired'

@@ -306,7 +306,7 @@ export const ADJUST_CASES: readonly AdjustCase[] = [
   {
     name: 'A9 …and forty dollars off by hand stop at what the mugs have left',
     input: ask({ lines: [line('1', 'MUG-SPK', 2), LOAD()], codes: [code('WELCOME10')], customer: NEW_CUSTOMER, staff: noLimit }),
-    expect: { order: '28.00', lines: { '1': '28.00', '9': '0.00' }, refused: [] },
+    expect: { order: '28.00', lines: { '1': '28.00', '9': '0.00' }, applied: [welcome('1', '2.80'), { line: '1', offer: null, kind: 'staff', amount: '25.20', reason: '2' }], refused: [] },
   },
   {
     name: 'A10 a card being loaded counts for no minimum',

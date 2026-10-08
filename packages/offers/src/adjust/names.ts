@@ -31,7 +31,8 @@ export type Name = Record<string, string> | string;
 
 /** The longest a name may be: what an answer's check allows. */
 const MAX = 200;
-const cut = (text: string): string => (text.length > MAX ? text.slice(0, MAX) : text);
+/** Cut by whole characters: a character made of two halves is never left as one. */
+const cut = (text: string): string => (text.length > MAX ? Array.from(text).slice(0, MAX).join('').slice(0, MAX) : text);
 
 /** A word and what it stands before, in each language: "Voucher · One candle". */
 const behind = (word: Words, text: string): Name => (text === '' ? { ...word } : Object.fromEntries(LOCALES.map((locale) => [locale, cut(`${word[locale]} · ${text}`)])));
@@ -42,17 +43,23 @@ const behind = (word: Words, text: string): Name => (text === '' ? { ...word } :
  * name for every language.
  */
 export function offerName(stored: unknown, fallback: string): Name {
+  const named = (read: unknown): Name | null => {
+    if (typeof read === 'string') return read.trim() === '' ? null : cut(read.trim());
+    if (typeof read !== 'object' || read === null || Array.isArray(read)) return null;
+    const names: Record<string, string> = {};
+    // Only a language tag is a name's key: nothing else of the map is read.
+    for (const [locale, name] of Object.entries(read)) if (/^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$/.test(locale) && typeof name === 'string' && name !== '') names[locale] = cut(name);
+    return Object.keys(names).length > 0 ? names : null;
+  };
+  if (typeof stored === 'object' && stored !== null) return named(stored) ?? cut(fallback);
   if (typeof stored !== 'string' || stored.trim() === '') return cut(fallback);
   const text = stored.trim();
-  if (text.startsWith('{')) {
+  if (text.startsWith('{') || text.startsWith('"')) {
     try {
-      const read: unknown = JSON.parse(text);
-      if (typeof read === 'object' && read !== null && !Array.isArray(read)) {
-        const names = Object.fromEntries(Object.entries(read as Record<string, unknown>).filter((entry): entry is [string, string] => typeof entry[1] === 'string' && entry[1] !== '').map(([locale, name]) => [locale, cut(name)]));
-        if (Object.keys(names).length > 0) return names;
-      }
+      const read = named(JSON.parse(text));
+      if (read !== null) return read;
     } catch {
-      // Not a map after all: the text itself is the name.
+      // Not what it looked like: the text itself is the name.
     }
   }
   return cut(text);

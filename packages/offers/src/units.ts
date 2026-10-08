@@ -26,8 +26,17 @@ export function toUnits(value: unknown, scale: number): bigint | null {
   return match[1] === '-' ? -scaled : scaled;
 }
 
-/** As {@link toUnits}, with nothing read as zero. */
-export const unitsOr0 = (value: unknown, scale: number): bigint => toUnits(value, scale) ?? 0n;
+/**
+ * An amount of the order itself, which arrives at the order's own decimals:
+ * anything finer is cut off, as Adminium cuts it when it checks the answer —
+ * so a reduction is never a unit more than the line Adminium sees.
+ */
+export function cutUnits(value: unknown, scale: number): bigint {
+  const text = typeof value === 'number' ? String(value) : typeof value === 'string' ? value.trim() : '';
+  const match = /^(\d+)(?:\.(\d+))?$/.exec(text);
+  if (match === null) return 0n;
+  return BigInt(match[1]!) * pow10(scale) + BigInt(((match[2] ?? '') + '0'.repeat(scale)).slice(0, scale) || '0');
+}
 
 /** The text an amount is written as: `1860n` at two decimals is `"18.60"`. */
 export function fromUnits(units: bigint, scale: number): string {

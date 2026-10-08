@@ -17,12 +17,12 @@
 
 import type { AdjustApplied, AdjustInput, AdjustOutput, AdjustReason, AdjustUse, ExplainReason } from '@adminium/add-on-contracts';
 
-import { fromUnits, toUnits } from '../units.ts';
+import { cutUnits, fromUnits } from '../units.ts';
 import { best } from './best.ts';
 import { offersOf, typedOf } from './candidates.ts';
-import { person, standing } from './conditions.ts';
+import { chooseCode, person, standing } from './conditions.ts';
 import { explained } from './explain.ts';
-import { wholeOf, type Line, type Miss, type Offer, type Question, type Refused, type Standing } from './standing.ts';
+import { firstRuns, wholeOf, type Line, type Miss, type Offer, type Question, type Refused, type Standing } from './standing.ts';
 import { nameIn } from './names.ts';
 import { earned } from './refund.ts';
 import { things } from './vouchers.ts';
@@ -50,6 +50,9 @@ function refusal(typed: string, miss: Miss, input: AdjustInput): Refused {
   return { typed, reason, ...(miss.params === undefined ? {} : { params: miss.params }) };
 }
 
+/** The most whole units one line is counted as: more than any basket holds, and far inside what a number keeps exactly. */
+const UNITS_MAX = 1_000_000_000;
+
 function linesOf(input: AdjustInput): Line[] {
   return input.lines.map((line, at) => {
     const quantity = wholeOf(line.quantity);
@@ -57,10 +60,9 @@ function linesOf(input: AdjustInput): Line[] {
       key: line.key,
       at,
       goods: line.kept && !line.excluded && line.paidBy === null,
-      amount: toUnits(line.amount, input.scale) ?? 0n,
-      units: quantity !== null && quantity >= 1 ? quantity : 1,
+      amount: cutUnits(line.amount, input.scale),
+      units: quantity !== null && quantity >= 1 && quantity <= UNITS_MAX ? quantity : 1,
       what: line.what,
-      nights: line.nights === undefined ? null : line.nights.map((night) => toUnits(night.price, input.scale) ?? 0n),
     };
   });
 }
@@ -76,39 +78,51 @@ export function adjust(input: AdjustInput): AdjustOutput {
   const misses = new Map<string, Miss>();
   const eligible: Offer[] = [];
   for (const offer of offers) {
+    refused.push(...chooseCode(offer, input, question.earned));
     const miss = question.earned ? null : (standing(offer, input) ?? person(offer, input));
     if (miss === null) eligible.push(offer);
     else misses.set(offer.id, { reason: miss });
   }
 
-  // Vouchers for a thing and packs first, on the lines as they came.
-  const start: Standing = { left: question.lines.map((line) => (line.goods ? line.amount : 0n)), taken: [] };
+  // Vouchers for a thing and packs first, on the lines as they came, unit by unit.
+  const start: Standing = {
+    left: question.lines.map((line) => (line.goods ? line.amount : 0n)),
+    runs: question.lines.map((line) => {
+      const nights = input.lines[line.at]!.nights;
+      return line.goods ? firstRuns(line.amount, line.units, nights === undefined ? null : nights.map((night) => cutUnits(night.price, scale))) : [];
+    }),
+    taken: [],
+  };
   refused.push(...things(question, start, typed.vouchers));
 
-  const { won, runs, left } = best(question, start, eligible, typed.vouchers);
+  const { won, runs, left, staff } = best(question, start, eligible, typed.vouchers);
   for (const offer of left) misses.set(offer.id, { reason: 'not-combinable' });
-  if (won.staff !== null) refused.push(won.staff);
+  if (staff !== null) refused.push(staff);
 
-  // An offer of the winning run that did not apply says why; one that was left out of it lost to a better one.
-  const applied = new Set(won.standing.taken.map((taken) => taken.source.offer).filter((id): id is string => id !== null));
-  const winner = won.code ?? won.alone;
+  // An offer of the winning run that did not apply says why. One that was left out of it either failed for a reason of
+  // its own in the run that tried it, or simply lost — and a code that lost is told which offer beat it.
+  const given = (offer: Offer | null): bigint => (offer === null ? 0n : won.standing.taken.reduce((total, taken) => (taken.source.offer === offer.id ? total + taken.total : total), 0n));
+  const top = eligible.reduce<Offer | null>((champion, offer) => (given(offer) > given(champion) ? offer : champion), null);
   const told: NonNullable<AdjustOutput['told']> = [];
   for (const offer of eligible) {
-    if (applied.has(offer.id) || misses.has(offer.id)) continue;
-    const here = won.missed.get(offer.id);
-    // Not in the winning run: why it failed in a run of its own, if it did; else it simply lost.
+    if (given(offer) > 0n || misses.has(offer.id)) continue;
     const own = runs.find((run) => run.alone === offer || run.code === offer);
-    const miss = here ?? own?.missed.get(offer.id) ?? null;
-    if (miss !== null) misses.set(offer.id, miss);
-    else if (own !== undefined && own !== won) {
-      misses.set(offer.id, { reason: 'not-combinable' });
-      if (offer.typed !== null && winner !== null) told.push({ typed: offer.typed.typed, note: 'better-offer-applied', name: nameIn(winner.name, input.locale) });
+    const miss = won.missed.get(offer.id) ?? own?.missed.get(offer.id) ?? null;
+    if (miss !== null) {
+      misses.set(offer.id, miss);
+      continue;
     }
+    misses.set(offer.id, { reason: 'not-combinable' });
+    // What beat it. An offer that does not combine lost to the one that was taken alone; a code among the ones that
+    // combine lost to the code that was let apply in its place (which may be the one taken alone). Where that took
+    // nothing, whichever offer gave most.
+    const alone = own?.alone === offer;
+    const rival = [alone ? won.alone : won.code, alone || won.alone?.typed == null ? null : won.alone, top].find((one) => one != null && one !== offer && given(one) > 0n) ?? null;
+    if (offer.typed !== null && rival !== null) told.push({ typed: offer.typed.typed, note: 'better-offer-applied', name: nameIn(rival.name, input.locale) });
   }
   for (const offer of offers) {
     const miss = misses.get(offer.id);
-    if (offer.typed === null || miss === undefined) continue;
-    if (miss.reason === 'not-combinable' && told.some((one) => one.typed === offer.typed!.typed)) continue;
+    if (offer.typed === null || miss === undefined || told.some((one) => one.typed === offer.typed!.typed)) continue;
     refused.push(refusal(offer.typed.typed, miss, input));
   }
 
@@ -146,9 +160,10 @@ export function adjust(input: AdjustInput): AdjustOutput {
               ...(input.customer === null ? {} : { customer: input.customer.key }),
             }),
           ),
-    refused,
+    // A question carries twelve codes and one reduction by hand: an answer refuses no more than that.
+    refused: refused.slice(0, 13),
   };
-  if (told.length > 0) out.told = told;
+  if (told.length > 0) out.told = told.slice(0, 12);
   if (input.explain) out.explain = explained(offers, misses, taken, scale);
   return out;
 }
