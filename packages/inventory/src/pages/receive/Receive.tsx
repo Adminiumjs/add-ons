@@ -37,7 +37,7 @@ import {
   asDataError,
   listAll,
   lucideByName,
-  money,
+  useMoney,
   useAccess,
   useAppToasts,
   useLocaleTag,
@@ -117,6 +117,7 @@ export function Receive({ t, receiptId, poId }: ReceiveProps): ReactNode {
   const navigate = useNavigate();
   const [said, say] = useSaid();
   const locale = useLocaleTag();
+  const cash = useMoney();
   const costs = access.canRead('receipt_lines', LINE_COSTS);
   const totals = access.canRead('receipts', ['total']);
   const mayPost = access.canMove('receipts', 'posting', 'draft');
@@ -439,12 +440,12 @@ export function Receive({ t, receiptId, poId }: ReceiveProps): ReactNode {
                 />
                 {line.unitCost === '' && used !== '' && !line.dirty ? <span className="text-body-sm text-fg-muted">{t('receive.costUsed', 'Adminium used {cost}', { cost: used })}</span> : null}
                 {/* Before anything is saved: the order's own cost, which is what an empty field takes. Read from the order, never worked out here. */}
-                {line.unitCost === '' && line.saved === null && line.status === 'draft' && (line.ordered?.cost ?? '') !== '' ? <span className="text-body-sm text-fg-muted">{t('receive.costOrdered', 'The order says {cost}', { cost: money(line.ordered?.cost, locale) })}</span> : null}
+                {line.unitCost === '' && line.saved === null && line.status === 'draft' && (line.ordered?.cost ?? '') !== '' ? <span className="text-body-sm text-fg-muted">{t('receive.costOrdered', 'The order says {cost}', { cost: cash(line.ordered?.cost) })}</span> : null}
               </Stack>
             );
           },
         },
-        { key: 'total', label: t('receive.col.total', 'Total'), cell: (line) => (line.saved !== null && !line.dirty ? <Figure>{money(line.saved['amount'], locale)}</Figure> : <span className="text-fg-muted">—</span>) },
+        { key: 'total', label: t('receive.col.total', 'Total'), cell: (line) => (line.saved !== null && !line.dirty ? <Figure>{cash(line.saved['amount'])}</Figure> : <span className="text-fg-muted">—</span>) },
       );
     }
     return out;
@@ -561,7 +562,7 @@ export function Receive({ t, receiptId, poId }: ReceiveProps): ReactNode {
         totals={
           receipt !== null && !dirty
             ? totals
-              ? t('receive.totalsMoney', 'Receiving {units} units · {total}', { units: plain(receipt['units']), total: money(receipt['total'], locale) })
+              ? t('receive.totalsMoney', 'Receiving {units} units · {total}', { units: plain(receipt['units']), total: cash(receipt['total']) })
               : t('receive.totalsUnits', 'Receiving {units} units', { units: plain(receipt['units']) })
             : t('receive.totalsTyped', '{count, plural, one {# line} other {# lines}} to receive', { count: typed.length })
         }

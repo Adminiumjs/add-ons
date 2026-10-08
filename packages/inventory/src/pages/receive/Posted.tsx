@@ -20,7 +20,7 @@ import {
   Stack,
   Tag,
   asDataError,
-  money,
+  useMoney,
   useAccess,
   useAppToasts,
   useLocaleTag,
@@ -58,6 +58,7 @@ export function Posted({ t, receipt, order, lines, costs, totals, note, onChange
   const toasts = useAppToasts();
   const navigate = useNavigate();
   const locale = useLocaleTag();
+  const cash = useMoney();
   const status = text(receipt['status']);
   const mayUndo = access.canMove('receipts', 'reversing', 'posted') || (status === 'reversing' && access.canMove('receipts', 'reversed', 'reversing'));
   const maySendBack = access.canMove('receipt_lines', 'sent_back', 'posted');
@@ -161,7 +162,7 @@ export function Posted({ t, receipt, order, lines, costs, totals, note, onChange
                   <Figure>
                     {plain(line.saved?.['qty'])} {line.unit}
                   </Figure>
-                  {costs ? <Figure>{money(line.saved?.['amount'], locale)}</Figure> : null}
+                  {costs ? <Figure>{cash(line.saved?.['amount'])}</Figure> : null}
                   {maySendBack && status === 'posted' && line.status === 'posted' ? (
                     <Button variant="ghost" size="sm" disabled={busy} onClick={() => setConfirm(line)}>
                       {t('receive.sendBack', 'Send back to supplier')}
@@ -173,7 +174,7 @@ export function Posted({ t, receipt, order, lines, costs, totals, note, onChange
           ))}
           <Divider />
           <span className="font-semibold text-fg">
-            {totals ? t('receive.posted.totalsMoney', 'Received {units} units · {total}', { units: plain(receipt['units']), total: money(receipt['total'], locale) }) : t('receive.posted.totalsUnits', 'Received {units} units', { units: plain(receipt['units']) })}
+            {totals ? t('receive.posted.totalsMoney', 'Received {units} units · {total}', { units: plain(receipt['units']), total: cash(receipt['total']) }) : t('receive.posted.totalsUnits', 'Received {units} units', { units: plain(receipt['units']) })}
           </span>
           {run === null ? null : <ProgressBar value={run.done} max={Math.max(run.all, 1)} label={t('shared.progress', '{done} of {all} lines', { done: run.done, all: run.all })} />}
           {problem === null ? null : <Alert tone="danger" role="alert" title={problem} />}

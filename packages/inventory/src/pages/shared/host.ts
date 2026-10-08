@@ -19,9 +19,11 @@
 import type { ChangeEventHandler, ComponentType, FocusEventHandler, KeyboardEventHandler, MouseEventHandler, ReactElement, ReactNode, Ref } from 'react';
 import type { AddOnDataHooks, DataError, DataRow, DataValue, EachResult, UseRecordsOptions, UseWriteResult } from '@adminium/add-on-contracts/runtime';
 import dataKit from '@adminium/add-on-contracts/runtime/data';
-import { useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import router from '@adminium/add-on-contracts/runtime/router';
 import uiKit from '@adminium/add-on-contracts/runtime/ui';
+
+import { useLocaleTag } from '@adminium/add-on-contracts/runtime/app';
 
 export { ApiError, PageActions, PageSurface, api, lucideByName, registerMessages, useAppToasts, useLocaleTag } from '@adminium/add-on-contracts/runtime/app';
 export type { AddOnTranslate } from '@adminium/add-on-contracts/runtime/app';
@@ -283,15 +285,42 @@ export function asDataError(caught: unknown): DataError {
 
 /**
  * A sum of money as a row holds it, with its two places: one database hands
- * `18` and another `18.00` for the same amount. No currency sign — a screen is
- * not told the connection's currency — and no arithmetic: only how it reads.
+ * `18` and another `18.00` for the same amount. No arithmetic: only how it
+ * reads. With the database's currency it carries that currency's sign, where
+ * the reader's language puts it; with none (the owner set none, or a host
+ * that does not say) it is the bare figure. Less than nothing reads with a
+ * minus sign, not a hyphen.
  */
-export function money(value: unknown, locale: string): string {
+export function money(value: unknown, locale: string, currency?: string | null): string {
   if (value === null || value === undefined || value === '') return '';
   const text = String(value);
   if (!/^-?\d+(\.\d+)?$/.test(text)) return text;
   const [whole = '0', part = ''] = text.replace('-', '').split('.');
   const grouped = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(BigInt(whole));
   const point = new Intl.NumberFormat(locale, { minimumFractionDigits: 1 }).format(1.1).replace(/\p{Nd}/gu, '');
-  return `${text.startsWith('-') ? '-' : ''}${grouped}${point}${part.padEnd(2, '0')}`;
+  const figure = `${grouped}${point}${part.padEnd(2, '0')}`;
+  const minus = text.startsWith('-') ? '\u2212' : '';
+  let before = '';
+  let after = '';
+  if (typeof currency === 'string' && /^[A-Za-z]{3}$/.test(currency)) {
+    try {
+      // Where this language puts the sign, and what it puts between: read off a figure Intl wrote, never the amount itself.
+      const parts = new Intl.NumberFormat(locale, { style: 'currency', currency: currency.toUpperCase() }).formatToParts(1);
+      const first = parts.findIndex((piece) => piece.type === 'integer');
+      const last = parts.reduce((at, piece, index) => (piece.type === 'integer' || piece.type === 'fraction' ? index : at), first);
+      const words = (pieces: Intl.NumberFormatPart[]): string => pieces.filter((piece) => piece.type === 'currency' || piece.type === 'literal').map((piece) => piece.value).join('');
+      before = words(parts.slice(0, first));
+      after = words(parts.slice(last + 1));
+    } catch {
+      // A code Intl does not know: the bare figure.
+    }
+  }
+  return `${minus}${before}${figure}${after}`;
+}
+
+/** Money on a screen of this add-on: the reader's language, the database's currency. */
+export function useMoney(): (value: unknown) => string {
+  const locale = useLocaleTag();
+  const currency = (useAccess() as { currency?: string | null }).currency ?? null;
+  return useCallback((value: unknown) => money(value, locale, currency), [locale, currency]);
 }

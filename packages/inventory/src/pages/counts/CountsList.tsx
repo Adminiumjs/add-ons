@@ -26,7 +26,7 @@ import {
   Stack,
   StatusPill,
   asDataError,
-  money,
+  useMoney,
   useAccess,
   useAppToasts,
   useLocaleTag,
@@ -85,6 +85,7 @@ export function CountsList({ t, startOpen }: { t: AddOnTranslate; startOpen: boo
   const access = useAccess();
   const navigate = useNavigate();
   const locale = useLocaleTag();
+  const cash = useMoney();
   const mayOpen = access.canRead('counts');
   const mayStart = access.canCreate('counts');
   const seesValue = access.canRead('counts', ['value']);
@@ -104,7 +105,7 @@ export function CountsList({ t, startOpen }: { t: AddOnTranslate; startOpen: boo
     { key: 'at', label: t('counts.col.started', 'Started'), render: (row) => when(row['at']) },
     { key: 'status', label: t('counts.col.status', 'Status'), render: (row) => <StatusPill status={text(row['status'])} tone={STATUS_TONE[text(row['status'])] ?? 'neutral'}>{statusWords(t, text(row['status']))}</StatusPill> },
     { key: 'differences', label: t('counts.col.differences', 'Differences'), align: 'end' },
-    ...(seesValue ? [{ key: 'value', label: t('counts.col.value', 'Value'), align: 'end' as const, render: (row: DataRow) => <Figure>{money(row['value'], locale)}</Figure> }] : []),
+    ...(seesValue ? [{ key: 'value', label: t('counts.col.value', 'Value'), align: 'end' as const, render: (row: DataRow) => <Figure>{cash(row['value'])}</Figure> }] : []),
   ];
   return (
     <PageFrame

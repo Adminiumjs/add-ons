@@ -68,6 +68,8 @@ export const world = {
   /** What the reader may not do: `create:items`, `update:counts`, `move:receipts:posting`. */
   cannot: new Set<string>(),
   has: {} as Record<string, boolean>,
+  /** The currency of the database; null when the owner set none. */
+  currency: null as string | null,
   calls: [] as Call[],
   /** What Adminium decides on a saved row; the default decides nothing. */
   decide: ((_table: string, row: Row): Row => row) as (table: string, row: Row) => Row,
@@ -99,6 +101,7 @@ export function resetWorld(): void {
   world.closed = new Set();
   world.cannot = new Set();
   world.has = {};
+  world.currency = null;
   world.calls = [];
   world.decide = (_table, row) => row;
   world.updateEach = null;
@@ -306,6 +309,7 @@ function useAccess() {
   useWorld();
   return {
     ready: true,
+    currency: world.currency,
     canRead: (table: string, columns?: readonly string[]) => !world.closed.has(table) && (columns ?? []).every((column) => !(world.unreadable[table] ?? []).includes(column)),
     canCreate: (table: string) => !world.cannot.has(`create:${table}`),
     canUpdate: (table: string) => !world.cannot.has(`update:${table}`),

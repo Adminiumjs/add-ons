@@ -32,7 +32,7 @@ import {
   Switch,
   Tag,
   asDataError,
-  money,
+  useMoney,
   useAccess,
   useAppToasts,
   useLocaleTag,
@@ -71,6 +71,7 @@ export function CountSheet({ t, countId }: { t: AddOnTranslate; countId: string 
   const toasts = useAppToasts();
   const navigate = useNavigate();
   const locale = useLocaleTag();
+  const cash = useMoney();
   const [said, say] = useSaid();
   const mayOpen = access.canRead('counts');
   const seesValue = access.canRead('count_lines', ['value']);
@@ -323,7 +324,7 @@ export function CountSheet({ t, countId }: { t: AddOnTranslate; countId: string 
       },
     },
     { key: 'difference', label: t('counts.col.difference', 'Difference'), cell: (line) => (isSet(line['is_counted']) ? <Figure>{signed(plain(line['difference'] as DataValue))}</Figure> : <span className="text-fg-muted">—</span>) },
-    ...(seesValue ? [{ key: 'value', label: t('counts.col.value', 'Value'), cell: (line: DataRow) => (isSet(line['is_counted']) ? <Figure>{money(line['value'], locale)}</Figure> : <span className="text-fg-muted">—</span>) }] : []),
+    ...(seesValue ? [{ key: 'value', label: t('counts.col.value', 'Value'), cell: (line: DataRow) => (isSet(line['is_counted']) ? <Figure>{cash(line['value'])}</Figure> : <span className="text-fg-muted">—</span>) }] : []),
   ];
 
   if (!mayOpen) return <PageFrame t={t} title={t('counts.title', 'Counts')} refused />;
@@ -465,7 +466,7 @@ export function CountSheet({ t, countId }: { t: AddOnTranslate; countId: string 
       </Card>
       <TotalsBar
         label={t('counts.bar', 'This count')}
-        totals={seesValue ? t('counts.totalsMoney', '{count, plural, one {# difference} other {# differences}} · {value}', { count: differences, value: money(sheet['value'], locale) }) : t('counts.totals', '{count, plural, one {# difference} other {# differences}}', { count: differences })}
+        totals={seesValue ? t('counts.totalsMoney', '{count, plural, one {# difference} other {# differences}} · {value}', { count: differences, value: cash(sheet['value']) }) : t('counts.totals', '{count, plural, one {# difference} other {# differences}}', { count: differences })}
         problem={problem}
         progress={run === null ? null : <ProgressBar value={run.done} max={Math.max(run.all, 1)} label={t('shared.progress', '{done} of {all} lines', { done: run.done, all: run.all })} />}
       >
