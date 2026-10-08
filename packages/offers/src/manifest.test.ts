@@ -112,6 +112,8 @@ describe('the manifest', () => {
     expect(manifest.addOn.provides).toEqual([
       { contract: 'posting-rows', version: 1, server: OUTPUT.server },
       { contract: 'price-adjust', version: 1, server: OUTPUT.server },
+      // What it prints is a module of its own: the deciding file runs with no clock, and a printed card has a date on it.
+      { contract: 'document-render', version: 1, server: OUTPUT.documents },
     ]);
     for (const entry of manifest.addOn.provides) expect(BUILT_FILES).toContain(entry.server);
   });

@@ -87,6 +87,20 @@ describe("a screen carries its own words and nobody else's", () => {
   });
 });
 
+describe('what Offers prints is a module of its own', () => {
+  it('is loaded like any provider, answers its four kinds, and is not the file that decides', async () => {
+    const built = (await import(/* @vite-ignore */ `${join(DIST, 'documents.js')}?${String(statSync(join(DIST, 'documents.js')).mtimeMs)}`)) as { default: { key: string; kinds: () => { id: string }[] } };
+    expect(built.default.key).toBe('offers');
+    expect(built.default.kinds().map((kind) => kind.id)).toEqual(['gift-card', 'gift-card-strip', 'voucher', 'voucher-strip']);
+    const code = codeOf(readFileSync(join(DIST, 'documents.js'), 'utf8'));
+    // Everything it needs is in it: nothing is left for Adminium to resolve.
+    expect(code).not.toMatch(/^\s*import\s[^;]*\bfrom\b|\bimport\s*\(|\brequire\s*\(/m);
+    // And the deciding file holds none of it: no page of HTML is drawn where a price is worked out.
+    expect(builtServer()).not.toContain('<!doctype html>');
+    expect(statSync(join(DIST, 'documents.js')).size).toBeLessThanOrEqual(FILE_MAX_BYTES);
+  });
+});
+
 describe('the built bytes pass the release sweep', () => {
   it('the built bytes pass the word gate', () => {
     for (const file of built()) {

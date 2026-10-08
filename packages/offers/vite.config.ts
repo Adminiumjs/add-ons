@@ -28,6 +28,8 @@ import { defineConfig } from 'vitest/config';
 export const OUTPUT = {
   /** Built from `src/server.ts` — the `posting-rows@1` and the `price-adjust@1` provider. */
   server: 'dist/server.js',
+  /** Built from `src/documents.ts` — the `document-render@1` provider: an ordinary module, loaded like any provider. */
+  documents: 'dist/documents.js',
   /** The screens that are code, each built from `src/pages/<name>/index.tsx` into a file of its own. */
   pages: {
     'offers-discounts': 'dist/pages/discounts.js',
@@ -56,7 +58,7 @@ export const OUTPUT = {
  * would be resolved by the browser against an address that does not exist.
  */
 /** Every file the build writes, as the manifest names them. */
-export const BUILT_FILES: readonly string[] = [OUTPUT.server, ...Object.values(OUTPUT.pages)];
+export const BUILT_FILES: readonly string[] = [OUTPUT.server, OUTPUT.documents, ...Object.values(OUTPUT.pages)];
 
 function screens(): Plugin {
   const shim = (name: string): string => fileURLToPath(new URL(`../../node_modules/@adminium/add-on-contracts/dist/runtime/${name}.js`, import.meta.url));
@@ -64,6 +66,12 @@ function screens(): Plugin {
     name: 'add-on-offers:screens',
     apply: 'build',
     async closeBundle() {
+      // What Offers prints: one module with everything in it, beside the file that decides.
+      await build({
+        configFile: false,
+        logLevel: 'warn',
+        build: { emptyOutDir: false, outDir: 'dist', lib: { entry: 'src/documents.ts', formats: ['es'], fileName: () => 'documents.js' }, rollupOptions: { external: [], output: { inlineDynamicImports: true } }, target: 'es2022', sourcemap: false },
+      });
       for (const file of Object.values(OUTPUT.pages)) {
         const name = file.slice('dist/pages/'.length, -'.js'.length);
         await build({

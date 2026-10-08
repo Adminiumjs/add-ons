@@ -7224,6 +7224,166 @@
       }
     }
   ],
+  "documents": [
+    {
+      "kind": "gift-card",
+      "addOn": "offers",
+      "table": "gift_cards",
+      "name": {
+        "en-US": "Gift card",
+        "de-DE": "Geschenkkarte",
+        "fr-FR": "Carte cadeau",
+        "da-DK": "Gavekort",
+        "cs-CZ": "Dárková karta",
+        "ar-EG": "بطاقة هدية",
+        "zh-CN": "礼品卡",
+        "zh-TW": "禮品卡"
+      },
+      "mapping": {
+        "code": {
+          "column": "code"
+        },
+        "qr": {
+          "column": "code"
+        },
+        "amount": {
+          "column": "balance"
+        },
+        "useBy": {
+          "column": "expires_on"
+        }
+      },
+      "requestValues": [
+        "first"
+      ],
+      "where": {
+        "column": "kind",
+        "in": [
+          "card"
+        ]
+      }
+    },
+    {
+      "kind": "gift-card-strip",
+      "addOn": "offers",
+      "table": "gift_cards",
+      "name": {
+        "en-US": "Gift card, receipt strip",
+        "de-DE": "Geschenkkarte, Bonstreifen",
+        "fr-FR": "Carte cadeau, ticket",
+        "da-DK": "Gavekort, bonstrimmel",
+        "cs-CZ": "Dárková karta, účtenka",
+        "ar-EG": "بطاقة هدية، شريط إيصال",
+        "zh-CN": "礼品卡（小票）",
+        "zh-TW": "禮品卡（收據）"
+      },
+      "mapping": {
+        "code": {
+          "column": "code"
+        },
+        "qr": {
+          "column": "code"
+        },
+        "amount": {
+          "column": "balance"
+        },
+        "useBy": {
+          "column": "expires_on"
+        }
+      },
+      "requestValues": [
+        "first"
+      ],
+      "where": {
+        "column": "kind",
+        "in": [
+          "card"
+        ]
+      }
+    },
+    {
+      "kind": "voucher",
+      "addOn": "offers",
+      "table": "vouchers",
+      "name": {
+        "en-US": "Voucher",
+        "de-DE": "Gutschein",
+        "fr-FR": "Bon",
+        "da-DK": "Voucher",
+        "cs-CZ": "Poukaz",
+        "ar-EG": "قسيمة",
+        "zh-CN": "代金券",
+        "zh-TW": "兌換券"
+      },
+      "mapping": {
+        "code": {
+          "column": "code"
+        },
+        "qr": {
+          "column": "code"
+        },
+        "name": {
+          "column": "public_name"
+        },
+        "worth": {
+          "column": "worth"
+        },
+        "value": {
+          "column": "value"
+        },
+        "usesLeft": {
+          "column": "uses_left"
+        },
+        "usesTotal": {
+          "column": "uses_total"
+        },
+        "useBy": {
+          "column": "expires_on"
+        }
+      }
+    },
+    {
+      "kind": "voucher-strip",
+      "addOn": "offers",
+      "table": "vouchers",
+      "name": {
+        "en-US": "Voucher, receipt strip",
+        "de-DE": "Gutschein, Bonstreifen",
+        "fr-FR": "Bon, ticket",
+        "da-DK": "Voucher, bonstrimmel",
+        "cs-CZ": "Poukaz, účtenka",
+        "ar-EG": "قسيمة، شريط إيصال",
+        "zh-CN": "代金券（小票）",
+        "zh-TW": "兌換券（收據）"
+      },
+      "mapping": {
+        "code": {
+          "column": "code"
+        },
+        "qr": {
+          "column": "code"
+        },
+        "name": {
+          "column": "public_name"
+        },
+        "worth": {
+          "column": "worth"
+        },
+        "value": {
+          "column": "value"
+        },
+        "usesLeft": {
+          "column": "uses_left"
+        },
+        "usesTotal": {
+          "column": "uses_total"
+        },
+        "useBy": {
+          "column": "expires_on"
+        }
+      }
+    }
+  ],
   "publicKeys": {
     "offers-link": {}
   },
@@ -7453,6 +7613,11 @@
         "contract": "price-adjust",
         "version": 1,
         "server": "dist/server.js"
+      },
+      {
+        "contract": "document-render",
+        "version": 1,
+        "server": "dist/documents.js"
       }
     ],
     "hostApi": 2,
