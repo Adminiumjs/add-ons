@@ -10,7 +10,7 @@
  */
 import { useState, type ReactNode } from 'react';
 
-import { Alert, Sheet, SheetBody, SheetHeader, Tabs, TabsContent, TabsList, TabsTrigger, lucideByName, useNavigate, useSearch, type AddOnTranslate } from '../shared/host.ts';
+import { Alert, Sheet, SheetBody, SheetHeader, Tabs, TabsList, TabsTrigger, lucideByName, useNavigate, useSearch, type AddOnTranslate } from '../shared/host.ts';
 import { PageFrame } from '../shared/PageFrame.tsx';
 import { LOOK_UP } from '../shared/paths.ts';
 import { useRole } from '../shared/role.ts';
@@ -52,15 +52,15 @@ export function Issue({ t }: { t: AddOnTranslate }): ReactNode {
                 {may.includes('batch') ? <TabsTrigger value="batch">{t('issue.tab.batch', 'Batch of codes')}</TabsTrigger> : null}
               </TabsList>
             </SheetBody>
-            <TabsContent value="gift-card">
-              <CardTab t={t} onDone={close} />
-            </TabsContent>
-            <TabsContent value="voucher">
-              <VoucherTab t={t} onDone={close} />
-            </TabsContent>
-            <TabsContent value="batch">
-              <BatchTab t={t} onDone={close} />
-            </TabsContent>
+            {/*
+              Every tab the role has stays drawn, the others out of sight: a code shown once, a form half filled or a
+              batch being made is not thrown away by a look at another tab.
+            */}
+            {may.map((one) => (
+              <div key={one} role="tabpanel" hidden={tab !== one}>
+                {one === 'gift-card' ? <CardTab t={t} onDone={close} /> : one === 'voucher' ? <VoucherTab t={t} onDone={close} /> : <BatchTab t={t} onDone={close} />}
+              </div>
+            ))}
           </Tabs>
         )}
       </Sheet>

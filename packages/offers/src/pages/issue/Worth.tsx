@@ -104,7 +104,10 @@ export function WorthFields({ t, worth, onChange, what, wrong }: { t: AddOnTrans
             value={worth.table}
             options={[{ value: '', label: t('issue.worth.choose', 'Choose…') }, ...tables.map((one, index) => ({ value: String(index), label: one.label }))]}
             onChange={(event) => {
+              // An answer still on its way was for the other table: it is dropped.
+              turn.current += 1;
               setFound([]);
+              setSaid(null);
               setSearch('');
               onChange({ ...worth, table: event.target.value, thing: null });
             }}

@@ -56,7 +56,8 @@ function Shell({ t, title, subtitle, said, saving, saveLabel, danger, onClose, o
       <DialogHeader title={title} {...(subtitle === undefined ? {} : { subtitle })} closeLabel={t('shared.close', 'Close')} {...(danger === true ? { tone: 'danger' as const } : {})} />
       <DialogBody>
         <Stack gap="md">
-          {said === null || said.field !== undefined ? null : <Alert tone="danger" role="alert" title={said.message} />}
+          {/* Said at the top whatever it is about: a refusal may name a field this dialog does not draw. */}
+          {said === null ? null : <Alert tone="danger" role="alert" title={said.message} />}
           {children}
         </Stack>
       </DialogBody>
@@ -89,6 +90,7 @@ export function MoneyDialog({ t, kind, card, onClose, onSaved }: DialogProps & {
   const movesTo = kind === 'top-up' && Number.isFinite(months) && months > 0 ? addMonths(todayOf(new Date()), months) : null;
 
   const save = async (): Promise<void> => {
+    if (saving) return;
     if (!positive(amount)) return setSaid({ message: t('lookup.dialog.amountNeeded', 'Enter an amount above zero.'), field: 'amount' });
     if (why.trim() === '') return setSaid({ message: t('lookup.dialog.whyNeeded', 'Say why.'), field: 'reason' });
     setSaving(true);
@@ -163,6 +165,7 @@ export function CancelDialog({ t, card, onClose, onSaved }: DialogProps & { card
   const [saving, setSaving] = useState(false);
   const ending = card.last4 ?? '';
   const save = async (): Promise<void> => {
+    if (saving) return;
     if (why.trim() === '') return setSaid({ message: t('lookup.dialog.whyNeeded', 'Say why.'), field: 'void_reason' });
     setSaving(true);
     setSaid(null);
@@ -196,6 +199,7 @@ export function CreditDialog({ t, address, card, onClose, onSaved }: DialogProps
   const [said, setSaid] = useState<Said | null>(null);
   const [saving, setSaving] = useState(false);
   const save = async (): Promise<void> => {
+    if (saving) return;
     if (!positive(amount)) return setSaid({ message: t('lookup.dialog.amountNeeded', 'Enter an amount above zero.'), field: 'amount' });
     if (why.trim() === '') return setSaid({ message: t('lookup.dialog.whyNeeded', 'Say why.'), field: 'reason' });
     setSaving(true);

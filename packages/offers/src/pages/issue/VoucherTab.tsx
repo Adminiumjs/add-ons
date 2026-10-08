@@ -39,6 +39,7 @@ export function VoucherTab({ t, onDone }: { t: AddOnTranslate; onDone: () => voi
   };
 
   const save = async (): Promise<void> => {
+    if (saving) return;
     const found = check();
     setWrong(found);
     if (Object.keys(found).length > 0) return;

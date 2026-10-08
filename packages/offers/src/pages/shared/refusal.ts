@@ -45,7 +45,7 @@ function posting(t: AddOnTranslate, details: Readonly<Record<string, unknown>>):
   }
 }
 
-export function refusal(t: AddOnTranslate, error: DataError): Said {
+export function refusal(t: AddOnTranslate, error: DataError, doing?: 'print'): Said {
   const details = error.details ?? {};
   const column = text(details['column']) ?? text(details['path']);
   switch (error.code) {
@@ -67,8 +67,10 @@ export function refusal(t: AddOnTranslate, error: DataError): Said {
     case 'TABLE_FORBIDDEN':
       return { message: t('refusal.forbidden', 'You do not have permission to do this.') };
     case 'NOT_FOUND':
-      return { message: t('refusal.notFound', 'This is not there any more.') };
+      // Every miss of a print reads the same: a reader who is shown no code prints only what they have just made.
+      return { message: doing === 'print' ? t('refusal.askToPrint', 'Ask a manager to print it.') : t('refusal.notFound', 'This is not there any more.') };
     case 'FEATURE_OFF':
+      return { message: doing === 'print' ? t('refusal.noPrint', 'This cannot be printed right now.') : t('refusal.off', 'Offers is switched off right now.') };
     case 'DOCUMENT_NOT_DRAWN':
       return { message: t('refusal.noPrint', 'This cannot be printed right now.') };
     default:

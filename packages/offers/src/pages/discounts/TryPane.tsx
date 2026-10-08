@@ -168,7 +168,7 @@ export function TryPane({ t, mapped, draft, offerId, name, unsaved, narrow }: Tr
             {tried.applied.map((one, index) => (
               <Stack key={String(index)} direction="row" justify="between" gap="sm">
                 {one.name === name ? <span className="font-semibold">{unsaved ? t('discounts.try.draftName', '{name} (draft)', { name: one.name }) : one.name}</span> : <span className="text-fg">{one.name}</span>}
-                <span dir="ltr">{`−${money(one.amount, locale)}`}</span>
+                <span dir="ltr">{t('discounts.try.minus', '−{amount}', { amount: money(one.amount, locale) })}</span>
               </Stack>
             ))}
             {reduction === null || tried.data[reduction] === undefined || tried.data[reduction] === null ? null : (

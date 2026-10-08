@@ -37,6 +37,7 @@ import {
   useWrite,
   type AddOnTranslate,
   type DataError,
+  type DataRow,
   type TableColumn,
 } from '../shared/host.ts';
 import { PageFrame, useSaid } from '../shared/PageFrame.tsx';
@@ -106,7 +107,7 @@ export function LookUp({ t }: { t: AddOnTranslate }): ReactNode {
   /** One save from the card's own buttons, then the same value looked up again. */
   const act = useCallback(
     async (name: string, save: () => Promise<string>): Promise<void> => {
-      if (found === null) return;
+      if (found === null || busy !== null) return;
       setBusy(name);
       setActionSaid(null);
       try {
@@ -114,12 +115,12 @@ export function LookUp({ t }: { t: AddOnTranslate }): ReactNode {
         toasts.push({ variant: 'success', title });
         await submit(found.typed);
       } catch (caught) {
-        setActionSaid(refusal(t, asDataError(caught)).message);
+        setActionSaid(refusal(t, asDataError(caught), name === 'print' ? 'print' : undefined).message);
       } finally {
         setBusy(null);
       }
     },
-    [found, submit, t, toasts],
+    [found, busy, submit, t, toasts],
   );
 
   const saved = async (title: string): Promise<void> => {
@@ -146,12 +147,17 @@ export function LookUp({ t }: { t: AddOnTranslate }): ReactNode {
               aria-label={t('lookup.field.label', "Type or scan a code, or a customer's email")}
               dir="ltr"
               autoFocus
+              {...(fieldSaid === null ? {} : { 'aria-describedby': 'offers-look-up-said' })}
             />
             <Button variant="primary" loading={lookUp.finding} onClick={() => void submit(typed)}>
               {t('lookup.go', 'Look up')}
             </Button>
           </Stack>
-          {fieldSaid === null ? null : <Alert tone="warn" role="alert" title={fieldSaid} />}
+          {fieldSaid === null ? null : (
+            <div id="offers-look-up-said">
+              <Alert tone="warn" role="alert" title={fieldSaid} />
+            </div>
+          )}
         </Stack>
       </Card>
 
@@ -181,9 +187,17 @@ export function LookUp({ t }: { t: AddOnTranslate }): ReactNode {
   );
 }
 
-/** A day as the reader's language writes it; the text as it came when it is no day. */
+/**
+ * A day as the reader's language writes it; the text as it came when it is no
+ * day. A bare day is that day everywhere; a moment is the day it was where
+ * the reader is.
+ */
 export function formatDay(value: unknown, locale: string): string {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}/.test(value)) return value === null || value === undefined ? '' : String(value);
+  if (value.length > 10) {
+    const moment = new Date(value.includes('T') ? value : value.replace(' ', 'T'));
+    if (!Number.isNaN(moment.getTime())) return new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'short', day: 'numeric' }).format(moment);
+  }
   const [year = 0, month = 1, day = 1] = value.slice(0, 10).split('-').map(Number);
   return new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(new Date(Date.UTC(year, month - 1, day)));
 }
@@ -241,7 +255,7 @@ function CardResult({ t, typed, shown, role, locale, date, busy, act, onOpen }: 
               {credit ? t('lookup.addCredit', 'Add credit') : t('lookup.topUp', 'Top up')}
             </Button>
           ) : null}
-          {role.cardMoney && active ? (
+          {role.cardMoney && active && !credit ? (
             <Button variant="secondary" onClick={() => onOpen({ dialog: 'adjust', card: shown })}>
               {t('lookup.adjust', 'Adjust')}
             </Button>
@@ -263,7 +277,7 @@ function CardResult({ t, typed, shown, role, locale, date, busy, act, onOpen }: 
           ) : null}
         </Stack>
         {role.ready && !role.cardMoney ? <span className="text-body-sm text-fg-muted">{t('lookup.askManager', 'A manager can top up, adjust or cancel it.')}</span> : null}
-        <DataTable columns={columns} rows={shown.rows} rowKey="at" empty={t('lookup.noActivity', 'Nothing has happened to it yet.')} />
+        <DataTable columns={columns} rows={numbered(shown.rows)} rowKey="n" empty={t('lookup.noActivity', 'Nothing has happened to it yet.')} />
       </Stack>
     </Card>
   );
@@ -273,7 +287,8 @@ function VoucherResult({ t, typed, shown, role, locale, date, busy, act }: Resul
   const actions = useWrite('voucher_actions');
   const move = useStateMove('vouchers');
   const documents = useDocument();
-  const batch = useRecord('voucher_batches', shown.batch);
+  // Only a reader who may read batches asks for one, and is given the link to it.
+  const batch = useRecord('voucher_batches', role.readsBatches ? shown.batch : null);
   const pack = shown.kind === 'pack';
   const why = whyNot(t, shown, date);
   const columns: TableColumn[] = [
@@ -284,7 +299,8 @@ function VoucherResult({ t, typed, shown, role, locale, date, busy, act }: Resul
   ];
   const use = async (): Promise<string> => {
     await actions.create({ voucher_id: Number.isFinite(Number(shown.key)) ? Number(shown.key) : shown.key, action: 'use' });
-    return pack && shown.usesLeft !== null ? t('lookup.useRecorded', '1 use recorded · {left} left', { left: Math.max(0, shown.usesLeft - 1) }) : t('lookup.markedUsed', 'Marked as used');
+    // What is left is read again from Adminium, not counted down here.
+    return pack ? t('lookup.useRecorded', '1 use recorded') : t('lookup.markedUsed', 'Marked as used');
   };
   return (
     <Card
@@ -304,10 +320,10 @@ function VoucherResult({ t, typed, shown, role, locale, date, busy, act }: Resul
           items={[
             { label: t('lookup.code', 'Code'), value: <CodeEnd last4={shown.last4} /> },
             ...(shown.name === null ? [] : [{ label: t('lookup.what', 'What it is'), value: shown.name }]),
-            ...(shown.value === null || pack ? [] : [{ label: t('lookup.worth', 'Worth'), value: shown.worth === 'percent' ? <span dir="ltr">{`${trimmed(shown.value)}%`}</span> : <Amount value={shown.value} locale={locale} /> }]),
+            ...(shown.value === null || pack ? [] : [{ label: t('lookup.worth', 'Worth'), value: shown.worth === 'percent' ? <span dir="ltr">{t('lookup.percent', '{n}%', { n: trimmed(shown.value) })}</span> : <Amount value={shown.value} locale={locale} /> }]),
             { label: t('lookup.useBy', 'Use it by'), value: shown.expires === null ? t('lookup.never', 'Never expires') : date(shown.expires) },
             ...(shown.holder === null ? [] : [{ label: t('lookup.for', 'For'), value: shown.holder }]),
-            ...(shown.batch === null ? [] : [{ label: t('lookup.batch', 'Batch'), value: <Link to={recordAt(BATCHES, shown.batch)}>{text(batch.row?.['name']) ?? t('lookup.openBatch', 'Open the batch')}</Link> }]),
+            ...(shown.batch === null || !role.readsBatches ? [] : [{ label: t('lookup.batch', 'Batch'), value: <Link to={recordAt(BATCHES, shown.batch)}>{text(batch.row?.['name']) ?? t('lookup.openBatch', 'Open the batch')}</Link> }]),
           ]}
         />
         <Stack direction="row" gap="sm" wrap>
@@ -327,7 +343,7 @@ function VoucherResult({ t, typed, shown, role, locale, date, busy, act }: Resul
             </Button>
           ) : null}
         </Stack>
-        <DataTable columns={columns} rows={shown.rows} rowKey="at" empty={t('lookup.noUses', 'It has not been used yet.')} />
+        <DataTable columns={columns} rows={numbered(shown.rows)} rowKey="n" empty={t('lookup.noUses', 'It has not been used yet.')} />
       </Stack>
     </Card>
   );
@@ -359,5 +375,7 @@ function CodeResult({ t, typed, shown, date }: { t: AddOnTranslate; typed: strin
 }
 
 const text = (value: unknown): string | null => (value === null || value === undefined || value === '' ? null : String(value));
+/** History rows carry no key of their own: each is told apart by its place in the answer. */
+const numbered = (rows: readonly DataRow[]): DataRow[] => rows.map((row, n) => ({ ...row, n }));
 /** `10.00` as `10`, `12.50` as `12.5`: a percent is read, not counted. */
 const trimmed = (value: string): string => (value.includes('.') ? value.replace(/0+$/, '').replace(/\.$/, '') : value);

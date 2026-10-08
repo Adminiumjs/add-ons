@@ -102,7 +102,8 @@ describe('the discount editor', () => {
       if (kind === 'update') throw new Refused('UNIQUE_VIOLATION', '', { column: 'code' });
     };
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-    expect(await screen.findByText('That code is already used by another discount.')).toBeTruthy();
+    // Said at the top and on the field.
+    expect(await screen.findAllByText('That code is already used by another discount.')).toHaveLength(2);
     expect(field(/^Name \(internal\)/).value).toBe('Autumn five');
     expect(field(/^Amount off/).value).toBe('7.50');
     expect(field(/^Code/).value).toBe('LAUNCH20');
@@ -112,7 +113,8 @@ describe('the discount editor', () => {
     said = { taken: true };
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(world.calls.some((call) => call.kind === 'api' && call.table.endsWith('/codes/make'))).toBe(true));
-    expect(await screen.findByText('That code is already used by another discount.')).toBeTruthy();
+    // Said at the top and on the field.
+    expect(await screen.findAllByText('That code is already used by another discount.')).toHaveLength(2);
     expect(world.calls.some((call) => call.kind === 'update' || call.kind === 'create')).toBe(false);
     expect(field(/^Amount off/).value).toBe('7.50');
   });
@@ -124,7 +126,9 @@ describe('the discount editor', () => {
       if (kind === 'update') throw new Refused('VALIDATION_FAILED', 'Thirty-seven are already used.', { column: 'max_uses' });
     };
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-    const uses = (await screen.findByText('Thirty-seven are already used.')).closest('[data-part="field"]') as HTMLElement;
+    const told = await screen.findAllByText('Thirty-seven are already used.');
+    expect(told).toHaveLength(2);
+    const uses = told.map((node) => node.closest('[data-part="field"]')).find((node) => node !== null) as HTMLElement;
     expect(within(uses).getByLabelText(/^Total uses/)).toBeTruthy();
     expect(field(/^Total uses/).value).toBe('40');
   });
@@ -167,7 +171,7 @@ describe('the discount editor', () => {
     fireEvent.change(document.querySelectorAll('input[type="date"]')[1] as HTMLInputElement, { target: { value: '2026-09-01' } });
     expect(await screen.findByText('Can never apply')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-    expect(await screen.findByText('Until is before From, so this can never apply. Pick a date on or after From.')).toBeTruthy();
+    expect(await screen.findAllByText('Until is before From, so this can never apply. Pick a date on or after From.')).toHaveLength(2);
     expect(world.calls.some((call) => call.kind === 'update')).toBe(false);
   });
 
@@ -230,7 +234,7 @@ describe('the discount editor', () => {
     expect(field(/^Total uses/).disabled).toBe(false);
     type(/^Total uses/, '49');
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-    expect(await screen.findByText('50 are already used. Enter 50 or more.')).toBeTruthy();
+    expect(await screen.findAllByText('50 are already used. Enter 50 or more.')).toHaveLength(2);
     type(/^Total uses/, '80');
     world.decide = (table, row) => (table === 'offers' ? { ...row, used_up: false } : row);
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
@@ -249,7 +253,7 @@ describe('the discount editor', () => {
     expect(run.disabled).toBe(true);
     const until = dialog.querySelector('input[type="date"]') as HTMLInputElement;
     fireEvent.change(until, { target: { value: '2020-01-01' } });
-    expect(within(dialog).getByText('Choose a day after today.')).toBeTruthy();
+    expect(within(dialog).getByText('Choose today or a later day.')).toBeTruthy();
     expect(run.disabled).toBe(true);
     fireEvent.change(until, { target: { value: '2099-12-31' } });
     fireEvent.click(run);
@@ -282,6 +286,77 @@ describe('the discount editor', () => {
     expect(screen.getByText('You can read this discount. A manager can change it.')).toBeTruthy();
     for (const name of ['Save', 'Pause', 'End now', 'Make one for me']) expect(screen.queryByRole('button', { name })?.hasAttribute('disabled') ?? true, name).toBe(true);
     expect(field(/^Name \(internal\)/).disabled).toBe(true);
+  });
+
+  it('a second press while a save is on its way saves nothing twice', async () => {
+    await open(null);
+    type(/^Name \(internal\)/, 'Harvest weekend');
+    type(/^What customers see/, 'Harvest weekend');
+    type(/^Percent off/, '10');
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Switch on' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+    await waitFor(() => expect(world.navigated).toHaveLength(1));
+    expect(world.calls.filter((call) => call.kind === 'tree')).toHaveLength(1);
+    expect(world.calls.filter((call) => call.kind === 'move')).toHaveLength(0);
+  });
+
+  it('a save that stops part-way keeps what was typed and knows what is there now: the next save makes nothing twice', async () => {
+    seed('offers', [{ ...MUGS, gives: 'quantity_price', value: null }]);
+    seed('offer_breaks', [{ id: 1, offer_id: 2, from_qty: 4, value: '8.000' }, { id: 2, offer_id: 2, from_qty: 8, value: '14.000' }]);
+    await open('2');
+    const from = (): HTMLInputElement[] => (screen.getAllByLabelText(/^From$/) as HTMLInputElement[]).filter((input) => input.type !== 'date');
+    // Take the first step out, and add two more: the second of them is refused.
+    fireEvent.click(screen.getAllByRole('button', { name: 'Remove this step' })[0] as HTMLElement);
+    for (const [at, qty, off] of [[1, '12', '18'], [2, '16', '22']] as const) {
+      fireEvent.click(screen.getByRole('button', { name: 'Add a step' }));
+      fireEvent.change(from()[at] as HTMLElement, { target: { value: qty } });
+      fireEvent.change(screen.getAllByLabelText(/^Percent off/)[at] as HTMLElement, { target: { value: off } });
+    }
+    world.before = (kind, table, values) => {
+      if (kind === 'create' && table === 'offer_breaks' && (values as { from_qty: number }).from_qty === 16) throw new Refused('WRITE_CONFLICT');
+    };
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(await screen.findByText('Someone else changed this at the same time. Nothing was saved. Try again.')).toBeTruthy();
+    expect(from().map((input) => input.value)).toEqual(['8', '12', '16']);
+    // Again, with nothing in the way: the step taken out is not taken out again, the one made is not made again.
+    world.before = null;
+    world.calls = [];
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(world.toasts.map((toast) => toast.title)).toEqual(['Monday mugs saved']));
+    expect(world.calls.filter((call) => call.table === 'offer_breaks' && ['create', 'update', 'remove'].includes(call.kind)).map((call) => [call.kind, (call.values as { from_qty?: number } | undefined)?.from_qty])).toEqual([['update', 8], ['update', 12], ['create', 16]]);
+    expect((world.tables['offer_breaks'] ?? []).map((row) => row['from_qty']).sort((a, b) => Number(a) - Number(b))).toEqual([8, 12, 16]);
+  });
+
+  it('saving twice in a row, with something typed in between, knows the rows the first save made', async () => {
+    seed('offers', [{ ...MUGS, gives: 'quantity_price', value: null }]);
+    await open('2');
+    fireEvent.click(screen.getByRole('button', { name: 'Add a step' }));
+    const from = (): HTMLInputElement[] => (screen.getAllByLabelText(/^From$/) as HTMLInputElement[]).filter((input) => input.type !== 'date');
+    fireEvent.change(from()[0] as HTMLElement, { target: { value: '4' } });
+    fireEvent.change(screen.getAllByLabelText(/^Percent off/)[0] as HTMLElement, { target: { value: '8' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(world.toasts).toHaveLength(1));
+    fireEvent.change(screen.getAllByLabelText(/^Percent off/)[0] as HTMLElement, { target: { value: '9' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(world.toasts).toHaveLength(2));
+    expect(world.tables['offer_breaks']).toHaveLength(1);
+    expect(world.tables['offer_breaks']?.[0]).toMatchObject({ from_qty: 4, value: '9' });
+  });
+
+  it('"Raise the limit" puts the person in the field it opens', async () => {
+    await open('5');
+    fireEvent.click(screen.getByRole('button', { name: 'Raise the limit' }));
+    await waitFor(() => expect(document.activeElement).toBe(field(/^Total uses/)));
+  });
+
+  it('a reader who may not read the groups is asked for none, and a grouped discount still says it has one', async () => {
+    world.closed.add('groups');
+    seed('offers', [{ ...AUTUMN, group_id: 3 }]);
+    await open('4');
+    expect(world.calls.some((call) => call.table === 'groups')).toBe(false);
+    expect([...field(/^Customer group/).querySelectorAll('option')].map((option) => option.textContent)).toEqual(['Anyone', 'A customer group']);
+    expect(field(/^Customer group/).value).toBe('3');
   });
 
   it('Make one for me asks Adminium for the code', async () => {

@@ -51,6 +51,7 @@ export function CardTab({ t, onDone }: { t: AddOnTranslate; onDone: () => void }
   };
 
   const save = async (): Promise<void> => {
+    if (saving) return;
     const found = check();
     setWrong(found);
     if (Object.keys(found).length > 0) return;
@@ -85,7 +86,7 @@ export function CardTab({ t, onDone }: { t: AddOnTranslate; onDone: () => void }
     } catch (caught) {
       const error = asDataError(caught);
       // While the till's cards are being brought in, no card is made by hand.
-      setWrong(error.code === 'POSTING_REFUSED' && error.details?.['reason'] === 'not-allowed' && limits?.['cards_paused'] === true ? { '': t('issue.card.paused', 'Gift cards are being brought in from the till. Try again when that has finished.') } : wrongOf(t, error));
+      setWrong(error.code === 'POSTING_REFUSED' && error.details?.['reason'] === 'not-allowed' && [true, 1, '1', 'true'].includes(limits?.['cards_paused'] as never) ? { '': t('issue.card.paused', 'Gift cards are being brought in from the till. Try again when that has finished.') } : wrongOf(t, error));
     } finally {
       setSaving(false);
     }

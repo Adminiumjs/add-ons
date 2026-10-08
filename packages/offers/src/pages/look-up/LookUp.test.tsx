@@ -130,10 +130,10 @@ describe('Look up', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Adjust' }));
     const dialog = await screen.findByRole('dialog');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Adjust' }));
-    expect(await within(dialog).findByText('Enter an amount above zero.')).toBeTruthy();
+    expect(await within(dialog).findAllByText('Enter an amount above zero.')).toHaveLength(2);
     fireEvent.change(within(dialog).getByLabelText(/^Amount/), { target: { value: '30.00' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Adjust' }));
-    expect(await within(dialog).findByText('Say why.')).toBeTruthy();
+    expect(await within(dialog).findAllByText('Say why.')).toHaveLength(2);
     expect(world.calls.some((call) => call.kind === 'create')).toBe(false);
     fireEvent.click(within(dialog).getByRole('radio', { name: 'Remove' }));
     fireEvent.change(within(dialog).getByLabelText(/^Why/), { target: { value: 'Loaded twice' } });
@@ -141,7 +141,7 @@ describe('Look up', () => {
       throw new Refused('POSTING_REFUSED', '', { reason: 'empty', left: '19.00' });
     };
     fireEvent.click(within(dialog).getByRole('button', { name: 'Adjust' }));
-    expect(await within(dialog).findByText('The card has 19.00 left. Remove 19.00 or less.')).toBeTruthy();
+    expect(await within(dialog).findAllByText('The card has 19.00 left. Remove 19.00 or less.')).toHaveLength(2);
     // Removing is a negative amount; the dialog is still there with what was typed.
     expect(world.calls.find((call) => call.kind === 'create')).toMatchObject({ values: { action: 'adjust', amount: '-30.00', reason: 'Loaded twice' } });
     expect((within(dialog).getByLabelText(/^Amount/) as HTMLInputElement).value).toBe('30.00');
@@ -156,7 +156,7 @@ describe('Look up', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Cancel the card' }));
     const dialog = await screen.findByRole('dialog');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel the card' }));
-    expect(await within(dialog).findByText('Say why.')).toBeTruthy();
+    expect(await within(dialog).findAllByText('Say why.')).toHaveLength(2);
     expect(world.calls.some((call) => call.kind === 'move')).toBe(false);
     fireEvent.change(within(dialog).getByLabelText(/^Why/), { target: { value: 'Reported lost' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel the card' }));
@@ -173,7 +173,7 @@ describe('Look up', () => {
     expect(screen.getByText('Never expires')).toBeTruthy();
     expect(screen.getByText('12.50')).toBeTruthy();
     // Credit has no code to print, cancel or send.
-    for (const name of ['Print', 'Cancel the card', 'Send again', 'Top up']) expect(screen.queryByRole('button', { name })).toBeNull();
+    for (const name of ['Print', 'Cancel the card', 'Send again', 'Top up', 'Adjust']) expect(screen.queryByRole('button', { name })).toBeNull();
     // Adding to it is one more row for the credit found.
     fireEvent.click(screen.getByRole('button', { name: 'Add credit' }));
     const dialog = await screen.findByRole('dialog');
@@ -225,7 +225,7 @@ describe('Look up', () => {
       left = 5;
     };
     fireEvent.click(screen.getByRole('button', { name: 'Use one now' }));
-    await waitFor(() => expect(world.toasts.map((toast) => toast.title)).toEqual(['1 use recorded · 5 left']));
+    await waitFor(() => expect(world.toasts.map((toast) => toast.title)).toEqual(['1 use recorded']));
     expect(world.calls.find((call) => call.kind === 'create')).toMatchObject({ table: 'voucher_actions', values: { voucher_id: 5, action: 'use' } });
     expect(await screen.findByText('5 of 10')).toBeTruthy();
   });
@@ -266,6 +266,51 @@ describe('Look up', () => {
     expect(screen.getByText('12 of 50')).toBeTruthy();
     expect(screen.getByText('Expired Jan 31, 2026')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Open the discount' }).getAttribute('href')).toBe('/add-ons/offers/offers-discounts/2');
+  });
+
+  it('a refusal about something the dialog does not draw is still said', async () => {
+    world.before = (kind) => {
+      if (kind === 'tree') throw new Refused('VALIDATION_FAILED', 'This is not an address anybody can be written to.', { column: 'owner_email' });
+    };
+    render(<LookUp t={t} />);
+    await lookUp('new@example');
+    fireEvent.click(await screen.findByRole('button', { name: 'Give credit' }));
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.change(within(dialog).getByLabelText(/^Amount/), { target: { value: '15.00' } });
+    fireEvent.change(within(dialog).getByLabelText(/^Why/), { target: { value: 'Goodwill' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Give credit' }));
+    expect(await within(dialog).findByText('This is not an address anybody can be written to.')).toBeTruthy();
+  });
+
+  it('a second press while a use is being recorded records one use', async () => {
+    world.lookUp = () => ({ kind: 'pack', table: 'vouchers', key: '5', last4: '7K2M', row: { worth: 'pack', public_name: '10 classes', status: 'issued', uses_total: 10, uses_left: 6, expires_on: null, awaiting_sale: false, batch_id: 3 }, rows: [] });
+    world.closed.add('voucher_batches');
+    render(<LookUp t={t} />);
+    await lookUp('PK-AAAA-BBBB-7K2M');
+    const use = await screen.findByRole('button', { name: 'Use one now' });
+    fireEvent.click(use);
+    fireEvent.click(use);
+    await waitFor(() => expect(world.toasts).toHaveLength(1));
+    expect(world.calls.filter((call) => call.kind === 'create')).toHaveLength(1);
+    // A reader who may not read batches is asked for none and shown no link to one.
+    expect(world.calls.some((call) => call.table === 'voucher_batches')).toBe(false);
+    expect(screen.queryAllByRole('link').filter((link) => (link.getAttribute('href') ?? '').includes('voucher-batches'))).toEqual([]);
+  });
+
+  it('a print that is refused says to ask a manager, and a look-up while Offers is off says that', async () => {
+    world.lookUp = () => cardAnswer();
+    world.before = (kind) => {
+      if (kind === 'document') throw new Refused('NOT_FOUND');
+    };
+    render(<LookUp t={t} />);
+    await lookUp(CODE);
+    fireEvent.click(await screen.findByRole('button', { name: 'Print' }));
+    expect(await screen.findByText('Ask a manager to print it.')).toBeTruthy();
+    world.lookUp = () => {
+      throw new Refused('FEATURE_OFF');
+    };
+    await lookUp(CODE);
+    expect(await screen.findByText('Offers is switched off right now.')).toBeTruthy();
   });
 
   it('a look-up that fails says so and changes nothing shown', async () => {

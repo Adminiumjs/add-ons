@@ -21,6 +21,8 @@ export interface Role {
   readsCode: boolean;
   readsBalance: boolean;
   editOffers: boolean;
+  readsGroups: boolean;
+  readsBatches: boolean;
   /** Change how Adminium works out a table's columns. */
   changeRules: boolean;
 }
@@ -39,6 +41,8 @@ export function useRole(): Role {
     readsCode: access.canRead('gift_cards', ['code']),
     readsBalance: access.canRead('gift_cards', ['balance']),
     editOffers: access.canCreate('offers'),
+    readsGroups: access.canRead('groups'),
+    readsBatches: access.canRead('voucher_batches'),
     changeRules: access.has('system:schema:remap'),
   };
 }

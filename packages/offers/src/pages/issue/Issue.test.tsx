@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { wordsFor } from '../shared/messages.ts';
@@ -32,7 +32,10 @@ const viewer = (): void => {
   desk();
   world.cannot.add('create:vouchers');
 };
-const type = (label: RegExp | string, value: string): void => void fireEvent.change(screen.getByLabelText(label), { target: { value } });
+/** The tab in sight: every tab stays drawn, so a field is looked for in the one that shows. */
+const panel = (): HTMLElement => document.querySelector('[role="tabpanel"]:not([hidden])') as HTMLElement;
+const shown = (): ReturnType<typeof within> => within(panel());
+const type = (label: RegExp | string, value: string): void => void fireEvent.change(shown().getByLabelText(label), { target: { value } });
 const tab = (name: string): void => void fireEvent.click(screen.getByRole('tab', { name }));
 
 describe('Issue', () => {
@@ -85,7 +88,8 @@ describe('Issue', () => {
     type(/^For/, 'Ana');
     type(/^Email/, 'ana@example.com');
     fireEvent.click(screen.getByRole('button', { name: 'Issue the card' }));
-    expect(await screen.findByText('Say why.')).toBeTruthy();
+    // Said at the top and on the field.
+    expect(await screen.findAllByText('Say why.')).toHaveLength(2);
     expect(screen.getByText('1 thing needs fixing')).toBeTruthy();
     expect(world.calls.some((call) => call.kind === 'tree')).toBe(false);
     type(/^Why/, 'Sold at the counter');
@@ -155,8 +159,8 @@ describe('Issue', () => {
     fireEvent.click(await screen.findByRole('radio', { name: "Don't send, I'll print it" }));
     fireEvent.click(screen.getByRole('button', { name: 'Issue the card' }));
     expect(await screen.findByText('Gift cards are being brought in from the till. Try again when that has finished.')).toBeTruthy();
-    expect((screen.getByLabelText(/^Why/) as HTMLTextAreaElement).value).toBe('Sold at the counter');
-    expect((screen.getByLabelText(/^Amount/) as HTMLInputElement).value).toBe('25');
+    expect((shown().getByLabelText(/^Why/) as HTMLTextAreaElement).value).toBe('Sold at the counter');
+    expect((shown().getByLabelText(/^Amount/) as HTMLInputElement).value).toBe('25');
   });
 
   it('a named voucher needs an address', async () => {
@@ -165,7 +169,7 @@ describe('Issue', () => {
     type(/^Amount/, '5');
     type(/^Called/, 'Five off');
     fireEvent.click(screen.getByRole('button', { name: 'Issue the voucher' }));
-    expect(await screen.findByText('A voucher for a named person needs their email.')).toBeTruthy();
+    expect(await screen.findAllByText('A voucher for a named person needs their email.')).toHaveLength(2);
     expect(world.calls.some((call) => call.kind === 'create')).toBe(false);
     type(/^Email/, 'ana@example.com');
     type(/^Name/, 'Ana');
@@ -178,7 +182,7 @@ describe('Issue', () => {
     world.once = (table, row) => (table === 'vouchers' ? [{ table: 'vouchers', key: String(row['id']), column: 'code', value: 'AAAABBBB7K2M', print: 'tok-9' }] : []);
     render(<Issue t={t} />);
     tab('Voucher');
-    fireEvent.click(screen.getByRole('radio', { name: /^A pack/ }));
+    fireEvent.click(shown().getByRole('radio', { name: /^A pack/ }));
     type(/^Called/, '10 massages');
     fireEvent.click(screen.getByRole('radio', { name: 'Whoever holds it' }));
     // Nothing picked yet, and eleven is fine but one is not a pack.
@@ -187,10 +191,10 @@ describe('Issue', () => {
     expect(await screen.findByText('Choose what it is for.')).toBeTruthy();
     expect(screen.getByText('A pack has from 2 to 50 uses.')).toBeTruthy();
     // Only tables whose rows are things are offered: a tag is no row.
-    const from = await screen.findByLabelText(/^From/);
+    const from = await shown().findByLabelText(/^From/);
     expect([...from.querySelectorAll('option')].map((option) => option.textContent)).toEqual(['Choose…', 'Products']);
     fireEvent.change(from, { target: { value: '0' } });
-    fireEvent.change(screen.getByLabelText(/^What it is for/), { target: { value: '60' } });
+    fireEvent.change(shown().getByLabelText(/^What it is for/), { target: { value: '60' } });
     fireEvent.click(await screen.findByRole('option', { name: 'Massage 60 min' }));
     expect(screen.queryByRole('option', { name: 'Massage 30 min' })).toBeNull();
     type(/^Uses/, '10');
@@ -226,7 +230,13 @@ describe('Issue', () => {
     type(/^How many/, count);
     type(/^Amount/, '5');
     type(/^Called/, 'Five off');
-    fireEvent.change(document.querySelector('input[type="date"]') as HTMLInputElement, { target: { value: '2099-11-30' } });
+    fireEvent.change(panel().querySelector('input[type="date"]') as HTMLInputElement, { target: { value: '2099-11-30' } });
+  };
+
+  /** What Adminium does when a part is made: the batch's own count of its vouchers goes up. */
+  const counted = (rows: readonly Record<string, unknown>[], results: readonly { ok: boolean }[]): void => {
+    const row = world.tables['voucher_batches']?.[0];
+    if (row !== undefined) row['made'] = Number(row['made'] ?? 0) + rows.reduce<number>((total, part, index) => (results[index]?.ok === true ? total + Number(part['size']) : total), 0);
   };
 
   it('a batch is sent as chunks and a chunk not run is sent again', async () => {
@@ -234,7 +244,9 @@ describe('Issue', () => {
     world.createEach = (_table, rows) => {
       calls += 1;
       // The first time the middle part runs out of time; sent again, it is made.
-      return rows.map((row, index) => (calls === 1 && index === 1 ? { key: String(index), ok: false, notRun: true } : { key: String(index), ok: true, row: { id: 100 + index, ...row } }));
+      const out = rows.map((row, index) => (calls === 1 && index === 1 ? ({ key: String(index), ok: false, notRun: true } as const) : ({ key: String(index), ok: true, row: { id: 100 + index, ...row } } as const)));
+      counted(rows, out);
+      return out;
     };
     render(<Issue t={t} />);
     batch('1200');
@@ -250,16 +262,27 @@ describe('Issue', () => {
   });
 
   it('a part refused twice is not sent a third time: the sheet says how many were made and where to finish', async () => {
-    world.createEach = (_table, rows) => rows.map((row, index) => (row['size'] === 200 ? { key: String(index), ok: false, error: { code: 'WRITE_CONFLICT', message: '' } } : { key: String(index), ok: true, row: { id: 100 + index, ...row } }));
+    world.createEach = (_table, rows) => {
+      const out = rows.map((row, index) => (row['size'] === 200 ? ({ key: String(index), ok: false, error: { code: 'WRITE_CONFLICT', message: '' } } as const) : ({ key: String(index), ok: true, row: { id: 100 + index, ...row } } as const)));
+      counted(rows, out);
+      return out;
+    };
     render(<Issue t={t} />);
     batch('1200');
     fireEvent.click(screen.getByRole('button', { name: 'Make the codes' }));
     expect(await screen.findByText('1000 of 1200 made. Finish it under Voucher batches.')).toBeTruthy();
+    // Why the part was refused is said, in words.
+    expect(screen.getByText('Someone else changed this at the same time. Nothing was saved. Try again.')).toBeTruthy();
     expect(world.calls.filter((call) => call.kind === 'createEach')).toHaveLength(2);
     expect(screen.getByRole('link', { name: 'Open the batch' }).getAttribute('href')).toBe(`/p/offers-voucher-batches/r/${String(world.tables['voucher_batches']?.[0]?.['id'])}`);
   });
 
   it('download asks Adminium for the file', async () => {
+    world.createEach = (_table, rows) => {
+      const out = rows.map((row, index) => ({ key: String(index), ok: true, row: { id: 100 + index, ...row } }) as const);
+      counted(rows, out);
+      return out;
+    };
     render(<Issue t={t} />);
     batch('200');
     fireEvent.click(screen.getByRole('button', { name: 'Make the codes' }));
@@ -271,6 +294,37 @@ describe('Issue', () => {
     // Nothing was read to build a file here: no list of the vouchers was asked for.
     expect(world.calls.some((call) => call.kind === 'list' && call.table === 'vouchers')).toBe(false);
     expect(document.querySelector('a[download]')).toBeNull();
+  });
+
+  it('a look at another tab throws nothing away: a code shown once is still there, and so is a form half filled', async () => {
+    world.once = (table, row) => (table === 'gift_cards' ? [{ table: 'gift_cards', key: String(row['id']), column: 'code', value: 'GC-7K2MW3HNQ4XP', print: 'tok-1' }] : []);
+    render(<Issue t={t} />);
+    type(/^Amount/, '25');
+    type(/^Why/, 'Sold at the counter');
+    fireEvent.click(shown().getByRole('radio', { name: "Don't send, I'll print it" }));
+    fireEvent.click(screen.getByRole('button', { name: 'Issue the card' }));
+    await screen.findByRole('group', { name: 'The code' });
+    tab('Voucher');
+    type(/^Called/, 'Five off');
+    tab('Gift card');
+    expect([...shown().getByRole('group', { name: 'The code' }).children].map((chip) => chip.textContent)).toEqual(['GC', '-7K2M', '-W3HN', '-Q4XP']);
+    tab('Voucher');
+    expect((shown().getByLabelText(/^Called/) as HTMLInputElement).value).toBe('Five off');
+  });
+
+  it('the count shown when a batch is done is the batch\'s own, even when the answers were lost on the way', async () => {
+    world.createEach = (_table, rows) => {
+      const row = world.tables['voucher_batches']?.[0];
+      if (row !== undefined) row['made'] = 200;
+      // Made, and the answer never arrived.
+      throw new Refused('CLIENT_ERROR', 'The connection was lost.');
+      return rows.map((_, index) => ({ key: String(index), ok: true, row: {} }) as const);
+    };
+    render(<Issue t={t} />);
+    batch('200');
+    fireEvent.click(screen.getByRole('button', { name: 'Make the codes' }));
+    expect(await screen.findByText('200 codes made')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Download the codes (CSV)' })).toBeTruthy();
   });
 
   it('a batch needs a name, a count within five thousand and a last day', async () => {

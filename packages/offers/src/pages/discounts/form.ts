@@ -252,3 +252,28 @@ export const keptSteps = (form: Form): readonly Step[] => (form.gives === 'quant
 
 /** The same form? Compared as what a save would send, so a space typed and taken out again is no change. */
 export const same = (a: Form, b: Form): boolean => JSON.stringify([offerValues(a), keptSteps(a).map(stepValues), keptTargets(a).map(targetValues), a.trigger === 'code' ? codeWord(a.code) : '']) === JSON.stringify([offerValues(b), keptSteps(b).map(stepValues), keptTargets(b).map(targetValues), b.trigger === 'code' ? codeWord(b.code) : '']);
+
+/**
+ * The form after a save that stopped part-way: what was typed stays, and each
+ * step and target carries the key of the row that is really there now — so
+ * the next save neither makes a row twice nor removes one that is gone.
+ */
+export function rekeyed(form: Form, steps: readonly Step[], targets: readonly Target[]): Form {
+  const left = [...steps];
+  const take = <Row extends { id?: string }>(pool: Row[], fits: (row: Row) => boolean): string | undefined => {
+    const at = pool.findIndex(fits);
+    return at === -1 ? undefined : pool.splice(at, 1)[0]?.id;
+  };
+  const kept = [...targets];
+  return {
+    ...form,
+    steps: form.steps.map(({ id: _id, ...step }) => {
+      const id = take(left, (row) => row.fromQty === step.fromQty);
+      return id === undefined ? step : { ...step, id };
+    }),
+    targets: form.targets.map(({ id: _id, ...target }) => {
+      const id = take(kept, (row) => row.kind === target.kind && row.sourceTable === target.sourceTable && row.sourceRow === target.sourceRow);
+      return id === undefined ? target : { ...target, id };
+    }),
+  };
+}

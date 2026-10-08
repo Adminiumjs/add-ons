@@ -12,7 +12,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 
 import { todayOf } from '../look-up/read.ts';
 import { formatDay } from '../look-up/LookUp.tsx';
-import { Alert, Button, DateInput, Field, Input, Link, NumberInput, ProgressBar, SheetBody, SheetFooter, Stack, asDataError, useExport, useLocaleTag, useRecord, useWrite, type AddOnTranslate, type DataValue, type EachResult } from '../shared/host.ts';
+import { Alert, Button, DateInput, Field, Input, Link, NumberInput, ProgressBar, SheetBody, SheetFooter, Stack, asDataError, useExport, useLocaleTag, useRead, useRecord, useWrite, type AddOnTranslate, type DataValue, type EachResult } from '../shared/host.ts';
 import { BATCHES, recordAt } from '../shared/paths.ts';
 import { refusal } from '../shared/refusal.ts';
 import { Fixes, wrongOf, type Wrong } from './form.tsx';
@@ -36,6 +36,7 @@ export function BatchTab({ t, onDone }: { t: AddOnTranslate; onDone: () => void 
   const batches = useWrite('voucher_batches');
   const chunks = useWrite('batch_chunks');
   const exports = useExport();
+  const reads = useRead();
   const what = useWhat(t);
   const [worth, setWorth] = useState<Worth>(NO_WORTH);
   const [name, setName] = useState('');
@@ -68,6 +69,7 @@ export function BatchTab({ t, onDone }: { t: AddOnTranslate; onDone: () => void 
   };
 
   const make = async (): Promise<void> => {
+    if (batches.saving || stage.at !== 'form') return;
     const found = check();
     setWrong(found);
     if (Object.keys(found).length > 0) return;
@@ -83,14 +85,21 @@ export function BatchTab({ t, onDone }: { t: AddOnTranslate; onDone: () => void 
     setStage({ at: 'making', batch, count: many });
     const id: DataValue = /^\d+$/.test(batch) ? Number(batch) : batch;
     const sizes = partsOf(many);
-    let made = 0;
     try {
       const sent = (list: readonly number[]): Promise<readonly EachResult[]> => chunks.createEach(list.map((size) => ({ batch_id: id, size })));
       const first = await sent(sizes);
       const again = sizes.filter((_, index) => first[index]?.ok !== true);
       // A part that was not run, or was refused, is sent once more and no more.
       const second = again.length === 0 ? [] : await sent(again);
-      made = [...first, ...second].reduce((total, result, index) => (result.ok ? total + ((index < first.length ? sizes[index] : again[index - first.length]) ?? 0) : total), 0);
+      const refused = [...second].find((result): result is Extract<EachResult, { ok: false; error: unknown }> => !result.ok && 'error' in result);
+      if (refused !== undefined) setSaid(refusal(t, refused.error).message);
+    } catch (caught) {
+      setSaid(refusal(t, asDataError(caught)).message);
+    }
+    // How many were made is the batch's own count, read now: an answer lost on the way does not make them unmade.
+    let made = 0;
+    try {
+      made = Number((await reads.get('voucher_batches', id as string | number))?.['made'] ?? 0) || 0;
     } catch (caught) {
       setSaid(refusal(t, asDataError(caught)).message);
     }

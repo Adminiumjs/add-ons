@@ -24,7 +24,7 @@ export function Result({ t, title, made, onDone }: { t: AddOnTranslate; title: s
       // The first print shows what the card was loaded with, not a balance on a day.
       await documents.open(made.document, made.table, made.key, { print: true, values: { first: '1' }, ...(made.once === null ? {} : { once: made.once.print }) });
     } catch (caught) {
-      setSaid(refusal(t, asDataError(caught)).message);
+      setSaid(refusal(t, asDataError(caught), 'print').message);
     }
   };
   return (

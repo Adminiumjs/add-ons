@@ -42,6 +42,7 @@ import {
   useBlocker,
   useLocaleTag,
   useNavigate,
+  useRead,
   useRecord,
   useRecords,
   useStateMove,
@@ -55,7 +56,7 @@ import { DISCOUNTS } from '../shared/paths.ts';
 import { refusal } from '../shared/refusal.ts';
 import { useRole } from '../shared/role.ts';
 import { mapped as readMapped, type Mapped } from '../shared/things.ts';
-import { BLANK, LOCALES, NOT_STORED, check, fromRows, needsTargets, neverApplies, offerValues, same, type Form, type Gives, type Stored, type Target, type Trigger } from './form.ts';
+import { BLANK, LOCALES, NOT_STORED, check, fromRows, needsTargets, neverApplies, offerValues, rekeyed, same, type Form, type Gives, type Stored, type Target, type Trigger } from './form.ts';
 import { askCode, saveDiscount } from './save.ts';
 import { TargetPicker } from './TargetPicker.tsx';
 import { TryPane } from './TryPane.tsx';
@@ -87,7 +88,9 @@ export function Editor({ t, offerId }: { t: AddOnTranslate; offerId: string | nu
   const steps = useRecords('offer_breaks', { filter: byOffer, pageSize: 50, enabled: offerId !== null });
   const targets = useRecords('offer_targets', { filter: byOffer, pageSize: 199, enabled: offerId !== null });
   const codes = useRecords('codes', { filter: byOffer, pageSize: 50, sort: [{ column: 'id', direction: 'asc' }], enabled: offerId !== null });
-  const groups = useRecords('groups', { sort: [{ column: 'name', direction: 'asc' }], pageSize: 199, columns: ['id', 'name'] });
+  // A reader who may not read the groups is asked for none: a grouped discount then reads "A customer group".
+  const groups = useRecords('groups', { sort: [{ column: 'name', direction: 'asc' }], pageSize: 199, columns: ['id', 'name'], enabled: role.readsGroups });
+  const reads = useRead();
   const savers = { tree: useTreeWrite('offers'), offers: useWrite('offers'), steps: useWrite('offer_breaks'), targets: useWrite('offer_targets'), codes: useWrite('codes') };
   const move = useStateMove('offers');
 
@@ -106,6 +109,7 @@ export function Editor({ t, offerId }: { t: AddOnTranslate; offerId: string | nu
   const [raising, setRaising] = useState(false);
   const [moreNames, setMoreNames] = useState(false);
   const [map, setMap] = useState<Mapped | null>(null);
+  const [mapSaid, setMapSaid] = useState<string | null>(null);
   const usesRef = useRef<HTMLDivElement | null>(null);
   const leaving = useRef(false);
 
@@ -129,12 +133,17 @@ export function Editor({ t, offerId }: { t: AddOnTranslate; offerId: string | nu
     let live = true;
     readMapped().then(
       (next) => (live ? setMap(next) : undefined),
-      () => undefined,
+      (caught: unknown) => (live ? setMapSaid(refusal(t, asDataError(caught)).message) : undefined),
     );
     return () => {
       live = false;
     };
-  }, []);
+  }, [t]);
+
+  // "Raise the limit" opens the field and puts the person in it, once it can take them.
+  useEffect(() => {
+    if (raising) usesRef.current?.querySelector('input')?.focus();
+  }, [raising]);
 
   const dirty = !same(form, loaded);
   typing.current = dirty;
@@ -161,6 +170,14 @@ export function Editor({ t, offerId }: { t: AddOnTranslate; offerId: string | nu
     setStored((held) => ({ ...held, id: text(merged['id']), status: (['draft', 'active', 'paused', 'ended'] as const).find((one) => one === merged['status']) ?? held.status, uses: Number(merged['uses'] ?? held.uses) || 0, given: merged['given'] === undefined || merged['given'] === null ? held.given : text(merged['given']), usedUp: merged['used_up'] === true || merged['used_up'] === 1 }));
   };
 
+  /** The discount as it stands on the server now, read at once (not when the screen next draws). */
+  const reread = async (id: string): Promise<{ form: Form; stored: Stored } | null> => {
+    const key = /^\d+$/.test(id) ? Number(id) : id;
+    const by = [{ column: 'offer_id', op: 'eq' as const, value: key }];
+    const [offerRow, stepRows, targetRows, codeRows] = await Promise.all([reads.get('offers', key), reads.list('offer_breaks', { filter: by, pageSize: 50 }), reads.list('offer_targets', { filter: by, pageSize: 199 }), reads.list('codes', { filter: by, pageSize: 50, sort: [{ column: 'id', direction: 'asc' }] })]);
+    return offerRow === null ? null : fromRows(offerRow, stepRows.rows, targetRows.rows, codeRows.rows);
+  };
+
   const save = async (thenOn: boolean): Promise<void> => {
     const found = check(t, form, stored, mainLocale);
     setWrong(found);
@@ -169,6 +186,7 @@ export function Editor({ t, offerId }: { t: AddOnTranslate; offerId: string | nu
       toasts.push({ variant: 'error', title: t('discounts.fix', 'Fix {n, plural, one {# thing} other {# things}} before saving', { n: Object.keys(found).length }) });
       return;
     }
+    if (busy !== null) return;
     setBusy(thenOn ? 'on' : 'save');
     try {
       const saved = await saveDiscount(savers, form, stored);
@@ -195,16 +213,26 @@ export function Editor({ t, offerId }: { t: AddOnTranslate; offerId: string | nu
         leaving.current = true;
         await navigate({ to: `${DISCOUNTS}/${encodeURIComponent(id)}`, replace: true });
       } else {
-        // Its lists were changed row by row: read again, so the next save knows each row's key.
-        steps.refetch();
-        targets.refetch();
-        codes.refetch();
-        offer.refetch();
+        // Its lists were changed row by row: read them again before anything else can be saved, so the next save knows each row's key.
+        const fresh = await reread(stored.id);
+        if (fresh !== null) {
+          setForm(fresh.form);
+          setLoaded(fresh.form);
+          setStored(fresh.stored);
+        }
       }
     } catch (caught) {
       const refused = refusal(t, asDataError(caught));
       if (refused.field === undefined) setSaid(refused.message);
       else setWrong({ [refused.field]: refused.message });
+      // A save that stopped part-way has changed some rows: what is typed stays, and is matched to what is there now.
+      if (stored.id !== null) {
+        const fresh = await reread(stored.id).catch(() => null);
+        if (fresh !== null) {
+          setStored(fresh.stored);
+          setForm((held) => rekeyed(held, fresh.form.steps, fresh.form.targets));
+        }
+      }
     } finally {
       setBusy(null);
     }
@@ -212,7 +240,7 @@ export function Editor({ t, offerId }: { t: AddOnTranslate; offerId: string | nu
 
   /** A move and nothing else: what is typed and unsaved stays typed and unsaved. */
   const act = async (action: 'pause' | 'resume' | 'end-now' | 'run-again', done: string, values?: Record<string, string>): Promise<void> => {
-    if (stored.id === null) return;
+    if (stored.id === null || busy !== null) return;
     setBusy(action);
     setSaid(null);
     try {
@@ -231,6 +259,7 @@ export function Editor({ t, offerId }: { t: AddOnTranslate; offerId: string | nu
   };
 
   const makeCode = async (): Promise<void> => {
+    if (busy !== null) return;
     setBusy('code');
     try {
       const made = await askCode();
@@ -247,7 +276,6 @@ export function Editor({ t, offerId }: { t: AddOnTranslate; offerId: string | nu
   const today = new Date();
   const todayText = `${String(today.getFullYear())}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   const name = form.name.trim() === '' ? t('discounts.newTitle', 'New discount') : form.name.trim();
-  const unsavedNote = (label: string): string => (dirty ? t('discounts.unsavedMove', '{action} (your changes are not saved)', { action: label }) : label);
   const fixes = Object.keys(wrong).length;
   const Trash = lucideByName('trash-2');
   const signedInOnly = t('discounts.signedInOnly', 'Only for a signed-in customer, or one your staff name. Guests do not get it.');
@@ -255,17 +283,17 @@ export function Editor({ t, offerId }: { t: AddOnTranslate; offerId: string | nu
   const header = !mayEdit ? undefined : (
     <Stack direction="row" gap="sm" wrap>
       {stored.status === 'active' ? (
-        <Button variant="secondary" loading={busy === 'pause'} onClick={() => void act('pause', t('discounts.paused', '{name} is paused', { name }))}>
-          {unsavedNote(t('discounts.pause', 'Pause'))}
+        <Button variant="secondary" loading={busy === 'pause'} disabled={busy !== null} onClick={() => void act('pause', t('discounts.paused', '{name} is paused', { name }))}>
+          {dirty ? t('discounts.pauseUnsaved', 'Pause (your changes are not saved)') : t('discounts.pause', 'Pause')}
         </Button>
       ) : null}
       {stored.status === 'paused' ? (
-        <Button variant="secondary" loading={busy === 'resume'} onClick={() => void act('resume', t('discounts.resumed', '{name} is on again', { name }))}>
-          {unsavedNote(t('discounts.resume', 'Resume'))}
+        <Button variant="secondary" loading={busy === 'resume'} disabled={busy !== null} onClick={() => void act('resume', t('discounts.resumed', '{name} is on again', { name }))}>
+          {dirty ? t('discounts.resumeUnsaved', 'Resume (your changes are not saved)') : t('discounts.resume', 'Resume')}
         </Button>
       ) : null}
       {ended ? (
-        <Button variant="primary" onClick={() => setRunning(form.endsOn > todayText ? form.endsOn : '')}>
+        <Button variant="primary" onClick={() => setRunning(form.endsOn >= todayText ? form.endsOn : '')}>
           {t('discounts.runAgain', 'Run again')}
         </Button>
       ) : null}
@@ -278,15 +306,15 @@ export function Editor({ t, offerId }: { t: AddOnTranslate; offerId: string | nu
       ) : null}
       {stored.status === 'draft' ? (
         <>
-          <Button variant="secondary" loading={busy === 'save'} onClick={() => void save(false)}>
+          <Button variant="secondary" loading={busy === 'save'} disabled={busy !== null} onClick={() => void save(false)}>
             {t('discounts.saveDraft', 'Save draft')}
           </Button>
-          <Button variant="primary" loading={busy === 'on'} onClick={() => void save(true)}>
+          <Button variant="primary" loading={busy === 'on'} disabled={busy !== null} onClick={() => void save(true)}>
             {t('discounts.switchOn', 'Switch on')}
           </Button>
         </>
       ) : ended ? null : (
-        <Button variant="primary" loading={busy === 'save'} disabled={locked} onClick={() => void save(false)}>
+        <Button variant="primary" loading={busy === 'save'} disabled={locked || busy !== null} onClick={() => void save(false)}>
           {t('discounts.save', 'Save')}
         </Button>
       )}
@@ -343,7 +371,8 @@ export function Editor({ t, offerId }: { t: AddOnTranslate; offerId: string | nu
   const body = (
     <Stack gap="lg">
       {said === null ? null : <Alert tone="danger" role="alert" title={said} />}
-      {fixes === 0 ? null : <Alert tone="danger" role="alert" title={t('discounts.fixes', '{n, plural, one {# thing needs} other {# things need}} fixing before you can save.', { n: fixes })} />}
+      {fixes === 0 ? null : <Alert tone="danger" role="alert" title={t('discounts.fixes', '{n, plural, one {# thing needs} other {# things need}} fixing before you can save.', { n: fixes })} {...(fixes === 1 ? { body: Object.values(wrong)[0] } : {})} />}
+      {mapSaid === null ? null : <Alert tone="warn" title={t('discounts.noMap', 'What your tables sell could not be read, so items cannot be chosen and the discount cannot be tried.')} body={mapSaid} />}
       {!mayEdit ? <Alert tone="info" title={t('discounts.readOnly', 'You can read this discount. A manager can change it.')} /> : null}
       {ended ? <Alert tone="info" title={t('discounts.ended.title', 'This discount has ended')} body={t('discounts.ended.body', 'Run it again with a later Until date.')} /> : null}
       {usedUp && !raising ? (
@@ -357,10 +386,7 @@ export function Editor({ t, offerId }: { t: AddOnTranslate; offerId: string | nu
                   <Button
                     variant="secondary"
                     size="sm"
-                    onClick={() => {
-                      setRaising(true);
-                      usesRef.current?.querySelector('input')?.focus();
-                    }}
+                    onClick={() => setRaising(true)}
                   >
                     {t('discounts.usedUp.raise', 'Raise the limit')}
                   </Button>
@@ -461,7 +487,7 @@ export function Editor({ t, offerId }: { t: AddOnTranslate; offerId: string | nu
               <DateInput value={form.startsOn} disabled={locked} onChange={(event) => set({ startsOn: event.target.value })} />
             </Field>
             <Field label={t('discounts.until', 'Until (optional)')} hint={t('discounts.untilHint', "To the end of that day, on the venue's clock.")} {...on('ends_on')}>
-              <DateInput value={form.endsOn} disabled={!mayEdit || (usedUp && !raising)} error={wrong['ends_on'] !== undefined} onChange={(event) => set({ endsOn: event.target.value })} />
+              <DateInput value={form.endsOn} disabled={locked} error={wrong['ends_on'] !== undefined} onChange={(event) => set({ endsOn: event.target.value })} />
             </Field>
           </Grid>
           <Field label={t('discounts.days', 'Days of the week')} hint={t('discounts.daysHint', 'None chosen means every day.')}>
@@ -489,7 +515,7 @@ export function Editor({ t, offerId }: { t: AddOnTranslate; offerId: string | nu
             <NumberInput label={t('discounts.minSpend', 'Minimum spend')} hint={t('discounts.minSpendHint', 'Of the goods, after the reductions that come before it.')} value={form.minSpend} decimals={2} disabled={locked} onChange={(minSpend) => set({ minSpend })} {...on('min_spend')} />
             <NumberInput label={t('discounts.minQty', 'Minimum quantity')} hint={t('discounts.minQtyHint', 'Of what it applies to.')} value={form.minQty} whole disabled={locked} unit={t('discounts.each', 'each')} onChange={(minQty) => set({ minQty })} {...on('min_qty')} />
           </Grid>
-          <Select label={t('discounts.group', 'Customer group')} hint={signedInOnly} value={form.groupId} disabled={locked} options={[{ value: '', label: t('discounts.anyone', 'Anyone') }, ...groups.rows.map((group) => ({ value: text(group['id']), label: text(group['name']) }))]} onChange={(event) => set({ groupId: event.target.value })} {...on('group_id')} />
+          <Select label={t('discounts.group', 'Customer group')} hint={signedInOnly} value={form.groupId} disabled={locked} options={[{ value: '', label: t('discounts.anyone', 'Anyone') }, ...groups.rows.map((group) => ({ value: text(group['id']), label: text(group['name']) })), ...(form.groupId !== '' && !groups.rows.some((group) => text(group['id']) === form.groupId) ? [{ value: form.groupId, label: t('discounts.aGroup', 'A customer group') }] : [])]} onChange={(event) => set({ groupId: event.target.value })} {...on('group_id')} />
           <Stack gap="xs">
             <Switch label={t('discounts.firstOrder', 'First order only')} checked={form.firstOrderOnly} disabled={locked} onCheckedChange={(firstOrderOnly) => set({ firstOrderOnly })} />
             <span className="text-body-sm text-fg-muted">{signedInOnly}</span>
@@ -567,7 +593,7 @@ export function Editor({ t, offerId }: { t: AddOnTranslate; offerId: string | nu
         <Dialog open onOpenChange={(open) => (open ? undefined : setRunning(null))} size="sm">
           <DialogHeader title={t('discounts.run.title', 'Run {name} again', { name })} closeLabel={t('shared.close', 'Close')} />
           <DialogBody>
-            <Field label={t('discounts.run.until', 'Until')} required {...(running !== '' && running <= todayText ? { error: t('discounts.run.ahead', 'Choose a day after today.') } : { hint: t('discounts.run.hint', 'It runs to the end of that day.') })}>
+            <Field label={t('discounts.run.until', 'Until')} required {...(running !== '' && running < todayText ? { error: t('discounts.run.ahead', 'Choose today or a later day.') } : { hint: t('discounts.run.hint', 'It runs to the end of that day.') })}>
               <DateInput value={running} onChange={(event) => setRunning(event.target.value)} />
             </Field>
           </DialogBody>
@@ -575,7 +601,7 @@ export function Editor({ t, offerId }: { t: AddOnTranslate; offerId: string | nu
             <Button variant="secondary" onClick={() => setRunning(null)}>
               {t('shared.cancel', 'Cancel')}
             </Button>
-            <Button variant="primary" loading={busy === 'run-again'} disabled={running === '' || running <= todayText} onClick={() => void act('run-again', t('discounts.ranAgain', '{name} runs again until {date}', { name, date: shortDay(running, locale) }), { ends_on: running })}>
+            <Button variant="primary" loading={busy === 'run-again'} disabled={running === '' || running < todayText || busy !== null} onClick={() => void act('run-again', t('discounts.ranAgain', '{name} runs again until {date}', { name, date: shortDay(running, locale) }), { ends_on: running })}>
               {t('discounts.runAgain', 'Run again')}
             </Button>
           </DialogFooter>

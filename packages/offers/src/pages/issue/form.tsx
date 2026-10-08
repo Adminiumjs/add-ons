@@ -18,7 +18,8 @@ export function Fixes({ t, wrong }: { t: AddOnTranslate; wrong: Wrong }): ReactN
   const general = wrong[''];
   if (general !== undefined) return <Alert tone="danger" role="alert" title={general} />;
   if (fields.length === 0) return null;
-  return <Alert tone="danger" role="alert" title={t('issue.fixes', '{n, plural, one {# thing needs} other {# things need}} fixing', { n: fields.length })} />;
+  // One thing: its sentence is said here too, since a refusal may name a field this form does not draw.
+  return <Alert tone="danger" role="alert" title={t('issue.fixes', '{n, plural, one {# thing needs} other {# things need}} fixing', { n: fields.length })} {...(fields.length === 1 ? { body: wrong[fields[0] as string] } : {})} />;
 }
 
 export const positive = (amount: string): boolean => /^\d+(\.\d+)?$/.test(amount) && /[1-9]/.test(amount);

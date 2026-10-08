@@ -17,5 +17,6 @@ export default function DiscountsPage(): ReactNode {
   const { _splat } = useParams({ strict: false });
   const id = (_splat ?? '').split('/').filter(Boolean)[1];
   if (id === undefined) return <List t={t} />;
-  return <Editor key={id} t={t} offerId={id === 'new' ? null : decodeURIComponent(id)} />;
+  // One editor from a blank discount to its first save and on: what that save said stays on the screen.
+  return <Editor t={t} offerId={id === 'new' ? null : decodeURIComponent(id)} />;
 }
