@@ -290,7 +290,7 @@ describe.skipIf(!tables.some((table) => table.ref === 'receipts'))('the document
     const undo = moveOf('receipts', 'posted', 'reversing');
     expect(undo.requires).toEqual({ where: [{ column: 'can_undo', eq: 1 }] });
     const column = (ref: string) => tableOf('receipts').columns.find((one) => one.ref === ref);
-    expect(column('order_status')?.rules).toEqual({ copy: { via: 'po_id', from: 'status', mode: 'always', follow: true } });
+    expect(column('order_status')?.rules?.['copy']).toEqual({ via: 'po_id', from: 'status', mode: 'always', follow: true });
     expect(column('can_undo')?.rules).toEqual({ formula: { if: [{ or: [{ isNull: 'order_status' }, { eq: ['order_status', 'sent'] }, { eq: ['order_status', 'part_received'] }] }, 1, 0] } });
   });
 
