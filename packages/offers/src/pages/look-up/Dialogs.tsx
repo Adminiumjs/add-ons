@@ -63,7 +63,7 @@ function Shell({ t, title, subtitle, said, saving, saveLabel, danger, onClose, o
       </DialogBody>
       <DialogFooter>
         <Button variant="secondary" onClick={() => onClose()}>
-          {t('shared.cancel', 'Cancel')}
+          {danger === true ? t('lookup.dialog.keep', 'Keep the card') : t('shared.cancel', 'Cancel')}
         </Button>
         <Button variant={danger === true ? 'destructive' : 'primary'} loading={saving} onClick={() => onSave()}>
           {saveLabel}

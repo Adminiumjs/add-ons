@@ -297,6 +297,7 @@ export const lookup: Readonly<Record<string, string>> = {
   "lookup.dialog.creditMail": "يُبلَّغ العميل بالبريد الإلكتروني.",
   "lookup.dialog.creditMore": "إضافة رصيد لـ {address}",
   "lookup.dialog.direction": "إضافة أو خصم",
+  "lookup.dialog.keep": "الإبقاء على البطاقة",
   "lookup.dialog.movesTo": "ينتقل تاريخ «يُستخدم قبل» إلى {date}",
   "lookup.dialog.other": "أخرى",
   "lookup.dialog.paidBy": "طريقة الدفع",

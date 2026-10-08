@@ -38,7 +38,7 @@ describe("the screens' looks", () => {
    * found in the dashboard's sources first.
    */
   // (`flex-1`, `overflow-*`, `max-w-full`, `px-5`, `py-4`: found in the dashboard's built stylesheet, 2026-10-08 — a sheet's one pane, and a row of choices wider than a phone.)
-  const KNOWN = ['flex-1', 'font-semibold', 'leading-[normal]', 'max-w-full', 'min-w-0', 'overflow-x-auto', 'overflow-y-auto', 'px-5', 'py-4', 'size-4', 'sr-only', 'text-body-sm', 'text-fg', 'text-fg-muted'];
+  const KNOWN = ['flex', 'flex-1', 'flex-col', 'font-semibold', 'leading-[normal]', 'max-w-full', 'min-h-0', 'min-w-0', 'overflow-x-auto', 'overflow-y-auto', 'px-5', 'py-4', 'size-4', 'sr-only', 'text-body-sm', 'text-fg', 'text-fg-muted'];
 
   it('use no class the dashboard does not already draw', () => {
     const used = new Set<string>();

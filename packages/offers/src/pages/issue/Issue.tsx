@@ -45,21 +45,23 @@ export function Issue({ t }: { t: AddOnTranslate }): ReactNode {
             <Alert tone="warn" role="alert" title={t('issue.notAllowed', 'Your role cannot issue.')} />
           </SheetPane>
         ) : (
-          <Tabs value={tab} onValueChange={(value) => setPicked(TABS.find((one) => one === value) ?? null)}>
-            <SheetPane>
+          // The tabs and the tab that shows fill what the sheet's header leaves, as a column: the form scrolls and its
+          // button stays in view under it. (Left to themselves they grew past the sheet, and the button with them.)
+          <Tabs value={tab} onValueChange={(value) => setPicked(TABS.find((one) => one === value) ?? null)} className="flex min-h-0 flex-1 flex-col">
+            <div className="px-5">
               <TabsList aria-label={t('issue.tabs', 'What to issue')}>
                 {may.includes('gift-card') ? <TabsTrigger value="gift-card">{t('issue.tab.card', 'Gift card')}</TabsTrigger> : null}
                 {may.includes('voucher') ? <TabsTrigger value="voucher">{t('issue.tab.voucher', 'Voucher')}</TabsTrigger> : null}
                 {may.includes('batch') ? <TabsTrigger value="batch">{t('issue.tab.batch', 'Batch of codes')}</TabsTrigger> : null}
               </TabsList>
-            </SheetPane>
+            </div>
             {/*
               Every tab the role has stays drawn, the others out of sight: a code shown once, a form half filled or a
               batch being made is not thrown away by a look at another tab.
             */}
             {may.map((one) => (
               // The host's own panel, so each tab names the panel it shows (a panel of our own left the tabs pointing at nothing).
-              <TabsContent key={one} value={one} forceMount hidden={tab !== one}>
+              <TabsContent key={one} value={one} forceMount hidden={tab !== one} {...(tab === one ? { className: 'flex min-h-0 flex-1 flex-col' } : {})}>
                 {one === 'gift-card' ? <CardTab t={t} onDone={close} /> : one === 'voucher' ? <VoucherTab t={t} onDone={close} /> : <BatchTab t={t} onDone={close} />}
               </TabsContent>
             ))}

@@ -112,6 +112,8 @@ describe('the three roles', () => {
       codes: 'r',
       vouchers: 'rcu',
       voucher_actions: 'rc',
+      // (Read only, for the Overview's card: the spec gave the desk none, and its home page then showed an error.)
+      voucher_batches: 'r',
       gift_cards: 'rcu',
       card_ledger: 'r',
       redemptions: 'r',
@@ -209,7 +211,8 @@ describe('desk and viewer', () => {
     for (const kept of ['code', 'status', 'sold', 'sale_price', 'tax_later', 'batch_id', 'uses_taken', 'uses_left']) expect(made, kept).not.toContain(kept);
     // The manager makes one with the same, and hangs none on a batch by hand: a batch counts what it made itself.
     expect(columns(manager, 'vouchers', 'create')).toEqual(made);
-    expect(may(desk, 'voucher_batches', 'read')).toBe(false);
+    // The desk reads a batch's name and counts — the Overview shows them to everybody who opens it — and makes none.
+    expect(holds(desk, 'voucher_batches')).toBe('r');
     expect(may(desk, 'batch_chunks', 'create')).toBe(false);
   });
 

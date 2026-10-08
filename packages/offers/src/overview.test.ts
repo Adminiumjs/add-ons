@@ -94,8 +94,16 @@ describe('the Overview', () => {
     expect(item('batches').config.binding).toMatchObject({ select: ['id', 'name', 'used', 'count', 'expires_on'], orderBy: [{ column: 'id', dir: 'desc' }] });
     expect(item('packs').config.binding).toMatchObject({ filters: [{ column: 'worth', op: 'eq', value: 'pack' }, { column: 'uses_left', op: 'gt', value: 0 }] });
     // Newest first by the moment it happened, not by the order rows were written in.
-    expect(item('activity').config.binding).toMatchObject({ lookups: ['card:card_id.label', 'what:card_id.kind'], orderBy: [{ column: 'at', dir: 'desc' }, { column: 'id', dir: 'desc' }], limit: 6 });
+    expect(item('activity').config.binding).toMatchObject({ lookups: ['card:card_id.label'], orderBy: [{ column: 'at', dir: 'desc' }, { column: 'id', dir: 'desc' }], limit: 6 });
     for (const one of items.filter((candidate) => candidate.widget === 'mini-table')) expect(one.config.binding.limit, one.i).toBeLessThanOrEqual(6);
+    // A list draws five rows unless it says six itself, and its first three columns: the amount is one of them, as money, and
+    // what happened reads as a word, not as the stored value.
+    for (const one of items.filter((candidate) => candidate.widget === 'mini-table')) expect((one.config as { limit?: number }).limit, one.i).toBe(6);
+    const shown = (item('activity').config as unknown as { columns: { name: string; semantic?: string; enumLabels?: Record<string, string> }[] }).columns;
+    expect(shown.map((column) => column.name)).toEqual(['card', 'kind', 'amount']);
+    expect(shown[1]!.enumLabels).toMatchObject({ issue: 'Issued', spend: 'Spent', void: 'Cancelled' });
+    expect(shown[2]!.semantic).toBe('money');
+    expect((item('cards').config as unknown as { columns: { name: string; semantic?: string }[] }).columns.find((column) => column.name === 'balance')!.semantic).toBe('money');
   });
 
   it('every widget reads one table, and only columns that table has', () => {

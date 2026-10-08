@@ -297,6 +297,7 @@ export const lookup: Readonly<Record<string, string>> = {
   "lookup.dialog.creditMail": "The customer is told by email.",
   "lookup.dialog.creditMore": "Add credit for {address}",
   "lookup.dialog.direction": "Add or remove",
+  "lookup.dialog.keep": "Keep the card",
   "lookup.dialog.movesTo": "Use it by moves to {date}",
   "lookup.dialog.other": "Other",
   "lookup.dialog.paidBy": "Paid by",

@@ -65,7 +65,8 @@ describe('Look up', () => {
       const dialog = await screen.findByRole('dialog');
       expect(within(dialog).getByRole('heading').textContent).toBe(title);
       expect(dialog.textContent?.replace(/[\s-]/g, '')).not.toContain(BARE);
-      fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+      // A dialog that cancels a card is left by "Keep the card": two buttons that both say Cancel say nothing.
+      fireEvent.click(within(dialog).getByRole('button', { name: button === 'Cancel the card' ? 'Keep the card' : 'Cancel' }));
     }
     // Nothing navigated anywhere with it.
     expect(world.navigated).toEqual([]);

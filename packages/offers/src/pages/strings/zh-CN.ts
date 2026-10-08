@@ -297,6 +297,7 @@ export const lookup: Readonly<Record<string, string>> = {
   "lookup.dialog.creditMail": "系统会发邮件通知顾客。",
   "lookup.dialog.creditMore": "为 {address} 增加储值",
   "lookup.dialog.direction": "增加或扣除",
+  "lookup.dialog.keep": "保留此卡",
   "lookup.dialog.movesTo": "有效期将改为 {date}",
   "lookup.dialog.other": "其他",
   "lookup.dialog.paidBy": "支付方式",

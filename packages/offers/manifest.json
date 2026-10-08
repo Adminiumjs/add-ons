@@ -2944,6 +2944,7 @@
         "table:@offer_breaks:read",
         "table:@offer_targets:read",
         "table:@codes:read",
+        "table:@voucher_batches:read",
         "table:@vouchers:read",
         "table:@vouchers:create",
         "table:@vouchers:update",
@@ -3914,13 +3915,18 @@
                 "columns": [
                   {
                     "name": "label",
-                    "label": "Card"
+                    "label": "Card",
+                    "format": "mono"
                   },
                   {
                     "name": "balance",
-                    "label": "Left"
+                    "label": "Left",
+                    "logicalType": "decimal",
+                    "semantic": "money",
+                    "format": "currency"
                   }
                 ],
+                "limit": 6,
                 "emptyState": {
                   "titleKey": "No gift cards yet",
                   "titles": {
@@ -4026,6 +4032,7 @@
                     "label": "Made"
                   }
                 ],
+                "limit": 6,
                 "secondary": [
                   "expires_on"
                 ],
@@ -4111,6 +4118,7 @@
                     "label": "Uses"
                   }
                 ],
+                "limit": 6,
                 "emptyState": {
                   "titleKey": "No packs in use",
                   "titles": {
@@ -4181,7 +4189,7 @@
               "x": 0,
               "y": 21,
               "w": 12,
-              "h": 7,
+              "h": 9,
               "config": {
                 "title": "Last activity",
                 "titles": {
@@ -4197,21 +4205,41 @@
                 "columns": [
                   {
                     "name": "card",
-                    "label": "Card"
-                  },
-                  {
-                    "name": "what",
-                    "label": "Kind of card"
+                    "label": "Card",
+                    "format": "mono"
                   },
                   {
                     "name": "kind",
-                    "label": "What"
+                    "label": "What",
+                    "logicalType": "enum",
+                    "enumValues": [
+                      "issue",
+                      "top_up",
+                      "spend",
+                      "refund",
+                      "adjust",
+                      "expire",
+                      "void"
+                    ],
+                    "enumLabels": {
+                      "issue": "Issued",
+                      "top_up": "Topped up",
+                      "spend": "Spent",
+                      "refund": "Put back",
+                      "adjust": "Adjusted",
+                      "expire": "Expired",
+                      "void": "Cancelled"
+                    }
                   },
                   {
                     "name": "amount",
-                    "label": "Amount"
+                    "label": "Amount",
+                    "logicalType": "decimal",
+                    "semantic": "money",
+                    "format": "currency"
                   }
                 ],
+                "limit": 6,
                 "secondary": [
                   "at"
                 ],
@@ -4254,8 +4282,7 @@
                     "at"
                   ],
                   "lookups": [
-                    "card:card_id.label",
-                    "what:card_id.kind"
+                    "card:card_id.label"
                   ],
                   "orderBy": [
                     {

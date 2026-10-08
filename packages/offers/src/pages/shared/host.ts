@@ -97,11 +97,11 @@ export const EmptyState = part<{ title: ReactNode; body?: ReactNode; actions?: R
 export const Tag = part<{ tone?: Tone; children?: ReactNode }>(ui, 'Tag');
 export const Spinner = part<{ label?: string; size?: 'sm' | 'md' | 'lg' }>(ui, 'Spinner');
 export const SegmentedControl = part<{ options: readonly { value: string; label: ReactNode }[]; value: string; onValueChange: (value: string) => void; disabled?: boolean; 'aria-label'?: string }>(ui, 'SegmentedControl');
-export const Tabs = part<{ value: string; onValueChange: (value: string) => void; variant?: 'underline' | 'pill'; children?: ReactNode }>(ui, 'Tabs');
+export const Tabs = part<{ value: string; onValueChange: (value: string) => void; variant?: 'underline' | 'pill'; className?: string; children?: ReactNode }>(ui, 'Tabs');
 export const TabsList = part<{ 'aria-label'?: string; children?: ReactNode }>(ui, 'TabsList');
 export const TabsTrigger = part<{ value: string; disabled?: boolean; children?: ReactNode }>(ui, 'TabsTrigger');
 /** `forceMount` keeps a panel drawn while another tab shows; it is then put out of sight with `hidden`. */
-export const TabsContent = part<{ value: string; forceMount?: true; hidden?: boolean; children?: ReactNode }>(ui, 'TabsContent');
+export const TabsContent = part<{ value: string; forceMount?: true; hidden?: boolean; className?: string; children?: ReactNode }>(ui, 'TabsContent');
 export const AutosaveIndicator = part<{ status: 'idle' | 'dirty' | 'saving' | 'saved' | 'error'; savingLabel: string; savedLabel: string; errorLabel?: string }>(ui, 'AutosaveIndicator');
 
 /* ── the data kit: layout ──────────────────────────────────────────────── */
@@ -314,5 +314,8 @@ export function money(value: unknown, locale: string): string {
   const [whole = '0', part = ''] = text.replace('-', '').split('.');
   const grouped = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(BigInt(whole));
   const point = new Intl.NumberFormat(locale, { minimumFractionDigits: 1 }).format(1.1).replace(/\p{Nd}/gu, '');
-  return `${text.startsWith('-') ? '-' : ''}${grouped}${point}${part.padEnd(2, '0')}`;
+  // The places in the language's own digits, as the whole part is: an Arabic reader is not shown ١٩ beside 00.
+  const digits = new Intl.NumberFormat(locale, { useGrouping: false });
+  const places = [...part.padEnd(2, '0')].map((digit) => digits.format(Number(digit))).join('');
+  return `${text.startsWith('-') ? '-' : ''}${grouped}${point}${places}`;
 }
