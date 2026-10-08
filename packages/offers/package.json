@@ -28,8 +28,8 @@
     "react": "^19.0.0"
   },
   "devDependencies": {
-    "@adminium/add-on-contracts": "npm:@adminiumjs/add-on-contracts@0.3.1",
+    "@adminium/add-on-contracts": "npm:@adminiumjs/add-on-contracts@0.3.18-rc.0",
     "@adminium/add-on-host": "*",
-    "@adminiumjs/manifest": "0.3.1"
+    "@adminiumjs/manifest": "0.3.18-rc.0"
   }
 }
