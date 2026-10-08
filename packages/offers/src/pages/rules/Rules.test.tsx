@@ -207,20 +207,84 @@ describe('Offer rules', () => {
     expect((plan.closest('[data-part="alert"]') as HTMLElement).textContent).toContain('discount on Order lines, total on Orders, and the table order_codes');
     expect((plan.closest('[data-part="alert"]') as HTMLElement).textContent).not.toContain('status');
     expect(world.toasts).toEqual([]);
+    // Asking stored nothing: no posting, no rule. Closing the sheet here leaves the table as it was.
+    expect(writes().filter((one) => (one.body as { dryRun?: true } | undefined)?.dryRun !== true)).toEqual([]);
     fireEvent.click(screen.getByRole('button', { name: 'Add these and save' }));
     await waitFor(() => expect(world.toasts.map((toast) => toast.title)).toEqual(['Rule added for Orders']));
     const adjust = { by: { addOn: 'offers' }, lines: [{ table: 'order_lines', via: 'order_id', price: 'unit_price', quantity: 'qty', discount: 'discount', what: [{ column: 'item_id', as: 'item' }] }], order: { discount: 'discount' }, codes: { table: 'order_codes', via: 'order_id', typed: 'typed', code: 'code_id', voucher: 'voucher_id', removed: 'removed_at' }, uses: 'offers-uses', frozen: { to: ['paid'] }, expect: 'total' };
     const make = { lineAmount: true, subtotal: true, discount: true, total: true, codes: { table: 'order_codes' } };
     const uses = { call: 'put /api/v1/connections/c1/tables/orders/postings/offers-uses', body: { into: { addOn: 'offers', ledger: 'value', action: 'redeem' }, post: { on: { to: ['paid'] } }, map: {} } };
     expect(writes()).toEqual([
-      // The posting the rule names is stored before the rule, each time.
-      uses,
       { call: 'put /api/v1/connections/c1/tables/orders/adjust', body: { adjust, make, dryRun: true } },
+      // After the yes: the posting the rule names, then the rule.
       uses,
       { call: 'put /api/v1/connections/c1/tables/orders/adjust', body: { adjust, make, checksum: 'sum-1' } },
     ]);
     // No schema route was ever called by the page.
     expect(world.calls.some((call) => call.kind === 'api' && /schema|columns|ddl/.test(call.table))).toBe(false);
+  });
+
+  it('changing a rule keeps what the sheet has no picker for, and a rule that stops recording uses takes its posting with it', async () => {
+    const own: Priced = { table: 'orders', tableLabel: 'Orders', owner: null, enabled: true, state: 'live', holding: 0, adjust: { by: { addOn: 'offers' }, needs: 'offers', lines: [{ table: 'order_lines', via: 'order_id', price: 'unit_price', quantity: 'qty', discount: 'unit_price', what: [{ column: 'item_id', as: 'item' }, { column: 'tag', as: 'tag' }], excludes: { column: 'gift_card_id', set: true } }, { self: true, price: 'due', discount: 'due', what: [] }], order: { discount: 'due', staff: { kind: 'k', value: 'v', reason: 'r', by: 'b' } }, codes: { table: 'order_codes', via: 'order_id', typed: 'typed', code: 'code_id', voucher: 'voucher_id' }, uses: 'uses-own', frozen: { to: ['paid'] } } };
+    adjusts = [own];
+    postings = [{ ...APP_USES, id: 'uses-own', table: 'orders', tableLabel: 'Orders', owner: null }];
+    render(<Rules t={t} />);
+    fireEvent.click(within(await card('Orders')).getByRole('button', { name: 'Edit' }));
+    await screen.findByRole('dialog');
+    choose(/^The line's quantity/, '');
+    fireEvent.click(screen.getByRole('button', { name: 'Save rule' }));
+    await waitFor(() => expect(world.toasts.map((toast) => toast.title)).toEqual(['Rule saved for Orders']));
+    const sent = writes().find((one) => one.call.endsWith('/adjust'))?.body as { adjust: Record<string, unknown> };
+    // The codes table, the staff reduction, the second line table, the tag and what a line leaves out are all still there.
+    expect(sent.adjust).toEqual({ ...own.adjust, lines: [{ table: 'order_lines', via: 'order_id', price: 'unit_price', discount: 'unit_price', what: [{ column: 'item_id', as: 'item' }, { column: 'tag', as: 'tag' }], excludes: { column: 'gift_card_id', set: true } }, { self: true, price: 'due', discount: 'due', what: [] }] });
+    // The posting keeps the name the rule knows it by.
+    expect(writes()[0]?.call).toBe('put /api/v1/connections/c1/tables/orders/postings/uses-own');
+    cleanup();
+
+    world.calls = [];
+    world.toasts = [];
+    render(<Rules t={t} />);
+    fireEvent.click(within(await card('Orders')).getByRole('button', { name: 'Edit' }));
+    await screen.findByRole('dialog');
+    choose(/^The row is final/, 'never');
+    fireEvent.click(screen.getByRole('button', { name: 'Save rule' }));
+    await waitFor(() => expect(world.toasts).toHaveLength(1));
+    expect(writes().map((one) => one.call)).toEqual(['put /api/v1/connections/c1/tables/orders/adjust', 'delete /api/v1/connections/c1/tables/orders/postings/uses-own']);
+    expect((writes()[0]?.body as { adjust: Record<string, unknown> }).adjust).not.toHaveProperty('uses');
+    expect((writes()[0]?.body as { adjust: Record<string, unknown> }).adjust).not.toHaveProperty('frozen');
+  });
+
+  it('a posting left standing by itself has a card of its own, and is removed from it after a yes', async () => {
+    adjusts = [];
+    postings = [{ ...APP_USES, id: 'offers-uses', table: 'orders', tableLabel: 'Orders', owner: null, holding: 2 }, { ...OWN_PAYS, id: 'offers-card-back', action: 'refund', table: 'refunds', tableLabel: 'Refunds' }];
+    render(<Rules t={t} />);
+    const stray = await card('Orders');
+    expect(within(stray).getByText('Records what was used')).toBeTruthy();
+    expect(within(stray).queryByRole('button', { name: 'Edit' })).toBeNull();
+    fireEvent.click(within(stray).getByRole('button', { name: 'Remove rule' }));
+    expect(writes()).toEqual([]);
+    fireEvent.click(within(stray).getByRole('button', { name: 'Remove rule' }));
+    await waitFor(() => expect(writes()).toEqual([{ call: 'delete /api/v1/connections/c1/tables/orders/postings/offers-uses', body: undefined }]));
+    // A refund's posting can be removed the same way.
+    expect(within(await card('Refunds')).getByRole('button', { name: 'Remove rule' })).toBeTruthy();
+  });
+
+  it('removing a rule whose posting still holds uses removes the rule and says what is left', async () => {
+    const own: Priced = { ...APP_ADJUST, table: 'orders', tableLabel: 'Orders', owner: null, adjust: { ...APP_ADJUST.adjust, lines: [{ table: 'order_lines', via: 'order_id', price: 'unit_price', discount: 'unit_price', what: [{ column: 'item_id', as: 'item' }] }], uses: 'offers-uses' } };
+    adjusts = [own];
+    postings = [{ ...APP_USES, id: 'offers-uses', table: 'orders', tableLabel: 'Orders', owner: null }];
+    const working = world.api;
+    world.api = (method, path, payload) => {
+      if (method === 'delete' && path.includes('/postings/')) throw new Refused('POSTING_REFUSED', '', { reason: 'receipt-open', rows: 2 });
+      return working?.(method, path, payload);
+    };
+    render(<Rules t={t} />);
+    fireEvent.click(within(await card('Orders')).getByRole('button', { name: 'Edit' }));
+    const sheet = await screen.findByRole('dialog');
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Remove rule' }));
+    fireEvent.click(within(within(sheet).getByText(/^Remove this rule\?/).closest('[data-part="alert"]') as HTMLElement).getByRole('button', { name: 'Remove rule' }));
+    await waitFor(() => expect(world.toasts.map((toast) => toast.title)).toEqual(['Rule removed from Orders. 2 rows are holding a use or a card payment: put them back first.']));
+    expect(writes().map((one) => one.call)).toEqual(['delete /api/v1/connections/c1/tables/orders/adjust', 'delete /api/v1/connections/c1/tables/orders/postings/offers-uses']);
   });
 
   it('a refusal lands in the sheet, which stays open with what was picked', async () => {

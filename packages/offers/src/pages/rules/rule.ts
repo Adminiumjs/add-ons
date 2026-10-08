@@ -61,12 +61,13 @@ export interface SourceTable {
   lineOf?: { table: string; via: string }[];
 }
 
-export type Kind = 'discounts' | 'pays' | 'refunds' | 'sells-cards' | 'sells-vouchers' | 'moved';
+/** `uses`: a posting that records what was used, standing by itself (its table's price rule is gone, or never came). */
+export type Kind = 'discounts' | 'pays' | 'refunds' | 'sells-cards' | 'sells-vouchers' | 'uses' | 'moved';
 /** The four an owner can add. */
 export const ADDABLE = ['discounts', 'pays', 'sells-cards', 'sells-vouchers'] as const;
 export type Addable = (typeof ADDABLE)[number];
 
-export const kindOf = (action: string): Kind | null => (action === 'spend' ? 'pays' : action === 'refund' ? 'refunds' : action === 'issue' ? 'sells-cards' : action === 'sell' ? 'sells-vouchers' : action === 'move' ? 'moved' : null);
+export const kindOf = (action: string): Kind | null => (action === 'spend' ? 'pays' : action === 'refund' ? 'refunds' : action === 'issue' ? 'sells-cards' : action === 'sell' ? 'sells-vouchers' : action === 'redeem' ? 'uses' : action === 'move' ? 'moved' : null);
 const ACTION: Readonly<Record<Exclude<Addable, 'discounts'>, string>> = { pays: 'spend', 'sells-cards': 'issue', 'sells-vouchers': 'sell' };
 /** The posting each kind is stored under on an owner's table. */
 export const POSTING: Readonly<Record<Addable | 'refunds', string>> = { discounts: 'offers-uses', pays: 'offers-card', refunds: 'offers-card-back', 'sells-cards': 'offers-card-load', 'sells-vouchers': 'offers-voucher-sold' };
@@ -125,8 +126,9 @@ export function sentence(t: AddOnTranslate, card: Card, names: Names): string[] 
   if (card.kind === 'refunds') out.push(t('rules.says.refunds', 'A row gives {amount} back to the card that paid, when {when}.', { amount: column(rule.map['amount']), when: at }));
   if (card.kind === 'sells-cards') out.push(t('rules.says.sellsCards', 'A row that names a gift card in {card} puts {amount} on it when {when}.', { card: column(rule.map['card']), amount: column(rule.map['amount']), when: at }));
   if (card.kind === 'sells-vouchers') out.push(t('rules.says.sellsVouchers', 'A row that names a voucher in {voucher} marks it sold when {when}.', { voucher: column(rule.map['voucher']), when: at }));
+  if (card.kind === 'uses') out.push(t('rules.says.usesAlone', 'What was used is recorded when {when}, though this table takes no discounts now. Remove it, or add the rule again.', { when: at }));
   if (card.kind === 'moved') out.push(t('rules.says.moved', 'Gift cards kept here before were brought in. This is done once, by Adminium.'));
-  if (card.kind !== 'moved' && card.kind !== 'refunds' && rule.reverse !== undefined) out.push(t('rules.says.back', 'It is undone when {when}.', { when: point(t, rule.reverse.on, card.table, names) }));
+  if (card.kind !== 'moved' && card.kind !== 'refunds' && card.kind !== 'uses' && rule.reverse !== undefined) out.push(t('rules.says.back', 'It is undone when {when}.', { when: point(t, rule.reverse.on, card.table, names) }));
   return out;
 }
 
@@ -151,6 +153,8 @@ export interface Form {
   when: When;
   back: When;
   making: Making;
+  /** The price rule being changed, as it is stored: what the sheet has no picker for is kept as it is. */
+  base?: Readonly<Record<string, unknown>>;
 }
 export const EMPTY: Form = { kind: 'discounts', table: '', cols: {}, when: { kind: 'never' }, back: { kind: 'never' }, making: { amounts: false, codes: false } };
 
@@ -255,19 +259,30 @@ export function sentOf(form: Form, refOf: (table: string) => string): Sent {
     const what = (['item', 'category', 'type'] as const).flatMap((as) => (col(form, as) === '' ? [] : [{ column: col(form, as), as }]));
     const final = pointOf(form.when);
     const frozen = final === null || 'create' in final ? undefined : 'to' in final ? { to: final.to } : 'set' in final ? { column: final.column, set: true } : { column: final.column, in: final.in };
+    /*
+     * A rule being changed keeps what the sheet has no picker for: its codes
+     * table, who is buying, what staff give, further line tables, a line's
+     * tags and what it leaves out. Only what the form holds is replaced.
+     */
+    const base = (form.base ?? {}) as { lines?: Record<string, unknown>[]; order?: Record<string, unknown>; uses?: unknown; frozen?: unknown; expect?: unknown };
+    const { uses: _uses, frozen: _frozen, expect: _expect, lines: baseLines = [], order: baseOrder = {}, ...kept } = base;
+    const { quantity: _quantity, what: baseWhat, ...keptPart } = (baseLines[0] ?? {}) as { quantity?: unknown; what?: { column: string; as: string }[] };
+    const tags = (baseWhat ?? []).filter((entry) => entry.as === 'tag');
     const adjust: Record<string, unknown> = {
+      ...kept,
       by: { addOn: 'offers' },
-      lines: [{ table: lines.table, via: lines.via, price: col(form, 'price'), ...(col(form, 'quantity') === '' ? {} : { quantity: col(form, 'quantity') }), discount: col(form, 'lineDiscount') || MADE.discount, what }],
-      order: { discount: col(form, 'orderDiscount') || MADE.discount },
+      lines: [{ ...keptPart, table: lines.table, via: lines.via, price: col(form, 'price'), ...(col(form, 'quantity') === '' ? {} : { quantity: col(form, 'quantity') }), discount: col(form, 'lineDiscount') || MADE.discount, what: [...what, ...tags] }, ...baseLines.slice(1)],
+      order: { ...baseOrder, discount: col(form, 'orderDiscount') || MADE.discount },
       ...(make.codes ? { codes: { table: MADE.codes, via: MADE.codesVia, typed: MADE.typed, code: MADE.code, voucher: MADE.voucher, removed: MADE.removed } } : {}),
-      ...(final === null ? {} : { uses: POSTING.discounts }),
+      ...(final === null ? {} : { uses: typeof base.uses === 'string' ? base.uses : POSTING.discounts }),
       ...(frozen === undefined ? {} : { frozen }),
       ...(col(form, 'total') !== '' ? { expect: col(form, 'total') } : make.amounts ? { expect: MADE.total } : {}),
     };
+    const usesId = typeof base.uses === 'string' ? base.uses : POSTING.discounts;
     const asked = { ...(make.amounts ? { lineAmount: true, subtotal: true, discount: true, total: true } : {}), ...(make.codes ? { codes: { table: MADE.codes } } : {}) };
     return {
       adjust: { body: { adjust, ...(Object.keys(asked).length === 0 ? {} : { make: asked }) } },
-      postings: final === null ? [] : [{ table: form.table, id: POSTING.discounts, body: { into: into('redeem'), ...phases(form), map: {} } }],
+      postings: final === null ? [] : [{ table: form.table, id: usesId, body: { into: into('redeem'), ...phases(form), map: {} } }],
     };
   }
   const via = col(form, 'order') === '' ? {} : { via: col(form, 'order') };
@@ -295,6 +310,7 @@ export function formOf(card: Card): Form | null {
       when: whenOf(card.uses?.post),
       back: whenOf(card.uses?.reverse),
       making: { amounts: false, codes: false },
+      base: card.priced.adjust,
     };
   }
   if (card.kind !== 'pays' && card.kind !== 'sells-cards' && card.kind !== 'sells-vouchers') return null;

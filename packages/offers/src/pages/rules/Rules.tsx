@@ -38,7 +38,7 @@ import {
 } from '../shared/host.ts';
 import { PageFrame } from '../shared/PageFrame.tsx';
 import { refusal } from '../shared/refusal.ts';
-import { ADDABLE, EMPTY, PARTS, appName, cardsOf, formOf, formProblems, sentOf, sentence, type Addable, type Card, type Form, type Names, type Posted, type Priced, type SourceColumn, type SourceTable, type When } from './rule.ts';
+import { ADDABLE, EMPTY, PARTS, appName, cardsOf, formOf, formProblems, linesOf, sentOf, sentence, type Addable, type Card, type Form, type Names, type Posted, type Priced, type SourceColumn, type SourceTable, type When } from './rule.ts';
 
 const LEDGER = '/api/v1/ledgers/offers/value';
 const NUMBERS = new Set(['int', 'integer', 'bigint', 'decimal', 'number', 'float', 'money']);
@@ -76,6 +76,7 @@ export function Rules({ t }: { t: AddOnTranslate }): ReactNode {
   const [said, setSaid] = useState<Readonly<Record<string, string>>>({});
   const [busy, setBusy] = useState<string | null>(null);
   const [editing, setEditing] = useState<Editing | null>(null);
+  const [removing, setRemoving] = useState<string | null>(null);
 
   const load = useCallback(async (): Promise<Read | null> => {
     try {
@@ -133,6 +134,23 @@ export function Rules({ t }: { t: AddOnTranslate }): ReactNode {
     }
   };
 
+  /** A posting that stands by itself — a refund's, or a stray record of uses — is removed from its card. */
+  const removeAlone = async (card: Card): Promise<void> => {
+    if (card.kind === 'discounts') return;
+    setBusy(key(card));
+    setSaid((all) => Object.fromEntries(Object.entries(all).filter(([held]) => held !== key(card))));
+    try {
+      await api.delete(postingAt(card.table, card.posted.id));
+      toasts.push({ variant: 'success', title: t('rules.removed', 'Rule removed from {table}', { table: card.tableLabel }) });
+      setRemoving(null);
+      await load();
+    } catch (caught) {
+      setSaid((all) => ({ ...all, [key(card)]: refusal(t, asDataError(caught)).message }));
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const title = (kind: Card['kind']): string =>
     kind === 'discounts'
       ? t('rules.kind.discounts', 'Takes discounts')
@@ -144,7 +162,9 @@ export function Rules({ t }: { t: AddOnTranslate }): ReactNode {
             ? t('rules.kind.sellsCards', 'Sells or tops up a gift card')
             : kind === 'sells-vouchers'
               ? t('rules.kind.sellsVouchers', 'Sells a voucher or a pack')
-              : t('rules.kind.moved', 'Brought in older gift cards');
+              : kind === 'uses'
+                ? t('rules.kind.uses', 'Records what was used')
+                : t('rules.kind.moved', 'Brought in older gift cards');
   const Lock = lucideByName('lock');
 
   return (
@@ -159,7 +179,8 @@ export function Rules({ t }: { t: AddOnTranslate }): ReactNode {
       {read.cards.length === 0 ? <EmptyState title={t('rules.none.title', 'No table has anything to do with offers yet')} body={t('rules.none.body', 'An app that takes discounts or gift cards brings its rules with it. For a table of your own, add a rule.')} /> : null}
       {read.cards.map((card) => {
         const locked = card.owner !== null || card.kind === 'moved';
-        const changeable = read.canChange && !locked && card.kind !== 'refunds';
+        const changeable = read.canChange && !locked && card.kind !== 'refunds' && card.kind !== 'uses';
+        const removable = read.canChange && !locked && (card.kind === 'refunds' || card.kind === 'uses');
         return (
           <Panel
             key={key(card)}
@@ -191,6 +212,24 @@ export function Rules({ t }: { t: AddOnTranslate }): ReactNode {
                   <Button variant="secondary" size="sm" onClick={() => setEditing({ card, form: formOf(card) ?? { ...EMPTY, table: card.table } })}>
                     {t('rules.edit', 'Edit')}
                   </Button>
+                </Stack>
+              ) : null}
+              {removable ? (
+                <Stack direction="row" gap="sm">
+                  {removing === key(card) ? (
+                    <>
+                      <Button variant="destructive" size="sm" loading={busy === key(card)} onClick={() => void removeAlone(card)}>
+                        {t('rules.remove', 'Remove rule')}
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setRemoving(null)}>
+                        {t('shared.cancel', 'Cancel')}
+                      </Button>
+                    </>
+                  ) : (
+                    <Button variant="secondary" size="sm" onClick={() => setRemoving(key(card))}>
+                      {t('rules.remove', 'Remove rule')}
+                    </Button>
+                  )}
                 </Stack>
               ) : null}
             </Stack>
@@ -280,29 +319,33 @@ function RuleSheet({ t, editing, sources, ownTables, names, tableAt, postingAt, 
     setSaid(null);
     if (problems.length > 0) return;
     const sent = sentOf(form, refOf);
+    if (busy !== null) return;
     setBusy('save');
     try {
-      // What the price rule names must be there first: the posting that records uses.
-      for (const one of sent.postings) await api.put(postingAt(one.table, one.id), one.body);
-      if (sent.adjust !== undefined) {
-        const making = sent.adjust.body.make !== undefined;
-        if (making && asked === null) {
-          // Adminium says what it would add; nothing is added until that is read and said yes to.
-          const answered = await api.put<{ checksum: string; made: { columns: Asked['columns']; tables: string[] }; refusals: { table?: string; column?: string; reason: string }[] }>(`${tableAt(form.table)}/adjust`, { ...sent.adjust.body, dryRun: true });
-          if (answered.refusals.length > 0) {
-            setSaid(t('rules.sheet.cannotMake', 'Adminium cannot add what is missing here: {reasons}', { reasons: names.list(answered.refusals.map((refused) => refused.reason)) }));
-            return;
-          }
-          setAsked({ checksum: answered.checksum, columns: answered.made.columns.filter((column) => column.made), tables: answered.made.tables });
+      const making = sent.adjust?.body.make !== undefined;
+      if (sent.adjust !== undefined && making && asked === null) {
+        // Adminium says what it would add. Nothing is stored — no column, no rule, no posting — until that is read and said yes to.
+        const answered = await api.put<{ checksum: string; made: { columns: Asked['columns']; tables: string[] }; refusals: { table?: string; column?: string; reason: string }[] }>(`${tableAt(form.table)}/adjust`, { ...sent.adjust.body, dryRun: true });
+        if (answered.refusals.length > 0) {
+          setSaid(t('rules.sheet.cannotMake', 'Adminium cannot add what is missing here: {reasons}', { reasons: names.list(answered.refusals.map((refused) => refused.reason)) }));
           return;
         }
-        await api.put(`${tableAt(form.table)}/adjust`, { ...sent.adjust.body, ...(making && asked !== null ? { checksum: asked.checksum } : {}) });
+        setAsked({ checksum: answered.checksum, columns: answered.made.columns.filter((column) => column.made), tables: answered.made.tables });
+        return;
       }
+      // What the price rule names must be there first: the posting that records uses.
+      for (const one of sent.postings) await api.put(postingAt(one.table, one.id), one.body);
+      if (sent.adjust !== undefined) await api.put(`${tableAt(form.table)}/adjust`, { ...sent.adjust.body, ...(making && asked !== null ? { checksum: asked.checksum } : {}) });
+      // A rule that no longer says when a row is final no longer records uses: its old posting goes with it.
+      const old = editing.card?.kind === 'discounts' ? editing.card.uses : null;
+      if (sent.adjust !== undefined && sent.postings.length === 0 && old !== null && old !== undefined && old.owner === null) await api.delete(postingAt(form.table, old.id));
       await onSaved(editing.card === null ? t('rules.saved.new', 'Rule added for {table}', { table: source?.label ?? form.table }) : t('rules.saved', 'Rule saved for {table}', { table: source?.label ?? form.table }));
     } catch (caught) {
       const refused = refusal(t, asDataError(caught));
       setSaid(refused.message);
-      if (refused.field !== undefined) setMarked([refused.field]);
+      // A refusal names a column; the sheet marks the part that column was picked for.
+      const part = refused.field === undefined ? undefined : Object.entries(form.cols).find(([, column]) => column === refused.field || linesOf(column).via === refused.field)?.[0];
+      if (part !== undefined) setMarked([part]);
     } finally {
       setBusy(null);
     }
@@ -310,13 +353,22 @@ function RuleSheet({ t, editing, sources, ownTables, names, tableAt, postingAt, 
 
   const remove = async (): Promise<void> => {
     const card = editing.card;
-    if (card === null) return;
+    if (card === null || busy !== null) return;
     setBusy('remove');
     setSaid(null);
     try {
       if (card.kind === 'discounts') {
+        // The rule names its posting, so the rule goes first. Where the posting then cannot go — rows still hold a
+        // use — it is left as a card of its own, which says so and can be removed once they are put back.
         await api.delete(`${tableAt(card.table)}/adjust`);
-        if (card.uses !== null && card.uses.owner === null) await api.delete(postingAt(card.table, card.uses.id));
+        if (card.uses !== null && card.uses.owner === null) {
+          try {
+            await api.delete(postingAt(card.table, card.uses.id));
+          } catch (caught) {
+            await onSaved(t('rules.removedPart', 'Rule removed from {table}. {why}', { table: card.tableLabel, why: refusal(t, asDataError(caught)).message }));
+            return;
+          }
+        }
       } else await api.delete(postingAt(card.table, card.posted.id));
       await onSaved(t('rules.removed', 'Rule removed from {table}', { table: card.tableLabel }));
     } catch (caught) {
