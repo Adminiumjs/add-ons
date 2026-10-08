@@ -51,9 +51,10 @@ export class Answer {
   readonly refusals: NonNullable<PostingOutput['refusals']> = [];
   readonly notes: NonNullable<PostingOutput['notes']> = [];
 
-  insert(table: string, line: string, values: Record<string, Scalar>): void {
+  /** `label` names the row for the rest of this answer: a later row points at it with `{ '@row': label }` in a link. */
+  insert(table: string, line: string, values: Record<string, Scalar | { '@row': string }>, label?: string): void {
     // Nothing is said of a column that holds nothing: the database's own default stands.
-    this.rows.push({ op: 'insert', table, line, values: Object.fromEntries(Object.entries(values).filter(([, value]) => value !== undefined)) as never });
+    this.rows.push({ op: 'insert', table, ...(label === undefined ? {} : { label }), line, values: Object.fromEntries(Object.entries(values).filter(([, value]) => value !== undefined)) as never });
   }
   update(table: string, line: string, id: Scalar, set: Record<string, Scalar>): void {
     this.rows.push({ op: 'update', table, line, key: { id: id as string | number }, set });

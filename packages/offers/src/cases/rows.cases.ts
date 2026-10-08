@@ -346,6 +346,32 @@ export const ROWS_CASES: readonly RowsCase[] = [
     expect: { rows: [insert('card_ledger', { kind: 'spend', taken: '11.50', value: '11.50', balance_after: '38.50' })] },
   },
   {
+    name: 'P17a an old card nobody has made yet is made by its first row, under its old code, and the row points at it',
+    input: call({ action: 'move', source: { table: 'pos:gift_card_ledger', row: 'b1' }, lines: [line('', { old_card: '9', old_code: 'gc-48219930', old_table: 'pos:gift_cards', kind: 'issue', amount: '50.00', at: '2026-03-02T09:00:00.000Z' })], reads: { card: [] } }),
+    expect: {
+      rows: [
+        { op: 'insert', table: 'gift_cards', label: 'card:9', values: { kind: 'card', code: 'GC-48219930', status: 'active', issued_at: '2026-03-02T09:00:00.000Z', moved_from: '9', moved_table: 'pos:gift_cards', moving: true } },
+        insert('card_ledger', { card_id: { '@row': 'card:9' }, kind: 'issue', taken: '-50.00', value: '50.00', balance_after: '50.00', at: '2026-03-02T09:00:00.000Z' }),
+      ],
+    },
+  },
+  {
+    name: 'P17a …two old rows of one new card in one call make one card, and the second row counts on the first',
+    input: call({ action: 'move', source: { table: 'pos:gift_card_ledger', row: 'b1' }, lines: [line('r1', { old_card: '9', old_code: 'GC-48219930', kind: 'issue', amount: '50.00', at: '2026-03-02T09:00:00.000Z' }), line('r2', { old_card: '9', old_code: 'GC-48219930', kind: 'redeem', amount: '-21.50', at: '2026-03-09T09:00:00.000Z' })], reads: { card: [] } }),
+    expect: {
+      rows: [
+        { op: 'insert', table: 'gift_cards', label: 'card:9', values: { code: 'GC-48219930', moved_table: '' } },
+        insert('card_ledger', { card_id: { '@row': 'card:9' }, kind: 'issue', balance_after: '50.00' }),
+        insert('card_ledger', { card_id: { '@row': 'card:9' }, kind: 'spend', taken: '21.50', balance_after: '28.50' }),
+      ],
+    },
+  },
+  {
+    name: 'P17a …a code the till kept with no word in front gets the word',
+    input: call({ action: 'move', source: { table: 'pos:gift_card_ledger', row: 'b3' }, lines: [line('', { old_card: '11', old_code: ' 4821 9930 ', kind: 'issue', amount: '5.00', at: '2026-03-02T09:00:00.000Z' })], reads: { card: [] } }),
+    expect: { rows: [{ op: 'insert', table: 'gift_cards', label: 'card:11', values: { code: 'GC-48219930' } }, insert('card_ledger', { kind: 'issue' })] },
+  },
+  {
     name: 'P19 a cash payment in a table that also takes cards writes nothing',
     input: call({ action: 'spend', lines: [payment('p7', null, '20.00')], reads: { card: [] } }),
     expect: { rows: [] },

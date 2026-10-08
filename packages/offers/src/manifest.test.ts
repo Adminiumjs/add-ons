@@ -469,7 +469,7 @@ describe('the ledger', () => {
       expire: { inputs: 'card rowRef', phases: 'post', reads: ['card: gift_cards by id ← input.card.row'], locks: cardLock, writes: 'card_ledger' },
       void: { inputs: 'card rowRef', phases: 'post', reads: ['card: gift_cards by id ← input.card.row'], locks: cardLock, writes: 'card_ledger' },
       make: { inputs: 'batch link, size number', phases: 'post', reads: ['batch: voucher_batches by id ← input.batch'], locks: 'batch.id of voucher_batches', writes: 'vouchers' },
-      move: { inputs: 'old_card text, kind text, amount decimal, at text, note text?', phases: 'post', reads: ['card: gift_cards by moved_from ← input.old_card'], locks: cardLock, writes: 'card_ledger, gift_cards' },
+      move: { inputs: 'old_card text, kind text, amount decimal, at text, note text?, old_code text?, old_table text?', phases: 'post', reads: ['card: gift_cards by moved_from ← input.old_card'], locks: cardLock, writes: 'card_ledger, gift_cards' },
     });
   });
 
@@ -480,7 +480,8 @@ describe('the ledger', () => {
         insert: ['kind', 'offer_id', 'code_id', 'voucher_id', 'reason_id', 'source_table', 'source_row', 'source_label', 'customer', 'amount', 'uses', 'prepaid', 'state', 'at'],
         update: { by: ['id'], set: ['state', 'at', 'given_back_at'] },
       },
-      gift_cards: { update: { by: ['id'], set: ['status', 'issued_at', 'expires_on', 'remind_on', 'notify'] } },
+      // A card is inserted only by the move, for an older card a till brings in under the code it has always had.
+      gift_cards: { insert: ['kind', 'code', 'status', 'issued_at', 'moved_from', 'moved_table', 'moving'], update: { by: ['id'], set: ['status', 'issued_at', 'expires_on', 'remind_on', 'notify'] } },
       vouchers: {
         insert: ['batch_id', 'worth', 'value', 'what', 'source_table', 'source_row', 'units', 'public_name', 'uses_total', 'expires_on', 'note'],
         update: { by: ['id'], set: ['status', 'sold', 'awaiting_sale', 'sale_price', 'tax_later', 'expires_on'] },
@@ -495,10 +496,16 @@ describe('the ledger', () => {
       const kept = new Set([...table.columns.filter(decided).map((column) => column.ref), ...balances(table), 'id', 'receipt_id']);
       for (const name of [...(scope.insert ?? []), ...(scope.update?.set ?? [])]) {
         expect(table.columns.map((column) => column.ref), `${ref}.${name}`).toContain(name);
+        // The one exception, and only on a row that is added: an older card's own code (below).
+        if (ref === 'gift_cards' && name === 'code' && (scope.insert ?? []).includes(name)) continue;
         expect(kept.has(name), `${ref}.${name} is Adminium's to fill`).toBe(false);
       }
     }
-    // A code is never the deciding code's to write: Adminium makes each one.
+    // A code is never the deciding code's to write: Adminium makes each one — but for a card a till brings in, which
+    // keeps the code its holder has. The card's own rule says so, a change never writes it, and a voucher's never.
+    expect((columnOf('gift_cards', 'code').rules as { code?: { givenByLedger?: boolean } }).code?.givenByLedger).toBe(true);
+    expect(value.writes['gift_cards']?.update?.set).not.toContain('code');
+    expect((columnOf('vouchers', 'code').rules as { code?: { givenByLedger?: boolean } }).code?.givenByLedger).toBeUndefined();
     expect(value.writes['vouchers']?.insert).not.toContain('code');
     expect(Object.keys(value.writes).sort()).toEqual(['card_ledger', 'gift_cards', 'offers', 'redemptions', 'vouchers']);
   });

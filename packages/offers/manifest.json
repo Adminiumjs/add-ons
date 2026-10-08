@@ -1836,7 +1836,8 @@
             "rules": {
               "code": {
                 "prefix": "GC-",
-                "length": 12
+                "length": 12,
+                "givenByLedger": true
               }
             }
           },
@@ -2062,6 +2063,12 @@
             "ref": "note",
             "type": "text",
             "maxLength": 200,
+            "nullable": true
+          },
+          {
+            "ref": "receipt_id",
+            "type": "fk",
+            "references": "postings",
             "nullable": true
           }
         ]
@@ -7821,6 +7828,15 @@
             }
           },
           "gift_cards": {
+            "insert": [
+              "kind",
+              "code",
+              "status",
+              "issued_at",
+              "moved_from",
+              "moved_table",
+              "moving"
+            ],
             "update": {
               "by": [
                 "id"
@@ -8398,7 +8414,9 @@
               "kind": "text",
               "amount": "decimal",
               "at": "text",
-              "note": "text?"
+              "note": "text?",
+              "old_code": "text?",
+              "old_table": "text?"
             },
             "phases": [
               "post"

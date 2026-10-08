@@ -254,15 +254,37 @@ export function move(input: PostingInput, answer: Answer): void {
   const balances = new Balances(cards, scaleFor(input, ['amount'], cards));
   const KINDS: Readonly<Record<string, string>> = { issue: 'issue', reload: 'top_up', top_up: 'top_up', redeem: 'spend', spend: 'spend', refund: 'refund', adjust: 'adjust' };
   const activated = new Set<string>();
+  /** Old cards this answer makes, by the till's key for them: the name each goes by for the rest of the answer. */
+  const made = new Map<string, string>();
   for (const line of input.lines) {
+    const old = textOf(line.inputs['old_card']);
     const card = cards.find((one) => same(one['moved_from'], line.inputs['old_card']));
-    if (card === undefined) throw new Error('an old row was brought in for a card that was not made');
     const amount = toUnits(line.inputs['amount'], balances.scale);
     const kind = KINDS[textOf(line.inputs['kind']) ?? ''];
-    if (amount === null || kind === undefined) throw new Error('an old row with no amount, or of an unknown kind');
     const at = textOf(line.inputs['at']) ?? input.now;
     const note = textOf(line.inputs['note']);
-    // The till wrote what the holder gained; the ledger writes what was taken.
+    if (card === undefined) {
+      /*
+       * The card's first old row, and no card yet: it is made here, under the
+       * code it has always had. Nobody types that code — it comes from the
+       * till's own row — and a second row of the same card in this answer
+       * points at the card this one made.
+       */
+      const code = oldCode(line.inputs['old_code']);
+      if (old === null || code === null) throw new Error('an old row was brought in for a card that was not made, and it names no code to make it with');
+      if (amount === null || kind === undefined) throw new Error('an old row with no amount, or of an unknown kind');
+      let label = made.get(old);
+      if (label === undefined) {
+        label = `card:${old}`;
+        made.set(old, label);
+        answer.insert('gift_cards', line.line, { kind: 'card', code, status: 'active', issued_at: at, moved_from: old, moved_table: textOf(line.inputs['old_table']) ?? '', moving: true }, label);
+      }
+      // The till wrote what the holder gained; the ledger writes what was taken.
+      const after = balances.move(label, -amount);
+      answer.insert('card_ledger', line.line, { card_id: { '@row': label }, kind, taken: balances.text(-amount), value: balances.text(amount < 0n ? -amount : amount), balance_after: balances.text(after), ...(note === null ? {} : { note }), ...actedBy(input, line), at });
+      continue;
+    }
+    if (amount === null || kind === undefined) throw new Error('an old row with no amount, or of an unknown kind');
     const after = balances.move(card['id'], -amount);
     answer.insert('card_ledger', line.line, { card_id: card['id'] ?? null, kind, taken: balances.text(-amount), value: balances.text(amount < 0n ? -amount : amount), balance_after: balances.text(after), ...(note === null ? {} : { note }), ...actedBy(input, line), at });
     if (textOf(card['status']) === 'inactive' && !activated.has(String(card['id']))) {
@@ -270,4 +292,11 @@ export function move(input: PostingInput, answer: Answer): void {
       answer.update('gift_cards', line.line, card['id'] ?? null, { status: 'active', issued_at: at });
     }
   }
+}
+
+/** An old card's code as it is kept: capitals, no spaces, behind the word every card's code has. */
+function oldCode(given: unknown): string | null {
+  const bare = (textOf(given) ?? '').replace(/\s/g, '').toUpperCase();
+  if (bare === '' || bare === 'GC-' || bare === 'GC') return null;
+  return bare.startsWith('GC-') ? bare : `GC-${bare.replace(/^GC/, '')}`;
 }
