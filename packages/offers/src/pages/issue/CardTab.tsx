@@ -9,9 +9,10 @@ import { addDays } from '../../rows/dates.ts';
 import { toUnits } from '../../units.ts';
 import { todayOf } from '../look-up/read.ts';
 import { formatDay } from '../look-up/LookUp.tsx';
-import { Button, DateInput, Field, Input, NumberInput, RadioCard, RadioGroup, SegmentedControl, SheetBody, SheetFooter, Stack, Textarea, asDataError, money, useLocaleTag, useRecords, useTreeWrite, type AddOnTranslate } from '../shared/host.ts';
+import { Button, DateInput, Field, Input, NumberInput, RadioCard, RadioGroup, SegmentedControl, SheetFooter, Stack, Textarea, asDataError, money, useLocaleTag, useRecords, useTreeWrite, type AddOnTranslate } from '../shared/host.ts';
 import { Fixes, blankToNull, isEmail, positive, wrongOf, type Wrong } from './form.tsx';
 import { Result, onceOf, type Made } from './Result.tsx';
+import { SheetPane } from '../shared/SheetPane.tsx';
 
 const PICKS = ['25', '50', '100'];
 const MESSAGE_MAX = 200;
@@ -96,7 +97,7 @@ export function CardTab({ t, onDone }: { t: AddOnTranslate; onDone: () => void }
   const on = (field: string): { error?: string } => (wrong[field] === undefined ? {} : { error: wrong[field] });
   return (
     <>
-      <SheetBody>
+      <SheetPane>
         <Stack gap="md">
           <Fixes t={t} wrong={wrong} />
           <Stack direction="row" gap="sm" wrap>
@@ -138,7 +139,7 @@ export function CardTab({ t, onDone }: { t: AddOnTranslate; onDone: () => void }
             <Textarea value={why} maxLength={200} rows={2} onChange={(event) => setWhy(event.target.value)} />
           </Field>
         </Stack>
-      </SheetBody>
+      </SheetPane>
       <SheetFooter>
         <Button variant="primary" loading={saving} onClick={() => void save()}>
           {t('issue.card.save', 'Issue the card')}

@@ -10,13 +10,14 @@
  */
 import { useState, type ReactNode } from 'react';
 
-import { Alert, Sheet, SheetBody, SheetHeader, Tabs, TabsList, TabsTrigger, lucideByName, useNavigate, useSearch, type AddOnTranslate } from '../shared/host.ts';
+import { Alert, Sheet, SheetHeader, Tabs, TabsList, TabsTrigger, lucideByName, useNavigate, useSearch, type AddOnTranslate } from '../shared/host.ts';
 import { PageFrame } from '../shared/PageFrame.tsx';
 import { LOOK_UP } from '../shared/paths.ts';
 import { useRole } from '../shared/role.ts';
 import { BatchTab } from './BatchTab.tsx';
 import { CardTab } from './CardTab.tsx';
 import { VoucherTab } from './VoucherTab.tsx';
+import { SheetPane } from '../shared/SheetPane.tsx';
 
 type Tab = 'gift-card' | 'voucher' | 'batch';
 const TABS: readonly Tab[] = ['gift-card', 'voucher', 'batch'];
@@ -40,18 +41,18 @@ export function Issue({ t }: { t: AddOnTranslate }): ReactNode {
       <Sheet open onOpenChange={(open) => (open ? undefined : close())} maxWidth={560}>
         <SheetHeader icon={Icon === undefined ? null : <Icon />} title={t('issue.title', 'Issue')} subtitle={t('issue.subtitle', 'A gift card, a voucher or a batch of codes')} closeLabel={t('shared.close', 'Close')} />
         {tab === null ? (
-          <SheetBody>
+          <SheetPane>
             <Alert tone="warn" role="alert" title={t('issue.notAllowed', 'Your role cannot issue.')} />
-          </SheetBody>
+          </SheetPane>
         ) : (
           <Tabs value={tab} onValueChange={(value) => setPicked(TABS.find((one) => one === value) ?? null)}>
-            <SheetBody>
+            <SheetPane>
               <TabsList aria-label={t('issue.tabs', 'What to issue')}>
                 {may.includes('gift-card') ? <TabsTrigger value="gift-card">{t('issue.tab.card', 'Gift card')}</TabsTrigger> : null}
                 {may.includes('voucher') ? <TabsTrigger value="voucher">{t('issue.tab.voucher', 'Voucher')}</TabsTrigger> : null}
                 {may.includes('batch') ? <TabsTrigger value="batch">{t('issue.tab.batch', 'Batch of codes')}</TabsTrigger> : null}
               </TabsList>
-            </SheetBody>
+            </SheetPane>
             {/*
               Every tab the role has stays drawn, the others out of sight: a code shown once, a form half filled or a
               batch being made is not thrown away by a look at another tab.

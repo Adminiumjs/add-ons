@@ -9,11 +9,12 @@
  */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
-import { Alert, Button, Card, Combobox, EmptyState, Field, Input, Link, SegmentedControl, Sheet, SheetBody, SheetHeader, Stack, StickyBar, api, asDataError, lucideByName, money, useLocaleTag, type AddOnTranslate, type DataValue } from '../shared/host.ts';
+import { Alert, Button, Card, Combobox, EmptyState, Field, Input, Link, SegmentedControl, Sheet, SheetHeader, Stack, StickyBar, api, asDataError, lucideByName, money, useLocaleTag, type AddOnTranslate, type DataValue } from '../shared/host.ts';
 import { RULES } from '../shared/paths.ts';
 import { refusal } from '../shared/refusal.ts';
 import { things, type Mapped, type Thing } from '../shared/things.ts';
 import { explainWords } from './explainWords.ts';
+import { SheetPane } from '../shared/SheetPane.tsx';
 
 export interface Tried {
   data: Readonly<Record<string, unknown>>;
@@ -223,7 +224,7 @@ export function TryPane({ t, mapped, draft, offerId, name, unsaved, narrow }: Tr
       </StickyBar>
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetHeader icon={Icon === undefined ? null : <Icon />} title={t('discounts.try.title', 'Try it')} closeLabel={t('shared.close', 'Close')} />
-        <SheetBody>{body}</SheetBody>
+        <SheetPane>{body}</SheetPane>
       </Sheet>
     </>
   );

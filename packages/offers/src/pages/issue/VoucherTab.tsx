@@ -7,10 +7,11 @@ import { useState, type ReactNode } from 'react';
 
 import { todayOf } from '../look-up/read.ts';
 import { formatDay } from '../look-up/LookUp.tsx';
-import { Button, DateInput, Field, Input, RadioCard, RadioGroup, SheetBody, SheetFooter, Stack, Textarea, asDataError, useLocaleTag, useWrite, type AddOnTranslate } from '../shared/host.ts';
+import { Button, DateInput, Field, Input, RadioCard, RadioGroup, SheetFooter, Stack, Textarea, asDataError, useLocaleTag, useWrite, type AddOnTranslate } from '../shared/host.ts';
 import { Fixes, blankToNull, isEmail, wrongOf, type Wrong } from './form.tsx';
 import { Result, onceOf, type Made } from './Result.tsx';
 import { NO_WORTH, WorthFields, checkWorth, useWhat, worthValues, type Worth } from './Worth.tsx';
+import { SheetPane } from '../shared/SheetPane.tsx';
 
 export function VoucherTab({ t, onDone }: { t: AddOnTranslate; onDone: () => void }): ReactNode {
   const locale = useLocaleTag();
@@ -77,7 +78,7 @@ export function VoucherTab({ t, onDone }: { t: AddOnTranslate; onDone: () => voi
   const on = (field: string): { error?: string } => (wrong[field] === undefined ? {} : { error: wrong[field] });
   return (
     <>
-      <SheetBody>
+      <SheetPane>
         <Stack gap="md">
           <Fixes t={t} wrong={what.failed === null ? wrong : { '': what.failed }} />
           <WorthFields t={t} worth={worth} onChange={setWorth} what={what.mapped} wrong={wrong} />
@@ -99,7 +100,7 @@ export function VoucherTab({ t, onDone }: { t: AddOnTranslate; onDone: () => voi
             <Textarea value={note} maxLength={200} rows={2} onChange={(event) => setNote(event.target.value)} />
           </Field>
         </Stack>
-      </SheetBody>
+      </SheetPane>
       <SheetFooter>
         <Button variant="primary" loading={saving} onClick={() => void save()}>
           {t('issue.voucher.save', 'Issue the voucher')}

@@ -12,11 +12,12 @@ import { useEffect, useState, type ReactNode } from 'react';
 
 import { todayOf } from '../look-up/read.ts';
 import { formatDay } from '../look-up/LookUp.tsx';
-import { Alert, Button, DateInput, Field, Input, Link, NumberInput, ProgressBar, SheetBody, SheetFooter, Stack, asDataError, useExport, useLocaleTag, useRead, useRecord, useWrite, type AddOnTranslate, type DataValue, type EachResult } from '../shared/host.ts';
+import { Alert, Button, DateInput, Field, Input, Link, NumberInput, ProgressBar, SheetFooter, Stack, asDataError, useExport, useLocaleTag, useRead, useRecord, useWrite, type AddOnTranslate, type DataValue, type EachResult } from '../shared/host.ts';
 import { BATCHES, recordAt } from '../shared/paths.ts';
 import { refusal } from '../shared/refusal.ts';
 import { Fixes, wrongOf, type Wrong } from './form.tsx';
 import { NO_WORTH, WorthFields, checkWorth, useWhat, worthValues, type Worth } from './Worth.tsx';
+import { SheetPane } from '../shared/SheetPane.tsx';
 
 /** The most vouchers one part makes, and the most one batch holds. */
 export const PART = 500;
@@ -122,7 +123,7 @@ export function BatchTab({ t, onDone }: { t: AddOnTranslate; onDone: () => void 
     const whole = stage.at === 'done' && stage.made >= stage.count;
     return (
       <>
-        <SheetBody>
+        <SheetPane>
           <Stack gap="md">
             {stage.at === 'making' ? <Alert tone="info" role="status" title={t('issue.batch.making', 'Making the codes')} body={t('issue.batch.progress', '{made} of {count}', { made: shown, count: stage.count })} /> : null}
             {stage.at === 'done' && whole ? <Alert tone="pos" role="status" title={t('issue.batch.made', '{count} codes made', { count: stage.count })} body={t('issue.batch.again', 'You can download them again from Voucher batches.')} /> : null}
@@ -132,7 +133,7 @@ export function BatchTab({ t, onDone }: { t: AddOnTranslate; onDone: () => void 
             <ProgressBar value={shown} max={stage.count} label={t('issue.batch.progress', '{made} of {count}', { made: shown, count: stage.count })} />
             {said === null ? null : <Alert tone="danger" role="alert" title={said} />}
           </Stack>
-        </SheetBody>
+        </SheetPane>
         <SheetFooter>
           {stage.at === 'done' && stage.made > 0 ? (
             <Button variant="secondary" loading={exports.running} onClick={() => void download()}>
@@ -151,7 +152,7 @@ export function BatchTab({ t, onDone }: { t: AddOnTranslate; onDone: () => void 
   const many = /^\d+$/.test(count) ? Number(count) : 0;
   return (
     <>
-      <SheetBody>
+      <SheetPane>
         <Stack gap="md">
           <Fixes t={t} wrong={what.failed === null ? wrong : { '': what.failed }} />
           <Input label={t('issue.batch.name', 'Name of the batch')} hint={t('issue.noteHint', 'For staff only.')} value={name} maxLength={80} required onChange={(event) => setName(event.target.value)} {...on('name')} />
@@ -163,7 +164,7 @@ export function BatchTab({ t, onDone }: { t: AddOnTranslate; onDone: () => void 
           </Field>
           {many > 0 && expires !== '' ? <Alert tone="info" title={t('issue.batch.readBack', '{count, plural, one {# code} other {# codes}}, each good once, until {date}', { count: many, date: formatDay(expires, locale) })} /> : null}
         </Stack>
-      </SheetBody>
+      </SheetPane>
       <SheetFooter>
         <Button variant="primary" loading={batches.saving} onClick={() => void make()}>
           {t('issue.batch.save', 'Make the codes')}

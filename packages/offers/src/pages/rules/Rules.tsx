@@ -22,7 +22,6 @@ import {
   RadioGroup,
   Select,
   Sheet,
-  SheetBody,
   SheetFooter,
   SheetHeader,
   Stack,
@@ -39,6 +38,7 @@ import {
 import { PageFrame } from '../shared/PageFrame.tsx';
 import { refusal } from '../shared/refusal.ts';
 import { ADDABLE, EMPTY, PARTS, appName, cardsOf, formOf, formProblems, linesOf, sentOf, sentence, type Addable, type Card, type Form, type Names, type Posted, type Priced, type SourceColumn, type SourceTable, type When } from './rule.ts';
+import { SheetPane } from '../shared/SheetPane.tsx';
 
 const LEDGER = '/api/v1/ledgers/offers/value';
 const NUMBERS = new Set(['int', 'integer', 'bigint', 'decimal', 'number', 'float', 'money']);
@@ -397,7 +397,7 @@ function RuleSheet({ t, editing, sources, ownTables, names, tableAt, postingAt, 
   return (
     <Sheet open onOpenChange={(next) => (next || working ? undefined : onClose())} maxWidth={600}>
       <SheetHeader icon={Icon === undefined ? null : <Icon />} title={editing.card === null ? t('rules.sheet.add', 'Add a rule') : t('rules.sheet.edit', 'Edit rule')} closeLabel={t('shared.close', 'Close')} />
-      <SheetBody>
+      <SheetPane>
         <Stack gap="md">
           {said === null ? null : <Alert tone="danger" role="alert" title={said} />}
           <RadioGroup value={form.kind} onValueChange={(kind) => set({ ...EMPTY, kind: ADDABLE.find((one) => one === kind) ?? 'discounts', table: form.table })} aria-label={t('rules.sheet.kind', 'What the table does')}>
@@ -506,7 +506,7 @@ function RuleSheet({ t, editing, sources, ownTables, names, tableAt, postingAt, 
             />
           ) : null}
         </Stack>
-      </SheetBody>
+      </SheetPane>
       <SheetFooter>
         {editing.card === null ? null : (
           <Button variant="ghost" loading={busy === 'remove'} disabled={working} onClick={() => setConfirmRemove(true)}>

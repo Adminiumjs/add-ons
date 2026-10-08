@@ -415,6 +415,8 @@ export function Editor({ t, offerId }: { t: AddOnTranslate; offerId: string | nu
 
       <Card title={t('discounts.section.gives', 'What it gives')}>
         <Stack gap="md">
+          {/* Five choices are wider than a phone: they scroll inside their own row, never the page. */}
+          <div className="max-w-full overflow-x-auto">
           <SegmentedControl
             aria-label={t('discounts.section.gives', 'What it gives')}
             value={form.gives}
@@ -428,6 +430,7 @@ export function Editor({ t, offerId }: { t: AddOnTranslate; offerId: string | nu
               { value: 'quantity_price', label: t('discounts.kind.steps', 'Price by quantity') },
             ]}
           />
+          </div>
           {valueField}
         </Stack>
       </Card>

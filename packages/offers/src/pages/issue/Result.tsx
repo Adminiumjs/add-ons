@@ -2,8 +2,9 @@
 import { useState, type ReactNode } from 'react';
 
 import { CodeChips } from '../shared/codes.tsx';
-import { Alert, Button, KeyValueList, SheetBody, SheetFooter, Stack, asDataError, useDocument, type AddOnTranslate, type OnceValue } from '../shared/host.ts';
+import { Alert, Button, KeyValueList, SheetFooter, Stack, asDataError, useDocument, type AddOnTranslate, type OnceValue } from '../shared/host.ts';
 import { refusal } from '../shared/refusal.ts';
+import { SheetPane } from '../shared/SheetPane.tsx';
 
 export interface Made {
   table: 'gift_cards' | 'vouchers';
@@ -29,14 +30,14 @@ export function Result({ t, title, made, onDone }: { t: AddOnTranslate; title: s
   };
   return (
     <>
-      <SheetBody>
+      <SheetPane>
         <Stack gap="md">
           <Alert tone="pos" role="status" title={title} body={made.once === null ? t('issue.result.noCode', 'Its code can be read by a manager.') : t('issue.result.once', 'The full code is shown only this once.')} />
           {made.once === null ? null : <CodeChips code={made.once.value} word={made.word} label={t('issue.result.code', 'The code')} />}
           <KeyValueList items={made.facts} />
           {said === null ? null : <Alert tone="danger" role="alert" title={said} />}
         </Stack>
-      </SheetBody>
+      </SheetPane>
       <SheetFooter>
         <Button variant="secondary" loading={documents.opening} onClick={() => void print()}>
           {t('issue.print', 'Print')}
