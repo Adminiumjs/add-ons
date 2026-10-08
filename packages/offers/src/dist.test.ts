@@ -15,6 +15,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { impuritiesIn } from '@adminium/add-on-host/testing';
 
 import manifest from '../manifest.json' with { type: 'json' };
+import * as GERMAN from './pages/strings/de-DE.ts';
 import { BUILT_FILES } from '../vite.config.ts';
 import { buildForReal, DIST } from './testing/build.ts';
 import { bannedHitsIn } from './testing/lexicon.ts';
@@ -62,8 +63,16 @@ describe('the build writes what the manifest promises', () => {
 describe("a screen carries its own words and nobody else's", () => {
   const file = (name: string) => readFileSync(join(DIST, 'pages', `${name}.js`), 'utf8');
 
-  it('holds a sentence of its own, and none of another screen', () => {
+  it('holds a sentence of its own in every language, and none of another screen', () => {
+    // English and German: a screen's file carries all eight languages of its own words, and not one of its neighbours'.
     const OWN: Readonly<Record<string, string>> = { discounts: 'Can be combined', 'look-up': 'Type or scan a code first.', issue: 'Your role cannot issue.', rules: 'Takes a gift card as payment' };
+    const KEY: Readonly<Record<string, [section: keyof typeof GERMAN, key: string]>> = { discounts: ['discounts', 'discounts.combinable'], 'look-up': ['lookup', 'lookup.field.empty'], issue: ['issue', 'issue.notAllowed'], rules: ['rules', 'rules.kind.pays'] };
+    for (const [name, [section, key]] of Object.entries(KEY)) {
+      const german = GERMAN[section][key] as string;
+      expect(german, key).not.toBe(OWN[name]);
+      expect(file(name), `${name} in German`).toContain(JSON.stringify(german).slice(1, -1));
+      for (const other of Object.keys(KEY)) if (other !== name) expect(file(other), `${other} carries ${name}'s German`).not.toContain(JSON.stringify(german).slice(1, -1));
+    }
     for (const [name, sentence] of Object.entries(OWN)) {
       expect(file(name), name).toContain(sentence);
       for (const [other, theirs] of Object.entries(OWN)) if (other !== name) expect(file(name), `${name} carries a sentence of ${other}`).not.toContain(theirs);
@@ -74,7 +83,8 @@ describe("a screen carries its own words and nobody else's", () => {
     for (const name of ['discounts', 'look-up', 'issue', 'rules']) {
       // Nothing left for the browser to fetch from an address that serves one file.
       expect(codeOf(file(name)), name).not.toMatch(/^\s*import\s[^;]*\bfrom\b|^\s*import\s*['"]|\bimport\s*\(/m);
-      expect(statSync(join(DIST, 'pages', `${name}.js`)).size, name).toBeLessThan(160_000);
+      // Its own sentences in eight languages are most of a screen's file; the editor, with the most to say, is the largest.
+      expect(statSync(join(DIST, 'pages', `${name}.js`)).size, name).toBeLessThan(name === 'discounts' ? 240_000 : 160_000);
     }
   });
 

@@ -579,6 +579,7 @@ export const rules: Readonly<Record<string, string>> = {
   "rules.says.sellsVouchers": "A row that names a voucher in {voucher} marks it sold when {when}.",
   "rules.says.uses": "What was used is recorded when {when}, and given back when {back}.",
   "rules.says.usesAlone": "What was used is recorded when {when}, though this table takes no discounts now. Remove it, or add the rule again.",
+  "rules.says.usesKept": "What was used is recorded when {when}, and is never given back.",
   "rules.sheet.add": "Add a rule",
   "rules.sheet.cannotMake": "Adminium cannot add what is missing here: {reasons}",
   "rules.sheet.chooseColumn": "Choose a column",

@@ -3966,10 +3966,10 @@
                 "title": "Voucher batches",
                 "titles": {
                   "en-US": "Voucher batches",
-                  "de-DE": "Gutschein-Chargen",
-                  "fr-FR": "Lots de bons",
-                  "da-DK": "Voucher-partier",
-                  "cs-CZ": "Dávky poukazů",
+                  "de-DE": "Gutscheinserien",
+                  "fr-FR": "Séries de bons",
+                  "da-DK": "Voucherserier",
+                  "cs-CZ": "Série poukazů",
                   "ar-EG": "دفعات القسائم",
                   "zh-CN": "代金券批次",
                   "zh-TW": "兌換券批次"
@@ -3995,10 +3995,10 @@
                   "titleKey": "No voucher batches yet",
                   "titles": {
                     "en-US": "No voucher batches yet",
-                    "de-DE": "Noch keine Gutschein-Chargen",
-                    "fr-FR": "Aucun lot de bons pour l’instant",
-                    "da-DK": "Ingen voucher-partier endnu",
-                    "cs-CZ": "Zatím žádné dávky poukazů",
+                    "de-DE": "Noch keine Gutscheinserien",
+                    "fr-FR": "Aucune série de bons pour l’instant",
+                    "da-DK": "Ingen voucherserier endnu",
+                    "cs-CZ": "Zatím žádné série poukazů",
                     "ar-EG": "لا توجد دفعات قسائم بعد",
                     "zh-CN": "尚无代金券批次",
                     "zh-TW": "尚無兌換券批次"

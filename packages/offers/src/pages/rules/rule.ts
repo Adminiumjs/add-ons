@@ -116,7 +116,9 @@ export function sentence(t: AddOnTranslate, card: Card, names: Names): string[] 
   if (card.kind === 'discounts') {
     const parts = ((card.priced.adjust['lines'] ?? []) as { table?: string; self?: true }[]).map((part) => (part.self === true ? card.tableLabel : names.table(part.table ?? '')));
     out.push(t('rules.says.discounts', 'Discounts and codes are worked out for each row, line by line from {lines}.', { lines: names.list(parts) }));
-    out.push(card.uses === null ? t('rules.says.noUses', 'What was used is not recorded: limits by use are not kept.') : t('rules.says.uses', 'What was used is recorded when {when}, and given back when {back}.', { when: point(t, card.uses.post?.on, card.table, names), back: point(t, card.uses.reverse?.on, card.table, names) }));
+    if (card.uses === null) out.push(t('rules.says.noUses', 'What was used is not recorded: limits by use are not kept.'));
+    else if (card.uses.reverse === undefined) out.push(t('rules.says.usesKept', 'What was used is recorded when {when}, and is never given back.', { when: point(t, card.uses.post?.on, card.table, names) }));
+    else out.push(t('rules.says.uses', 'What was used is recorded when {when}, and given back when {back}.', { when: point(t, card.uses.post?.on, card.table, names), back: point(t, card.uses.reverse.on, card.table, names) }));
     return out;
   }
   const rule = card.posted;

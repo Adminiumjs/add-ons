@@ -47,3 +47,71 @@ describe("the screens' looks", () => {
     for (const file of SCREENS) expect(readFileSync(file, 'utf8'), file).not.toMatch(/className=\{/);
   });
 });
+
+describe("the screens' words in eight languages", () => {
+  const english = LOCALES['en-US'] as Record<string, Record<string, string>>;
+  const others = Object.entries(LOCALES).filter(([tag]) => tag !== 'en-US') as [string, Record<string, Record<string, string>>][];
+  /** The names a sentence takes, plural arguments among them. */
+  const names = (message: string): string[] => {
+    const out = new Set<string>();
+    let depth = 0;
+    let at = '';
+    for (const char of message) {
+      if (char === '{') {
+        depth += 1;
+        at = '';
+      } else if (char === '}' || char === ',') {
+        // Only what opens at an odd depth is a name: inside a plural's branch (even) the words are the sentence's own.
+        if (depth % 2 === 1 && /^\s*[a-zA-Z]+\s*$/.test(at)) out.add(at.trim());
+        if (char === '}') depth -= 1;
+        at = '#';
+      } else at += char;
+    }
+    return [...out].sort();
+  };
+  const branches = (message: string): string[][] => [...message.matchAll(/\{\s*\w+\s*,\s*plural\s*,((?:[^{}]|\{[^{}]*\})*)\}/g)].map((match) => [...(match[1] as string).matchAll(/(=\d+|\w+)\s*\{/g)].map((branch) => branch[1] as string));
+
+  it('are eight, and each has every key of the English, section by section, and no other', () => {
+    expect(Object.keys(LOCALES).sort()).toEqual(['ar-EG', 'cs-CZ', 'da-DK', 'de-DE', 'en-US', 'fr-FR', 'zh-CN', 'zh-TW']);
+    for (const [tag, words] of others) {
+      for (const section of SECTIONS as string[]) expect(Object.keys(words[section] ?? {}), `${tag} · ${section}`).toEqual(Object.keys(english[section] ?? {}));
+    }
+  });
+
+  it('take the same names as the English sentence does, whatever order they come in', () => {
+    for (const [tag, words] of others) {
+      for (const section of SECTIONS as string[]) {
+        for (const [key, sentence] of Object.entries(english[section] ?? {})) expect(names(words[section]?.[key] ?? ''), `${tag} · ${key}`).toEqual(names(sentence));
+      }
+    }
+  });
+
+  it('say a counted thing in every form its language has, and balance their braces', () => {
+    for (const [tag, words] of Object.entries(LOCALES) as [string, Record<string, Record<string, string>>][]) {
+      const forms = new Intl.PluralRules(tag).resolvedOptions().pluralCategories;
+      for (const section of SECTIONS as string[]) {
+        for (const [key, sentence] of Object.entries(words[section] ?? {})) {
+          expect([...sentence].filter((char) => char === '{').length, `${tag} · ${key}`).toBe([...sentence].filter((char) => char === '}').length);
+          for (const given of branches(sentence)) {
+            // "many" outside Arabic is the form of millions and of fractions: `other` stands in for it, as the formatter does.
+            for (const form of forms.filter((one) => one !== 'many' || tag.startsWith('ar'))) expect(given, `${tag} · ${key} · ${form}`).toContain(form);
+            for (const form of given) expect(form.startsWith('=') || forms.includes(form as Intl.LDMLPluralRule), `${tag} · ${key} · ${form}`).toBe(true);
+          }
+          // An apostrophe opens a quoted stretch in a counted sentence: a typed one would swallow the words after it.
+          if (sentence.includes(', plural,')) expect(sentence, `${tag} · ${key}`).not.toContain("'");
+          expect(sentence.trim(), `${tag} · ${key}`).not.toBe('');
+        }
+      }
+    }
+  });
+
+  it('are translated: next to nothing reads as the English does, and what does is a name both languages share', () => {
+    // A screen left in English passes every check above. Here each language is held to a handful of sentences that
+    // are the same in both — a word the languages share ("Code", "Status"), or a pattern with no words in it.
+    for (const [tag, words] of others) {
+      const same = (SECTIONS as string[]).flatMap((section) => Object.entries(english[section] ?? {}).filter(([key, sentence]) => words[section]?.[key] === sentence));
+      expect(same.length, `${tag}: ${same.map(([key]) => key).join(' ')}`).toBeLessThanOrEqual(16);
+      for (const [key, sentence] of same) expect(sentence.replace(/\{[^}]*\}/g, '').replace(/[^A-Za-z]/g, '').length, `${tag} · ${key} is still English: ${sentence}`).toBeLessThanOrEqual(8);
+    }
+  });
+});
