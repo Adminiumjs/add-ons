@@ -1,6 +1,6 @@
 {
   "name": "@adminium/add-on-offers",
-  "version": "1.0.9",
+  "version": "1.0.8",
   "type": "module",
   "description": "Offers & gift cards \u2014 discounts, codes, vouchers, packs and gift cards, worked out and recorded in the same save as the order they belong to.",
   "license": "AGPL-3.0-only",
@@ -28,8 +28,8 @@
     "react": "^19.0.0"
   },
   "devDependencies": {
-    "@adminium/add-on-contracts": "npm:@adminiumjs/add-on-contracts@0.3.18",
+    "@adminium/add-on-contracts": "npm:@adminiumjs/add-on-contracts@0.3.19",
     "@adminium/add-on-host": "*",
-    "@adminiumjs/manifest": "0.3.18"
+    "@adminiumjs/manifest": "0.3.19"
   }
 }
