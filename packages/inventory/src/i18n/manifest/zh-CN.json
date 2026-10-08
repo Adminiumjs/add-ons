@@ -250,7 +250,7 @@
   "column|Can be undone": "可撤销",
   "column|Lines not posted": "未过账行数",
   "column|Lines posted": "已过账行数",
-  "column|Costs to check": "有待核对的成本",
+  "column|Lines to check": "待核对的行",
   "action|Continue": "继续",
   "action|Undo or send back": "撤销或退回",
   "table|Receipt line": "收货单明细",

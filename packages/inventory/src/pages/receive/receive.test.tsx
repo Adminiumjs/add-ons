@@ -39,7 +39,7 @@ function sample(): void {
     }
     if (table === 'receipts') {
       const lines = (world.tables['receipt_lines'] ?? []).filter((line) => line['receipt_id'] === row['id']);
-      return { status: 'draft', number: 'RC-0001', ...row, lines: lines.length, unposted: lines.filter((line) => line['status'] === 'draft').length, unreversed: lines.filter((line) => line['status'] === 'posted').length, units: '51.000', total: '56.10', cost_to_check: 0, by: 'Ava Reyes' };
+      return { status: 'draft', number: 'RC-0001', ...row, lines: lines.length, unposted: lines.filter((line) => line['status'] === 'draft').length, unreversed: lines.filter((line) => line['status'] === 'posted').length, units: '51.000', total: '56.10', lines_to_check: 0, by: 'Ava Reyes' };
     }
     return row;
   };
@@ -106,7 +106,7 @@ describe('Receive', () => {
   });
 
   it('shows the server\'s figures after a save, never its own', async () => {
-    seed('receipts', [{ id: 90, number: 'RC-0001', po_id: 7, supplier_id: 1, place_id: 1, kind: 'delivery', status: 'draft', lines: 1, unposted: 1, unreversed: 0, units: '51.000', total: '56.10', cost_to_check: 0 }]);
+    seed('receipts', [{ id: 90, number: 'RC-0001', po_id: 7, supplier_id: 1, place_id: 1, kind: 'delivery', status: 'draft', lines: 1, unposted: 1, unreversed: 0, units: '51.000', total: '56.10', lines_to_check: 0 }]);
     seed('receipt_lines', [{ id: 91, receipt_id: 90, po_line_id: 71, item_id: 11, item_name: 'Lidocaine 1% ampoule', unit: 'each', packs: '5.000', pack_size: '10.000', qty_typed: null, qty: '51.000', unit_cost: null, cost_used: '1.1000', amount: '56.10', batch_code: 'LD201', expires_on: '2027-04-30', status: 'draft' }]);
     render(<Receive t={t} receiptId="90" poId={null} />);
     const row = await screen.findByRole('group', { name: 'Lidocaine 1% ampoule' });
@@ -124,7 +124,7 @@ describe('Receive', () => {
 
   it('a saved receipt reads units only to someone who may not see its total', async () => {
     world.unreadable = { receipt_lines: ['unit_cost', 'cost_used', 'amount'], receipts: ['total'] };
-    seed('receipts', [{ id: 90, number: 'RC-0001', po_id: null, supplier_id: null, place_id: 1, kind: 'delivery', status: 'draft', lines: 1, unposted: 1, unreversed: 0, units: '51.000', total: '56.10', cost_to_check: 0 }]);
+    seed('receipts', [{ id: 90, number: 'RC-0001', po_id: null, supplier_id: null, place_id: 1, kind: 'delivery', status: 'draft', lines: 1, unposted: 1, unreversed: 0, units: '51.000', total: '56.10', lines_to_check: 0 }]);
     seed('receipt_lines', [{ id: 91, receipt_id: 90, po_line_id: null, item_id: 13, item_name: 'Alcohol swab', unit: 'each', packs: null, pack_size: null, qty_typed: '51.000', qty: '51.000', amount: '56.10', batch_code: null, expires_on: null, status: 'draft' }]);
     render(<Receive t={t} receiptId="90" poId={null} />);
     expect(await screen.findByText('Receiving 51 units')).toBeTruthy();
@@ -186,7 +186,7 @@ describe('Receive', () => {
   });
 
   it('a refused line stops the run, keeps what was typed and offers Continue posting', async () => {
-    seed('receipts', [{ id: 90, number: 'RC-0001', po_id: 7, supplier_id: 1, place_id: 1, kind: 'delivery', status: 'draft', lines: 2, unposted: 2, unreversed: 0, units: '250.000', total: '0.00', cost_to_check: 0 }]);
+    seed('receipts', [{ id: 90, number: 'RC-0001', po_id: 7, supplier_id: 1, place_id: 1, kind: 'delivery', status: 'draft', lines: 2, unposted: 2, unreversed: 0, units: '250.000', total: '0.00', lines_to_check: 0 }]);
     seed('receipt_lines', [
       { id: 91, receipt_id: 90, po_line_id: 72, item_id: 12, item_name: 'Gloves, nitrile, L', unit: 'pairs', packs: '2.000', pack_size: '100.000', qty_typed: null, qty: '200.000', batch_code: null, expires_on: null, status: 'draft' },
       { id: 92, receipt_id: 90, po_line_id: 71, item_id: 11, item_name: 'Lidocaine 1% ampoule', unit: 'each', packs: '5.000', pack_size: '10.000', qty_typed: null, qty: '50.000', batch_code: 'LD118', expires_on: '2026-09-01', status: 'draft' },
@@ -220,7 +220,7 @@ describe('Receive', () => {
   });
 
   it('shows a save Adminium refused on the line it names, and keeps the line', async () => {
-    seed('receipts', [{ id: 90, number: 'RC-0001', po_id: null, supplier_id: null, place_id: 1, kind: 'delivery', status: 'draft', lines: 1, unposted: 1, unreversed: 0, units: '1.000', total: '0.00', cost_to_check: 0 }]);
+    seed('receipts', [{ id: 90, number: 'RC-0001', po_id: null, supplier_id: null, place_id: 1, kind: 'delivery', status: 'draft', lines: 1, unposted: 1, unreversed: 0, units: '1.000', total: '0.00', lines_to_check: 0 }]);
     seed('receipt_lines', [{ id: 91, receipt_id: 90, po_line_id: null, item_id: 13, item_name: 'Alcohol swab', unit: 'each', packs: null, pack_size: null, qty_typed: '1.000', qty: '1.000', batch_code: null, expires_on: null, status: 'draft' }]);
     world.before = (kind) => {
       if (kind === 'update') throw new Refused('VALIDATION_FAILED', 'Enter a quantity above zero.', { column: 'qty' });

@@ -250,7 +250,7 @@
   "column|Can be undone": "Kan fortrydes",
   "column|Lines not posted": "Linjer ikke bogført",
   "column|Lines posted": "Linjer bogført",
-  "column|Costs to check": "Kostpriser at tjekke",
+  "column|Lines to check": "Linjer at tjekke",
   "action|Continue": "Fortsæt",
   "action|Undo or send back": "Fortryd eller send tilbage",
   "table|Receipt line": "Varemodtagelseslinje",

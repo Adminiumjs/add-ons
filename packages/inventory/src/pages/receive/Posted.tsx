@@ -142,7 +142,7 @@ export function Posted({ t, receipt, order, lines, costs, totals, note, onChange
               ))}
             </Stack>
           )}
-          {Number(receipt['cost_to_check'] ?? 0) > 0 && costs ? <Alert tone="warn" title={t('receive.costToCheck', 'A line was posted at the average cost because none was known. Check its cost.')} /> : null}
+          {Number(receipt['lines_to_check'] ?? 0) > 0 && costs ? <Alert tone="warn" title={t('receive.costToCheck', 'A line was posted at the average cost because none was known. Check its cost.')} /> : null}
           {lines.map((line) => (
             <Stack key={line.key} gap="xs">
               <Divider />

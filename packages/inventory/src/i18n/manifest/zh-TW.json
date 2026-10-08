@@ -250,7 +250,7 @@
   "column|Can be undone": "可復原",
   "column|Lines not posted": "未過帳行數",
   "column|Lines posted": "已過帳行數",
-  "column|Costs to check": "待檢查成本",
+  "column|Lines to check": "待檢查的明細",
   "action|Continue": "繼續",
   "action|Undo or send back": "復原或退回",
   "table|Receipt line": "收貨明細",

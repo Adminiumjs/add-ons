@@ -250,7 +250,7 @@
   "column|Can be undone": "Peut être annulée",
   "column|Lines not posted": "Lignes non validées",
   "column|Lines posted": "Lignes validées",
-  "column|Costs to check": "Coûts à vérifier",
+  "column|Lines to check": "Lignes à vérifier",
   "action|Continue": "Continuer",
   "action|Undo or send back": "Annuler ou renvoyer",
   "table|Receipt line": "Ligne de réception",

@@ -7076,7 +7076,7 @@
             }
           },
           {
-            "ref": "cost_to_check",
+            "ref": "lines_to_check",
             "type": "int",
             "default": 0,
             "rules": {
@@ -7087,14 +7087,14 @@
               }
             },
             "label": {
-              "en-US": "Costs to check",
-              "de-DE": "Zu prüfende Kosten",
-              "fr-FR": "Coûts à vérifier",
-              "da-DK": "Kostpriser at tjekke",
-              "cs-CZ": "Ceny ke kontrole",
-              "ar-EG": "تكاليف للمراجعة",
-              "zh-CN": "有待核对的成本",
-              "zh-TW": "待檢查成本"
+              "en-US": "Lines to check",
+              "de-DE": "Zu prüfende Zeilen",
+              "fr-FR": "Lignes à vérifier",
+              "da-DK": "Linjer at tjekke",
+              "cs-CZ": "Řádky ke kontrole",
+              "ar-EG": "بنود للمراجعة",
+              "zh-CN": "待核对的行",
+              "zh-TW": "待檢查的明細"
             }
           }
         ],
@@ -11048,7 +11048,7 @@
             "lines",
             "unposted",
             "unreversed",
-            "cost_to_check"
+            "lines_to_check"
           ],
           "creatable": [
             "po_id",
@@ -12924,7 +12924,7 @@
             "control": "date-range"
           },
           {
-            "column": "cost_to_check",
+            "column": "lines_to_check",
             "control": "number-range"
           }
         ],

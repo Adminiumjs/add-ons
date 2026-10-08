@@ -211,7 +211,7 @@ export const COLUMNS: Readonly<Record<string, string>> = {
   'receipts.order_status': 'Order status',
   'receipts.can_undo': 'Can be undone',
   'receipts.received_at': 'Received',
-  'receipts.cost_to_check': 'Costs to check',
+  'receipts.lines_to_check': 'Lines to check',
   'receipt_lines.receipt_id': 'Receipt',
   'receipt_lines.qty_typed': 'Units typed',
   'receipt_lines.po_cost': 'Cost on the order',

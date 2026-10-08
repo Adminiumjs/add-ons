@@ -250,7 +250,7 @@
   "column|Can be undone": "يمكن التراجع عنه",
   "column|Lines not posted": "سطور غير مرحَّلة",
   "column|Lines posted": "سطور مرحَّلة",
-  "column|Costs to check": "تكاليف للمراجعة",
+  "column|Lines to check": "بنود للمراجعة",
   "action|Continue": "متابعة",
   "action|Undo or send back": "تراجع أو إرجاع",
   "table|Receipt line": "سطر إذن الاستلام",

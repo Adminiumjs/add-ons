@@ -250,7 +250,7 @@
   "column|Can be undone": "Kann rückgängig gemacht werden",
   "column|Lines not posted": "Nicht gebuchte Zeilen",
   "column|Lines posted": "Gebuchte Zeilen",
-  "column|Costs to check": "Zu prüfende Kosten",
+  "column|Lines to check": "Zu prüfende Zeilen",
   "action|Continue": "Fortsetzen",
   "action|Undo or send back": "Rückgängig machen oder zurücksenden",
   "table|Receipt line": "Wareneingangszeile",
