@@ -56,7 +56,8 @@ interface Table {
   states?: { moves: Record<string, { to: string; planned?: boolean }[]>; actions?: Action[] };
 }
 
-const pages = manifest.pages as unknown as Page[];
+/** The generated lists; the Overview, a dashboard, has a suite of its own (`overview.test.ts`). */
+const pages = (manifest.pages as unknown as (Page & { template: string })[]).filter((page) => page.template === 'page-crud');
 const tables = manifest.requiredSchema.tables as unknown as Table[];
 const tableOf = (ref: string): Table => tables.find((table) => table.ref === ref)!;
 const columnOf = (table: string, ref: string): Column | undefined => tableOf(table).columns.find((column) => column.ref === ref);

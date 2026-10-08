@@ -3219,6 +3219,1022 @@
   ],
   "pages": [
     {
+      "ref": "offers-overview",
+      "template": "page-dashboard",
+      "title": {
+        "key": "addon.offers.page.overview",
+        "fallback": "Overview"
+      },
+      "titles": {
+        "en-US": "Overview",
+        "de-DE": "Übersicht",
+        "fr-FR": "Vue d’ensemble",
+        "da-DK": "Oversigt",
+        "cs-CZ": "Přehled",
+        "ar-EG": "نظرة عامة",
+        "zh-CN": "概览",
+        "zh-TW": "總覽"
+      },
+      "nav": {
+        "group": "manifest:offers",
+        "icon": "layout-dashboard",
+        "order": 5
+      },
+      "config": {
+        "layout": {
+          "version": 1,
+          "toolbar": {
+            "links": [
+              {
+                "label": "New discount",
+                "labels": {
+                  "en-US": "New discount",
+                  "de-DE": "Neuer Rabatt",
+                  "fr-FR": "Nouvelle remise",
+                  "da-DK": "Ny rabat",
+                  "cs-CZ": "Nová sleva",
+                  "ar-EG": "خصم جديد",
+                  "zh-CN": "新建折扣",
+                  "zh-TW": "新增折扣"
+                },
+                "href": "/add-ons/offers/offers-discounts/new",
+                "icon": "percent",
+                "tone": "primary"
+              },
+              {
+                "label": "Issue",
+                "labels": {
+                  "en-US": "Issue",
+                  "de-DE": "Ausstellen",
+                  "fr-FR": "Émettre",
+                  "da-DK": "Udsted",
+                  "cs-CZ": "Vystavit",
+                  "ar-EG": "إصدار",
+                  "zh-CN": "发放",
+                  "zh-TW": "發放"
+                },
+                "href": "/add-ons/offers/offers-issue",
+                "icon": "circle-plus"
+              }
+            ]
+          },
+          "items": [
+            {
+              "i": "owed",
+              "widget": "kpi-stat-card",
+              "x": 0,
+              "y": 0,
+              "w": 4,
+              "h": 3,
+              "config": {
+                "title": "Owed on gift cards and credit",
+                "titles": {
+                  "en-US": "Owed on gift cards and credit",
+                  "de-DE": "Offen auf Geschenkkarten und Guthaben",
+                  "fr-FR": "Dû sur les cartes cadeaux et avoirs",
+                  "da-DK": "Skyldigt på gavekort og tilgodehavender",
+                  "cs-CZ": "Dlužná částka na dárkových kartách a kreditech",
+                  "ar-EG": "المستحق على بطاقات الهدايا والأرصدة",
+                  "zh-CN": "礼品卡与储值余额",
+                  "zh-TW": "禮品卡與儲值金餘額"
+                },
+                "deltaMode": "none",
+                "showSparkline": false,
+                "metricFormat": "currency",
+                "metricLabel": "still to be spent",
+                "metricLabels": {
+                  "en-US": "still to be spent",
+                  "de-DE": "noch einzulösen",
+                  "fr-FR": "restant à dépenser",
+                  "da-DK": "endnu ikke brugt",
+                  "cs-CZ": "zbývá utratit",
+                  "ar-EG": "لم يُنفق بعد",
+                  "zh-CN": "尚未使用",
+                  "zh-TW": "尚未使用"
+                },
+                "iconName": "wallet",
+                "href": "/p/offers-gift-cards",
+                "binding": {
+                  "kind": "table-query",
+                  "source": {
+                    "name": "gift_cards",
+                    "type": "table"
+                  },
+                  "shape": "metric+delta",
+                  "aggregations": [
+                    {
+                      "fn": "sum",
+                      "column": "balance",
+                      "alias": "owed"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "column": "status",
+                      "op": "eq",
+                      "value": "active"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "i": "given",
+              "widget": "kpi-stat-card",
+              "x": 4,
+              "y": 0,
+              "w": 4,
+              "h": 3,
+              "config": {
+                "title": "Given last month",
+                "titles": {
+                  "en-US": "Given last month",
+                  "de-DE": "Letzten Monat gewährt",
+                  "fr-FR": "Accordé le mois dernier",
+                  "da-DK": "Givet sidste måned",
+                  "cs-CZ": "Poskytnuto minulý měsíc",
+                  "ar-EG": "الممنوح الشهر الماضي",
+                  "zh-CN": "上月优惠金额",
+                  "zh-TW": "上月折抵金額"
+                },
+                "deltaMode": "none",
+                "showSparkline": false,
+                "metricFormat": "currency",
+                "metricLabel": "discounts and staff discounts",
+                "metricLabels": {
+                  "en-US": "discounts and staff discounts",
+                  "de-DE": "Rabatte und Personalrabatte",
+                  "fr-FR": "remises et remises du personnel",
+                  "da-DK": "rabatter og personalerabatter",
+                  "cs-CZ": "slevy a slevy od personálu",
+                  "ar-EG": "الخصومات وخصومات الموظفين",
+                  "zh-CN": "折扣与员工折扣",
+                  "zh-TW": "折扣與員工折扣"
+                },
+                "iconName": "hand-coins",
+                "href": "/add-ons/offers/offers-discounts",
+                "binding": {
+                  "kind": "table-query",
+                  "source": {
+                    "name": "applied",
+                    "type": "table"
+                  },
+                  "shape": "metric+delta",
+                  "aggregations": [
+                    {
+                      "fn": "sum",
+                      "column": "amount",
+                      "alias": "given"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "column": "kind",
+                      "op": "in",
+                      "value": [
+                        "offer",
+                        "code",
+                        "staff"
+                      ]
+                    }
+                  ],
+                  "window": {
+                    "column": "at",
+                    "last": 1,
+                    "unit": "month",
+                    "calendar": true,
+                    "offset": 1
+                  }
+                }
+              }
+            },
+            {
+              "i": "uses",
+              "widget": "kpi-stat-card",
+              "x": 8,
+              "y": 0,
+              "w": 4,
+              "h": 3,
+              "config": {
+                "title": "Uses of discounts last month",
+                "titles": {
+                  "en-US": "Uses of discounts last month",
+                  "de-DE": "Rabatteinlösungen letzten Monat",
+                  "fr-FR": "Utilisations de remises le mois dernier",
+                  "da-DK": "Brugte rabatter sidste måned",
+                  "cs-CZ": "Použití slev minulý měsíc",
+                  "ar-EG": "مرات استخدام الخصومات الشهر الماضي",
+                  "zh-CN": "上月折扣使用次数",
+                  "zh-TW": "上月折扣使用次數"
+                },
+                "deltaMode": "none",
+                "showSparkline": false,
+                "metricLabel": "counted on paid orders",
+                "metricLabels": {
+                  "en-US": "counted on paid orders",
+                  "de-DE": "auf bezahlten Bestellungen gezählt",
+                  "fr-FR": "comptées sur les commandes payées",
+                  "da-DK": "talt på betalte ordrer",
+                  "cs-CZ": "započteno u zaplacených objednávek",
+                  "ar-EG": "محسوبة على الطلبات المدفوعة",
+                  "zh-CN": "按已付款订单统计",
+                  "zh-TW": "依已付款訂單計算"
+                },
+                "iconName": "ticket",
+                "href": "/p/offers-uses",
+                "binding": {
+                  "kind": "table-query",
+                  "source": {
+                    "name": "redemptions",
+                    "type": "table"
+                  },
+                  "shape": "metric+delta",
+                  "aggregations": [
+                    {
+                      "fn": "count",
+                      "alias": "uses"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "column": "state",
+                      "op": "eq",
+                      "value": "counted"
+                    },
+                    {
+                      "column": "offer_id",
+                      "op": "not_null"
+                    }
+                  ],
+                  "window": {
+                    "column": "at",
+                    "last": 1,
+                    "unit": "month",
+                    "calendar": true,
+                    "offset": 1
+                  }
+                }
+              }
+            },
+            {
+              "i": "issued",
+              "widget": "kpi-stat-card",
+              "x": 0,
+              "y": 3,
+              "w": 6,
+              "h": 3,
+              "config": {
+                "title": "Issued and topped up last month",
+                "titles": {
+                  "en-US": "Issued and topped up last month",
+                  "de-DE": "Letzten Monat ausgestellt und aufgeladen",
+                  "fr-FR": "Émis et rechargé le mois dernier",
+                  "da-DK": "Udstedt og fyldt op sidste måned",
+                  "cs-CZ": "Vystaveno a dobito minulý měsíc",
+                  "ar-EG": "المُصدَر والمُعاد شحنه الشهر الماضي",
+                  "zh-CN": "上月发卡与充值",
+                  "zh-TW": "上月發卡與儲值"
+                },
+                "deltaMode": "none",
+                "showSparkline": false,
+                "metricFormat": "currency",
+                "metricLabel": "put on gift cards",
+                "metricLabels": {
+                  "en-US": "put on gift cards",
+                  "de-DE": "auf Geschenkkarten geladen",
+                  "fr-FR": "chargé sur des cartes cadeaux",
+                  "da-DK": "sat ind på gavekort",
+                  "cs-CZ": "nabito na dárkové karty",
+                  "ar-EG": "أُضيف إلى بطاقات الهدايا",
+                  "zh-CN": "存入礼品卡",
+                  "zh-TW": "存入禮品卡"
+                },
+                "iconName": "banknote",
+                "href": "/p/offers-activity",
+                "binding": {
+                  "kind": "table-query",
+                  "source": {
+                    "name": "card_ledger",
+                    "type": "table"
+                  },
+                  "shape": "metric+delta",
+                  "aggregations": [
+                    {
+                      "fn": "sum",
+                      "column": "value",
+                      "alias": "issued"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "column": "kind",
+                      "op": "in",
+                      "value": [
+                        "issue",
+                        "top_up"
+                      ]
+                    }
+                  ],
+                  "window": {
+                    "column": "at",
+                    "last": 1,
+                    "unit": "month",
+                    "calendar": true,
+                    "offset": 1
+                  }
+                }
+              }
+            },
+            {
+              "i": "spent",
+              "widget": "kpi-stat-card",
+              "x": 6,
+              "y": 3,
+              "w": 6,
+              "h": 3,
+              "config": {
+                "title": "Spent from cards and credit last month",
+                "titles": {
+                  "en-US": "Spent from cards and credit last month",
+                  "de-DE": "Letzten Monat von Karten und Guthaben ausgegeben",
+                  "fr-FR": "Dépensé depuis les cartes et avoirs le mois dernier",
+                  "da-DK": "Brugt fra kort og tilgodehavender sidste måned",
+                  "cs-CZ": "Utraceno z karet a kreditů minulý měsíc",
+                  "ar-EG": "المُنفَق من البطاقات والأرصدة الشهر الماضي",
+                  "zh-CN": "上月礼品卡与储值消费",
+                  "zh-TW": "上月禮品卡與儲值金消費"
+                },
+                "deltaMode": "none",
+                "showSparkline": false,
+                "metricFormat": "currency",
+                "metricLabel": "paid with a card or credit",
+                "metricLabels": {
+                  "en-US": "paid with a card or credit",
+                  "de-DE": "mit Karte oder Guthaben bezahlt",
+                  "fr-FR": "payé par carte ou avoir",
+                  "da-DK": "betalt med kort eller tilgodehavende",
+                  "cs-CZ": "zaplaceno kartou nebo kreditem",
+                  "ar-EG": "مدفوع ببطاقة أو رصيد",
+                  "zh-CN": "以礼品卡或储值支付",
+                  "zh-TW": "以禮品卡或儲值金支付"
+                },
+                "iconName": "receipt",
+                "href": "/p/offers-activity",
+                "binding": {
+                  "kind": "table-query",
+                  "source": {
+                    "name": "card_ledger",
+                    "type": "table"
+                  },
+                  "shape": "metric+delta",
+                  "aggregations": [
+                    {
+                      "fn": "sum",
+                      "column": "value",
+                      "alias": "spent"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "column": "kind",
+                      "op": "eq",
+                      "value": "spend"
+                    }
+                  ],
+                  "window": {
+                    "column": "at",
+                    "last": 1,
+                    "unit": "month",
+                    "calendar": true,
+                    "offset": 1
+                  }
+                }
+              }
+            },
+            {
+              "i": "discounts",
+              "widget": "chart-ranking-bars",
+              "x": 0,
+              "y": 6,
+              "w": 6,
+              "h": 8,
+              "config": {
+                "title": "Discounts last month",
+                "titles": {
+                  "en-US": "Discounts last month",
+                  "de-DE": "Rabatte letzten Monat",
+                  "fr-FR": "Remises le mois dernier",
+                  "da-DK": "Rabatter sidste måned",
+                  "cs-CZ": "Slevy minulý měsíc",
+                  "ar-EG": "الخصومات الشهر الماضي",
+                  "zh-CN": "上月折扣",
+                  "zh-TW": "上月折扣"
+                },
+                "subtitle": "Amount given, most first",
+                "subtitles": {
+                  "en-US": "Amount given, most first",
+                  "de-DE": "Gewährter Betrag, höchster zuerst",
+                  "fr-FR": "Montant accordé, du plus élevé au plus bas",
+                  "da-DK": "Givet beløb, størst først",
+                  "cs-CZ": "Poskytnutá částka, od nejvyšší",
+                  "ar-EG": "المبلغ الممنوح، الأكبر أولًا",
+                  "zh-CN": "优惠金额，从高到低",
+                  "zh-TW": "折抵金額，由高到低"
+                },
+                "metricFormat": "currency",
+                "emptyState": {
+                  "titleKey": "No discounts used yet. Discounts show here, most given first, once customers use them.",
+                  "titles": {
+                    "en-US": "No discounts used yet. Discounts show here, most given first, once customers use them.",
+                    "de-DE": "Noch keine Rabatte eingelöst. Sobald Kunden Rabatte nutzen, erscheinen sie hier, der höchste zuerst.",
+                    "fr-FR": "Aucune remise utilisée pour l’instant. Elles apparaîtront ici, de la plus élevée à la plus basse, dès que des clients en utiliseront.",
+                    "da-DK": "Ingen rabatter brugt endnu. Rabatter vises her, størst først, når kunderne bruger dem.",
+                    "cs-CZ": "Zatím nebyla použita žádná sleva. Jakmile je zákazníci začnou využívat, zobrazí se zde od nejvyšší.",
+                    "ar-EG": "لم تُستخدم أي خصومات بعد. تظهر الخصومات هنا، الأكبر أولًا، عندما يستخدمها العملاء.",
+                    "zh-CN": "尚无折扣被使用。顾客使用后，将按优惠金额从高到低显示在此。",
+                    "zh-TW": "尚無折扣被使用。顧客使用後，會依折抵金額由高到低顯示於此。"
+                  }
+                },
+                "series": [
+                  {
+                    "label": "Given",
+                    "labels": {
+                      "en-US": "Given",
+                      "de-DE": "Gewährt",
+                      "fr-FR": "Accordé",
+                      "da-DK": "Givet",
+                      "cs-CZ": "Poskytnuto",
+                      "ar-EG": "الممنوح",
+                      "zh-CN": "已优惠",
+                      "zh-TW": "已折抵"
+                    }
+                  },
+                  {
+                    "label": "Uses",
+                    "labels": {
+                      "en-US": "Uses",
+                      "de-DE": "Einlösungen",
+                      "fr-FR": "Utilisations",
+                      "da-DK": "Anvendelser",
+                      "cs-CZ": "Použití",
+                      "ar-EG": "مرات الاستخدام",
+                      "zh-CN": "使用次数",
+                      "zh-TW": "使用次數"
+                    }
+                  }
+                ],
+                "binding": {
+                  "kind": "table-query",
+                  "source": {
+                    "name": "redemptions",
+                    "type": "table"
+                  },
+                  "shape": "categorical",
+                  "groupBy": [
+                    "offer_id"
+                  ],
+                  "groupLabel": "offer_id.name",
+                  "aggregations": [
+                    {
+                      "fn": "sum",
+                      "column": "amount",
+                      "alias": "given"
+                    },
+                    {
+                      "fn": "count",
+                      "alias": "uses"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "column": "state",
+                      "op": "eq",
+                      "value": "counted"
+                    },
+                    {
+                      "column": "offer_id",
+                      "op": "not_null"
+                    }
+                  ],
+                  "window": {
+                    "column": "at",
+                    "last": 1,
+                    "unit": "month",
+                    "calendar": true,
+                    "offset": 1
+                  },
+                  "orderBy": [
+                    {
+                      "column": "given",
+                      "dir": "desc"
+                    }
+                  ],
+                  "limit": 5
+                }
+              }
+            },
+            {
+              "i": "staff",
+              "widget": "chart-ranking-bars",
+              "x": 6,
+              "y": 6,
+              "w": 6,
+              "h": 8,
+              "config": {
+                "title": "Staff discounts last month",
+                "titles": {
+                  "en-US": "Staff discounts last month",
+                  "de-DE": "Personalrabatte letzten Monat",
+                  "fr-FR": "Remises du personnel le mois dernier",
+                  "da-DK": "Personalerabatter sidste måned",
+                  "cs-CZ": "Slevy od personálu minulý měsíc",
+                  "ar-EG": "خصومات الموظفين الشهر الماضي",
+                  "zh-CN": "上月员工折扣",
+                  "zh-TW": "上月員工折扣"
+                },
+                "subtitle": "By the reason staff picked",
+                "subtitles": {
+                  "en-US": "By the reason staff picked",
+                  "de-DE": "Nach dem vom Personal gewählten Grund",
+                  "fr-FR": "Selon le motif choisi par le personnel",
+                  "da-DK": "Efter den årsag, personalet valgte",
+                  "cs-CZ": "Podle důvodu, který personál zvolil",
+                  "ar-EG": "حسب السبب الذي اختاره الموظفون",
+                  "zh-CN": "按员工选择的原因",
+                  "zh-TW": "依員工選擇的原因"
+                },
+                "metricFormat": "currency",
+                "emptyState": {
+                  "titleKey": "No staff discounts yet. When staff give a discount, it is grouped here by the reason they pick.",
+                  "titles": {
+                    "en-US": "No staff discounts yet. When staff give a discount, it is grouped here by the reason they pick.",
+                    "de-DE": "Noch keine Personalrabatte. Gewährt das Personal einen Rabatt, wird er hier nach dem gewählten Grund gruppiert.",
+                    "fr-FR": "Aucune remise du personnel pour l’instant. Lorsqu’un membre du personnel accorde une remise, elle est regroupée ici selon le motif choisi.",
+                    "da-DK": "Ingen personalerabatter endnu. Når personalet giver en rabat, grupperes den her efter den årsag, de vælger.",
+                    "cs-CZ": "Zatím žádné slevy od personálu. Když personál poskytne slevu, seskupí se zde podle zvoleného důvodu.",
+                    "ar-EG": "لا توجد خصومات موظفين بعد. عندما يمنح الموظفون خصمًا، يُجمَّع هنا حسب السبب الذي يختارونه.",
+                    "zh-CN": "尚无员工折扣。员工给予折扣后，将按所选原因归类显示在此。",
+                    "zh-TW": "尚無員工折扣。員工給予折扣後，會依所選原因歸類顯示於此。"
+                  }
+                },
+                "series": [
+                  {
+                    "label": "Given",
+                    "labels": {
+                      "en-US": "Given",
+                      "de-DE": "Gewährt",
+                      "fr-FR": "Accordé",
+                      "da-DK": "Givet",
+                      "cs-CZ": "Poskytnuto",
+                      "ar-EG": "الممنوح",
+                      "zh-CN": "已优惠",
+                      "zh-TW": "已折抵"
+                    }
+                  },
+                  {
+                    "label": "Uses",
+                    "labels": {
+                      "en-US": "Uses",
+                      "de-DE": "Einlösungen",
+                      "fr-FR": "Utilisations",
+                      "da-DK": "Anvendelser",
+                      "cs-CZ": "Použití",
+                      "ar-EG": "مرات الاستخدام",
+                      "zh-CN": "使用次数",
+                      "zh-TW": "使用次數"
+                    }
+                  }
+                ],
+                "binding": {
+                  "kind": "table-query",
+                  "source": {
+                    "name": "applied",
+                    "type": "table"
+                  },
+                  "shape": "categorical",
+                  "groupBy": [
+                    "reason_id"
+                  ],
+                  "groupLabel": "reason_id.label",
+                  "aggregations": [
+                    {
+                      "fn": "sum",
+                      "column": "amount",
+                      "alias": "given"
+                    },
+                    {
+                      "fn": "count",
+                      "alias": "uses"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "column": "kind",
+                      "op": "eq",
+                      "value": "staff"
+                    }
+                  ],
+                  "window": {
+                    "column": "at",
+                    "last": 1,
+                    "unit": "month",
+                    "calendar": true,
+                    "offset": 1
+                  },
+                  "orderBy": [
+                    {
+                      "column": "given",
+                      "dir": "desc"
+                    }
+                  ],
+                  "limit": 5
+                }
+              }
+            },
+            {
+              "i": "cards",
+              "widget": "mini-table",
+              "x": 0,
+              "y": 14,
+              "w": 4,
+              "h": 7,
+              "config": {
+                "title": "Gift cards",
+                "titles": {
+                  "en-US": "Gift cards",
+                  "de-DE": "Geschenkkarten",
+                  "fr-FR": "Cartes cadeaux",
+                  "da-DK": "Gavekort",
+                  "cs-CZ": "Dárkové karty",
+                  "ar-EG": "بطاقات الهدايا",
+                  "zh-CN": "礼品卡",
+                  "zh-TW": "禮品卡"
+                },
+                "columns": [
+                  {
+                    "name": "label",
+                    "label": "Card"
+                  },
+                  {
+                    "name": "balance",
+                    "label": "Left"
+                  }
+                ],
+                "emptyState": {
+                  "titleKey": "No gift cards yet",
+                  "titles": {
+                    "en-US": "No gift cards yet",
+                    "de-DE": "Noch keine Geschenkkarten",
+                    "fr-FR": "Aucune carte cadeau pour l’instant",
+                    "da-DK": "Ingen gavekort endnu",
+                    "cs-CZ": "Zatím žádné dárkové karty",
+                    "ar-EG": "لا توجد بطاقات هدايا بعد",
+                    "zh-CN": "尚无礼品卡",
+                    "zh-TW": "尚無禮品卡"
+                  }
+                },
+                "viewAllHref": "/p/offers-gift-cards",
+                "subtitle": "Balance left, largest first",
+                "subtitles": {
+                  "en-US": "Balance left, largest first",
+                  "de-DE": "Restguthaben, größtes zuerst",
+                  "fr-FR": "Solde restant, du plus élevé au plus bas",
+                  "da-DK": "Restsaldo, størst først",
+                  "cs-CZ": "Zbývající zůstatek, od nejvyššího",
+                  "ar-EG": "الرصيد المتبقي، الأكبر أولًا",
+                  "zh-CN": "剩余余额，从高到低",
+                  "zh-TW": "剩餘餘額，由高到低"
+                },
+                "binding": {
+                  "kind": "table-query",
+                  "source": {
+                    "name": "gift_cards",
+                    "type": "table"
+                  },
+                  "shape": "record-list",
+                  "select": [
+                    "id",
+                    "label",
+                    "balance"
+                  ],
+                  "filters": [
+                    {
+                      "column": "kind",
+                      "op": "eq",
+                      "value": "card"
+                    },
+                    {
+                      "column": "status",
+                      "op": "eq",
+                      "value": "active"
+                    },
+                    {
+                      "column": "balance",
+                      "op": "gt",
+                      "value": 0
+                    }
+                  ],
+                  "orderBy": [
+                    {
+                      "column": "balance",
+                      "dir": "desc"
+                    },
+                    {
+                      "column": "issued_at",
+                      "dir": "asc"
+                    },
+                    {
+                      "column": "id",
+                      "dir": "asc"
+                    }
+                  ],
+                  "limit": 6
+                }
+              }
+            },
+            {
+              "i": "batches",
+              "widget": "mini-table",
+              "x": 4,
+              "y": 14,
+              "w": 4,
+              "h": 7,
+              "config": {
+                "title": "Voucher batches",
+                "titles": {
+                  "en-US": "Voucher batches",
+                  "de-DE": "Gutschein-Chargen",
+                  "fr-FR": "Lots de bons",
+                  "da-DK": "Voucher-partier",
+                  "cs-CZ": "Dávky poukazů",
+                  "ar-EG": "دفعات القسائم",
+                  "zh-CN": "代金券批次",
+                  "zh-TW": "兌換券批次"
+                },
+                "columns": [
+                  {
+                    "name": "name",
+                    "label": "Batch"
+                  },
+                  {
+                    "name": "used",
+                    "label": "Used"
+                  },
+                  {
+                    "name": "count",
+                    "label": "Made"
+                  }
+                ],
+                "secondary": [
+                  "expires_on"
+                ],
+                "emptyState": {
+                  "titleKey": "No voucher batches yet",
+                  "titles": {
+                    "en-US": "No voucher batches yet",
+                    "de-DE": "Noch keine Gutschein-Chargen",
+                    "fr-FR": "Aucun lot de bons pour l’instant",
+                    "da-DK": "Ingen voucher-partier endnu",
+                    "cs-CZ": "Zatím žádné dávky poukazů",
+                    "ar-EG": "لا توجد دفعات قسائم بعد",
+                    "zh-CN": "尚无代金券批次",
+                    "zh-TW": "尚無兌換券批次"
+                  }
+                },
+                "viewAllHref": "/p/offers-voucher-batches",
+                "subtitle": "Used of made",
+                "subtitles": {
+                  "en-US": "Used of made",
+                  "de-DE": "Eingelöst von erstellt",
+                  "fr-FR": "Utilisés sur créés",
+                  "da-DK": "Brugt af oprettet",
+                  "cs-CZ": "Použito z vytvořených",
+                  "ar-EG": "المستخدَم من المُنشأ",
+                  "zh-CN": "已使用 / 已生成",
+                  "zh-TW": "已使用／已產生"
+                },
+                "binding": {
+                  "kind": "table-query",
+                  "source": {
+                    "name": "voucher_batches",
+                    "type": "table"
+                  },
+                  "shape": "record-list",
+                  "select": [
+                    "id",
+                    "name",
+                    "used",
+                    "count",
+                    "expires_on"
+                  ],
+                  "orderBy": [
+                    {
+                      "column": "id",
+                      "dir": "desc"
+                    }
+                  ],
+                  "limit": 6
+                }
+              }
+            },
+            {
+              "i": "packs",
+              "widget": "mini-table",
+              "x": 8,
+              "y": 14,
+              "w": 4,
+              "h": 7,
+              "config": {
+                "title": "Packs in use",
+                "titles": {
+                  "en-US": "Packs in use",
+                  "de-DE": "Pakete in Gebrauch",
+                  "fr-FR": "Forfaits en cours",
+                  "da-DK": "Klippekort i brug",
+                  "cs-CZ": "Balíčky v užívání",
+                  "ar-EG": "الباقات قيد الاستخدام",
+                  "zh-CN": "使用中的次卡",
+                  "zh-TW": "使用中的次卡"
+                },
+                "columns": [
+                  {
+                    "name": "public_name",
+                    "label": "Pack"
+                  },
+                  {
+                    "name": "uses_left",
+                    "label": "Left"
+                  },
+                  {
+                    "name": "uses_total",
+                    "label": "Uses"
+                  }
+                ],
+                "emptyState": {
+                  "titleKey": "No packs in use",
+                  "titles": {
+                    "en-US": "No packs in use",
+                    "de-DE": "Keine Pakete in Gebrauch",
+                    "fr-FR": "Aucun forfait en cours",
+                    "da-DK": "Ingen klippekort i brug",
+                    "cs-CZ": "Žádné balíčky v užívání",
+                    "ar-EG": "لا توجد باقات قيد الاستخدام",
+                    "zh-CN": "没有使用中的次卡",
+                    "zh-TW": "沒有使用中的次卡"
+                  }
+                },
+                "viewAllHref": "/p/offers-vouchers?f.worth=eq:pack",
+                "subtitle": "Uses left of all",
+                "subtitles": {
+                  "en-US": "Uses left of all",
+                  "de-DE": "Verbleibende von allen Einlösungen",
+                  "fr-FR": "Utilisations restantes sur le total",
+                  "da-DK": "Klip tilbage af alle",
+                  "cs-CZ": "Zbývající použití z celkových",
+                  "ar-EG": "مرات الاستخدام المتبقية من الإجمالي",
+                  "zh-CN": "剩余次数 / 总次数",
+                  "zh-TW": "剩餘次數／總次數"
+                },
+                "binding": {
+                  "kind": "table-query",
+                  "source": {
+                    "name": "vouchers",
+                    "type": "table"
+                  },
+                  "shape": "record-list",
+                  "select": [
+                    "id",
+                    "public_name",
+                    "uses_left",
+                    "uses_total"
+                  ],
+                  "filters": [
+                    {
+                      "column": "worth",
+                      "op": "eq",
+                      "value": "pack"
+                    },
+                    {
+                      "column": "uses_left",
+                      "op": "gt",
+                      "value": 0
+                    }
+                  ],
+                  "orderBy": [
+                    {
+                      "column": "issued_at",
+                      "dir": "desc"
+                    },
+                    {
+                      "column": "id",
+                      "dir": "desc"
+                    }
+                  ],
+                  "limit": 6
+                }
+              }
+            },
+            {
+              "i": "activity",
+              "widget": "mini-table",
+              "x": 0,
+              "y": 21,
+              "w": 12,
+              "h": 7,
+              "config": {
+                "title": "Last activity",
+                "titles": {
+                  "en-US": "Last activity",
+                  "de-DE": "Letzte Aktivität",
+                  "fr-FR": "Dernière activité",
+                  "da-DK": "Seneste aktivitet",
+                  "cs-CZ": "Poslední aktivita",
+                  "ar-EG": "آخر نشاط",
+                  "zh-CN": "最近动态",
+                  "zh-TW": "最近動態"
+                },
+                "columns": [
+                  {
+                    "name": "card",
+                    "label": "Card"
+                  },
+                  {
+                    "name": "what",
+                    "label": "Kind of card"
+                  },
+                  {
+                    "name": "kind",
+                    "label": "What"
+                  },
+                  {
+                    "name": "amount",
+                    "label": "Amount"
+                  }
+                ],
+                "secondary": [
+                  "at"
+                ],
+                "emptyState": {
+                  "titleKey": "No activity yet",
+                  "titles": {
+                    "en-US": "No activity yet",
+                    "de-DE": "Noch keine Aktivität",
+                    "fr-FR": "Aucune activité pour l’instant",
+                    "da-DK": "Ingen aktivitet endnu",
+                    "cs-CZ": "Zatím žádná aktivita",
+                    "ar-EG": "لا يوجد نشاط بعد",
+                    "zh-CN": "尚无动态",
+                    "zh-TW": "尚無動態"
+                  }
+                },
+                "viewAllHref": "/p/offers-activity",
+                "subtitle": "Gift cards and credit",
+                "subtitles": {
+                  "en-US": "Gift cards and credit",
+                  "de-DE": "Geschenkkarten und Guthaben",
+                  "fr-FR": "Cartes cadeaux et avoirs",
+                  "da-DK": "Gavekort og tilgodehavender",
+                  "cs-CZ": "Dárkové karty a kredity",
+                  "ar-EG": "بطاقات الهدايا والأرصدة",
+                  "zh-CN": "礼品卡与储值",
+                  "zh-TW": "禮品卡與儲值金"
+                },
+                "binding": {
+                  "kind": "table-query",
+                  "source": {
+                    "name": "card_ledger",
+                    "type": "table"
+                  },
+                  "shape": "record-list",
+                  "select": [
+                    "id",
+                    "kind",
+                    "amount",
+                    "at"
+                  ],
+                  "lookups": [
+                    "card:card_id.label",
+                    "what:card_id.kind"
+                  ],
+                  "orderBy": [
+                    {
+                      "column": "at",
+                      "dir": "desc"
+                    },
+                    {
+                      "column": "id",
+                      "dir": "desc"
+                    }
+                  ],
+                  "limit": 6
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
       "ref": "offers-codes",
       "template": "page-crud",
       "title": {
