@@ -385,6 +385,7 @@ export const rules: Readonly<Record<string, string>> = {
   "rules.makeItems.label": "Die Spalte, die jede Zeile benennt",
   "rules.needsUnit": "Wählen Sie zuerst in den Einstellungen eine Standardeinheit",
   "rules.off": "Aus",
+  "rules.on": "Ein",
   "rules.point.create": "die Zeile angelegt wird",
   "rules.point.from": "{row} von {fromStates} zu {states} wechselt",
   "rules.point.in": "{column} zu {values} wird",

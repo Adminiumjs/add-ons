@@ -385,6 +385,7 @@ export const rules: Readonly<Record<string, string>> = {
   "rules.makeItems.label": "用來為每一列命名的欄位",
   "rules.needsUnit": "請先在「設定」中選擇預設單位",
   "rules.off": "關閉",
+  "rules.on": "開啟",
   "rules.point.create": "該列建立",
   "rules.point.from": "{row}從{fromStates}移至{states}",
   "rules.point.in": "{column}變為{values}",

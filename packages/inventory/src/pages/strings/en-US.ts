@@ -385,6 +385,7 @@ export const rules: Readonly<Record<string, string>> = {
   "rules.makeItems.label": "The column that names each row",
   "rules.needsUnit": "Choose a default unit in Settings first",
   "rules.off": "Off",
+  "rules.on": "On",
   "rules.point.create": "the row is created",
   "rules.point.from": "{row} moves to {states} from {fromStates}",
   "rules.point.in": "{column} becomes {values}",

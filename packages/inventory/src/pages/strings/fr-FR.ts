@@ -385,6 +385,7 @@ export const rules: Readonly<Record<string, string>> = {
   "rules.makeItems.label": "La colonne qui nomme chaque ligne",
   "rules.needsUnit": "Choisissez d’abord une unité par défaut dans les Paramètres",
   "rules.off": "Désactivée",
+  "rules.on": "Activée",
   "rules.point.create": "la ligne est créée",
   "rules.point.from": "{row} passe de {fromStates} à {states}",
   "rules.point.in": "{column} devient {values}",

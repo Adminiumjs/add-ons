@@ -193,7 +193,7 @@ export interface SelectProps {
 }
 export const Select = part<SelectProps>(data, 'Select');
 
-export const Switch = part<{ label?: ReactNode; checked: boolean; onCheckedChange: (checked: boolean) => void; disabled?: boolean; id?: string }>(data, 'Switch');
+export const Switch = part<{ label?: ReactNode; 'aria-label'?: string; checked: boolean; onCheckedChange: (checked: boolean) => void; disabled?: boolean; id?: string }>(data, 'Switch');
 export const RadioGroup = part<{ value: string; onValueChange: (value: string) => void; 'aria-label'?: string; children?: ReactNode }>(data, 'RadioGroup');
 export const RadioCard = part<{ value: string; title: ReactNode; description?: ReactNode; disabled?: boolean }>(data, 'RadioCard');
 

@@ -167,7 +167,8 @@ export function Rules({ t }: { t: AddOnTranslate }): ReactNode {
       title={t('rules.title', 'Stock rules')}
       testId="inventory-rules"
       actions={
-        read.canChange ? (
+        // An empty page has its own button, in the middle of it: one is enough.
+        read.canChange && drawn.length > 0 ? (
           <Button variant="primary" iconLeft={<Plus />} onClick={() => setEditing({ rule: null, form: EMPTY })}>
             {t('rules.add', 'Add a rule')}
           </Button>
@@ -188,8 +189,9 @@ export function Rules({ t }: { t: AddOnTranslate }): ReactNode {
             description={mine ? t('rules.badge.yours', 'Your table') : t('rules.badge.app', 'From {app}', { app: appName(rule.owner ?? '') })}
             actions={
               <Stack direction="row" gap="sm" align="center">
-                {rule.enabled ? null : <Tag tone="neutral">{t('rules.off', 'Off')}</Tag>}
-                <Switch label={t('rules.switchLabel', '{table} rule', { table: rule.tableLabel })} checked={rule.enabled} disabled={!read.canChange || busy !== null} onCheckedChange={(next) => void toggle(rule, next)} />
+                {/* What is read is whether it is on; which rule it switches is the switch's own name. */}
+                <Tag tone={rule.enabled ? 'pos' : 'neutral'}>{rule.enabled ? t('rules.on', 'On') : t('rules.off', 'Off')}</Tag>
+                <Switch aria-label={t('rules.switchLabel', '{table} rule', { table: rule.tableLabel })} checked={rule.enabled} disabled={!read.canChange || busy !== null} onCheckedChange={(next) => void toggle(rule, next)} />
                 {mine && read.canChange ? (
                   <Button variant="secondary" size="sm" disabled={busy !== null} onClick={() => setEditing({ rule, form: formOf(rule) })}>
                     {t('rules.edit', 'Edit')}

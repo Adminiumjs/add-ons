@@ -503,9 +503,9 @@ function RadioCard({ value, title, description, disabled }: Props) {
     </button>
   );
 }
-const Switch = ({ label, checked, onCheckedChange, disabled, id }: Props) => (
+const Switch = ({ label, checked, onCheckedChange, disabled, id, 'aria-label': named }: Props) => (
   <label>
-    <input id={id} type="checkbox" role="switch" checked={checked} disabled={disabled} onChange={(event) => onCheckedChange(event.target.checked)} />
+    <input id={id} type="checkbox" role="switch" aria-label={named} checked={checked} disabled={disabled} onChange={(event) => onCheckedChange(event.target.checked)} />
     {label}
   </label>
 );

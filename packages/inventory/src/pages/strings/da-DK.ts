@@ -385,6 +385,7 @@ export const rules: Readonly<Record<string, string>> = {
   "rules.makeItems.label": "Den kolonne, der navngiver hver række",
   "rules.needsUnit": "Vælg først en standardenhed i Indstillinger",
   "rules.off": "Fra",
+  "rules.on": "Til",
   "rules.point.create": "rækken oprettes",
   "rules.point.from": "{row} skifter til {states} fra {fromStates}",
   "rules.point.in": "{column} bliver {values}",

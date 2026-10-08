@@ -82,7 +82,11 @@ describe('Stock rules', () => {
   it('switches a rule off through its own route and says what Adminium answered', async () => {
     serve(true);
     render(<Rules t={t} />);
-    fireEvent.click(await screen.findByRole('switch', { name: 'Order items rule' }));
+    // The switch is named for a screen reader by the rule it switches; what is read beside it is whether it is on.
+    const toggle = await screen.findByRole('switch', { name: 'Order items rule' });
+    expect(screen.queryByText('Order items rule')).toBeNull();
+    expect(screen.getAllByText('On').length).toBeGreaterThan(0);
+    fireEvent.click(toggle);
     await waitFor(() => expect(world.toasts.at(-1)?.title).toBe('Order items rule switched off'));
     expect(sent.find((call) => call.verb === 'patch')).toEqual({ verb: 'patch', path: '/api/v1/connections/c1/tables/main.ordering_order_items/postings/stock/switch', body: { enabled: false } });
   });
@@ -97,7 +101,10 @@ describe('Stock rules', () => {
   it('adds a rule: nothing is sent while neither Hold nor Take is chosen, then the rule goes whole to its own address', async () => {
     serve(true, [app]);
     render(<Rules t={t} />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Add a rule' }));
+    // An empty page offers it once, not twice.
+    await screen.findByRole('button', { name: 'Add a rule' });
+    expect(screen.getAllByRole('button', { name: 'Add a rule' })).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a rule' }));
     const sheet = screen.getByRole('dialog');
     fireEvent.change(within(sheet).getByLabelText(/^Table/), { target: { value: 'main.jobs' } });
     fireEvent.click(within(sheet).getByRole('radio', { name: /A linked column/ }));

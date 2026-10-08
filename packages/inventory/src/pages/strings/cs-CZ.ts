@@ -385,6 +385,7 @@ export const rules: Readonly<Record<string, string>> = {
   "rules.makeItems.label": "Sloupec, který pojmenovává každý řádek",
   "rules.needsUnit": "Nejdřív v Nastavení vyberte výchozí jednotku",
   "rules.off": "Vypnuto",
+  "rules.on": "Zapnuto",
   "rules.point.create": "řádek vznikne",
   "rules.point.from": "{row} přejde do stavu {states} ze stavu {fromStates}",
   "rules.point.in": "sloupec {column} získá hodnotu {values}",

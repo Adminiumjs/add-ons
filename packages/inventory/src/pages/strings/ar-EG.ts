@@ -385,6 +385,7 @@ export const rules: Readonly<Record<string, string>> = {
   "rules.makeItems.label": "العمود الذي يسمّي كل صف",
   "rules.needsUnit": "اختر وحدة افتراضية في الإعدادات أولًا",
   "rules.off": "متوقفة",
+  "rules.on": "مفعّلة",
   "rules.point.create": "يُنشأ الصف",
   "rules.point.from": "ينتقل {row} من {fromStates} إلى {states}",
   "rules.point.in": "يصبح {column} {values}",
