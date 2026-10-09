@@ -71,6 +71,8 @@ export const world = {
   /** The currency of the database; null when the owner set none. */
   currency: null as string | null,
   calls: [] as Call[],
+  /** The tables of the reads the screen on show holds open: each is read again after every save. */
+  live: [] as string[],
   /** What Adminium decides on a saved row; the default decides nothing. */
   decide: ((_table: string, row: Row): Row => row) as (table: string, row: Row) => Row,
   /** Answers a row-by-row change; absent, every row is changed. */
@@ -183,8 +185,25 @@ function insert(table: string, values: Values): Row {
   return row;
 }
 
+/**
+ * A read a screen holds open. The dashboard reads every one of them again
+ * after ANY save on the page — it cannot know what a save changed — so what a
+ * screen keeps live is what each save costs. `world.live` is that list.
+ */
+function useLive(table: string, on: boolean): void {
+  React.useEffect(() => {
+    if (!on) return undefined;
+    world.live.push(table);
+    return () => {
+      const at = world.live.indexOf(table);
+      if (at !== -1) world.live.splice(at, 1);
+    };
+  }, [table, on]);
+}
+
 function useRecords(table: string, options: ListOptions = {}) {
   useWorld();
+  useLive(table, options.enabled !== false);
   if (options.enabled === false) return { rows: [], hasMore: false, loading: false, error: null, refetch: () => undefined };
   try {
     return { ...listed(table, options), loading: false, error: null, refetch: () => undefined };
@@ -195,6 +214,7 @@ function useRecords(table: string, options: ListOptions = {}) {
 
 function useRecord(table: string, key: string | number | null) {
   useWorld();
+  useLive(table, key !== null);
   const row = key === null ? undefined : find(table, key);
   return { row: row === undefined ? null : shown(table, row), loading: false, error: null, refetch: () => undefined };
 }

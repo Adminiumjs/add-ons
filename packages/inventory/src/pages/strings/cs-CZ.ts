@@ -7,6 +7,7 @@ export const shared: Readonly<Record<string, string>> = {
   "shared.failed.title": "Tohle se nepodařilo načíst",
   "shared.loading": "Načítání",
   "shared.next": "Další",
+  "shared.overLimit": "Na chvíli příliš mnoho požadavků. Pokračuje se samo za {seconds, plural, one {# sekundu} few {# sekundy} many {# sekundy} other {# sekund}}.",
   "shared.pageN": "Strana {n}",
   "shared.previous": "Předchozí",
   "shared.progress": "{done} z {all} řádků",

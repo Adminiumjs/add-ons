@@ -7,6 +7,7 @@ export const shared: Readonly<Record<string, string>> = {
   "shared.failed.title": "無法載入",
   "shared.loading": "載入中",
   "shared.next": "下一頁",
+  "shared.overLimit": "暫時請求過多。{seconds, plural, other {# 秒}}後自動繼續。",
   "shared.pageN": "第 {n} 頁",
   "shared.previous": "上一頁",
   "shared.progress": "{done}／{all} 行",

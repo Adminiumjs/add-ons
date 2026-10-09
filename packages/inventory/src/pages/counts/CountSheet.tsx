@@ -9,6 +9,14 @@
  *
  * Posting adjusts the lines that differ, one by one. A stock manager can
  * reverse a posted count, and cancel one that is still open.
+ *
+ * WHAT THIS SCREEN KEEPS LIVE. Adminium reads every live list of a page
+ * again after each save, and a count is a save per line. So only what a mark
+ * can change is a live read here: the count, the lines on show and what the
+ * books hold for them. The place, the category and the reasons do not change
+ * while somebody counts and are read once; the lines that differ are read
+ * while the question that lists them is open. Six reads after every typed
+ * line ran one person out of their minute's requests on a count of fourteen.
  */
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 
@@ -96,10 +104,46 @@ export function CountSheet({ t, countId }: { t: AddOnTranslate; countId: string 
   // What the books hold now, for the lines on this page: a balance is read where it lives, never copied onto a line.
   const levelIds = lines.rows.map((line) => text(line['level_id']));
   const levels = useRecords('levels', { filter: [{ column: 'id', op: 'in', value: levelIds }], pageSize: PAGE_SIZE, columns: ['id', 'qty'], enabled: mayOpen && levelIds.length > 0 && access.canRead('levels') });
-  const place = useRecords('places', { filter: [{ column: 'id', op: 'eq', value: text(sheet?.['place_id']) }], pageSize: 1, columns: ['id', 'name'], enabled: sheet !== null });
-  const category = useRecords('categories', { filter: [{ column: 'id', op: 'eq', value: text(sheet?.['category_id']) }], pageSize: 1, columns: ['id', 'name'], enabled: sheet !== null && text(sheet['category_id']) !== '' });
-  const reasons = useRecords('reasons', { filter: [{ column: 'for', op: 'eq', value: 'adjust' }, { column: 'active', op: 'eq', value: true }], sort: [{ column: 'label', direction: 'asc' }], pageSize: 100, columns: ['id', 'label'], enabled: sheet !== null && mayPost });
-  const differing = useRecords('count_lines', { filter: [{ column: 'count_id', op: 'eq', value: countId }, { column: 'differs', op: 'eq', value: 1 }], sort: [{ column: 'item_name', direction: 'asc' }], pageSize: 20, columns: ['id', 'item_name', 'batch_code', 'difference', 'unit'], enabled: mayOpen });
+  // Read once: neither the place, the category nor the reasons change while somebody counts.
+  const placeId = text(sheet?.['place_id']);
+  const categoryId = text(sheet?.['category_id']);
+  const [placeName, setPlaceName] = useState('');
+  const [categoryName, setCategoryName] = useState('');
+  const [reasons, setReasons] = useState<readonly DataRow[]>([]);
+  useEffect(() => {
+    if (placeId === '') return;
+    let live = true;
+    void read
+      .list('places', { filter: [{ column: 'id', op: 'eq', value: placeId }], pageSize: 1, columns: ['id', 'name'] })
+      .then(({ rows }) => (live ? setPlaceName(text(rows[0]?.['name'])) : undefined))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [read, placeId]);
+  useEffect(() => {
+    if (categoryId === '') return;
+    let live = true;
+    void read
+      .list('categories', { filter: [{ column: 'id', op: 'eq', value: categoryId }], pageSize: 1, columns: ['id', 'name'] })
+      .then(({ rows }) => (live ? setCategoryName(text(rows[0]?.['name'])) : undefined))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [read, categoryId]);
+  const hasSheet = sheet !== null;
+  useEffect(() => {
+    if (!hasSheet || !mayPost) return;
+    let live = true;
+    void read
+      .list('reasons', { filter: [{ column: 'for', op: 'eq', value: 'adjust' }, { column: 'active', op: 'eq', value: true }], sort: [{ column: 'label', direction: 'asc' }], pageSize: 100, columns: ['id', 'label'] })
+      .then(({ rows }) => (live ? setReasons(rows) : undefined))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [read, hasSheet, mayPost]);
 
   const marks = useWrite('count_marks');
   const lineWrites = useWrite('count_lines');
@@ -109,6 +153,8 @@ export function CountSheet({ t, countId }: { t: AddOnTranslate; countId: string 
   const [saving, setSaving] = useState<Readonly<Record<string, Saving>>>({});
   const [lineSaid, setLineSaid] = useState<Readonly<Record<string, string>>>({});
   const [dialog, setDialog] = useState<'post' | 'reverse' | 'cancel' | null>(null);
+  // The lines that differ are listed in the question before a post or a reverse, and read only while it is open.
+  const differing = useRecords('count_lines', { filter: [{ column: 'count_id', op: 'eq', value: countId }, { column: 'differs', op: 'eq', value: 1 }], sort: [{ column: 'item_name', direction: 'asc' }], pageSize: 20, columns: ['id', 'item_name', 'batch_code', 'difference', 'unit'], enabled: mayOpen && (dialog === 'post' || dialog === 'reverse') });
   const [reasonId, setReasonId] = useState('');
   const [busy, setBusy] = useState(false);
   const [run, setRun] = useState<{ done: number; all: number } | null>(null);
@@ -118,7 +164,7 @@ export function CountSheet({ t, countId }: { t: AddOnTranslate; countId: string 
   const scan = useRef<HTMLInputElement | null>(null);
   const focusLine = useRef<string | null>(null);
 
-  const defaultReason = text(reasons.rows.find((reason) => text(reason['label']) === 'Count difference')?.['id'] ?? reasons.rows[0]?.['id']);
+  const defaultReason = text(reasons.find((reason) => text(reason['label']) === 'Count difference')?.['id'] ?? reasons[0]?.['id']);
   useEffect(() => {
     if (reasonId === '' && defaultReason !== '') setReasonId(defaultReason);
   }, [reasonId, defaultReason]);
@@ -170,9 +216,10 @@ export function CountSheet({ t, countId }: { t: AddOnTranslate; countId: string 
     setBusy(true);
     try {
       const fresh = (await read.get('counts', countId)) ?? sheet;
-      const outcome = await runSheet({ read, move, updateEach: lineWrites.updateEach, onProgress: (done, all) => setRun({ done, all }), first: (line) => isSet(line['differs']) }, COUNT_POST, fresh, reasonId === '' ? undefined : { reason_id: reasonId });
+      const outcome = await runSheet({ read, move, updateEach: lineWrites.updateEach, onProgress: (done, all) => (setProblem(null), setRun({ done, all })), onWaiting: (ms) => setProblem(t('shared.overLimit', 'Too many requests for a moment. Going on by itself in {seconds, plural, one {# second} other {# seconds}}.', { seconds: Math.ceil(ms / 1000) })), first: (line) => isSet(line['differs']) }, COUNT_POST, fresh, reasonId === '' ? undefined : { reason_id: reasonId });
       const noted = [...outcome.rows].filter(([, moved]) => moved.postings.some((posting) => (posting.notes ?? []).some((note) => note.note === 'to-check'))).map(([, moved]) => text(moved.row['item_name']));
       setToCheck(noted);
+      setProblem(null);
       if (outcome.finished) {
         const after = await read.get('counts', countId);
         toasts.push({ variant: 'success', title: t('counts.posted', 'Count posted · {count, plural, one {# line} other {# lines}} adjusted', { count: Number(after?.['differences'] ?? 0) }) });
@@ -212,7 +259,8 @@ export function CountSheet({ t, countId }: { t: AddOnTranslate; countId: string 
     setBusy(true);
     try {
       const fresh = (await read.get('counts', countId)) ?? sheet;
-      const outcome = await runSheet({ read, move, updateEach: lineWrites.updateEach, onProgress: (done, all) => setRun({ done, all }) }, COUNT_UNDO, fresh);
+      const outcome = await runSheet({ read, move, updateEach: lineWrites.updateEach, onProgress: (done, all) => (setProblem(null), setRun({ done, all })), onWaiting: (ms) => setProblem(t('shared.overLimit', 'Too many requests for a moment. Going on by itself in {seconds, plural, one {# second} other {# seconds}}.', { seconds: Math.ceil(ms / 1000) })) }, COUNT_UNDO, fresh);
+      setProblem(null);
       if (outcome.finished) toasts.push({ variant: 'success', title: t('counts.reversedToast', 'Count reversed') });
       else {
         const first = outcome.refused[0];
@@ -352,8 +400,8 @@ export function CountSheet({ t, countId }: { t: AddOnTranslate; countId: string 
   return (
     <PageFrame
       t={t}
-      title={t('counts.sheet.titlePlace', 'Count · {place}', { place: text(place.rows[0]?.['name']) })}
-      subtitle={t('counts.sheet.subtitle', '{number} · {scope} · started {date}', { number: text(sheet['number']), scope: scopeWords(t, text(sheet['scope']), text(category.rows[0]?.['name'])), date: started })}
+      title={t('counts.sheet.titlePlace', 'Count · {place}', { place: placeName })}
+      subtitle={t('counts.sheet.subtitle', '{number} · {scope} · started {date}', { number: text(sheet['number']), scope: scopeWords(t, text(sheet['scope']), categoryName), date: started })}
       backTo={COUNTS}
       status={said}
       testId="inventory-count-sheet"
@@ -530,7 +578,7 @@ export function CountSheet({ t, countId }: { t: AddOnTranslate; countId: string 
                 ))}
                 {differences > differing.rows.length ? <span className="text-body-sm text-fg-muted">{t('counts.post.more', 'and {count} more', { count: differences - differing.rows.length })}</span> : null}
               </Stack>
-              {dialog === 'post' && differences > 0 ? <Select label={t('counts.post.reason', 'Reason')} value={reasonId} onChange={(event) => setReasonId(event.target.value)} options={reasons.rows.map((reason) => ({ value: text(reason['id']), label: text(reason['label']) }))} /> : null}
+              {dialog === 'post' && differences > 0 ? <Select label={t('counts.post.reason', 'Reason')} value={reasonId} onChange={(event) => setReasonId(event.target.value)} options={reasons.map((reason) => ({ value: text(reason['id']), label: text(reason['label']) }))} /> : null}
             </Stack>
           )}
         </DialogBody>

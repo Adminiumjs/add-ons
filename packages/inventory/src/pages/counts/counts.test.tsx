@@ -138,6 +138,55 @@ describe('a count sheet', () => {
     await waitFor(() => expect(world.navigated.at(-1)?.to).toBe('/add-ons/inventory/inventory-counts'));
   });
 
+  it('keeps live only what a mark can change: the place and the reasons are read once, the differing lines with the question', async () => {
+    sheet();
+    render(<CountSheet t={t} countId="5" />);
+    // The place is in the title, read once.
+    expect(await screen.findByRole('heading', { name: 'Count · Treatment room' })).toBeTruthy();
+    // Adminium reads every live read again after each save: these three, and no more, per typed line.
+    expect([...world.live].sort()).toEqual(['count_lines', 'counts', 'levels']);
+    for (const item of ['Alcohol swab', 'Gloves, nitrile, L', 'Lidocaine 1% ampoule']) {
+      const field = screen.getByLabelText(`Counted, ${item}`);
+      fireEvent.change(field, { target: { value: '12' } });
+      fireEvent.blur(field);
+    }
+    await waitFor(() => expect(world.calls.filter((call) => call.kind === 'create')).toHaveLength(3));
+    await waitFor(() => expect(screen.getByText('3 of 3 lines counted')).toBeTruthy());
+    expect(world.calls.filter((call) => call.kind === 'list' && call.table === 'places')).toHaveLength(1);
+    expect(world.calls.filter((call) => call.kind === 'list' && call.table === 'reasons')).toHaveLength(1);
+    expect([...world.live].sort()).toEqual(['count_lines', 'counts', 'levels']);
+    // The question lists the lines that differ, with the reason read at the start; closed, it reads nothing.
+    fireEvent.click(screen.getByRole('button', { name: 'Post count' }));
+    const dialog = screen.getByRole('dialog');
+    await waitFor(() => expect(world.live.filter((table) => table === 'count_lines')).toHaveLength(2));
+    expect(within(dialog).getByText('Alcohol swab')).toBeTruthy();
+    expect((within(dialog).getByLabelText('Reason') as HTMLSelectElement).value).toBe('9');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect([...world.live].sort()).toEqual(['count_lines', 'counts', 'levels']));
+  });
+
+  it('waits out "too many requests" while posting and goes on by itself', async () => {
+    sheet([line(1, 'Alcohol swab', { counted: '14.000', qty_when_counted: '14.000', difference: '0.000', is_counted: 1 }), line(2, 'Gloves, nitrile, L', { counted: '12.000', qty_when_counted: '13.000', difference: '-1.000', is_counted: 1, differs: 1 })]);
+    Object.assign(world.tables['counts']?.[0] ?? {}, { counted_lines: 2, uncounted: 0, differences: 1 });
+    let refusedOnce = false;
+    world.before = (kind, table, values) => {
+      if (kind !== 'move' || table !== 'counts' || (values as { to: string }).to !== 'posted' || refusedOnce) return;
+      refusedOnce = true;
+      throw new Refused('RATE_LIMITED', 'Too many requests. Try again in 1 second.', { bucket: 'api', limit: 300, resetAt: new Date().toISOString() });
+    };
+    render(<CountSheet t={t} countId="5" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Post count' }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Post count' }));
+    // Said while it waits; nobody presses "Continue posting".
+    expect(await screen.findByText('Too many requests for a moment. Going on by itself in 1 second.')).toBeTruthy();
+    await waitFor(() => expect(world.tables['counts']?.[0]?.['status']).toBe('posted'), { timeout: 4000 });
+    expect(refusedOnce).toBe(true);
+    // The lines went in once: the second pass found none left to send.
+    expect(world.calls.filter((call) => call.kind === 'updateEach').map((call) => (call.values as { ids: string[] }).ids)).toEqual([['2', '1'], []].filter((ids) => ids.length > 0));
+    expect(world.toasts.at(-1)?.title).toBe('Count posted · 1 line adjusted');
+    expect(screen.queryByText(/Too many requests/)).toBeNull();
+  });
+
   it('asks for a reason only where something differs, and the keyboard starts on Post', async () => {
     sheet([line(1, 'Alcohol swab', { counted: '14.000', qty_when_counted: '14.000', difference: '0.000', is_counted: 1 })]);
     Object.assign(world.tables['counts']?.[0] ?? {}, { counted_lines: 1, uncounted: 0, differences: 0 });
@@ -170,7 +219,7 @@ describe('a count sheet', () => {
     render(<CountSheet t={t} countId="5" />);
     await screen.findByRole('group', { name: 'Alcohol swab' });
     expect(screen.queryByText('Value')).toBeNull();
-    for (const call of world.calls) expect(JSON.stringify(call.options ?? {})).not.toContain('"value"');
+    for (const call of world.calls) expect((call.options as { columns?: readonly string[] } | undefined)?.columns ?? []).not.toContain('value');
     expect(screen.getByText('0 differences')).toBeTruthy();
   });
 });

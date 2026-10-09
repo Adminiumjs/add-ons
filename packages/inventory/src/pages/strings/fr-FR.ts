@@ -7,6 +7,7 @@ export const shared: Readonly<Record<string, string>> = {
   "shared.failed.title": "Le chargement a échoué",
   "shared.loading": "Chargement",
   "shared.next": "Suivant",
+  "shared.overLimit": "Trop de requêtes pour le moment. La suite reprend d’elle-même dans {seconds, plural, one {# seconde} other {# secondes}}.",
   "shared.pageN": "Page {n}",
   "shared.previous": "Précédent",
   "shared.progress": "{done} lignes sur {all}",
