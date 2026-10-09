@@ -3,7 +3,7 @@
   "manifestVersion": 1,
   "key": "shipping-dhl",
   "name": "DHL Shipping",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "publisher": {
     "id": "adminium",
     "name": "Adminium",

@@ -1,5 +1,11 @@
 # @adminium/add-on-inventory
 
+## 1.0.11
+
+### Patch Changes
+
+- ee8a401: Inventory: a count no longer runs its counter out of requests. Typing a line re-read six lists; it now re-reads the three a count can change, and a post that meets "too many requests" waits and goes on by itself.
+
 ## 1.0.10
 
 ## 1.0.9
