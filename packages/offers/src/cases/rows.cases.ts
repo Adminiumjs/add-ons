@@ -154,6 +154,37 @@ export const ROWS_CASES: readonly RowsCase[] = [
     expect: { rows: [insert('card_ledger', { card_id: 5, kind: 'refund', taken: '-9.80', value: '9.80', balance_after: '50.00', against_id: 60, source_table: REFUNDS, source_row: '3' })] },
   },
   {
+    name: 'P6 a refund taken back takes its money off the card again, against the payment it was for',
+    input: call({
+      action: 'refund',
+      phase: 'reverse',
+      source: { table: REFUNDS, row: '3' },
+      lines: [line('', { against_table: PAYMENTS, against_row: 'p9', amount: '9.80' })],
+      reads: { spend: [{ id: 60, card_id: 5, kind: 'spend', taken: '30.00', value: '30.00', source_table: PAYMENTS, source_row: 'p9' }], card: [card(5, 'R2MC', '29.80')], given: [{ id: 61, card_id: 5, kind: 'refund', taken: '-9.80', value: '9.80', against_id: 60, source_table: REFUNDS, source_row: '3' }] },
+      written: { card_ledger: [{ id: 61, card_id: 5, kind: 'refund', taken: '-9.80', value: '9.80', balance_after: '29.80', against_id: 60, source_table: REFUNDS, source_row: '3' }] },
+    }),
+    expect: { rows: [insert('card_ledger', { card_id: 5, kind: 'adjust', taken: '9.80', value: '9.80', balance_after: '20.00', against_id: 60, source_table: REFUNDS, source_row: '3' })] },
+  },
+  {
+    name: 'P6 …and takes nothing once the payment itself was undone: the card already has all of it back',
+    input: call({
+      action: 'refund',
+      phase: 'reverse',
+      source: { table: REFUNDS, row: '3' },
+      lines: [line('', { against_table: PAYMENTS, against_row: 'p9', amount: '9.80' })],
+      reads: {
+        spend: [{ id: 60, card_id: 5, kind: 'spend', taken: '30.00', value: '30.00', source_table: PAYMENTS, source_row: 'p9' }],
+        card: [card(5, 'R2MC', '50.00')],
+        given: [
+          { id: 61, card_id: 5, kind: 'refund', taken: '-9.80', value: '9.80', against_id: 60, source_table: REFUNDS, source_row: '3' },
+          { id: 62, card_id: 5, kind: 'refund', taken: '-20.20', value: '20.20', against_id: 60, source_table: PAYMENTS, source_row: 'p9' },
+        ],
+      },
+      written: { card_ledger: [{ id: 61, card_id: 5, kind: 'refund', taken: '-9.80', value: '9.80', balance_after: '29.80', against_id: 60, source_table: REFUNDS, source_row: '3' }] },
+    }),
+    expect: { rows: [] },
+  },
+  {
     name: 'P6 …and a cent more than it took is refused, with nothing left to give',
     input: call({
       action: 'refund',

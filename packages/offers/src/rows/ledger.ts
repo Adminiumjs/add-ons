@@ -133,6 +133,10 @@ export class Balances {
  * again. And the row that takes a refund back is written against the payment
  * the refund was for, so that payment's rows always add up to what it still
  * holds of the card's money.
+ *
+ * A refund taken back after its payment was undone takes nothing: in either
+ * order — the refund first, or the payment first — the card ends with all the
+ * payment took.
  */
 export function reverseCardRows(input: PostingInput, answer: Answer, kind: string): void {
   const rows = written(input, 'card_ledger');
@@ -140,8 +144,14 @@ export function reverseCardRows(input: PostingInput, answer: Answer, kind: strin
   const scale = scaleOf(...rows.flatMap((row) => [row['taken'], row['value']]), ...cards.map((card) => card['balance']));
   const balances = new Balances(cards, scale);
   const given = read(input, 'given');
+  /** The payments a refund of this round went back from (the refund action reads them; a payment's own reverse reads none). */
+  const spends = read(input, 'spend');
   for (const row of rows) {
     const wrote = toUnits(row['taken'], scale) ?? 0n;
+    // Money given back from a payment that has been undone since: undoing the payment gave the card the rest of
+    // what it took, so all of it is back on the card already. Taking this part off again would leave the card short.
+    const from = wrote < 0n ? spends.find((spend) => same(spend['id'], row['against_id'])) : undefined;
+    if (from !== undefined && given.some((one) => same(one['against_id'], from['id']) && same(one['source_table'], from['source_table']) && same(one['source_row'], from['source_row']) && (toUnits(one['taken'], scale) ?? 0n) < 0n)) continue;
     // What the card has had back against this row since, or has had taken again.
     const since = given.filter((one) => same(one['against_id'], row['id'])).reduce((total, one) => total + (toUnits(one['taken'], scale) ?? 0n), 0n);
     const still = wrote + since;
