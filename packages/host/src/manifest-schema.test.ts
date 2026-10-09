@@ -437,6 +437,19 @@ const HOST_ROOTS: readonly { name: string; root: string }[] = [
       process.env.ADMINIUM_ONLINE_ORDERING ??
       fileURLToPath(new URL('../../../../online-ordering', import.meta.url)),
   },
+  /*
+   * Hotel takes Inventory (the linen a check-out sends to the laundry) and
+   * Offers & gift cards (a code on a stay, a gift card at the desk). Both
+   * attach to every app, so no range names it — it is here so that an add-on
+   * whose shapes or roles stop fitting a real app that leans on them is told
+   * by that app's own manifest.
+   */
+  {
+    name: 'hotel-reservations',
+    root:
+      process.env.ADMINIUM_HOTEL_RESERVATIONS ??
+      fileURLToPath(new URL('../../../../hotel-reservations', import.meta.url)),
+  },
 ];
 
 /** The checked-out directory a host name stands for. */

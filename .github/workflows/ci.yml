@@ -175,6 +175,14 @@ jobs:
           repository: Adminiumjs/online-ordering
           path: .hosts/online-ordering
 
+      # Hotel leans on Inventory and on Offers & gift cards: registered in
+      # `HOST_ROOTS` and here in one change, as the apps above are.
+      - name: Check out the hotel-reservations app
+        uses: actions/checkout@v4
+        with:
+          repository: Adminiumjs/hotel-reservations
+          path: .hosts/hotel-reservations
+
       # `verify` is the repo's own script — typecheck, then test, then build —
       # so CI cannot drift from what a maintainer runs by hand.
       - name: Typecheck, test, build
@@ -189,6 +197,7 @@ jobs:
           ADMINIUM_CLIENT_PORTAL: ${{ github.workspace }}/.hosts/client-portal
           ADMINIUM_POINT_OF_SALE: ${{ github.workspace }}/.hosts/point-of-sale
           ADMINIUM_ONLINE_ORDERING: ${{ github.workspace }}/.hosts/online-ordering
+          ADMINIUM_HOTEL_RESERVATIONS: ${{ github.workspace }}/.hosts/hotel-reservations
           # Only the two add-on HOSTS are required: `host-mirror.test.ts` is the
           # guard this covers, and it compares vendored files that only those two
           # carry. The two target apps above are read by a different suite, which
