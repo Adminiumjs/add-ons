@@ -1,6 +1,6 @@
 {
   "name": "@adminium/add-on-offers",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "type": "module",
   "description": "Offers & gift cards — discounts, codes, vouchers, packs and gift cards, worked out and recorded in the same save as the order they belong to.",
   "license": "AGPL-3.0-only",
