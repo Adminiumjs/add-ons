@@ -425,5 +425,9 @@
   "email|{{row.price.money}} each pack": "{{row.price.money}} للعبوة الواحدة",
   "email|Total": "الإجمالي",
   "action|Use stock": "استخدام المخزون",
-  "text|Uses nothing from stock. Add the items one of these uses.": "لا يستخدم شيئًا من المخزون. أضف الأصناف التي يستخدمها الواحد من هذه."
+  "text|Uses nothing from stock. Add the items one of these uses.": "لا يستخدم شيئًا من المخزون. أضف الأصناف التي يستخدمها الواحد من هذه.",
+  "text|What is running low?": "ما الذي يوشك على النفاد؟",
+  "text|Which batches expire in the next 30 days?": "ما التشغيلات التي تنتهي صلاحيتها خلال 30 يومًا؟",
+  "text|What is our stock worth, by place?": "كم تساوي قيمة مخزوننا حسب المكان؟",
+  "text|Which purchase orders are late?": "ما أوامر الشراء المتأخرة؟"
 }

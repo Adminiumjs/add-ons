@@ -1,6 +1,6 @@
 {
   "name": "@adminium/add-on-invoices",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "type": "module",
   "description": "Invoices & Receipts — invoices, receipts and credit notes rendered from your own records. No network, no account, no service.",
   "license": "AGPL-3.0-only",
@@ -27,7 +27,7 @@
     "react": "^19.0.0"
   },
   "devDependencies": {
-    "@adminium/add-on-contracts": "npm:@adminiumjs/add-on-contracts@0.3.19",
+    "@adminium/add-on-contracts": "npm:@adminiumjs/add-on-contracts@0.3.22",
     "@adminium/add-on-host": "*",
     "@adminium/i18n": "npm:@adminiumjs/i18n@0.2.9",
     "@adminium/tokens": "npm:@adminiumjs/tokens@0.2.9",

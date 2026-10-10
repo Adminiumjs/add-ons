@@ -425,5 +425,9 @@
   "email|{{row.price.money}} each pack": "每包装 {{row.price.money}}",
   "email|Total": "合计",
   "action|Use stock": "使用库存",
-  "text|Uses nothing from stock. Add the items one of these uses.": "未使用任何库存。请添加每一项所使用的物品。"
+  "text|Uses nothing from stock. Add the items one of these uses.": "未使用任何库存。请添加每一项所使用的物品。",
+  "text|What is running low?": "哪些库存快不够了？",
+  "text|Which batches expire in the next 30 days?": "哪些批次将在未来 30 天内过期？",
+  "text|What is our stock worth, by place?": "按存放地点统计，我们的库存值多少？",
+  "text|Which purchase orders are late?": "哪些采购单已逾期？"
 }

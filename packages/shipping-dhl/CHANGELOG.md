@@ -1,5 +1,7 @@
 # @adminium/add-on-shipping-dhl
 
+## 1.0.12
+
 ## 1.0.11
 
 ## 1.0.10

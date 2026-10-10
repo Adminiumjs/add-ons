@@ -1,6 +1,6 @@
 {
   "name": "@adminium/add-on-inventory",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "type": "module",
   "description": "Inventory — stock by place and by batch, counted, received and moved, and taken by the rows of your own tables in the same save.",
   "license": "AGPL-3.0-only",
@@ -28,8 +28,8 @@
     "react": "^19.0.0"
   },
   "devDependencies": {
-    "@adminium/add-on-contracts": "npm:@adminiumjs/add-on-contracts@0.3.19",
+    "@adminium/add-on-contracts": "npm:@adminiumjs/add-on-contracts@0.3.22",
     "@adminium/add-on-host": "*",
-    "@adminiumjs/manifest": "0.3.19"
+    "@adminiumjs/manifest": "0.3.22"
   }
 }

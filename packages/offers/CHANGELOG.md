@@ -1,5 +1,11 @@
 # @adminium/add-on-offers
 
+## 1.0.12
+
+### Patch Changes
+
+- 192042b: Offers gives Automations a step, "Issue a voucher": a rule says who it is for and what it is worth, and the voucher's own email carries the code. Offers and Inventory tell the assistant what their tables are and offer questions on their pages. Both need Adminium 0.3.22.
+
 ## 1.0.11
 
 ## 1.0.10

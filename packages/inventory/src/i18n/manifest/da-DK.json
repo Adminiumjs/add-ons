@@ -425,5 +425,9 @@
   "email|{{row.price.money}} each pack": "{{row.price.money}} pr. pakke",
   "email|Total": "I alt",
   "action|Use stock": "Brug lager",
-  "text|Uses nothing from stock. Add the items one of these uses.": "Bruger intet fra lageret. Tilføj de varer, som én af disse bruger."
+  "text|Uses nothing from stock. Add the items one of these uses.": "Bruger intet fra lageret. Tilføj de varer, som én af disse bruger.",
+  "text|What is running low?": "Hvad er ved at løbe tør?",
+  "text|Which batches expire in the next 30 days?": "Hvilke partier udløber inden for de næste 30 dage?",
+  "text|What is our stock worth, by place?": "Hvad er vores lager værd, fordelt på steder?",
+  "text|Which purchase orders are late?": "Hvilke indkøbsordrer er forsinkede?"
 }

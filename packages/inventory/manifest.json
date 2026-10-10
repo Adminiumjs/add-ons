@@ -3,7 +3,7 @@
   "manifestVersion": 1,
   "key": "inventory",
   "name": "Inventory",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "publisher": {
     "id": "adminium",
     "name": "Adminium",
@@ -18,7 +18,7 @@
     "data"
   ],
   "compatibility": {
-    "minAdminiumVersion": "0.3.18",
+    "minAdminiumVersion": "0.3.22",
     "requires": []
   },
   "capabilities": [],
@@ -17555,6 +17555,108 @@
           }
         ]
       }
-    ]
+    ],
+    "assistant": {
+      "tables": {
+        "items": {
+          "is": "A thing kept in stock, with its unit and average cost. How much there is of it is in stock_points, not here."
+        },
+        "places": {
+          "is": "A place stock is kept in: a shop, a store room, a van."
+        },
+        "stock_points": {
+          "is": "One item in one place: how much is there. The table to read for \"how much do we have\".",
+          "columns": {
+            "on_hand": "What is physically there.",
+            "reserved": "Held for open orders, still on the shelf.",
+            "available": "on_hand minus reserved: what can still be promised.",
+            "on_order": "Ordered from a supplier, not yet received.",
+            "reorder_level": "At or below this, the item is running low."
+          }
+        },
+        "levels": {
+          "is": "The same quantity split by batch: one row a batch of an item in a place, with its expiry date."
+        },
+        "batches": {
+          "is": "A batch of an item, with the day it was received and, where it has one, its expiry date."
+        },
+        "movements": {
+          "is": "Every change of a quantity, one row each, with what caused it: a receipt, a use, a transfer, a count."
+        },
+        "purchase_orders": {
+          "is": "An order placed with a supplier, with its status and the day it is expected."
+        },
+        "receipts": {
+          "is": "A delivery taken into stock, with or without a purchase order."
+        },
+        "transfers": {
+          "is": "Stock moved from one place to another."
+        },
+        "counts": {
+          "is": "A stock count: what was counted in a place, and the differences it found."
+        },
+        "reorder_requests": {
+          "is": "An item that fell to its reorder level and is waiting to be ordered."
+        },
+        "suppliers": {
+          "is": "Who stock is bought from, with how many days they take to deliver."
+        }
+      },
+      "questions": [
+        {
+          "key": "running-low",
+          "text": {
+            "en-US": "What is running low?",
+            "de-DE": "Was geht zur Neige?",
+            "fr-FR": "Qu’est-ce qui vient à manquer ?",
+            "da-DK": "Hvad er ved at løbe tør?",
+            "cs-CZ": "Co dochází?",
+            "ar-EG": "ما الذي يوشك على النفاد؟",
+            "zh-CN": "哪些库存快不够了？",
+            "zh-TW": "哪些庫存快不夠了？"
+          }
+        },
+        {
+          "key": "expiring",
+          "text": {
+            "en-US": "Which batches expire in the next 30 days?",
+            "de-DE": "Welche Chargen laufen in den nächsten 30 Tagen ab?",
+            "fr-FR": "Quels lots expirent dans les 30 prochains jours ?",
+            "da-DK": "Hvilke partier udløber inden for de næste 30 dage?",
+            "cs-CZ": "Které šarže vyprší během příštích 30 dní?",
+            "ar-EG": "ما التشغيلات التي تنتهي صلاحيتها خلال 30 يومًا؟",
+            "zh-CN": "哪些批次将在未来 30 天内过期？",
+            "zh-TW": "哪些批次將在未來 30 天內到期？"
+          }
+        },
+        {
+          "key": "stock-value",
+          "text": {
+            "en-US": "What is our stock worth, by place?",
+            "de-DE": "Wie viel ist unser Bestand je Standort wert?",
+            "fr-FR": "Que vaut notre stock, par lieu ?",
+            "da-DK": "Hvad er vores lager værd, fordelt på steder?",
+            "cs-CZ": "Jakou hodnotu mají naše zásoby podle místa?",
+            "ar-EG": "كم تساوي قيمة مخزوننا حسب المكان؟",
+            "zh-CN": "按存放地点统计，我们的库存值多少？",
+            "zh-TW": "依存放地點統計，我們的庫存值多少？"
+          }
+        },
+        {
+          "key": "late-orders",
+          "page": "inventory-purchase-orders",
+          "text": {
+            "en-US": "Which purchase orders are late?",
+            "de-DE": "Welche Bestellungen sind überfällig?",
+            "fr-FR": "Quelles commandes fournisseurs sont en retard ?",
+            "da-DK": "Hvilke indkøbsordrer er forsinkede?",
+            "cs-CZ": "Které objednávky u dodavatelů mají zpoždění?",
+            "ar-EG": "ما أوامر الشراء المتأخرة؟",
+            "zh-CN": "哪些采购单已逾期？",
+            "zh-TW": "哪些採購單已逾期？"
+          }
+        }
+      ]
+    }
   }
 }
