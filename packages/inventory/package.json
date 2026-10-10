@@ -1,6 +1,6 @@
 {
   "name": "@adminium/add-on-inventory",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "type": "module",
   "description": "Inventory — stock by place and by batch, counted, received and moved, and taken by the rows of your own tables in the same save.",
   "license": "AGPL-3.0-only",
