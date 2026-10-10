@@ -129,7 +129,7 @@ describe('the manifest', () => {
   });
 
   it('asks for the server that runs a price rule, and for no app', () => {
-    expect(manifest.compatibility).toEqual({ minAdminiumVersion: '0.3.19', requires: [] });
+    expect(manifest.compatibility).toEqual({ minAdminiumVersion: '0.3.22', requires: [] });
     expect(manifest.addOns.suggests.map((one) => one.key)).toEqual(['invoices']);
   });
 });

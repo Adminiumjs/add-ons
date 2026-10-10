@@ -18,7 +18,7 @@
     "data"
   ],
   "compatibility": {
-    "minAdminiumVersion": "0.3.19",
+    "minAdminiumVersion": "0.3.22",
     "requires": []
   },
   "capabilities": [],
@@ -9143,6 +9143,254 @@
           }
         }
       }
-    ]
+    ],
+    "steps": [
+      {
+        "key": "issue-voucher",
+        "name": {
+          "ar-EG": "إصدار قسيمة",
+          "cs-CZ": "Vydat poukaz",
+          "da-DK": "Udsted en voucher",
+          "de-DE": "Gutschein ausstellen",
+          "en-US": "Issue a voucher",
+          "fr-FR": "Émettre un bon",
+          "zh-CN": "发放代金券",
+          "zh-TW": "發放兌換券"
+        },
+        "does": {
+          "ar-EG": "ينشئ قسيمة لشخص واحد ويرسل له رمزها بالبريد",
+          "cs-CZ": "Vytvoří poukaz jedné osobě a pošle jí kód e-mailem",
+          "da-DK": "Laver en voucher til én person og sender koden på e-mail",
+          "de-DE": "Erstellt einen Gutschein für eine Person und sendet ihr den Code per E-Mail",
+          "en-US": "Makes a voucher for one person and emails them its code",
+          "fr-FR": "Crée un bon pour une personne et lui envoie le code par e-mail",
+          "zh-CN": "为一个人生成代金券，并把代码通过邮件发给对方",
+          "zh-TW": "為一個人產生兌換券，並以郵件寄出代碼"
+        },
+        "inputs": [
+          {
+            "key": "to",
+            "kind": "email",
+            "required": true,
+            "label": {
+              "ar-EG": "إرسال إلى",
+              "cs-CZ": "Poslat komu",
+              "da-DK": "Send til",
+              "de-DE": "Senden an",
+              "en-US": "Send to",
+              "fr-FR": "Envoyer à",
+              "zh-CN": "发送给",
+              "zh-TW": "寄送給"
+            }
+          },
+          {
+            "key": "name",
+            "kind": "text",
+            "label": {
+              "ar-EG": "الاسم على القسيمة",
+              "cs-CZ": "Jméno na poukazu",
+              "da-DK": "Navn på voucheren",
+              "de-DE": "Name auf dem Gutschein",
+              "en-US": "Name on the voucher",
+              "fr-FR": "Nom sur le bon",
+              "zh-CN": "代金券上的姓名",
+              "zh-TW": "兌換券上的姓名"
+            }
+          },
+          {
+            "key": "title",
+            "kind": "text",
+            "required": true,
+            "label": {
+              "ar-EG": "نص القسيمة",
+              "cs-CZ": "Co je na poukazu napsáno",
+              "da-DK": "Hvad der står på voucheren",
+              "de-DE": "Text auf dem Gutschein",
+              "en-US": "What the voucher says",
+              "fr-FR": "Texte du bon",
+              "zh-CN": "代金券上的说明",
+              "zh-TW": "兌換券上的說明"
+            }
+          },
+          {
+            "key": "worth",
+            "kind": "choice",
+            "required": true,
+            "label": {
+              "ar-EG": "القيمة بصيغة",
+              "cs-CZ": "Hodnota jako",
+              "da-DK": "Værdi som",
+              "de-DE": "Wert als",
+              "en-US": "Worth",
+              "fr-FR": "Valeur en",
+              "zh-CN": "价值类型",
+              "zh-TW": "價值類型"
+            },
+            "options": [
+              {
+                "value": "percent",
+                "label": {
+                  "ar-EG": "نسبة خصم",
+                  "cs-CZ": "Procento slevy",
+                  "da-DK": "Procent rabat",
+                  "de-DE": "Prozent Rabatt",
+                  "en-US": "A percent off",
+                  "fr-FR": "Un pourcentage",
+                  "zh-CN": "折扣百分比",
+                  "zh-TW": "折扣百分比"
+                }
+              },
+              {
+                "value": "amount",
+                "label": {
+                  "ar-EG": "مبلغ خصم",
+                  "cs-CZ": "Částka slevy",
+                  "da-DK": "Et beløb i rabat",
+                  "de-DE": "Ein Betrag Rabatt",
+                  "en-US": "An amount off",
+                  "fr-FR": "Un montant",
+                  "zh-CN": "减免金额",
+                  "zh-TW": "折抵金額"
+                }
+              }
+            ]
+          },
+          {
+            "key": "value",
+            "kind": "number",
+            "required": true,
+            "label": {
+              "ar-EG": "المقدار",
+              "cs-CZ": "Kolik",
+              "da-DK": "Hvor meget",
+              "de-DE": "Wie viel",
+              "en-US": "How much",
+              "fr-FR": "Combien",
+              "zh-CN": "数值",
+              "zh-TW": "數值"
+            }
+          }
+        ],
+        "writes": {
+          "table": "vouchers",
+          "values": {
+            "holder_email": {
+              "input": "to"
+            },
+            "holder_name": {
+              "input": "name"
+            },
+            "public_name": {
+              "input": "title"
+            },
+            "worth": {
+              "input": "worth"
+            },
+            "value": {
+              "input": "value"
+            },
+            "note": {
+              "token": "ruleName"
+            }
+          }
+        }
+      }
+    ],
+    "assistant": {
+      "tables": {
+        "offers": {
+          "is": "A discount: what is taken off (a percent, an amount, a fixed price, a bonus item, a price by quantity) and the days, minimums, groups and limits it is held to. Applied by itself or by a code."
+        },
+        "codes": {
+          "is": "A discount code many customers may type to get an offer, with its own limit of uses and last day. Not a voucher: it belongs to nobody."
+        },
+        "vouchers": {
+          "is": "A voucher: a code issued to ONE person, used once or a few times (a pack), worth an amount, a percent, a thing or a pack of uses. Not a gift card: it holds no money balance.",
+          "columns": {
+            "worth": "What it is worth: amount, percent, thing or pack.",
+            "value": "The amount or the percent, when worth is one of those.",
+            "uses_left": "How many uses remain; 0 means used up.",
+            "holder_email": "Who it was issued to. Personal.",
+            "status": "issued (usable), used, expired or voided."
+          }
+        },
+        "voucher_batches": {
+          "is": "Vouchers made together in one go (for a campaign or a print run), all alike."
+        },
+        "gift_cards": {
+          "is": "A gift card or store credit: a code that holds a money balance, spent at checkout until nothing is left. Not a voucher."
+        },
+        "card_ledger": {
+          "is": "Every row that put value on a gift card or took it off: a load, a payment, a refund back to the card."
+        },
+        "redemptions": {
+          "is": "One use of a voucher on an order."
+        },
+        "applied": {
+          "is": "What was taken off an order line, and by which offer, code or voucher, as it read at that moment."
+        },
+        "groups": {
+          "is": "A group of customers an offer can be limited to."
+        },
+        "messages": {
+          "is": "The emails this add-on queues and sends: a gift card, store credit or a voucher to the person it is for."
+        }
+      },
+      "questions": [
+        {
+          "key": "vouchers-unused",
+          "text": {
+            "ar-EG": "ما القسائم التي صدرت ولم تُستخدم؟",
+            "cs-CZ": "Které poukazy byly vydány a nikdy použity?",
+            "da-DK": "Hvilke vouchere er udstedt, men aldrig brugt?",
+            "de-DE": "Welche Gutscheine wurden ausgestellt und nie eingelöst?",
+            "en-US": "Which vouchers were issued and never used?",
+            "fr-FR": "Quels bons ont été émis et jamais utilisés ?",
+            "zh-CN": "哪些代金券已发出但从未使用？",
+            "zh-TW": "哪些兌換券已發出但從未使用？"
+          }
+        },
+        {
+          "key": "cards-balance",
+          "text": {
+            "ar-EG": "كم المبلغ المتبقي في بطاقات الهدايا؟",
+            "cs-CZ": "Kolik ještě zbývá na dárkových kartách?",
+            "da-DK": "Hvor meget står der tilbage på gavekortene?",
+            "de-DE": "Wie viel Guthaben ist noch auf den Geschenkkarten?",
+            "en-US": "How much is still left on gift cards?",
+            "fr-FR": "Combien reste-t-il sur les cartes cadeaux ?",
+            "zh-CN": "礼品卡上还剩多少余额？",
+            "zh-TW": "禮品卡上還剩多少餘額？"
+          }
+        },
+        {
+          "key": "offers-most-used",
+          "text": {
+            "ar-EG": "ما العرض الأكثر استخدامًا هذا الشهر؟",
+            "cs-CZ": "Která nabídka byla tento měsíc použita nejčastěji?",
+            "da-DK": "Hvilket tilbud blev brugt mest i denne måned?",
+            "de-DE": "Welches Angebot wurde diesen Monat am häufigsten genutzt?",
+            "en-US": "Which offer was used most this month?",
+            "fr-FR": "Quelle offre a été la plus utilisée ce mois-ci ?",
+            "zh-CN": "本月哪个优惠用得最多？",
+            "zh-TW": "本月哪個優惠用得最多？"
+          }
+        },
+        {
+          "key": "codes-ending",
+          "page": "offers-codes",
+          "text": {
+            "ar-EG": "ما الرموز التي ينتهي آخر يوم لها هذا الشهر؟",
+            "cs-CZ": "Kterým kódům tento měsíc končí platnost?",
+            "da-DK": "Hvilke koder har sidste dag i denne måned?",
+            "de-DE": "Welche Codes laufen diesen Monat ab?",
+            "en-US": "Which codes reach their last day this month?",
+            "fr-FR": "Quels codes arrivent à leur dernier jour ce mois-ci ?",
+            "zh-CN": "哪些优惠码本月到期？",
+            "zh-TW": "哪些優惠碼本月到期？"
+          }
+        }
+      ]
+    }
   }
 }

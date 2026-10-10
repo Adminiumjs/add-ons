@@ -425,5 +425,9 @@
   "email|{{row.price.money}} each pack": "{{row.price.money}} je Packung",
   "email|Total": "Summe",
   "action|Use stock": "Bestand verwenden",
-  "text|Uses nothing from stock. Add the items one of these uses.": "Verwendet nichts aus dem Bestand. Fügen Sie die Artikel hinzu, die hiervon einer verwendet."
+  "text|Uses nothing from stock. Add the items one of these uses.": "Verwendet nichts aus dem Bestand. Fügen Sie die Artikel hinzu, die hiervon einer verwendet.",
+  "text|What is running low?": "Was geht zur Neige?",
+  "text|Which batches expire in the next 30 days?": "Welche Chargen laufen in den nächsten 30 Tagen ab?",
+  "text|What is our stock worth, by place?": "Wie viel ist unser Bestand je Standort wert?",
+  "text|Which purchase orders are late?": "Welche Bestellungen sind überfällig?"
 }

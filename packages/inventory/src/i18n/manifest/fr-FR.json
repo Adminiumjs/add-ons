@@ -425,5 +425,9 @@
   "email|{{row.price.money}} each pack": "{{row.price.money}} le paquet",
   "email|Total": "Total",
   "action|Use stock": "Utiliser du stock",
-  "text|Uses nothing from stock. Add the items one of these uses.": "N’utilise rien du stock. Ajoutez les articles qu’un de ceux-ci utilise."
+  "text|Uses nothing from stock. Add the items one of these uses.": "N’utilise rien du stock. Ajoutez les articles qu’un de ceux-ci utilise.",
+  "text|What is running low?": "Qu’est-ce qui vient à manquer ?",
+  "text|Which batches expire in the next 30 days?": "Quels lots expirent dans les 30 prochains jours ?",
+  "text|What is our stock worth, by place?": "Que vaut notre stock, par lieu ?",
+  "text|Which purchase orders are late?": "Quelles commandes fournisseurs sont en retard ?"
 }

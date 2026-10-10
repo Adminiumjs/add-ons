@@ -425,5 +425,9 @@
   "email|{{row.price.money}} each pack": "{{row.price.money}} za balení",
   "email|Total": "Celkem",
   "action|Use stock": "Použít zásoby",
-  "text|Uses nothing from stock. Add the items one of these uses.": "Nepoužívá nic ze zásob. Přidejte položky, které jeden takový záznam používá."
+  "text|Uses nothing from stock. Add the items one of these uses.": "Nepoužívá nic ze zásob. Přidejte položky, které jeden takový záznam používá.",
+  "text|What is running low?": "Co dochází?",
+  "text|Which batches expire in the next 30 days?": "Které šarže vyprší během příštích 30 dní?",
+  "text|What is our stock worth, by place?": "Jakou hodnotu mají naše zásoby podle místa?",
+  "text|Which purchase orders are late?": "Které objednávky u dodavatelů mají zpoždění?"
 }
