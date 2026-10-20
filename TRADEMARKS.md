@@ -603,3 +603,140 @@ of this section, and it is empty. The package's `sources.test.ts` checks that
 list, that the manifest declares no connection, and that no source file names
 an address; the release sweep reads every built byte for the words that may
 not ship. The day a paragraph above stops being true, one of those turns red.
+
+---
+
+# Payments for Stripe — Stripe, Link, and the ways to pay Stripe offers
+
+**Stripe** and **Link** are trademarks of Stripe, Inc. They are referenced
+**nominatively only**: to say which payment service this add-on connects to, and
+to name the Stripe wallet a shop may have switched on. Link is always written
+"Link (Stripe)" where staff see it, so that it is never read as the pay link
+Adminium makes, and it is not named on the pay page at all.
+
+## Not affiliated
+
+Adminium, this add-on and every app that uses it are not affiliated with,
+sponsored by, endorsed by, certified by or in partnership with Stripe, Inc. No
+approval of any kind has been sought or given. The line *"Adminium is not
+affiliated with this company."* appears on every one of the add-on's own
+surfaces that names the company, in all eight locales.
+
+Adminium takes no part in a payment. Each shop connects its own Stripe account
+with its own key; the money goes from the customer to that account, and this
+repository holds no account, no key and no money of anyone's.
+
+## How the name is written
+
+The Stripe marks usage terms ask that the word mark be used unaltered: never
+abbreviated, never in the plural or the possessive, never translated, never
+inside another name, and never more prominent than the name of the thing it is
+used with. The add-on's screens therefore say "the Stripe page" and "the Stripe
+dashboard", and its listing leads with what the add-on does.
+
+## The ways to pay it names, and whose they are
+
+The shop chooses its ways to pay in the Stripe dashboard. The add-on reads that
+choice back and shows each way by name, so a shop can see what its customers
+will be offered:
+
+- **Apple Pay** is a trademark of Apple Inc.
+- **Google Pay** is a trademark of Google LLC.
+- **Klarna** is a trademark of Klarna Bank AB.
+- **SEPA Direct Debit** is named after the Single Euro Payments Area scheme,
+  which the European Payments Council manages; the name is used as the name of
+  the scheme.
+- Local ways to pay (for example iDEAL, Bancontact and Multibanco) are the marks
+  of their owners and are named the way Stripe reports them.
+- A card is described by its scheme as Stripe reports it on the charge (for
+  example "Visa ••4242"), so staff can tell which card paid. Visa is a
+  trademark of Visa Inc., Mastercard of Mastercard International Incorporated,
+  and American Express of American Express Company.
+- **PayPal** (a trademark of PayPal, Inc.) is named once, in the code that
+  keeps it off the Stripe page while the PayPal add-on is connected, so a
+  customer sees one PayPal button, not two.
+
+Each of these is a word on a plain button with a generic icon. None is
+endorsed, and none of their owners has a relationship with Adminium.
+
+## No logo, no brand colour
+
+The add-on is represented by a monogram tile in `--fg-muted` on `--surface-3`.
+No Stripe logo, no wallet or card logo, no brand colour and no brand typeface
+appears in its code, its stylesheet, its README, its documentation or the design
+comps it was built from. The Stripe page the customer is sent to carries the
+branding the shop set in its own Stripe dashboard; this add-on draws none of it.
+
+The app template the shop uploads to its own Stripe account is named after the
+shop ("Payments for" and the shop's name). Stripe refuses app names that use its
+own marks, and the template keeps to that.
+
+## The vendor's own terms
+
+A shop that connects a real account is bound by the Stripe terms, not by
+Adminium's:
+
+- Stripe legal hub and services agreement: <https://stripe.com/legal>
+- Marks usage terms: <https://stripe.com/legal/marks>
+- API reference: <https://docs.stripe.com/api>
+
+This repository ships no credentials, and its tests run against the official
+Stripe mock server, never against a live account.
+
+---
+
+# Payments for PayPal — PayPal and Venmo
+
+**PayPal** is a trademark of PayPal, Inc. It is referenced **nominatively
+only**: to say which payment service this add-on connects to.
+
+**Venmo**, also a mark of PayPal, Inc., is named here only to say that this
+add-on does **not** offer it. Venmo works only inside the PayPal script on a
+merchant's page and has no return address, so it cannot appear on the redirect
+page this add-on uses. It is not named in the add-on's screens, its listing or
+its locale bundles. If a later version offers it, it joins the table above with
+its own line. PayPal Pay Later is treated the same way: it is not named until it
+is checked to appear on the redirect page.
+
+## Not affiliated
+
+Adminium, this add-on and every app that uses it are not affiliated with,
+sponsored by, endorsed by, certified by or in partnership with PayPal, Inc. No
+approval of any kind has been sought or given. The line *"Adminium is not
+affiliated with this company."* appears on every one of the add-on's own
+surfaces that names the company, in all eight locales.
+
+Adminium takes no part in a payment. Each shop connects its own PayPal Business
+account with its own credentials; the money goes from the customer to that
+account, and this repository holds no account, no credential and no money of
+anyone's.
+
+## How the name is written
+
+The PayPal user agreement reserves the PayPal marks and their logos. The
+add-on therefore uses the word only to name the service, unaltered and in
+text, and says "the PayPal page" and "the PayPal dashboard" rather than a
+possessive form, the same rule as the Stripe add-on.
+
+A card a customer pays with through PayPal is described by its scheme as PayPal
+reports it, under the same rule and the same owners as in the Stripe section
+above.
+
+## No logo, no brand colour
+
+The add-on is represented by a monogram tile in `--fg-muted` on `--surface-3`.
+The pay page shows a plain button with a generic wallet icon and the words "Pay
+with PayPal". No PayPal logo, no PayPal button artwork, no brand colour and no
+brand typeface appears in its code, its stylesheet, its README, its
+documentation or the design comps it was built from.
+
+## The vendor's own terms
+
+A shop that connects a real account is bound by the PayPal terms, not by
+Adminium's:
+
+- PayPal legal agreements: <https://www.paypal.com/us/legalhub/home>
+- PayPal user agreement: <https://www.paypal.com/us/legalhub/paypal/useragreement-full>
+- REST API reference: <https://developer.paypal.com/api/rest/>
+
+This repository ships no credentials, and no test calls a live PayPal account.
