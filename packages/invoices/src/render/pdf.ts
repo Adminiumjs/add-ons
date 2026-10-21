@@ -339,16 +339,22 @@ function drawPassage(entry: Extract<Block, { kind: 'passage' }>, m: Metrics, cur
 
 function drawFoot(entry: Extract<Block, { kind: 'foot' }>, m: Metrics, cursor: Cursor, pages: Page[]): void {
   const pad = m.narrow ? 6 : 12;
-  const both = entry.payLines.length > 0 && entry.footText !== '';
+  const both = (entry.payLines.length > 0 || entry.payOnline !== undefined) && entry.footText !== '';
   const leftWidth = m.narrow || !both ? contentWidth(m) - pad * 2 : (contentWidth(m) - pad * 2) * 0.42;
   const rightX = m.narrow || !both ? m.marginX + pad : m.marginX + pad + leftWidth + 20;
   const rightWidth = m.narrow || !both ? contentWidth(m) - pad * 2 : contentWidth(m) - pad * 2 - leftWidth - 20;
 
-  const payLines = entry.payLines.flatMap((line) =>
-    wrap(line.text, leftWidth, { sizePt: m.body, weight: line.strong ? 'bold' : 'regular' }).map((text) => ({ text, strong: line.strong })),
-  );
+  const online = entry.payOnline;
+  const payLines = [
+    ...entry.payLines.flatMap((line) =>
+      wrap(line.text, leftWidth, { sizePt: m.body, weight: line.strong ? 'bold' : 'regular' }).map((text) => ({ text, strong: line.strong })),
+    ),
+    // The link on a line of its own, broken by character where it is wider than the column.
+    ...(online === undefined ? [] : wrap(online.line.replace(online.url, `\n${online.url}`), leftWidth, { sizePt: m.body }).filter((text) => text.trim() !== '').map((text) => ({ text, strong: false }))),
+  ];
+  const qrSize = online?.qr == null ? 0 : m.narrow ? 64 : 72;
   const footLines = entry.footText === '' ? [] : wrap(entry.footText, rightWidth, { sizePt: m.body });
-  const payHeight = payLines.length === 0 ? 0 : m.small + 5 + payLines.length * m.leading;
+  const payHeight = payLines.length === 0 ? 0 : m.small + 5 + payLines.length * m.leading + (qrSize > 0 ? qrSize + 6 : 0);
   const footHeight = footLines.length === 0 ? 0 : m.small + 5 + footLines.length * m.leading;
   const height = (m.narrow || !both ? payHeight + footHeight + (both ? 10 : 0) : Math.max(payHeight, footHeight)) + pad * 2;
 
@@ -363,6 +369,10 @@ function drawFoot(entry: Extract<Block, { kind: 'foot' }>, m: Metrics, cursor: C
       cursor.ops.push(...text(m.frame, m.marginX + pad, y + m.body, line.text, { sizePt: m.body, weight: line.strong ? 'bold' : 'regular', color: line.strong ? INK : MID }));
       y += m.leading;
     }
+    if (online?.qr != null && qrSize > 0) {
+      cursor.ops.push(...qrModules(m, m.marginX + pad, y + 6, qrSize, online.qr.modules));
+      y += qrSize + 6;
+    }
   }
   let footY = m.narrow || !both ? (payLines.length > 0 ? y + 10 : y) : cursor.y + pad;
   if (footLines.length > 0) {
@@ -374,6 +384,25 @@ function drawFoot(entry: Extract<Block, { kind: 'foot' }>, m: Metrics, cursor: C
     }
   }
   cursor.y += height + 8;
+}
+
+/** A scan code as dark squares, one run of a row at a time, on the panel's light ground. */
+function qrModules(m: Metrics, x: number, y: number, size: number, modules: readonly string[]): number[] {
+  const cell = size / modules.length;
+  const ops: number[] = [];
+  modules.forEach((row, r) => {
+    for (let c = 0; c < row.length; ) {
+      if (row[c] !== '1') {
+        c += 1;
+        continue;
+      }
+      let end = c;
+      while (end < row.length && row[end] === '1') end += 1;
+      ops.push(...box(m.frame, x + c * cell, y + r * cell, (end - c) * cell, cell, INK));
+      c = end;
+    }
+  });
+  return ops;
 }
 
 function drawSignature(entry: Extract<Block, { kind: 'signature' }>, m: Metrics, cursor: Cursor, pages: Page[]): void {

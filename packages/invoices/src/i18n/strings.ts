@@ -72,7 +72,7 @@ export const strings = {
     'addon.invoices.line':
       'Invoices, quotes, receipts, credit notes and statements drawn from your own records, in eight languages — printed, downloaded or emailed.',
     'addon.invoices.what':
-      'This turns a row into a document somebody can keep. An app can build its invoices, quotes and payments on this add-on’s shapes: Adminium then numbers them without gaps, works out every line, the tax and the total in the currency’s own decimals, records each payment as somebody enters it, and holds three reminders for each unpaid invoice until somebody sends them. The documents print those stored figures as they are, with your letterhead and how to pay, in the document’s language — as a page for every language, and as a PDF for Latin text. It never takes a payment and never charges a card: money moves outside it, and a payment is only ever what a person records. Nothing is fetched from anywhere and no account is needed.',
+      'This turns a row into a document somebody can keep. An app can build its invoices, quotes and payments on this add-on’s shapes: Adminium then numbers them without gaps, works out every line, the tax and the total in the currency’s own decimals, records each payment as somebody enters it, and holds three reminders for each unpaid invoice until somebody sends them. The documents print those stored figures as they are, with your letterhead and how to pay, in the document’s language — as a page for every language, and as a PDF for Latin text. Adminium can take a payment against an invoice built on this add-on’s shape; the add-on itself still moves no money and charges no card. Nothing is fetched from anywhere and no account is needed.',
     'addon.invoices.disconnect.goes':
       'The receipt and invoice buttons go from your record screens.',
     'addon.invoices.disconnect.stays':
@@ -179,7 +179,7 @@ export const strings = {
     'addon.invoices.line':
       'Rechnungen, Angebote, Quittungen, Gutschriften und Kontoauszüge aus Ihren eigenen Datensätzen, in acht Sprachen — gedruckt, heruntergeladen oder versendet.',
     'addon.invoices.what':
-      'Hieraus wird aus einer Zeile ein Beleg, den jemand aufbewahren kann. Eine App kann ihre Rechnungen, Angebote und Zahlungen auf den Formen dieses Add-ons aufbauen: Adminium nummeriert sie dann lückenlos, rechnet jede Position, die Steuer und die Summe in den Nachkommastellen der Währung, erfasst jede Zahlung, sobald jemand sie einträgt, und hält für jede offene Rechnung drei Erinnerungen bereit, bis jemand sie sendet. Die Belege drucken diese gespeicherten Werte so, wie sie sind, mit Ihrem Briefkopf und dem Zahlungsweg, in der Sprache des Belegs — als Seite für jede Sprache und als PDF bei lateinischer Schrift. Es nimmt nie eine Zahlung entgegen und belastet nie eine Karte: Geld fließt außerhalb, und eine Zahlung ist immer nur das, was ein Mensch erfasst. Nichts wird irgendwoher geladen, und es ist kein Konto nötig.',
+      'Hieraus wird aus einer Zeile ein Beleg, den jemand aufbewahren kann. Eine App kann ihre Rechnungen, Angebote und Zahlungen auf den Formen dieses Add-ons aufbauen: Adminium nummeriert sie dann lückenlos, rechnet jede Position, die Steuer und die Summe in den Nachkommastellen der Währung, erfasst jede Zahlung, sobald jemand sie einträgt, und hält für jede offene Rechnung drei Erinnerungen bereit, bis jemand sie sendet. Die Belege drucken diese gespeicherten Werte so, wie sie sind, mit Ihrem Briefkopf und dem Zahlungsweg, in der Sprache des Belegs — als Seite für jede Sprache und als PDF bei lateinischer Schrift. Adminium kann eine Zahlung für eine Rechnung entgegennehmen, die auf der Form dieses Add-ons aufbaut; das Add-on selbst bewegt weiterhin kein Geld und belastet keine Karte. Nichts wird irgendwoher geladen, und es ist kein Konto nötig.',
     'addon.invoices.disconnect.goes':
       'Die Schaltflächen für Quittung und Rechnung verschwinden von Ihren Datensatz-Bildschirmen.',
     'addon.invoices.disconnect.stays':
@@ -284,7 +284,7 @@ export const strings = {
     'addon.invoices.line':
       'Factures, devis, reçus, avoirs et relevés établis à partir de vos propres données, en huit langues — imprimés, téléchargés ou envoyés.',
     'addon.invoices.what':
-      'Ceci transforme une ligne en un document que l’on peut garder. Une app peut bâtir ses factures, devis et règlements sur les formes de cet add-on : Adminium les numérote alors sans trou, calcule chaque ligne, la taxe et le total dans les décimales de la devise, enregistre chaque règlement dès qu’on le saisit, et prépare trois relances pour chaque facture impayée, qui attendent qu’on les envoie. Les documents impriment ces montants enregistrés tels quels, avec votre en-tête et la façon de régler, dans la langue du document — en page pour chaque langue, et en PDF pour l’écriture latine. Il n’encaisse jamais rien et ne débite jamais de carte : l’argent circule ailleurs, et un règlement n’est que ce qu’une personne enregistre. Rien n’est chargé d’ailleurs et aucun compte n’est nécessaire.',
+      'Ceci transforme une ligne en un document que l’on peut garder. Une app peut bâtir ses factures, devis et règlements sur les formes de cet add-on : Adminium les numérote alors sans trou, calcule chaque ligne, la taxe et le total dans les décimales de la devise, enregistre chaque règlement dès qu’on le saisit, et prépare trois relances pour chaque facture impayée, qui attendent qu’on les envoie. Les documents impriment ces montants enregistrés tels quels, avec votre en-tête et la façon de régler, dans la langue du document — en page pour chaque langue, et en PDF pour l’écriture latine. Adminium peut encaisser un paiement pour une facture bâtie sur la forme de cet add-on ; l’add-on lui-même ne fait toujours circuler aucun argent et ne débite aucune carte. Rien n’est chargé d’ailleurs et aucun compte n’est nécessaire.',
     'addon.invoices.disconnect.goes':
       'Les boutons de reçu et de facture disparaissent de vos écrans d’enregistrement.',
     'addon.invoices.disconnect.stays':
@@ -389,7 +389,7 @@ export const strings = {
     'addon.invoices.line':
       'Faktury, nabídky, stvrzenky, dobropisy a výpisy z vašich vlastních záznamů, v osmi jazycích — k tisku, stažení nebo odeslání.',
     'addon.invoices.what':
-      'Z řádku se tu stává doklad, který si lze ponechat. Aplikace může své faktury, nabídky a platby postavit na tvarech tohoto doplňku: Adminium je pak čísluje bez mezer, spočítá každou položku, daň i celkovou částku na desetinná místa měny, zaznamená každou platbu, jakmile ji někdo zadá, a ke každé neuhrazené faktuře připraví tři upomínky, které čekají, až je někdo odešle. Doklady tisknou tyto uložené částky tak, jak jsou, s vaší hlavičkou a pokyny k platbě, v jazyce dokladu — jako stránku v každém jazyce a jako PDF u latinky. Nikdy nepřijímá platbu a nikdy nestrhává peníze z karty: peníze se pohybují mimo něj a platba je vždy jen to, co zaznamená člověk. Nic se odnikud nestahuje a není potřeba žádný účet.',
+      'Z řádku se tu stává doklad, který si lze ponechat. Aplikace může své faktury, nabídky a platby postavit na tvarech tohoto doplňku: Adminium je pak čísluje bez mezer, spočítá každou položku, daň i celkovou částku na desetinná místa měny, zaznamená každou platbu, jakmile ji někdo zadá, a ke každé neuhrazené faktuře připraví tři upomínky, které čekají, až je někdo odešle. Doklady tisknou tyto uložené částky tak, jak jsou, s vaší hlavičkou a pokyny k platbě, v jazyce dokladu — jako stránku v každém jazyce a jako PDF u latinky. Adminium může přijmout platbu za fakturu postavenou na tvaru tohoto doplňku; doplněk sám dál nepohybuje penězi a nic nestrhává z karty. Nic se odnikud nestahuje a není potřeba žádný účet.',
     'addon.invoices.disconnect.goes':
       'Tlačítka na stvrzenku a fakturu zmizí z obrazovek vašich záznamů.',
     'addon.invoices.disconnect.stays':
@@ -494,7 +494,7 @@ export const strings = {
     'addon.invoices.line':
       'Fakturaer, tilbud, kvitteringer, kreditnotaer og kontoudtog ud fra jeres egne data — udskrevet, hentet eller sendt.',
     'addon.invoices.what':
-      'Her bliver en række til et bilag, man kan gemme. En app kan bygge sine fakturaer, tilbud og betalinger på dette tilføjelsesprograms former: Adminium nummererer dem så uden huller, regner hver linje, afgiften og totalen ud med valutaens egne decimaler, registrerer hver betaling, når nogen indtaster den, og holder tre rykkere klar for hver ubetalt faktura, indtil nogen sender dem. Bilagene trykker de gemte tal, som de er, med jeres brevhoved og betalingsvejledning, på bilagets eget sprog — som en side på alle sprog og som PDF ved latinsk skrift. Det tager aldrig imod en betaling og trækker aldrig på et kort: pengene flytter sig udenfor, og en betaling er altid kun det, et menneske registrerer. Intet hentes udefra, og der kræves ingen konto.',
+      'Her bliver en række til et bilag, man kan gemme. En app kan bygge sine fakturaer, tilbud og betalinger på dette tilføjelsesprograms former: Adminium nummererer dem så uden huller, regner hver linje, afgiften og totalen ud med valutaens egne decimaler, registrerer hver betaling, når nogen indtaster den, og holder tre rykkere klar for hver ubetalt faktura, indtil nogen sender dem. Bilagene trykker de gemte tal, som de er, med jeres brevhoved og betalingsvejledning, på bilagets eget sprog — som en side på alle sprog og som PDF ved latinsk skrift. Adminium kan tage imod en betaling for en faktura bygget på dette tilføjelsesprograms form; tilføjelsesprogrammet selv flytter stadig ingen penge og trækker ikke på noget kort. Intet hentes udefra, og der kræves ingen konto.',
     'addon.invoices.disconnect.goes':
       'Knapperne til kvittering og faktura forsvinder fra jeres rækkeskærme.',
     'addon.invoices.disconnect.stays':
@@ -599,7 +599,7 @@ export const strings = {
     'addon.invoices.line':
       '根据您自己的记录生成发票、报价单、收据、贷记单和对账表，支持八种语言——可打印、下载或发送。',
     'addon.invoices.what':
-      '这会把一行记录变成可以保存的单据。应用可以把自己的发票、报价单和付款建立在本附加组件的形态上：Adminium 会为其连续编号、按币种自身的小数位计算每一行、税额和合计，在有人录入时记录每笔付款，并为每张未付发票准备三次提醒，等待有人发送。单据按原样打印这些存储的数字，附上您的信头和付款方法，使用单据的语言——所有语言都有网页版，拉丁文字另有 PDF。它从不收款，也从不扣卡：资金在它之外流转，付款永远只是有人记录下来的内容。不从任何地方获取内容，也无需账户。',
+      '这会把一行记录变成可以保存的单据。应用可以把自己的发票、报价单和付款建立在本附加组件的形态上：Adminium 会为其连续编号、按币种自身的小数位计算每一行、税额和合计，在有人录入时记录每笔付款，并为每张未付发票准备三次提醒，等待有人发送。单据按原样打印这些存储的数字，附上您的信头和付款方法，使用单据的语言——所有语言都有网页版，拉丁文字另有 PDF。Adminium 可以为建立在本附加组件形态上的发票收款；附加组件本身仍不转移资金，也不扣卡。不从任何地方获取内容，也无需账户。',
     'addon.invoices.disconnect.goes': '记录页面上的收据和发票按钮会消失。',
     'addon.invoices.disconnect.stays': '已经生成的单据原样留在你的数据库里。',
     'addon.invoices.activity.rendered': '绘制了一张收据',
@@ -697,7 +697,7 @@ export const strings = {
     'addon.invoices.line':
       '根據您自己的記錄產生發票、報價單、收據、貸記單和對帳表，支援八種語言——可列印、下載或寄送。',
     'addon.invoices.what':
-      '這會把一列記錄變成可以保存的單據。應用可以把自己的發票、報價單和付款建立在本附加元件的形態上：Adminium 會為其連續編號、依幣別自身的小數位計算每一列、稅額和合計，在有人輸入時記錄每筆付款，並為每張未付發票準備三次提醒，等待有人發送。單據依原樣列印這些儲存的數字，附上您的信頭和付款方法，使用單據的語言——所有語言都有網頁版，拉丁文字另有 PDF。它從不收款，也從不扣卡：資金在它之外流轉，付款永遠只是有人記錄下來的內容。不從任何地方取得內容，也無需帳戶。',
+      '這會把一列記錄變成可以保存的單據。應用可以把自己的發票、報價單和付款建立在本附加元件的形態上：Adminium 會為其連續編號、依幣別自身的小數位計算每一列、稅額和合計，在有人輸入時記錄每筆付款，並為每張未付發票準備三次提醒，等待有人發送。單據依原樣列印這些儲存的數字，附上您的信頭和付款方法，使用單據的語言——所有語言都有網頁版，拉丁文字另有 PDF。Adminium 可以為建立在本附加元件形態上的發票收款；附加元件本身仍不移轉資金，也不扣卡。不從任何地方取得內容，也無需帳戶。',
     'addon.invoices.disconnect.goes': '記錄頁面上的收據和發票按鈕會消失。',
     'addon.invoices.disconnect.stays': '已經產生的單據原樣留在你的資料庫裡。',
     'addon.invoices.activity.rendered': '繪製了一張收據',
@@ -795,7 +795,7 @@ export const strings = {
     'addon.invoices.line':
       'فواتير وعروض أسعار وإيصالات وإشعارات دائنة وكشوف حساب من سجلاتك أنت، بثماني لغات — للطباعة أو التنزيل أو الإرسال.',
     'addon.invoices.what':
-      'يحوّل هذا صفاً إلى مستند يمكن الاحتفاظ به. يمكن للتطبيق أن يبني فواتيره وعروض أسعاره ومدفوعاته على أشكال هذه الإضافة: عندها يرقّمها Adminium بلا فراغات، ويحسب كل سطر والضريبة والإجمالي بعدد خانات العملة نفسها، ويسجّل كل دفعة عندما يُدخلها أحد، ويُعدّ ثلاثة تذكيرات لكل فاتورة غير مدفوعة تنتظر أن يرسلها أحد. تطبع المستندات هذه الأرقام المخزنة كما هي، مع ترويستك وطريقة الدفع، بلغة المستند — صفحةً لكل لغة، وملف PDF للكتابة اللاتينية. لا يستلم أي دفعة أبداً ولا يسحب من أي بطاقة: المال يتحرك خارجه، والدفعة دائماً هي ما يسجّله شخص فقط. لا يُجلب شيء من أي مكان ولا حاجة إلى حساب.',
+      'يحوّل هذا صفاً إلى مستند يمكن الاحتفاظ به. يمكن للتطبيق أن يبني فواتيره وعروض أسعاره ومدفوعاته على أشكال هذه الإضافة: عندها يرقّمها Adminium بلا فراغات، ويحسب كل سطر والضريبة والإجمالي بعدد خانات العملة نفسها، ويسجّل كل دفعة عندما يُدخلها أحد، ويُعدّ ثلاثة تذكيرات لكل فاتورة غير مدفوعة تنتظر أن يرسلها أحد. تطبع المستندات هذه الأرقام المخزنة كما هي، مع ترويستك وطريقة الدفع، بلغة المستند — صفحةً لكل لغة، وملف PDF للكتابة اللاتينية. يمكن لـ Adminium استلام دفعة لفاتورة مبنية على شكل هذه الإضافة؛ أما الإضافة نفسها فلا تحرّك أي مال ولا تسحب من أي بطاقة. لا يُجلب شيء من أي مكان ولا حاجة إلى حساب.',
     'addon.invoices.disconnect.goes': 'يختفي زرّا الإيصال والفاتورة من شاشات سجلاتك.',
     'addon.invoices.disconnect.stays': 'كل مستند صُنع بالفعل يبقى في قاعدة بياناتك كما هو تماماً.',
     'addon.invoices.activity.rendered': 'رُسم إيصال',

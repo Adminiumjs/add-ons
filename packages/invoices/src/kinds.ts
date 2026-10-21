@@ -1425,6 +1425,63 @@ const INVOICE_REFERENCE: OutlineSlot = {
   },
 };
 
+/**
+ * An unpaid invoice's pay link, and the same link as a code to scan. Both are
+ * given by Adminium, never typed, and printed under how to pay only while
+ * something is owed; the code only when the link is short enough for one.
+ */
+const PAY_URL: OutlineSlot = {
+  id: 'payUrl',
+  label: {
+    'en-US': 'Pay link',
+    'de-DE': 'Zahlungslink',
+    'fr-FR': 'Lien de paiement',
+    'cs-CZ': 'Platební odkaz',
+    'da-DK': 'Betalingslink',
+    'zh-CN': '付款链接',
+    'zh-TW': '付款連結',
+    'ar-EG': 'رابط الدفع',
+  },
+  help: {
+    'en-US': 'Where the customer can pay this invoice online. Printed under how to pay while something is owed.',
+    'de-DE': 'Wo der Kunde diese Rechnung online bezahlen kann. Steht unter „So bezahlen Sie“, solange etwas offen ist.',
+    'fr-FR': 'Où le client peut régler cette facture en ligne. Imprimé sous « Comment régler » tant qu’un montant reste dû.',
+    'cs-CZ': 'Kde zákazník může fakturu zaplatit online. Tiskne se pod „Jak zaplatit“, dokud je něco dlužno.',
+    'da-DK': 'Hvor kunden kan betale fakturaen online. Trykkes under „Sådan betaler du“, så længe der skyldes noget.',
+    'zh-CN': '客户可在线支付本发票的地址。在仍有欠款时打印在“付款方法”下方。',
+    'zh-TW': '客戶可線上支付本發票的位址。在仍有欠款時印在「付款方法」下方。',
+    'ar-EG': 'حيث يمكن للعميل دفع هذه الفاتورة عبر الإنترنت. يُطبع تحت «طريقة الدفع» ما دام هناك مبلغ مستحق.',
+  },
+  type: 'text',
+  required: false,
+};
+
+const PAY_QR: OutlineSlot = {
+  id: 'payQr',
+  label: {
+    'en-US': 'Code to pay',
+    'de-DE': 'Code zum Bezahlen',
+    'fr-FR': 'Code pour payer',
+    'cs-CZ': 'Kód k platbě',
+    'da-DK': 'Kode til betaling',
+    'zh-CN': '付款二维码',
+    'zh-TW': '付款 QR 碼',
+    'ar-EG': 'رمز الدفع',
+  },
+  help: {
+    'en-US': 'The pay link as a code to scan, when it is short enough for one.',
+    'de-DE': 'Der Zahlungslink als Code zum Scannen, wenn er kurz genug dafür ist.',
+    'fr-FR': 'Le lien de paiement en code à scanner, s’il est assez court.',
+    'cs-CZ': 'Platební odkaz jako kód ke skenování, je-li dost krátký.',
+    'da-DK': 'Betalingslinket som en kode at scanne, når det er kort nok.',
+    'zh-CN': '付款链接的可扫描二维码（链接足够短时）。',
+    'zh-TW': '付款連結的可掃描 QR 碼（連結夠短時）。',
+    'ar-EG': 'رابط الدفع كرمز للمسح، عندما يكون قصيرًا بما يكفي.',
+  },
+  type: 'qr',
+  required: false,
+};
+
 const OPENING_BALANCE: OutlineSlot = {
   id: 'openingBalance',
   label: {
@@ -2150,6 +2207,8 @@ const OUTLINES: Readonly<Record<string, DocumentOutline>> = {
       SERVICE_FROM,
       SERVICE_TO,
       INVOICE_REFERENCE,
+      PAY_URL,
+      PAY_QR,
     ],
   },
   /*

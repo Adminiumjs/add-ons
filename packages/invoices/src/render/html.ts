@@ -126,6 +126,14 @@ td .note { display: block; font-size: 11px; color: var(--sub); }
 `.trim();
 }
 
+/**
+ * The pay link and its code, added to the page's styles only when the page
+ * carries them: every other document keeps the bytes it always had.
+ */
+const PAY_ONLINE_STYLES = `
+.foot .pay-online { overflow-wrap: anywhere; }
+.foot .pay-qr { inline-size: 96px; block-size: 96px; margin-block-start: 6px; image-rendering: pixelated; }`;
+
 /** A figure, isolated so a right-to-left page never reorders its parts. */
 const figure = (value: string): string => `<span class="fig">${escapeHtml(value)}</span>`;
 
@@ -263,13 +271,17 @@ function block(entry: Block): string {
     case 'foot':
       return (
         '<section class="foot">' +
-        (entry.payLines.length === 0
+        (entry.payLines.length === 0 && entry.payOnline === undefined
           ? ''
           : '<div class="col">' +
             `<span class="label">${escapeHtml(entry.payLabel)}</span>` +
             entry.payLines
               .map((line) => `<span class="line${line.strong ? ' strong' : ''}">${own(line.text)}</span>`)
               .join('') +
+            (entry.payOnline === undefined
+              ? ''
+              : `<span class="line pay-online">${own(entry.payOnline.line)}</span>` +
+                (entry.payOnline.qr === null ? '' : `<img class="pay-qr" alt="" src="${escapeHtml(entry.payOnline.qr.png)}">`)) +
             '</div>') +
         (entry.footText === ''
           ? ''
@@ -307,7 +319,7 @@ export function renderHtml(document: Document, paper: string): Uint8Array {
     '<head><meta charset="utf-8">' +
     '<meta name="viewport" content="width=device-width, initial-scale=1">' +
     `<title>${escapeHtml(title)}</title>` +
-    `<style>${styles(document.accent, paper)}</style>` +
+    `<style>${styles(document.accent, paper)}${document.blocks.some((entry) => entry.kind === 'foot' && entry.payOnline !== undefined) ? PAY_ONLINE_STYLES : ''}</style>` +
     '</head><body><main class="sheet">' +
     (document.voidMark === null
       ? ''

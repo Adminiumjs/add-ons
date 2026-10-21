@@ -15,8 +15,9 @@
  * (`manifest.json`, `addOn.shapes`). Adminium then keeps them by the rules the
  * shapes declare — gapless numbers, each line and the totals in the currency's
  * decimals, the balance as payments are recorded, the reminders — and the
- * documents print those stored figures as they are. A payment is only ever
- * what a person records: the add-on charges no card and moves no money.
+ * documents print those stored figures as they are. Adminium can take a payment
+ * against an invoice built on this shape (`invoice@2`); the add-on itself
+ * still charges no card and moves no money.
  *
  * A document mapped by hand, with no stored totals, is added up here under one
  * written law (`money.ts`), as it always was.
@@ -56,8 +57,9 @@ export function register(): AddOn {
     monogram: 'INV',
     /*
      * `data` from the add-on categories' closed five. Not `payments`, which is
-     * the tempting one and is wrong: this add-on takes no money, moves none,
-     * and knows nothing about whether anything was ever settled. It renders a
+     * the tempting one and is wrong: this add-on takes no money and moves
+     * none (Adminium takes an online payment against an invoice built on its
+     * shape; the add-on only draws it and prints the pay link). It renders a
      * document from rows. What it adds to a deployment is a way to draw its own
      * data, which is what `data` means.
      */
