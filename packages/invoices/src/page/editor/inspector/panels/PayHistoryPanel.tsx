@@ -1,16 +1,57 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-/** The Payment history panel (comp 981-987; `payhEdit` 1713, `addPayh` 1714): a card per payment — date · amount · remove, then the method — *Add payment*, *Remove section* (`payhShow`). */
+/**
+ * The Payment history panel.
+ *
+ * On an INVOICE, payments are recorded, not typed: the host's own Payment
+ * panel (its balance, its payments and refunds, the pay link and "Record a
+ * payment"), the switch that prints them on the document (`payhShow`), and
+ * the line that says so (comp 306-334).
+ *
+ * On a TEMPLATE, which takes no payments, the typed rows stay as they were
+ * (comp 981-987; `payhEdit` 1713, `addPayh` 1714): a card per payment — date ·
+ * amount · remove, then the method — *Add payment*, *Remove section*.
+ */
+import { Info } from 'lucide-react';
 import { cn } from '@adminium/ui';
 
 import { t } from '../../../messages.js';
 import { formatMoney } from '../../../model/money.js';
-import { FIELD, PanelLabel, RemoveSectionButton } from '../parts.js';
+import { hostDocumentPaymentPanel } from '../../../payments.js';
+import { FIELD, Note, PanelLabel, RemoveSectionButton, Toggle } from '../parts.js';
 import type { PanelProps } from '../panelProps.js';
 import { RowsEditor } from '../RowsEditor.js';
 
 const CELL = cn(FIELD, 'rounded-lg bg-surface px-[9px] py-[7px] text-[12px]');
 
-export function PayHistoryPanel({ draft, edits, onSelect }: PanelProps) {
+function InvoicePayments({ draft, edits, documentId, onPaymentsChanged }: PanelProps) {
+  const Panel = hostDocumentPaymentPanel();
+  const shown = draft.body.payhShow;
+  return (
+    <div className="flex flex-col gap-[14px]" data-testid="invoices-payments">
+      {Panel === null || documentId === undefined ? (
+        <Note>{t('inspector.payments.newerHost', 'Recording payments here needs a newer Adminium.')}</Note>
+      ) : (
+        <Panel documentId={documentId} onChanged={onPaymentsChanged} />
+      )}
+      <div className="flex items-center gap-[10px]">
+        <div id="invoices-payments-show-label" className="min-w-0 flex-1 text-[12.5px] font-bold text-fg">
+          {t('inspector.payments.show', 'Show payments on documents')}
+        </div>
+        <Toggle on={shown} labelledBy="invoices-payments-show-label" testId="invoices-payments-show" onClick={() => (shown ? edits.hideSection('payhShow') : edits.enableSection('payhShow'))} />
+      </div>
+      <div className="flex items-start gap-[9px] rounded-[10px] bg-surface-2 px-3 py-[11px]">
+        <Info className="mt-px size-[15px] shrink-0 text-fg-subtle" aria-hidden="true" />
+        <span className="text-[11.5px] leading-[1.5] text-fg-muted">
+          {t('inspector.payments.info', "Payments are recorded, not typed. To print them on the invoice, keep 'Show payments on documents' on.")}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+export function PayHistoryPanel(props: PanelProps) {
+  if (props.kind === 'invoice') return <InvoicePayments {...props} />;
+  const { draft, edits, onSelect } = props;
   const body = draft.body;
   return (
     <div className="flex flex-col gap-[9px]">

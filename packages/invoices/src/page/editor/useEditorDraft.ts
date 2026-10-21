@@ -46,6 +46,12 @@ export interface EditorActions {
   redo: () => void;
   /** PUTs the draft; resolves with the reply, rejects with the API error (the chip shows *Couldn't save*). */
   save: () => Promise<InvoiceDetail>;
+  /**
+   * The status the server holds, put into the draft and the saved copy alike,
+   * with no history step: an invoice's Paid is set and cleared by its balance,
+   * never typed, so it is never an unsaved change either.
+   */
+  adoptStatus: (status: EditorDraft['status']) => void;
 }
 
 function applyPatch(draft: EditorDraft, patch: DraftPatch): EditorDraft {
@@ -71,7 +77,9 @@ export function useEditorDraft(detail: InvoiceDetail): [EditorState, EditorActio
       return { reply, sent };
     },
     onSuccess: ({ reply, sent }) => {
-      setSaved(sent);
+      // The balance may have set or cleared Paid on the way: the reply's status stands.
+      setSaved({ ...sent, status: reply.status });
+      if (reply.status !== sent.status) setDraft((current) => (current.status === sent.status ? { ...current, status: reply.status } : current));
       queryClient.setQueryData([...INVOICES_KEY, 'detail', detail.id], reply);
       void invalidateInvoices(queryClient);
     },
@@ -111,7 +119,12 @@ export function useEditorDraft(detail: InvoiceDetail): [EditorState, EditorActio
   const status: SaveStatus = saveMutation.isPending ? 'saving' : saveMutation.isError ? 'error' : dirty ? 'dirty' : 'saved';
   const error = saveMutation.isError ? (saveMutation.error instanceof Error ? saveMutation.error.message : String(saveMutation.error)) : null;
 
-  const actions = useMemo<EditorActions>(() => ({ beginEdit, mutate, histMutate, undo, redo, save }), [beginEdit, mutate, histMutate, undo, redo, save]);
+  const adoptStatus = useCallback((status: EditorDraft['status']) => {
+    setSaved((current) => (current.status === status ? current : { ...current, status }));
+    setDraft((current) => (current.status === status ? current : { ...current, status }));
+  }, []);
+
+  const actions = useMemo<EditorActions>(() => ({ beginEdit, mutate, histMutate, undo, redo, save, adoptStatus }), [beginEdit, mutate, histMutate, undo, redo, save, adoptStatus]);
 
   return [
     {

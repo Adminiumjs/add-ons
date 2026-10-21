@@ -176,6 +176,31 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+describe('Invoice editor — Paid follows the balance', () => {
+  it('takes the status the server answers a save with, so a balance that set Paid leaves nothing unsaved', async () => {
+    const { user, fetchMock, calls } = await renderEditor(detail({ kind: 'invoice', status: 'sent' }));
+    const answer = fetchMock.getMockImplementation() as (input: unknown, init?: RequestInit) => Promise<Response>;
+    fetchMock.mockImplementation(async (input: unknown, init?: RequestInit) => {
+      const reply = await answer(input, init);
+      if (init?.method !== 'PUT') return reply;
+      const saved = (await reply.json()) as InvoiceDetail;
+      return jsonResponse(200, { ...saved, status: 'paid' });
+    });
+    await user.click(nameInput());
+    await user.type(nameInput(), ' 2026');
+    await user.click(screen.getByTestId('invoices-save'));
+    await waitFor(() => {
+      expect(chip().textContent).toBe('All changes saved');
+    });
+    expect((puts(calls)[0]?.body as InvoicePutBody).status).toBe('sent');
+    // The panel shows the status the server holds, locked.
+    await user.click(document.querySelector('[data-testid="invoices-section"][data-section="theme"]') as HTMLElement);
+    expect(screen.getAllByTestId('invoices-status-paid').map((pill) => pill.textContent)).toEqual(['Paid', 'Paid']);
+    // The invoice's payments are read once, for the sheet and the panel alike.
+    expect(calls.some((call) => call.method === 'POST' && call.url === '/api/v1/payments/panel')).toBe(true);
+  });
+});
+
 describe('Invoice editor — save, history, guard', () => {
   it('typing never issues a request; the chip reads Unsaved changes; Save → one PUT → All changes saved', async () => {
     const { user, calls } = await renderEditor();

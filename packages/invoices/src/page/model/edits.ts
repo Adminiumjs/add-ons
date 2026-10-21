@@ -26,6 +26,8 @@ export interface DocumentEdits {
   histSet: <K extends keyof InvoiceBody>(key: K, value: InvoiceBody[K]) => void;
   setName: (name: string) => void;
   histSetStatus: (status: InvoiceStatus) => void;
+  /** A currency choice: the symbol the sheet prints and the ISO code a payment is taken in, one history step. */
+  histSetCurrency: (sym: string, code: string) => void;
   histSetTopic: (topic: InvoiceTopic) => void;
   histSetLang: (lang: InvoiceLang) => void;
 

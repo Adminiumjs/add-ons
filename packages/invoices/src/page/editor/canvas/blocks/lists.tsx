@@ -20,6 +20,7 @@ import { cn } from '@adminium/ui';
 import { t } from '../../../messages.js';
 import { fxMinor, formatMoney, formatPercent, parseMinor, taxBreakdown } from '../../../model/money.js';
 import { ACCENT_SOFT_BG, ACCENT_TEXT, KICKER, Region, STATUS_TONE, statusText } from '../inline.js';
+import { hundredthsOf, printedPayments, type DocumentPayment } from '../../../payments.js';
 import type { BlockProps } from './types.js';
 
 const CHIP = 'flex items-center gap-2.5 rounded-[10px] border border-[#ececef] bg-[#fafafa] px-3 py-[9px]';
@@ -105,7 +106,48 @@ export function TaxbreakBlock({ body, totals, section, onSelect }: BlockProps) {
   );
 }
 
-export function PayhistoryBlock({ body, section, onSelect }: BlockProps) {
+/** A recorded payment's way, as the sheet prints it: the service's own label when it gave one. */
+function wayText(payment: DocumentPayment): string {
+  if (payment.wayLabel !== null && payment.wayLabel.trim() !== '') return payment.wayLabel;
+  switch (payment.way) {
+    case 'bank-transfer':
+      return t('canvas.payments.way.bank-transfer', 'Bank transfer');
+    case 'cash':
+      return t('canvas.payments.way.cash', 'Cash');
+    case 'card':
+      return t('canvas.payments.way.card', 'Card');
+    case 'cheque':
+      return t('canvas.payments.way.cheque', 'Cheque');
+    case 'online':
+      return t('canvas.payments.way.online', 'Online');
+    default:
+      return t('canvas.payments.way.other', 'Other');
+  }
+}
+
+export function PayhistoryBlock({ body, payments = null, section, onSelect }: BlockProps) {
+  // An invoice with recorded payments prints those; one without prints the rows typed before payments were recorded.
+  const recorded = printedPayments(payments);
+  if (recorded.length > 0) {
+    return (
+      <Region section="payhistory" selected={section} onSelect={onSelect}>
+        <div className={`${KICKER} mb-[9px]`}>{t('canvas.payhistory.title', 'Payment history')}</div>
+        <div className="flex flex-col gap-[7px]">
+          {recorded.map((payment) => {
+            const net = (hundredthsOf(payment.amount) ?? 0) - (hundredthsOf(payment.refunded) ?? 0);
+            return (
+              <div key={payment.id} data-testid="invoices-recorded-payment" className="flex justify-between gap-3 text-[12.5px]">
+                <span>
+                  <span className="font-mono text-[#6b6b76]">{payment.paidOn}</span> · {wayText(payment)}
+                </span>
+                <span className="font-mono font-bold">{formatMoney(net, body.currency, body.cents)}</span>
+              </div>
+            );
+          })}
+        </div>
+      </Region>
+    );
+  }
   return (
     <Region section="payhistory" selected={section} onSelect={onSelect}>
       <div className={`${KICKER} mb-[9px]`}>{t('canvas.payhistory.title', 'Payment history')}</div>

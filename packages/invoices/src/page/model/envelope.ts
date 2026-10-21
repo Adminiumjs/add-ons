@@ -127,6 +127,11 @@ export interface InvoiceBody {
   accent: string;
   /** The currency SYMBOL the sheet prints (comp 1578: $ € £ ¥). */
   currency: string;
+  /**
+   * The ISO 4217 code a payment is taken in (`EUR`); null until one is chosen.
+   * A symbol alone cannot say it: `$` is USD, CAD or AUD.
+   */
+  currencyCode: string | null;
   cents: boolean;
   title: string;
   logoIcon: string;
@@ -242,13 +247,51 @@ export const DEFAULT_BLOCK_ORDER: readonly string[] = [
 export const ACCENT_SWATCHES: readonly string[] = ['#4f46e5', '#0d9488', '#e5484d', '#ea580c', '#111111'];
 export const DEFAULT_ACCENT = '#4f46e5';
 
-/** The comp's four currencies (1578): symbol → picker label. */
-export const CURRENCIES: readonly { sym: string; label: string }[] = [
-  { sym: '$', label: 'USD $' },
-  { sym: '€', label: 'EUR €' },
-  { sym: '£', label: 'GBP £' },
-  { sym: '¥', label: 'JPY ¥' },
+/** A currency the picker offers: the symbol the sheet prints and the ISO code a payment is taken in. */
+export interface CurrencyChoice {
+  sym: string;
+  code: string;
+  label: string;
+}
+
+/** The comp's four currencies (1578): symbol and code → picker label. */
+export const CURRENCIES: readonly CurrencyChoice[] = [
+  { sym: '$', code: 'USD', label: 'USD $' },
+  { sym: '€', code: 'EUR', label: 'EUR €' },
+  { sym: '£', code: 'GBP', label: 'GBP £' },
+  { sym: '¥', code: 'JPY', label: 'JPY ¥' },
 ];
+
+/** The rest the picker's list offers, each printed with its own symbol. */
+export const MORE_CURRENCIES: readonly CurrencyChoice[] = [
+  { sym: 'A$', code: 'AUD', label: 'AUD A$' },
+  { sym: 'C$', code: 'CAD', label: 'CAD C$' },
+  { sym: 'CHF', code: 'CHF', label: 'CHF' },
+  { sym: '¥', code: 'CNY', label: 'CNY ¥' },
+  { sym: 'Kč', code: 'CZK', label: 'CZK Kč' },
+  { sym: 'kr', code: 'DKK', label: 'DKK kr' },
+  { sym: 'E£', code: 'EGP', label: 'EGP E£' },
+  { sym: 'HK$', code: 'HKD', label: 'HKD HK$' },
+  { sym: '₹', code: 'INR', label: 'INR ₹' },
+  { sym: 'kr', code: 'NOK', label: 'NOK kr' },
+  { sym: 'NZ$', code: 'NZD', label: 'NZD NZ$' },
+  { sym: 'zł', code: 'PLN', label: 'PLN zł' },
+  { sym: 'kr', code: 'SEK', label: 'SEK kr' },
+  { sym: 'S$', code: 'SGD', label: 'SGD S$' },
+  { sym: 'NT$', code: 'TWD', label: 'TWD NT$' },
+  { sym: 'AED', code: 'AED', label: 'AED' },
+  { sym: 'SAR', code: 'SAR', label: 'SAR' },
+  { sym: 'R', code: 'ZAR', label: 'ZAR R' },
+];
+
+/**
+ * The code a symbol can only mean (the server reads the same on a save).
+ * `€` and `£` say one currency each; `$` and `¥` do not, so the person picks.
+ */
+export function currencyCodeForSymbol(symbol: string): string | null {
+  const one: Readonly<Record<string, string>> = { '€': 'EUR', '£': 'GBP' };
+  return one[symbol.trim()] ?? null;
+}
 
 /** The twelve logo marks (comp 1580). */
 export const LOGO_MARKS: readonly string[] = ['hexagon', 'circle', 'square', 'triangle', 'gem', 'zap', 'flame', 'leaf', 'star', 'heart', 'command', 'box'];
@@ -272,6 +315,7 @@ export function emptyBody(): InvoiceBody {
   return {
     accent: DEFAULT_ACCENT,
     currency: '$',
+    currencyCode: null,
     cents: true,
     title: 'INVOICE',
     logoIcon: 'hexagon',
@@ -350,6 +394,13 @@ export function emptyBody(): InvoiceBody {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** An ISO 4217 code as three capital letters, or null for anything else. */
+export function currencyCodeOf(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const code = value.trim().toUpperCase();
+  return /^[A-Z]{3}$/.test(code) ? code : null;
 }
 
 function str(value: unknown, fallback: string): string {
@@ -448,6 +499,7 @@ export function normalizeBody(raw: unknown): InvoiceBody {
   return {
     accent: /^#[0-9a-fA-F]{6}$/.test(str(r['accent'], '')) ? str(r['accent'], '') : base.accent,
     currency: str(r['currency'], base.currency) || base.currency,
+    currencyCode: currencyCodeOf(r['currencyCode']),
     cents: bool(r['cents'], base.cents),
     title: str(r['title'], base.title),
     logoIcon: str(r['logoIcon'], base.logoIcon) || base.logoIcon,

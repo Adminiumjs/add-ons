@@ -21,6 +21,7 @@ import { cn } from '@adminium/ui';
 
 import { t } from '../../../messages.js';
 import { formatMoney, formatPercent, parseDecimal } from '../../../model/money.js';
+import { hundredthsOf } from '../../../payments.js';
 import { InlineInput, KICKER, Region } from '../inline.js';
 import type { BlockProps } from './types.js';
 
@@ -159,11 +160,13 @@ export function ItemsBlock({ body, totals, edits, section, onSelect }: BlockProp
   );
 }
 
-export function TotalsBlock({ body, totals, section, onSelect }: BlockProps) {
+export function TotalsBlock({ body, totals, payments = null, section, onSelect }: BlockProps) {
   const money = (minor: number) => formatMoney(minor, body.currency, body.cents);
   const showDiscount = parseDecimal(body.discountRate) > 0;
+  // An invoice that takes payments: what was paid (live, net of refunds) and what is left of the total on the sheet.
+  const paid = payments === null || payments.currency === '' ? null : hundredthsOf(payments.paid);
   return (
-    <div className="flex justify-end">
+    <div className="flex flex-col items-end gap-[9px]">
       <Region section="tax" selected={section} onSelect={onSelect}>
         <div data-testid="invoices-totals" className="flex w-[280px] flex-col gap-[9px]">
           <div className="flex justify-between text-[13px]">
@@ -192,6 +195,22 @@ export function TotalsBlock({ body, totals, section, onSelect }: BlockProps) {
           </div>
         </div>
       </Region>
+      {paid === null ? null : (
+        <Region section="payhistory" selected={section} onSelect={onSelect}>
+          <div data-testid="invoices-balance" className="flex w-[280px] flex-col gap-[9px]">
+            <div className="flex justify-between text-[13px]">
+              <span className="text-[#6b6b76]">{t('canvas.totals.paid', 'Paid')}</span>
+              <span data-testid="invoices-paid" className="font-mono font-bold text-pos">{`−${money(paid)}`}</span>
+            </div>
+            <div className="flex items-center justify-between border-t border-[#ececef] pt-[11px]">
+              <span className="text-[14px] font-extrabold">{t('canvas.totals.balanceDue', 'Balance due')}</span>
+              <span data-testid="invoices-balance-due" className="font-mono text-[20px] font-extrabold tracking-[-.02em] text-[var(--adm-invoice-accent)]">
+                {money(Math.max(0, totals.total - paid))}
+              </span>
+            </div>
+          </div>
+        </Region>
+      )}
     </div>
   );
 }

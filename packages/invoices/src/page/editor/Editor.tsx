@@ -36,7 +36,8 @@ import { customKeyOf, type OptionalSection, type SectionKey } from '../model/blo
 import type { CustomSectionType } from '../model/envelope.js';
 import type { InvoiceLang } from '../model/languages.js';
 import { totalsOf } from '../model/money.js';
-import { invalidateInvoices } from '../queries.js';
+import { useDocumentPayments } from '../payments.js';
+import { INVOICES_KEY, invalidateInvoices } from '../queries.js';
 import { InvoiceCanvas } from './canvas/InvoiceCanvas.js';
 import type { ImageRejection } from './canvas/inline.js';
 import { EditorHeader } from './EditorHeader.js';
@@ -135,6 +136,19 @@ export function Editor({ detail }: EditorProps) {
 
   // --- the header's actions ------------------------------------------------------
   const kind = detail.kind;
+  // An invoice's payments, as Adminium keeps them (one cache with the host's Payment panel).
+  const payments = useDocumentPayments(detail.id, kind === 'invoice');
+  // A payment or refund may have set or cleared Paid: the draft takes the server's status.
+  const onPaymentsChanged = useCallback(() => {
+    void invoicesApi
+      .detail(detail.id)
+      .then((fresh) => {
+        actions.adoptStatus(fresh.status);
+        queryClient.setQueryData([...INVOICES_KEY, 'detail', detail.id], fresh);
+        void invalidateInvoices(queryClient);
+      })
+      .catch(() => undefined);
+  }, [actions, detail.id, queryClient]);
   const openDocument = (id: string) => {
     void navigate({ to: documentPath(id) });
   };
@@ -235,6 +249,10 @@ export function Editor({ detail }: EditorProps) {
     onSelect: setSection,
     onOpenAdd: () => setAddOpen({ at: null }),
     onImageRejected,
+    kind,
+    documentId: detail.id,
+    payments,
+    onPaymentsChanged,
   };
 
   return (
@@ -282,6 +300,7 @@ export function Editor({ detail }: EditorProps) {
               <InvoiceCanvas
                 draft={draft}
                 totals={totals}
+                payments={payments}
                 edits={edits}
                 section={section}
                 onSelect={setSection}

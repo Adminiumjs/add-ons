@@ -29,6 +29,7 @@ import { isBuiltinBlockKey, visibleBlocks, type SectionKey } from '../../model/b
 import type { EditorDraft } from '../../model/doc.js';
 import type { DocumentEdits } from '../../model/edits.js';
 import type { Totals } from '../../model/money.js';
+import type { DocumentPayments } from '../../payments.js';
 import { BlockSlot } from './BlockSlot.js';
 import { CustomBlock, builtinBlockLabel, renderBuiltinBlock, type BlockProps } from './blocks/index.js';
 import { ACCENT_BG, InlineInput, Region, STATUS_TONE, statusText, type ImageRejection } from './inline.js';
@@ -37,6 +38,8 @@ import { PaperShell } from './PaperShell.js';
 export interface InvoiceCanvasProps {
   draft: EditorDraft;
   totals: Totals;
+  /** The invoice's recorded payments; null for a template, or while unknown. */
+  payments?: DocumentPayments | null | undefined;
   edits: DocumentEdits;
   section: SectionKey;
   onSelect: (section: SectionKey) => void;
@@ -55,7 +58,7 @@ interface DragState {
 
 const NO_DRAG: DragState = { from: null, over: null };
 
-export function InvoiceCanvas({ draft, totals, edits, section, onSelect, onInsertAt, onAppend, onRemoveCustom, onImageRejected }: InvoiceCanvasProps) {
+export function InvoiceCanvas({ draft, totals, payments = null, edits, section, onSelect, onInsertAt, onAppend, onRemoveCustom, onImageRejected }: InvoiceCanvasProps) {
   const body = draft.body;
   const [drag, setDrag] = useState<DragState>(NO_DRAG);
   const blocks = visibleBlocks(body);
@@ -88,7 +91,7 @@ export function InvoiceCanvas({ draft, totals, edits, section, onSelect, onInser
     edits.reorderBlocks(index, direction === -1 ? neighbour.index : neighbour.index + 1);
   };
 
-  const blockProps: BlockProps = { body, totals, edits, section, onSelect, onRemoveCustom, onImageRejected };
+  const blockProps: BlockProps = { body, totals, payments, edits, section, onSelect, onRemoveCustom, onImageRejected };
 
   return (
     <div data-testid="invoices-canvas">
