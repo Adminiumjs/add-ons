@@ -24,6 +24,10 @@ export interface PanelProps {
   documentId?: string | undefined;
   /** The invoice's payments as Adminium keeps them; null for a template, or while unknown. */
   payments?: DocumentPayments | null | undefined;
+  /** Whether the payments' first answer is in: until then nothing is known to hold the currency. */
+  paymentsSettled?: boolean | undefined;
+  /** The currency the last save was refused for leaving; null when none was. */
+  currencyHeldIn?: string | null | undefined;
   /** A payment or refund changed the invoice (its balance, its status): the editor reads it again. */
   onPaymentsChanged?: (() => void) | undefined;
 }

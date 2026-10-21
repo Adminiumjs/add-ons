@@ -201,6 +201,39 @@ describe('Invoice editor — Paid follows the balance', () => {
   });
 });
 
+describe('Invoice editor — a currency held to its payments', () => {
+  it('puts the currency back and says why when a save is refused for leaving it, with no failed-save toast', async () => {
+    const doc = detail({ kind: 'invoice', status: 'sent' }, body({ currency: '€', currencyCode: 'EUR' }));
+    const { user, fetchMock } = await renderEditor(doc);
+    const answer = fetchMock.getMockImplementation() as (input: unknown, init?: RequestInit) => Promise<Response>;
+    let refused = 0;
+    fetchMock.mockImplementation(async (input: unknown, init?: RequestInit) => {
+      if (init?.method === 'PUT') {
+        const put = JSON.parse(String(init.body)) as InvoicePutBody;
+        if (put.body.currencyCode !== 'EUR') {
+          refused += 1;
+          return jsonResponse(422, { error: { code: 'CURRENCY_HAS_PAYMENTS', message: 'This invoice has payments in EUR, so its currency stays EUR.', requestId: 'req_1', details: { field: 'currencyCode', currency: 'EUR' } } });
+        }
+      }
+      return await answer(input, init);
+    });
+    await user.click(document.querySelector('[data-testid="invoices-section"][data-section="theme"]') as HTMLElement);
+    const pounds = (await screen.findAllByRole('button', { name: 'GBP £' }))[0] as HTMLButtonElement;
+    await waitFor(() => {
+      expect(pounds.disabled).toBe(false);
+    });
+    await user.click(pounds);
+    expect(chip().textContent).toBe('Unsaved changes');
+    await user.click(screen.getByTestId('invoices-save'));
+    await screen.findAllByText('This invoice has payments in EUR, so its currency stays EUR.');
+    expect(refused).toBe(1);
+    expect(screen.queryByText('Could not save')).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'EUR €' }).map((one) => one.getAttribute('aria-pressed'))).not.toContain('false');
+    expect(screen.getAllByRole('button', { name: 'GBP £' }).map((one) => (one as HTMLButtonElement).disabled)).not.toContain(false);
+    expect(chip().textContent).toBe('All changes saved');
+  });
+});
+
 describe('Invoice editor — save, history, guard', () => {
   it('typing never issues a request; the chip reads Unsaved changes; Save → one PUT → All changes saved', async () => {
     const { user, calls } = await renderEditor();

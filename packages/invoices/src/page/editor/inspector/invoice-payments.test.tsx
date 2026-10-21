@@ -16,7 +16,7 @@ import { requireAddOnHost } from '@adminium/add-on-contracts/runtime';
 
 import type { EditorDraft } from '../../model/doc.js';
 import type { DocumentEdits } from '../../model/edits.js';
-import { currencyCodeOf, emptyBody, normalizeBody, type InvoiceBody } from '../../model/envelope.js';
+import { CURRENCIES, MORE_CURRENCIES, currencyCodeOf, emptyBody, normalizeBody, type InvoiceBody } from '../../model/envelope.js';
 import { totalsOf } from '../../model/money.js';
 import { hundredthsOf, type DocumentPayments } from '../../payments.js';
 import { PayhistoryBlock } from '../canvas/blocks/lists.js';
@@ -58,6 +58,19 @@ const PAID: DocumentPayments = {
     { id: 'kept:2', amount: '5.00', currency: 'EUR', refunded: '0', way: 'online', wayLabel: 'Visa ••4242', test: true, paidOn: '2026-10-21', recordedBy: null },
   ],
 };
+
+describe('the currencies the picker offers', () => {
+  // SYNC NOTE: the engine's `DESIGNER_CURRENCY_CODES` (`apps/server/src/invoices/document.ts`) is this list, exactly.
+  const ENGINE = ['USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF', 'CNY', 'CZK', 'DKK', 'EGP', 'HKD', 'INR', 'NOK', 'NZD', 'PLN', 'SEK', 'SGD', 'TWD', 'AED', 'SAR', 'ZAR'];
+
+  it('are the ones the engine takes payments in, none with three decimals', () => {
+    const offered = [...CURRENCIES, ...MORE_CURRENCIES].map((choice) => choice.code);
+    expect(offered).toEqual(ENGINE);
+    for (const code of offered) {
+      expect(new Intl.NumberFormat('en', { style: 'currency', currency: code }).resolvedOptions().maximumFractionDigits).toBeLessThanOrEqual(2);
+    }
+  });
+});
 
 describe('the ISO code and the hundredths', () => {
   it('reads a code only when it is three letters, and never gives a stored body one', () => {
@@ -103,6 +116,21 @@ describe('the Title & theme panel of an invoice', () => {
     expect(screen.getByText('This invoice has payments in EUR, so its currency stays EUR.')).toBeDefined();
     expect((screen.getByRole('button', { name: 'EUR €' }) as HTMLButtonElement).disabled).toBe(true);
     expect((screen.getByRole('combobox', { name: 'More currencies' }) as HTMLSelectElement).disabled).toBe(true);
+  });
+
+  it('keeps the currency still until the payments are known, then frees it when none holds it', () => {
+    const { unmount } = render(<ThemePanel {...panelProps(draftOf(), { paymentsSettled: false })} />);
+    expect((screen.getByRole('button', { name: 'GBP £' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole('combobox', { name: 'More currencies' }) as HTMLSelectElement).disabled).toBe(true);
+    unmount();
+    render(<ThemePanel {...panelProps(draftOf(), { paymentsSettled: true })} />);
+    expect((screen.getByRole('button', { name: 'GBP £' }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('holds the currency a refused save named, with no payment recorded yet', () => {
+    render(<ThemePanel {...panelProps(draftOf(), { currencyHeldIn: 'EUR' })} />);
+    expect(screen.getByText('This invoice has payments in EUR, so its currency stays EUR.')).toBeDefined();
+    expect((screen.getByRole('button', { name: 'USD $' }) as HTMLButtonElement).disabled).toBe(true);
   });
 
   it('never offers Paid, shows it locked when the balance set it, and says why', () => {
@@ -168,13 +196,22 @@ describe('the sheet of an invoice that takes payments', () => {
   }
 
   it('prints Paid and Balance due under the total, from the sheet’s own total', () => {
-    render(<TotalsBlock {...blockProps({}, PAID)} />);
+    render(<TotalsBlock {...blockProps({ payhShow: true }, PAID)} />);
     expect(screen.getByTestId('invoices-paid').textContent).toBe('−€50.00');
     expect(screen.getByTestId('invoices-balance-due').textContent).toBe('€70.00');
   });
 
   it('prints no balance for a template, or an invoice with no code yet', () => {
-    render(<TotalsBlock {...blockProps({}, null)} />);
+    render(<TotalsBlock {...blockProps({ payhShow: true }, null)} />);
+    expect(screen.queryByTestId('invoices-balance')).toBeNull();
+  });
+
+  it('prints no balance with payments switched off, or with no live payment', () => {
+    const { unmount } = render(<TotalsBlock {...blockProps({ payhShow: false }, PAID)} />);
+    expect(screen.queryByTestId('invoices-balance')).toBeNull();
+    unmount();
+    const testOnly = { ...PAID, paid: '0', payments: PAID.payments.filter((payment) => payment.test) };
+    render(<TotalsBlock {...blockProps({ payhShow: true }, testOnly)} />);
     expect(screen.queryByTestId('invoices-balance')).toBeNull();
   });
 

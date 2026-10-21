@@ -61,12 +61,14 @@ const SMALL_BUTTON = 'rounded-[9px] border border-border bg-surface px-[11px] py
 /** An invoice's statuses a person picks: Paid is the balance's to set and clear. */
 const PICKED_STATUSES: readonly InvoiceStatus[] = INVOICE_STATUSES.filter((status) => status !== 'paid');
 
-export function ThemePanel({ draft, edits, onImageRejected, kind, payments }: PanelProps) {
+export function ThemePanel({ draft, edits, onImageRejected, kind, payments, paymentsSettled = true, currencyHeldIn = null }: PanelProps) {
   const body = draft.body;
   const tintPct = Math.round(body.bgTint * 100);
   const invoice = kind === 'invoice';
   // Paid in one currency: the invoice stays in it.
-  const heldIn = invoice && hasLivePayment(payments ?? null) ? (printedPayments(payments ?? null)[0]?.currency ?? null) : null;
+  const heldIn = invoice ? ((hasLivePayment(payments ?? null) ? (printedPayments(payments ?? null)[0]?.currency ?? null) : null) ?? currencyHeldIn) : null;
+  // Until the payments are known, nothing says the currency is free to change.
+  const pickerOff = heldIn !== null || (invoice && !paymentsSettled);
   // The code the picker shows as chosen: the stored one, or the one a symbol can only mean.
   const code = body.currencyCode ?? currencyCodeForSymbol(body.currency);
   const chipOn = (choice: { sym: string; code: string }) => (code !== null ? code === choice.code : body.currency === choice.sym);
@@ -104,7 +106,7 @@ export function ThemePanel({ draft, edits, onImageRejected, kind, payments }: Pa
               outlined
               label={currency.label}
               value={currency.sym}
-              disabled={heldIn !== null}
+              disabled={pickerOff}
               onClick={() => edits.histSetCurrency(currency.sym, currency.code)}
               className="flex-1 rounded-[9px] px-1 py-[9px]"
             />
@@ -114,7 +116,7 @@ export function ThemePanel({ draft, edits, onImageRejected, kind, payments }: Pa
           aria-label={t('inspector.theme.currencyMore', 'More currencies')}
           data-testid="invoices-currency-more"
           value={more?.code ?? ''}
-          disabled={heldIn !== null}
+          disabled={pickerOff}
           onChange={(event) => {
             const choice = MORE_CURRENCIES.find((one) => one.code === event.target.value);
             if (choice !== undefined) edits.histSetCurrency(choice.sym, choice.code);

@@ -36,7 +36,7 @@ import { customKeyOf, type OptionalSection, type SectionKey } from '../model/blo
 import type { CustomSectionType } from '../model/envelope.js';
 import type { InvoiceLang } from '../model/languages.js';
 import { totalsOf } from '../model/money.js';
-import { useDocumentPayments } from '../payments.js';
+import { useDocumentPaymentsState } from '../payments.js';
 import { INVOICES_KEY, invalidateInvoices } from '../queries.js';
 import { InvoiceCanvas } from './canvas/InvoiceCanvas.js';
 import type { ImageRejection } from './canvas/inline.js';
@@ -46,7 +46,7 @@ import { Inspector } from './inspector/Inspector.js';
 import { AddSectionModal } from './overlays/AddSectionModal.js';
 import { DiscardChangesModal } from './overlays/DiscardChangesModal.js';
 import { useDocumentEdits } from './useDocumentEdits.js';
-import { useEditorDraft } from './useEditorDraft.js';
+import { isCurrencyHeld, useEditorDraft } from './useEditorDraft.js';
 import { useProvider } from './useProvider.js';
 
 export interface EditorProps {
@@ -120,6 +120,8 @@ export function Editor({ detail }: EditorProps) {
     try {
       await actions.save();
     } catch (error) {
+      // Held to its payments' currency: said beside the currency picker, which went back to it.
+      if (isCurrencyHeld(error)) return;
       failToast(t('editor.saveFailed', 'Could not save'), error);
     }
   }, [actions, failToast, state.status]);
@@ -137,7 +139,7 @@ export function Editor({ detail }: EditorProps) {
   // --- the header's actions ------------------------------------------------------
   const kind = detail.kind;
   // An invoice's payments, as Adminium keeps them (one cache with the host's Payment panel).
-  const payments = useDocumentPayments(detail.id, kind === 'invoice');
+  const { payments, settled: paymentsSettled } = useDocumentPaymentsState(detail.id, kind === 'invoice');
   // A payment or refund may have set or cleared Paid: the draft takes the server's status.
   const onPaymentsChanged = useCallback(() => {
     void invoicesApi
@@ -252,6 +254,8 @@ export function Editor({ detail }: EditorProps) {
     kind,
     documentId: detail.id,
     payments,
+    paymentsSettled,
+    currencyHeldIn: state.currencyHeldIn,
     onPaymentsChanged,
   };
 

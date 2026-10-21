@@ -21,7 +21,7 @@ import { cn } from '@adminium/ui';
 
 import { t } from '../../../messages.js';
 import { formatMoney, formatPercent, parseDecimal } from '../../../model/money.js';
-import { hundredthsOf } from '../../../payments.js';
+import { hasLivePayment, hundredthsOf } from '../../../payments.js';
 import { InlineInput, KICKER, Region } from '../inline.js';
 import type { BlockProps } from './types.js';
 
@@ -163,8 +163,8 @@ export function ItemsBlock({ body, totals, edits, section, onSelect }: BlockProp
 export function TotalsBlock({ body, totals, payments = null, section, onSelect }: BlockProps) {
   const money = (minor: number) => formatMoney(minor, body.currency, body.cents);
   const showDiscount = parseDecimal(body.discountRate) > 0;
-  // An invoice that takes payments: what was paid (live, net of refunds) and what is left of the total on the sheet.
-  const paid = payments === null || payments.currency === '' ? null : hundredthsOf(payments.paid);
+  // An invoice with a live payment, its payments shown on the sheet: what was paid (net of refunds) and what is left.
+  const paid = body.payhShow && hasLivePayment(payments) && payments !== null && payments.currency !== '' ? hundredthsOf(payments.paid) : null;
   return (
     <div className="flex flex-col items-end gap-[9px]">
       <Region section="tax" selected={section} onSelect={onSelect}>

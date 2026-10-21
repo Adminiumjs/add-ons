@@ -47,6 +47,15 @@ export function paymentsKey(documentId: string) {
 
 /** The invoice's payments; null while unknown, for a template, or when the host keeps none for it. */
 export function useDocumentPayments(documentId: string, enabled: boolean): DocumentPayments | null {
+  return useDocumentPaymentsState(documentId, enabled).payments;
+}
+
+/**
+ * The invoice's payments and whether the first answer is in (`settled`, also
+ * true for a template and after an older host's refusal): what may hold the
+ * currency is not known before it.
+ */
+export function useDocumentPaymentsState(documentId: string, enabled: boolean): { payments: DocumentPayments | null; settled: boolean } {
   const query = useQuery({
     queryKey: paymentsKey(documentId),
     queryFn: async () => (await api.post<{ data: DocumentPayments | null }>('/api/v1/payments/panel', { documentId })).data,
@@ -55,7 +64,7 @@ export function useDocumentPayments(documentId: string, enabled: boolean): Docum
     // An older host answers 422 for a document: no payments, not a retried error.
     retry: false,
   });
-  return enabled ? (query.data ?? null) : null;
+  return { payments: enabled ? (query.data ?? null) : null, settled: !enabled || query.isFetched };
 }
 
 /** The live payments the sheet prints: no test payment ever reaches a document. */
