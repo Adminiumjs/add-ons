@@ -64,6 +64,7 @@ including the ones that name no company.
 | Inventory | `packages/inventory` | `STK` | *(none)* | — |
 | Offers & gift cards | `packages/offers` | `OFF` | *(none)* | — |
 | Card payments | `packages/payments-stripe` | `CP` | **Stripe**, **Link**; ways to pay it names: **PayPal**, **Apple Pay**, **Google Pay**, **Klarna**; card schemes: **Visa**, **Mastercard**, **American Express** | Stripe, Inc.; PayPal, Inc.; Apple Inc.; Google LLC; Klarna Bank AB; Visa Inc.; Mastercard International Incorporated; American Express Company |
+| Wallet payments | `packages/payments-paypal` | `WP` | **PayPal** | PayPal, Inc. |
 
 Adminium and the Adminium name are marks of the Adminium project. Every add-on
 here is published by the project itself (`publisher.id: adminium`), which in v1
@@ -729,9 +730,10 @@ listing say "Connects to PayPal". It says "the PayPal page" and "the PayPal
 dashboard" rather than a possessive form, the same rule as the Card payments
 add-on.
 
-A card a customer pays with through PayPal is described by its scheme as PayPal
-reports it, under the same rule and the same owners as in the Stripe section
-above.
+The add-on names no card scheme and no other way to pay. However the customer
+funds the payment on the PayPal page, staff see it as "PayPal". A held or
+declined payment is explained in Adminium's own sentence, chosen from the
+reason code PayPal sends, so no other company's name reaches a screen.
 
 ## No logo, no brand colour
 

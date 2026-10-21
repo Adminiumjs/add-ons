@@ -86,6 +86,8 @@ describe('release shape: discovery', () => {
       'offers',
       // The first that moves money: a `payment-provider@1` half the engine loads, and no screen of its own.
       'payments-stripe',
+      // The second payment provider, and the first server half that imports Node's own modules (webhook certificates).
+      'payments-paypal',
       'personalizer',
       'shipping-dhl',
     ].sort());
@@ -200,7 +202,17 @@ describe.each(found)('release shape: $name', (addOn) => {
      *   peer-declaring it would be an install a consumer does not need (npm 7+
      *   auto-installs peers, so that is a real cost).
      */
-    expect(imported, `${addOn.name}'s bundle must import nothing at all`).toEqual(new Set());
+    const addOnBlock = (addOn.manifest['addOn'] ?? {}) as { slots?: unknown[]; pages?: unknown[] };
+    const hasClient = (addOnBlock.slots ?? []).length > 0 || (addOnBlock.pages ?? []).length > 0;
+    /*
+     * A SERVER-ONLY BUNDLE MAY ASK FOR NODE'S OWN MODULES, AND NOTHING ELSE.
+     * With no slot and no page, no byte of it reaches a browser: the engine
+     * imports it on Node, which already has `node:crypto` (the PayPal add-on
+     * checks a webhook's certificate chain with it). A `node:` specifier is
+     * never an install, so the rule "import nothing" still means it.
+     */
+    const outside = hasClient ? [...imported] : [...imported].filter((specifier) => !specifier.startsWith('node:'));
+    expect(new Set(outside), `${addOn.name}'s bundle must import nothing at all`).toEqual(new Set());
 
     const declared = new Set(Object.keys((addOn.pkg['peerDependencies'] ?? {}) as object));
     /*
@@ -209,8 +221,6 @@ describe.each(found)('release shape: $name', (addOn) => {
      * peer-declaring React would make npm install a library no line of it
      * loads. Such an add-on declares no peer at all.
      */
-    const addOnBlock = (addOn.manifest['addOn'] ?? {}) as { slots?: unknown[]; pages?: unknown[] };
-    const hasClient = (addOnBlock.slots ?? []).length > 0 || (addOnBlock.pages ?? []).length > 0;
     if (!hasClient) {
       expect([...declared], `${addOn.name} has no browser half, so it peer-declares nothing`).toEqual([]);
       return;
