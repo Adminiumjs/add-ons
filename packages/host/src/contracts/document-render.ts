@@ -96,7 +96,7 @@ export interface DocumentQrValue {
   png: string;
 }
 
-export type OutlineSlotDefault = 'sequence' | 'connection' | 'setting' | 'now';
+export type OutlineSlotDefault = 'sequence' | 'connection' | 'setting' | 'now' | 'pay-link';
 
 export interface OutlineSlot {
   id: string;

@@ -1454,6 +1454,8 @@ const PAY_URL: OutlineSlot = {
   },
   type: 'text',
   required: false,
+  // Filled by Adminium with the invoice's own live pay link, only while it can be paid online.
+  default: 'pay-link',
 };
 
 const PAY_QR: OutlineSlot = {
@@ -1480,6 +1482,8 @@ const PAY_QR: OutlineSlot = {
   },
   type: 'qr',
   required: false,
+  // Filled by Adminium with the invoice's own live pay link, only while it can be paid online.
+  default: 'pay-link',
 };
 
 const OPENING_BALANCE: OutlineSlot = {

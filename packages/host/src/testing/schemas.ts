@@ -214,7 +214,7 @@ const outlineSlotShape = {
     'qr',
   ]),
   required: z.boolean(),
-  default: z.enum(['sequence', 'connection', 'setting', 'now']).optional(),
+  default: z.enum(['sequence', 'connection', 'setting', 'now', 'pay-link']).optional(),
 };
 
 /** A `qr` slot's value, as the host makes it (the engine's `documentQrValueSchema`). */
