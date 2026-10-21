@@ -12,10 +12,10 @@
  * retryable }`; nothing here throws for something Stripe said. Stripe's own
  * words reach staff only after every key-shaped string is taken out of them.
  *
- * How Stripe's states read (plan 70 §4.1):
+ * How Stripe's states read:
  *   - session `open`                         → `pending` (`requires_action` while the bank asks for a step)
  *   - `open`, the last try declined          → `failed`, nothing taken; the page stays open, so a later
- *                                              success can still follow and is recorded (plan 70 §7.2 D3, D7)
+ *                                              success can still follow, and the engine records it
  *   - `complete` + `paid`                    → `succeeded`
  *   - `complete` + `unpaid` (a bank debit)   → `processing`, until Stripe says it settled or failed
  *   - `expired`                              → `expired`

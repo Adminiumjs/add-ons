@@ -10,8 +10,8 @@
  * PayPal takes money in two steps (Orders v2): the customer APPROVES on the
  * PayPal page, then Adminium CAPTURES. `complete` is the capture, and only the
  * engine calls it (the return page, the `CHECKOUT.ORDER.APPROVED` webhook and
- * the sweep, under one lock); `status` never captures. How it reads (plan 70
- * §4.2), always from the CAPTURE, never from the order:
+ * the sweep, under one lock); `status` never captures. How it reads,
+ * always from the CAPTURE, never from the order:
  *   - no capture yet (created, waiting, approved)      → `pending`
  *   - capture `COMPLETED` (or since refunded)            → `succeeded`
  *   - capture `PENDING`                                  → `processing`, with PayPal's reason

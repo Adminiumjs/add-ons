@@ -5,7 +5,7 @@
  * (`paypal/paypal-rest-api-specifications`, commit `90e8041ffe`, 2026-04-07:
  * `checkout_orders_v2.json` 2.32, `payments_payment_v2.json` 2.12,
  * `notifications_webhooks_v1.json` 1.11, read 2026-10-21) and the PayPal
- * developer pages named in plan 70's facts check. The OpenAPI suite checks
+ * developer pages named beside each value. The OpenAPI suite checks
  * every request this add-on builds against the same descriptions.
  */
 
@@ -37,7 +37,7 @@ export const CERT_HOSTS: Readonly<Record<PaymentMode, readonly string[]>> = {
 
 /**
  * The certificate's subject. PayPal signs webhooks with a certificate for
- * this name (VERIFY WITH A SANDBOX DELIVERY: plan 70 P0-T05, whether the
+ * this name (VERIFY WITH A SANDBOX DELIVERY whether the
  * sandbox uses the same name).
  */
 export const CERT_SUBJECT = 'messageverificationcerts.paypal.com';
@@ -53,8 +53,8 @@ export const PAYPAL_PATHS = {
 } as const;
 
 /**
- * How long a checkout stays payable: six hours (plan 70 §4.2). PayPal keeps a
- * `PayPal-Request-Id` for six hours on order create and capture (facts §5), so
+ * How long a checkout stays payable: six hours. PayPal keeps a
+ * `PayPal-Request-Id` for six hours on order create and capture (developer.paypal.com idempotency reference), so
  * an order is never captured after its capture key could have been forgotten.
  */
 export const ORDER_LIFETIME_MS = 6 * 60 * 60 * 1000;

@@ -1,8 +1,7 @@
 /**
  * STRIPE'S OWN CURRENCY TABLE: how an amount is written in its smallest unit.
  *
- * Source: https://docs.stripe.com/currencies (read 2026-10-20, plan 70 facts
- * §8). Each provider owns its table, because they disagree: HUF and TWD take
+ * Source: https://docs.stripe.com/currencies (read 2026-10-20). Each provider owns its table, because they disagree: HUF and TWD take
  * two decimals here and none at PayPal.
  *
  * An amount that cannot be held exactly is REFUSED, never rounded: rounding a

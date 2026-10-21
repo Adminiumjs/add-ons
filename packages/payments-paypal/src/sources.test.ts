@@ -5,7 +5,7 @@
  * - No module but its own files, the contract mirror, and exactly
  *   `node:crypto` and `node:tls` (the webhook certificate check).
  * - No address but the PayPal hosts of its two modes.
- * - No possessive of a mark in anything it ships (plan 70 G1-1).
+ * - No possessive of a mark in anything it ships (the naming rule in TRADEMARKS.md).
  * - The money, word and signature files read no clock and roll no die.
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs';

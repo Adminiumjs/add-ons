@@ -2,7 +2,7 @@
  * PAYPAL'S OWN CURRENCY TABLE.
  *
  * Source: https://developer.paypal.com/reference/currency-codes/ (read
- * 2026-10-20, plan 70 facts §8). PayPal takes 24 currencies and nothing else.
+ * 2026-10-20). PayPal takes 24 currencies and nothing else.
  * HUF, JPY and TWD are whole units only: "no decimal places or fractions". So
  * an amount the Stripe add-on takes (HUF 10.45) is refused here. Nothing is
  * rounded: rounding a customer's amount is taking a different amount.

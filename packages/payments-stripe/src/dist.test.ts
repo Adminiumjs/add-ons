@@ -41,7 +41,7 @@ describe('dist/server.js', () => {
     expect(bytes.length).toBeLessThan(MAX_BYTES);
   });
 
-  it('writes no mark in the possessive (G1-1)', () => {
+  it('writes no mark in the possessive', () => {
     const code = readFileSync(join(ROOT, OUTPUT.server), 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/[^\n]*/g, ' ');
     expect(code).not.toMatch(POSSESSIVE);
   });

@@ -3,8 +3,8 @@
  *
  * PayPal signs `<transmission id>|<transmission time>|<webhook id>|<crc32 of
  * the raw body>` with SHA256withRSA, using the certificate at the delivery's
- * `paypal-cert-url` (developer.paypal.com/api/rest/webhooks/rest, plan 70
- * facts §7). Local checking is PayPal's preferred method and the only one
+ * `paypal-cert-url` (developer.paypal.com/api/rest/webhooks/rest, read
+ * 2026-10-20). Local checking is PayPal's preferred method and the only one
  * that also works for its simulator's events.
  *
  * A forged delivery names its own certificate address, so before any byte

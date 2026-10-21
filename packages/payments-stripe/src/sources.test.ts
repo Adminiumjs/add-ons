@@ -3,7 +3,7 @@
  *
  * - No network but the client the engine hands in: no `fetch`, no Node module.
  * - No address but the Stripe API and the Stripe page.
- * - No possessive of a mark in anything it ships (plan 70 G1-1): "the Stripe
+ * - No possessive of a mark in anything it ships (the naming rule in TRADEMARKS.md): "the Stripe
  *   page", never the possessive.
  * - Nothing shipped reaches the test-only entry points.
  */

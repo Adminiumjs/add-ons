@@ -4,7 +4,7 @@
  * Validated with the validator an install uses. Until the engine release that
  * admits `payment-provider@1` is published, the installed `@adminiumjs/manifest`
  * does not know the contract and the first case is red; it goes green against
- * the packed engine tarball (plan 70 P1-R) and after the release.
+ * the packed engine tarball and after the release.
  */
 import { validateManifest } from '@adminiumjs/manifest';
 import { describe, expect, it } from 'vitest';
@@ -50,7 +50,7 @@ describe('the Wallet payments manifest', () => {
     for (const mode of ['test', 'live'] as const) expect(declared).toContain(new URL(PAYPAL_HOSTS[mode].api).hostname);
   });
 
-  it('is named for what it does, and says what it connects to (G1-1)', () => {
+  it('is named for what it does, and says what it connects to ', () => {
     expect(manifest.name).toBe('Wallet payments');
     expect(manifest.name).not.toMatch(/paypal/i);
     expect(manifest.description.fallback.startsWith('Connects to PayPal.')).toBe(true);

@@ -97,7 +97,7 @@ export const WEBHOOK_SECRET = /^whsec_[A-Za-z0-9+/=]{10,}$/;
  * nothing is created either way. The names are the Stripe dashboard's own
  * words, which is what the admin sees next to each missing one.
  *
- * VERIFY WITH A SANDBOX KEY (plan 70 P0-T05): that a write probe on a missing
+ * VERIFY WITH A SANDBOX KEY: that a write probe on a missing
  * object is refused for permission BEFORE it is looked up, and that reading
  * the account (`Accounts: read`) is what a restricted key needs for its own
  * account id.

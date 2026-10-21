@@ -2,7 +2,7 @@
  * Adminium's eight locales → the Stripe Checkout `locale` enum.
  *
  * Source: the `locale` enum in the Checkout Sessions create call (OpenAPI
- * `2026-09-30.endive`; plan 70 facts §9). Stripe Checkout has no Arabic, so
+ * `2026-09-30.endive`). Stripe Checkout has no Arabic, so
  * an Arabic pay page hands over with `auto` (the browser's language) and the
  * pay page says so before the redirect ("The Stripe page is not in Arabic.").
  */
