@@ -63,6 +63,7 @@ including the ones that name no company.
 | Invoices & Receipts | `packages/invoices` | `INV` | *(none)* | — |
 | Inventory | `packages/inventory` | `STK` | *(none)* | — |
 | Offers & gift cards | `packages/offers` | `OFF` | *(none)* | — |
+| Card payments | `packages/payments-stripe` | `CP` | **Stripe**, **Link**; ways to pay it names: **PayPal**, **Apple Pay**, **Google Pay**, **Klarna**; card schemes: **Visa**, **Mastercard**, **American Express** | Stripe, Inc.; PayPal, Inc.; Apple Inc.; Google LLC; Klarna Bank AB; Visa Inc.; Mastercard International Incorporated; American Express Company |
 
 Adminium and the Adminium name are marks of the Adminium project. Every add-on
 here is published by the project itself (`publisher.id: adminium`), which in v1
@@ -648,15 +649,21 @@ will be offered:
 - **SEPA Direct Debit** is named after the Single Euro Payments Area scheme,
   which the European Payments Council manages; the name is used as the name of
   the scheme.
-- Local ways to pay (for example iDEAL, Bancontact and Multibanco) are the marks
-  of their owners and are named the way Stripe reports them.
+- Local ways to pay (for example iDEAL, Bancontact and Multibanco), other
+  wallets (for example Amazon Pay, Cash App Pay, Revolut Pay, Alipay and WeChat
+  Pay) and pay-later services (for example Affirm and Afterpay / Clearpay) are
+  the marks of their owners and are named the way Stripe reports them, as a
+  plain word on a list of what the shop has switched on.
 - A card is described by its scheme as Stripe reports it on the charge (for
   example "Visa ••4242"), so staff can tell which card paid. Visa is a
   trademark of Visa Inc., Mastercard of Mastercard International Incorporated,
-  and American Express of American Express Company.
-- **PayPal** (a trademark of PayPal, Inc.) is named once, in the code that
-  keeps it off the Stripe page while the PayPal add-on is connected, so a
-  customer sees one PayPal button, not two.
+  and American Express of American Express Company. Other schemes Stripe
+  reports (Discover, Diners Club, JCB, UnionPay, Cartes Bancaires, eftpos and
+  Interac) are the marks of their owners and are named the same way.
+- **PayPal** (a trademark of PayPal, Inc.) is named as one of the ways Stripe
+  offers, where the shop has switched it on, and is left off the Stripe page
+  while the Wallet payments add-on is connected, so a customer sees one PayPal
+  button, not two.
 
 Each of these is a word on a plain button with a generic icon. None is
 endorsed, and none of their owners has a relationship with Adminium.

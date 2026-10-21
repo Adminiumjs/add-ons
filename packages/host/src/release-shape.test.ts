@@ -84,6 +84,8 @@ describe('release shape: discovery', () => {
       'inventory',
       // The first that answers what an order's reductions come to (`price-adjust@1`), from the same file as its postings.
       'offers',
+      // The first that moves money: a `payment-provider@1` half the engine loads, and no screen of its own.
+      'payments-stripe',
       'personalizer',
       'shipping-dhl',
     ].sort());
@@ -201,6 +203,18 @@ describe.each(found)('release shape: $name', (addOn) => {
     expect(imported, `${addOn.name}'s bundle must import nothing at all`).toEqual(new Set());
 
     const declared = new Set(Object.keys((addOn.pkg['peerDependencies'] ?? {}) as object));
+    /*
+     * AN ADD-ON WITH NO BROWSER HALF NEEDS NO REACT. A payment provider is a
+     * server half the engine imports and nothing else (no slot, no page), so
+     * peer-declaring React would make npm install a library no line of it
+     * loads. Such an add-on declares no peer at all.
+     */
+    const addOnBlock = (addOn.manifest['addOn'] ?? {}) as { slots?: unknown[]; pages?: unknown[] };
+    const hasClient = (addOnBlock.slots ?? []).length > 0 || (addOnBlock.pages ?? []).length > 0;
+    if (!hasClient) {
+      expect([...declared], `${addOn.name} has no browser half, so it peer-declares nothing`).toEqual([]);
+      return;
+    }
     expect(declared.has('react'), `${addOn.name} must peer-declare react`).toBe(true);
     for (const specifier of declared) {
       expect(
