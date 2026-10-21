@@ -12,6 +12,9 @@
  * service; locally `docker run -p 12111:12111 stripe/stripe-mock:v0.206.0`).
  * Without it the suite is skipped by name, never passed.
  */
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
 import { describe, expect, it } from 'vitest';
 
 import type { PaymentHttpClient } from '@adminium/add-on-host/contracts';
@@ -23,6 +26,27 @@ const MOCK = process.env['STRIPE_MOCK_URL'];
 
 /** The version this suite was last run against; CI pins the same image. */
 export const STRIPE_MOCK_IMAGE = 'stripe/stripe-mock:v0.206.0';
+
+/**
+ * CI sets `STRIPE_MOCK_REQUIRED=1` beside the address: there a skipped wire
+ * suite is a failure, never a quiet pass (a broken service step would
+ * otherwise look exactly like a laptop without the mock).
+ */
+const REQUIRED = process.env['STRIPE_MOCK_REQUIRED'] === '1';
+
+describe.runIf(REQUIRED && MOCK === undefined)('stripe-mock, required here', () => {
+  it('is reachable: STRIPE_MOCK_URL is set', () => {
+    expect.fail('STRIPE_MOCK_REQUIRED=1 but STRIPE_MOCK_URL is not set: the Stripe wire suite would be skipped.');
+  });
+});
+
+describe('the image CI runs', () => {
+  it('is the one this suite was last run against', () => {
+    const workflow = readFileSync(fileURLToPath(new URL('../../../.github/workflows/ci.yml', import.meta.url)), 'utf8');
+    expect(workflow).toContain(`image: ${STRIPE_MOCK_IMAGE}`);
+    expect(workflow).toContain("STRIPE_MOCK_REQUIRED: '1'");
+  });
+});
 
 interface Seen {
   method: string;
