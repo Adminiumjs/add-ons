@@ -20,7 +20,10 @@ const chain = testChain();
 const trust = { anchors: [new X509Certificate(chain.rootPem)], subject: CERT_SUBJECT };
 const credentials = { client_id: 'AunitClientId0001', client_secret: 'EunitClientSecret0001', webhook_id: '4JH86294D6297924G' };
 
-let clock = Date.UTC(2026, 9, 21, 10, 0, 0);
+// The test chain is made fresh on each run, so the clock starts an hour into
+// its leaf's dates, never at a fixed day the chain may not cover yet.
+const START = Date.parse(new X509Certificate(chain.chainPem).validFrom) + 3_600_000;
+let clock = START;
 const now = () => clock;
 let paypal: FakePaypal;
 
@@ -50,7 +53,7 @@ async function made(over: Partial<CheckoutInput> = {}): Promise<string> {
 
 beforeEach(() => {
   forgetPaypalCaches();
-  clock = Date.UTC(2026, 9, 21, 10, 0, 0);
+  clock = START;
   paypal = createFakePaypal({ now, clientId: credentials.client_id, clientSecret: credentials.client_secret, certPem: chain.chainPem, signingKeyPem: chain.leafKeyPem, merchantId: '4TQ8ZL2W7NP3A' });
 });
 
