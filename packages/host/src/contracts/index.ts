@@ -31,6 +31,7 @@ export type {
   DocumentLocaleId,
   DocumentOutline,
   DocumentPaper,
+  DocumentQrValue,
   DocumentRenderer,
   DocumentSubject,
   LocalizedText,

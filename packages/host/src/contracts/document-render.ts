@@ -80,7 +80,21 @@ export type OutlineSlotType =
   | 'percent'
   | 'currency'
   | 'number'
-  | 'collection';
+  | 'collection'
+  | 'qr';
+
+/**
+ * A `qr` slot's value, made by the host (a provider needs no encoder): the
+ * text it encodes, its modules as rows of `0` and `1` with no quiet zone
+ * around them (a provider draws them as squares), and the same code as a PNG
+ * data URL (for a provider that draws HTML). A provider that declares a `qr`
+ * slot needs a host that knows the type.
+ */
+export interface DocumentQrValue {
+  text: string;
+  modules: readonly string[];
+  png: string;
+}
 
 export type OutlineSlotDefault = 'sequence' | 'connection' | 'setting' | 'now';
 

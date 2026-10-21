@@ -211,10 +211,25 @@ const outlineSlotShape = {
     'currency',
     'number',
     'collection',
+    'qr',
   ]),
   required: z.boolean(),
   default: z.enum(['sequence', 'connection', 'setting', 'now']).optional(),
 };
+
+/** A `qr` slot's value, as the host makes it (the engine's `documentQrValueSchema`). */
+export const documentQrValueSchema = z
+  .object({
+    text: z.string().min(1).max(64),
+    // Version 1 (21 modules) to version 40 (177), square.
+    modules: z.array(z.string().regex(/^[01]+$/)).min(21).max(177),
+    png: z.string().regex(/^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/),
+  })
+  .strict()
+  .refine((value) => value.modules.every((row) => row.length === value.modules.length), {
+    message: 'a QR code is square: as many modules in each row as there are rows',
+    path: ['modules'],
+  });
 
 /** One column of a `collection`. A column is never itself a collection. */
 export const outlineLeafSlotSchema = z.object(outlineSlotShape).strict();
