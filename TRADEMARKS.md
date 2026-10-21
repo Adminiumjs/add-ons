@@ -606,7 +606,7 @@ not ship. The day a paragraph above stops being true, one of those turns red.
 
 ---
 
-# Payments for Stripe — Stripe, Link, and the ways to pay Stripe offers
+# Card payments — Stripe, Link, and the ways to pay Stripe offers
 
 **Stripe** and **Link** are trademarks of Stripe, Inc. They are referenced
 **nominatively only**: to say which payment service this add-on connects to, and
@@ -631,8 +631,10 @@ repository holds no account, no key and no money of anyone's.
 The Stripe marks usage terms ask that the word mark be used unaltered: never
 abbreviated, never in the plural or the possessive, never translated, never
 inside another name, and never more prominent than the name of the thing it is
-used with. The add-on's screens therefore say "the Stripe page" and "the Stripe
-dashboard", and its listing leads with what the add-on does.
+used with. The add-on is therefore named for what it does, "Card payments",
+and its card and listing say "Connects to Stripe" in plain text, never larger
+than the name. Its screens say "the Stripe page" and "the Stripe dashboard",
+never a possessive, and no locale bundle inflects or translates the word.
 
 ## The ways to pay it names, and whose they are
 
@@ -685,7 +687,7 @@ Stripe mock server, never against a live account.
 
 ---
 
-# Payments for PayPal — PayPal and Venmo
+# Wallet payments — PayPal and Venmo
 
 **PayPal** is a trademark of PayPal, Inc. It is referenced **nominatively
 only**: to say which payment service this add-on connects to.
@@ -715,8 +717,10 @@ anyone's.
 
 The PayPal user agreement reserves the PayPal marks and their logos. The
 add-on therefore uses the word only to name the service, unaltered and in
-text, and says "the PayPal page" and "the PayPal dashboard" rather than a
-possessive form, the same rule as the Stripe add-on.
+text. The add-on is named for what it does, "Wallet payments", and its card and
+listing say "Connects to PayPal". It says "the PayPal page" and "the PayPal
+dashboard" rather than a possessive form, the same rule as the Card payments
+add-on.
 
 A card a customer pays with through PayPal is described by its scheme as PayPal
 reports it, under the same rule and the same owners as in the Stripe section
