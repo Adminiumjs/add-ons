@@ -13,6 +13,7 @@ import type { CreatePaymentProvider } from '@adminium/add-on-host/contracts';
 
 import { BUILT_FILES, NODE_IMPORTS, OUTPUT } from '../vite.config.ts';
 import { POSSESSIVE } from './sources.test.ts';
+import { LISTENED_EVENTS } from './wire.ts';
 import { buildForReal, DIST, ROOT } from './testing/build.ts';
 import { createFakePaypal } from './testing/fake-paypal.ts';
 import { testChain } from './testing/certs.ts';
@@ -47,7 +48,9 @@ describe('dist/server.js', () => {
   });
 
   it('loads the way the engine loads it, and its factory answers', async () => {
-    const module = (await import(pathToFileURL(join(ROOT, OUTPUT.server)).href)) as { createPaymentProvider?: CreatePaymentProvider };
+    const module = (await import(pathToFileURL(join(ROOT, OUTPUT.server)).href)) as { createPaymentProvider?: CreatePaymentProvider; webhookEvents?: readonly string[] };
+    // The optional list Studio shows beside the webhook address, carried by the built file.
+    expect(module.webhookEvents).toEqual([...LISTENED_EVENTS]);
     expect(typeof module.createPaymentProvider).toBe('function');
     const chain = testChain();
     const credentials = { client_id: 'AbuiltBytesClient01', client_secret: 'EbuiltBytesSecret01', webhook_id: 'WH0BUILT' };
