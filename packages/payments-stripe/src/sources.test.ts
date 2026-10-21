@@ -10,6 +10,8 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { KEY_APP_PERMISSIONS } from './key-app.ts';
+import { LISTENED_EVENTS } from './wire.ts';
 
 import { impuritiesIn, RAW_CONTROL_EXPLANATION, rawControlOffences } from '@adminium/add-on-host/testing';
 
@@ -86,5 +88,18 @@ describe('what the shipped code does not do', () => {
       ['README.md', readFileSync(join(ROOT, 'README.md'), 'utf8')] as const,
     ];
     expect(texts.filter(([, text]) => POSSESSIVE.test(text)).map(([file]) => file)).toEqual([]);
+  });
+});
+
+describe('the guide in the README', () => {
+  const readme = readFileSync(join(ROOT, 'README.md'), 'utf8');
+
+  it('names every event the webhook must send', () => {
+    expect(LISTENED_EVENTS.filter((event) => !readme.includes(`\`${event}\``))).toEqual([]);
+  });
+
+  it('lists exactly the access the key app asks for, by the names the Stripe dashboard uses', () => {
+    const rows = [...readme.matchAll(/^\s*\| ([^|]+?)(?: \(optional\))? \| [^|]+ \|$/gmu)].map((match) => match[1]!).filter((name) => name !== 'Permission' && !/^-+$/.test(name));
+    expect(rows.sort()).toEqual(KEY_APP_PERMISSIONS.map((one) => one.name).sort());
   });
 });

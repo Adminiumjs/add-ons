@@ -11,6 +11,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { LISTENED_EVENTS } from './wire.ts';
 
 import { impuritiesIn, RAW_CONTROL_EXPLANATION, rawControlOffences } from '@adminium/add-on-host/testing';
 
@@ -86,5 +87,18 @@ describe('what the shipped code does not do', () => {
       ['README.md', readFileSync(join(ROOT, 'README.md'), 'utf8')] as const,
     ];
     expect(texts.filter(([, text]) => POSSESSIVE.test(text)).map(([file]) => file)).toEqual([]);
+  });
+});
+
+describe('the guide in the README', () => {
+  const readme = readFileSync(join(ROOT, 'README.md'), 'utf8');
+  const manifest = readFileSync(join(ROOT, 'manifest.json'), 'utf8');
+
+  it('names every event the webhook must send', () => {
+    expect(LISTENED_EVENTS.filter((event) => !readme.includes(`\`${event}\``))).toEqual([]);
+  });
+
+  it('names neither Pay Later nor Venmo where a shop reads it: neither is shown on the PayPal page this add-on uses until checked', () => {
+    for (const text of [readme, manifest]) expect(text).not.toMatch(/pay\s*later|venmo/i);
   });
 });

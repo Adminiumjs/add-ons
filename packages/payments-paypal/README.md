@@ -27,6 +27,52 @@ reaches your server.
 Set it up in **Studio → Payments**. Everything you type there is kept
 encrypted, per mode, and can be replaced without disconnecting.
 
+## Set it up
+
+Do it first in the PayPal sandbox, make a test payment, then do the same in
+live mode. Studio keeps a checklist of the steps.
+
+### 1. The REST app and its credentials
+
+1. Sign in at developer.paypal.com with your PayPal Business account and open
+   Apps & Credentials. The switch at the top chooses Sandbox or Live: start in
+   Sandbox.
+2. Create an app (type Merchant), with Accept payments on.
+3. Copy its client ID and secret into the sandbox fields of Wallet payments in
+   Studio. Studio checks them at once with PayPal.
+
+The secret opens the whole PayPal account. Keep it in Studio and nowhere else;
+if it ever leaks, make a new secret in the same place and replace it in Studio.
+
+### 2. The webhook and its webhook ID
+
+1. In the same app, under Webhooks, add a webhook. Paste the address Studio
+   shows for that mode. It must be on port 443 (an address with no port): PayPal
+   sends webhooks to port 443 only.
+2. Tick these events: `CHECKOUT.ORDER.APPROVED`, `PAYMENT.CAPTURE.COMPLETED`,
+   `PAYMENT.CAPTURE.DENIED`, `PAYMENT.CAPTURE.PENDING`,
+   `PAYMENT.CAPTURE.REFUNDED`, `PAYMENT.CAPTURE.REVERSED`.
+3. Save, then copy the webhook's **ID** (not its address) into the webhook ID
+   field in Studio. Adminium checks every webhook's signature with it, on your
+   server, without asking PayPal.
+
+### 3. A test payment
+
+A sandbox payment needs a sandbox **buyer** login. On the PayPal developer
+site, open Testing tools → Sandbox accounts and use the email and password of
+the Personal account there. In Studio → Payments, "Send a test payment" opens
+the pay page for a pretend invoice of one unit in a new tab; choose "Pay with
+PayPal" and sign in as that buyer. Back in Studio you see what PayPal took,
+that the webhook arrived, and what would have been recorded. Nothing is
+written to your tables.
+
+### 4. Going live
+
+Switch Apps & Credentials to Live, create the live app and its webhook the same
+way, paste the live client ID, secret and webhook ID into the live fields, and
+switch Wallet payments to live in Studio. Test links stop working when you go
+live.
+
 ## How a payment goes
 
 The customer approves the payment on the PayPal page and comes back.
