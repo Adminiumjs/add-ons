@@ -514,7 +514,8 @@ export function createPaypalProvider(context: PaymentProviderContext, options: P
       if (!input.methods.includes('paypal')) return providerError('INVALID_REQUEST', 'No way to pay is allowed for this payment.');
       if (input.idempotencyKey.length > 108) return providerError('INVALID_REQUEST', 'The request id is longer than PayPal keeps.');
       const locale = paypalLocale(input.payable.locale);
-      const description = [input.payable.reference.trim(), input.payable.description.trim()].filter((one) => one !== '').join(' · ');
+      // A plain row's description is often its number again: say it once ("ORD-1006", not "ORD-1006 · ORD-1006").
+      const description = [...new Set([input.payable.reference.trim(), input.payable.description.trim()])].filter((one) => one !== '').join(' · ');
       const order = await request(
         'POST',
         PAYPAL_PATHS.orders,

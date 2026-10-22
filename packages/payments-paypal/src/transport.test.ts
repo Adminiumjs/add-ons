@@ -116,6 +116,13 @@ describe('the hosts of each mode', () => {
 });
 
 describe('the order it asks for', () => {
+  it('names a plain row once when its description is its number again', async () => {
+    const base = input();
+    await made({ payable: { ...base.payable, reference: 'ORD-1006', description: 'ORD-1006' } });
+    const sent = paypal.requests.find((one) => one.method === 'POST' && one.path === '/v2/checkout/orders')!;
+    expect((sent.body as { purchase_units: { description: string }[] }).purchase_units[0]!.description).toBe('ORD-1006');
+  });
+
   it('captures in one unit, with the attempt, the amount, PAY_NOW, no shipping and the language', async () => {
     await made();
     const sent = paypal.requests.find((one) => one.method === 'POST' && one.path === '/v2/checkout/orders')!;
