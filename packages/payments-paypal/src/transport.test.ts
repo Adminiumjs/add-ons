@@ -417,6 +417,21 @@ describe('disputes', () => {
     });
   });
 
+  it('reads a reversal sent as a refund (an "up" link, a negative amount) as a lost dispute over its capture', async () => {
+    const captureId = await capture();
+    const resource = {
+      id: 'REF-REVERSAL-1',
+      status: 'COMPLETED',
+      amount: { currency_code: 'EUR', value: '-120.00' },
+      links: [{ href: `https://api-m.sandbox.paypal.com/v2/payments/captures/${captureId}`, rel: 'up', method: 'GET' }],
+    };
+    expect(await verified(paypal.raise('PAYMENT.CAPTURE.REVERSED', 'refund', resource))).toMatchObject({
+      kind: 'dispute',
+      paymentRef: captureId,
+      dispute: { status: 'lost', amount: '120.00', currency: 'EUR' },
+    });
+  });
+
   it('carries no dispute on any other event, and nulls for an amount it cannot read', async () => {
     const captureId = await capture();
     const completed = paypal.events().find((one) => one.type === 'PAYMENT.CAPTURE.COMPLETED')!;
@@ -431,6 +446,32 @@ describe('disputes', () => {
 });
 
 describe('the sweep', () => {
+  it('reads every page of the window, not only the newest hundred', async () => {
+    for (let n = 0; n < 140; n += 1) {
+      clock += 1000;
+      paypal.raise('PAYMENT.CAPTURE.COMPLETED', 'capture', { id: `CAP-${String(n)}`, status: 'COMPLETED', amount: { currency_code: 'EUR', value: '1.00' } });
+    }
+    const read = await provider().listMissedEvents(null);
+    if (read.ok !== true) throw new Error('no events');
+    expect(read.events).toHaveLength(140);
+    expect(read.events[0]!.paymentRef).toBe('CAP-0');
+    expect(read.more).toBe(false);
+  });
+
+  it('never follows a "next" link off the events list', async () => {
+    const asked: string[] = [];
+    const spy: PaymentHttpClient = async (url, init) => {
+      asked.push(url);
+      const answer = await paypal.http(url, init);
+      if (!url.includes('/v1/notifications/webhooks-events')) return answer;
+      const body = (await answer.text()).replace(/"links":\[[^\]]*\]/, '"links":[{"href":"https://evil.example/v1/oauth2/token","rel":"next"}]');
+      return { status: answer.status, headers: answer.headers, text: async () => body };
+    };
+    paypal.raise('PAYMENT.CAPTURE.COMPLETED', 'capture', { id: 'CAP-x', status: 'COMPLETED', amount: { currency_code: 'EUR', value: '1.00' } });
+    await provider(spy).listMissedEvents(null);
+    expect(asked.some((url) => url.includes('evil.example') || url.endsWith('/v1/oauth2/token?'))).toBe(false);
+  });
+
   it('moves forward through events that share a second, repeating none', async () => {
     const a = await made({ attemptId: 'a', idempotencyKey: 'a:create' });
     paypal.approve(a);

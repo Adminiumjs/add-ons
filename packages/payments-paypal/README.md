@@ -12,7 +12,7 @@ reaches your server.
 ## What it needs
 
 - A **PayPal Business account**.
-- Adminium 0.3.32 or newer, on an address your customers can reach, served on
+- Adminium 0.3.33 or newer, on an address your customers can reach, served on
   port 443: PayPal delivers webhooks to port 443 only.
 - A **REST app** in the PayPal developer dashboard, for each mode you use
   (sandbox for testing, live for real payments), with Accept payments on. Its

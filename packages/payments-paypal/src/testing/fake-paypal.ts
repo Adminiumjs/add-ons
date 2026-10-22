@@ -255,8 +255,14 @@ export function createFakePaypal(options: FakePaypalOptions): FakePaypal {
       const start = Date.parse(query.get('start_time') ?? '1970-01-01T00:00:00Z');
       const end = Date.parse(query.get('end_time') ?? '2999-01-01T00:00:00Z');
       const size = Number(query.get('page_size') ?? 10);
+      const page = Math.max(1, Number(query.get('page') ?? 1));
+      // Newest first, a page at a time, with a "next" link to the following page — as PayPal pages its events.
       const inRange = events.filter((one) => Math.floor(one.at / 1000) * 1000 >= start && one.at <= end + 999).reverse();
-      return respond(200, { events: inRange.slice(0, size).map(eventBody), count: Math.min(size, inRange.length), links: inRange.length > size ? [{ href: 'next-page', rel: 'next', method: 'GET' }] : [] });
+      const shown = inRange.slice((page - 1) * size, page * size);
+      const following = new URLSearchParams(query);
+      following.set('page', String(page + 1));
+      const links = inRange.length > page * size ? [{ href: `${FAKE_API}/v1/notifications/webhooks-events?${following.toString()}`, rel: 'next', method: 'GET' }] : [];
+      return respond(200, { events: shown.map(eventBody), count: shown.length, links });
     }
     return issue(404, 'RESOURCE_NOT_FOUND', 'INVALID_RESOURCE_ID', `No route for ${method} ${path}.`);
   }

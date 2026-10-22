@@ -133,6 +133,23 @@ function link(body: Json | null, rel: string): string | null {
 }
 
 /** Why PayPal holds a capture, in a sentence (`capture_status_details.reason`). */
+/** Pages of the events list one sweep call reads: 100 events each, newest first. */
+const EVENT_PAGES_PER_CALL = 20;
+
+/**
+ * The path of PayPal's "next" page link, only when it is the events list again (same path, its own query). The
+ * request helper adds the mode's own API host, so a link naming any other host or path is not followed.
+ */
+function nextPath(href: string | null): string | null {
+  if (href === null) return null;
+  try {
+    const url = new URL(href, 'https://api-m.paypal.com');
+    return url.pathname === PAYPAL_PATHS.events ? `${url.pathname}${url.search}` : null;
+  } catch {
+    return null;
+  }
+}
+
 const PENDING_REASONS: Readonly<Record<string, string>> = {
   BUYER_COMPLAINT: 'The customer has opened a complaint about this payment.',
   CHARGEBACK: 'The payment is being charged back.',
@@ -420,10 +437,15 @@ export function createPaypalProvider(context: PaymentProviderContext, options: P
       const up = link(resource, 'up');
       paymentRef = up === null ? null : (up.split('/').filter(Boolean).at(-1) ?? null);
     } else if (type === 'PAYMENT.CAPTURE.REVERSED') {
-      // The capture taken back (a chargeback, or PayPal reversing it): the money is gone.
+      // The capture taken back (a chargeback, or PayPal reversing it): the money is gone. PayPal may send the capture
+      // itself, or the reversal as a refund-shaped resource whose "up" link names the capture and whose amount is
+      // negative: either way the capture is the payment and the amount is what went back.
       kind = 'dispute';
-      paymentRef = text(resource['id']);
-      dispute = { status: 'lost', ...moneyOf(resource['amount']) };
+      const up = link(resource, 'up');
+      paymentRef = up === null ? text(resource['id']) : (up.split('/').filter(Boolean).at(-1) ?? null);
+      const amount = asObject(resource['amount']);
+      const value = text(amount?.['value']);
+      dispute = { status: 'lost', ...moneyOf(amount === null || value === null ? resource['amount'] : { ...amount, value: value.replace(/^-/, '') }) };
     } else if (type.startsWith('CUSTOMER.DISPUTE.')) {
       // The resource is the dispute; the capture it is about is the seller's transaction id.
       kind = 'dispute';
@@ -678,9 +700,20 @@ export function createPaypalProvider(context: PaymentProviderContext, options: P
       const sinceMs = Date.parse(since ?? '');
       if (Number.isNaN(sinceMs)) return providerError('INVALID_REQUEST', 'The sweep cursor is not a time.');
       const query = new URLSearchParams({ page_size: '100', start_time: new Date(sinceMs).toISOString(), end_time: new Date(now()).toISOString() });
-      const body = await request('GET', `${PAYPAL_PATHS.events}?${query.toString()}`);
-      if (isError(body)) return body;
-      const raw = 'empty' in body ? [] : list(body['events']);
+      // PayPal lists newest first, a page at a time: read every page of the window before sorting, or the older pages
+      // are skipped when the cursor moves to the newest event read. Bounded, so one call stays small.
+      const raw: Json[] = [];
+      let path: string | null = `${PAYPAL_PATHS.events}?${query.toString()}`;
+      let pages = 0;
+      while (path !== null && pages < EVENT_PAGES_PER_CALL) {
+        const body = await request('GET', path);
+        if (isError(body)) return body;
+        pages += 1;
+        if ('empty' in body) break;
+        raw.push(...list(body['events']));
+        path = nextPath(link(body, 'next'));
+      }
+      const unread = path !== null;
       const wanted = new Set<string>(LISTENED_EVENTS);
       const events: PaymentEvent[] = [];
       for (const one of raw) {
@@ -698,7 +731,7 @@ export function createPaypalProvider(context: PaymentProviderContext, options: P
         const carried = newest.occurredAt === sinceMs ? [...seen] : [];
         next = `${new Date(newest.occurredAt).toISOString()}|${[...new Set([...carried, ...atNewest])].join(',')}`.slice(0, 1024);
       }
-      return { ok: true, events: kept, cursor: next, more: !('empty' in body) && link(body, 'next') !== null };
+      return { ok: true, events: kept, cursor: next, more: unread || kept.length < events.length };
     },
 
     /** One way: the customer pays with their PayPal account. Venmo and Pay Later are not offered on the PayPal page this add-on uses. */

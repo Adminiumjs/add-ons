@@ -12,7 +12,7 @@ pays on the Stripe page, so no card number ever reaches your server.
 ## What it needs
 
 - A Stripe account in one of the countries Stripe serves sellers in.
-- Adminium 0.3.32 or newer, on an address your customers can reach.
+- Adminium 0.3.33 or newer, on an address your customers can reach.
 - A **restricted key** (`rk_test_…` / `rk_live_…`), never a secret key. Make it
   with the private app template Studio offers (the way Stripe recommends), or by
   hand in the Stripe dashboard with exactly these permissions. The names are
