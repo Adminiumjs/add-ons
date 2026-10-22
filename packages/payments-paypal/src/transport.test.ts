@@ -14,10 +14,10 @@ import { crc32 } from './signature.ts';
 import { createFakePaypal, FAKE_CERT_URL, type FakePaypal } from './testing/fake-paypal.ts';
 import { testChain } from './testing/certs.ts';
 import { createPaypalProvider, forgetPaypalCaches } from './transport.ts';
-import { CERT_SUBJECT, ORDER_LIFETIME_MS, VOID_MARKER } from './wire.ts';
+import { LISTENED_EVENTS, ORDER_LIFETIME_MS, VOID_MARKER } from './wire.ts';
 
 const chain = testChain();
-const trust = { anchors: [new X509Certificate(chain.rootPem)], subject: CERT_SUBJECT };
+const trust = { anchors: [new X509Certificate(chain.rootPem)], intermediates: [] };
 const credentials = { client_id: 'AunitClientId0001', client_secret: 'EunitClientSecret0001', webhook_id: '4JH86294D6297924G' };
 
 // The test chain is made fresh on each run, so the clock starts an hour into
@@ -291,6 +291,26 @@ describe('webhooks', () => {
     expect(ref).toBeTruthy();
   });
 
+  it('completes a leaf served alone from a pinned intermediate, never from an address, and refuses it with none pinned', async () => {
+    const { delivery } = await paidDelivery();
+    const fetched: string[] = [];
+    const leafOnly: PaymentHttpClient = async (url, init) => {
+      fetched.push(url);
+      return url === FAKE_CERT_URL ? { status: 200, headers: { get: () => null }, text: async () => chain.leafPem } : paypal.http(url, init);
+    };
+    const pinned = { anchors: [new X509Certificate(chain.rootPem)], intermediates: [new X509Certificate(chain.intermediatePem)] };
+    const withPin = createPaypalProvider({ http: leafOnly, credentials, mode: 'test' }, { now, trust: pinned });
+    expect(await withPin.verifyWebhook(delivery)).toMatchObject({ ok: true, kind: 'checkout' });
+    expect(fetched).toEqual([FAKE_CERT_URL]);
+    forgetPaypalCaches();
+    const answer = await provider(leafOnly).verifyWebhook(delivery);
+    expect(answer).toMatchObject({ ok: false, code: 'SIGNATURE_INVALID', providerMessage: 'The certificate chain does not end in a trusted root.' });
+    // A pinned intermediate that does not itself hang from a trusted root completes nothing.
+    forgetPaypalCaches();
+    const unrooted = createPaypalProvider({ http: leafOnly, credentials, mode: 'test' }, { now, trust: { anchors: [new X509Certificate(chain.rogueChainPem)], intermediates: pinned.intermediates } });
+    expect(code(await unrooted.verifyWebhook(delivery))).toBe('SIGNATURE_INVALID');
+  });
+
   it('refuses a certificate outside its dates', async () => {
     const { delivery } = await paidDelivery();
     clock = Date.UTC(2040, 0, 1);
@@ -318,6 +338,88 @@ describe('webhooks', () => {
     expect(code(await live.verifyWebhook(paypal.deliveryFor(approved.id, 'WEBHOOK_ID', { certUrl: liveUrl })))).toBe('SIGNATURE_INVALID');
     expect(await live.verifyWebhook(paypal.deliveryFor(approved.id, credentials.webhook_id, { certUrl: liveUrl }))).toMatchObject({ ok: true, livemode: true });
     expect(FAKE_CERT_URL).toContain('api.sandbox.paypal.com');
+  });
+});
+
+describe('disputes', () => {
+  async function capture(): Promise<string> {
+    const ref = await made();
+    paypal.approve(ref);
+    const state = await provider().complete(ref, `${ref}:capture`);
+    if (state.ok !== true || state.paymentRef === null) throw new Error('not paid');
+    return state.paymentRef;
+  }
+
+  /** A `CUSTOMER.DISPUTE.*` resource as PayPal sends it (Disputes API v1 `dispute`). */
+  const disputeResource = (captureId: string, extra: Record<string, unknown> = {}) => ({
+    dispute_id: 'PP-D-27803',
+    create_time: '2026-10-22T11:21:00.000Z',
+    update_time: '2026-10-22T11:21:00.000Z',
+    disputed_transactions: [{ buyer_transaction_id: '3BC38643YC807283D', seller_transaction_id: captureId, transaction_status: 'COMPLETED', gross_amount: { currency_code: 'EUR', value: '120.00' } }],
+    reason: 'MERCHANDISE_OR_SERVICE_NOT_RECEIVED',
+    status: 'OPEN',
+    dispute_amount: { currency_code: 'EUR', value: '120.00' },
+    dispute_life_cycle_stage: 'CHARGEBACK',
+    ...extra,
+  });
+
+  const verified = (eventId: string) => provider().verifyWebhook(paypal.deliveryFor(eventId, credentials.webhook_id));
+
+  it('names the capture a dispute is about, not the dispute, and reads it as open', async () => {
+    const captureId = await capture();
+    for (const type of ['CUSTOMER.DISPUTE.CREATED', 'CUSTOMER.DISPUTE.UPDATED']) {
+      const answer = await verified(paypal.raise(type, 'dispute', disputeResource(captureId)));
+      expect(answer).toMatchObject({ ok: true, type, kind: 'dispute', paymentRef: captureId, checkoutRef: null, dispute: { status: 'open', amount: '120.00', currency: 'EUR' } });
+    }
+  });
+
+  it('reads how a resolved dispute ended for the seller', async () => {
+    const captureId = await capture();
+    const outcomes: [string | null, string][] = [
+      ['RESOLVED_BUYER_FAVOUR', 'lost'],
+      ['ACCEPTED', 'lost'],
+      ['RESOLVED_SELLER_FAVOUR', 'won'],
+      ['CANCELED_BY_BUYER', 'won'],
+      ['DENIED', 'won'],
+      ['RESOLVED_WITH_PAYOUT', 'closed'],
+      ['NONE', 'closed'],
+      ['SOMETHING_NEW', 'closed'],
+      [null, 'closed'],
+    ];
+    for (const [outcome, status] of outcomes) {
+      const resource = disputeResource(captureId, { status: 'RESOLVED', ...(outcome === null ? {} : { dispute_outcome: { outcome_code: outcome } }) });
+      const answer = await verified(paypal.raise('CUSTOMER.DISPUTE.RESOLVED', 'dispute', resource));
+      expect(answer, String(outcome)).toMatchObject({ ok: true, kind: 'dispute', paymentRef: captureId, dispute: { status, amount: '120.00', currency: 'EUR' } });
+    }
+  });
+
+  it('takes what went back to the customer for a lost dispute, when PayPal says it', async () => {
+    const captureId = await capture();
+    const resource = disputeResource(captureId, { status: 'RESOLVED', dispute_outcome: { outcome_code: 'RESOLVED_BUYER_FAVOUR', amount_refunded: { currency_code: 'EUR', value: '45.5' } } });
+    expect(await verified(paypal.raise('CUSTOMER.DISPUTE.RESOLVED', 'dispute', resource))).toMatchObject({ dispute: { status: 'lost', amount: '45.50', currency: 'EUR' } });
+  });
+
+  it('reads a reversed capture as a lost dispute over the capture amount', async () => {
+    const captureId = await capture();
+    const resource = { id: captureId, status: 'REVERSED', amount: { currency_code: 'EUR', value: '120.00' } };
+    expect(await verified(paypal.raise('PAYMENT.CAPTURE.REVERSED', 'capture', resource))).toMatchObject({
+      ok: true,
+      kind: 'dispute',
+      paymentRef: captureId,
+      dispute: { status: 'lost', amount: '120.00', currency: 'EUR' },
+    });
+  });
+
+  it('carries no dispute on any other event, and nulls for an amount it cannot read', async () => {
+    const captureId = await capture();
+    const completed = paypal.events().find((one) => one.type === 'PAYMENT.CAPTURE.COMPLETED')!;
+    expect(await verified(completed.id)).not.toHaveProperty('dispute');
+    const resource = disputeResource(captureId, { dispute_amount: { currency_code: 'XYZ', value: 'lots' } });
+    expect(await verified(paypal.raise('CUSTOMER.DISPUTE.CREATED', 'dispute', resource))).toMatchObject({ dispute: { status: 'open', amount: null, currency: null } });
+  });
+
+  it('asks for the dispute events and a declined capture', () => {
+    expect(LISTENED_EVENTS).toEqual(expect.arrayContaining(['PAYMENT.CAPTURE.DECLINED', 'CUSTOMER.DISPUTE.CREATED', 'CUSTOMER.DISPUTE.UPDATED', 'CUSTOMER.DISPUTE.RESOLVED']));
   });
 });
 

@@ -38,7 +38,7 @@ const name = (file: string) => file.slice(SRC.length);
 /** A mark followed by an apostrophe-s, straight or curly. */
 export const POSSESSIVE = /\b(Stripe|PayPal|Venmo)['’]s\b/;
 
-const PURE = ['currency.ts', 'locale.ts', 'wire.ts', 'signature.ts'];
+const PURE = ['currency.ts', 'locale.ts', 'wire.ts', 'signature.ts', 'intermediates.ts'];
 
 describe('what the shipped code does not do', () => {
   it('found the shipped files at all', () => {

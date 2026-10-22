@@ -20,9 +20,12 @@ reaches your server.
   account (PayPal has no narrower key), so keep it in Studio and nowhere else.
 - A **webhook** on the same app, pointing at the address Studio shows, with
   these events: `CHECKOUT.ORDER.APPROVED`, `PAYMENT.CAPTURE.COMPLETED`,
-  `PAYMENT.CAPTURE.DENIED`, `PAYMENT.CAPTURE.PENDING`, `PAYMENT.CAPTURE.REFUNDED`
-  and `PAYMENT.CAPTURE.REVERSED`. Its **webhook ID** goes into Studio too:
-  Adminium checks every webhook's signature with it, on your server.
+  `PAYMENT.CAPTURE.DECLINED`, `PAYMENT.CAPTURE.DENIED`,
+  `PAYMENT.CAPTURE.PENDING`, `PAYMENT.CAPTURE.REFUNDED`,
+  `PAYMENT.CAPTURE.REVERSED`, `CUSTOMER.DISPUTE.CREATED`,
+  `CUSTOMER.DISPUTE.UPDATED` and `CUSTOMER.DISPUTE.RESOLVED`. Its **webhook
+  ID** goes into Studio too: Adminium checks every webhook's signature with
+  it, on your server.
 
 Set it up in **Studio → Payments**. Everything you type there is kept
 encrypted, per mode, and can be replaced without disconnecting.
@@ -50,8 +53,10 @@ if it ever leaks, make a new secret in the same place and replace it in Studio.
    shows for that mode. It must be on port 443 (an address with no port): PayPal
    sends webhooks to port 443 only.
 2. Tick these events: `CHECKOUT.ORDER.APPROVED`, `PAYMENT.CAPTURE.COMPLETED`,
-   `PAYMENT.CAPTURE.DENIED`, `PAYMENT.CAPTURE.PENDING`,
-   `PAYMENT.CAPTURE.REFUNDED`, `PAYMENT.CAPTURE.REVERSED`.
+   `PAYMENT.CAPTURE.DECLINED`, `PAYMENT.CAPTURE.DENIED`,
+   `PAYMENT.CAPTURE.PENDING`, `PAYMENT.CAPTURE.REFUNDED`,
+   `PAYMENT.CAPTURE.REVERSED`, `CUSTOMER.DISPUTE.CREATED`,
+   `CUSTOMER.DISPUTE.UPDATED`, `CUSTOMER.DISPUTE.RESOLVED`.
 3. Save, then copy the webhook's **ID** (not its address) into the webhook ID
    field in Studio. Adminium checks every webhook's signature with it, on your
    server, without asking PayPal.
@@ -83,6 +88,17 @@ clears, shows as processing with the reason PayPal gives.
 
 A checkout that Adminium ends, or that is more than six hours old, is never
 taken, even if the customer approves it afterwards.
+
+A dispute is matched to the payment it is about and followed until PayPal
+resolves it: in your favour, in the customer's (the disputed money went back
+to them), or closed with no decision. A payment PayPal reverses reads as a
+dispute lost.
+
+Every webhook's signature is checked on your server against the signing
+certificate PayPal names. PayPal serves that certificate without the DigiCert
+certificate it hangs from, so the add-on carries that one itself and checks it against the
+roots Node trusts; it never fetches a certificate from anywhere but the PayPal
+address a webhook names.
 
 ## What it does not do
 

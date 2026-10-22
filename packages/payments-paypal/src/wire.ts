@@ -36,11 +36,16 @@ export const CERT_HOSTS: Readonly<Record<PaymentMode, readonly string[]>> = {
 };
 
 /**
- * The certificate's subject. PayPal signs webhooks with a certificate for
- * this name (VERIFY WITH A SANDBOX DELIVERY whether the
- * sandbox uses the same name).
+ * The name the signing certificate is issued to, per mode. The sandbox signs
+ * with its own name: a real sandbox delivery (2026-10-22) named
+ * `messageverificationcerts.sandbox.paypal.com`, and every live certificate
+ * read back names `messageverificationcerts.paypal.com`. A certificate of
+ * one mode never passes for the other.
  */
-export const CERT_SUBJECT = 'messageverificationcerts.paypal.com';
+export const CERT_SUBJECTS: Readonly<Record<PaymentMode, string>> = {
+  test: 'messageverificationcerts.sandbox.paypal.com',
+  live: 'messageverificationcerts.paypal.com',
+};
 
 export const PAYPAL_PATHS = {
   token: '/v1/oauth2/token',
@@ -66,14 +71,23 @@ export const ORDER_LIFETIME_MS = 6 * 60 * 60 * 1000;
  */
 export const VOID_MARKER = ':void';
 
-/** The events the sweep reads back when a webhook went missing (the webhook guide lists the same). */
+/**
+ * The events the sweep reads back when a webhook went missing (the webhook
+ * guide lists the same). The dispute events are PayPal's own names
+ * (developer.paypal.com/api/rest/webhooks/event-names, Disputes); a dispute
+ * names the capture it is about in `disputed_transactions[].seller_transaction_id`.
+ */
 export const LISTENED_EVENTS = [
   'CHECKOUT.ORDER.APPROVED',
   'PAYMENT.CAPTURE.COMPLETED',
+  'PAYMENT.CAPTURE.DECLINED',
   'PAYMENT.CAPTURE.DENIED',
   'PAYMENT.CAPTURE.PENDING',
   'PAYMENT.CAPTURE.REFUNDED',
   'PAYMENT.CAPTURE.REVERSED',
+  'CUSTOMER.DISPUTE.CREATED',
+  'CUSTOMER.DISPUTE.UPDATED',
+  'CUSTOMER.DISPUTE.RESOLVED',
 ] as const;
 
 /** Webhook headers, in lower case as the engine hands them. */

@@ -56,7 +56,7 @@ import { paypalLocale } from './locale.ts';
 import { checkChain, signatureMatches, signedMessage, systemTrust, type CertTrust } from './signature.ts';
 import {
   CERT_HOSTS,
-  CERT_SUBJECT,
+  CERT_SUBJECTS,
   LISTENED_EVENTS,
   ORDER_LIFETIME_MS,
   PAYPAL_HOSTS,
@@ -71,10 +71,25 @@ export const PAYPAL_ADD_ON_KEY = 'payments-paypal';
 
 type Json = Record<string, unknown>;
 
+/**
+ * How a dispute stands, as the engine's contract carries it from the release
+ * after 0.3.32 (`PaymentEvent.dispute`). Declared here, with the same shape,
+ * so this add-on still builds against the published 0.3.32 contracts, which
+ * lack it; against the newer ones the two declarations are the same field.
+ */
+interface DisputeOutcome {
+  readonly status: 'open' | 'won' | 'lost' | 'closed';
+  /** The amount in dispute (or, once lost, given back), as a decimal in major units ("120.00"). */
+  readonly amount: string | null;
+  readonly currency: string | null;
+}
+
+type PaymentEventOut = PaymentEvent & { readonly dispute?: DisputeOutcome };
+
 export interface PaypalProviderOptions {
   /** The clock (epoch ms). Defaults to the system clock. */
   now?: () => number;
-  /** The roots and subject a webhook certificate must chain to. Defaults to the system roots. */
+  /** The roots and intermediates a webhook certificate must chain to. Defaults to the system roots and the pinned DigiCert intermediates. */
   trust?: CertTrust;
 }
 
@@ -133,6 +148,22 @@ const PENDING_REASONS: Readonly<Record<string, string>> = {
   DECLINED_BY_RISK_FRAUD_FILTERS: 'PayPal declined the payment on a risk check.',
 };
 
+/**
+ * How a resolved dispute ended for the seller, by `dispute_outcome.outcome_code`
+ * (PayPal Disputes API v1, `customer_disputes_v1.json`, read 2026-10-22).
+ * `ACCEPTED` and `DENIED` are deprecated there but may still arrive.
+ * `RESOLVED_WITH_PAYOUT` (PayPal paid one side out itself) and
+ * `NONE` (closed with no decision) say nothing certain about the money: they,
+ * and any code not listed, read as closed.
+ */
+const DISPUTE_OUTCOMES: Readonly<Record<string, DisputeOutcome['status']>> = {
+  RESOLVED_BUYER_FAVOUR: 'lost',
+  ACCEPTED: 'lost',
+  RESOLVED_SELLER_FAVOUR: 'won',
+  CANCELED_BY_BUYER: 'won',
+  DENIED: 'won',
+};
+
 const REFUND_STATUSES: Readonly<Record<string, RefundStatus>> = {
   COMPLETED: 'succeeded',
   PENDING: 'pending',
@@ -145,7 +176,7 @@ export function createPaypalProvider(context: PaymentProviderContext, options: P
   const now = options.now ?? (() => Date.now());
   const hosts = PAYPAL_HOSTS[context.mode];
   const live = context.mode === 'live';
-  const trust = options.trust ?? systemTrust(CERT_SUBJECT);
+  const trust = options.trust ?? systemTrust();
   const clientId = context.credentials['client_id'] ?? '';
   const clientSecret = context.credentials['client_secret'] ?? '';
   const cacheKey = `${context.mode}:${createHash('sha256').update(`${clientId}\u0000${clientSecret}`).digest('hex')}`;
@@ -351,7 +382,25 @@ export function createPaypalProvider(context: PaymentProviderContext, options: P
     };
   }
 
-  function eventOf(event: Json): PaymentEvent | ProviderError {
+  /** An amount object (`{ value, currency_code }`) read as a decimal and its currency, or both null. */
+  function moneyOf(value: unknown): { amount: string | null; currency: string | null } {
+    const money = asObject(value);
+    const currency = text(money?.['currency_code'])?.toUpperCase() ?? null;
+    const amount = readValue(money?.['value'], currency);
+    return amount === null ? { amount: null, currency: null } : { amount, currency };
+  }
+
+  /** How a `CUSTOMER.DISPUTE.*` event leaves the dispute. */
+  function disputeOf(type: string, resource: Json): DisputeOutcome {
+    if (type !== 'CUSTOMER.DISPUTE.RESOLVED') return { status: 'open', ...moneyOf(resource['dispute_amount']) };
+    const outcome = asObject(resource['dispute_outcome']);
+    const status = DISPUTE_OUTCOMES[text(outcome?.['outcome_code']) ?? ''] ?? 'closed';
+    // Lost: what went back to the customer, when PayPal says; else the amount disputed.
+    const refunded = status === 'lost' ? moneyOf(outcome?.['amount_refunded']) : { amount: null, currency: null };
+    return { status, ...(refunded.amount !== null ? refunded : moneyOf(resource['dispute_amount'])) };
+  }
+
+  function eventOf(event: Json): PaymentEventOut | ProviderError {
     const eventId = text(event['id']);
     const type = text(event['event_type']);
     const at = Date.parse(text(event['create_time']) ?? '');
@@ -361,6 +410,7 @@ export function createPaypalProvider(context: PaymentProviderContext, options: P
     let checkoutRef: string | null = null;
     let paymentRef: string | null = null;
     let refundRef: string | null = null;
+    let dispute: DisputeOutcome | null = null;
     if (type.startsWith('CHECKOUT.ORDER.')) {
       kind = 'checkout';
       checkoutRef = text(resource['id']);
@@ -369,9 +419,16 @@ export function createPaypalProvider(context: PaymentProviderContext, options: P
       refundRef = text(resource['id']);
       const up = link(resource, 'up');
       paymentRef = up === null ? null : (up.split('/').filter(Boolean).at(-1) ?? null);
-    } else if (type === 'PAYMENT.CAPTURE.REVERSED' || type.startsWith('CUSTOMER.DISPUTE.')) {
+    } else if (type === 'PAYMENT.CAPTURE.REVERSED') {
+      // The capture taken back (a chargeback, or PayPal reversing it): the money is gone.
       kind = 'dispute';
       paymentRef = text(resource['id']);
+      dispute = { status: 'lost', ...moneyOf(resource['amount']) };
+    } else if (type.startsWith('CUSTOMER.DISPUTE.')) {
+      // The resource is the dispute; the capture it is about is the seller's transaction id.
+      kind = 'dispute';
+      paymentRef = text(list(resource['disputed_transactions'])[0]?.['seller_transaction_id']);
+      dispute = disputeOf(type, resource);
     } else if (type.startsWith('PAYMENT.CAPTURE.')) {
       kind = 'checkout';
       paymentRef = text(resource['id']);
@@ -389,6 +446,7 @@ export function createPaypalProvider(context: PaymentProviderContext, options: P
       // A PayPal event carries no mode: the endpoint and the webhook id it was signed for are this mode's.
       livemode: live,
       occurredAt: at,
+      ...(dispute === null ? {} : { dispute }),
     };
   }
 
@@ -591,7 +649,7 @@ export function createPaypalProvider(context: PaymentProviderContext, options: P
       }
       const pem = await certificate(address.href);
       if (isError(pem)) return pem;
-      const leaf = checkChain(pem, now(), trust);
+      const leaf = checkChain(pem, now(), trust, CERT_SUBJECTS[context.mode]);
       if (typeof leaf === 'string') return providerError('SIGNATURE_INVALID', leaf);
       const signedFor = [webhookId, ...(live ? [] : [SIMULATOR_WEBHOOK_ID])];
       if (!signedFor.some((one) => signatureMatches(signedMessage(id, time, one, delivery.rawBody), signature, leaf))) {

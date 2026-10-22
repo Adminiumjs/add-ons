@@ -10,9 +10,13 @@
  * A forged delivery names its own certificate address, so before any byte
  * of the certificate is believed:
  *   - the address must be https on one of the exact hosts in `CERT_HOSTS`;
- *   - the certificate must be for `CERT_SUBJECT`, inside its dates;
- *   - every certificate in the chain must be issued and signed by the next,
- *     and the last by a root the system trusts (`node:tls`).
+ *   - the certificate must be for the mode's name in `CERT_SUBJECTS`, inside
+ *     its dates;
+ *   - every certificate served must be issued and signed by the next, and the
+ *     last by a root the system trusts (`node:tls`), or by one of the pinned
+ *     DigiCert intermediates (`intermediates.ts`) that is itself issued and
+ *     signed by such a root. PayPal serves the leaf alone, so the pinned
+ *     intermediate is what completes a real chain.
  *
  * `node:crypto` and `node:tls` are the only modules this half imports: the
  * engine runs it on Node, and a certificate chain is not something to parse
@@ -21,6 +25,8 @@
 
 import { verify, X509Certificate } from 'node:crypto';
 import { rootCertificates } from 'node:tls';
+
+import { PINNED_INTERMEDIATES } from './intermediates.ts';
 
 /** CRC-32 (IEEE 802.3, the one PayPal names), over the UTF-8 bytes, as an unsigned decimal. */
 const CRC_TABLE = (() => {
@@ -39,18 +45,23 @@ export function crc32(text: string): number {
   return (crc ^ 0xffffffff) >>> 0;
 }
 
-/** What a chain must be rooted in and issued for. Tests hand their own. */
+/** What a chain must be rooted in. Tests hand their own. */
 export interface CertTrust {
+  /** The roots a chain may end in. */
   readonly anchors: readonly X509Certificate[];
-  readonly subject: string;
+  /** Intermediates that may complete a chain served without one; each must itself hang from an anchor. */
+  readonly intermediates: readonly X509Certificate[];
 }
 
-let systemAnchors: X509Certificate[] | null = null;
+let system: CertTrust | null = null;
 
-/** The roots the system trusts, read once. */
-export function systemTrust(subject: string): CertTrust {
-  systemAnchors ??= rootCertificates.map((pem) => new X509Certificate(pem));
-  return { anchors: systemAnchors, subject };
+/** The roots the system trusts and the pinned DigiCert intermediates, read once. */
+export function systemTrust(): CertTrust {
+  system ??= {
+    anchors: rootCertificates.map((pem) => new X509Certificate(pem)),
+    intermediates: PINNED_INTERMEDIATES.map((one) => new X509Certificate(one.pem)),
+  };
+  return system;
 }
 
 /** Each certificate in a PEM bundle, leaf first. */
@@ -58,8 +69,23 @@ export function splitPem(pem: string): string[] {
   return pem.match(/-----BEGIN CERTIFICATE-----[\s\S]+?-----END CERTIFICATE-----/g) ?? [];
 }
 
-/** The leaf of a chain that passes every check, or why it does not. */
-export function checkChain(pem: string, nowMs: number, trust: CertTrust): X509Certificate | string {
+function inDates(cert: X509Certificate, nowMs: number): boolean {
+  return nowMs >= Date.parse(cert.validFrom) && nowMs <= Date.parse(cert.validTo);
+}
+
+function issuedBy(cert: X509Certificate, issuer: X509Certificate): boolean {
+  return cert.checkIssued(issuer) && cert.verify(issuer.publicKey);
+}
+
+function anchored(cert: X509Certificate, anchors: readonly X509Certificate[]): boolean {
+  return anchors.some((anchor) => anchor.fingerprint256 === cert.fingerprint256 || issuedBy(cert, anchor));
+}
+
+/**
+ * The leaf of a chain that passes every check, or why it does not. `subject`
+ * is the name the leaf must be issued to: the mode's in `CERT_SUBJECTS`.
+ */
+export function checkChain(pem: string, nowMs: number, trust: CertTrust, subject: string): X509Certificate | string {
   let chain: X509Certificate[];
   try {
     chain = splitPem(pem).map((one) => new X509Certificate(one));
@@ -68,20 +94,16 @@ export function checkChain(pem: string, nowMs: number, trust: CertTrust): X509Ce
   }
   const leaf = chain[0];
   if (leaf === undefined) return 'The certificate address sent no certificate.';
-  for (const cert of chain) {
-    if (nowMs < Date.parse(cert.validFrom) || nowMs > Date.parse(cert.validTo)) return 'A certificate in the chain is outside its dates.';
-  }
-  if (leaf.checkHost(trust.subject) === undefined) return 'The signing certificate is not issued to PayPal.';
+  if (chain.some((cert) => !inDates(cert, nowMs))) return 'A certificate in the chain is outside its dates.';
+  if (leaf.checkHost(subject) === undefined) return 'The signing certificate is not issued to PayPal.';
   for (let i = 0; i + 1 < chain.length; i += 1) {
-    if (!chain[i]!.checkIssued(chain[i + 1]!) || !chain[i]!.verify(chain[i + 1]!.publicKey)) {
-      return 'The certificate chain does not hold together.';
-    }
+    if (!issuedBy(chain[i]!, chain[i + 1]!)) return 'The certificate chain does not hold together.';
   }
   const top = chain[chain.length - 1]!;
-  const anchored = trust.anchors.some(
-    (anchor) => anchor.fingerprint256 === top.fingerprint256 || (top.checkIssued(anchor) && top.verify(anchor.publicKey)),
-  );
-  return anchored ? leaf : 'The certificate chain does not end in a trusted root.';
+  if (anchored(top, trust.anchors)) return leaf;
+  // Served without its intermediate: complete it from the pinned ones, never from an address.
+  const completed = trust.intermediates.some((middle) => inDates(middle, nowMs) && issuedBy(top, middle) && anchored(middle, trust.anchors));
+  return completed ? leaf : 'The certificate chain does not end in a trusted root.';
 }
 
 /** True when `signature` (base64) is the leaf's SHA256withRSA signature over `message`. */

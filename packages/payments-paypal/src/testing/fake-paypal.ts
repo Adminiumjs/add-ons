@@ -104,6 +104,8 @@ export interface FakePaypal {
   latestDelivery(orderId: string, webhookId: string): WebhookDelivery | null;
   deliveryFor(eventId: string, webhookId: string, options?: { certUrl?: string; keyPem?: string }): WebhookDelivery;
   events(): readonly { id: string; type: string }[];
+  /** PayPal sends an event Adminium did not cause (a dispute, a reversal); answers its id. */
+  raise(type: string, resourceType: string, resource: Record<string, unknown>): string;
   tokensIssued(): number;
 }
 
@@ -354,6 +356,10 @@ export function createFakePaypal(options: FakePaypalOptions): FakePaypal {
     deliveryFor,
     events() {
       return events.map((one) => ({ id: one.id, type: one.type }));
+    },
+    raise(type, resourceType, resource) {
+      emit(type, resourceType, resource);
+      return events.at(-1)!.id;
     },
     tokensIssued() {
       return issuedTokens.size;

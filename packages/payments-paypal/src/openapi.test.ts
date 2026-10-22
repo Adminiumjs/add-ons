@@ -15,7 +15,6 @@ import { createFakePaypal } from './testing/fake-paypal.ts';
 import { testChain } from './testing/certs.ts';
 import { eventsQueryIssues, OPENAPI_SOURCE, operationOf, requestIssues } from './testing/openapi.ts';
 import { createPaypalProvider, forgetPaypalCaches } from './transport.ts';
-import { CERT_SUBJECT } from './wire.ts';
 
 describe(`the PayPal wire, against ${Object.entries(OPENAPI_SOURCE.files).map(([file, version]) => `${file.split('/').at(-1)} ${version}`).join(', ')}`, () => {
   it('sends only bodies and queries the descriptions allow', async () => {
@@ -23,7 +22,7 @@ describe(`the PayPal wire, against ${Object.entries(OPENAPI_SOURCE.files).map(([
     const chain = testChain();
     const credentials = { client_id: 'AopenapiClient00001', client_secret: 'EopenapiSecret00001', webhook_id: 'WH0OPENAPI' };
     const paypal = createFakePaypal({ clientId: credentials.client_id, clientSecret: credentials.client_secret, certPem: chain.chainPem, signingKeyPem: chain.leafKeyPem });
-    const provider = () => createPaypalProvider({ http: paypal.http, credentials, mode: 'test' }, { trust: { anchors: [new X509Certificate(chain.rootPem)], subject: CERT_SUBJECT } });
+    const provider = () => createPaypalProvider({ http: paypal.http, credentials, mode: 'test' }, { trust: { anchors: [new X509Certificate(chain.rootPem)], intermediates: [] } });
 
     expect((await provider().checkCredentials()).ok).toBe(true);
     const make = (attempt: string, currency = 'EUR', amount = '120.00', locale: string | null = 'de-DE', email: string | null = 'lena@example.test') =>

@@ -10,13 +10,12 @@ import { paymentProviderConformance, type PaymentAmountCase } from '@adminium/ad
 
 import { createFakePaypal } from './testing/fake-paypal.ts';
 import { testChain } from './testing/certs.ts';
-import { CERT_SUBJECT } from './wire.ts';
 import { createPaypalProvider } from './transport.ts';
 
 const chain = testChain();
 const credentials = { client_id: 'AconformanceClient01', client_secret: 'EconformanceSecret01', webhook_id: '8PT597110X687430LKGECATA' };
 const paypal = createFakePaypal({ clientId: credentials.client_id, clientSecret: credentials.client_secret, certPem: chain.chainPem, signingKeyPem: chain.leafKeyPem });
-const trust = { anchors: [new X509Certificate(chain.rootPem)], subject: CERT_SUBJECT };
+const trust = { anchors: [new X509Certificate(chain.rootPem)], intermediates: [] };
 const make = () => createPaypalProvider({ http: paypal.http, credentials, mode: 'test' }, { trust });
 
 /** PayPal's own answers: 24 currencies, HUF/JPY/TWD whole units. */
