@@ -1,6 +1,6 @@
 {
   "name": "@adminium/add-on-payments-paypal",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "type": "module",
   "description": "Wallet payments — lets a shop's customers pay an invoice or a record on the PayPal page, with the shop's own PayPal Business account.",
   "license": "AGPL-3.0-only",

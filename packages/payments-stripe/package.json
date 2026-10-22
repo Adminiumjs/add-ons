@@ -1,6 +1,6 @@
 {
   "name": "@adminium/add-on-payments-stripe",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "type": "module",
   "description": "Card payments — lets a shop's customers pay an invoice or a record on the Stripe hosted page, with the shop's own Stripe account and key.",
   "license": "AGPL-3.0-only",
