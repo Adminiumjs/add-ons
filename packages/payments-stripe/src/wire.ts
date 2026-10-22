@@ -88,38 +88,66 @@ export const RESTRICTED_KEY = /^rk_(test|live)_[A-Za-z0-9]{10,}$/;
 export const WEBHOOK_SECRET = /^whsec_[A-Za-z0-9+/=]{10,}$/;
 
 /**
+ * Where an access sits on the Stripe dashboard form for a restricted key: the
+ * Core list, Connect, or a group of its own (whose heading is the access name).
+ */
+export type PermissionGroup = 'Core' | 'Connect' | 'Checkout Sessions' | 'Webhook Endpoints, Event Destinations';
+
+/**
  * THE PERMISSIONS A KEY NEEDS, each with a call that proves it without
- * changing anything at Stripe.
+ * changing anything at Stripe. The names are the words of the Stripe
+ * dashboard form for a restricted key (read 2026-10-22 in a sandbox), and
+ * `group` is where that form lists each one, so the admin can find a missing one.
  *
- * Reads are proved with a one-item list. Writes are proved by asking for
- * something that does not exist: a key that may write gets "No such …"
- * (`resource_missing`), a key that may not gets a permission refusal, and
- * nothing is created either way. The names are the Stripe dashboard's own
- * words, which is what the admin sees next to each missing one.
+ * Reads are proved with a one-item list. Writes are proved with a POST that
+ * carries NO parameter at all, so nothing is looked up and nothing can be
+ * made: a key that may write gets 400 for the missing parameter, a key that
+ * may not gets a permission refusal (`more_permissions_required`).
  *
- * VERIFY WITH A SANDBOX KEY: that a write probe on a missing
- * object is refused for permission BEFORE it is looked up, and that reading
- * the account (`Accounts: read`) is what a restricted key needs for its own
- * account id.
+ * Why no parameter: a sandbox walk (2026-10-22) found that Stripe looks an
+ * object up BEFORE it checks the permission (a refund of a made-up
+ * PaymentIntent answered 404 "No such payment_intent" with Charges and
+ * Refunds set to None), and checks the permission BEFORE the parameters (a
+ * refund of a real PaymentIntent for too much answered
+ * `more_permissions_required` without the permission, 400 `param: amount`
+ * with it). That a request with no parameter is refused for permission
+ * before it is refused for the missing parameter is INFERRED from that
+ * order, not yet seen: CONFIRM WITH A CURL with a key whose write is off
+ * (`curl -u rk_test_…: -X POST https://api.stripe.com/v1/refunds` and the
+ * same for `/v1/checkout/sessions`; expected `more_permissions_required`).
  */
 export const PERMISSION_PROBES: readonly {
   name: string;
+  group: PermissionGroup;
   method: 'GET' | 'POST';
   path: string;
-  body?: Readonly<Record<string, string>>;
   optional?: boolean;
 }[] = [
-  { name: 'Checkout Sessions: write', method: 'POST', path: STRIPE_PATHS.expireSession('cs_adminium_permission_check') },
-  { name: 'Checkout Sessions: read', method: 'GET', path: `${STRIPE_PATHS.sessions}?limit=1` },
-  { name: 'PaymentIntents: read', method: 'GET', path: `${STRIPE_PATHS.paymentIntents}?limit=1` },
+  { name: 'Checkout Sessions: write', group: 'Checkout Sessions', method: 'POST', path: STRIPE_PATHS.sessions },
+  { name: 'Checkout Sessions: read', group: 'Checkout Sessions', method: 'GET', path: `${STRIPE_PATHS.sessions}?limit=1` },
+  { name: 'Payment Intents: read', group: 'Core', method: 'GET', path: `${STRIPE_PATHS.paymentIntents}?limit=1` },
+  { name: 'Charges and Refunds: write', group: 'Core', method: 'POST', path: STRIPE_PATHS.refunds },
+  { name: 'Events: read', group: 'Core', method: 'GET', path: `${STRIPE_PATHS.events}?limit=1` },
+  { name: 'Payment Disputes: read', group: 'Core', method: 'GET', path: `${STRIPE_PATHS.disputes}?limit=1` },
+  { name: 'Payment Method Configurations: read', group: 'Core', method: 'GET', path: `${STRIPE_PATHS.paymentMethodConfigurations}?limit=1` },
   {
-    name: 'Charges and Refunds: write',
-    method: 'POST',
-    path: STRIPE_PATHS.refunds,
-    body: { payment_intent: 'pi_adminium_permission_check' },
+    name: 'Webhook Endpoints, Event Destinations: read',
+    group: 'Webhook Endpoints, Event Destinations',
+    method: 'GET',
+    path: `${STRIPE_PATHS.webhookEndpoints}?limit=1`,
+    optional: true,
   },
-  { name: 'Events: read', method: 'GET', path: `${STRIPE_PATHS.events}?limit=1` },
-  { name: 'Disputes: read', method: 'GET', path: `${STRIPE_PATHS.disputes}?limit=1` },
-  { name: 'Payment Method Configurations: read', method: 'GET', path: `${STRIPE_PATHS.paymentMethodConfigurations}?limit=1` },
-  { name: 'Webhook endpoints: read', method: 'GET', path: `${STRIPE_PATHS.webhookEndpoints}?limit=1`, optional: true },
 ];
+
+/**
+ * The access a key needs to say which account it belongs to (`GET
+ * /v1/account`). On the form it is under Connect, as "In your account: Read".
+ */
+export const ACCOUNT_PERMISSION = { name: 'Accounts: read', group: 'Connect' } as const satisfies { name: string; group: PermissionGroup };
+
+/** A permission as a message names it: with the place on the form to find it ("Accounts: read (under Connect, In your account)"). */
+export function permissionLabel(permission: { name: string; group: PermissionGroup }): string {
+  if (permission.group === 'Connect') return `${permission.name} (under Connect, In your account)`;
+  if (permission.group === 'Core') return `${permission.name} (under Core)`;
+  return permission.name;
+}

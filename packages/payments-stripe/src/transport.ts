@@ -53,8 +53,10 @@ import { checkoutLocale } from './locale.ts';
 import { cardLabel, EXCLUDABLE, methodInfo } from './methods.ts';
 import { verifyStripeSignature } from './signature.ts';
 import {
+  ACCOUNT_PERMISSION,
   LISTENED_EVENTS,
   PERMISSION_PROBES,
+  permissionLabel,
   RESTRICTED_KEY,
   SESSION_LIFETIME_SECONDS,
   SIGNATURE_HEADER,
@@ -67,6 +69,33 @@ import {
 export const STRIPE_ADD_ON_KEY = 'payments-stripe';
 
 type Json = Record<string, unknown>;
+
+/**
+ * How a dispute stands, as the engine's contract carries it from the release
+ * after 0.3.32 (`PaymentEvent.dispute`). Declared here, with the same shape,
+ * so this add-on still builds against the published 0.3.32 contracts, which
+ * lack it; against the newer ones the two declarations are the same field.
+ */
+interface DisputeOutcome {
+  readonly status: 'open' | 'won' | 'lost' | 'closed';
+  /** The amount disputed, as a decimal in major units ("120.00"). */
+  readonly amount: string | null;
+  readonly currency: string | null;
+}
+
+type PaymentEventOut = PaymentEvent & { readonly dispute?: DisputeOutcome };
+
+/**
+ * A dispute's `status` read for the seller. `warning_closed` is an inquiry
+ * closed with no chargeback. Any other status (`warning_needs_response`,
+ * `needs_response`, `under_review`, …) is still open, except on
+ * `charge.dispute.closed`, where an unknown one reads as closed.
+ */
+const DISPUTE_STATUSES: Readonly<Record<string, DisputeOutcome['status']>> = {
+  won: 'won',
+  lost: 'lost',
+  warning_closed: 'closed',
+};
 
 export interface StripeProviderOptions {
   /** The clock (epoch ms), for `expires_at` and the signature window. Defaults to the system clock. */
@@ -116,6 +145,43 @@ const REFUND_FAILURES: Readonly<Record<string, string>> = {
   unknown: 'Stripe did not say why the refund failed.',
 };
 
+/** The sentence for a refund refused for permission. */
+const REFUND_PERMISSION_MISSING = 'The Stripe key may not give refunds. Give it Charges and Refunds: write, then try again.';
+
+/** Stripe refusals of a refund that have a sentence of their own, by `error.code`. */
+const REFUND_REFUSALS: Readonly<Record<string, string>> = {
+  charge_disputed: 'The customer already got this money back through a dispute.',
+};
+
+/**
+ * True when Stripe refused a call because the key lacks a permission. Stripe
+ * answers 403 with `code: more_permissions_required` ("Permission denied …
+ * Enabling Charges and Refunds Write …", seen in a sandbox 2026-10-22); the
+ * code and the older "required permissions" wording count whatever the status.
+ */
+function permissionRefused(status: number, body: Json | null): boolean {
+  const error = asObject(body?.['error']) ?? {};
+  return status === 403 || text(error['code']) === 'more_permissions_required' || /required permissions/i.test(text(error['message']) ?? '');
+}
+
+/**
+ * Stripe words shown for a refused refund, without what means nothing to the
+ * person who asked for it: addresses (the Stripe dashboard, the docs) and
+ * Stripe object ids (`ch_…`, `pi_…`, `re_…`, `acct_…`, `req_…`).
+ */
+function plainRefusal(message: string): string {
+  const out = message
+    .replace(/\s*\([^()]*\bhttps?:\/\/[^()]*\)/g, '')
+    .replace(/\bhttps?:\/\/\S+/g, '')
+    .replace(/\brequest:?\s+req_[A-Za-z0-9]+:?/gi, '')
+    .replace(/['"`]?\b(?:ch|pi|re|pyr|py|acct|req|cus|txn|dp|du)_[A-Za-z0-9]+\b['"`]?/g, '')
+    .replace(/\s+([.,;:!?])/g, '$1')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/(?:\s*\b(?:see|at|visit)\s*)+([.;]|$)/gi, '$1')
+    .trim();
+  return out === '' || /^[.,;:!?]+$/.test(out) ? 'Stripe refused the refund.' : out;
+}
+
 const REFUND_STATUSES: Readonly<Record<string, RefundStatus>> = {
   pending: 'pending',
   requires_action: 'requires_action',
@@ -149,12 +215,14 @@ export function createStripeProvider(context: PaymentProviderContext, options: S
 
   function refusal(status: number, body: Json | null, refunding: boolean): ProviderError {
     const error = asObject(body?.['error']) ?? {};
-    const message = scrub(text(error['message']) ?? `Stripe answered ${status}.`, context.credentials);
+    const raw = scrub(text(error['message']) ?? `Stripe answered ${status}.`, context.credentials);
+    const message = refunding ? plainRefusal(raw) : raw;
     const code = text(error['code']);
     const type = text(error['type']);
     const param = text(error['param']) ?? '';
     if (status === 401) return providerError('CREDENTIALS_REFUSED', message);
-    if (status === 403 || /required permissions/i.test(message)) return providerError('PERMISSION_MISSING', message);
+    if (permissionRefused(status, body)) return providerError('PERMISSION_MISSING', refunding ? REFUND_PERMISSION_MISSING : message);
+    if (refunding && code !== null && REFUND_REFUSALS[code] !== undefined) return providerError('REFUND_REFUSED', REFUND_REFUSALS[code]);
     if (code === 'resource_missing' || status === 404) return providerError('NOT_FOUND', message);
     if (status === 429 || code === 'rate_limit') return providerError('RATE_LIMITED', message, true);
     if (status === 409 || code === 'idempotency_key_in_use' || code === 'lock_timeout') return providerError('UNAVAILABLE', message, true);
@@ -165,12 +233,13 @@ export function createStripeProvider(context: PaymentProviderContext, options: S
     return providerError('INVALID_REQUEST', message);
   }
 
-  async function request(
+  /** One call, answered as Stripe answered it: the status and the body (null when it is not JSON). */
+  async function call(
     method: 'GET' | 'POST',
     path: string,
     form?: { readonly [field: string]: FormValue },
     idempotencyKey?: string,
-  ): Promise<Json | ProviderError> {
+  ): Promise<{ status: number; body: Json | null } | ProviderError> {
     const secret = key();
     if (isError(secret)) return secret;
     const headers: Record<string, string> = { authorization: `Bearer ${secret}`, 'stripe-version': STRIPE_API_VERSION };
@@ -193,7 +262,19 @@ export function createStripeProvider(context: PaymentProviderContext, options: S
     } catch {
       body = null;
     }
-    if (response.status < 200 || response.status >= 300) return refusal(response.status, body, path === STRIPE_PATHS.refunds && method === 'POST');
+    return { status: response.status, body };
+  }
+
+  async function request(
+    method: 'GET' | 'POST',
+    path: string,
+    form?: { readonly [field: string]: FormValue },
+    idempotencyKey?: string,
+  ): Promise<Json | ProviderError> {
+    const answer = await call(method, path, form, idempotencyKey);
+    if (isError(answer)) return answer;
+    const { status, body } = answer;
+    if (status < 200 || status >= 300) return refusal(status, body, path === STRIPE_PATHS.refunds && method === 'POST');
     if (body === null) return providerError('UNAVAILABLE', 'Stripe answered with something that is not JSON.', true);
     if (typeof body['livemode'] === 'boolean' && body['livemode'] !== live) {
       return providerError('MODE_MISMATCH', `Stripe answered for ${body['livemode'] ? 'live' : 'test'} payments, and this call was for ${context.mode}.`);
@@ -295,7 +376,7 @@ export function createStripeProvider(context: PaymentProviderContext, options: S
     };
   }
 
-  function eventOf(event: Json): PaymentEvent | ProviderError {
+  function eventOf(event: Json): PaymentEventOut | ProviderError {
     const eventId = text(event['id']);
     const type = text(event['type']);
     const created = event['created'];
@@ -307,6 +388,7 @@ export function createStripeProvider(context: PaymentProviderContext, options: S
     let checkoutRef: string | null = null;
     let paymentRef: string | null = null;
     let refundRef: string | null = null;
+    let dispute: DisputeOutcome | null = null;
     if (type.startsWith('checkout.session.')) {
       kind = 'checkout';
       checkoutRef = text(object['id']);
@@ -323,6 +405,10 @@ export function createStripeProvider(context: PaymentProviderContext, options: S
     } else if (type.startsWith('charge.dispute.')) {
       kind = 'dispute';
       paymentRef = idOf(object['payment_intent']);
+      const currency = text(object['currency'])?.toUpperCase() ?? null;
+      const amount = amountOf(object['amount'], currency);
+      const status = DISPUTE_STATUSES[text(object['status']) ?? ''] ?? (type === 'charge.dispute.closed' ? 'closed' : 'open');
+      dispute = { status, amount, currency: amount === null ? null : currency };
     } else if (type.startsWith('payment_intent.')) {
       kind = 'checkout';
       paymentRef = text(object['id']);
@@ -338,6 +424,7 @@ export function createStripeProvider(context: PaymentProviderContext, options: S
       refundRef: clip(refundRef),
       livemode: event['livemode'] === true,
       occurredAt: Math.max(0, Math.round(created * 1000)),
+      ...(dispute === null ? {} : { dispute }),
     };
   }
 
@@ -365,25 +452,36 @@ export function createStripeProvider(context: PaymentProviderContext, options: S
     key: STRIPE_ADD_ON_KEY,
     mode: context.mode,
 
+    /**
+     * Each probe in `PERMISSION_PROBES`, read by its status: 2xx is allowed; a
+     * permission refusal is missing; a write's 400 that is NOT a permission
+     * refusal (the missing parameter) is allowed, because Stripe checks the
+     * permission first. Anything else stops the check with what Stripe said.
+     */
     async checkCredentials(): Promise<CredentialCheck | ProviderError> {
-      const missing: string[] = [];
+      const missing: (typeof PERMISSION_PROBES)[number][] = [];
       for (const probe of PERMISSION_PROBES) {
-        const answer = await request(probe.method, probe.path, probe.body);
-        if (!isError(answer) || answer.code === 'NOT_FOUND') continue;
-        if (answer.code !== 'PERMISSION_MISSING') return answer;
-        if (probe.optional !== true) missing.push(probe.name);
+        const answer = await call(probe.method, probe.path);
+        if (isError(answer)) return answer;
+        if (answer.status >= 200 && answer.status < 300) continue;
+        if (answer.status !== 401 && permissionRefused(answer.status, answer.body)) {
+          if (probe.optional !== true) missing.push(probe);
+          continue;
+        }
+        if (probe.method === 'POST' && answer.status === 400) continue;
+        return refusal(answer.status, answer.body, false);
       }
       const account = await request('GET', STRIPE_PATHS.account);
       if (isError(account)) {
         if (account.code !== 'PERMISSION_MISSING') return account;
         return providerError(
           'PERMISSION_MISSING',
-          `The key cannot say which Stripe account it belongs to. Give it: ${[...missing, 'Accounts: read'].join(', ')}.`,
+          `The key cannot say which Stripe account it belongs to. Give it: ${[...missing, ACCOUNT_PERMISSION].map(permissionLabel).join(', ')}.`,
         );
       }
       const accountId = text(account['id']);
       if (accountId === null) return providerError('UNAVAILABLE', 'Stripe did not say which account the key belongs to.');
-      return { ok: true, accountId: accountId.slice(0, 255), livemode: live, missing };
+      return { ok: true, accountId: accountId.slice(0, 255), livemode: live, missing: missing.map((probe) => probe.name) };
     },
 
     async createCheckout(input: CheckoutInput): Promise<CheckoutCreated | ProviderError> {

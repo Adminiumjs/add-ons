@@ -19,14 +19,16 @@
  * it answers the files to put in the download. Nothing is fetched or written.
  */
 
-import { PERMISSION_PROBES } from './wire.ts';
+import { ACCOUNT_PERMISSION, PERMISSION_PROBES, type PermissionGroup } from './wire.ts';
 
 /** One line of the app's permission list: Stripe's id, the name the key check uses, and why. */
 export interface KeyAppPermission {
   /** Stripe's id for the access, as `stripe-app.json` names it. */
   permission: string;
-  /** The same access as the Stripe dashboard and the key check name it. */
+  /** The same access as the Stripe dashboard form and the key check name it. */
   name: string;
+  /** Where that form lists it. */
+  group: PermissionGroup;
   /** Shown to whoever installs the app. */
   purpose: string;
   optional?: boolean;
@@ -38,15 +40,15 @@ export interface KeyAppPermission {
  * the ids are Stripe's own.
  */
 export const KEY_APP_PERMISSIONS: readonly KeyAppPermission[] = [
-  { permission: 'checkout_session_write', name: 'Checkout Sessions: write', purpose: 'Start a payment, and end one that is no longer needed.' },
-  { permission: 'checkout_session_read', name: 'Checkout Sessions: read', purpose: 'See how a payment ended.' },
-  { permission: 'payment_intent_read', name: 'PaymentIntents: read', purpose: 'See the amount taken.' },
-  { permission: 'charge_write', name: 'Charges and Refunds: write', purpose: 'Give refunds. In Stripe this access also allows changing charges.' },
-  { permission: 'event_read', name: 'Events: read', purpose: 'Catch a payment whose webhook went missing.' },
-  { permission: 'dispute_read', name: 'Disputes: read', purpose: 'Show disputes.' },
-  { permission: 'payment_method_configurations_read', name: 'Payment Method Configurations: read', purpose: 'See which ways to pay you switched on.' },
-  { permission: 'connected_account_read', name: 'Accounts: read', purpose: 'Show which Stripe account the key belongs to.' },
-  { permission: 'webhook_read', name: 'Webhook endpoints: read', purpose: 'Check your live webhook.', optional: true },
+  { permission: 'checkout_session_write', name: 'Checkout Sessions: write', group: 'Checkout Sessions', purpose: 'Start a payment, and end one that is no longer needed.' },
+  { permission: 'checkout_session_read', name: 'Checkout Sessions: read', group: 'Checkout Sessions', purpose: 'See how a payment ended.' },
+  { permission: 'payment_intent_read', name: 'Payment Intents: read', group: 'Core', purpose: 'See the amount taken.' },
+  { permission: 'charge_write', name: 'Charges and Refunds: write', group: 'Core', purpose: 'Give refunds. In Stripe this access also allows changing charges.' },
+  { permission: 'event_read', name: 'Events: read', group: 'Core', purpose: 'Catch a payment whose webhook went missing.' },
+  { permission: 'dispute_read', name: 'Payment Disputes: read', group: 'Core', purpose: 'Show disputes.' },
+  { permission: 'payment_method_configurations_read', name: 'Payment Method Configurations: read', group: 'Core', purpose: 'See which ways to pay you switched on.' },
+  { permission: 'connected_account_read', name: ACCOUNT_PERMISSION.name, group: ACCOUNT_PERMISSION.group, purpose: 'Show which Stripe account the key belongs to.' },
+  { permission: 'webhook_read', name: 'Webhook Endpoints, Event Destinations: read', group: 'Webhook Endpoints, Event Destinations', purpose: 'Check your live webhook.', optional: true },
 ];
 
 /** The id the shipped template carries: never valid to upload, so an unstamped template is refused here first. */
@@ -184,4 +186,4 @@ export function keyAppTemplate(input: { shopName: string; installId: string }): 
 }
 
 /** The key check's names, in the app's order: the two lists must never drift apart. */
-export const KEY_APP_CHECKED_NAMES: readonly string[] = [...PERMISSION_PROBES.map((probe) => probe.name), 'Accounts: read'];
+export const KEY_APP_CHECKED_NAMES: readonly string[] = [...PERMISSION_PROBES.map((probe) => probe.name), ACCOUNT_PERMISSION.name];

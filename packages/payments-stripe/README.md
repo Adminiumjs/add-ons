@@ -15,19 +15,23 @@ pays on the Stripe page, so no card number ever reaches your server.
 - Adminium 0.3.32 or newer, on an address your customers can reach.
 - A **restricted key** (`rk_test_…` / `rk_live_…`), never a secret key. Make it
   with the private app template Studio offers (the way Stripe recommends), or by
-  hand in the Stripe dashboard with exactly these permissions:
+  hand in the Stripe dashboard with exactly these permissions. The names are
+  the ones on the Stripe form for a restricted key: Checkout Sessions and
+  Webhook Endpoints, Event Destinations are groups of their own, Accounts is
+  under Connect (set "In your account" to Read), and the rest are in the Core
+  list.
 
   | Permission | Why |
   |---|---|
   | Checkout Sessions: write | start a payment; end one that is no longer needed |
   | Checkout Sessions: read | read how a payment ended |
-  | PaymentIntents: read | the amount taken |
+  | Payment Intents: read | the amount taken |
   | Charges and Refunds: write | give refunds (in Stripe this access also allows changing charges) |
   | Events: read | find a payment whose webhook went missing |
-  | Disputes: read | show disputes |
+  | Payment Disputes: read | show disputes |
   | Payment Method Configurations: read | show the ways to pay you switched on |
   | Accounts: read | show which Stripe account the key belongs to |
-  | Webhook endpoints: read (optional) | check your live webhook |
+  | Webhook Endpoints, Event Destinations: read (optional) | check your live webhook |
 
 - A **webhook endpoint** per mode in the Stripe dashboard, pointing at the
   address Studio shows, and its signing secret (`whsec_…`).

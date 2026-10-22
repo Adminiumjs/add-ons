@@ -238,19 +238,27 @@ export function createFakeStripe(options: FakeStripeOptions = {}): FakeStripe {
     return answer;
   };
 
+  /**
+   * Stripe's refusal for a missing permission, as a sandbox key with Charges
+   * and Refunds set to None got it (2026-10-22): 403, `more_permissions_required`.
+   * Checked BEFORE the parameters, as the sandbox showed.
+   */
   function denied(permission: string): PaymentHttpResponse | null {
     if (!missing.has(permission)) return null;
-    return refusal(403, 'invalid_request_error', `The provided key 'rk_test_*********abcd' does not have the required permissions for this endpoint on account '${accountId}'. Having the '${permission}' permission would allow this request to continue.`);
+    return refusal(403, 'invalid_request_error', `Permission denied. The provided key 'rk_test_*********abcd' does not have the required permissions for this endpoint on account '${accountId}'. Enabling ${permission} would allow this request to continue. See https://docs.stripe.com/keys for more information.`, { code: 'more_permissions_required' });
   }
+
+  /** Stripe's refusal of a request that lacks a parameter it needs. */
+  const lacking = (message: string, param: string) => refusal(400, 'invalid_request_error', message, { code: 'parameter_missing', param });
 
   const list = (data: unknown[], hasMore = false) => respond(200, { object: 'list', data, has_more: hasMore, url: '/v1/x' });
 
   function route(method: string, path: string, params: Json, query: URLSearchParams): PaymentHttpResponse {
     const parts = path.split('/').filter(Boolean);
     if (method === 'GET' && path === '/v1/account') return denied('Accounts: read') ?? respond(200, { id: accountId, object: 'account' });
-    if (method === 'GET' && path === '/v1/payment_intents') return denied('PaymentIntents: read') ?? list([]);
-    if (method === 'GET' && path === '/v1/disputes') return denied('Disputes: read') ?? list([]);
-    if (method === 'GET' && path === '/v1/webhook_endpoints') return denied('Webhook endpoints: read') ?? list([]);
+    if (method === 'GET' && path === '/v1/payment_intents') return denied('Payment Intents: read') ?? list([]);
+    if (method === 'GET' && path === '/v1/disputes') return denied('Payment Disputes: read') ?? list([]);
+    if (method === 'GET' && path === '/v1/webhook_endpoints') return denied('Webhook Endpoints, Event Destinations: read') ?? list([]);
     if (method === 'GET' && path === '/v1/payment_method_configurations') {
       const block = denied('Payment Method Configurations: read');
       if (block !== null) return block;
@@ -265,6 +273,7 @@ export function createFakeStripe(options: FakeStripeOptions = {}): FakeStripe {
     if (method === 'POST' && path === '/v1/checkout/sessions') {
       const block = denied('Checkout Sessions: write');
       if (block !== null) return block;
+      if (params['mode'] === undefined) return lacking('Missing required param: mode.', 'mode');
       const line = ((params['line_items'] as Json[] | undefined) ?? [])[0] ?? {};
       const price = (line['price_data'] as Json | undefined) ?? {};
       const session: Session = {
@@ -304,6 +313,9 @@ export function createFakeStripe(options: FakeStripeOptions = {}): FakeStripe {
     if (method === 'POST' && path === '/v1/refunds') {
       const block = denied('Charges and Refunds: write');
       if (block !== null) return block;
+      if (params['payment_intent'] === undefined && params['charge'] === undefined) {
+        return lacking('One of the following params should be provided for this request: payment_intent or charge.', 'payment_intent');
+      }
       const intent = intents.get(String(params['payment_intent']));
       if (intent === undefined) return refusal(400, 'invalid_request_error', `No such payment_intent: '${String(params['payment_intent'])}'`, { code: 'resource_missing', param: 'payment_intent' });
       if (intent.status !== 'succeeded') return refusal(400, 'invalid_request_error', 'This PaymentIntent does not have a successful charge to refund.', { code: 'charge_not_refundable' });

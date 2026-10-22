@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 import type { PaymentHttpClient, ProviderError } from '@adminium/add-on-host/contracts';
 
 import { stripeDecimal, stripeMinor } from './currency.ts';
+import { signStripeWebhook } from './signature.ts';
 import { createFakeStripe } from './testing/fake-stripe.ts';
 import { createStripeProvider } from './transport.ts';
 import { PERMISSION_PROBES, STRIPE_API_VERSION } from './wire.ts';
@@ -219,29 +220,147 @@ describe('the permission check', () => {
   });
 
   it('names each missing permission in the Stripe dashboard words, and creates nothing', async () => {
-    const stripe = createFakeStripe({ missing: ['Charges and Refunds: write', 'Events: read', 'Webhook endpoints: read'] });
+    const stripe = createFakeStripe({ missing: ['Charges and Refunds: write', 'Events: read', 'Webhook Endpoints, Event Destinations: read'] });
     const answer = await provider(stripe.http).checkCredentials();
     expect(answer).toMatchObject({ ok: true, missing: ['Charges and Refunds: write', 'Events: read'] });
     expect(stripe.events()).toEqual([]);
   });
 
-  it('cannot name the account without Accounts: read, and says so', async () => {
-    const answer = await provider(createFakeStripe({ missing: ['Accounts: read', 'Disputes: read'] }).http).checkCredentials();
-    expect(code(answer)).toBe('PERMISSION_MISSING');
-    expect((answer as ProviderError).providerMessage).toContain('Disputes: read, Accounts: read');
+  it('sees a missing WRITE permission, which a lookup of a made-up object hid', async () => {
+    for (const write of ['Charges and Refunds: write', 'Checkout Sessions: write']) {
+      const stripe = createFakeStripe({ missing: [write] });
+      expect(await provider(stripe.http).checkCredentials(), write).toMatchObject({ ok: true, missing: [write] });
+      expect(stripe.events()).toEqual([]);
+    }
   });
 
-  it('probes every permission the guide lists', () => {
+  it('probes a write with a POST of no parameter at all, so nothing is looked up or made', async () => {
+    const stripe = createFakeStripe();
+    await provider(stripe.http).checkCredentials();
+    const posts = stripe.requests.filter((one) => one.method === 'POST');
+    expect(posts.map((one) => one.path).sort()).toEqual(['/v1/checkout/sessions', '/v1/refunds']);
+    expect(posts.map((one) => one.params)).toEqual([{}, {}]);
+    expect(stripe.events()).toEqual([]);
+  });
+
+  it('reads the answers of a probe: 400 without a permission code is allowed, the permission code is missing whatever the status', async () => {
+    const answeringFor = (writes: { status: number; body: unknown }): PaymentHttpClient => async (url, init) => {
+      const path = new URL(url).pathname;
+      const reply = init?.method === 'POST' ? writes : path === '/v1/account' ? { status: 200, body: { id: 'acct_1', object: 'account' } } : { status: 200, body: { object: 'list', data: [] } };
+      return { status: reply.status, headers: { get: () => 'application/json' }, text: async () => JSON.stringify(reply.body) };
+    };
+    const missingParam = { status: 400, body: { error: { type: 'invalid_request_error', code: 'parameter_missing', message: 'Missing required param: mode.' } } };
+    expect(await provider(answeringFor(missingParam)).checkCredentials()).toMatchObject({ ok: true, missing: [] });
+    const refused = { status: 400, body: { error: { type: 'invalid_request_error', code: 'more_permissions_required', message: 'Permission denied.' } } };
+    expect(await provider(answeringFor(refused)).checkCredentials()).toMatchObject({ ok: true, missing: ['Checkout Sessions: write', 'Charges and Refunds: write'] });
+    const broken = { status: 500, body: { error: { type: 'api_error', message: 'Something went wrong.' } } };
+    expect(code(await provider(answeringFor(broken)).checkCredentials())).toBe('UNAVAILABLE');
+  });
+
+  it('cannot name the account without Accounts: read, and says where each missing one is on the form', async () => {
+    const answer = await provider(createFakeStripe({ missing: ['Accounts: read', 'Payment Disputes: read', 'Checkout Sessions: read'] }).http).checkCredentials();
+    expect(code(answer)).toBe('PERMISSION_MISSING');
+    expect((answer as ProviderError).providerMessage).toBe(
+      'The key cannot say which Stripe account it belongs to. Give it: Checkout Sessions: read, Payment Disputes: read (under Core), Accounts: read (under Connect, In your account).',
+    );
+  });
+
+  it('probes every permission the guide lists, by the names on the Stripe form', () => {
     expect(PERMISSION_PROBES.map((one) => one.name)).toEqual([
       'Checkout Sessions: write',
       'Checkout Sessions: read',
-      'PaymentIntents: read',
+      'Payment Intents: read',
       'Charges and Refunds: write',
       'Events: read',
-      'Disputes: read',
+      'Payment Disputes: read',
       'Payment Method Configurations: read',
-      'Webhook endpoints: read',
+      'Webhook Endpoints, Event Destinations: read',
     ]);
+  });
+});
+
+describe('refunds Stripe refuses', () => {
+  const refundWith = (status: number, error: Record<string, unknown>) =>
+    provider(answering(status, { error: { type: 'invalid_request_error', ...error } })).refund({ paymentRef: 'pi_3Q2w3E4r5T6y7U8i', amount: '20.00', currency: 'EUR', reason: 'other', idempotencyKey: 'rf-1' });
+
+  it('says a charged-back payment went back to the customer through a dispute', async () => {
+    const answer = await refundWith(400, { code: 'charge_disputed', message: 'Charge ch_3Q2w3E4r5T6y7U8i1a2b3c4d has been charged back; cannot issue a refund.' });
+    expect(answer).toMatchObject({ ok: false, code: 'REFUND_REFUSED', providerMessage: 'The customer already got this money back through a dispute.' });
+  });
+
+  it('says which permission a refund needs, whatever status Stripe used', async () => {
+    const message =
+      "Permission denied. The provided key 'rk_test_*********abcd' does not have the required permissions for this endpoint on account 'acct_1Q2w3E4r'. Enabling Charges and Refunds Write ('charge_write') would allow this request to continue.";
+    for (const status of [403, 400]) {
+      expect(await refundWith(status, { code: 'more_permissions_required', message }), String(status)).toMatchObject({
+        ok: false,
+        code: 'PERMISSION_MISSING',
+        providerMessage: 'The Stripe key may not give refunds. Give it Charges and Refunds: write, then try again.',
+      });
+    }
+  });
+
+  it('passes any other refusal on without addresses or Stripe ids', async () => {
+    const answer = await refundWith(400, {
+      code: 'charge_already_refunded',
+      message: "Charge ch_3Q2w3E4r5T6y7U8i has already been refunded (see https://dashboard.stripe.com/test/payments/pi_3Q2w3E4r5T6y7U8i). Request req_AbC123dEf: https://docs.stripe.com/error-codes/charge-already-refunded",
+    });
+    expect(answer).toMatchObject({ ok: false, code: 'REFUND_REFUSED' });
+    const words = (answer as ProviderError).providerMessage;
+    expect(words).toBe('Charge has already been refunded.');
+    expect(words).not.toMatch(/https?:|ch_|pi_|req_|acct_|re_/);
+  });
+
+  it('keeps Stripe words that hold nothing to take out', async () => {
+    const answer = await refundWith(400, { param: 'amount', message: 'Refund amount (€9,999.99) is greater than charge amount (€30.00)' });
+    expect(answer).toMatchObject({ code: 'REFUND_REFUSED', providerMessage: 'Refund amount (€9,999.99) is greater than charge amount (€30.00)' });
+  });
+});
+
+describe('disputes', () => {
+  const at = Date.UTC(2026, 9, 22, 11, 21, 0);
+  const SECONDS = Math.floor(at / 1000);
+
+  async function delivered(type: string, dispute: Record<string, unknown>) {
+    const body = JSON.stringify({
+      id: `evt_${type.replace(/\W/g, '')}${String(dispute['status'])}`,
+      object: 'event',
+      type,
+      created: SECONDS,
+      livemode: false,
+      data: { object: { id: 'du_1Q2w3E4r', object: 'dispute', payment_intent: 'pi_3Q2w3E4r', charge: 'ch_3Q2w3E4r', amount: 12000, currency: 'eur', reason: 'fraudulent', ...dispute } },
+    });
+    const signature = await signStripeWebhook(body, SECRET, SECONDS);
+    return provider(neverCalled, { now: () => at }).verifyWebhook({ rawBody: body, headers: { 'stripe-signature': signature } });
+  }
+
+  it.each([
+    ['charge.dispute.created', 'needs_response', 'open'],
+    ['charge.dispute.created', 'warning_needs_response', 'open'],
+    ['charge.dispute.updated', 'under_review', 'open'],
+    ['charge.dispute.closed', 'won', 'won'],
+    ['charge.dispute.closed', 'lost', 'lost'],
+    ['charge.dispute.closed', 'warning_closed', 'closed'],
+    ['charge.dispute.closed', 'something_new', 'closed'],
+  ])('%s with status %s reads as %s, with the amount disputed', async (type, status, outcome) => {
+    expect(await delivered(type, { status })).toMatchObject({
+      ok: true,
+      kind: 'dispute',
+      paymentRef: 'pi_3Q2w3E4r',
+      dispute: { status: outcome, amount: '120.00', currency: 'EUR' },
+    });
+  });
+
+  it('writes a whole-unit currency as Stripe takes it, and nulls an amount it cannot read', async () => {
+    expect(await delivered('charge.dispute.closed', { status: 'lost', amount: 5000, currency: 'jpy' })).toMatchObject({ dispute: { status: 'lost', amount: '5000', currency: 'JPY' } });
+    expect(await delivered('charge.dispute.created', { status: 'needs_response', amount: 'lots' })).toMatchObject({ dispute: { status: 'open', amount: null, currency: null } });
+  });
+
+  it('carries no dispute on any other event', async () => {
+    const body = JSON.stringify({ id: 'evt_1', object: 'event', type: 'checkout.session.completed', created: SECONDS, livemode: false, data: { object: { id: 'cs_1', object: 'checkout.session', payment_intent: 'pi_1' } } });
+    const answer = await provider(neverCalled, { now: () => at }).verifyWebhook({ rawBody: body, headers: { 'stripe-signature': await signStripeWebhook(body, SECRET, SECONDS) } });
+    expect(answer).toMatchObject({ ok: true, kind: 'checkout' });
+    expect(answer).not.toHaveProperty('dispute');
   });
 });
 
