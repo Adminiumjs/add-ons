@@ -356,6 +356,13 @@ describe('disputes', () => {
     expect(await delivered('charge.dispute.created', { status: 'needs_response', amount: 'lots' })).toMatchObject({ dispute: { status: 'open', amount: null, currency: null } });
   });
 
+  it('says when the dispute opened (its own created, not the event’s), or null when it does not say', async () => {
+    const opened = SECONDS - 3 * 86_400;
+    expect(await delivered('charge.dispute.closed', { status: 'lost', created: opened })).toMatchObject({ occurredAt: SECONDS * 1000, dispute: { status: 'lost', openedAt: opened * 1000 } });
+    expect(await delivered('charge.dispute.created', { status: 'needs_response' })).toMatchObject({ dispute: { status: 'open', openedAt: null } });
+    expect(await delivered('charge.dispute.updated', { status: 'under_review', created: 'yesterday' })).toMatchObject({ dispute: { openedAt: null } });
+  });
+
   it('carries no dispute on any other event', async () => {
     const body = JSON.stringify({ id: 'evt_1', object: 'event', type: 'checkout.session.completed', created: SECONDS, livemode: false, data: { object: { id: 'cs_1', object: 'checkout.session', payment_intent: 'pi_1' } } });
     const answer = await provider(neverCalled, { now: () => at }).verifyWebhook({ rawBody: body, headers: { 'stripe-signature': await signStripeWebhook(body, SECRET, SECONDS) } });

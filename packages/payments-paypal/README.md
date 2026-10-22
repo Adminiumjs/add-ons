@@ -91,8 +91,9 @@ taken, even if the customer approves it afterwards.
 
 A dispute is matched to the payment it is about and followed until PayPal
 resolves it: in your favour, in the customer's (the disputed money went back
-to them), or closed with no decision. A payment PayPal reverses reads as a
-dispute lost.
+to them), or closed with no decision. A payment PayPal reverses (it does so when a
+chargeback is filed, before the bank decides) reads as a dispute opened: how
+it ended comes with the dispute's resolution.
 
 Every webhook's signature is checked on your server against the signing
 certificate PayPal names. PayPal serves that certificate without the DigiCert

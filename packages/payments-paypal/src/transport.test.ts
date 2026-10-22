@@ -406,30 +406,53 @@ describe('disputes', () => {
     expect(await verified(paypal.raise('CUSTOMER.DISPUTE.RESOLVED', 'dispute', resource))).toMatchObject({ dispute: { status: 'lost', amount: '45.50', currency: 'EUR' } });
   });
 
-  it('reads a reversed capture as a lost dispute over the capture amount', async () => {
+  it('says when the dispute opened, on every event about it', async () => {
     const captureId = await capture();
-    const resource = { id: captureId, status: 'REVERSED', amount: { currency_code: 'EUR', value: '120.00' } };
-    expect(await verified(paypal.raise('PAYMENT.CAPTURE.REVERSED', 'capture', resource))).toMatchObject({
+    const opened = Date.parse('2026-10-22T11:21:00.000Z');
+    expect(await verified(paypal.raise('CUSTOMER.DISPUTE.CREATED', 'dispute', disputeResource(captureId)))).toMatchObject({ dispute: { status: 'open', openedAt: opened } });
+    const resolved = disputeResource(captureId, { status: 'RESOLVED', update_time: '2026-11-02T09:00:00.000Z', dispute_outcome: { outcome_code: 'RESOLVED_BUYER_FAVOUR' } });
+    expect(await verified(paypal.raise('CUSTOMER.DISPUTE.RESOLVED', 'dispute', resolved))).toMatchObject({ dispute: { status: 'lost', openedAt: opened } });
+    // A dispute that does not say: null, and the engine takes the first event it heard.
+    expect(await verified(paypal.raise('CUSTOMER.DISPUTE.UPDATED', 'dispute', disputeResource(captureId, { create_time: undefined })))).toMatchObject({ dispute: { status: 'open', openedAt: null } });
+  });
+
+  // PayPal reverses a capture when a chargeback is FILED, before the bank decides: read as lost, a dispute the seller
+  // then won could never be taken back. It opens the dispute; CUSTOMER.DISPUTE.RESOLVED says how it ended.
+  it('reads a reversed capture as news of an open dispute over the capture amount, from when it was reversed', async () => {
+    const captureId = await capture();
+    const resource = { id: captureId, status: 'REVERSED', amount: { currency_code: 'EUR', value: '120.00' }, create_time: '2026-10-01T08:00:00.000Z', update_time: '2026-10-22T11:20:00.000Z' };
+    const answer = await verified(paypal.raise('PAYMENT.CAPTURE.REVERSED', 'capture', resource));
+    expect(answer).toMatchObject({
       ok: true,
       kind: 'dispute',
       paymentRef: captureId,
-      dispute: { status: 'lost', amount: '120.00', currency: 'EUR' },
+      dispute: { status: 'open', amount: '120.00', currency: 'EUR', openedAt: Date.parse('2026-10-22T11:20:00.000Z') },
     });
+    expect((answer as { dispute?: { status: string } }).dispute?.status).not.toBe('lost');
   });
 
-  it('reads a reversal sent as a refund (an "up" link, a negative amount) as a lost dispute over its capture', async () => {
+  it('reads a reversal sent as a refund (an "up" link, a negative amount) as news of an open dispute over its capture', async () => {
     const captureId = await capture();
     const resource = {
       id: 'REF-REVERSAL-1',
       status: 'COMPLETED',
       amount: { currency_code: 'EUR', value: '-120.00' },
+      create_time: '2026-10-22T11:19:00.000Z',
       links: [{ href: `https://api-m.sandbox.paypal.com/v2/payments/captures/${captureId}`, rel: 'up', method: 'GET' }],
     };
     expect(await verified(paypal.raise('PAYMENT.CAPTURE.REVERSED', 'refund', resource))).toMatchObject({
       kind: 'dispute',
       paymentRef: captureId,
-      dispute: { status: 'lost', amount: '120.00', currency: 'EUR' },
+      dispute: { status: 'open', amount: '120.00', currency: 'EUR', openedAt: Date.parse('2026-10-22T11:19:00.000Z') },
     });
+  });
+
+  it('dates a reversal that carries no time of its own by its event', async () => {
+    const captureId = await capture();
+    const answer = await verified(paypal.raise('PAYMENT.CAPTURE.REVERSED', 'capture', { id: captureId, status: 'REVERSED', amount: { currency_code: 'EUR', value: '120.00' } }));
+    expect(answer).toMatchObject({ ok: true, dispute: { status: 'open' } });
+    const event = answer as unknown as { occurredAt: number; dispute: { openedAt: number } };
+    expect(event.dispute.openedAt).toBe(event.occurredAt);
   });
 
   it('carries no dispute on any other event, and nulls for an amount it cannot read', async () => {

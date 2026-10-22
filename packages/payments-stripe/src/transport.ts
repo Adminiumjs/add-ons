@@ -81,6 +81,8 @@ interface DisputeOutcome {
   /** The amount disputed, as a decimal in major units ("120.00"). */
   readonly amount: string | null;
   readonly currency: string | null;
+  /** When the dispute opened (epoch ms), so a refund that settled it is counted once even if the close is heard first. */
+  readonly openedAt?: number | null;
 }
 
 type PaymentEventOut = PaymentEvent & { readonly dispute?: DisputeOutcome };
@@ -408,7 +410,10 @@ export function createStripeProvider(context: PaymentProviderContext, options: S
       const currency = text(object['currency'])?.toUpperCase() ?? null;
       const amount = amountOf(object['amount'], currency);
       const status = DISPUTE_STATUSES[text(object['status']) ?? ''] ?? (type === 'charge.dispute.closed' ? 'closed' : 'open');
-      dispute = { status, amount, currency: amount === null ? null : currency };
+      // The dispute's own `created` (seconds), the same on every event about it.
+      const opened = object['created'];
+      const openedAt = typeof opened === 'number' && Number.isFinite(opened) && opened > 0 ? Math.round(opened * 1000) : null;
+      dispute = { status, amount, currency: amount === null ? null : currency, openedAt };
     } else if (type.startsWith('payment_intent.')) {
       kind = 'checkout';
       paymentRef = text(object['id']);

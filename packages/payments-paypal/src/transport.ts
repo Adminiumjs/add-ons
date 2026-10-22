@@ -82,6 +82,8 @@ interface DisputeOutcome {
   /** The amount in dispute (or, once lost, given back), as a decimal in major units ("120.00"). */
   readonly amount: string | null;
   readonly currency: string | null;
+  /** When the dispute opened (epoch ms), so a refund that settled it is counted once even if the close is heard first. */
+  readonly openedAt?: number | null;
 }
 
 type PaymentEventOut = PaymentEvent & { readonly dispute?: DisputeOutcome };
@@ -407,14 +409,21 @@ export function createPaypalProvider(context: PaymentProviderContext, options: P
     return amount === null ? { amount: null, currency: null } : { amount, currency };
   }
 
-  /** How a `CUSTOMER.DISPUTE.*` event leaves the dispute. */
+  /** An RFC 3339 time PayPal sends (`create_time`) as epoch ms, or null. */
+  function timeOf(value: unknown): number | null {
+    const at = Date.parse(text(value) ?? '');
+    return Number.isNaN(at) || at <= 0 ? null : at;
+  }
+
+  /** How a `CUSTOMER.DISPUTE.*` event leaves the dispute, and when it opened (the dispute's own `create_time`). */
   function disputeOf(type: string, resource: Json): DisputeOutcome {
-    if (type !== 'CUSTOMER.DISPUTE.RESOLVED') return { status: 'open', ...moneyOf(resource['dispute_amount']) };
+    const openedAt = timeOf(resource['create_time']);
+    if (type !== 'CUSTOMER.DISPUTE.RESOLVED') return { status: 'open', ...moneyOf(resource['dispute_amount']), openedAt };
     const outcome = asObject(resource['dispute_outcome']);
     const status = DISPUTE_OUTCOMES[text(outcome?.['outcome_code']) ?? ''] ?? 'closed';
     // Lost: what went back to the customer, when PayPal says; else the amount disputed.
     const refunded = status === 'lost' ? moneyOf(outcome?.['amount_refunded']) : { amount: null, currency: null };
-    return { status, ...(refunded.amount !== null ? refunded : moneyOf(resource['dispute_amount'])) };
+    return { status, ...(refunded.amount !== null ? refunded : moneyOf(resource['dispute_amount'])), openedAt };
   }
 
   function eventOf(event: Json): PaymentEventOut | ProviderError {
@@ -437,15 +446,18 @@ export function createPaypalProvider(context: PaymentProviderContext, options: P
       const up = link(resource, 'up');
       paymentRef = up === null ? null : (up.split('/').filter(Boolean).at(-1) ?? null);
     } else if (type === 'PAYMENT.CAPTURE.REVERSED') {
-      // The capture taken back (a chargeback, or PayPal reversing it): the money is gone. PayPal may send the capture
-      // itself, or the reversal as a refund-shaped resource whose "up" link names the capture and whose amount is
-      // negative: either way the capture is the payment and the amount is what went back.
+      // The capture taken back. PayPal reverses a capture when a chargeback is FILED, before the bank decides: news of
+      // an open dispute, never its outcome (a "lost" here could not be taken back when the seller then wins it). The
+      // outcome is CUSTOMER.DISPUTE.RESOLVED's. PayPal may send the capture itself (reversed when it was last
+      // updated), or the reversal as a refund-shaped resource whose "up" link names the capture, whose amount is
+      // negative and whose own create_time is when it was made: either way the capture is the payment.
       kind = 'dispute';
       const up = link(resource, 'up');
       paymentRef = up === null ? text(resource['id']) : (up.split('/').filter(Boolean).at(-1) ?? null);
       const amount = asObject(resource['amount']);
       const value = text(amount?.['value']);
-      dispute = { status: 'lost', ...moneyOf(amount === null || value === null ? resource['amount'] : { ...amount, value: value.replace(/^-/, '') }) };
+      const openedAt = (up === null ? timeOf(resource['update_time']) : timeOf(resource['create_time'])) ?? at;
+      dispute = { status: 'open', ...moneyOf(amount === null || value === null ? resource['amount'] : { ...amount, value: value.replace(/^-/, '') }), openedAt };
     } else if (type.startsWith('CUSTOMER.DISPUTE.')) {
       // The resource is the dispute; the capture it is about is the seller's transaction id.
       kind = 'dispute';
