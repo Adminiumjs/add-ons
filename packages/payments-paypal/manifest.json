@@ -1,0 +1,83 @@
+{
+  "kind": "add-on",
+  "manifestVersion": 1,
+  "key": "payments-paypal",
+  "name": "Wallet payments",
+  "version": "1.0.13",
+  "publisher": {
+    "id": "adminium",
+    "name": "Adminium",
+    "url": "https://adminium.dev"
+  },
+  "license": "AGPL-3.0-only",
+  "description": {
+    "key": "addon.payments-paypal.line",
+    "fallback": "Connects to PayPal. Your customers pay an invoice or a record with their PayPal account on the PayPal page, and the payment is recorded here."
+  },
+  "categories": ["payments"],
+  "compatibility": {
+    "minAdminiumVersion": "0.3.33",
+    "requires": ["outbound-http"]
+  },
+  "capabilities": ["outbound-http"],
+  "addOn": {
+    "attaches": [{ "app": "*" }],
+    "provides": [{ "contract": "payment-provider", "version": 1, "server": "dist/server.js" }],
+    "connect": { "kind": "api-key" },
+    "network": {
+      "allow": [
+        "api-m.paypal.com",
+        "api-m.sandbox.paypal.com",
+        "www.paypal.com",
+        "www.sandbox.paypal.com",
+        "api.paypal.com",
+        "api.sandbox.paypal.com"
+      ]
+    },
+    "publicSettings": []
+  },
+  "settings": [
+    {
+      "key": "client_id",
+      "type": "string",
+      "secret": true,
+      "required": true,
+      "label": {
+        "key": "addon.payments-paypal.setting.clientId",
+        "fallback": "Client ID"
+      },
+      "help": {
+        "key": "addon.payments-paypal.setting.clientIdHelp",
+        "fallback": "From your REST app in the PayPal developer dashboard, for this mode."
+      }
+    },
+    {
+      "key": "client_secret",
+      "type": "string",
+      "secret": true,
+      "required": true,
+      "label": {
+        "key": "addon.payments-paypal.setting.clientSecret",
+        "fallback": "Secret"
+      },
+      "help": {
+        "key": "addon.payments-paypal.setting.clientSecretHelp",
+        "fallback": "The secret of the same REST app. It opens the whole account, so keep it here and nowhere else."
+      }
+    },
+    {
+      "key": "webhook_id",
+      "type": "string",
+      "secret": true,
+      "required": true,
+      "label": {
+        "key": "addon.payments-paypal.setting.webhookId",
+        "fallback": "Webhook ID"
+      },
+      "help": {
+        "key": "addon.payments-paypal.setting.webhookIdHelp",
+        "fallback": "Shown next to the webhook you added to the REST app. Adminium needs it to check that a webhook came from PayPal."
+      }
+    }
+  ]
+}

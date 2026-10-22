@@ -8,11 +8,14 @@ import type { DocumentEdits } from '../../../model/edits.js';
 import type { InvoiceBody } from '../../../model/envelope.js';
 import type { SectionKey } from '../../../model/blocks.js';
 import type { Totals } from '../../../model/money.js';
+import type { DocumentPayments } from '../../../payments.js';
 import type { ImageRejection } from '../inline.js';
 
 export interface BlockProps {
   body: InvoiceBody;
   totals: Totals;
+  /** The invoice's recorded payments; null for a template, or while unknown. */
+  payments?: DocumentPayments | null | undefined;
   edits: DocumentEdits;
   /** The selected section. */
   section: SectionKey;

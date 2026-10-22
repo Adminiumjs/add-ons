@@ -16,11 +16,20 @@ contract, so Adminium's own document machinery — the stored mappings, the
 record trigger, the render job — can drive it without knowing which
 implementation it has.
 
-**Build an app's tables on its shapes.** The add-on defines two shapes that an
+**Build an app's tables on its shapes.** The add-on defines three shapes that an
 app builds its own tables on (`addOn.shapes` in `manifest.json`):
 
 - `invoices/invoice@1` — a document (numbered, sent, void), its lines and its
   payments;
+- `invoices/invoice@2` — the same, and a payments part ready for payments taken
+  online: a unique `payment_ref` (empty until Adminium records an online
+  payment, never typed), the `provider` it came through, `refunded_amount`
+  (`paid` counts each payment less what was refunded of it, so a refund reopens
+  the balance), and for a card on the shop's own terminal its `approval_code`
+  and `card_last4`; `method` gains `online`. The invoice's email and its
+  reminders carry a pay button (`{{pay_url}}`), and the printed invoice its pay
+  link and a code to scan while something is owed. An app moves from `@1` to
+  `@2` in its own update; `@1` does not change;
 - `invoices/quote@1` — a document (sent, accepted, declined, withdrawn) and its
   lines.
 
@@ -99,9 +108,12 @@ button now prints any of its record's keys named like these slots
 own receipt number, its date and how it was made — and the balance left after
 them. A voided payment stays on file and stops counting.
 
-**It never takes a payment.** It charges no card, holds no bank details but the
-instructions you type for your clients to read, and moves no money: a payment
-is only ever what a person records after the money has arrived.
+**It moves no money.** It charges no card and holds no bank details but the
+instructions you type for your clients to read. Adminium can take a payment
+against an invoice built on this shape (`invoices/invoice@2`), through the
+payment service the shop connects to its own account; the add-on itself still
+moves no money. Every other payment is what a person records after the money
+has arrived.
 
 **It does not decide which column means what.** The host maps its own record
 onto the outline's slot ids at the mount site, and this add-on validates that

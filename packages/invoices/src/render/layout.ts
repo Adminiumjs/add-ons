@@ -38,7 +38,7 @@ import type { InvoiceBody, LineItem } from '../document.ts';
 import { isPurchaseOrder, PURCHASE_ORDER, PURCHASE_ORDER_UNPRICED } from '../kinds.ts';
 import { lineMinor, taxBreakdown, totalsOf } from '../money.ts';
 import { differenceText, isPositive, isZero, productText, sumText } from '../shape-money.ts';
-import type { BoundExtras, LineFacts, OrderLine, StoredLine, SubjectFacts } from '../subject.ts';
+import type { BoundExtras, LineFacts, OrderLine, PayQr, StoredLine, SubjectFacts } from '../subject.ts';
 import { minorToDecimal, type Formats } from './format.ts';
 import { fill, type LayoutWords } from './words.ts';
 
@@ -127,6 +127,12 @@ export interface FootBlock {
   readonly kind: 'foot';
   readonly payLabel: string;
   readonly payLines: readonly { readonly text: string; readonly strong: boolean }[];
+  /**
+   * An unpaid invoice's pay link, under how to pay, and its code to scan when
+   * the host made one. Absent otherwise — so a document without one draws to
+   * the bytes it always did.
+   */
+  readonly payOnline?: { readonly line: string; readonly url: string; readonly qr: PayQr | null };
   readonly footLabel: string;
   readonly footText: string;
 }
@@ -838,6 +844,14 @@ function footBlock(input: LayoutInput, isVoid: boolean, voidDay: string): FootBl
     payLines = [{ text: methodWord(input.extras.paidWith, words), strong: false }];
   }
 
-  if (payLines.length === 0 && footText === '') return null;
-  return { kind: 'foot', payLabel, payLines, footLabel: footText === '' ? '' : footLabel, footText };
+  // A pay link only while something is owed: never on a void, a paid or a hand-mapped invoice the host gave none for.
+  const owed = facts.balance === null || isPositive(facts.balance);
+  const payOnline =
+    kind === 'invoice' && !isVoid && owed && input.extras.payUrl !== ''
+      ? { line: fill(words.payOnlineLine, { url: input.extras.payUrl }), url: input.extras.payUrl, qr: input.extras.payQr }
+      : null;
+  if (payOnline !== null && payLabel === '') payLabel = words.howToPay;
+
+  if (payLines.length === 0 && payOnline === null && footText === '') return null;
+  return { kind: 'foot', payLabel, payLines, ...(payOnline === null ? {} : { payOnline }), footLabel: footText === '' ? '' : footLabel, footText };
 }

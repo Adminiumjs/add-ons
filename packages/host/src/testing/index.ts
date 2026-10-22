@@ -93,3 +93,12 @@ export {
   describeDocumentRenderer,
   type DocumentRendererFixtures,
 } from './document-render.ts';
+export {
+  PAYMENT_AMOUNT_CASES,
+  paymentProviderConformance,
+  type PaymentAmountCase,
+  type PaymentConformanceDriver,
+  type PaymentConformanceOptions,
+} from './payment-provider.ts';
+export { PAYMENT_ANSWER_SCHEMAS, providerErrorSchema, type PaymentCall } from './payment-schemas.ts';
+export { createDemoPaymentBackend, createDemoPaymentProvider, DEMO_SIGNATURE_HEADER } from './payment-demo.ts';

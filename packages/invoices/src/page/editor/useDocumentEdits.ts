@@ -64,6 +64,7 @@ export function useDocumentEdits(actions: EditorActions): DocumentEdits {
       histSet: (key, value) => body((b) => ({ ...b, [key]: value }), true),
       setName: (name) => actions.mutate({ name }),
       histSetStatus: (status) => actions.histMutate({ status }),
+      histSetCurrency: (sym, code) => body((b) => ({ ...b, currency: sym, currencyCode: code }), true),
       histSetTopic: (topic) => actions.histMutate({ topic }),
       histSetLang: (lang) => actions.histMutate({ lang }),
 

@@ -1,0 +1,60 @@
+{
+  "kind": "add-on",
+  "manifestVersion": 1,
+  "key": "payments-stripe",
+  "name": "Card payments",
+  "version": "1.0.13",
+  "publisher": {
+    "id": "adminium",
+    "name": "Adminium",
+    "url": "https://adminium.dev"
+  },
+  "license": "AGPL-3.0-only",
+  "description": {
+    "key": "addon.payments-stripe.line",
+    "fallback": "Connects to Stripe. Your customers pay an invoice or a record by card and the other ways your Stripe account offers, on the Stripe page, and the payment is recorded here."
+  },
+  "categories": ["payments"],
+  "compatibility": {
+    "minAdminiumVersion": "0.3.33",
+    "requires": ["outbound-http"]
+  },
+  "capabilities": ["outbound-http"],
+  "addOn": {
+    "attaches": [{ "app": "*" }],
+    "provides": [{ "contract": "payment-provider", "version": 1, "server": "dist/server.js" }],
+    "connect": { "kind": "api-key" },
+    "network": { "allow": ["api.stripe.com", "checkout.stripe.com"] },
+    "publicSettings": []
+  },
+  "settings": [
+    {
+      "key": "secret_key",
+      "type": "string",
+      "secret": true,
+      "required": true,
+      "label": {
+        "key": "addon.payments-stripe.setting.secretKey",
+        "fallback": "Restricted key"
+      },
+      "help": {
+        "key": "addon.payments-stripe.setting.secretKeyHelp",
+        "fallback": "Starts with rk_test_ or rk_live_. A secret key (sk_) is refused."
+      }
+    },
+    {
+      "key": "webhook_secret",
+      "type": "string",
+      "secret": true,
+      "required": true,
+      "label": {
+        "key": "addon.payments-stripe.setting.webhookSecret",
+        "fallback": "Webhook signing secret"
+      },
+      "help": {
+        "key": "addon.payments-stripe.setting.webhookSecretHelp",
+        "fallback": "Starts with whsec_. Copy it from the webhook endpoint in the Stripe dashboard, not from stripe listen."
+      }
+    }
+  ]
+}

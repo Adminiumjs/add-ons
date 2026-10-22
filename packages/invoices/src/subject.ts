@@ -236,11 +236,42 @@ export interface BoundExtras {
   /** Stored with the document. A mapping set to email it sends it there when the document is drawn; otherwise nothing is sent until somebody presses send. */
   readonly customerEmail: string;
   /**
+   * An invoice's pay link, as the host gives it: printed under how to pay,
+   * an `https` address only, `''` when there is none.
+   */
+  readonly payUrl: string;
+  /** The same link as a code to scan, made by the host; `null` when it gave none (a link too long for one). */
+  readonly payQr: PayQr | null;
+  /**
    * The day and the names of each MAPPED line, by the line's position in
    * `body.items` — empty when the lines are the authored template's own. They
    * ride here rather than on `LineItem` for the reason above.
    */
   readonly lines: readonly LineFacts[];
+}
+
+/** A code to scan: its modules as rows of `0` and `1`, and the same as a PNG `data:` URI. */
+export interface PayQr {
+  readonly modules: readonly string[];
+  readonly png: string;
+}
+
+/** A pay link the page may print: `https`, one line, no longer than an address bar takes. */
+export function payUrlOf(value: unknown): string {
+  if (typeof value !== 'string') return '';
+  const url = value.trim();
+  return /^https:\/\/[^\s<>"']{1,2040}$/.test(url) ? url : '';
+}
+
+/** A scan code as the host makes one; anything else is no code (the printed link stays). */
+export function payQrOf(value: unknown): PayQr | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const { modules, png } = value as { modules?: unknown; png?: unknown };
+  if (!Array.isArray(modules) || modules.length < 21 || modules.length > 177) return null;
+  const size = modules.length;
+  if (!modules.every((row) => typeof row === 'string' && row.length === size && /^[01]+$/.test(row))) return null;
+  if (typeof png !== 'string' || !/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(png)) return null;
+  return { modules: modules as string[], png };
 }
 
 /** What a line carries besides its figures: the day it is for, and the names printed under it. */
@@ -594,6 +625,8 @@ export function documentFrom(
       paidWith: textOf(subject.fields.paidWith),
       tip: moneyOf(subject.fields.tip, scale),
       customerEmail: textOf(subject.fields.customerEmail),
+      payUrl: payUrlOf(subject.fields.payUrl),
+      payQr: payQrOf(subject.fields.payQr),
       // Only lines that came from the subject: an authored template's own
       // lines have no day and no names to line up with.
       lines: items.length > 0 ? rows.map(lineFactsOf) : [],

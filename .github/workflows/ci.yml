@@ -46,6 +46,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
+    # STRIPE'S OWN MOCK SERVER, for the card payments add-on's wire suite
+    # (`packages/payments-stripe/src/stripe-mock.test.ts`): it checks every
+    # request the add-on builds against Stripe's published API description.
+    # Pinned: the suite names the same image, and a test reads this file to
+    # keep the two the same.
+    services:
+      stripe-mock:
+        image: stripe/stripe-mock:v0.206.0
+        ports:
+          - 12111:12111
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -183,6 +194,17 @@ jobs:
           repository: Adminiumjs/hotel-reservations
           path: .hosts/hotel-reservations
 
+      # The mock answers in well under a second, but a service container is
+      # not waited for: ask until it answers, for 60 seconds at most.
+      - name: Wait for stripe-mock
+        run: |
+          for attempt in $(seq 1 60); do
+            if curl -s -o /dev/null http://localhost:12111/v1/charges; then exit 0; fi
+            sleep 1
+          done
+          echo "stripe-mock did not answer on port 12111 within 60 seconds" >&2
+          exit 1
+
       # `verify` is the repo's own script — typecheck, then test, then build —
       # so CI cannot drift from what a maintainer runs by hand.
       - name: Typecheck, test, build
@@ -203,4 +225,8 @@ jobs:
           # carry. The two target apps above are read by a different suite, which
           # reports their absence rather than depending on it.
           ADMINIUM_REQUIRE_HOSTS: 'true'
+          # The Stripe wire suite runs against the service above, and a
+          # skipped one fails the job instead of passing it.
+          STRIPE_MOCK_URL: http://localhost:12111
+          STRIPE_MOCK_REQUIRED: '1'
         run: npm run verify

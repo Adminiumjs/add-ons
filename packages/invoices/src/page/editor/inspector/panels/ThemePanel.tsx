@@ -8,14 +8,15 @@
  * is the better path, and the background image with its overlay slider capped
  * at 95 % (795-803, 1733).
  */
-import { Upload } from 'lucide-react';
+import { Lock, Upload } from 'lucide-react';
 import { cn } from '@adminium/ui';
 
 import { t } from '../../../messages.js';
 import { invoiceIcon } from '../../../icons.js';
-import { ACCENT_SWATCHES, CURRENCIES, INVOICE_STATUSES, INVOICE_TOPICS, type InvoiceStatus, type InvoiceTopic } from '../../../model/envelope.js';
+import { ACCENT_SWATCHES, CURRENCIES, INVOICE_STATUSES, INVOICE_TOPICS, MORE_CURRENCIES, currencyCodeForSymbol, type InvoiceStatus, type InvoiceTopic } from '../../../model/envelope.js';
+import { hasLivePayment, printedPayments } from '../../../payments.js';
 import { DOCUMENT_LANGUAGES } from '../../../model/languages.js';
-import { DASHED, Divider, FOCUS, FileLabel, Note, OptionButton, PanelLabel, RangeInput, Swatch, TextField, Toggle, type OptionTone } from '../parts.js';
+import { DASHED, Divider, FIELD, FOCUS, FileLabel, Note, OptionButton, PanelLabel, RangeInput, Swatch, TextField, Toggle, type OptionTone } from '../parts.js';
 import type { PanelProps } from '../panelProps.js';
 import { uploadFromInput } from '../upload.js';
 
@@ -57,9 +58,22 @@ export function topicOption(topic: InvoiceTopic): { label: string; icon: string 
 
 const SMALL_BUTTON = 'rounded-[9px] border border-border bg-surface px-[11px] py-[7px] text-[11.5px] font-bold transition-colors hover:border-border-strong';
 
-export function ThemePanel({ draft, edits, onImageRejected }: PanelProps) {
+/** An invoice's statuses a person picks: Paid is the balance's to set and clear. */
+const PICKED_STATUSES: readonly InvoiceStatus[] = INVOICE_STATUSES.filter((status) => status !== 'paid');
+
+export function ThemePanel({ draft, edits, onImageRejected, kind, payments, paymentsSettled = true, currencyHeldIn = null }: PanelProps) {
   const body = draft.body;
   const tintPct = Math.round(body.bgTint * 100);
+  const invoice = kind === 'invoice';
+  // Paid in one currency: the invoice stays in it.
+  const heldIn = invoice ? ((hasLivePayment(payments ?? null) ? (printedPayments(payments ?? null)[0]?.currency ?? null) : null) ?? currencyHeldIn) : null;
+  // Until the payments are known, nothing says the currency is free to change.
+  const pickerOff = heldIn !== null || (invoice && !paymentsSettled);
+  // The code the picker shows as chosen: the stored one, or the one a symbol can only mean.
+  const code = body.currencyCode ?? currencyCodeForSymbol(body.currency);
+  const chipOn = (choice: { sym: string; code: string }) => (code !== null ? code === choice.code : body.currency === choice.sym);
+  const more = MORE_CURRENCIES.find((choice) => choice.code === code) ?? null;
+  const statuses = invoice ? PICKED_STATUSES : INVOICE_STATUSES;
   return (
     <div className="flex flex-col gap-4">
       <TextField
@@ -86,9 +100,41 @@ export function ThemePanel({ draft, edits, onImageRejected }: PanelProps) {
         </PanelLabel>
         <div className="flex gap-[6px]" role="group" aria-labelledby="invoices-currency-label">
           {CURRENCIES.map((currency) => (
-            <OptionButton key={currency.sym} on={body.currency === currency.sym} outlined label={currency.label} value={currency.sym} onClick={() => edits.histSet('currency', currency.sym)} className="flex-1 rounded-[9px] px-1 py-[9px]" />
+            <OptionButton
+              key={currency.code}
+              on={more === null && chipOn(currency)}
+              outlined
+              label={currency.label}
+              value={currency.sym}
+              disabled={pickerOff}
+              onClick={() => edits.histSetCurrency(currency.sym, currency.code)}
+              className="flex-1 rounded-[9px] px-1 py-[9px]"
+            />
           ))}
         </div>
+        <select
+          aria-label={t('inspector.theme.currencyMore', 'More currencies')}
+          data-testid="invoices-currency-more"
+          value={more?.code ?? ''}
+          disabled={pickerOff}
+          onChange={(event) => {
+            const choice = MORE_CURRENCIES.find((one) => one.code === event.target.value);
+            if (choice !== undefined) edits.histSetCurrency(choice.sym, choice.code);
+          }}
+          className={cn(FIELD, 'mt-[6px] py-[7px] text-[12px] disabled:cursor-not-allowed disabled:opacity-60')}
+        >
+          <option value="">{t('inspector.theme.currencyMore', 'More currencies')}</option>
+          {MORE_CURRENCIES.map((choice) => (
+            <option key={choice.code} value={choice.code}>
+              {choice.label}
+            </option>
+          ))}
+        </select>
+        {heldIn !== null ? (
+          <Note className="mt-2">{t('inspector.theme.currencyHeld', 'This invoice has payments in {code}, so its currency stays {code}.', { code: heldIn })}</Note>
+        ) : invoice && code === null ? (
+          <Note className="mt-2">{t('inspector.theme.currencyAsk', 'Pick the currency to take payments: {symbol} is used by more than one.', { symbol: body.currency })}</Note>
+        ) : null}
       </div>
       <div className="flex items-center gap-[10px]">
         <div className="min-w-0 flex-1">
@@ -104,10 +150,17 @@ export function ThemePanel({ draft, edits, onImageRejected }: PanelProps) {
           {t('inspector.theme.statusLabel', 'Status')}
         </PanelLabel>
         <div className="flex flex-wrap gap-[6px]" role="group" aria-labelledby="invoices-status-label">
-          {INVOICE_STATUSES.map((status) => (
+          {statuses.map((status) => (
             <OptionButton key={status} on={draft.status === status} tone={STATUS_TONE[status]} label={statusLabel(status)} value={status} onClick={() => edits.histSetStatus(status)} />
           ))}
+          {invoice && draft.status === 'paid' ? (
+            <span data-testid="invoices-status-paid" className="inline-flex items-center gap-[6px] rounded-lg border border-transparent bg-pos-soft px-3 py-[7px] text-[11.5px] font-bold text-pos">
+              {statusLabel('paid')}
+              <Lock className="size-[13px] text-fg-subtle" aria-hidden="true" />
+            </span>
+          ) : null}
         </div>
+        {invoice ? <Note className="mt-2">{t('inspector.theme.statusPaidHelp', 'Becomes Paid by itself when the balance is zero.')}</Note> : null}
       </div>
       <Divider />
       <div>

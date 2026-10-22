@@ -91,6 +91,8 @@ export interface LayoutWords {
   readonly fingerprint: string;
   readonly howToPay: string;
   readonly referenceLine: string;
+  /** An invoice's pay link, under how to pay: `{url}` is printed as it is. */
+  readonly payOnlineLine: string;
   readonly referenceInvoiceNumber: string;
   readonly howItGetsPaid: string;
   readonly thankYou: string;
@@ -197,6 +199,7 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     fingerprint: 'fingerprint {print}',
     howToPay: 'How to pay',
     referenceLine: 'Reference: {number}',
+    payOnlineLine: 'Or pay online: {url}',
     referenceInvoiceNumber: 'Reference: the invoice number',
     howItGetsPaid: 'How it gets paid',
     thankYou: 'Thank you',
@@ -292,6 +295,7 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     fingerprint: 'Fingerabdruck {print}',
     howToPay: 'So bezahlen Sie',
     referenceLine: 'Verwendungszweck: {number}',
+    payOnlineLine: 'Oder online bezahlen: {url}',
     referenceInvoiceNumber: 'Verwendungszweck: die Rechnungsnummer',
     howItGetsPaid: 'Zahlungsaufteilung',
     thankYou: 'Vielen Dank',
@@ -387,6 +391,7 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     fingerprint: 'empreinte {print}',
     howToPay: 'Comment régler',
     referenceLine: 'Référence : {number}',
+    payOnlineLine: 'Ou payez en ligne : {url}',
     referenceInvoiceNumber: 'Référence : le numéro de facture',
     howItGetsPaid: 'Échéancier',
     thankYou: 'Merci',
@@ -482,6 +487,7 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     fingerprint: 'otisk {print}',
     howToPay: 'Jak zaplatit',
     referenceLine: 'Označení platby: {number}',
+    payOnlineLine: 'Nebo zaplaťte online: {url}',
     referenceInvoiceNumber: 'Označení platby: číslo faktury',
     howItGetsPaid: 'Rozložení plateb',
     thankYou: 'Děkujeme',
@@ -577,6 +583,7 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     fingerprint: 'fingeraftryk {print}',
     howToPay: 'Sådan betaler du',
     referenceLine: 'Reference: {number}',
+    payOnlineLine: 'Eller betal online: {url}',
     referenceInvoiceNumber: 'Reference: fakturanummeret',
     howItGetsPaid: 'Betalingsopdeling',
     thankYou: 'Tak',
@@ -672,6 +679,7 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     fingerprint: '指纹 {print}',
     howToPay: '付款方法',
     referenceLine: '付款备注：{number}',
+    payOnlineLine: '或在线付款：{url}',
     referenceInvoiceNumber: '付款备注：发票编号',
     howItGetsPaid: '付款安排',
     thankYou: '谢谢',
@@ -767,6 +775,7 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     fingerprint: '指紋 {print}',
     howToPay: '付款方法',
     referenceLine: '付款備註：{number}',
+    payOnlineLine: '或線上付款：{url}',
     referenceInvoiceNumber: '付款備註：發票編號',
     howItGetsPaid: '付款安排',
     thankYou: '謝謝',
@@ -862,6 +871,7 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     fingerprint: 'البصمة {print}',
     howToPay: 'طريقة الدفع',
     referenceLine: 'المرجع: {number}',
+    payOnlineLine: 'أو ادفع عبر الإنترنت: {url}',
     referenceInvoiceNumber: 'المرجع: رقم الفاتورة',
     howItGetsPaid: 'مراحل الدفع',
     thankYou: 'شكراً لك',

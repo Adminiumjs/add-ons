@@ -71,6 +71,12 @@ export interface InspectorProps {
   onImageRejected: (result: Extract<ImageReadResult, { ok: false }>) => void;
   /** The drawer variant below `lg` renders the same panel without the aside chrome. */
   variant?: 'aside' | 'drawer' | undefined;
+  kind?: PanelProps['kind'];
+  documentId?: string | undefined;
+  payments?: PanelProps['payments'];
+  paymentsSettled?: PanelProps['paymentsSettled'];
+  currencyHeldIn?: PanelProps['currencyHeldIn'];
+  onPaymentsChanged?: (() => void) | undefined;
 }
 
 /** The comp's `insMeta` per fixed section (1565) → its panel (732-1033). */
@@ -140,8 +146,8 @@ function fallbackHeader(): SectionHeader {
   return { icon: 'mouse-pointer-click', title: t('inspector.fallback.title', 'Edit'), hint: '' };
 }
 
-export function Inspector({ section, draft, edits, totals, onSelect, onOpenAdd, onImageRejected, variant = 'aside' }: InspectorProps) {
-  const props: PanelProps = { draft, edits, totals, onSelect, onOpenAdd, onImageRejected };
+export function Inspector({ section, draft, edits, totals, onSelect, onOpenAdd, onImageRejected, variant = 'aside', kind, documentId, payments, paymentsSettled, currencyHeldIn, onPaymentsChanged }: InspectorProps) {
+  const props: PanelProps = { draft, edits, totals, onSelect, onOpenAdd, onImageRejected, kind, documentId, payments, paymentsSettled, currencyHeldIn, onPaymentsChanged };
 
   let header: SectionHeader;
   let panel: ReactNode;

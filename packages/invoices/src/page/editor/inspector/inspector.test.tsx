@@ -114,6 +114,7 @@ function mockEdits(): DocumentEdits {
     histSet: vi.fn(),
     setName: vi.fn(),
     histSetStatus: vi.fn(),
+    histSetCurrency: vi.fn(),
     histSetTopic: vi.fn(),
     histSetLang: vi.fn(),
     updateLine: vi.fn(),
@@ -347,7 +348,7 @@ describe('Inspector — the discrete choices reach their hist… setter', () => 
 
     expect(within(panel).getByRole('button', { name: 'USD $' }).getAttribute('aria-pressed')).toBe('true');
     await user.click(within(panel).getByRole('button', { name: 'EUR €' }));
-    expect(edits.histSet).toHaveBeenCalledWith('currency', '€');
+    expect(edits.histSetCurrency).toHaveBeenCalledWith('€', 'EUR');
 
     const decimals = within(panel).getByRole('switch', { name: 'Show decimals' });
     expect(decimals.getAttribute('aria-checked')).toBe('true');

@@ -76,6 +76,7 @@ export function OptionButton({
   className,
   testId = 'invoices-option',
   value,
+  disabled = false,
   children,
 }: {
   on: boolean;
@@ -86,6 +87,7 @@ export function OptionButton({
   className?: string | undefined;
   testId?: string | undefined;
   value?: string | undefined;
+  disabled?: boolean | undefined;
   children?: ReactNode;
 }) {
   return (
@@ -94,9 +96,10 @@ export function OptionButton({
       aria-pressed={on}
       data-testid={testId}
       data-value={value}
+      disabled={disabled}
       onClick={onClick}
       className={cn(
-        'flex items-center justify-center rounded-lg border px-3 py-[7px] text-[11.5px] font-bold transition-colors',
+        'flex items-center justify-center rounded-lg border px-3 py-[7px] text-[11.5px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60',
         FOCUS,
         on ? cn(ON_TONE[tone], outlined ? 'border-accent' : 'border-transparent') : 'border-border bg-surface-2 text-fg-muted hover:border-border-strong',
         className,

@@ -1,0 +1,29 @@
+{
+  "name": "@adminium/add-on-payments-paypal",
+  "version": "1.0.13",
+  "type": "module",
+  "description": "Wallet payments — lets a shop's customers pay an invoice or a record on the PayPal page, with the shop's own PayPal Business account.",
+  "license": "AGPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Adminiumjs/add-ons.git",
+    "directory": "packages/payments-paypal"
+  },
+  "homepage": "https://adminium.dev/marketplace",
+  "bugs": "https://github.com/Adminiumjs/add-ons/issues",
+  "files": [
+    "dist",
+    "manifest.json",
+    "TRADEMARKS.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b --force",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@adminium/add-on-host": "*"
+  }
+}

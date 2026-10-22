@@ -16,7 +16,11 @@
 
 import { readFileSync } from 'node:fs';
 
+import { createHash } from 'node:crypto';
+
 import {
+  evaluateFormula,
+  rollupValue,
   shapeConformanceIssues,
   shapeKey,
   validateManifest,
@@ -40,7 +44,7 @@ type Shape = {
 
 const clone = <T>(value: T): T => structuredClone(value);
 const SHAPES = (manifest.addOn as unknown as { shapes: Shape[] }).shapes;
-const shape = (name: string): Shape => SHAPES.find((entry) => entry.name === name)!;
+const shape = (name: string, version = 1): Shape => SHAPES.find((entry) => entry.name === name && entry.version === version)!;
 
 function issuesOf(result: ReturnType<typeof validateManifest>): string[] {
   return result.ok ? [] : result.issues.map((issue) => `${issue.path}: ${issue.message}`);
@@ -84,9 +88,10 @@ function spelledStates(shapeName: string, states: Json): Json {
 const L = ['en-US', 'de-DE', 'fr-FR', 'cs-CZ', 'da-DK', 'zh-CN', 'zh-TW', 'ar-EG'];
 const name = (text: string) => Object.fromEntries(L.map((l) => [l, text]));
 
-/** An app — a small studio desk — built on both shapes. */
-function sampleApp(): Json {
-  const invoice = shape('invoice');
+/** An app — a small studio desk — built on both shapes (its invoices on `invoice@<version>`). */
+function sampleApp(version = 1): Json {
+  const invoice = shape('invoice', version);
+  const builtOn = `invoices/invoice@${String(version)}`;
   const quote = shape('quote');
   const id = { ref: 'id', type: 'int', role: 'pk' };
   const producers = invoice.outbox!.producers.map((producer) => {
@@ -125,7 +130,7 @@ function sampleApp(): Json {
         },
         {
           ref: 'invoices',
-          builtOn: 'invoices/invoice@1',
+          builtOn,
           part: 'document',
           columns: [
             // The client's own rate first; the add-on's default fills in when it is empty.
@@ -144,10 +149,10 @@ function sampleApp(): Json {
             return states;
           })(),
         },
-        { ref: 'invoice_lines', builtOn: 'invoices/invoice@1', part: 'lines', columns: spelledOut('invoice', invoice.parts['lines']!) },
+        { ref: 'invoice_lines', builtOn, part: 'lines', columns: spelledOut('invoice', invoice.parts['lines']!) },
         {
           ref: 'payments',
-          builtOn: 'invoices/invoice@1',
+          builtOn,
           part: 'payments',
           columns: [
             ...spelledOut('invoice', invoice.parts['payments']!),
@@ -236,8 +241,9 @@ group('the add-on manifest', () => {
     expect(issuesOf(validateManifest(broken)).join('\n')).toContain('prefix_invoice');
   });
 
-  it('declares invoice@1 with three parts and quote@1 with two', () => {
-    expect(SHAPES.map((entry) => `${entry.name}@${String(entry.version)}`)).toEqual(['invoice@1', 'quote@1']);
+  it('declares invoice@1 with three parts and quote@1 with two, and invoice@2 beside them', () => {
+    expect(SHAPES.map((entry) => `${entry.name}@${String(entry.version)}`)).toEqual(['invoice@1', 'quote@1', 'invoice@2']);
+    expect(Object.keys(shape('invoice', 2).parts)).toEqual(['document', 'lines', 'payments']);
     expect(Object.keys(shape('invoice').parts)).toEqual(['document', 'lines', 'payments']);
     expect(Object.keys(shape('quote').parts)).toEqual(['document', 'lines']);
   });
@@ -392,5 +398,98 @@ group('the shapes file an app vendors', () => {
   it('is the manifest itself — one copy, nothing to drift', () => {
     const raw = JSON.parse(readFileSync(new URL('../manifest.json', import.meta.url), 'utf8')) as { addOn: { shapes: unknown } };
     expect(raw.addOn.shapes).toEqual(SHAPES);
+  });
+});
+
+/*
+ * `invoice@2`: what an online payment needs of a payments row, beside `@1`.
+ * An app stays on `@1` until its own update moves it, so `@1` must never move
+ * under it; `@2` is `@1` with exactly the additions below and nothing else.
+ */
+group('invoice@2, for payments taken online', () => {
+  const v1 = shape('invoice', 1);
+  const v2 = shape('invoice', 2);
+  const columnsOf = (entry: Shape, part: string) => entry.parts[part]!.columns;
+  const column = (entry: Shape, part: string, ref: string) => columnsOf(entry, part).find((one) => one.ref === ref)!;
+
+  it('leaves invoice@1 exactly as release 1.0.12 shipped it', () => {
+    // The digest of `invoice@1` in 1.0.12's manifest. An app built on it is checked against these bytes.
+    expect(createHash('sha256').update(JSON.stringify(v1)).digest('hex')).toBe('b4be323aa33789b85d081636945544debd2c3585aadfd8b4f8f7655a3613fc19');
+  });
+
+  it('is invoice@1 with the payments part grown, paid counting what was refunded, and a pay button: nothing else', () => {
+    expect(v2.documentProfiles).toEqual(v1.documentProfiles);
+    expect(v2.parts['lines']).toEqual(v1.parts['lines']);
+    expect(v2.outbox!.producers).toEqual(v1.outbox!.producers);
+    const strip = (columns: Column[]) => columns.map((one) => (one.ref === 'paid' ? { ...one, rules: undefined } : one));
+    expect(strip(columnsOf(v2, 'document'))).toEqual(strip(columnsOf(v1, 'document')));
+    expect(v2.parts['document']!.states).toEqual(v1.parts['document']!.states);
+    const added = ['refunded_amount', 'net_amount', 'payment_ref', 'provider', 'approval_code', 'card_last4'];
+    expect(columnsOf(v2, 'payments').map((one) => one.ref).filter((ref) => !added.includes(ref))).toEqual(columnsOf(v1, 'payments').map((one) => one.ref));
+    for (const one of columnsOf(v1, 'payments')) {
+      if (one.ref === 'method') continue;
+      expect(column(v2, 'payments', one.ref), one.ref).toEqual(one);
+    }
+  });
+
+  it('keeps the payment reference unique and empty until Adminium records one, so rows from before never collide', () => {
+    expect(column(v2, 'payments', 'payment_ref')).toEqual({ ref: 'payment_ref', type: 'text', maxLength: 64, nullable: true, unique: true });
+    expect(column(v2, 'payments', 'provider')).toMatchObject({ type: 'text', nullable: true });
+    expect(column(v2, 'payments', 'approval_code')).toMatchObject({ type: 'text', maxLength: 12, nullable: true });
+    expect(column(v2, 'payments', 'card_last4')).toMatchObject({ type: 'text', maxLength: 4, nullable: true, rules: { validation: { minLength: 4, maxLength: 4 } } });
+  });
+
+  it('takes every way to pay Adminium records an online payment as', () => {
+    const methods = column(v2, 'payments', 'method')['enum'] as string[];
+    expect(methods).toEqual([...(column(v1, 'payments', 'method')['enum'] as string[]), 'online']);
+    for (const written of ['card', 'bank-transfer', 'online']) expect(methods).toContain(written);
+  });
+
+  it('starts a row with nothing refunded, and counts a row as what is left after its refunds', () => {
+    expect(column(v2, 'payments', 'refunded_amount')).toMatchObject({ type: 'decimal', scale: 'currency', default: 0, rules: { validation: { min: 0 } } });
+    const net = column(v2, 'payments', 'net_amount').rules!['formula'] as Parameters<typeof evaluateFormula>[0];
+    expect(evaluateFormula(net, { amount: '120.00', refunded_amount: '40.00' }, 2)).toBe('80.00');
+    expect(evaluateFormula(net, { amount: '120.00', refunded_amount: '0' }, 2)).toBe('120.00');
+    // A row whose refunded amount is empty is a row with nothing refunded.
+    expect(evaluateFormula(net, { amount: '45.250', refunded_amount: null }, 3)).toBe('45.250');
+  });
+
+  it('sums paid over unvoided rows as what each kept, so a refund reopens the balance', () => {
+    const rollup = column(v2, 'document', 'paid').rules!['rollup'] as { sum: string; where: Json; balance: Json; cap: boolean };
+    expect(rollup).toEqual({ ...(column(v1, 'document', 'paid').rules!['rollup'] as Json), sum: 'net_amount' });
+    const rows = [
+      { amount: '120.00', refunded_amount: '40.00', net_amount: '80.00', voided: false },
+      { amount: '10.00', refunded_amount: '0', net_amount: '10.00', voided: true },
+    ].filter((row) => row.voided === false);
+    expect(rollupValue(rows, { sum: rollup.sum }, 2)).toBe('80.00');
+  });
+
+  it('offers a pay button on the sent email and every reminder, in eight languages, and none on the receipt', () => {
+    for (const template of v2.outbox!.templates as unknown as { kind: string; vars: string[]; locales: Record<string, { blocks: { block: string; id?: string; data: Json }[] }> }[]) {
+      const pays = template.kind !== 'payment-receipt';
+      expect(template.vars.includes('pay_url'), template.kind).toBe(pays);
+      for (const [locale, content] of Object.entries(template.locales)) {
+        const button = content.blocks.find((block) => block.id === 'pay');
+        if (!pays) {
+          expect(button, `${template.kind} ${locale}`).toBeUndefined();
+          continue;
+        }
+        expect(button, `${template.kind} ${locale}`).toMatchObject({ block: 'email.button', data: { url: '{{pay_url}}' } });
+        expect(String(button!.data['label']), `${template.kind} ${locale}`).toContain('{{number}}');
+      }
+    }
+  });
+
+  it('validates as an app whose invoices are built on it, and passes the conformance check', () => {
+    expect(shapeConformanceIssues(sampleApp(2) as never, shapesByKey())).toEqual([]);
+    expect(issuesOf(validateManifest(sampleApp(2)))).toEqual([]);
+  });
+
+  it('refuses an app on invoice@2 that leaves the payment reference out', () => {
+    const app = sampleApp(2);
+    const tables = (app['requiredSchema'] as { tables: { ref: string; columns: Column[] }[] }).tables;
+    const payments = tables.find((table) => table.ref === 'payments')!;
+    payments.columns = payments.columns.filter((one) => one.ref !== 'payment_ref');
+    expect(shapeConformanceIssues(app as never, shapesByKey()).map((issue) => issue.message).join('\n')).toContain('payment_ref');
   });
 });

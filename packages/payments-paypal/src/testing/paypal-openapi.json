@@ -1,0 +1,2682 @@
+{
+ "source": {
+  "repository": "paypal/paypal-rest-api-specifications",
+  "commit": "90e8041ffe",
+  "committed": "2026-04-07",
+  "read": "2026-10-21",
+  "files": {
+   "openapi/checkout_orders_v2.json": "2.32",
+   "openapi/payments_payment_v2.json": "2.12",
+   "openapi/notifications_webhooks_v1.json": "1.11"
+  },
+  "trimmed": "Only the schemas the requests below reach. Descriptions and examples removed; payment_source keeps only paypal, the one source this add-on sends."
+ },
+ "requests": {
+  "POST /v2/checkout/orders": {
+   "spec": "orders",
+   "schema": "order_request"
+  },
+  "PATCH /v2/checkout/orders/{id}": {
+   "spec": "orders",
+   "schema": "patch_request"
+  },
+  "POST /v2/checkout/orders/{id}/capture": {
+   "spec": "orders",
+   "schema": "order_capture_request"
+  },
+  "POST /v2/payments/captures/{capture_id}/refund": {
+   "spec": "payments",
+   "schema": "refund_request"
+  }
+ },
+ "query": {
+  "GET /v1/notifications/webhooks-events": {
+   "page_size": {
+    "type": "integer",
+    "default": 10
+   },
+   "start_time": {
+    "type": "string"
+   },
+   "end_time": {
+    "type": "string"
+   },
+   "transaction_id": {
+    "type": "string"
+   },
+   "event_type": {
+    "type": "string"
+   }
+  }
+ },
+ "schemas": {
+  "orders": {
+   "order_request": {
+    "type": "object",
+    "required": [
+     "intent",
+     "purchase_units"
+    ],
+    "properties": {
+     "intent": {
+      "$ref": "#/components/schemas/checkout_payment_intent"
+     },
+     "payer": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/payer"
+       },
+       {
+        "deprecated": true
+       }
+      ]
+     },
+     "purchase_units": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10,
+      "items": {
+       "allOf": [
+        {
+         "$ref": "#/components/schemas/purchase_unit_request"
+        },
+        {}
+       ]
+      }
+     },
+     "payment_source": {
+      "$ref": "#/components/schemas/payment_source"
+     },
+     "application_context": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/order_application_context"
+       },
+       {}
+      ]
+     }
+    }
+   },
+   "checkout_payment_intent": {
+    "type": "string",
+    "enum": [
+     "CAPTURE",
+     "AUTHORIZE"
+    ]
+   },
+   "payer": {
+    "type": "object",
+    "allOf": [
+     {
+      "$ref": "#/components/schemas/payer_base"
+     },
+     {
+      "type": "object",
+      "properties": {
+       "name": {
+        "allOf": [
+         {
+          "$ref": "#/components/schemas/name"
+         },
+         {
+          "not": {
+           "anyOf": [
+            {
+             "required": [
+              "prefix"
+             ]
+            },
+            {
+             "required": [
+              "middle_name"
+             ]
+            },
+            {
+             "required": [
+              "suffix"
+             ]
+            },
+            {
+             "required": [
+              "alternate_full_name"
+             ]
+            },
+            {
+             "required": [
+              "full_name"
+             ]
+            }
+           ]
+          }
+         }
+        ]
+       },
+       "phone": {
+        "allOf": [
+         {
+          "$ref": "#/components/schemas/phone_with_type"
+         },
+         {}
+        ]
+       },
+       "birth_date": {
+        "allOf": [
+         {
+          "$ref": "#/components/schemas/date_no_time"
+         },
+         {}
+        ]
+       },
+       "tax_info": {
+        "allOf": [
+         {
+          "$ref": "#/components/schemas/tax_info"
+         },
+         {}
+        ]
+       },
+       "address": {
+        "allOf": [
+         {
+          "$ref": "#/components/schemas/address_portable"
+         },
+         {
+          "not": {
+           "anyOf": [
+            {
+             "required": [
+              "address_line_3"
+             ]
+            },
+            {
+             "required": [
+              "admin_area_3"
+             ]
+            },
+            {
+             "required": [
+              "admin_area_4"
+             ]
+            },
+            {
+             "required": [
+              "address_details"
+             ]
+            }
+           ]
+          }
+         }
+        ]
+       }
+      }
+     }
+    ]
+   },
+   "payer_base": {
+    "type": "object",
+    "properties": {
+     "email_address": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/email"
+       },
+       {}
+      ]
+     },
+     "payer_id": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/account_id"
+       },
+       {
+        "readOnly": true
+       }
+      ]
+     }
+    }
+   },
+   "email": {
+    "type": "string",
+    "minLength": 3,
+    "maxLength": 254,
+    "pattern": "^.*(?:[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*|(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21\\x23-\\x5b\\x5d-\\x7f]|\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])*\")@(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\\.)+[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?|\\[(?:(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-zA-Z0-9-]*[a-zA-Z0-9]:(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21-\\x5a\\x53-\\x7f]|\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])+)\\]).*$"
+   },
+   "account_id": {
+    "type": "string",
+    "minLength": 13,
+    "maxLength": 13,
+    "pattern": "^[2-9A-HJ-NP-Z]{13}$"
+   },
+   "name": {
+    "type": "object",
+    "properties": {
+     "prefix": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 140,
+      "pattern": "^[\\S\\s]*$"
+     },
+     "given_name": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 140,
+      "pattern": "^[\\S\\s]*$"
+     },
+     "surname": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 140,
+      "pattern": "^[\\S\\s]*$"
+     },
+     "middle_name": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 140,
+      "pattern": "^[\\S\\s]*$"
+     },
+     "suffix": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 140,
+      "pattern": "^[\\S\\s]*$"
+     },
+     "full_name": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 300,
+      "pattern": "^[\\S\\s]*$"
+     }
+    }
+   },
+   "phone_with_type": {
+    "type": "object",
+    "required": [
+     "phone_number"
+    ],
+    "properties": {
+     "phone_type": {
+      "$ref": "#/components/schemas/phone_type"
+     },
+     "phone_number": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/phone_number_without_country_code"
+       },
+       {}
+      ]
+     }
+    }
+   },
+   "phone_type": {
+    "type": "string",
+    "enum": [
+     "FAX",
+     "HOME",
+     "MOBILE",
+     "OTHER",
+     "PAGER"
+    ]
+   },
+   "phone_number_without_country_code": {
+    "type": "object",
+    "required": [
+     "national_number"
+    ],
+    "properties": {
+     "national_number": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 14,
+      "pattern": "^[0-9]{1,14}?$"
+     }
+    }
+   },
+   "date_no_time": {
+    "type": "string",
+    "minLength": 10,
+    "maxLength": 10,
+    "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])$"
+   },
+   "tax_info": {
+    "type": "object",
+    "required": [
+     "tax_id",
+     "tax_id_type"
+    ],
+    "properties": {
+     "tax_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 14,
+      "pattern": "^.*([a-zA-Z0-9]).*$"
+     },
+     "tax_id_type": {
+      "type": "string",
+      "enum": [
+       "BR_CPF",
+       "BR_CNPJ"
+      ]
+     }
+    }
+   },
+   "address_portable": {
+    "type": "object",
+    "required": [
+     "country_code"
+    ],
+    "properties": {
+     "address_line_1": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 300,
+      "pattern": "^[\\S\\s]*$"
+     },
+     "address_line_2": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 300,
+      "pattern": "^[\\S\\s]*$"
+     },
+     "address_line_3": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 100,
+      "pattern": "^[\\S\\s]*$"
+     },
+     "admin_area_4": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 100,
+      "pattern": "^[\\S\\s]*$"
+     },
+     "admin_area_3": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 100,
+      "pattern": "^[\\S\\s]*$"
+     },
+     "admin_area_2": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 120,
+      "pattern": "^[\\S\\s]*$"
+     },
+     "admin_area_1": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 300,
+      "pattern": "^[\\S\\s]*$"
+     },
+     "postal_code": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 60,
+      "pattern": "^[\\S\\s]*$"
+     },
+     "country_code": {
+      "$ref": "#/components/schemas/country_code"
+     },
+     "address_details": {
+      "type": "object",
+      "properties": {
+       "street_number": {
+        "type": "string",
+        "minLength": 0,
+        "maxLength": 100,
+        "pattern": "^[\\S\\s]*$"
+       },
+       "street_name": {
+        "type": "string",
+        "minLength": 0,
+        "maxLength": 100,
+        "pattern": "^[\\S\\s]*$"
+       },
+       "street_type": {
+        "type": "string",
+        "minLength": 0,
+        "maxLength": 100,
+        "pattern": "^[\\S\\s]*$"
+       },
+       "delivery_service": {
+        "type": "string",
+        "minLength": 0,
+        "maxLength": 100,
+        "pattern": "^[\\S\\s]*$"
+       },
+       "building_name": {
+        "type": "string",
+        "minLength": 0,
+        "maxLength": 100,
+        "pattern": "^[\\S\\s]*$"
+       },
+       "sub_building": {
+        "type": "string",
+        "minLength": 0,
+        "maxLength": 100,
+        "pattern": "^[\\S\\s]*$"
+       }
+      }
+     }
+    }
+   },
+   "country_code": {
+    "type": "string",
+    "minLength": 2,
+    "maxLength": 2,
+    "pattern": "^([A-Z]{2}|C2)$"
+   },
+   "purchase_unit_request": {
+    "type": "object",
+    "required": [
+     "amount"
+    ],
+    "properties": {
+     "reference_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[\\S\\s]*$"
+     },
+     "amount": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/amount_with_breakdown"
+       },
+       {}
+      ]
+     },
+     "payee": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/payee"
+       },
+       {}
+      ]
+     },
+     "payment_instruction": {
+      "$ref": "#/components/schemas/payment_instruction"
+     },
+     "description": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 3000,
+      "pattern": "^[\\S\\s]*$"
+     },
+     "custom_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "pattern": "^[\\S\\s]*$"
+     },
+     "invoice_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 127,
+      "pattern": "^[\\S\\s]*$"
+     },
+     "soft_descriptor": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000,
+      "pattern": "^[\\S\\s]*$"
+     },
+     "items": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 32767,
+      "items": {
+       "allOf": [
+        {
+         "$ref": "#/components/schemas/item_request"
+        },
+        {}
+       ]
+      }
+     },
+     "shipping": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/shipping_detail"
+       },
+       {}
+      ]
+     },
+     "supplementary_data": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/supplementary_data"
+       },
+       {}
+      ]
+     }
+    }
+   },
+   "amount_with_breakdown": {
+    "type": "object",
+    "allOf": [
+     {
+      "$ref": "#/components/schemas/money"
+     },
+     {
+      "type": "object",
+      "properties": {
+       "breakdown": {
+        "$ref": "#/components/schemas/amount_breakdown"
+       }
+      }
+     }
+    ]
+   },
+   "money": {
+    "type": "object",
+    "required": [
+     "currency_code",
+     "value"
+    ],
+    "properties": {
+     "currency_code": {
+      "$ref": "#/components/schemas/currency_code"
+     },
+     "value": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 32,
+      "pattern": "^((-?[0-9]+)|(-?([0-9]+)?[.][0-9]+))$"
+     }
+    }
+   },
+   "currency_code": {
+    "type": "string",
+    "minLength": 3,
+    "maxLength": 3,
+    "pattern": "^[\\S\\s]*$"
+   },
+   "amount_breakdown": {
+    "type": "object",
+    "properties": {
+     "item_total": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/money"
+       },
+       {}
+      ]
+     },
+     "shipping": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/money"
+       },
+       {}
+      ]
+     },
+     "handling": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/money"
+       },
+       {}
+      ]
+     },
+     "tax_total": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/money"
+       },
+       {}
+      ]
+     },
+     "insurance": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/money"
+       },
+       {}
+      ]
+     },
+     "shipping_discount": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/money"
+       },
+       {}
+      ]
+     },
+     "discount": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/discount_with_breakdown"
+       },
+       {}
+      ]
+     }
+    }
+   },
+   "discount_with_breakdown": {
+    "type": "object",
+    "allOf": [
+     {
+      "$ref": "#/components/schemas/money"
+     },
+     {
+      "type": "object"
+     }
+    ]
+   },
+   "payee": {
+    "type": "object",
+    "allOf": [
+     {
+      "$ref": "#/components/schemas/payee_base"
+     },
+     {
+      "type": "object"
+     }
+    ]
+   },
+   "payee_base": {
+    "type": "object",
+    "properties": {
+     "email_address": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/email"
+       },
+       {}
+      ]
+     },
+     "merchant_id": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/account_id"
+       },
+       {}
+      ]
+     }
+    }
+   },
+   "payment_instruction": {
+    "type": "object",
+    "properties": {
+     "platform_fees": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 1,
+      "items": {
+       "allOf": [
+        {
+         "$ref": "#/components/schemas/platform_fee"
+        },
+        {}
+       ]
+      }
+     },
+     "disbursement_mode": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/disbursement_mode"
+       },
+       {}
+      ]
+     },
+     "payee_pricing_tier_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20,
+      "pattern": "^.*$"
+     },
+     "payee_receivable_fx_rate_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4000,
+      "pattern": "^.*$"
+     }
+    }
+   },
+   "platform_fee": {
+    "type": "object",
+    "required": [
+     "amount"
+    ],
+    "properties": {
+     "amount": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/money"
+       },
+       {}
+      ]
+     },
+     "payee": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/payee_base"
+       },
+       {}
+      ]
+     }
+    }
+   },
+   "disbursement_mode": {
+    "type": "string",
+    "enum": [
+     "INSTANT",
+     "DELAYED"
+    ],
+    "default": "INSTANT"
+   },
+   "item_request": {
+    "type": "object",
+    "required": [
+     "name",
+     "quantity",
+     "unit_amount"
+    ],
+    "properties": {
+     "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 3000,
+      "pattern": "^[\\S\\s]*$"
+     },
+     "unit_amount": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/money"
+       },
+       {}
+      ]
+     },
+     "tax": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/money"
+       },
+       {}
+      ]
+     },
+     "quantity": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 10,
+      "pattern": "^[1-9][0-9]{0,9}$"
+     },
+     "description": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 4000,
+      "pattern": "^[\\S\\s]*$"
+     },
+     "sku": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 127,
+      "pattern": "^[\\S\\s]*$"
+     },
+     "url": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "format": "uri"
+     },
+     "category": {
+      "type": "string",
+      "enum": [
+       "DIGITAL_GOODS",
+       "PHYSICAL_GOODS",
+       "DONATION"
+      ]
+     },
+     "image_url": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "format": "uri"
+     },
+     "upc": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/universal_product_code"
+       },
+       {}
+      ]
+     },
+     "billing_plan": {
+      "$ref": "#/components/schemas/order_billing_plan"
+     }
+    }
+   },
+   "universal_product_code": {
+    "type": "object",
+    "required": [
+     "code",
+     "type"
+    ],
+    "properties": {
+     "type": {
+      "type": "string",
+      "enum": [
+       "UPC-A",
+       "UPC-B",
+       "UPC-C",
+       "UPC-D",
+       "UPC-E",
+       "UPC-2",
+       "UPC-5"
+      ]
+     },
+     "code": {
+      "type": "string",
+      "minLength": 6,
+      "maxLength": 17,
+      "pattern": "^[0-9]{0,17}$"
+     }
+    }
+   },
+   "order_billing_plan": {
+    "type": "object",
+    "required": [
+     "billing_cycles"
+    ],
+    "properties": {
+     "billing_cycles": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "items": {
+       "$ref": "#/components/schemas/billing_cycle"
+      }
+     },
+     "setup_fee": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/money"
+       },
+       {}
+      ]
+     },
+     "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 127,
+      "pattern": "^[A-Za-z0-9() +',.:-]+$"
+     }
+    }
+   },
+   "billing_cycle": {
+    "type": "object",
+    "required": [
+     "tenure_type"
+    ],
+    "properties": {
+     "tenure_type": {
+      "type": "string",
+      "enum": [
+       "REGULAR",
+       "TRIAL"
+      ]
+     },
+     "pricing_scheme": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/pricing_scheme"
+       },
+       {}
+      ]
+     },
+     "total_cycles": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 999,
+      "default": 1
+     },
+     "sequence": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3,
+      "default": 1
+     },
+     "start_date": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/date_no_time"
+       },
+       {}
+      ]
+     }
+    }
+   },
+   "pricing_scheme": {
+    "type": "object",
+    "required": [
+     "pricing_model"
+    ],
+    "properties": {
+     "price": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/money"
+       },
+       {}
+      ]
+     },
+     "pricing_model": {
+      "type": "string",
+      "enum": [
+       "FIXED",
+       "VARIABLE",
+       "AUTO_RELOAD"
+      ]
+     },
+     "reload_threshold_amount": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/money"
+       },
+       {}
+      ]
+     }
+    }
+   },
+   "shipping_detail": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/name"
+       },
+       {
+        "not": {
+         "anyOf": [
+          {
+           "required": [
+            "prefix"
+           ]
+          },
+          {
+           "required": [
+            "given_name"
+           ]
+          },
+          {
+           "required": [
+            "surname"
+           ]
+          },
+          {
+           "required": [
+            "middle_name"
+           ]
+          },
+          {
+           "required": [
+            "suffix"
+           ]
+          },
+          {
+           "required": [
+            "alternate_full_name"
+           ]
+          }
+         ]
+        }
+       }
+      ]
+     },
+     "email_address": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/email_address"
+       },
+       {}
+      ]
+     },
+     "phone_number": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/phone"
+       },
+       {
+        "not": {
+         "required": [
+          "extension_number"
+         ]
+        }
+       }
+      ]
+     },
+     "type": {
+      "type": "string",
+      "enum": [
+       "SHIPPING",
+       "PICKUP_IN_PERSON",
+       "PICKUP_IN_STORE",
+       "PICKUP_FROM_PERSON"
+      ],
+      "default": "SHIPPING"
+     },
+     "options": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 30,
+      "items": {
+       "allOf": [
+        {
+         "$ref": "#/components/schemas/shipping_option"
+        },
+        {}
+       ]
+      }
+     },
+     "address": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/address_portable"
+       },
+       {
+        "not": {
+         "anyOf": [
+          {
+           "required": [
+            "address_line_3"
+           ]
+          },
+          {
+           "required": [
+            "admin_area_3"
+           ]
+          },
+          {
+           "required": [
+            "admin_area_4"
+           ]
+          },
+          {
+           "required": [
+            "address_details"
+           ]
+          }
+         ]
+        }
+       }
+      ]
+     }
+    }
+   },
+   "email_address": {
+    "type": "string",
+    "minLength": 3,
+    "maxLength": 254,
+    "pattern": "^(?:[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*|\"(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21\\x23-\\x5b\\x5d-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])*\")@(?:(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?|\\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[A-Za-z0-9-]*[A-Za-z0-9]:(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21-\\x5a\\x53-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])+)\\])$"
+   },
+   "phone": {
+    "type": "object",
+    "required": [
+     "country_code",
+     "national_number"
+    ],
+    "properties": {
+     "country_code": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 3,
+      "pattern": "^[0-9]{1,3}?$"
+     },
+     "national_number": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 14,
+      "pattern": "^[0-9]{1,14}?$"
+     },
+     "extension_number": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 15,
+      "pattern": "^[0-9]{1,15}?$"
+     }
+    }
+   },
+   "shipping_option": {
+    "type": "object",
+    "required": [
+     "id",
+     "label",
+     "selected"
+    ],
+    "properties": {
+     "id": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 127,
+      "pattern": "^[\\S\\s]*$"
+     },
+     "label": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 127,
+      "pattern": "^[\\S\\s]*$"
+     },
+     "type": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/shipping_type"
+       },
+       {}
+      ]
+     },
+     "amount": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/money"
+       },
+       {}
+      ]
+     },
+     "selected": {
+      "type": "boolean"
+     }
+    }
+   },
+   "shipping_type": {
+    "type": "string",
+    "enum": [
+     "SHIPPING",
+     "PICKUP",
+     "PICKUP_IN_STORE",
+     "PICKUP_FROM_PERSON"
+    ],
+    "default": "SHIPPING"
+   },
+   "supplementary_data": {
+    "type": "object",
+    "properties": {
+     "card": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/card_supplementary_data"
+       },
+       {}
+      ]
+     },
+     "risk": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/risk_supplementary_data"
+       },
+       {}
+      ]
+     }
+    }
+   },
+   "card_supplementary_data": {
+    "type": "object",
+    "properties": {
+     "level_2": {
+      "$ref": "#/components/schemas/level_2_card_processing_data"
+     },
+     "level_3": {
+      "$ref": "#/components/schemas/level_3_card_processing_data"
+     }
+    }
+   },
+   "level_2_card_processing_data": {
+    "type": "object",
+    "properties": {
+     "invoice_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 127,
+      "pattern": "^[\\w\u2018\\-.,\":;\\!?]*$"
+     },
+     "tax_total": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/money"
+       },
+       {}
+      ]
+     }
+    }
+   },
+   "level_3_card_processing_data": {
+    "type": "object",
+    "properties": {
+     "shipping_amount": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/money"
+       },
+       {}
+      ]
+     },
+     "duty_amount": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/money"
+       },
+       {}
+      ]
+     },
+     "discount_amount": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/money"
+       },
+       {}
+      ]
+     },
+     "shipping_address": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/address_portable"
+       },
+       {
+        "not": {
+         "anyOf": [
+          {
+           "required": [
+            "address_line_3"
+           ]
+          },
+          {
+           "required": [
+            "admin_area_3"
+           ]
+          },
+          {
+           "required": [
+            "admin_area_4"
+           ]
+          },
+          {
+           "required": [
+            "address_details"
+           ]
+          }
+         ]
+        }
+       }
+      ]
+     },
+     "ships_from_postal_code": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 60,
+      "pattern": "^[a-zA-Z0-9_'.-]*$"
+     },
+     "line_items": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "items": {
+       "allOf": [
+        {
+         "$ref": "#/components/schemas/line_item"
+        },
+        {}
+       ]
+      }
+     }
+    }
+   },
+   "line_item": {
+    "type": "object",
+    "allOf": [
+     {
+      "$ref": "#/components/schemas/item_without_category_tax_or_amount"
+     },
+     {
+      "type": "object",
+      "properties": {
+       "unit_amount": {
+        "allOf": [
+         {
+          "$ref": "#/components/schemas/money"
+         },
+         {}
+        ]
+       },
+       "tax": {
+        "allOf": [
+         {
+          "$ref": "#/components/schemas/money"
+         },
+         {}
+        ]
+       },
+       "commodity_code": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 12,
+        "pattern": "^[a-zA-Z0-9_'.-]*$"
+       },
+       "discount_amount": {
+        "allOf": [
+         {
+          "$ref": "#/components/schemas/money"
+         },
+         {}
+        ]
+       },
+       "total_amount": {
+        "allOf": [
+         {
+          "$ref": "#/components/schemas/money"
+         },
+         {}
+        ]
+       },
+       "unit_of_measure": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 12,
+        "pattern": "^[a-zA-Z0-9_'.-]*$"
+       }
+      }
+     }
+    ]
+   },
+   "item_without_category_tax_or_amount": {
+    "type": "object",
+    "required": [
+     "name",
+     "quantity"
+    ],
+    "properties": {
+     "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 127,
+      "pattern": "^[\\S\\s]*$"
+     },
+     "quantity": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 10,
+      "pattern": "^[1-9][0-9]{0,9}$"
+     },
+     "description": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 2048,
+      "pattern": "^[\\S\\s]*$"
+     },
+     "sku": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 127,
+      "pattern": "^[\\S\\s]*$"
+     },
+     "url": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "format": "uri"
+     },
+     "image_url": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "format": "uri"
+     },
+     "upc": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/universal_product_code"
+       },
+       {}
+      ]
+     },
+     "billing_plan": {
+      "$ref": "#/components/schemas/order_billing_plan"
+     }
+    }
+   },
+   "risk_supplementary_data": {
+    "type": "object",
+    "properties": {
+     "customer": {
+      "$ref": "#/components/schemas/participant_metadata"
+     }
+    }
+   },
+   "participant_metadata": {
+    "type": "object",
+    "properties": {
+     "ip_address": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/ip_address"
+       },
+       {}
+      ]
+     }
+    }
+   },
+   "ip_address": {
+    "type": "string",
+    "minLength": 7,
+    "maxLength": 39,
+    "pattern": "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\\-]*[A-Za-z0-9])$|^\\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:)))(%.+)?\\s*$"
+   },
+   "payment_source": {
+    "type": "object",
+    "properties": {
+     "paypal": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/paypal_wallet"
+       },
+       {}
+      ]
+     }
+    }
+   },
+   "paypal_wallet": {
+    "type": "object",
+    "properties": {
+     "vault_id": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/vault_id"
+       },
+       {}
+      ]
+     },
+     "email_address": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/email"
+       },
+       {}
+      ]
+     },
+     "name": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/name"
+       },
+       {
+        "not": {
+         "anyOf": [
+          {
+           "required": [
+            "prefix"
+           ]
+          },
+          {
+           "required": [
+            "middle_name"
+           ]
+          },
+          {
+           "required": [
+            "suffix"
+           ]
+          },
+          {
+           "required": [
+            "alternate_full_name"
+           ]
+          },
+          {
+           "required": [
+            "full_name"
+           ]
+          }
+         ]
+        }
+       }
+      ]
+     },
+     "phone": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/phone_with_type"
+       },
+       {}
+      ]
+     },
+     "birth_date": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/date_no_time"
+       },
+       {}
+      ]
+     },
+     "tax_info": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/tax_info"
+       },
+       {}
+      ]
+     },
+     "address": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/address_portable"
+       },
+       {
+        "not": {
+         "anyOf": [
+          {
+           "required": [
+            "address_line_3"
+           ]
+          },
+          {
+           "required": [
+            "admin_area_3"
+           ]
+          },
+          {
+           "required": [
+            "admin_area_4"
+           ]
+          },
+          {
+           "required": [
+            "address_details"
+           ]
+          }
+         ]
+        }
+       }
+      ]
+     },
+     "attributes": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/paypal_wallet_attributes"
+       },
+       {}
+      ]
+     },
+     "experience_context": {
+      "$ref": "#/components/schemas/paypal_wallet_experience_context"
+     },
+     "billing_agreement_id": {
+      "$ref": "#/components/schemas/billing_agreement_id"
+     },
+     "stored_credential": {
+      "$ref": "#/components/schemas/paypal_wallet_stored_credential"
+     }
+    }
+   },
+   "vault_id": {
+    "type": "string",
+    "minLength": 1,
+    "maxLength": 255,
+    "pattern": "^[0-9a-zA-Z_-]+$"
+   },
+   "paypal_wallet_attributes": {
+    "type": "object",
+    "properties": {
+     "customer": {
+      "$ref": "#/components/schemas/paypal_wallet_customer"
+     },
+     "vault": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/vault_paypal_wallet_base"
+       },
+       {
+        "not": {
+         "required": [
+          "shipping"
+         ]
+        }
+       }
+      ]
+     }
+    }
+   },
+   "paypal_wallet_customer": {
+    "type": "object",
+    "allOf": [
+     {
+      "$ref": "#/components/schemas/customer"
+     },
+     {
+      "type": "object",
+      "properties": {
+       "merchant_customer_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[0-9a-zA-Z-_.^*$@#]+$"
+       }
+      }
+     }
+    ]
+   },
+   "customer": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "$ref": "#/components/schemas/merchant_partner_customer_id"
+     },
+     "email_address": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/email"
+       },
+       {}
+      ]
+     },
+     "phone": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/phone_with_type"
+       },
+       {}
+      ]
+     },
+     "name": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/name"
+       },
+       {
+        "not": {
+         "anyOf": [
+          {
+           "required": [
+            "prefix"
+           ]
+          },
+          {
+           "required": [
+            "middle_name"
+           ]
+          },
+          {
+           "required": [
+            "suffix"
+           ]
+          },
+          {
+           "required": [
+            "alternate_full_name"
+           ]
+          },
+          {
+           "required": [
+            "full_name"
+           ]
+          }
+         ]
+        }
+       }
+      ]
+     }
+    }
+   },
+   "merchant_partner_customer_id": {
+    "type": "string",
+    "minLength": 1,
+    "maxLength": 22,
+    "pattern": "^[0-9a-zA-Z_-]+$"
+   },
+   "vault_paypal_wallet_base": {
+    "type": "object",
+    "required": [
+     "usage_type"
+    ],
+    "allOf": [
+     {
+      "$ref": "#/components/schemas/vault_instruction_base"
+     },
+     {
+      "type": "object",
+      "properties": {
+       "description": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128,
+        "pattern": "^[\\S\\s]*$"
+       },
+       "usage_pattern": {
+        "type": "string",
+        "enum": [
+         "IMMEDIATE",
+         "DEFERRED",
+         "RECURRING_PREPAID",
+         "RECURRING_POSTPAID",
+         "THRESHOLD_PREPAID",
+         "THRESHOLD_POSTPAID",
+         "SUBSCRIPTION_PREPAID",
+         "SUBSCRIPTION_POSTPAID",
+         "UNSCHEDULED_PREPAID",
+         "UNSCHEDULED_POSTPAID",
+         "INSTALLMENT_PREPAID",
+         "INSTALLMENT_POSTPAID"
+        ]
+       },
+       "shipping": {
+        "allOf": [
+         {
+          "$ref": "#/components/schemas/shipping_detail"
+         },
+         {
+          "not": {
+           "required": [
+            "options"
+           ]
+          }
+         }
+        ]
+       },
+       "usage_type": {
+        "type": "string",
+        "enum": [
+         "MERCHANT",
+         "PLATFORM"
+        ]
+       },
+       "customer_type": {
+        "type": "string",
+        "enum": [
+         "CONSUMER",
+         "BUSINESS"
+        ],
+        "default": "CONSUMER"
+       },
+       "permit_multiple_payment_tokens": {
+        "type": "boolean",
+        "default": false
+       }
+      }
+     }
+    ]
+   },
+   "vault_instruction_base": {
+    "type": "object",
+    "properties": {
+     "store_in_vault": {
+      "$ref": "#/components/schemas/store_in_vault_instruction"
+     }
+    }
+   },
+   "store_in_vault_instruction": {
+    "type": "string",
+    "enum": [
+     "ON_SUCCESS"
+    ]
+   },
+   "paypal_wallet_experience_context": {
+    "type": "object",
+    "properties": {
+     "brand_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 127,
+      "pattern": "^.*$"
+     },
+     "locale": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/language"
+       },
+       {}
+      ]
+     },
+     "shipping_preference": {
+      "type": "string",
+      "enum": [
+       "GET_FROM_FILE",
+       "NO_SHIPPING",
+       "SET_PROVIDED_ADDRESS"
+      ],
+      "default": "GET_FROM_FILE"
+     },
+     "contact_preference": {
+      "type": "string",
+      "enum": [
+       "NO_CONTACT_INFO",
+       "UPDATE_CONTACT_INFO",
+       "RETAIN_CONTACT_INFO"
+      ],
+      "default": "NO_CONTACT_INFO"
+     },
+     "return_url": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/url"
+       },
+       {
+        "format": "uri"
+       }
+      ]
+     },
+     "cancel_url": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/url"
+       },
+       {
+        "format": "uri"
+       }
+      ]
+     },
+     "app_switch_context": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/app_switch_context"
+       },
+       {}
+      ]
+     },
+     "landing_page": {
+      "type": "string",
+      "enum": [
+       "LOGIN",
+       "GUEST_CHECKOUT",
+       "NO_PREFERENCE",
+       "BILLING"
+      ],
+      "default": "NO_PREFERENCE"
+     },
+     "user_action": {
+      "type": "string",
+      "enum": [
+       "CONTINUE",
+       "PAY_NOW"
+      ],
+      "default": "CONTINUE"
+     },
+     "payment_method_preference": {
+      "type": "string",
+      "enum": [
+       "UNRESTRICTED",
+       "IMMEDIATE_PAYMENT_REQUIRED"
+      ],
+      "default": "UNRESTRICTED"
+     },
+     "order_update_callback_config": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/callback_configuration"
+       },
+       {}
+      ]
+     }
+    }
+   },
+   "language": {
+    "type": "string",
+    "minLength": 2,
+    "maxLength": 10,
+    "pattern": "^[a-z]{2}(?:-[A-Z][a-z]{3})?(?:-(?:[A-Z]{2}|[0-9]{3}))?$"
+   },
+   "url": {
+    "type": "string",
+    "minLength": 0,
+    "maxLength": 2147483647,
+    "format": "uri"
+   },
+   "app_switch_context": {
+    "type": "object",
+    "properties": {
+     "native_app": {
+      "$ref": "#/components/schemas/native_app_context"
+     },
+     "mobile_web": {
+      "$ref": "#/components/schemas/mobile_web_context"
+     }
+    }
+   },
+   "native_app_context": {
+    "type": "object",
+    "properties": {
+     "os_type": {
+      "type": "string",
+      "enum": [
+       "ANDROID",
+       "IOS",
+       "OTHER"
+      ],
+      "readOnly": true
+     },
+     "os_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^.*$",
+      "readOnly": true
+     }
+    }
+   },
+   "mobile_web_context": {
+    "type": "object",
+    "properties": {
+     "return_flow": {
+      "type": "string",
+      "enum": [
+       "AUTO",
+       "MANUAL"
+      ],
+      "default": "AUTO",
+      "readOnly": true
+     },
+     "buyer_user_agent": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "^.*$"
+     }
+    }
+   },
+   "callback_configuration": {
+    "type": "object",
+    "required": [
+     "callback_events",
+     "callback_url"
+    ],
+    "properties": {
+     "callback_events": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 5,
+      "uniqueItems": true,
+      "items": {
+       "type": "string",
+       "enum": [
+        "SHIPPING_ADDRESS",
+        "SHIPPING_OPTIONS"
+       ]
+      }
+     },
+     "callback_url": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 2040,
+      "format": "uri"
+     }
+    }
+   },
+   "billing_agreement_id": {
+    "type": "string",
+    "minLength": 2,
+    "maxLength": 128,
+    "pattern": "^[a-zA-Z0-9-]+$"
+   },
+   "paypal_wallet_stored_credential": {
+    "type": "object",
+    "required": [
+     "payment_initiator"
+    ],
+    "properties": {
+     "payment_initiator": {
+      "$ref": "#/components/schemas/payment_initiator"
+     },
+     "charge_pattern": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/charge_pattern"
+       },
+       {
+        "deprecated": true
+       }
+      ]
+     },
+     "usage_pattern": {
+      "$ref": "#/components/schemas/charge_pattern"
+     },
+     "usage": {
+      "$ref": "#/components/schemas/stored_payment_source_usage_type"
+     }
+    }
+   },
+   "payment_initiator": {
+    "type": "string",
+    "enum": [
+     "CUSTOMER",
+     "MERCHANT"
+    ]
+   },
+   "charge_pattern": {
+    "type": "string",
+    "enum": [
+     "IMMEDIATE",
+     "DEFERRED",
+     "RECURRING_PREPAID",
+     "RECURRING_POSTPAID",
+     "THRESHOLD_PREPAID",
+     "THRESHOLD_POSTPAID",
+     "SUBSCRIPTION_PREPAID",
+     "SUBSCRIPTION_POSTPAID",
+     "UNSCHEDULED_PREPAID",
+     "UNSCHEDULED_POSTPAID",
+     "INSTALLMENT_PREPAID",
+     "INSTALLMENT_POSTPAID"
+    ]
+   },
+   "stored_payment_source_usage_type": {
+    "type": "string",
+    "enum": [
+     "FIRST",
+     "SUBSEQUENT",
+     "DERIVED"
+    ],
+    "default": "DERIVED"
+   },
+   "order_application_context": {
+    "type": "object",
+    "properties": {
+     "brand_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 127,
+      "pattern": "^[\\S\\s]*$"
+     },
+     "locale": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/language"
+       },
+       {}
+      ]
+     },
+     "landing_page": {
+      "type": "string",
+      "enum": [
+       "LOGIN",
+       "BILLING",
+       "NO_PREFERENCE"
+      ],
+      "default": "NO_PREFERENCE",
+      "deprecated": true
+     },
+     "shipping_preference": {
+      "type": "string",
+      "enum": [
+       "GET_FROM_FILE",
+       "NO_SHIPPING",
+       "SET_PROVIDED_ADDRESS"
+      ],
+      "default": "GET_FROM_FILE",
+      "deprecated": true
+     },
+     "user_action": {
+      "type": "string",
+      "enum": [
+       "CONTINUE",
+       "PAY_NOW"
+      ],
+      "default": "CONTINUE"
+     },
+     "payment_method": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/payment_method"
+       },
+       {}
+      ]
+     },
+     "return_url": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 2147483647,
+      "format": "uri"
+     },
+     "cancel_url": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 2147483647,
+      "format": "uri"
+     },
+     "stored_payment_source": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/stored_payment_source"
+       },
+       {
+        "deprecated": true
+       }
+      ]
+     }
+    }
+   },
+   "payment_method": {
+    "type": "object",
+    "properties": {
+     "payee_preferred": {
+      "$ref": "#/components/schemas/payee_payment_method_preference"
+     },
+     "standard_entry_class_code": {
+      "type": "string",
+      "enum": [
+       "TEL",
+       "WEB",
+       "CCD",
+       "PPD"
+      ],
+      "default": "WEB"
+     }
+    }
+   },
+   "payee_payment_method_preference": {
+    "type": "string",
+    "enum": [
+     "UNRESTRICTED",
+     "IMMEDIATE_PAYMENT_REQUIRED"
+    ],
+    "default": "UNRESTRICTED"
+   },
+   "stored_payment_source": {
+    "type": "object",
+    "required": [
+     "payment_initiator",
+     "payment_type"
+    ],
+    "properties": {
+     "payment_initiator": {
+      "$ref": "#/components/schemas/payment_initiator"
+     },
+     "payment_type": {
+      "$ref": "#/components/schemas/stored_payment_source_payment_type"
+     },
+     "usage": {
+      "$ref": "#/components/schemas/stored_payment_source_usage_type"
+     },
+     "previous_network_transaction_reference": {
+      "$ref": "#/components/schemas/network_transaction_reference"
+     }
+    }
+   },
+   "stored_payment_source_payment_type": {
+    "type": "string",
+    "enum": [
+     "ONE_TIME",
+     "RECURRING",
+     "UNSCHEDULED"
+    ]
+   },
+   "network_transaction_reference": {
+    "type": "object",
+    "required": [
+     "id"
+    ],
+    "allOf": [
+     {
+      "$ref": "#/components/schemas/network_transaction"
+     }
+    ]
+   },
+   "network_transaction": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string",
+      "minLength": 9,
+      "maxLength": 36,
+      "pattern": "^[a-zA-Z0-9-_@.:&+=*^'~#!$%()]+$"
+     },
+     "date": {
+      "type": "string",
+      "minLength": 4,
+      "maxLength": 4,
+      "pattern": "^[0-9]+$"
+     },
+     "network": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/card_brand"
+       },
+       {}
+      ]
+     },
+     "acquirer_reference_number": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 36,
+      "pattern": "^[a-zA-Z0-9]+$"
+     }
+    }
+   },
+   "card_brand": {
+    "type": "string",
+    "enum": [
+     "VISA",
+     "MASTERCARD",
+     "DISCOVER",
+     "AMEX",
+     "SOLO",
+     "JCB",
+     "STAR",
+     "DELTA",
+     "SWITCH",
+     "MAESTRO",
+     "CB_NATIONALE",
+     "CONFIGOGA",
+     "CONFIDIS",
+     "ELECTRON",
+     "CETELEM",
+     "CHINA_UNION_PAY",
+     "DINERS",
+     "ELO",
+     "HIPER",
+     "HIPERCARD",
+     "RUPAY",
+     "GE",
+     "SYNCHRONY",
+     "EFTPOS",
+     "CARTE_BANCAIRE",
+     "STAR_ACCESS",
+     "PULSE",
+     "NYCE",
+     "ACCEL",
+     "UNKNOWN"
+    ]
+   },
+   "patch_request": {
+    "type": "array",
+    "minItems": 0,
+    "maxItems": 32767,
+    "items": {
+     "allOf": [
+      {
+       "$ref": "#/components/schemas/patch"
+      },
+      {}
+     ]
+    }
+   },
+   "patch": {
+    "type": "object",
+    "required": [
+     "op"
+    ],
+    "properties": {
+     "op": {
+      "type": "string",
+      "enum": [
+       "add",
+       "remove",
+       "replace",
+       "move",
+       "copy",
+       "test"
+      ]
+     },
+     "path": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 2147483647,
+      "pattern": "^[\\S\\s]*$"
+     },
+     "value": {},
+     "from": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 2147483647,
+      "pattern": "^[\\S\\s]*$"
+     }
+    }
+   },
+   "order_capture_request": {
+    "type": "object",
+    "properties": {
+     "payment_source": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/payment_source"
+       },
+       {
+        "not": {
+         "anyOf": [
+          {
+           "required": [
+            "afterpay"
+           ]
+          },
+          {
+           "required": [
+            "bancontact"
+           ]
+          },
+          {
+           "required": [
+            "blik"
+           ]
+          },
+          {
+           "required": [
+            "bizum"
+           ]
+          },
+          {
+           "required": [
+            "blik_pay_later"
+           ]
+          },
+          {
+           "required": [
+            "crypto"
+           ]
+          },
+          {
+           "required": [
+            "dragonpay"
+           ]
+          },
+          {
+           "required": [
+            "eps"
+           ]
+          },
+          {
+           "required": [
+            "estonia_banks"
+           ]
+          },
+          {
+           "required": [
+            "fiuu_cash"
+           ]
+          },
+          {
+           "required": [
+            "floa_pay"
+           ]
+          },
+          {
+           "required": [
+            "fpx"
+           ]
+          },
+          {
+           "required": [
+            "giropay"
+           ]
+          },
+          {
+           "required": [
+            "gopay"
+           ]
+          },
+          {
+           "required": [
+            "ideal"
+           ]
+          },
+          {
+           "required": [
+            "klarna"
+           ]
+          },
+          {
+           "required": [
+            "latvia_banks"
+           ]
+          },
+          {
+           "required": [
+            "lithuania_banks"
+           ]
+          },
+          {
+           "required": [
+            "mybank"
+           ]
+          },
+          {
+           "required": [
+            "paysafecard"
+           ]
+          },
+          {
+           "required": [
+            "pix_international"
+           ]
+          },
+          {
+           "required": [
+            "p24"
+           ]
+          },
+          {
+           "required": [
+            "skrill"
+           ]
+          },
+          {
+           "required": [
+            "paysera"
+           ]
+          },
+          {
+           "required": [
+            "scalapay"
+           ]
+          },
+          {
+           "required": [
+            "sofort"
+           ]
+          },
+          {
+           "required": [
+            "swish"
+           ]
+          },
+          {
+           "required": [
+            "thailand_banks"
+           ]
+          },
+          {
+           "required": [
+            "trustly"
+           ]
+          },
+          {
+           "required": [
+            "wero"
+           ]
+          },
+          {
+           "required": [
+            "zip"
+           ]
+          },
+          {
+           "required": [
+            "doku"
+           ]
+          },
+          {
+           "required": [
+            "alfamart"
+           ]
+          },
+          {
+           "required": [
+            "indomaret"
+           ]
+          },
+          {
+           "required": [
+            "indonesia_banks"
+           ]
+          },
+          {
+           "required": [
+            "jenius_pay"
+           ]
+          },
+          {
+           "required": [
+            "kredivo"
+           ]
+          },
+          {
+           "required": [
+            "linkaja"
+           ]
+          },
+          {
+           "required": [
+            "ovo"
+           ]
+          }
+         ]
+        }
+       }
+      ]
+     }
+    }
+   }
+  },
+  "payments": {
+   "refund_request": {
+    "type": "object",
+    "properties": {
+     "amount": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/money"
+       },
+       {}
+      ]
+     },
+     "custom_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 127,
+      "pattern": "^.*$"
+     },
+     "invoice_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 127,
+      "pattern": "^.*$"
+     },
+     "note_to_payer": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "pattern": "^.*$"
+     },
+     "payment_instruction": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/payment_instruction-2"
+       },
+       {}
+      ]
+     }
+    }
+   },
+   "money": {
+    "type": "object",
+    "required": [
+     "currency_code",
+     "value"
+    ],
+    "properties": {
+     "currency_code": {
+      "$ref": "#/components/schemas/currency_code"
+     },
+     "value": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 32,
+      "pattern": "^((-?[0-9]+)|(-?([0-9]+)?[.][0-9]+))$"
+     }
+    }
+   },
+   "currency_code": {
+    "type": "string",
+    "minLength": 3,
+    "maxLength": 3,
+    "pattern": "^[\\S\\s]*$"
+   },
+   "payment_instruction-2": {
+    "type": "object",
+    "properties": {
+     "platform_fees": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 1,
+      "items": {
+       "allOf": [
+        {
+         "$ref": "#/components/schemas/platform_fee"
+        },
+        {
+         "not": {
+          "required": [
+           "payee"
+          ]
+         }
+        }
+       ]
+      }
+     }
+    }
+   },
+   "platform_fee": {
+    "type": "object",
+    "required": [
+     "amount"
+    ],
+    "properties": {
+     "amount": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/money"
+       },
+       {}
+      ]
+     },
+     "payee": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/payee_base"
+       },
+       {}
+      ]
+     }
+    }
+   },
+   "payee_base": {
+    "type": "object",
+    "properties": {
+     "email_address": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/email"
+       },
+       {}
+      ]
+     },
+     "merchant_id": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/account_id-2"
+       },
+       {}
+      ]
+     }
+    }
+   },
+   "email": {
+    "type": "string",
+    "minLength": 3,
+    "maxLength": 254,
+    "pattern": "^.*(?:[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*|(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21\\x23-\\x5b\\x5d-\\x7f]|\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])*\")@(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\\.)+[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?|\\[(?:(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-zA-Z0-9-]*[a-zA-Z0-9]:(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21-\\x5a\\x53-\\x7f]|\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])+)\\]).*$"
+   },
+   "account_id-2": {
+    "type": "string",
+    "minLength": 13,
+    "maxLength": 13,
+    "pattern": "^[2-9A-HJ-NP-Z]{13}$"
+   }
+  }
+ }
+}
