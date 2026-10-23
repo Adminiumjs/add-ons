@@ -241,7 +241,9 @@ export function createFakeStripe(options: FakeStripeOptions = {}): FakeStripe {
   /**
    * Stripe's refusal for a missing permission, as a sandbox key with Charges
    * and Refunds set to None got it (2026-10-22): 403, `more_permissions_required`.
-   * Checked BEFORE the parameters, as the sandbox showed.
+   * Checked BEFORE the parameters on most endpoints, but NOT on `POST
+   * /v1/refunds`, which refuses a missing or unknown PaymentIntent first (see
+   * the route).
    */
   function denied(permission: string): PaymentHttpResponse | null {
     if (!missing.has(permission)) return null;
@@ -310,14 +312,27 @@ export function createFakeStripe(options: FakeStripeOptions = {}): FakeStripe {
         return respond(200, sessionBody(age(session), query.getAll('expand[]').includes('payment_intent')));
       }
     }
-    if (method === 'POST' && path === '/v1/refunds') {
+    if (method === 'POST' && path === '/v1/charges') {
+      // Permission FIRST, then the parameters, as a sandbox key showed
+      // (2026-10-23): with Charges and Refunds set to Read, 403
+      // `more_permissions_required`; with Write, 400 `parameter_missing`
+      // "Must provide source or customer." (no `param`). So this is the probe.
       const block = denied('Charges and Refunds: write');
       if (block !== null) return block;
+      return refusal(400, 'invalid_request_error', 'Must provide source or customer.', { code: 'parameter_missing' });
+    }
+    if (method === 'POST' && path === '/v1/refunds') {
+      // Real Stripe's order here, measured on a sandbox key (2026-10-22/23):
+      // a missing payment_intent/charge and an unknown PaymentIntent are both
+      // refused BEFORE the permission is checked; only a real one reaches it.
+      // So a refund of nothing cannot tell whether the key may give refunds.
       if (params['payment_intent'] === undefined && params['charge'] === undefined) {
-        return lacking('One of the following params should be provided for this request: payment_intent or charge.', 'payment_intent');
+        return refusal(400, 'invalid_request_error', 'One of the following params should be provided for this request: payment_intent or charge.');
       }
       const intent = intents.get(String(params['payment_intent']));
-      if (intent === undefined) return refusal(400, 'invalid_request_error', `No such payment_intent: '${String(params['payment_intent'])}'`, { code: 'resource_missing', param: 'payment_intent' });
+      if (intent === undefined) return refusal(404, 'invalid_request_error', `No such payment_intent: '${String(params['payment_intent'])}'`, { code: 'resource_missing', param: 'payment_intent' });
+      const block = denied('Charges and Refunds: write');
+      if (block !== null) return block;
       if (intent.status !== 'succeeded') return refusal(400, 'invalid_request_error', 'This PaymentIntent does not have a successful charge to refund.', { code: 'charge_not_refundable' });
       const left = intent.amount_received - refundedSoFar(intent.id);
       const amount = params['amount'] === undefined ? left : Number(params['amount']);

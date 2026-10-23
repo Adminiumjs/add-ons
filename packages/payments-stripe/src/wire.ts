@@ -104,17 +104,16 @@ export type PermissionGroup = 'Core' | 'Connect' | 'Checkout Sessions' | 'Webhoo
  * made: a key that may write gets 400 for the missing parameter, a key that
  * may not gets a permission refusal (`more_permissions_required`).
  *
- * Why no parameter: a sandbox walk (2026-10-22) found that Stripe looks an
- * object up BEFORE it checks the permission (a refund of a made-up
- * PaymentIntent answered 404 "No such payment_intent" with Charges and
- * Refunds set to None), and checks the permission BEFORE the parameters (a
- * refund of a real PaymentIntent for too much answered
- * `more_permissions_required` without the permission, 400 `param: amount`
- * with it). That a request with no parameter is refused for permission
- * before it is refused for the missing parameter is INFERRED from that
- * order, not yet seen: CONFIRM WITH A CURL with a key whose write is off
- * (`curl -u rk_test_…: -X POST https://api.stripe.com/v1/refunds` and the
- * same for `/v1/checkout/sessions`; expected `more_permissions_required`).
+ * Measured on a sandbox key with both writes set to Read (2026-10-23):
+ * - `POST /v1/checkout/sessions` with no parameter → `more_permissions_required`.
+ * - `POST /v1/refunds` with no parameter → 400 "payment_intent or charge" —
+ *   Stripe checks that parameter BEFORE the permission (and looks a made-up
+ *   PaymentIntent up before it too: 404), so a refund of nothing cannot see
+ *   whether the key may give refunds. It is NOT the probe.
+ * - `POST /v1/charges` with no parameter → 403 `more_permissions_required`
+ *   naming `charge_write`, the one permission that covers refunds; with Write
+ *   on, 400 `parameter_missing` "Must provide source or customer.". It is the
+ *   probe.
  */
 export const PERMISSION_PROBES: readonly {
   name: string;
@@ -126,7 +125,8 @@ export const PERMISSION_PROBES: readonly {
   { name: 'Checkout Sessions: write', group: 'Checkout Sessions', method: 'POST', path: STRIPE_PATHS.sessions },
   { name: 'Checkout Sessions: read', group: 'Checkout Sessions', method: 'GET', path: `${STRIPE_PATHS.sessions}?limit=1` },
   { name: 'Payment Intents: read', group: 'Core', method: 'GET', path: `${STRIPE_PATHS.paymentIntents}?limit=1` },
-  { name: 'Charges and Refunds: write', group: 'Core', method: 'POST', path: STRIPE_PATHS.refunds },
+  // The refund permission is checked on /v1/charges: an empty /v1/refunds is refused for its parameter first (see above).
+  { name: 'Charges and Refunds: write', group: 'Core', method: 'POST', path: STRIPE_PATHS.charges },
   { name: 'Events: read', group: 'Core', method: 'GET', path: `${STRIPE_PATHS.events}?limit=1` },
   { name: 'Payment Disputes: read', group: 'Core', method: 'GET', path: `${STRIPE_PATHS.disputes}?limit=1` },
   { name: 'Payment Method Configurations: read', group: 'Core', method: 'GET', path: `${STRIPE_PATHS.paymentMethodConfigurations}?limit=1` },
