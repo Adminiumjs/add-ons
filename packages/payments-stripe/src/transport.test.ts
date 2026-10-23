@@ -234,11 +234,25 @@ describe('the permission check', () => {
     }
   });
 
+  it('catches a key that may not give refunds, though Stripe answers an empty refund with 400 either way (A5)', async () => {
+    // Measured 2026-10-23: with Charges and Refunds set to Read, an empty POST
+    // /v1/refunds still answered 400 "payment_intent or charge", which the key
+    // check reads as allowed. The probe is an empty POST /v1/charges instead.
+    const plain = createFakeStripe({ missing: ['Charges and Refunds: write'] });
+    const emptyRefund = await plain.http('https://api.stripe.com/v1/refunds', { method: 'POST', headers: { authorization: 'Bearer rk_test_0123456789abcd' }, body: '' });
+    expect(emptyRefund.status).toBe(400);
+    expect(JSON.parse(await emptyRefund.text())).not.toMatchObject({ error: { code: 'more_permissions_required' } });
+    const stripe = createFakeStripe({ missing: ['Charges and Refunds: write'] });
+    expect(await provider(stripe.http).checkCredentials()).toMatchObject({ ok: true, missing: ['Charges and Refunds: write'] });
+    expect(stripe.requests.some((one) => one.method === 'POST' && one.path === '/v1/refunds')).toBe(false);
+    expect(stripe.events()).toEqual([]);
+  });
+
   it('probes a write with a POST of no parameter at all, so nothing is looked up or made', async () => {
     const stripe = createFakeStripe();
     await provider(stripe.http).checkCredentials();
     const posts = stripe.requests.filter((one) => one.method === 'POST');
-    expect(posts.map((one) => one.path).sort()).toEqual(['/v1/checkout/sessions', '/v1/refunds']);
+    expect(posts.map((one) => one.path).sort()).toEqual(['/v1/charges', '/v1/checkout/sessions']);
     expect(posts.map((one) => one.params)).toEqual([{}, {}]);
     expect(stripe.events()).toEqual([]);
   });
