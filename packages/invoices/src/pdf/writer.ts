@@ -24,15 +24,19 @@
  *
  * ── WHAT THIS WRITER DOES NOT DO ───────────────────────────────────────────
  *
- * No compression, no encryption, no embedded fonts, no object streams, no
- * incremental updates. It writes the smallest correct PDF that draws text,
- * rules and filled boxes in the base-14 faces every consumer already has. Every
+ * No encryption, no embedded fonts, no object streams, no incremental
+ * updates, and no compression of its own content streams. It writes the
+ * smallest correct PDF that draws text, rules and filled boxes in the base-14
+ * faces every consumer already has — and, when a page asks for one, a picture
+ * (`image.ts` turns a PNG or JPEG into the image object written here; its
+ * streams are the one compressed thing in the file). Every
  * one of those absences is what lets this package have ZERO runtime
  * dependencies, which is the constraint the whole design answers to — `pdf-lib`
  * and `jsPDF` are design errors here, not shortcuts.
  */
 
 import { CENTRAL_EUROPEAN_DIFFERENCES, centralEuropeanByte, widthOf, winAnsiByte, type FontWeight } from './helvetica.ts';
+import type { PdfImage } from './image.ts';
 
 /** ASCII text → bytes. For PDF syntax only: operators, dictionaries, numbers. */
 export function ascii(text: string): number[] {
@@ -105,6 +109,43 @@ export interface Page {
   readonly heightPt: number;
   /** The content stream's operators, already encoded. */
   readonly stream: number[];
+  /**
+   * Pictures this page draws, by the resource name its stream uses (`/Im1 Do`).
+   * Absent or empty: the page is written exactly as before.
+   */
+  readonly images?: readonly { readonly name: string; readonly image: PdfImage }[];
+}
+
+/** A resource name the stream can say as `/Name` with nothing to escape. */
+const IMAGE_NAME = /^[A-Za-z][A-Za-z0-9]*$/;
+
+/**
+ * The bytes of the file, kept as the chunks they were written in.
+ *
+ * A picture's stream can run to megabytes, and `array.push(...chunk)` passes
+ * every byte as an ARGUMENT — a few hundred thousand of them exhaust the call
+ * stack. So nothing is spread: chunks are kept whole, the running length is
+ * the byte count every offset is taken from, and they are copied into one
+ * buffer once, at the end.
+ */
+class Bytes {
+  private readonly chunks: (readonly number[] | Uint8Array)[] = [];
+  length = 0;
+
+  add(chunk: readonly number[] | Uint8Array): void {
+    this.chunks.push(chunk);
+    this.length += chunk.length;
+  }
+
+  done(): Uint8Array {
+    const out = new Uint8Array(this.length);
+    let at = 0;
+    for (const chunk of this.chunks) {
+      out.set(chunk, at);
+      at += chunk.length;
+    }
+    return out;
+  }
 }
 
 /** `#rrggbb` → the three 0..1 components a PDF colour operator takes. */
@@ -154,52 +195,90 @@ export function writePdf(pages: readonly Page[]): Uint8Array {
 
   const kids = pages.map((_, at) => `${String(firstPage + at)} 0 R`).join(' ');
 
-  const objects: number[][] = [
-    ascii('<</Type/Catalog/Pages 2 0 R>>'),
-    ascii(`<</Type/Pages/Kids[${kids}]/Count ${String(pages.length)}>>`),
-    ...pages.map((page, at) =>
+  /*
+   * PICTURES COME AFTER THE FONTS, for the same reason the fonts come after
+   * the streams: the order of everything before them is exactly what it was
+   * before a page could draw a picture, so a document without one keeps every
+   * object number and every byte. Each distinct picture is written once, in
+   * the order pages first use it, followed directly by its soft mask.
+   */
+  const lastFont = central ? centralBold : boldFont;
+  const pictures = new Map<PdfImage, number>();
+  let nextObject = lastFont + 1;
+  for (const page of pages) {
+    for (const { name, image } of page.images ?? []) {
+      if (!IMAGE_NAME.test(name)) throw new Error(`a picture's resource name must be letters and digits: ${name}`);
+      if (pictures.has(image)) continue;
+      pictures.set(image, nextObject);
+      nextObject += image.mask === null ? 1 : 2;
+    }
+  }
+  const xObjects = (page: Page): string =>
+    page.images === undefined || page.images.length === 0
+      ? ''
+      : `/XObject<<${page.images.map(({ name, image }) => `/${name} ${String(pictures.get(image)!)} 0 R`).join('')}>>`;
+  const pictureObjects: (number[] | Uint8Array)[][] = [];
+  for (const [image, number] of pictures) {
+    const mask = image.mask === null ? '' : `/SMask ${String(number + 1)} 0 R`;
+    pictureObjects.push(imageObject(image.entries + mask, image.data));
+    if (image.mask !== null) pictureObjects.push(imageObject(image.mask.entries, image.mask.data));
+  }
+
+  const objects: (number[] | Uint8Array)[][] = [
+    [ascii('<</Type/Catalog/Pages 2 0 R>>')],
+    [ascii(`<</Type/Pages/Kids[${kids}]/Count ${String(pages.length)}>>`)],
+    ...pages.map((page, at) => [
       ascii(
         `<</Type/Page/Parent 2 0 R/MediaBox[0 0 ${pt(page.widthPt)} ${pt(page.heightPt)}]` +
-          `/Resources<</Font<<${fonts}>>>>` +
+          `/Resources<</Font<<${fonts}>>${xObjects(page)}>>` +
           `/Contents ${String(firstStream + at)} 0 R>>`,
       ),
-    ),
-    ...pages.map((page) => [
-      ...ascii(`<</Length ${String(page.stream.length)}>>\nstream\n`),
-      ...page.stream,
-      ...ascii('\nendstream'),
     ]),
-    ascii('<</Type/Font/Subtype/Type1/BaseFont/Helvetica/Encoding/WinAnsiEncoding>>'),
-    ascii('<</Type/Font/Subtype/Type1/BaseFont/Helvetica-Bold/Encoding/WinAnsiEncoding>>'),
+    ...pages.map((page) => [
+      ascii(`<</Length ${String(page.stream.length)}>>\nstream\n`),
+      page.stream,
+      ascii('\nendstream'),
+    ]),
+    [ascii('<</Type/Font/Subtype/Type1/BaseFont/Helvetica/Encoding/WinAnsiEncoding>>')],
+    [ascii('<</Type/Font/Subtype/Type1/BaseFont/Helvetica-Bold/Encoding/WinAnsiEncoding>>')],
     ...(central
       ? [
-          ascii(`<</Type/Font/Subtype/Type1/BaseFont/Helvetica${centralEncoding}>>`),
-          ascii(`<</Type/Font/Subtype/Type1/BaseFont/Helvetica-Bold${centralEncoding}>>`),
+          [ascii(`<</Type/Font/Subtype/Type1/BaseFont/Helvetica${centralEncoding}>>`)],
+          [ascii(`<</Type/Font/Subtype/Type1/BaseFont/Helvetica-Bold${centralEncoding}>>`)],
         ]
       : []),
+    ...pictureObjects,
   ];
 
-  const bytes: number[] = [...ascii('%PDF-1.4\n')];
+  const bytes = new Bytes();
+  bytes.add(ascii('%PDF-1.4\n'));
   const offsets: number[] = [];
   objects.forEach((body, at) => {
     // THE ONE LINE THE WHOLE FILE IS ABOUT: the offset is how many BYTES have
     // been written, never how many characters some string holds.
     offsets.push(bytes.length);
-    bytes.push(...ascii(`${String(at + 1)} 0 obj\n`), ...body, ...ascii('\nendobj\n'));
+    bytes.add(ascii(`${String(at + 1)} 0 obj\n`));
+    for (const chunk of body) bytes.add(chunk);
+    bytes.add(ascii('\nendobj\n'));
   });
 
   const xref = bytes.length;
   const size = objects.length + 1;
-  bytes.push(...ascii(`xref\n0 ${String(size)}\n0000000000 65535 f \n`));
+  bytes.add(ascii(`xref\n0 ${String(size)}\n0000000000 65535 f \n`));
   for (const offset of offsets) {
-    bytes.push(...ascii(`${String(offset).padStart(10, '0')} 00000 n \n`));
+    bytes.add(ascii(`${String(offset).padStart(10, '0')} 00000 n \n`));
   }
-  bytes.push(
-    ...ascii(
-      `trailer\n<</Size ${String(size)}/Root 1 0 R>>\nstartxref\n${String(xref)}\n%%EOF\n`,
-    ),
-  );
-  return Uint8Array.from(bytes);
+  bytes.add(ascii(`trailer\n<</Size ${String(size)}/Root 1 0 R>>\nstartxref\n${String(xref)}\n%%EOF\n`));
+  return bytes.done();
+}
+
+/** An image XObject: its dictionary, then its already-filtered stream. */
+function imageObject(entries: string, data: Uint8Array): (number[] | Uint8Array)[] {
+  return [
+    ascii(`<</Type/XObject/Subtype/Image${entries}/Length ${String(data.length)}>>\nstream\n`),
+    data,
+    ascii('\nendstream'),
+  ];
 }
 
 /** Which `/F` name a weight maps to in the resource dictionary above. */
