@@ -25,7 +25,8 @@
  */
 
 import type { Block, Document } from './layout.ts';
-import { box, paragraph, rule, text, textRight, wrap, type Frame } from '../pdf/primitives.ts';
+import { pdfImageOf, type PdfImage } from '../pdf/image.ts';
+import { box, image, paragraph, rule, text, textRight, wrap, type Frame } from '../pdf/primitives.ts';
 import { widthOf } from '../pdf/helvetica.ts';
 import { ascii, fontName, literal, pt, rgb, writePdf, type Page } from '../pdf/writer.ts';
 
@@ -50,6 +51,18 @@ interface Cursor {
   page: number;
   /** What every page starts with: the accent edge, and a void document's word across it. */
   readonly prelude: readonly number[];
+  /** The pictures the page being drawn shows, by the name its stream uses. */
+  images: { name: string; image: PdfImage }[];
+}
+
+/** The page as drawn so far, with its pictures only when it has any: a page without keeps the bytes it always had. */
+function pageOf(cursor: Cursor, m: Metrics): Page {
+  return {
+    widthPt: m.frame.widthPt,
+    heightPt: m.frame.heightPt,
+    stream: cursor.ops,
+    ...(cursor.images.length > 0 ? { images: cursor.images } : {}),
+  };
 }
 
 interface Metrics {
@@ -85,8 +98,9 @@ const right = (m: Metrics): number => m.frame.widthPt - m.marginX;
 /** Start a new page when `needed` points would run past the bottom margin. */
 function ensure(cursor: Cursor, m: Metrics, needed: number, pages: Page[]): void {
   if (cursor.y + needed <= m.bottom) return;
-  pages.push({ widthPt: m.frame.widthPt, heightPt: m.frame.heightPt, stream: cursor.ops });
+  pages.push(pageOf(cursor, m));
   cursor.ops = [...cursor.prelude];
+  cursor.images = [];
   cursor.y = m.top;
   cursor.page += 1;
 }
@@ -159,8 +173,15 @@ function drawParties(entry: Extract<Block, { kind: 'parties' }>, m: Metrics, cur
   const metaX = m.narrow ? m.marginX : right(m) - metaWidth;
   for (const row of entry.meta) {
     cursor.ops.push(...text(m.frame, metaX, metaY + m.body, row.label, { sizePt: m.small + 0.5, weight: 'bold', color: SUBTLE }));
-    cursor.ops.push(...textRight(m.frame, right(m), metaY + m.body, row.value, { sizePt: m.body, color: INK }));
-    metaY += m.leading + 2;
+    // Somebody's words — a work's title, a site — may be longer than the
+    // column beside their label, and wrap under one another rather than run
+    // over it. A figure or a day is one line, as it always was.
+    const room = metaWidth - widthOf(row.label, m.small + 0.5, 'bold') - 12;
+    const lines = row.words === true ? wrap(row.value, room, { sizePt: m.body }) : [row.value];
+    lines.forEach((line, at) => {
+      cursor.ops.push(...textRight(m.frame, right(m), metaY + m.body + at * m.leading, line, { sizePt: m.body, color: INK }));
+    });
+    metaY += (lines.length - 1) * m.leading + m.leading + 2;
   }
   cursor.y = Math.max(y, metaY) + (m.narrow ? 8 : 16);
 }
@@ -412,6 +433,144 @@ function drawSignature(entry: Extract<Block, { kind: 'signature' }>, m: Metrics,
   cursor.y = drawn.y;
 }
 
+/** The largest a signature is drawn, in points: the comp's box, the picture scaled to fit inside it. */
+const SIGNATURE_BOX = { widthPt: 340, heightPt: 138 };
+
+/** A signed copy's checks: a hairline list, "Yes" in the mid grey, "No" in ink and bold. */
+function drawChecks(entry: Extract<Block, { kind: 'checks' }>, m: Metrics, cursor: Cursor, pages: Page[]): void {
+  const answerWidth = Math.max(...entry.rows.map((row) => widthOf(row.answer, m.body, row.done ? 'regular' : 'bold')), 0);
+  const labelWidth = contentWidth(m) - answerWidth - 16;
+  cursor.y += 10;
+  ensure(cursor, m, m.small + 11 + m.leading + 4, pages);
+  cursor.ops.push(...label(m, m.marginX, cursor.y + m.small, entry.heading));
+  cursor.y += m.small + 5;
+  cursor.ops.push(...rule(m.frame, m.marginX, cursor.y, contentWidth(m), HAIRLINE));
+  cursor.y += 6;
+  for (const row of entry.rows) {
+    const lines = wrap(row.label, labelWidth, { sizePt: m.body });
+    const height = lines.length * m.leading + 4;
+    ensure(cursor, m, height, pages);
+    lines.forEach((line, at) => {
+      cursor.ops.push(...text(m.frame, m.marginX, cursor.y + m.body + at * m.leading, line, { sizePt: m.body, color: INK }));
+    });
+    cursor.ops.push(
+      ...textRight(m.frame, right(m), cursor.y + m.body, row.answer, row.done ? { sizePt: m.body, color: MID } : { sizePt: m.body, weight: 'bold', color: INK }),
+    );
+    cursor.y += height;
+    cursor.ops.push(...rule(m.frame, m.marginX, cursor.y - 2, contentWidth(m), HAIRLINE));
+    cursor.y += 2;
+  }
+  cursor.y += 6;
+}
+
+/**
+ * What was still to put right: what in bold, by when at the end in the mid
+ * grey, a note under it in muted. A snag is never split across two pages;
+ * the list may be.
+ */
+function drawSnags(entry: Extract<Block, { kind: 'snags' }>, m: Metrics, cursor: Cursor, pages: Page[]): void {
+  cursor.y += 10;
+  ensure(cursor, m, m.small + 11 + m.leading + 4, pages);
+  cursor.ops.push(...label(m, m.marginX, cursor.y + m.small, entry.heading));
+  cursor.y += m.small + 5;
+  cursor.ops.push(...rule(m.frame, m.marginX, cursor.y, contentWidth(m), HAIRLINE));
+  cursor.y += 6;
+  if (entry.rows.length === 0) {
+    const drawn = paragraph(m.frame, m.marginX, cursor.y + m.body, entry.empty, contentWidth(m), { sizePt: m.body, color: MID }, m.leading);
+    cursor.ops.push(...drawn.ops);
+    cursor.y = drawn.y - m.body + 6;
+    return;
+  }
+  for (const row of entry.rows) {
+    const byWidth = row.by === '' ? 0 : widthOf(row.by, m.body, 'regular') + 16;
+    const what = wrap(row.what, contentWidth(m) - byWidth, { sizePt: m.body, weight: 'bold' });
+    const notes = row.note === '' ? [] : wrap(row.note, contentWidth(m) - byWidth, { sizePt: m.small });
+    const height = what.length * m.leading + notes.length * (m.small + 3) + 4;
+    ensure(cursor, m, height, pages);
+    what.forEach((line, at) => {
+      cursor.ops.push(...text(m.frame, m.marginX, cursor.y + m.body + at * m.leading, line, { sizePt: m.body, weight: 'bold', color: INK }));
+    });
+    if (row.by !== '') cursor.ops.push(...textRight(m.frame, right(m), cursor.y + m.body, row.by, { sizePt: m.body, color: MID }));
+    notes.forEach((line, at) => {
+      cursor.ops.push(
+        ...text(m.frame, m.marginX, cursor.y + what.length * m.leading + m.small + at * (m.small + 3), line, { sizePt: m.small, color: MUTED }),
+      );
+    });
+    cursor.y += height;
+    cursor.ops.push(...rule(m.frame, m.marginX, cursor.y - 2, contentWidth(m), HAIRLINE));
+    cursor.y += 2;
+  }
+  cursor.y += 6;
+}
+
+/** The size a picture is drawn at: its own shape, as large as fits the signature box. */
+function fitted(picture: PdfImage): { widthPt: number; heightPt: number } {
+  const scale = Math.min(SIGNATURE_BOX.widthPt / picture.width, SIGNATURE_BOX.heightPt / picture.height);
+  return { widthPt: picture.width * scale, heightPt: picture.height * scale };
+}
+
+/**
+ * Who signed: the signature, a hairline under it, the name and role in bold,
+ * and when. Kept whole: the heading, the picture and the two lines move to the
+ * next page together rather than leave a signature without its name.
+ */
+function drawSignoff(entry: Extract<Block, { kind: 'signoff' }>, m: Metrics, cursor: Cursor, pages: Page[]): void {
+  const picture = entry.picture === null ? null : pdfImageOf(entry.picture);
+  const size = picture === null ? null : fitted(picture);
+  const height = 14 + m.small + 5 + (size === null ? 0 : size.heightPt + 10) + m.leading * 2 + 6;
+  ensure(cursor, m, height, pages);
+  cursor.y += 14;
+  cursor.ops.push(...label(m, m.marginX, cursor.y + m.small, entry.heading));
+  cursor.y += m.small + 5;
+  if (picture !== null && size !== null) {
+    const name = `Im${String(cursor.images.length + 1)}`;
+    cursor.images.push({ name, image: picture });
+    cursor.ops.push(...image(m.frame, m.marginX, cursor.y, size.widthPt, size.heightPt, name));
+    cursor.y += size.heightPt + 2;
+    cursor.ops.push(...rule(m.frame, m.marginX, cursor.y, SIGNATURE_BOX.widthPt, HAIRLINE));
+    cursor.y += 8;
+  }
+  if (entry.name !== '') cursor.ops.push(...text(m.frame, m.marginX, cursor.y + m.body, entry.name, { sizePt: m.body, weight: 'bold', color: INK }));
+  cursor.y += m.leading;
+  if (entry.time !== '') cursor.ops.push(...text(m.frame, m.marginX, cursor.y + m.body, entry.time, { sizePt: m.body, color: MID }));
+  cursor.y += m.leading + 6;
+}
+
+/** Whether a signed copy's picture was handed over but cannot be drawn in the PDF (it is still on the print copy). */
+export function undrawnPicture(document: Document): boolean {
+  return document.blocks.some((block) => block.kind === 'signoff' && block.picture !== null && pdfImageOf(block.picture) === null);
+}
+
+/** The lines the foot of every page carries, wrapped to leave room for the page's number. */
+function footerLines(footer: NonNullable<Document['footer']>, m: Metrics): readonly string[] {
+  const widest = widthOf(footer.page.replace('{page}', '999').replace('{pages}', '999'), m.small, 'regular');
+  return wrap(footer.text, contentWidth(m) - widest - 20, { sizePt: m.small });
+}
+
+/** The space kept clear above the bottom margin for the foot of the page. */
+function footerSpace(footer: NonNullable<Document['footer']>, m: Metrics): number {
+  return footerLines(footer, m).length * (m.small + 3) + 14;
+}
+
+/**
+ * The foot of one page: a hairline, what the copy is, and "Page n of t" at
+ * the end — pinned to the bottom margin, drawn once the number of pages is
+ * known.
+ */
+function footerOps(footer: NonNullable<Document['footer']>, m: Metrics, page: number, pages: number): number[] {
+  const lines = footerLines(footer, m);
+  // The last line sits on the bottom margin; the hairline sits above the first.
+  const bottom = m.frame.heightPt - (m.narrow ? 14 : 48);
+  const top = bottom - (lines.length - 1) * (m.small + 3);
+  const ops = [...rule(m.frame, m.marginX, top - m.small - 5, contentWidth(m), HAIRLINE)];
+  lines.forEach((line, at) => {
+    ops.push(...text(m.frame, m.marginX, top + at * (m.small + 3), line, { sizePt: m.small, color: MUTED }));
+  });
+  const number = footer.page.replace('{page}', String(page)).replace('{pages}', String(pages));
+  ops.push(...textRight(m.frame, right(m), top, number, { sizePt: m.small, color: MUTED }));
+  return ops;
+}
+
 /**
  * The word across a void document: large, pale, turned — under everything
  * else on the page, so it never hides a figure.
@@ -437,7 +596,9 @@ function voidStamp(m: Metrics, word: string): number[] {
 }
 
 export function renderPdf(document: Document, paper: string): Uint8Array {
-  const m = metricsFor(paper);
+  const sheet = metricsFor(paper);
+  // A document with a foot on every page keeps that space clear of its blocks.
+  const m = document.footer === undefined ? sheet : { ...sheet, bottom: sheet.bottom - footerSpace(document.footer, sheet) };
   const pages: Page[] = [];
   // A hairline of the document's accent down the inside edge — the one piece
   // of the comp's branding a text-only writer can honour without an image —
@@ -446,7 +607,7 @@ export function renderPdf(document: Document, paper: string): Uint8Array {
     ...(document.voidMark === null ? [] : voidStamp(m, document.voidMark)),
     ...box(m.frame, 0, 0, m.narrow ? 2 : 4, m.frame.heightPt, document.accent),
   ];
-  const cursor: Cursor = { ops: [...prelude], y: m.top, page: 0, prelude };
+  const cursor: Cursor = { ops: [...prelude], y: m.top, page: 0, prelude, images: [] };
 
   for (const entry of document.blocks) {
     switch (entry.kind) {
@@ -481,10 +642,25 @@ export function renderPdf(document: Document, paper: string): Uint8Array {
       case 'signature':
         drawSignature(entry, m, cursor, pages);
         break;
+      case 'checks':
+        drawChecks(entry, m, cursor, pages);
+        break;
+      case 'snags':
+        drawSnags(entry, m, cursor, pages);
+        break;
+      case 'signoff':
+        drawSignoff(entry, m, cursor, pages);
+        break;
     }
   }
 
-  pages.push({ widthPt: m.frame.widthPt, heightPt: m.frame.heightPt, stream: cursor.ops });
+  pages.push(pageOf(cursor, m));
+  const footer = document.footer;
+  if (footer !== undefined) {
+    pages.forEach((page, at) => {
+      for (const op of footerOps(footer, sheet, at + 1, pages.length)) page.stream.push(op);
+    });
+  }
   return writePdf(pages);
 }
 

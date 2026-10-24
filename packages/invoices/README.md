@@ -102,6 +102,30 @@ later. A host that draws documents from its own record with this add-on's
 button now prints any of its record's keys named like these slots
 (`reference`, `serviceFrom`, `serviceTo`, and `date` or `options` on a line).
 
+## A signed copy of a handover
+
+The `signed-copy` kind is the one document that holds no money: what a customer
+signed on site when the work was handed over. An app maps a row of its own
+sign-offs to it:
+
+- `work` (what the work was, in the customer's words — the copy is named after
+  it, so never an internal code), `site`, `doneOn`, and `signedAt` (a day and a
+  time, printed as it was where the business is);
+- `signerName`, `signerRole`, and `signature`: a column holding the signature
+  as a PNG or JPEG file. Adminium hands the picture over (it needs Adminium
+  0.3.35); the PDF draws it, transparency kept, and the web page shows it;
+- `checks`, the words of each check one per line, and `check1` … `check5`, the
+  answers (true or 1 prints "Yes", false or 0 prints "No"); a check is printed
+  when its answer is set;
+- `snags`: what was still to put right **when it was signed**, as a text the app
+  writes into the sign-off as it is made — a JSON list of `{ "what", "by",
+  "note" }` (`by` a `YYYY-MM-DD` day) or one snag a line. `[]` prints "Nothing
+  was left to put right."; an empty text prints no list.
+
+Every page of the PDF ends with a line saying what the copy is and the page's
+number. Like every document here, the PDF draws Latin letters only; an Arabic or
+Chinese copy is the web page, for printing.
+
 ## What it records, and what it never does
 
 **It records payments** — each one somebody enters against an invoice, with its

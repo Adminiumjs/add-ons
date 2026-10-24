@@ -345,6 +345,7 @@
     "addon.invoices.record.kind.purchaseOrderUnpriced": "80f2a0aa26b493ab",
     "addon.invoices.record.kind.quote": "f0a6862ed2ffbaab",
     "addon.invoices.record.kind.receipt": "f7fc41f024abc656",
+    "addon.invoices.record.kind.signedCopy": "61fd62f4dfd504f9",
     "addon.invoices.record.kind.statement": "996c78002a186f4a",
     "addon.invoices.record.make": "8191b4768f81d292",
     "addon.invoices.record.none": "90af6696544e9faa",

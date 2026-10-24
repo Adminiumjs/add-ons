@@ -1,5 +1,5 @@
 /**
- * The seven kinds this add-on renders, and the outline of each.
+ * The eight kinds this add-on renders, and the outline of each.
  *
  * ── WHAT AN OUTLINE IS, AND WHAT IT IS NOT ─────────────────────────────────
  *
@@ -17,19 +17,21 @@
  * render — a receipt fired by a till, with no authored template behind it —
  * has no body at all and is drawn from the outline's defaults.
  *
- * ── SEVEN KINDS, TWELVE STARTERS, AND WHY THOSE ARE DIFFERENT NUMBERS ──────
+ * ── EIGHT KINDS, TWELVE STARTERS, AND WHY THOSE ARE DIFFERENT NUMBERS ──────
  *
  * The surface offers twelve starters over eight titles, four of which
  * (PROFORMA, ESTIMATE, DEPOSIT, COMMERCIAL INVOICE) no kind covers. A starter
  * is a TEMPLATE PRESET, not a kind: as a preset it costs nothing, and as a kind
  * each would have cost another `describe()` outline with eight-locale labels on
- * every slot. `kinds()` is seven because that is the number of distinct MAPPING
+ * every slot. `kinds()` is eight because that is the number of distinct MAPPING
  * shapes — money owed, money received, money returned, money offered (a quote),
  * one client's account over a period (a statement, which is not one row but
  * a read of many), and goods ordered from a supplier, which is two: the order
  * with its prices and the same order without them. Those two are separate
  * kinds rather than one kind with a switch because the difference is in the
  * OUTLINE — the one without prices has no slot a price could be mapped to.
+ * The eighth holds no money at all: what a customer signed on site when the
+ * work was handed over (a signed copy).
  *
  * ── WHY THE LABELS ARE HERE AND NOT IN `i18n/strings.ts` ───────────────────
  *
@@ -158,11 +160,24 @@ const KIND_LABELS = {
     'zh-TW': '採購單（不含價格）',
     'ar-EG': 'أمر شراء، بدون أسعار',
   },
+  'signed-copy': {
+    'en-US': 'Signed copy',
+    'de-DE': 'Unterschriebene Kopie',
+    'fr-FR': 'Copie signée',
+    'cs-CZ': 'Podepsaná kopie',
+    'da-DK': 'Underskrevet kopi',
+    'zh-CN': '签字副本',
+    'zh-TW': '簽字副本',
+    'ar-EG': 'نسخة موقّعة',
+  },
 } as const satisfies Readonly<Record<string, LocalizedText>>;
 
 /** The order to a supplier with its prices, and the same order without them. */
 export const PURCHASE_ORDER = 'purchase-order';
 export const PURCHASE_ORDER_UNPRICED = 'purchase-order-unpriced';
+
+/** What a customer signed on site: the work, the checks, what was still open, and the signature. */
+export const SIGNED_COPY = 'signed-copy';
 
 /** Whether a kind is an order to a supplier, with prices or without. */
 export function isPurchaseOrder(kind: string): boolean {
@@ -2159,6 +2174,301 @@ const ORDER_TOTAL: OutlineSlot = {
   },
 };
 
+/*
+ * ── THE SIGNED COPY: WHAT A CUSTOMER SIGNED, NOT WHAT THEY OWE ─────────────
+ *
+ * A crew finishes a job, walks the customer round it, and the customer signs
+ * on a phone. The copy names the work by what the customer calls it — never
+ * by the business's own code for the job — where and when it was done, the
+ * checks they were shown, what was still to put right at that moment, the
+ * signature itself, who signed and when.
+ *
+ * WHY THE CHECKS ARE A TEXT AND FIVE ANSWERS. An app keeps a sign-off's
+ * answers as columns of its row (true or 1 for a tick), and the words of each
+ * check are the app's, not this add-on's: one bakery's "oven left clean" is
+ * one fitter's "keys handed over". A mapping reads columns only, so the words
+ * arrive as one text — one check per line, in order, the first line naming
+ * the first answer — and the answers in `check1` … `check5`. A check is
+ * printed when its answer is mapped and set; with no words for it, it is
+ * called by its number.
+ *
+ * WHY THE SNAGS ARE A TEXT. What was still open must be what was open WHEN
+ * IT WAS SIGNED, not what is open on the day the copy is drawn again — so the
+ * app writes the list into a column of the sign-off as it is made. A list
+ * mapped from a table would be read live. The text is a JSON list of
+ * `{ "what", "by", "note" }` (`by` a `YYYY-MM-DD` day), or plain lines, one
+ * snag each; `[]` says nothing was left, and an empty text prints no list.
+ */
+
+const SIGNED_FOR_NAME: OutlineSlot = {
+  ...CUSTOMER_NAME,
+  label: {
+    'en-US': 'Customer',
+    'de-DE': 'Kunde',
+    'fr-FR': 'Client',
+    'cs-CZ': 'Zákazník',
+    'da-DK': 'Kunde',
+    'zh-CN': '客户',
+    'zh-TW': '客戶',
+    'ar-EG': 'العميل',
+  },
+  required: false,
+};
+
+const SIGNED_FOR_LINES: OutlineSlot = {
+  ...CUSTOMER_LINES,
+  label: {
+    'en-US': 'Customer’s address',
+    'de-DE': 'Anschrift des Kunden',
+    'fr-FR': 'Adresse du client',
+    'cs-CZ': 'Adresa zákazníka',
+    'da-DK': 'Kundens adresse',
+    'zh-CN': '客户地址',
+    'zh-TW': '客戶地址',
+    'ar-EG': 'عنوان العميل',
+  },
+};
+
+const WORK: OutlineSlot = {
+  id: 'work',
+  label: {
+    'en-US': 'The work',
+    'de-DE': 'Die Arbeit',
+    'fr-FR': 'Les travaux',
+    'cs-CZ': 'Práce',
+    'da-DK': 'Arbejdet',
+    'zh-CN': '工作内容',
+    'zh-TW': '工作內容',
+    'ar-EG': 'العمل',
+  },
+  help: {
+    'en-US': 'What the work was, in the customer’s words. The copy is named after it, so never map an internal code here.',
+    'de-DE': 'Was gemacht wurde, in den Worten des Kunden. Die Kopie wird danach benannt, also hier nie einen internen Code zuordnen.',
+    'fr-FR': 'Les travaux, dans les mots du client. La copie porte ce nom : n’associez jamais ici un code interne.',
+    'cs-CZ': 'Jaká práce to byla, slovy zákazníka. Kopie se podle toho jmenuje, proto sem nikdy nepřiřazujte interní kód.',
+    'da-DK': 'Hvad arbejdet var, med kundens ord. Kopien får navn efter det, så tilknyt aldrig en intern kode her.',
+    'zh-CN': '用客户的话说明是什么工作。副本以此命名，切勿在此映射内部编号。',
+    'zh-TW': '用客戶的話說明是什麼工作。副本以此命名，切勿在此對應內部編號。',
+    'ar-EG': 'ما هو العمل، بكلمات العميل. تُسمّى النسخة باسمه، فلا تربط هنا رمزاً داخلياً أبداً.',
+  },
+  type: 'text',
+  required: true,
+};
+
+const SITE: OutlineSlot = {
+  id: 'site',
+  label: {
+    'en-US': 'Where it was done',
+    'de-DE': 'Wo es gemacht wurde',
+    'fr-FR': 'Lieu des travaux',
+    'cs-CZ': 'Kde se pracovalo',
+    'da-DK': 'Hvor det blev udført',
+    'zh-CN': '施工地点',
+    'zh-TW': '施工地點',
+    'ar-EG': 'مكان التنفيذ',
+  },
+  type: 'text',
+  required: false,
+};
+
+const DONE_ON: OutlineSlot = {
+  id: 'doneOn',
+  label: {
+    'en-US': 'Day the work was done',
+    'de-DE': 'Tag der Ausführung',
+    'fr-FR': 'Jour des travaux',
+    'cs-CZ': 'Den provedení',
+    'da-DK': 'Dag for udførelsen',
+    'zh-CN': '完工日期',
+    'zh-TW': '完工日期',
+    'ar-EG': 'يوم تنفيذ العمل',
+  },
+  type: 'date',
+  required: false,
+};
+
+const SIGNED_AT: OutlineSlot = {
+  id: 'signedAt',
+  label: {
+    'en-US': 'When it was signed',
+    'de-DE': 'Wann unterschrieben wurde',
+    'fr-FR': 'Date de signature',
+    'cs-CZ': 'Kdy bylo podepsáno',
+    'da-DK': 'Hvornår der blev skrevet under',
+    'zh-CN': '签字时间',
+    'zh-TW': '簽字時間',
+    'ar-EG': 'وقت التوقيع',
+  },
+  help: {
+    'en-US': 'A day and a time. The time is printed as it was where the business is.',
+    'de-DE': 'Ein Tag mit Uhrzeit. Die Uhrzeit wird gedruckt, wie sie beim Betrieb war.',
+    'fr-FR': 'Un jour et une heure. L’heure est imprimée telle qu’elle était chez l’entreprise.',
+    'cs-CZ': 'Den a čas. Čas se vytiskne tak, jak byl v místě firmy.',
+    'da-DK': 'En dag og et klokkeslæt. Klokkeslættet trykkes, som det var hos virksomheden.',
+    'zh-CN': '日期和时间。时间按商家所在地打印。',
+    'zh-TW': '日期和時間。時間依商家所在地列印。',
+    'ar-EG': 'يوم ووقت. يُطبع الوقت كما كان في مكان النشاط.',
+  },
+  // Text, not a date: Adminium writes a date slot as the bare day, and the
+  // copy prints the time it was signed too. A stamp column arrives as its
+  // instant (`2026-07-25T15:00:00.000Z`) and is written out here.
+  type: 'text',
+  required: true,
+};
+
+const SIGNER_NAME: OutlineSlot = {
+  id: 'signerName',
+  label: {
+    'en-US': 'Who signed',
+    'de-DE': 'Wer unterschrieben hat',
+    'fr-FR': 'Signataire',
+    'cs-CZ': 'Kdo podepsal',
+    'da-DK': 'Hvem der skrev under',
+    'zh-CN': '签字人',
+    'zh-TW': '簽字人',
+    'ar-EG': 'من وقّع',
+  },
+  type: 'text',
+  required: true,
+};
+
+const SIGNER_ROLE: OutlineSlot = {
+  id: 'signerRole',
+  label: {
+    'en-US': 'Their role',
+    'de-DE': 'Funktion',
+    'fr-FR': 'Fonction',
+    'cs-CZ': 'Funkce',
+    'da-DK': 'Stilling',
+    'zh-CN': '职务',
+    'zh-TW': '職務',
+    'ar-EG': 'الصفة',
+  },
+  help: {
+    'en-US': 'Printed after the name.',
+    'de-DE': 'Hinter dem Namen gedruckt.',
+    'fr-FR': 'Imprimée après le nom.',
+    'cs-CZ': 'Vytiskne se za jménem.',
+    'da-DK': 'Trykkes efter navnet.',
+    'zh-CN': '印在姓名之后。',
+    'zh-TW': '印在姓名之後。',
+    'ar-EG': 'تُطبع بعد الاسم.',
+  },
+  type: 'text',
+  required: false,
+};
+
+const SIGNATURE: OutlineSlot = {
+  id: 'signature',
+  label: {
+    'en-US': 'Signature',
+    'de-DE': 'Unterschrift',
+    'fr-FR': 'Signature',
+    'cs-CZ': 'Podpis',
+    'da-DK': 'Underskrift',
+    'zh-CN': '签名',
+    'zh-TW': '簽名',
+    'ar-EG': 'التوقيع',
+  },
+  help: {
+    'en-US': 'A column holding the signature as a PNG or JPEG file. Adminium hands the picture over; nothing else can fill it.',
+    'de-DE': 'Eine Spalte, die die Unterschrift als PNG- oder JPEG-Datei enthält. Adminium übergibt das Bild; nichts anderes kann es füllen.',
+    'fr-FR': 'Une colonne qui contient la signature en fichier PNG ou JPEG. Adminium transmet l’image ; rien d’autre ne peut la remplir.',
+    'cs-CZ': 'Sloupec s podpisem jako souborem PNG nebo JPEG. Obrázek předá Adminium; nic jiného jej vyplnit nemůže.',
+    'da-DK': 'En kolonne med underskriften som PNG- eller JPEG-fil. Adminium giver billedet videre; intet andet kan udfylde det.',
+    'zh-CN': '保存签名 PNG 或 JPEG 文件的列。图片由 Adminium 传入，其他方式无法填写。',
+    'zh-TW': '儲存簽名 PNG 或 JPEG 檔案的欄。圖片由 Adminium 傳入，其他方式無法填寫。',
+    'ar-EG': 'عمود يحمل التوقيع كملف PNG أو JPEG. يسلّم Adminium الصورة؛ ولا شيء غيره يملؤها.',
+  },
+  type: 'picture',
+  required: false,
+};
+
+const CHECKS: OutlineSlot = {
+  id: 'checks',
+  label: {
+    'en-US': 'What was checked',
+    'de-DE': 'Was geprüft wurde',
+    'fr-FR': 'Ce qui a été vérifié',
+    'cs-CZ': 'Co bylo zkontrolováno',
+    'da-DK': 'Hvad der blev kontrolleret',
+    'zh-CN': '检查项目',
+    'zh-TW': '檢查項目',
+    'ar-EG': 'ما تم فحصه',
+  },
+  help: {
+    'en-US': 'The words of each check, one a line, in the order of the answers below.',
+    'de-DE': 'Der Wortlaut jedes Prüfpunkts, je eine Zeile, in der Reihenfolge der Antworten unten.',
+    'fr-FR': 'Le texte de chaque vérification, une par ligne, dans l’ordre des réponses ci-dessous.',
+    'cs-CZ': 'Znění každé kontroly, jedna na řádek, v pořadí odpovědí níže.',
+    'da-DK': 'Ordlyden af hver kontrol, én pr. linje, i samme rækkefølge som svarene nedenfor.',
+    'zh-CN': '每项检查的文字，每行一项，顺序与下方的答案一致。',
+    'zh-TW': '每項檢查的文字，每行一項，順序與下方的答案一致。',
+    'ar-EG': 'نص كل فحص، سطر لكل فحص، بترتيب الإجابات أدناه.',
+  },
+  type: 'text',
+  required: false,
+};
+
+/** The answer to one check: ticked when the column holds true or 1. */
+function checkAnswer(number: number): OutlineSlot {
+  const n = String(number);
+  return {
+    id: `check${n}`,
+    label: {
+      'en-US': `Check ${n} ticked`,
+      'de-DE': `Prüfpunkt ${n} abgehakt`,
+      'fr-FR': `Vérification ${n} cochée`,
+      'cs-CZ': `Kontrola ${n} odškrtnuta`,
+      'da-DK': `Kontrol ${n} afkrydset`,
+      'zh-CN': `检查 ${n} 已勾选`,
+      'zh-TW': `檢查 ${n} 已勾選`,
+      'ar-EG': `تم تأشير الفحص ${n}`,
+    },
+    help: {
+      'en-US': 'Printed “Yes” for true or 1, “No” for false or 0.',
+      'de-DE': 'Gedruckt als „Ja“ bei wahr oder 1, „Nein“ bei falsch oder 0.',
+      'fr-FR': 'Imprimé « Oui » pour vrai ou 1, « Non » pour faux ou 0.',
+      'cs-CZ': 'Vytiskne se „Ano“, když je hodnota pravda nebo 1, a „Ne“, když je nepravda nebo 0.',
+      'da-DK': 'Trykkes „Ja“ ved sand eller 1, „Nej“ ved falsk eller 0.',
+      'zh-CN': '为真或 1 时印“是”，为假或 0 时印“否”。',
+      'zh-TW': '為真或 1 時印「是」，為假或 0 時印「否」。',
+      'ar-EG': 'يُطبع «نعم» عند صحيح أو 1، و«لا» عند خطأ أو 0.',
+    },
+    type: 'text',
+    required: false,
+  };
+}
+
+const SNAGS: OutlineSlot = {
+  id: 'snags',
+  label: {
+    'en-US': 'Still to put right when it was signed',
+    'de-DE': 'Bei der Unterschrift noch offen',
+    'fr-FR': 'Restait à reprendre à la signature',
+    'cs-CZ': 'Při podpisu zbývalo napravit',
+    'da-DK': 'Stadig at udbedre ved underskriften',
+    'zh-CN': '签字时尚待处理',
+    'zh-TW': '簽字時尚待處理',
+    'ar-EG': 'ما بقي لإصلاحه عند التوقيع',
+  },
+  help: {
+    'en-US': 'A column the app writes as the copy is signed: a JSON list of what, by (a day) and note, or one line each. An empty list prints “Nothing was left to put right.”',
+    'de-DE': 'Eine Spalte, die die App bei der Unterschrift schreibt: eine JSON-Liste mit what, by (ein Tag) und note, oder je eine Zeile. Eine leere Liste druckt „Es war nichts mehr zu beheben.“',
+    'fr-FR': 'Une colonne que l’application écrit à la signature : une liste JSON de what, by (un jour) et note, ou une ligne chacun. Une liste vide imprime « Il ne restait rien à reprendre. »',
+    'cs-CZ': 'Sloupec, který aplikace zapíše při podpisu: seznam JSON s what, by (den) a note, nebo každá položka na řádek. Prázdný seznam vytiskne „Nic nezbývalo napravit.“',
+    'da-DK': 'En kolonne, appen skriver, når der skrives under: en JSON-liste med what, by (en dag) og note, eller én linje hver. En tom liste trykker „Der var intet tilbage at udbedre.“',
+    'zh-CN': '应用在签字时写入的列：包含 what、by（日期）和 note 的 JSON 列表，或每行一项。空列表印“签字时没有待处理的事项。”',
+    'zh-TW': '應用在簽字時寫入的欄：包含 what、by（日期）和 note 的 JSON 列表，或每行一項。空列表印「簽字時沒有待處理的事項。」',
+    'ar-EG': 'عمود يكتبه التطبيق عند التوقيع: قائمة JSON فيها what وby (يوم) وnote، أو سطر لكل واحد. القائمة الفارغة تطبع «لم يبقَ شيء لإصلاحه.»',
+  },
+  type: 'text',
+  required: false,
+};
+
+/** How many answers a signed copy reads. */
+export const SIGNED_COPY_CHECKS = 5;
+
 /** What both kinds of order carry: whom it is sent to, where the goods go, and when. */
 const ORDER_SHARED: readonly OutlineSlot[] = [
   NUMBER,
@@ -2311,6 +2621,27 @@ const OUTLINES: Readonly<Record<string, DocumentOutline>> = {
    */
   [PURCHASE_ORDER]: { slots: [...ORDER_SHARED, CURRENCY, ORDER_ITEMS, ORDER_TOTAL] },
   [PURCHASE_ORDER_UNPRICED]: { slots: [...ORDER_SHARED, ORDER_ITEMS_UNPRICED] },
+  /*
+   * No number, no money and no currency: a signed copy is in no series and
+   * owes nothing. Its lists are texts the app wrote (see above), so it has no
+   * collection at all.
+   */
+  [SIGNED_COPY]: {
+    slots: [
+      WORK,
+      SIGNED_AT,
+      SIGNER_NAME,
+      SIGNER_ROLE,
+      SIGNATURE,
+      SIGNED_FOR_NAME,
+      SIGNED_FOR_LINES,
+      SITE,
+      DONE_ON,
+      CHECKS,
+      ...Array.from({ length: SIGNED_COPY_CHECKS }, (_, at) => checkAnswer(at + 1)),
+      SNAGS,
+    ],
+  },
 };
 
 export const KINDS: readonly DocumentKind[] = [
@@ -2360,6 +2691,13 @@ export const KINDS: readonly DocumentKind[] = [
   {
     id: PURCHASE_ORDER_UNPRICED,
     label: KIND_LABELS[PURCHASE_ORDER_UNPRICED],
+    formats: ['html', 'pdf'],
+    paper: ['a4', 'letter'],
+    coverage: 'winansi',
+  },
+  {
+    id: SIGNED_COPY,
+    label: KIND_LABELS[SIGNED_COPY],
     formats: ['html', 'pdf'],
     paper: ['a4', 'letter'],
     coverage: 'winansi',

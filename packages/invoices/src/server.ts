@@ -42,11 +42,11 @@ import type {
   RenderedDocument,
 } from '@adminium/add-on-host/contracts';
 
-import { describe, isKnownKind, kinds } from './kinds.ts';
+import { describe, isKnownKind, kinds, SIGNED_COPY } from './kinds.ts';
 import { undrawnCharacters } from './pdf/helvetica.ts';
 import { layout, type Document } from './render/layout.ts';
 import { renderHtml } from './render/html.ts';
-import { renderPdf } from './render/pdf.ts';
+import { renderPdf, undrawnPicture } from './render/pdf.ts';
 import { formatsFor } from './render/format.ts';
 import { isRtl, wordsFor } from './render/words.ts';
 import { documentFrom, refuseSubject } from './subject.ts';
@@ -56,6 +56,7 @@ const KEY = 'invoices';
 /** Every string the finished document will draw, for the coverage check. */
 function drawnText(document: Document): string {
   const parts: string[] = [document.voidMark ?? ''];
+  if (document.footer !== undefined) parts.push(document.footer.text, document.footer.page);
   for (const block of document.blocks) {
     switch (block.kind) {
       case 'letterhead':
@@ -91,6 +92,18 @@ function drawnText(document: Document): string {
         break;
       case 'signature':
         parts.push(block.text);
+        break;
+      case 'checks':
+        parts.push(block.heading);
+        for (const row of block.rows) parts.push(row.label, row.answer);
+        break;
+      case 'snags':
+        parts.push(block.heading, block.empty);
+        for (const row of block.rows) parts.push(row.what, row.by, row.note);
+        break;
+      case 'signoff':
+        // The picture's label is the page's words for a reader that cannot see it; the PDF does not print it.
+        parts.push(block.heading, block.name, block.time);
         break;
     }
   }
@@ -163,15 +176,21 @@ export function renderSync(input: RenderInput): readonly RenderedDocument[] | Do
     extras,
     facts,
     words,
-    formats: formatsFor(input.subject.locale, facts.currency, { latin, cents: body.cents }),
+    formats: formatsFor(input.subject.locale, facts.currency, { latin, cents: body.cents, timezone: input.subject.now.timezone }),
     locale: input.subject.locale,
     rtl: isRtl(input.subject.locale),
     authored: input.body !== undefined,
     narrow: input.paper === 'receipt-80mm',
   });
 
-  // A statement is in no series: it is named by the day it runs to.
-  const fileNumber = input.kind === 'statement' ? (facts.statement.periodTo !== '' ? facts.statement.periodTo : facts.today) : body.number;
+  // A statement is in no series: it is named by the day it runs to. A signed
+  // copy is in none either, and is named by the work — never by a code.
+  const fileNumber =
+    input.kind === 'statement'
+      ? facts.statement.periodTo !== '' ? facts.statement.periodTo : facts.today
+      : input.kind === SIGNED_COPY
+        ? facts.signedCopy.work
+        : body.number;
   const kind = kinds().find((entry) => entry.id === input.kind)!;
   let formats = input.formats.filter((format) => kind.formats.includes(format));
   const warnings: string[] = [];
@@ -225,7 +244,12 @@ export function renderSync(input: RenderInput): readonly RenderedDocument[] | Do
             // which is a runtime dependency this package refuses.
             // So the letterhead is drawn as text, and the caller is TOLD,
             // rather than finding a missing mark on a printed invoice.
-            warnings: imageIn(document) ? ['the letterhead image is drawn in HTML only'] : [],
+            warnings: [
+              ...(imageIn(document) ? ['the letterhead image is drawn in HTML only'] : []),
+              // A picture the host handed over that this writer cannot draw (an
+              // image too large to decode, say) is left off the PDF, and said.
+              ...(undrawnPicture(document) ? ['the signature picture is drawn in HTML only'] : []),
+            ],
           },
     );
   }
