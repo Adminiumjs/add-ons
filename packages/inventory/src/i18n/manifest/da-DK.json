@@ -251,6 +251,8 @@
   "column|Lines not posted": "Linjer ikke bogført",
   "column|Lines posted": "Linjer bogført",
   "column|Lines to check": "Linjer at tjekke",
+  "column|Late": "Forsinket",
+  "column|Days late": "Dage forsinket",
   "action|Continue": "Fortsæt",
   "action|Undo or send back": "Fortryd eller send tilbage",
   "table|Receipt line": "Varemodtagelseslinje",

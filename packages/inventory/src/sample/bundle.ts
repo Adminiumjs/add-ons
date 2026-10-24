@@ -98,7 +98,7 @@ export function buildSample(): Bundle {
   // ── where the stock is ─────────────────────────────────────────────────────
   const namedBatches: { sku: string; code: string; expires: Expiry; receivedOn: number }[] = [
     ...Object.entries(OPENING_BATCH).map(([sku, batch]) => ({ sku, code: batch.code, expires: batch.expires, receivedOn: 1 })),
-    ...PO_1001.lines.flatMap((ordered) => (ordered.batch === null ? [] : [{ sku: ordered.sku, code: ordered.batch.code, expires: ordered.batch.expires, receivedOn: PO_1001.receivedOn }])),
+    ...PO_1001.lines.flatMap((ordered) => (ordered.batch === null ? [] : [{ sku: ordered.sku, code: ordered.batch.code, expires: ordered.batch.expires, receivedOn: PO_1001.deliveries[ordered.delivery] }])),
   ];
   const batches = [
     ...ITEMS.map((it) => ({ '@label': batchLabel(it.sku, null), item_id: itemRef(it.sku), code: '-', unassigned: true })),
@@ -154,7 +154,7 @@ export function buildSample(): Bundle {
       status: 'received',
       sent_how: 'none',
       sent_on: on(PO_1001.sentOn),
-      expected_on: on(PO_1001.receivedOn),
+      expected_on: on(PO_1001.expectedOn),
       sent_at: at(PO_1001.sentOn, '09:15'),
       received_at: at(PO_1001.receivedOn, '11:30'),
       closed_at: at(PO_1001.receivedOn, '11:30'),
@@ -169,21 +169,25 @@ export function buildSample(): Bundle {
     }),
   );
 
-  // ── receipts: the opening stock, one a place, then the delivery ────────────
+  // ── receipts: the opening stock, one a place, then the two deliveries ──────
+  // Posting stamps the day a receipt came in; the sample is history, so it says it. The day the order
+  // expected it, and whether it was late, Adminium works out as the rows go in.
   const stocked = PLACES.map(([name]) => name).filter((name) => ITEMS.some((it) => it.place === name));
+  const deliveryLabel = (delivery: number) => (delivery === 0 ? 'receipt:po-1001' : `receipt:po-1001:${String(delivery + 1)}`);
   const receipts = [
-    ...stocked.map((name, n) => ({ '@label': `receipt:opening:${slug(name)}`, number_seq: n + 1, number: `RC-${String(n + 1).padStart(4, '0')}`, place_id: place(name), kind: 'opening', status: 'posted', received_at: at(1, '08:00') })),
-    {
-      '@label': 'receipt:po-1001',
-      number_seq: stocked.length + 1,
-      number: `RC-${String(stocked.length + 1).padStart(4, '0')}`,
+    ...stocked.map((name, n) => ({ '@label': `receipt:opening:${slug(name)}`, number_seq: n + 1, number: `RC-${String(n + 1).padStart(4, '0')}`, place_id: place(name), kind: 'opening', status: 'posted', received_at: at(1, '08:00'), received_on: on(1) })),
+    ...PO_1001.deliveries.map((day, delivery) => ({
+      '@label': deliveryLabel(delivery),
+      number_seq: stocked.length + delivery + 1,
+      number: `RC-${String(stocked.length + delivery + 1).padStart(4, '0')}`,
       po_id: ref('po:1001'),
       supplier_id: supplier(PO_1001.supplier),
       place_id: place(PO_1001.place),
       kind: 'delivery',
       status: 'posted',
-      received_at: at(PO_1001.receivedOn, '11:30'),
-    },
+      received_at: at(day, '11:30'),
+      received_on: on(day),
+    })),
   ];
   /** A movement's document row: its label, and the receipt of posting written for it. */
   const sourceOf = new Map<Move, string>();
@@ -201,7 +205,7 @@ export function buildSample(): Bundle {
     const ordered = PO_1001.lines[(move.of as { line: number }).line]!;
     const label = `receipt-line:po-1001:${move.sku}`;
     sourceOf.set(move, label);
-    receiptLines.push({ '@label': label, receipt_id: ref('receipt:po-1001'), po_line_id: ref(`po-line:1001:${move.sku}`), item_id: itemRef(move.sku), packs: ordered.packs, ...(ordered.batch === null ? {} : { batch_code: ordered.batch.code, expires_on: expiry(ordered.batch.expires) }), status: 'posted' });
+    receiptLines.push({ '@label': label, receipt_id: ref(deliveryLabel(ordered.delivery)), po_line_id: ref(`po-line:1001:${move.sku}`), item_id: itemRef(move.sku), packs: ordered.packs, ...(ordered.batch === null ? {} : { batch_code: ordered.batch.code, expires_on: expiry(ordered.batch.expires) }), status: 'posted' });
   }
 
   // ── transfers: linen out to the laundry, and most of it back ───────────────

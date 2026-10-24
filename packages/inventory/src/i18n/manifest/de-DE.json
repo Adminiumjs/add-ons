@@ -251,6 +251,8 @@
   "column|Lines not posted": "Nicht gebuchte Zeilen",
   "column|Lines posted": "Gebuchte Zeilen",
   "column|Lines to check": "Zu prüfende Zeilen",
+  "column|Late": "Verspätet",
+  "column|Days late": "Tage verspätet",
   "action|Continue": "Fortsetzen",
   "action|Undo or send back": "Rückgängig machen oder zurücksenden",
   "table|Receipt line": "Wareneingangszeile",
