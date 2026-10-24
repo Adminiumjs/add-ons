@@ -81,7 +81,8 @@ export type OutlineSlotType =
   | 'currency'
   | 'number'
   | 'collection'
-  | 'qr';
+  | 'qr'
+  | 'picture';
 
 /**
  * A `qr` slot's value, made by the host (a provider needs no encoder): the
@@ -94,6 +95,35 @@ export interface DocumentQrValue {
   text: string;
   modules: readonly string[];
   png: string;
+}
+
+/**
+ * The kinds of picture a `picture` slot carries: the two every HTML page and
+ * every PDF writer draws without a decoder of its own.
+ */
+export type DocumentPictureMediaType = 'image/png' | 'image/jpeg';
+
+/**
+ * A `picture` slot's value, made by the HOST from a file a column of the
+ * document's own row holds (a customer's drawn signature). A provider never
+ * reads the file store: it is handed the picture, or nothing.
+ *
+ * The host has already judged it: the row's own file, alive, one picture, a
+ * column the reader may read; a PNG or a JPEG by its own bytes, at most 5 MiB
+ * and 8192 pixels a side, with what a camera writes beside it removed.
+ * Anything short of that is no value at all: the slot is left out of
+ * `subject.fields`.
+ *
+ * `dataUrl` is `data:<mediaType>;base64,<the bytes>`; `width` and `height`
+ * are the picture's own pixels. A slot of this type is never a column of a
+ * `collection`. A provider that declares one needs a host that knows the type
+ * (Adminium 0.3.35); an older host leaves the slot empty.
+ */
+export interface DocumentPictureValue {
+  mediaType: DocumentPictureMediaType;
+  dataUrl: string;
+  width: number;
+  height: number;
 }
 
 export type OutlineSlotDefault = 'sequence' | 'connection' | 'setting' | 'now' | 'pay-link';

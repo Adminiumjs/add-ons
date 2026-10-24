@@ -31,6 +31,8 @@ export type {
   DocumentLocaleId,
   DocumentOutline,
   DocumentPaper,
+  DocumentPictureMediaType,
+  DocumentPictureValue,
   DocumentQrValue,
   DocumentRenderer,
   DocumentSubject,
