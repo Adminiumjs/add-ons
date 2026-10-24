@@ -251,6 +251,8 @@
   "column|Lines not posted": "Lignes non validées",
   "column|Lines posted": "Lignes validées",
   "column|Lines to check": "Lignes à vérifier",
+  "column|Late": "En retard",
+  "column|Days late": "Jours de retard",
   "action|Continue": "Continuer",
   "action|Undo or send back": "Annuler ou renvoyer",
   "table|Receipt line": "Ligne de réception",

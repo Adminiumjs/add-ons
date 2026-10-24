@@ -251,6 +251,8 @@
   "column|Lines not posted": "سطور غير مرحَّلة",
   "column|Lines posted": "سطور مرحَّلة",
   "column|Lines to check": "بنود للمراجعة",
+  "column|Late": "متأخر",
+  "column|Days late": "أيام التأخير",
   "action|Continue": "متابعة",
   "action|Undo or send back": "تراجع أو إرجاع",
   "table|Receipt line": "سطر إذن الاستلام",
