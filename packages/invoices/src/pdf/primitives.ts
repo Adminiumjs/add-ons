@@ -1,9 +1,10 @@
 /**
- * The five drawing operations an invoice needs, and no sixth.
+ * The drawing operations a document needs, and no more.
  *
  * Everything the document draws is one of: a run of text at a point, a run of
  * text whose RIGHT edge is at a point (every money column), a paragraph
- * wrapped to a width, a horizontal rule, and a filled box. That list is short
+ * wrapped to a width, a horizontal rule, a filled box — and a picture, which
+ * only a signed copy draws (the customer's signature). That list is short
  * because it was taken from the comp rather than from imagination — anything
  * not on it is not drawn on any of the twelve starters.
  *
@@ -175,4 +176,26 @@ export function box(
       `${pt(x)} ${pt(at(frame, y + heightPt))} ${pt(widthPt)} ${pt(heightPt)} re\nf\nQ\n`,
     ),
   ];
+}
+
+/**
+ * Draw the named picture with its TOP-LEFT corner at (x, y), top-down, scaled
+ * to `widthPt` × `heightPt`.
+ *
+ * A PDF image is drawn into the unit square, so the matrix scales that square
+ * to the box and moves its BOTTOM-left corner into place — which, top-down, is
+ * `y + heightPt`. The name is the one the page lists the picture under in
+ * `Page.images`; the stream only says `/Name Do`.
+ */
+export function image(
+  frame: Frame,
+  x: number,
+  y: number,
+  widthPt: number,
+  heightPt: number,
+  name: string,
+): number[] {
+  return ascii(
+    `q\n${pt(widthPt)} 0 0 ${pt(heightPt)} ${pt(x)} ${pt(at(frame, y + heightPt))} cm\n/${name} Do\nQ\n`,
+  );
 }
