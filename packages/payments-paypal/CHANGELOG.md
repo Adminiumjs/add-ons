@@ -1,5 +1,7 @@
 # @adminium/add-on-payments-paypal
 
+## 1.0.14
+
 ## 1.0.13
 
 ### Patch Changes
