@@ -6918,6 +6918,147 @@
             }
           },
           {
+            "ref": "expected_on",
+            "type": "date",
+            "nullable": true,
+            "rules": {
+              "copy": {
+                "via": "po_id",
+                "from": "expected_on",
+                "mode": "always"
+              }
+            },
+            "label": {
+              "en-US": "Expected on",
+              "de-DE": "Erwartet am",
+              "fr-FR": "Attendu le",
+              "da-DK": "Forventet den",
+              "cs-CZ": "Očekávané datum",
+              "ar-EG": "متوقع في",
+              "zh-CN": "预计到货日期",
+              "zh-TW": "預計到貨日"
+            }
+          },
+          {
+            "ref": "received_on",
+            "type": "date",
+            "nullable": true,
+            "rules": {
+              "stamp": {
+                "set": "today",
+                "on": {
+                  "column": "status",
+                  "values": [
+                    "posted"
+                  ]
+                }
+              }
+            },
+            "label": {
+              "en-US": "Received on",
+              "de-DE": "Eingegangen am",
+              "fr-FR": "Reçu le",
+              "da-DK": "Modtaget den",
+              "cs-CZ": "Datum přijetí",
+              "ar-EG": "استُلمت في",
+              "zh-CN": "收货日期",
+              "zh-TW": "收貨日"
+            }
+          },
+          {
+            "ref": "late",
+            "type": "int",
+            "nullable": true,
+            "rules": {
+              "formula": {
+                "if": [
+                  {
+                    "gt": [
+                      {
+                        "daysBetween": [
+                          "expected_on",
+                          "received_on"
+                        ]
+                      },
+                      0
+                    ]
+                  },
+                  1,
+                  {
+                    "mul": [
+                      {
+                        "daysBetween": [
+                          "received_on",
+                          "expected_on"
+                        ]
+                      },
+                      0
+                    ]
+                  }
+                ]
+              }
+            },
+            "label": {
+              "en-US": "Late",
+              "de-DE": "Verspätet",
+              "fr-FR": "En retard",
+              "da-DK": "Forsinket",
+              "cs-CZ": "Pozdě",
+              "ar-EG": "متأخر",
+              "zh-CN": "延迟",
+              "zh-TW": "延遲"
+            }
+          },
+          {
+            "ref": "days_late",
+            "type": "int",
+            "nullable": true,
+            "rules": {
+              "formula": {
+                "if": [
+                  {
+                    "gt": [
+                      {
+                        "daysBetween": [
+                          "expected_on",
+                          "received_on"
+                        ]
+                      },
+                      0
+                    ]
+                  },
+                  {
+                    "daysBetween": [
+                      "expected_on",
+                      "received_on"
+                    ]
+                  },
+                  {
+                    "mul": [
+                      {
+                        "daysBetween": [
+                          "received_on",
+                          "expected_on"
+                        ]
+                      },
+                      0
+                    ]
+                  }
+                ]
+              }
+            },
+            "label": {
+              "en-US": "Days late",
+              "de-DE": "Tage verspätet",
+              "fr-FR": "Jours de retard",
+              "da-DK": "Dage forsinket",
+              "cs-CZ": "Dní zpoždění",
+              "ar-EG": "أيام التأخير",
+              "zh-CN": "延迟天数",
+              "zh-TW": "延遲天數"
+            }
+          },
+          {
             "ref": "by",
             "type": "text",
             "maxLength": 120,
@@ -11042,6 +11183,10 @@
             "order_status",
             "can_undo",
             "received_at",
+            "expected_on",
+            "received_on",
+            "late",
+            "days_late",
             "by",
             "note",
             "units",
@@ -17587,7 +17732,13 @@
           "is": "An order placed with a supplier, with its status and the day it is expected."
         },
         "receipts": {
-          "is": "A delivery taken into stock, with or without a purchase order."
+          "is": "A delivery taken into stock, with or without a purchase order.",
+          "columns": {
+            "expected_on": "The day its purchase order said the delivery would come.",
+            "received_on": "The day the receipt was posted: the day the delivery came in.",
+            "late": "1 when it came after expected_on, 0 when on or before; empty without both days.",
+            "days_late": "Days after expected_on it came; 0 when on time; empty without both days."
+          }
         },
         "transfers": {
           "is": "Stock moved from one place to another."

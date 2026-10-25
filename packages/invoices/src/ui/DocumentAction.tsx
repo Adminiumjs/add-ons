@@ -89,6 +89,7 @@ const KIND_KEYS: Readonly<Record<string, StringKey>> = {
   statement: 'addon.invoices.record.kind.statement',
   'purchase-order': 'addon.invoices.record.kind.purchaseOrder',
   'purchase-order-unpriced': 'addon.invoices.record.kind.purchaseOrderUnpriced',
+  'signed-copy': 'addon.invoices.record.kind.signedCopy',
 };
 
 export function DocumentAction({ payload }: { payload: RecordActionsPayload }) {

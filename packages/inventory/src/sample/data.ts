@@ -147,17 +147,25 @@ export const TURNOVERS = 96;
 export const SETS_BACK = 84;
 export const LINEN_DAY = 30;
 
-/** Purchase order 1001: sent on the 11th, received in full on the 14th. */
+/**
+ * Purchase order 1001: sent on the 10th, expected on the 12th (its supplier
+ * takes two days), and delivered twice: the swabs and the gloves on the 12th,
+ * on time; the syringes on the 14th, two days late. It is in full from the
+ * 14th.
+ */
 export const PO_1001 = {
   number: 1001,
   supplier: MS,
   place: 'Treatment room',
-  sentOn: 11,
+  sentOn: 10,
+  expectedOn: 12,
+  /** The day each delivery came in; a line names the delivery it came on. */
+  deliveries: [12, 14],
   receivedOn: 14,
   lines: [
-    { sku: 'SWAB-ALC', packs: 2, batch: { code: 'A9117', expires: { date: '2028-11-30' } as Expiry } },
-    { sku: 'GLV-M', packs: 2, batch: null },
-    { sku: 'SYR-5', packs: 1, batch: { code: 'L2502', expires: { date: '2029-09-30' } as Expiry } },
+    { sku: 'SWAB-ALC', packs: 2, delivery: 0, batch: { code: 'A9117', expires: { date: '2028-11-30' } as Expiry } },
+    { sku: 'GLV-M', packs: 2, delivery: 0, batch: null },
+    { sku: 'SYR-5', packs: 1, delivery: 1, batch: { code: 'L2502', expires: { date: '2029-09-30' } as Expiry } },
   ],
 } as const;
 
@@ -276,7 +284,7 @@ export function replay(): { moves: Move[]; levels: Map<string, number> } {
 
   PO_1001.lines.forEach((ordered, k) => {
     const it = ITEM.get(ordered.sku)!;
-    post(PO_1001.receivedOn, it.sku, it.place, ordered.batch?.code ?? null, 'received', ordered.packs * it.pack, { doc: 'po-1001', line: k });
+    post(PO_1001.deliveries[ordered.delivery], it.sku, it.place, ordered.batch?.code ?? null, 'received', ordered.packs * it.pack, { doc: 'po-1001', line: k });
   });
 
   const [broken, stained] = WRITE_OFFS as [(typeof WRITE_OFFS)[number], (typeof WRITE_OFFS)[number]];

@@ -10,12 +10,12 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-import { sampleBundleIssues, sampleBundleSchema, validateManifest } from '@adminiumjs/manifest';
+import { evaluateFormula, type FormulaExpr, sampleBundleIssues, sampleBundleSchema, validateManifest } from '@adminiumjs/manifest';
 import { describe, expect, it } from 'vitest';
 
 import manifest from '../manifest.json' with { type: 'json' };
 import { buildSample, slug, type Row } from './sample/bundle.ts';
-import { ITEMS, KITS, OPENING_BATCH, PLACES, PO_1001 } from './sample/data.ts';
+import { ITEMS, KITS, OPENING_BATCH, PLACES, PO_1001, SUPPLIERS } from './sample/data.ts';
 
 const FILE = fileURLToPath(new URL('../seeds/inventory.sample.json', import.meta.url));
 const bundle = JSON.parse(readFileSync(FILE, 'utf8')) as { format: string; app: string; tables: { ref: string; onlyIfEmpty?: boolean; rows: Row[] }[] };
@@ -89,7 +89,7 @@ describe('the sample file', () => {
       ['kit_lines', 16],
       ['purchase_orders', 3],
       ['po_lines', 8],
-      ['receipts', 5],
+      ['receipts', 6],
       ['receipt_lines', 43],
       ['transfers', 2],
       ['transfer_lines', 6],
@@ -244,7 +244,7 @@ describe('the bundle reproduces every stock figure', () => {
     for (const line of PO_1001.lines) expect(pointOf(line.sku, PO_1001.place).onOrder, line.sku).toBe(0);
   });
 
-  it('the opening stock is one receipt a place, 40 lines of 6,496 units worth $8,954.70; the delivery is 3 lines of 700 units worth $44.00', () => {
+  it('the opening stock is one receipt a place, 40 lines of 6,496 units worth $8,954.70; the two deliveries are 3 lines of 700 units worth $44.00', () => {
     const lines = rowsOf('receipt_lines').map((line) => {
       const ordered = line['po_line_id'] === undefined ? null : named(line['po_line_id']);
       const qty = ordered === null ? Number(line['qty_typed']) : Number(line['packs']) * Number(ordered['pack_size']);
@@ -260,10 +260,39 @@ describe('the bundle reproduces every stock figure', () => {
       ['RC-0002', 'opening', 'Back room', 6],
       ['RC-0003', 'opening', 'Treatment room', 12],
       ['RC-0004', 'opening', 'Linen store', 8],
-      ['RC-0005', 'delivery', 'Treatment room', 3],
+      ['RC-0005', 'delivery', 'Treatment room', 2],
+      ['RC-0006', 'delivery', 'Treatment room', 1],
     ]);
     // A line is received into its receipt's place: the place the item is kept in.
     for (const line of rowsOf('receipt_lines')) expect(named(line['receipt_id'])['place_id'], String(line['@label'])).toEqual({ '@ref': `place:${slug(ITEMS.find((item) => `item:${item.sku}` === labelOf(line['item_id']))!.place)}` });
+  });
+
+  it('order 1001 came in two deliveries: one on the day it was expected, one two days late', () => {
+    const order = named({ '@ref': 'po:1001' });
+    // The day expected is the day sent and the supplier's days to deliver, as the order's stamp works it out.
+    const leadDays = SUPPLIERS.find((one) => one.name === PO_1001.supplier)!.leadDays;
+    expect(order).toMatchObject({ sent_on: { '@month': -1, '@dom': PO_1001.sentOn }, expected_on: { '@month': -1, '@dom': PO_1001.sentOn + leadDays } });
+    // A day of last month as a date: any month will do, only the days between them count.
+    const day = (value: unknown): string | null => (value === undefined ? null : `2026-09-${String((value as Row)['@dom']).padStart(2, '0')}`);
+    const formula = (column: string): FormulaExpr => (manifest.requiredSchema.tables as unknown as { ref: string; columns: { ref: string; rules?: { formula?: FormulaExpr } }[] }[]).find((table) => table.ref === 'receipts')!.columns.find((one) => one.ref === column)!.rules!.formula!;
+    // As Adminium writes each receipt: the order's day copied through its link, the day it came in as the sample says.
+    const worked = rowsOf('receipts').map((receipt) => {
+      const row = { expected_on: receipt['po_id'] === undefined ? null : day(named(receipt['po_id'])['expected_on']), received_on: day(receipt['received_on']) };
+      return [receipt['number'], receipt['kind'], row.expected_on, row.received_on, evaluateFormula(formula('late'), row, 0), evaluateFormula(formula('days_late'), row, 0)];
+    });
+    expect(worked).toEqual([
+      // Opening stock was never ordered: it says nothing about a supplier.
+      ['RC-0001', 'opening', null, '2026-09-01', null, null],
+      ['RC-0002', 'opening', null, '2026-09-01', null, null],
+      ['RC-0003', 'opening', null, '2026-09-01', null, null],
+      ['RC-0004', 'opening', null, '2026-09-01', null, null],
+      ['RC-0005', 'delivery', '2026-09-12', '2026-09-12', '0', '0'],
+      ['RC-0006', 'delivery', '2026-09-12', '2026-09-14', '1', '2'],
+    ]);
+    // Each delivery's batch was received on the day its receipt was.
+    for (const line of PO_1001.lines) {
+      if (line.batch !== null) expect(byLabel.get(`batch:${line.batch.code}`)?.['received_on'], line.sku).toEqual({ '@month': -1, '@dom': PO_1001.deliveries[line.delivery] });
+    }
   });
 
   it('the count found 3 differences worth -$0.95', () => {

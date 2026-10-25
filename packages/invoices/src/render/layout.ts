@@ -35,10 +35,10 @@
  */
 
 import type { InvoiceBody, LineItem } from '../document.ts';
-import { isPurchaseOrder, PURCHASE_ORDER, PURCHASE_ORDER_UNPRICED } from '../kinds.ts';
+import { isPurchaseOrder, PURCHASE_ORDER, PURCHASE_ORDER_UNPRICED, SIGNED_COPY } from '../kinds.ts';
 import { lineMinor, taxBreakdown, totalsOf } from '../money.ts';
 import { differenceText, isPositive, isZero, productText, sumText } from '../shape-money.ts';
-import type { BoundExtras, LineFacts, OrderLine, PayQr, StoredLine, SubjectFacts } from '../subject.ts';
+import type { BoundExtras, LineFacts, OrderLine, PayQr, Picture, StoredLine, SubjectFacts } from '../subject.ts';
 import { minorToDecimal, type Formats } from './format.ts';
 import { fill, type LayoutWords } from './words.ts';
 
@@ -142,6 +142,38 @@ export interface SignatureBlock {
   readonly text: string;
 }
 
+/** A signed copy's checks: each one's words, and "Yes" or "No". */
+export interface ChecksBlock {
+  readonly kind: 'checks';
+  readonly heading: string;
+  readonly rows: readonly { readonly label: string; readonly answer: string; readonly done: boolean }[];
+}
+
+/**
+ * What was still to put right when a copy was signed: what, by when, and a
+ * note under it. No rows prints `empty` ("Nothing was left to put right.").
+ */
+export interface SnagsBlock {
+  readonly kind: 'snags';
+  readonly heading: string;
+  readonly rows: readonly { readonly what: string; readonly by: string; readonly note: string }[];
+  readonly empty: string;
+}
+
+/**
+ * Who signed: the signature as the picture itself, when the host handed one
+ * over, then the name and role, then when. Kept whole on one page.
+ */
+export interface SignoffBlock {
+  readonly kind: 'signoff';
+  readonly heading: string;
+  readonly picture: Picture | null;
+  /** What the picture is, for a reader that cannot see it. */
+  readonly pictureLabel: string;
+  readonly name: string;
+  readonly time: string;
+}
+
 export type Block =
   | LetterheadBlock
   | PartiesBlock
@@ -152,7 +184,10 @@ export type Block =
   | SignedBlock
   | PassageBlock
   | FootBlock
-  | SignatureBlock;
+  | SignatureBlock
+  | ChecksBlock
+  | SnagsBlock
+  | SignoffBlock;
 
 export interface Document {
   readonly locale: string;
@@ -164,6 +199,12 @@ export interface Document {
   /** The title the page is known by: the kind and its number. */
   readonly name: string;
   readonly blocks: readonly Block[];
+  /**
+   * A line at the foot of EVERY page, with the page's number — `page` holds
+   * `{page}` and `{pages}`. Only a signed copy has one; every other kind is
+   * laid out exactly as it always was.
+   */
+  readonly footer?: { readonly text: string; readonly page: string };
 }
 
 export interface LayoutInput {
@@ -268,6 +309,7 @@ function shortPrint(print: string): string {
 }
 
 export function layout(input: LayoutInput): Document {
+  if (input.kind === SIGNED_COPY) return signedCopyLayout(input);
   const { kind, body, facts, words, formats } = input;
   const isVoid = facts.status === 'void' || (kind === 'receipt' && facts.receipt.voided);
   const voidDay = facts.voidedOn === '' ? '' : formats.day(facts.voidedOn);
@@ -854,4 +896,80 @@ function footBlock(input: LayoutInput, isVoid: boolean, voidDay: string): FootBl
 
   if (payLines.length === 0 && payOnline === null && footText === '') return null;
   return { kind: 'foot', payLabel, payLines, ...(payOnline === null ? {} : { payOnline }), footLabel: footText === '' ? '' : footLabel, footText };
+}
+
+/**
+ * A signed copy: the letterhead, whom it is for beside the work, where and
+ * when; the title; the checks; what was still to put right; who signed, with
+ * the signature; and on every page a line saying what the copy is.
+ *
+ * WHAT IT NEVER CARRIES: a number, an amount, a pay box or the business's
+ * own footer for invoices. It is a record of a handover, and the only words
+ * of the business on it are its name and its lines.
+ */
+function signedCopyLayout(input: LayoutInput): Document {
+  const { body, facts, words, formats } = input;
+  const copy = facts.signedCopy;
+  const day = (value: string) => (value === '' ? '' : formats.day(value));
+
+  const toLines = body.customer.filter((line) => line !== '');
+  const nobody = body.customerName === '' && toLines.length === 0;
+  const blocks: Block[] = [
+    letterheadBlock(input),
+    {
+      kind: 'parties',
+      toLabel: nobody ? '' : words.signedFor,
+      toName: body.customerName,
+      toLines,
+      meta: [
+        wordsRow(words.work, copy.work),
+        wordsRow(words.site, copy.site),
+        row(words.doneOn, day(copy.doneOn)),
+        row(words.signedOn, copy.signedAt === '' ? '' : formats.moment(copy.signedAt)),
+      ].filter(notEmpty),
+    },
+    { kind: 'title', text: words.kindSignedCopy },
+  ];
+
+  if (copy.checks.length > 0) {
+    blocks.push({
+      kind: 'checks',
+      heading: words.whatWasChecked,
+      rows: copy.checks.map((check) => ({
+        label: check.what !== '' ? check.what : fill(words.checkNumber, { number: formats.quantity(String(check.number)) }),
+        answer: check.done ? words.yes : words.no,
+        done: check.done,
+      })),
+    });
+  }
+
+  if (copy.snags !== null) {
+    blocks.push({
+      kind: 'snags',
+      heading: words.stillToPutRight,
+      rows: copy.snags.map((snag) => ({ what: snag.what, by: snag.by === '' ? '' : fill(words.byDay, { day: day(snag.by) }), note: snag.note })),
+      empty: words.nothingLeft,
+    });
+  }
+
+  blocks.push({
+    kind: 'signoff',
+    heading: words.signedBy,
+    picture: copy.signature,
+    pictureLabel: fill(words.signatureOf, { name: copy.signerName }),
+    name: [copy.signerName, copy.signerRole].filter((part) => part !== '').join(', '),
+    time: copy.signedAt === '' ? '' : formats.moment(copy.signedAt),
+  });
+
+  const business = facts.letterhead.name !== '' ? facts.letterhead.name : body.logoText;
+  return {
+    locale: input.locale,
+    rtl: input.rtl,
+    accent: body.accent,
+    voidMark: null,
+    // The name a reader knows it by, and the one its file carries: never a code.
+    name: [words.kindSignedCopy, copy.work].filter((part) => part !== '').join(', '),
+    blocks,
+    footer: { text: fill(words.signedCopyFooter, { business }).trim(), page: words.pageOf },
+  };
 }

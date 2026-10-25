@@ -21,6 +21,7 @@ import type {
   DocumentError,
   DocumentKind,
   DocumentOutline,
+  DocumentPictureValue,
   DocumentRenderer,
   DocumentSubject,
   OutlineSlot,
@@ -30,9 +31,23 @@ import { isDocumentError } from '../contracts/document-render.ts';
 import {
   documentKindSchema,
   documentOutlineSchema,
+  documentPictureValueSchema,
+  documentQrValueSchema,
   localizedTextSchema,
   renderedDocumentSchema,
 } from './schemas.ts';
+
+/**
+ * A `picture` slot's value as the host hands it over: a 1 × 1 PNG, as the
+ * host reads it from a file a column of the row holds (a drawn signature).
+ * The same value as the engine's own fixture.
+ */
+export const SAMPLE_DOCUMENT_PICTURE: DocumentPictureValue = {
+  mediaType: 'image/png',
+  dataUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVR4nGNgAAAAAgABc3UBGAAAAABJRU5ErkJggg==',
+  width: 1,
+  height: 1,
+};
 
 /**
  * What an implementer supplies. Deliberately three fields, not ten.
@@ -334,6 +349,43 @@ export function describeDocumentRenderer(
           if (slot.type === 'money' || slot.type === 'percent') {
             expect(Number.isInteger(value), `${kind.id}.${slot.id} is ${String(value)}`).toBe(true);
           }
+        }
+      }
+    });
+
+    it('is given a QR code as the host draws it: its text, its modules and a PNG', () => {
+      // The host encodes a `qr` slot (a provider needs no encoder); a fixture holding anything else tests a shape no host sends.
+      for (const kind of kinds) {
+        const outline = impl.describe(kind.id);
+        const subject = fixtures.subject(kind);
+        for (const slot of outline.slots) {
+          const columns = slot.type === 'collection' ? (slot.columns ?? []).filter((column) => column.type === 'qr') : [];
+          for (const column of columns) {
+            for (const row of subject.collections[slot.id] ?? []) {
+              const cell = row[column.id];
+              if (cell === undefined || cell === null) continue;
+              expect(documentQrValueSchema.safeParse(cell).success, `${kind.id}.${slot.id}[].${column.id}`).toBe(true);
+            }
+          }
+          if (slot.type !== 'qr') continue;
+          const value = subject.fields[slot.id];
+          if (value === undefined || value === null) continue;
+          expect(documentQrValueSchema.safeParse(value).success, `${kind.id}.${slot.id}`).toBe(true);
+        }
+      }
+    });
+
+    it('is given a picture as the host hands it over: a PNG or a JPEG, its size, never in a list', () => {
+      // The host reads the file and judges it (`DocumentPictureValue`); a fixture holding anything else tests a shape no host sends.
+      for (const kind of kinds) {
+        const outline = impl.describe(kind.id);
+        const subject = fixtures.subject(kind);
+        for (const slot of outline.slots) {
+          expect((slot.columns ?? []).some((column) => column.type === 'picture'), `${kind.id}.${slot.id}[] holds a picture`).toBe(false);
+          if (slot.type !== 'picture') continue;
+          const value = subject.fields[slot.id];
+          if (value === undefined || value === null) continue;
+          expect(documentPictureValueSchema.safeParse(value).success, `${kind.id}.${slot.id}`).toBe(true);
         }
       }
     });

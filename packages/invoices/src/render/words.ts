@@ -144,6 +144,31 @@ export interface LayoutWords {
   readonly notes: string;
   readonly payment: string;
   readonly noPdf: string;
+  /** A signed copy: its name, and the heading over whom it is for. */
+  readonly kindSignedCopy: string;
+  readonly signedFor: string;
+  /** Its facts: the work, where, the day it was done, and when it was signed. */
+  readonly work: string;
+  readonly site: string;
+  readonly doneOn: string;
+  readonly signedOn: string;
+  readonly whatWasChecked: string;
+  /** A check's answer. */
+  readonly yes: string;
+  readonly no: string;
+  readonly stillToPutRight: string;
+  readonly nothingLeft: string;
+  /** The day a snag is to be put right by: `{day}` is already written out. */
+  readonly byDay: string;
+  readonly signedBy: string;
+  /** The foot of every page: `{business}` is the business's own name. */
+  readonly signedCopyFooter: string;
+  /** `{page}` and `{pages}` are already written out. */
+  readonly pageOf: string;
+  /** A check the app gave no words for. */
+  readonly checkNumber: string;
+  /** What a reader that cannot see the picture is told it is. */
+  readonly signatureOf: string;
 }
 
 const WORDS: Readonly<Record<string, LayoutWords>> = {
@@ -242,6 +267,23 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     notes: 'Notes',
     payment: 'How to settle',
     noPdf: 'For this language, use Print and choose Save as PDF.',
+    kindSignedCopy: 'Signed copy',
+    signedFor: 'For',
+    work: 'Work',
+    site: 'Site',
+    doneOn: 'Done',
+    signedOn: 'Signed',
+    whatWasChecked: 'What was checked',
+    yes: 'Yes',
+    no: 'No',
+    stillToPutRight: 'Still to put right when it was signed',
+    nothingLeft: 'Nothing was left to put right.',
+    byDay: 'By {day}',
+    signedBy: 'Signed by',
+    signedCopyFooter: 'This copy records what was checked and signed on site. {business} keeps the original.',
+    pageOf: 'Page {page} of {pages}',
+    checkNumber: 'Check {number}',
+    signatureOf: 'Signature of {name}',
   },
   'de-DE': {
     from: 'Von',
@@ -338,6 +380,23 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     notes: 'Hinweise',
     payment: 'Zahlungsweg',
     noPdf: 'Für diese Sprache: Drucken wählen und als PDF sichern.',
+    kindSignedCopy: 'Unterschriebene Kopie',
+    signedFor: 'Für',
+    work: 'Arbeit',
+    site: 'Ort',
+    doneOn: 'Erledigt',
+    signedOn: 'Unterschrieben',
+    whatWasChecked: 'Was geprüft wurde',
+    yes: 'Ja',
+    no: 'Nein',
+    stillToPutRight: 'Bei der Unterschrift noch offen',
+    nothingLeft: 'Es war nichts mehr zu beheben.',
+    byDay: 'Bis {day}',
+    signedBy: 'Unterschrieben von',
+    signedCopyFooter: 'Diese Kopie hält fest, was vor Ort geprüft und unterschrieben wurde. {business} bewahrt das Original auf.',
+    pageOf: 'Seite {page} von {pages}',
+    checkNumber: 'Prüfpunkt {number}',
+    signatureOf: 'Unterschrift von {name}',
   },
   'fr-FR': {
     from: 'De',
@@ -434,6 +493,23 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     notes: 'Notes',
     payment: 'Modalités de règlement',
     noPdf: 'Pour cette langue, utilisez Imprimer puis Enregistrer en PDF.',
+    kindSignedCopy: 'Copie signée',
+    signedFor: 'Pour',
+    work: 'Travaux',
+    site: 'Lieu',
+    doneOn: 'Terminé le',
+    signedOn: 'Signé le',
+    whatWasChecked: 'Ce qui a été vérifié',
+    yes: 'Oui',
+    no: 'Non',
+    stillToPutRight: 'Restait à reprendre à la signature',
+    nothingLeft: 'Il ne restait rien à reprendre.',
+    byDay: 'Avant le {day}',
+    signedBy: 'Signé par',
+    signedCopyFooter: 'Cette copie consigne ce qui a été vérifié et signé sur place. {business} conserve l’original.',
+    pageOf: 'Page {page} sur {pages}',
+    checkNumber: 'Vérification {number}',
+    signatureOf: 'Signature de {name}',
   },
   'cs-CZ': {
     from: 'Od',
@@ -530,6 +606,23 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     notes: 'Poznámky',
     payment: 'Jak uhradit',
     noPdf: 'U tohoto jazyka zvolte Tisk a uložte jako PDF.',
+    kindSignedCopy: 'Podepsaná kopie',
+    signedFor: 'Komu',
+    work: 'Práce',
+    site: 'Místo',
+    doneOn: 'Hotovo',
+    signedOn: 'Podepsáno',
+    whatWasChecked: 'Co bylo zkontrolováno',
+    yes: 'Ano',
+    no: 'Ne',
+    stillToPutRight: 'Při podpisu zbývalo napravit',
+    nothingLeft: 'Nic nezbývalo napravit.',
+    byDay: 'Do {day}',
+    signedBy: 'Kdo podepsal',
+    signedCopyFooter: 'Tato kopie zaznamenává, co bylo na místě zkontrolováno a podepsáno. Originál uchovává {business}.',
+    pageOf: 'Strana {page} z {pages}',
+    checkNumber: 'Kontrola {number}',
+    signatureOf: 'Podpis: {name}',
   },
   'da-DK': {
     from: 'Fra',
@@ -626,6 +719,23 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     notes: 'Noter',
     payment: 'Sådan betales der',
     noPdf: 'Her: vælg Udskriv, og gem som PDF.',
+    kindSignedCopy: 'Underskrevet kopi',
+    signedFor: 'Til',
+    work: 'Arbejde',
+    site: 'Sted',
+    doneOn: 'Udført',
+    signedOn: 'Underskrevet',
+    whatWasChecked: 'Hvad der blev kontrolleret',
+    yes: 'Ja',
+    no: 'Nej',
+    stillToPutRight: 'Stadig at udbedre ved underskriften',
+    nothingLeft: 'Der var intet tilbage at udbedre.',
+    byDay: 'Senest {day}',
+    signedBy: 'Underskrevet af',
+    signedCopyFooter: 'Denne kopi viser, hvad der blev kontrolleret og underskrevet på stedet. {business} opbevarer originalen.',
+    pageOf: 'Side {page} af {pages}',
+    checkNumber: 'Kontrol {number}',
+    signatureOf: 'Underskrift af {name}',
   },
   'zh-CN': {
     from: '开具方',
@@ -722,6 +832,23 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     notes: '备注',
     payment: '结算办法',
     noPdf: '此语言请使用“打印”并选择“另存为 PDF”。',
+    kindSignedCopy: '签字副本',
+    signedFor: '客户',
+    work: '工作内容',
+    site: '地点',
+    doneOn: '完工日期',
+    signedOn: '签字时间',
+    whatWasChecked: '检查项目',
+    yes: '是',
+    no: '否',
+    stillToPutRight: '签字时尚待处理',
+    nothingLeft: '签字时没有待处理的事项。',
+    byDay: '{day}前',
+    signedBy: '签字人',
+    signedCopyFooter: '本副本记录了现场检查并签字的内容。原件由{business}保存。',
+    pageOf: '第 {page} 页，共 {pages} 页',
+    checkNumber: '检查 {number}',
+    signatureOf: '{name}的签名',
   },
   'zh-TW': {
     from: '開立方',
@@ -818,6 +945,23 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     notes: '備註',
     payment: '結算辦法',
     noPdf: '此語言請使用「列印」並選擇「另存為 PDF」。',
+    kindSignedCopy: '簽字副本',
+    signedFor: '客戶',
+    work: '工作內容',
+    site: '地點',
+    doneOn: '完工日期',
+    signedOn: '簽字時間',
+    whatWasChecked: '檢查項目',
+    yes: '是',
+    no: '否',
+    stillToPutRight: '簽字時尚待處理',
+    nothingLeft: '簽字時沒有待處理的事項。',
+    byDay: '{day}前',
+    signedBy: '簽字人',
+    signedCopyFooter: '本副本記錄了現場檢查並簽字的內容。原件由{business}保存。',
+    pageOf: '第 {page} 頁，共 {pages} 頁',
+    checkNumber: '檢查 {number}',
+    signatureOf: '{name}的簽名',
   },
   'ar-EG': {
     from: 'من',
@@ -914,6 +1058,23 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     notes: 'ملاحظات',
     payment: 'طريقة السداد',
     noPdf: 'لهذه اللغة، استخدم الطباعة واختر الحفظ بصيغة PDF.',
+    kindSignedCopy: 'نسخة موقّعة',
+    signedFor: 'لصالح',
+    work: 'العمل',
+    site: 'الموقع',
+    doneOn: 'تم في',
+    signedOn: 'وُقّعت في',
+    whatWasChecked: 'ما تم فحصه',
+    yes: 'نعم',
+    no: 'لا',
+    stillToPutRight: 'ما بقي لإصلاحه عند التوقيع',
+    nothingLeft: 'لم يبقَ شيء لإصلاحه.',
+    byDay: 'قبل {day}',
+    signedBy: 'وقّعها',
+    signedCopyFooter: 'تسجّل هذه النسخة ما تم فحصه وتوقيعه في الموقع. تحتفظ {business} بالأصل.',
+    pageOf: 'صفحة {page} من {pages}',
+    checkNumber: 'فحص {number}',
+    signatureOf: 'توقيع {name}',
   },
 };
 

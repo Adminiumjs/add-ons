@@ -69,6 +69,7 @@ export {
 export {
   addressSchema,
   artworkRefSchema,
+  documentPictureValueSchema,
   jobSpecSchema,
   parcelSchema,
   personalizationSchema,
@@ -91,6 +92,7 @@ export {
 
 export {
   describeDocumentRenderer,
+  SAMPLE_DOCUMENT_PICTURE,
   type DocumentRendererFixtures,
 } from './document-render.ts';
 export {

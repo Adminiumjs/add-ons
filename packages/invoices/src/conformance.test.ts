@@ -15,7 +15,9 @@ import { describeDocumentRenderer } from '@adminium/add-on-host/testing';
 import { describe, expect, it } from 'vitest';
 
 import { emptyBody } from './document.ts';
-import { isPurchaseOrder } from './kinds.ts';
+import { SAMPLE_DOCUMENT_PICTURE } from '@adminium/add-on-host/testing';
+
+import { isPurchaseOrder, SIGNED_COPY } from './kinds.ts';
 import provider from './server.ts';
 
 /**
@@ -80,6 +82,19 @@ function subjectFor(kind: string) {
       ...(isPurchaseOrder(kind)
         ? { supplierName: 'Mill & Grain Supply', supplierEmail: 'orders@example.test', expectedBy: '2026-09-15', deliverTo: 'Harbour kitchen', total: 39_600 }
         : {}),
+      // A signed copy names the work and who signed; its signature is the picture the host hands over.
+      ...(kind === SIGNED_COPY
+        ? {
+            work: 'Studio meeting tables',
+            signedAt: '2026-09-09T15:00:00.000Z',
+            signerName: 'Ada Lindqvist',
+            checks: 'Everything on the list is on site\nKeys handed over',
+            check1: true,
+            check2: 0,
+            snags: '[]',
+            signature: SAMPLE_DOCUMENT_PICTURE,
+          }
+        : {}),
     },
     collections: {
       items: isPurchaseOrder(kind)
@@ -105,7 +120,7 @@ describeDocumentRenderer(provider, {
    * would test a value an operator never maps and the engine always supplies.
    * An order has no customer: the name it draws is the supplier's.
    */
-  textSlot: (kind) => (isPurchaseOrder(kind.id) ? 'supplierName' : 'customerName'),
+  textSlot: (kind) => (isPurchaseOrder(kind.id) ? 'supplierName' : kind.id === SIGNED_COPY ? 'signerName' : 'customerName'),
 });
 
 describe('the invoices provider draws what it was asked for', () => {
@@ -349,7 +364,7 @@ describe('the invoices provider draws what it was asked for', () => {
     expect(isDocumentError(outcome)).toBe(false);
   });
 
-  it('gives every kind a filename carrying its number, and a statement its day', async () => {
+  it('gives every kind a filename carrying its number, a statement its day and a signed copy its work', async () => {
     for (const kind of provider.kinds()) {
       const outcome = await provider.render({
         kind: kind.id,
@@ -360,8 +375,9 @@ describe('the invoices provider draws what it was asked for', () => {
       });
       if (isDocumentError(outcome)) throw new Error(`${kind.id}: ${JSON.stringify(outcome)}`);
       for (const document of outcome) {
-        // A statement is in no series; it is named by the day it runs to.
-        const number = kind.id === 'statement' ? '2026-09-10' : 'INV-1042';
+        // A statement is in no series; it is named by the day it runs to. A
+        // signed copy is in none either, and is named by the work it records.
+        const number = kind.id === 'statement' ? '2026-09-10' : kind.id === SIGNED_COPY ? 'Studio-meeting-tables' : 'INV-1042';
         expect(document.filename).toBe(`${kind.id}-${number}.${document.format}`);
       }
     }

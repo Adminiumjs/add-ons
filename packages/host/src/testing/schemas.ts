@@ -212,6 +212,7 @@ const outlineSlotShape = {
     'number',
     'collection',
     'qr',
+    'picture',
   ]),
   required: z.boolean(),
   default: z.enum(['sequence', 'connection', 'setting', 'now', 'pay-link']).optional(),
@@ -231,8 +232,35 @@ export const documentQrValueSchema = z
     path: ['modules'],
   });
 
-/** One column of a `collection`. A column is never itself a collection. */
-export const outlineLeafSlotSchema = z.object(outlineSlotShape).strict();
+/**
+ * A `picture` slot's value, as the host hands it over (the engine's
+ * `documentPictureValueSchema`): a PNG or a JPEG as a data URL, and its size.
+ */
+export const documentPictureValueSchema = z
+  .object({
+    mediaType: z.enum(['image/png', 'image/jpeg']),
+    dataUrl: z.string().regex(/^data:image\/(png|jpeg);base64,[A-Za-z0-9+/]+={0,2}$/),
+    width: z.number().int().min(1).max(8192),
+    height: z.number().int().min(1).max(8192),
+  })
+  .strict()
+  .refine((value) => value.dataUrl.startsWith(`data:${value.mediaType};base64,`), {
+    message: 'the data URL holds the picture of the kind it names',
+    path: ['dataUrl'],
+  });
+
+/**
+ * One column of a `collection`. A column is never itself a collection (it
+ * has no `columns`), and never a picture: a list of a thousand lines is no
+ * place to read a thousand files.
+ */
+export const outlineLeafSlotSchema = z
+  .object(outlineSlotShape)
+  .strict()
+  .refine((slot) => slot.type !== 'picture', {
+    message: 'a collection column is never a picture',
+    path: ['type'],
+  });
 
 /**
  * Two levels, and the third is refused. `OutlineSlot.columns` is typed as a

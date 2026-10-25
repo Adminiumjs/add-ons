@@ -79,6 +79,11 @@ export interface Formats {
   quantity(decimal: string): string;
   /** A percentage (`20`, `8.875`) → the printed rate. */
   percent(value: number): string;
+  /**
+   * An instant (`2026-07-25T15:00:00Z`) → its day and time where the business
+   * is; a plain day is written as `day` writes it, anything else as it came.
+   */
+  moment(value: string): string;
 }
 
 /** `Intl`'s formatters take exact decimal text; the ES2022 types only say so for numbers. */
@@ -101,7 +106,7 @@ function intl(locale: string, options: Intl.NumberFormatOptions): Formatter {
  * `cents` is the authored template's own "show the cents" switch, honoured
  * only where the currency is a typed symbol.
  */
-export function formatsFor(locale: string, currency: string, options: { latin: boolean; cents: boolean }): Formats {
+export function formatsFor(locale: string, currency: string, options: { latin: boolean; cents: boolean; timezone?: string }): Formats {
   const digits = currencyDigits(currency);
   let money: (decimal: string) => string;
   if (isCurrencyCode(currency)) {
@@ -130,18 +135,43 @@ export function formatsFor(locale: string, currency: string, options: { latin: b
     days = new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
   }
 
+  /*
+   * The time of day is the only thing on a document that depends on a zone,
+   * and the zone is the business's (the subject's own `now`), never the
+   * reader's: a copy signed at four in the afternoon in Leeds says four in the
+   * afternoon wherever it is opened.
+   */
+  const momentOptions: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
+  let moments: Intl.DateTimeFormat;
+  try {
+    moments = new Intl.DateTimeFormat(locale, { ...momentOptions, timeZone: options.timezone ?? 'UTC' });
+  } catch {
+    moments = new Intl.DateTimeFormat('en-US', { ...momentOptions, timeZone: 'UTC' });
+  }
+
+  const day = (value: string): string => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+    // A day the calendar does not have — month 13, 30 February — is printed
+    // as the app stored it: never a thrown error that loses the whole
+    // document, and never the day the date arithmetic rolls it over to.
+    const at = new Date(`${value}T00:00:00.000Z`);
+    return Number.isNaN(at.getTime()) || at.toISOString().slice(0, 10) !== value ? value : days.format(at);
+  };
+
   return {
     money,
-    day: (value) => {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
-      // A day the calendar does not have — month 13, 30 February — is printed
-      // as the app stored it: never a thrown error that loses the whole
-      // document, and never the day the date arithmetic rolls it over to.
-      const at = new Date(`${value}T00:00:00.000Z`);
-      return Number.isNaN(at.getTime()) || at.toISOString().slice(0, 10) !== value ? value : days.format(at);
-    },
+    day,
     quantity: (decimal) => (/^-?\d+(\.\d+)?$/.test(decimal) ? quantity.format(decimal) : decimal),
     percent: (value) => percent.format(value / 100),
+    moment: (value) => {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return day(value);
+      if (!/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(value)) return value;
+      // A stored instant with no zone of its own is UTC, as Adminium stores one —
+      // never the zone of the machine drawing it, or two servers would disagree.
+      const iso = value.replace(' ', 'T');
+      const at = new Date(/(Z|[+-]\d{2}:?\d{2})$/.test(iso) ? iso : `${iso}Z`);
+      return Number.isNaN(at.getTime()) ? value : moments.format(at);
+    },
   };
 }
 

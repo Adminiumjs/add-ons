@@ -251,6 +251,8 @@
   "column|Lines not posted": "未過帳行數",
   "column|Lines posted": "已過帳行數",
   "column|Lines to check": "待檢查的明細",
+  "column|Late": "延遲",
+  "column|Days late": "延遲天數",
   "action|Continue": "繼續",
   "action|Undo or send back": "復原或退回",
   "table|Receipt line": "收貨明細",

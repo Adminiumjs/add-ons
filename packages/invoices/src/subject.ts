@@ -42,7 +42,7 @@
 
 import type { DocumentError, DocumentSubject, OutlineSlot } from '@adminium/add-on-host/contracts';
 
-import { describe, isPurchaseOrder } from './kinds.ts';
+import { describe, isPurchaseOrder, SIGNED_COPY_CHECKS } from './kinds.ts';
 import type { InvoiceBody, LineItem } from './document.ts';
 import { emptyBody, normalizeInvoiceBody } from './document.ts';
 import { currencyDigits, dayIn, isCurrencyCode, minorToDecimal } from './render/format.ts';
@@ -333,6 +333,94 @@ export interface OrderLine {
   readonly amount: string | null;
 }
 
+/**
+ * A picture the host handed over, as the page may draw it: a PNG or a JPEG
+ * data URL and its size in pixels. Anything else is no picture.
+ */
+export interface Picture {
+  readonly mediaType: 'image/png' | 'image/jpeg';
+  readonly dataUrl: string;
+  readonly width: number;
+  readonly height: number;
+}
+
+/** A picture value exactly as the host makes one, or `null`. Never trusted further than that. */
+export function pictureOf(value: unknown): Picture | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const { mediaType, dataUrl, width, height } = value as Record<string, unknown>;
+  if (mediaType !== 'image/png' && mediaType !== 'image/jpeg') return null;
+  if (typeof dataUrl !== 'string' || !dataUrl.startsWith(`data:${mediaType};base64,`)) return null;
+  if (!/^data:image\/(png|jpeg);base64,[A-Za-z0-9+/]+={0,2}$/.test(dataUrl)) return null;
+  const side = (n: unknown): n is number => typeof n === 'number' && Number.isInteger(n) && n >= 1 && n <= 8192;
+  if (!side(width) || !side(height)) return null;
+  return { mediaType, dataUrl, width, height };
+}
+
+/** One check on a signed copy: its words, and whether it was ticked. */
+export interface SignedCheck {
+  /** `''` when the app gave no words: the layout calls it by its number. */
+  readonly what: string;
+  readonly number: number;
+  readonly done: boolean;
+}
+
+/** One thing still to put right when the copy was signed. */
+export interface SignedSnag {
+  readonly what: string;
+  /** `YYYY-MM-DD`, or `''`. */
+  readonly by: string;
+  readonly note: string;
+}
+
+/**
+ * The checks as printed: one for each answer the app mapped and set, in
+ * order, with the words of the same line of `checks`.
+ */
+function checksFrom(fields: Readonly<Record<string, unknown>>): SignedCheck[] {
+  const words = linesOf(fields.checks).map((line) => line.trim());
+  const out: SignedCheck[] = [];
+  for (let number = 1; number <= SIGNED_COPY_CHECKS; number += 1) {
+    const answer = fields[`check${String(number)}`];
+    if (answer === undefined || answer === null || answer === '') continue;
+    out.push({ what: words[number - 1] ?? '', number, done: flagOf(answer) });
+  }
+  return out;
+}
+
+/**
+ * The snags open when the copy was signed, as the app wrote them: a JSON
+ * list of `{ what, by, note }`, or plain lines with one snag each. `null`
+ * when the app wrote nothing (no list is printed); `[]` when it wrote an
+ * empty list (the copy says nothing was left).
+ */
+function snagsFrom(value: unknown): SignedSnag[] | null {
+  const text = textOf(value).trim();
+  if (text === '') return null;
+  if (text.startsWith('[')) {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      parsed = undefined;
+    }
+    if (Array.isArray(parsed)) {
+      return parsed
+        .map((entry): SignedSnag | null => {
+          if (typeof entry === 'string') return entry.trim() === '' ? null : { what: entry.trim(), by: '', note: '' };
+          if (typeof entry !== 'object' || entry === null) return null;
+          const row = entry as Record<string, unknown>;
+          const what = textOf(row.what ?? row.text).trim();
+          return what === '' ? null : { what, by: dateOf(row.by).trim(), note: textOf(row.note).trim() };
+        })
+        .filter((snag): snag is SignedSnag => snag !== null);
+    }
+  }
+  return linesOf(text)
+    .map((line) => line.trim())
+    .filter((line) => line !== '')
+    .map((what) => ({ what, by: '', note: '' }));
+}
+
 /** The letterhead as the document prints it, from the subject and, behind it, the settings. */
 export interface Letterhead {
   readonly name: string;
@@ -420,6 +508,20 @@ export interface SubjectFacts {
     /** `YYYY-MM-DD`, or `''`. */
     readonly expectedBy: string;
     readonly lines: readonly OrderLine[];
+  };
+  /** What a customer signed on site. Empty for every other kind. */
+  readonly signedCopy: {
+    readonly work: string;
+    readonly site: string;
+    /** `YYYY-MM-DD`, or `''`. */
+    readonly doneOn: string;
+    /** The instant as the app stored it, or `''`. */
+    readonly signedAt: string;
+    readonly signerName: string;
+    readonly signerRole: string;
+    readonly signature: Picture | null;
+    readonly checks: readonly SignedCheck[];
+    readonly snags: readonly SignedSnag[] | null;
   };
 }
 
@@ -615,6 +717,17 @@ export function documentFrom(
       deliverLines: linesOf(field('deliverLines')),
       expectedBy: dateOf(field('expectedBy')).trim(),
       lines: order ? orderLinesFrom(itemsSlot, subject, scale) : [],
+    },
+    signedCopy: {
+      work: textOf(field('work')).trim(),
+      site: textOf(field('site')).trim(),
+      doneOn: dateOf(field('doneOn')).trim(),
+      signedAt: textOf(field('signedAt')).trim(),
+      signerName: textOf(field('signerName')).trim(),
+      signerRole: textOf(field('signerRole')).trim(),
+      signature: pictureOf(field('signature')),
+      checks: checksFrom(subject.fields),
+      snags: snagsFrom(field('snags')),
     },
   };
 

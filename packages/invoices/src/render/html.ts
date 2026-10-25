@@ -134,6 +134,26 @@ const PAY_ONLINE_STYLES = `
 .foot .pay-online { overflow-wrap: anywhere; }
 .foot .pay-qr { inline-size: 96px; block-size: 96px; margin-block-start: 6px; image-rendering: pixelated; }`;
 
+/**
+ * A signed copy's lists, signature and page foot, added only to a page that
+ * carries them, for the same reason.
+ */
+const SIGNED_COPY_STYLES = `
+.list { margin-block-start: 18px; }
+.list .label { display: block; padding-block-end: 6px; border-block-end: 1px solid var(--line); }
+.list .item { display: flex; justify-content: space-between; gap: 16px; padding: 6px 0; border-block-end: 1px solid var(--line); }
+.list .ans { color: var(--mid); white-space: nowrap; }
+.list .ans.no { color: var(--ink); font-weight: 700; }
+.list .what { font-weight: 700; min-inline-size: 0; }
+.list .what .note { display: block; font-size: 11px; font-weight: 400; color: var(--mut); }
+.list .by { color: var(--mid); white-space: nowrap; }
+.list .empty { padding: 6px 0; color: var(--mid); }
+.signoff { margin-block-start: 22px; break-inside: avoid; }
+.signoff .sig { display: block; max-inline-size: 340px; max-block-size: 138px; margin-block-start: 8px; padding-block-end: 2px; border-block-end: 1px solid var(--line); background: #ffffff; object-fit: contain; }
+.signoff .who { margin-block-start: 8px; font-weight: 700; }
+.signoff .when { color: var(--mid); }
+.page-foot { margin-block-start: 36px; padding-block-start: 8px; border-block-start: 1px solid var(--line); font-size: 10.5px; color: var(--mut); }`;
+
 /** A figure, isolated so a right-to-left page never reorders its parts. */
 const figure = (value: string): string => `<span class="fig">${escapeHtml(value)}</span>`;
 
@@ -294,6 +314,46 @@ function block(entry: Block): string {
 
     case 'signature':
       return `<div class="signature">${escapeHtml(entry.text)}</div>`;
+
+    case 'checks':
+      return (
+        '<section class="list">' +
+        `<span class="label">${escapeHtml(entry.heading)}</span>` +
+        entry.rows
+          .map((row) => `<div class="item"><span>${own(row.label)}</span><span class="ans${row.done ? '' : ' no'}">${escapeHtml(row.answer)}</span></div>`)
+          .join('') +
+        '</section>'
+      );
+
+    case 'snags':
+      return (
+        '<section class="list">' +
+        `<span class="label">${escapeHtml(entry.heading)}</span>` +
+        (entry.rows.length === 0
+          ? `<div class="empty">${escapeHtml(entry.empty)}</div>`
+          : entry.rows
+              .map(
+                (row) =>
+                  `<div class="item"><span class="what">${own(row.what)}` +
+                  (row.note === '' ? '' : `<span class="note">${own(row.note)}</span>`) +
+                  '</span>' +
+                  (row.by === '' ? '' : `<span class="by">${escapeHtml(row.by)}</span>`) +
+                  '</div>',
+              )
+              .join('')) +
+        '</section>'
+      );
+
+    case 'signoff':
+      return (
+        '<section class="signoff">' +
+        `<span class="label">${escapeHtml(entry.heading)}</span>` +
+        // The picture as the host handed it over, already checked to be a PNG or JPEG data URL (`pictureOf`).
+        (entry.picture === null ? '' : `<img class="sig" alt="${escapeHtml(entry.pictureLabel)}" src="${escapeHtml(entry.picture.dataUrl)}">`) +
+        (entry.name === '' ? '' : `<div class="who">${own(entry.name)}</div>`) +
+        (entry.time === '' ? '' : `<div class="when">${escapeHtml(entry.time)}</div>`) +
+        '</section>'
+      );
   }
 }
 
@@ -319,12 +379,16 @@ export function renderHtml(document: Document, paper: string): Uint8Array {
     '<head><meta charset="utf-8">' +
     '<meta name="viewport" content="width=device-width, initial-scale=1">' +
     `<title>${escapeHtml(title)}</title>` +
-    `<style>${styles(document.accent, paper)}${document.blocks.some((entry) => entry.kind === 'foot' && entry.payOnline !== undefined) ? PAY_ONLINE_STYLES : ''}</style>` +
+    `<style>${styles(document.accent, paper)}${document.blocks.some((entry) => entry.kind === 'foot' && entry.payOnline !== undefined) ? PAY_ONLINE_STYLES : ''}${document.footer === undefined ? '' : SIGNED_COPY_STYLES}</style>` +
     '</head><body><main class="sheet">' +
     (document.voidMark === null
       ? ''
       : `<div class="void" aria-hidden="true"><span>${escapeHtml(document.voidMark)}</span></div>`) +
     document.blocks.map(block).join('') +
+    // The print copy carries the foot once, at the end, and no page number: a
+    // browser's own print header numbers the pages, and the PDF is the copy
+    // with a number on each.
+    (document.footer === undefined ? '' : `<footer class="page-foot">${own(document.footer.text)}</footer>`) +
     '</main></body></html>';
 
   return new TextEncoder().encode(html);
