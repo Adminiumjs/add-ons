@@ -12,7 +12,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import { offendingAddresses, RAW_CONTROL_EXPLANATION, rawControlOffences } from '@adminium/add-on-host/testing';
+import { impuritiesIn, offendingAddresses, RAW_CONTROL_EXPLANATION, rawControlOffences } from '@adminium/add-on-host/testing';
 
 import manifest from '../manifest.json' with { type: 'json' };
 import { COMPANY_MARKS, INERT_ORIGINS, NEVER_IN_A_BROWSER } from './add-on-facts.ts';
@@ -65,6 +65,16 @@ describe('the sources carry nothing that may not ship', () => {
     for (const file of SHIPPED) {
       expect(offendingAddresses(read(file), INERT_ORIGINS), relative(ROOT, file)).toEqual([]);
     }
+  });
+});
+
+describe('the sample is written the same every time', () => {
+  it('reads no clock and rolls no dice where it is made, so the file a script writes is the file the suite holds it to', () => {
+    // Forms has no code that decides inside a save; the one place a run must give the same answer twice is the sample.
+    const code = read(join(SRC, 'sample', 'bundle.ts'))
+      .replace(/\/\*[\s\S]*?\*\//g, ' ')
+      .replace(/\/\/[^\n]*/g, ' ');
+    expect(impuritiesIn(code)).toEqual([]);
   });
 });
 
