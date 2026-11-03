@@ -1,0 +1,95 @@
+/** Danish strings for the Forms & surveys screens. Keys are those of en-US.ts. */
+export const shared: Readonly<Record<string, string>> = {
+  "shared.cancel": "Annuller",
+  "shared.close": "Luk",
+  "shared.failed.title": "Det kunne ikke indlæses",
+  "shared.loading": "Indlæser",
+  "shared.missing.backForms": "Tilbage til formularerne",
+  "shared.missing.backSurveys": "Tilbage til undersøgelserne",
+  "shared.missing.body": "Den kan være slettet, eller linket er ikke helt rigtigt.",
+  "shared.missing.form": "Formularen findes ikke her",
+  "shared.missing.survey": "Undersøgelsen findes ikke her",
+  "shared.refusal.conflict": "En anden ændrede det samtidig. Intet blev gemt. Prøv igen.",
+  "shared.refusal.forbidden": "Du har ikke tilladelse til at gøre dette.",
+  "shared.refusal.notDraft": "Kun en kladde kan slettes. Luk i stedet en formular, der er online.",
+  "shared.refusal.notFound": "Det findes ikke længere.",
+  "shared.refusal.off": "Formularer og undersøgelser er slået fra lige nu.",
+  "shared.refusal.other": "Det kunne ikke gemmes. Prøv igen.",
+  "shared.refusal.rate": "For mange forsøg. Vent et minut.",
+  "shared.refusal.slugTaken": "En anden formular bruger allerede det linknavn.",
+  "shared.refusal.state": "Formularen er ændret i mellemtiden. Åbn den igen for at se, hvor den står.",
+  "shared.refused.body": "Spørg en leder, hvis du har brug for det.",
+  "shared.refused.title": "Du har ikke tilladelse til at åbne dette",
+  "shared.retry": "Prøv igen",
+  "shared.state.closed": "Lukket",
+  "shared.state.draft": "Kladde",
+  "shared.state.live": "Online",
+  "shared.tab.answers": "Svar",
+  "shared.tab.invitations": "Invitationer",
+  "shared.tab.questions": "Spørgsmål",
+  "shared.tab.results": "Resultater",
+  "shared.tab.share": "Del",
+  "shared.tabs.form": "Formularens dele",
+  "shared.tabs.survey": "Undersøgelsens dele"
+};
+
+export const list: Readonly<Record<string, string>> = {
+  "list.answers": "{count, plural, one {# svar} other {# svar}}",
+  "list.closedOn": "Lukket {date}",
+  "list.column.actions": "Handlinger",
+  "list.column.answers": "Svar",
+  "list.column.languages": "Sprog",
+  "list.column.name": "Navn",
+  "list.column.status": "Status",
+  "list.column.updated": "Ændret",
+  "list.delete.body": "“{name}” og dens spørgsmål slettes. Det kan ikke fortrydes.",
+  "list.delete.confirm": "Slet",
+  "list.delete.title": "Slet denne kladde?",
+  "list.deleteDraft": "Slet kladde",
+  "list.deleted": "Kladden er slettet.",
+  "list.empty.forms.body": "Lav en formular, som besøgende på dit website kan udfylde. Hvert svar kan blive en række i en af dine tabeller.",
+  "list.empty.forms.title": "Ingen formularer endnu",
+  "list.empty.surveys.body": "Spørg dine kunder, hvordan en opgave gik. En regel sender undersøgelsen efter opgaven, og hvert svar tælles med i resultaterne.",
+  "list.empty.surveys.title": "Ingen undersøgelser endnu",
+  "list.invited": "{count} inviteret",
+  "list.more": "Viser de {count} senest ændrede.",
+  "list.newForm": "Ny formular",
+  "list.newSurvey": "Ny undersøgelse",
+  "list.score": "anbefalingsscore {score}",
+  "list.tab.forms": "Formularer",
+  "list.tab.surveys": "Undersøgelser",
+  "list.tabs": "Formularer eller undersøgelser",
+  "list.thanksForm": "Tak. Vi har modtaget dine svar.",
+  "list.thanksSurvey": "Tak. Dine svar hjælper os.",
+  "list.title": "Formularer",
+  "list.untitledForm": "Formular uden titel",
+  "list.untitledSurvey": "Undersøgelse uden titel",
+  "list.updated": "Ændret {since}",
+  "list.view": "Visning",
+  "list.view.cards": "Kort",
+  "list.view.list": "Liste"
+};
+
+export const builder: Readonly<Record<string, string>> = {
+  "builder.closeForm": "Luk formularen",
+  "builder.closeSurvey": "Luk undersøgelsen",
+  "builder.languages": "Sprogversioner",
+  "builder.placeholder.questions": "Formularens spørgsmål bygges her.",
+  "builder.preview": "Forhåndsvisning",
+  "builder.publish": "Offentliggør",
+  "builder.saved": "Alle ændringer er gemt",
+  "builder.saving": "Gemmer"
+};
+
+export const answers: Readonly<Record<string, string>> = {
+  "answers.placeholder.answers": "Hvert sendt svar vises her."
+};
+
+export const surveys: Readonly<Record<string, string>> = {
+  "surveys.placeholder.invitations": "Alle, undersøgelsen er sendt til, vises her.",
+  "surveys.placeholder.results": "Undersøgelsens resultater tælles op her."
+};
+
+export const share: Readonly<Record<string, string>> = {
+  "share.placeholder.share": "Linket, QR-koden og linjerne til dit website vises her."
+};

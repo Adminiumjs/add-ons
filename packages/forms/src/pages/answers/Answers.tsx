@@ -1,0 +1,12 @@
+/**
+ * The Answers tab: its own folder's screen, handed the form's row by the
+ * frame (`TabProps`). A placeholder until that screen is built.
+ */
+import type { ReactNode } from 'react';
+
+import { EmptyState } from '../shared/host.ts';
+import type { TabProps } from '../shared/slot.ts';
+
+export function Answers({ t }: TabProps): ReactNode {
+  return <EmptyState compact title={t('answers.placeholder.answers', "Every answer sent is listed here.")} />;
+}

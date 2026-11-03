@@ -1,0 +1,95 @@
+/** German strings for the Forms & surveys screens. Keys are those of en-US.ts. */
+export const shared: Readonly<Record<string, string>> = {
+  "shared.cancel": "Abbrechen",
+  "shared.close": "Schließen",
+  "shared.failed.title": "Das konnte nicht geladen werden",
+  "shared.loading": "Wird geladen",
+  "shared.missing.backForms": "Zurück zu den Formularen",
+  "shared.missing.backSurveys": "Zurück zu den Umfragen",
+  "shared.missing.body": "Vielleicht wurde es gelöscht, oder der Link stimmt nicht ganz.",
+  "shared.missing.form": "Dieses Formular gibt es hier nicht",
+  "shared.missing.survey": "Diese Umfrage gibt es hier nicht",
+  "shared.refusal.conflict": "Jemand anderes hat das gleichzeitig geändert. Es wurde nichts gespeichert. Versuchen Sie es erneut.",
+  "shared.refusal.forbidden": "Sie dürfen das nicht tun.",
+  "shared.refusal.notDraft": "Nur ein Entwurf kann gelöscht werden. Schließen Sie ein Formular, das online ist, stattdessen.",
+  "shared.refusal.notFound": "Das ist nicht mehr vorhanden.",
+  "shared.refusal.off": "Formulare & Umfragen ist gerade ausgeschaltet.",
+  "shared.refusal.other": "Das konnte nicht gespeichert werden. Versuchen Sie es erneut.",
+  "shared.refusal.rate": "Zu viele Versuche. Warten Sie eine Minute.",
+  "shared.refusal.slugTaken": "Diesen Linknamen verwendet schon ein anderes Formular.",
+  "shared.refusal.state": "Dieses Formular hat sich inzwischen geändert. Öffnen Sie es erneut, um den aktuellen Stand zu sehen.",
+  "shared.refused.body": "Fragen Sie die Leitung, wenn Sie es brauchen.",
+  "shared.refused.title": "Sie dürfen das nicht öffnen",
+  "shared.retry": "Erneut versuchen",
+  "shared.state.closed": "Geschlossen",
+  "shared.state.draft": "Entwurf",
+  "shared.state.live": "Online",
+  "shared.tab.answers": "Antworten",
+  "shared.tab.invitations": "Einladungen",
+  "shared.tab.questions": "Fragen",
+  "shared.tab.results": "Ergebnisse",
+  "shared.tab.share": "Teilen",
+  "shared.tabs.form": "Teile des Formulars",
+  "shared.tabs.survey": "Teile der Umfrage"
+};
+
+export const list: Readonly<Record<string, string>> = {
+  "list.answers": "{count, plural, one {# Antwort} other {# Antworten}}",
+  "list.closedOn": "Geschlossen am {date}",
+  "list.column.actions": "Aktionen",
+  "list.column.answers": "Antworten",
+  "list.column.languages": "Sprachen",
+  "list.column.name": "Name",
+  "list.column.status": "Status",
+  "list.column.updated": "Geändert",
+  "list.delete.body": "„{name}“ und seine Fragen werden gelöscht. Das lässt sich nicht rückgängig machen.",
+  "list.delete.confirm": "Löschen",
+  "list.delete.title": "Diesen Entwurf löschen?",
+  "list.deleteDraft": "Entwurf löschen",
+  "list.deleted": "Entwurf gelöscht.",
+  "list.empty.forms.body": "Erstellen Sie ein Formular, das Besucher Ihrer Website ausfüllen können. Jede Antwort kann zu einer Zeile in einer Ihrer Tabellen werden.",
+  "list.empty.forms.title": "Noch keine Formulare",
+  "list.empty.surveys.body": "Fragen Sie Ihre Kundschaft, wie ein Auftrag gelaufen ist. Eine Regel sendet die Umfrage nach dem Auftrag, und jede Antwort fließt in die Ergebnisse ein.",
+  "list.empty.surveys.title": "Noch keine Umfragen",
+  "list.invited": "{count} eingeladen",
+  "list.more": "Angezeigt werden die {count} zuletzt geänderten.",
+  "list.newForm": "Neues Formular",
+  "list.newSurvey": "Neue Umfrage",
+  "list.score": "Empfehlungswert {score}",
+  "list.tab.forms": "Formulare",
+  "list.tab.surveys": "Umfragen",
+  "list.tabs": "Formulare oder Umfragen",
+  "list.thanksForm": "Vielen Dank. Wir haben Ihre Antworten erhalten.",
+  "list.thanksSurvey": "Vielen Dank. Ihre Antworten helfen uns.",
+  "list.title": "Formulare",
+  "list.untitledForm": "Formular ohne Titel",
+  "list.untitledSurvey": "Umfrage ohne Titel",
+  "list.updated": "Geändert {since}",
+  "list.view": "Ansicht",
+  "list.view.cards": "Karten",
+  "list.view.list": "Liste"
+};
+
+export const builder: Readonly<Record<string, string>> = {
+  "builder.closeForm": "Formular schließen",
+  "builder.closeSurvey": "Umfrage schließen",
+  "builder.languages": "Sprachfassungen",
+  "builder.placeholder.questions": "Hier werden die Fragen dieses Formulars erstellt.",
+  "builder.preview": "Vorschau",
+  "builder.publish": "Veröffentlichen",
+  "builder.saved": "Alle Änderungen gespeichert",
+  "builder.saving": "Wird gespeichert"
+};
+
+export const answers: Readonly<Record<string, string>> = {
+  "answers.placeholder.answers": "Hier steht jede gesendete Antwort."
+};
+
+export const surveys: Readonly<Record<string, string>> = {
+  "surveys.placeholder.invitations": "Hier steht jede Person, an die die Umfrage gesendet wurde.",
+  "surveys.placeholder.results": "Hier werden die Ergebnisse der Umfrage ausgezählt."
+};
+
+export const share: Readonly<Record<string, string>> = {
+  "share.placeholder.share": "Hier stehen der Link, der QR-Code und die Zeilen für Ihre Website."
+};
