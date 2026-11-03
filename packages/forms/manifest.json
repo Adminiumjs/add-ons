@@ -18,7 +18,7 @@
     "marketing"
   ],
   "compatibility": {
-    "minAdminiumVersion": "0.3.40",
+    "minAdminiumVersion": "0.3.41",
     "requires": []
   },
   "capabilities": [],
@@ -731,6 +731,9 @@
               "ar-EG": "أصبح صفًا في",
               "zh-CN": "生成的行所在表",
               "zh-TW": "產生的列所在表"
+            },
+            "rules": {
+              "tableRef": true
             }
           },
           {
@@ -1948,6 +1951,243 @@
           "order": 20
         },
         "detail": true
+      }
+    ],
+    "steps": [
+      {
+        "key": "send-survey",
+        "name": {
+          "en-US": "Send a survey",
+          "de-DE": "Umfrage senden",
+          "fr-FR": "Envoyer une enquête",
+          "da-DK": "Send en undersøgelse",
+          "cs-CZ": "Odeslat průzkum",
+          "ar-EG": "إرسال استطلاع",
+          "zh-CN": "发送调查",
+          "zh-TW": "傳送調查"
+        },
+        "does": {
+          "en-US": "Sends one of your surveys to a person, with their own link",
+          "de-DE": "Sendet einer Person eine Ihrer Umfragen mit ihrem eigenen Link",
+          "fr-FR": "Envoie l’une de vos enquêtes à une personne, avec son propre lien",
+          "da-DK": "Sender en af dine undersøgelser til en person med deres eget link",
+          "cs-CZ": "Pošle jeden z vašich průzkumů jedné osobě s jejím vlastním odkazem",
+          "ar-EG": "يرسل أحد استطلاعاتك إلى شخص، مع رابط خاص به",
+          "zh-CN": "将您的一项调查发送给某人，并附上其专属链接",
+          "zh-TW": "將您的一項調查傳送給某人，並附上其專屬連結"
+        },
+        "inputs": [
+          {
+            "key": "survey",
+            "kind": "record",
+            "table": "forms",
+            "by": "slug",
+            "where": [
+              {
+                "column": "kind",
+                "eq": "survey"
+              },
+              {
+                "column": "state",
+                "eq": "live"
+              }
+            ],
+            "required": true,
+            "label": {
+              "en-US": "Survey",
+              "de-DE": "Umfrage",
+              "fr-FR": "Enquête",
+              "da-DK": "Undersøgelse",
+              "cs-CZ": "Průzkum",
+              "ar-EG": "الاستطلاع",
+              "zh-CN": "调查",
+              "zh-TW": "調查"
+            },
+            "help": {
+              "en-US": "Only live surveys are listed.",
+              "de-DE": "Nur Umfragen, die online sind, werden aufgeführt.",
+              "fr-FR": "Seules les enquêtes en ligne sont proposées.",
+              "da-DK": "Kun undersøgelser, der er online, vises.",
+              "cs-CZ": "Nabízejí se jen zveřejněné průzkumy.",
+              "ar-EG": "تظهر الاستطلاعات المنشورة فقط.",
+              "zh-CN": "仅列出已上线的调查。",
+              "zh-TW": "僅列出已上線的調查。"
+            }
+          },
+          {
+            "key": "to",
+            "kind": "person",
+            "required": true,
+            "label": {
+              "en-US": "To",
+              "de-DE": "An",
+              "fr-FR": "À",
+              "da-DK": "Til",
+              "cs-CZ": "Komu",
+              "ar-EG": "إلى",
+              "zh-CN": "发送给",
+              "zh-TW": "傳送給"
+            }
+          },
+          {
+            "key": "class",
+            "kind": "choice",
+            "required": true,
+            "label": {
+              "en-US": "Kind of mail",
+              "de-DE": "Art der E-Mail",
+              "fr-FR": "Type d’e-mail",
+              "da-DK": "Type af mail",
+              "cs-CZ": "Druh e-mailu",
+              "ar-EG": "نوع البريد",
+              "zh-CN": "邮件类型",
+              "zh-TW": "郵件類型"
+            },
+            "options": [
+              {
+                "value": "marketing",
+                "label": {
+                  "en-US": "Marketing mail (default)",
+                  "de-DE": "Werbe-E-Mail (Standard)",
+                  "fr-FR": "E-mail marketing (par défaut)",
+                  "da-DK": "Markedsføringsmail (standard)",
+                  "cs-CZ": "Marketingový e-mail (výchozí)",
+                  "ar-EG": "بريد تسويقي (افتراضي)",
+                  "zh-CN": "营销邮件（默认）",
+                  "zh-TW": "行銷郵件（預設）"
+                },
+                "help": {
+                  "en-US": "Goes only to people who may be e-mailed for Surveys, with an unsubscribe link.",
+                  "de-DE": "Geht nur an Personen, die für Umfragen angeschrieben werden dürfen, mit einem Abmeldelink.",
+                  "fr-FR": "N’est envoyé qu’aux personnes qui acceptent d’être contactées pour les enquêtes, avec un lien de désinscription.",
+                  "da-DK": "Sendes kun til personer, der må få e-mails om undersøgelser, med et link til at framelde sig.",
+                  "cs-CZ": "Odejde jen lidem, kterým smíte psát kvůli průzkumům, s odkazem k odhlášení.",
+                  "ar-EG": "يُرسل فقط إلى من يجوز مراسلتهم بشأن الاستطلاعات، مع رابط لإلغاء الاشتراك.",
+                  "zh-CN": "只发给同意接收调查邮件的人，并附退订链接。",
+                  "zh-TW": "只寄給同意接收調查郵件的人，並附取消訂閱連結。"
+                }
+              },
+              {
+                "value": "service",
+                "label": {
+                  "en-US": "Service mail",
+                  "de-DE": "Service-E-Mail",
+                  "fr-FR": "E-mail de service",
+                  "da-DK": "Servicemail",
+                  "cs-CZ": "Servisní e-mail",
+                  "ar-EG": "بريد خدمة",
+                  "zh-CN": "服务邮件",
+                  "zh-TW": "服務郵件"
+                },
+                "help": {
+                  "en-US": "Use only for mail about work you did for them. People who said no to surveys are still skipped.",
+                  "de-DE": "Nur für E-Mails über Arbeit, die Sie für die Person erledigt haben. Wer Umfragen abgelehnt hat, wird trotzdem übersprungen.",
+                  "fr-FR": "Uniquement pour un e-mail sur un travail fait pour la personne. Les personnes qui ont refusé les enquêtes sont quand même ignorées.",
+                  "da-DK": "Brug kun til mails om arbejde, du har udført for dem. Personer, der har sagt nej til undersøgelser, springes stadig over.",
+                  "cs-CZ": "Jen pro e-maily o práci, kterou jste pro ně odvedli. Lidé, kteří průzkumy odmítli, se stále přeskočí.",
+                  "ar-EG": "استخدمه فقط لبريد عن عمل أنجزته لهم. من رفضوا الاستطلاعات يُتخطَّون مع ذلك.",
+                  "zh-CN": "仅用于与您为对方完成的工作相关的邮件。拒绝过调查的人仍会被跳过。",
+                  "zh-TW": "僅用於與您為對方完成的工作相關的郵件。拒絕過調查的人仍會被略過。"
+                }
+              }
+            ]
+          }
+        ],
+        "writes": {
+          "table": "invitations",
+          "values": {
+            "form_id": {
+              "input": "survey"
+            },
+            "email": {
+              "person": "to",
+              "field": "email"
+            },
+            "name": {
+              "person": "to",
+              "field": "name"
+            },
+            "language": {
+              "person": "to",
+              "field": "language"
+            },
+            "company": {
+              "person": "to",
+              "field": "company"
+            },
+            "person_table": {
+              "person": "to",
+              "field": "table"
+            },
+            "person_key": {
+              "person": "to",
+              "field": "key"
+            },
+            "record_table": {
+              "token": "recordTable"
+            },
+            "record_key": {
+              "token": "recordKey"
+            },
+            "about": {
+              "token": "recordLabel"
+            },
+            "rule_name": {
+              "token": "ruleName"
+            },
+            "class": {
+              "input": "class"
+            },
+            "invited_at": {
+              "token": "now"
+            }
+          }
+        }
+      }
+    ],
+    "recordTabs": [
+      {
+        "id": "survey",
+        "label": {
+          "key": "addon.forms.tab.survey",
+          "fallback": "Survey"
+        },
+        "labels": {
+          "en-US": "Survey",
+          "de-DE": "Umfrage",
+          "fr-FR": "Enquête",
+          "da-DK": "Undersøgelse",
+          "cs-CZ": "Průzkum",
+          "ar-EG": "الاستطلاع",
+          "zh-CN": "调查",
+          "zh-TW": "調查"
+        },
+        "table": "invitations",
+        "match": {
+          "table": "record_table",
+          "row": "record_key"
+        },
+        "on": "linked",
+        "columns": [
+          "form_id",
+          "invited_at",
+          "answered_at",
+          "class"
+        ],
+        "empty": {
+          "key": "addon.forms.tab.survey.empty",
+          "fallback": "No survey sent yet"
+        },
+        "empties": {
+          "en-US": "No survey sent yet",
+          "de-DE": "Noch keine Umfrage gesendet",
+          "fr-FR": "Aucune enquête envoyée pour l’instant",
+          "da-DK": "Ingen undersøgelse sendt endnu",
+          "cs-CZ": "Zatím nebyl odeslán žádný průzkum",
+          "ar-EG": "لم يُرسل أي استطلاع بعد",
+          "zh-CN": "尚未发送调查",
+          "zh-TW": "尚未傳送調查"
+        }
       }
     ]
   }
