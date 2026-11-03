@@ -31,8 +31,25 @@ export function newSlug(kind: Kind, random: (bytes: Uint8Array) => Uint8Array = 
   return `${kind}-${[...bytes].map((byte) => LETTERS[byte % LETTERS.length]).join('')}`;
 }
 
-/** The values of a new draft's row. */
-export function draftValues(t: AddOnTranslate, kind: Kind, locale: string, slug: string): Record<string, DataValue> {
+/**
+ * A random UUID (version 4). Made from `getRandomValues`, which a page served
+ * over plain http on a local network has too (`randomUUID` it has not).
+ */
+export function randomKey(random: (bytes: Uint8Array) => Uint8Array = (bytes) => crypto.getRandomValues(bytes)): string {
+  const bytes = random(new Uint8Array(16));
+  bytes[6] = (bytes[6]! & 0x0f) | 0x40;
+  bytes[8] = (bytes[8]! & 0x3f) | 0x80;
+  const hex = [...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+/**
+ * The values of a new draft's row. Its key is made here: the forms table's
+ * key is text that nothing on the server fills on a staff create, and
+ * Postgres and MySQL refuse a row without one (SQLite would keep a row no
+ * address can open again).
+ */
+export function draftValues(t: AddOnTranslate, kind: Kind, locale: string, slug: string, newKey: () => string = randomKey): Record<string, DataValue> {
   const language = languageFor(locale);
   const title = kind === 'survey' ? t('list.untitledSurvey', 'Untitled survey') : t('list.untitledForm', 'Untitled form');
   const thanks = kind === 'survey' ? t('list.thanksSurvey', 'Thank you. Your answers help us.') : t('list.thanksForm', 'Thank you. We have your answers.');
@@ -51,5 +68,5 @@ export function draftValues(t: AddOnTranslate, kind: Kind, locale: string, slug:
     limits: { perHour: FORM_PER_HOUR_DEFAULT, harder: false },
     ...(kind === 'survey' ? { survey: { mode: 'named', linkNames: true, stopAfterDays: SURVEY_STOP_AFTER_DAYS_DEFAULT } } : {}),
   };
-  return { kind, slug, name: title, state: 'draft', definition: asJson(definition), settings: asJson(settings) };
+  return { id: newKey(), kind, slug, name: title, state: 'draft', definition: asJson(definition), settings: asJson(settings) };
 }

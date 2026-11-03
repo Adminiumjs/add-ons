@@ -121,6 +121,8 @@ describe('a new form', () => {
     expect(made.table).toBe('forms');
     const values = made.values as Record<string, unknown>;
     expect(values).toMatchObject({ kind: 'form', state: 'draft', name: 'Formular ohne Titel' });
+    // Its own key: nothing on the server fills a text key on a staff create.
+    expect(values['id']).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
     expect(values['slug']).toMatch(/^form-[a-z2-9]{6}$/);
     expect(values['definition']).toEqual({ v: 1, kind: 'form', languages: ['de-DE'], defaultLanguage: 'de-DE', title: { 'de-DE': 'Formular ohne Titel' }, questions: [], ending: { kind: 'words', words: { 'de-DE': 'Vielen Dank. Wir haben Ihre Antworten erhalten.' } } });
     expect(values['settings']).toEqual({ becomes: null, tell: [], limits: { perHour: 200, harder: false } });
