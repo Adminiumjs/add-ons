@@ -8,10 +8,8 @@
  * outbox mails it with the person's own link. The record tab shows those
  * invitations on the record they were about.
  *
- * TODO(0.3.41): the pinned validator (0.3.40) does not know the step's words,
- * so `manifest.test.ts` validates the manifest without the step. Once the pin
- * is 0.3.41, it validates the whole manifest, and the shape checks here stay
- * as what the validator cannot know.
+ * `manifest.test.ts` validates the whole manifest with the pinned validator;
+ * the shape checks here are what a validator cannot know.
  */
 import { describe, expect, it } from 'vitest';
 

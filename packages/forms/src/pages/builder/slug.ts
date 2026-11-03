@@ -8,19 +8,12 @@
  * gives nothing readable, when the words are one an address reserves, or when
  * another form has them already.
  *
- * TODO(0.3.41): import `isFormSlug`, `FORM_SLUG_MAX` and
- * `FORM_SLUGS_RESERVED` from `@adminium/add-on-contracts/forms` once the
- * floor is 0.3.41; until then the one rule is written out here, word for word
- * as Adminium's door holds it.
+ * The rule itself is Adminium's own (`@adminium/add-on-contracts/forms`), so the
+ * builder and the door can never disagree on which link names exist.
  */
-export const FORM_SLUG = /^[a-z0-9](?:[a-z0-9-]{0,78}[a-z0-9])?$/;
-export const FORM_SLUG_MAX = 80;
-export const FORM_SLUGS_RESERVED: readonly string[] = ['api', 'surveys'];
+import { FORM_SLUG_MAX, isFormSlug } from '@adminium/add-on-contracts/forms';
 
-/** Whether a form may have this slug: it keeps the rule, and is no reserved word. */
-export function isFormSlug(slug: unknown): slug is string {
-  return typeof slug === 'string' && FORM_SLUG.test(slug) && !FORM_SLUGS_RESERVED.includes(slug);
-}
+export { FORM_SLUG, FORM_SLUG_MAX, FORM_SLUGS_RESERVED, isFormSlug } from '@adminium/add-on-contracts/forms';
 
 /** The readable link name a title gives, or null when it gives none Adminium would serve. */
 export function readableSlug(title: string): string | null {

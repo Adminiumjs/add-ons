@@ -52,12 +52,7 @@ const allPages = [...manifest.pages.map((page) => page.ref), ...manifest.addOn.p
 
 describe('the manifest', () => {
   it('validates with the validator an install uses, and names the one file the build writes', () => {
-    // TODO(0.3.41): validate the whole manifest once the pin is 0.3.41. The "Send a survey" step speaks
-    // 0.3.41's words (a person input, a record named by its slug, help lines, the record tokens), which the
-    // pinned 0.3.40 validator does not know; it is held to its shape in `survey-step.test.ts` until then.
-    const { steps: _laterWords, ...readable } = manifest.addOn as typeof manifest.addOn & { steps?: unknown };
-    void _laterWords;
-    const result = validateManifest({ ...manifest, addOn: readable });
+    const result = validateManifest(manifest);
     expect(result.ok ? [] : result.issues.map((issue) => `${String(issue.path)}: ${issue.message}`)).toEqual([]);
     expect(manifest.addOn.pages.map((page) => page.client)).toEqual([OUTPUT.pages.forms]);
     for (const page of manifest.addOn.pages) expect(BUILT_FILES).toContain(page.client);
