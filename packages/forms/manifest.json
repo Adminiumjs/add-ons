@@ -1,0 +1,1951 @@
+{
+  "kind": "add-on",
+  "manifestVersion": 1,
+  "key": "forms",
+  "name": "Forms & surveys",
+  "version": "1.0.14",
+  "publisher": {
+    "id": "adminium",
+    "name": "Adminium",
+    "url": "https://adminium.dev"
+  },
+  "license": "AGPL-3.0-only",
+  "description": {
+    "key": "addon.forms.description",
+    "fallback": "Forms your website visitors fill in, and surveys you send after a job. Each answer can become a row in one of your tables."
+  },
+  "categories": [
+    "marketing"
+  ],
+  "compatibility": {
+    "minAdminiumVersion": "0.3.40",
+    "requires": []
+  },
+  "capabilities": [],
+  "requiredSchema": {
+    "prefixed": true,
+    "tables": [
+      {
+        "ref": "forms",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "id",
+            "role": "pk"
+          },
+          {
+            "ref": "name",
+            "type": "text",
+            "maxLength": 200,
+            "label": {
+              "en-US": "Name",
+              "de-DE": "Name",
+              "fr-FR": "Nom",
+              "da-DK": "Navn",
+              "cs-CZ": "Název",
+              "ar-EG": "الاسم",
+              "zh-CN": "名称",
+              "zh-TW": "名稱"
+            }
+          },
+          {
+            "ref": "slug",
+            "type": "text",
+            "maxLength": 80,
+            "unique": true,
+            "label": {
+              "en-US": "Link name",
+              "de-DE": "Linkname",
+              "fr-FR": "Nom du lien",
+              "da-DK": "Linknavn",
+              "cs-CZ": "Název odkazu",
+              "ar-EG": "اسم الرابط",
+              "zh-CN": "链接名",
+              "zh-TW": "連結名稱"
+            }
+          },
+          {
+            "ref": "kind",
+            "type": "enum",
+            "enum": [
+              "form",
+              "survey"
+            ],
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "form": {
+                    "en-US": "Form",
+                    "de-DE": "Formular",
+                    "fr-FR": "Formulaire",
+                    "da-DK": "Formular",
+                    "cs-CZ": "Formulář",
+                    "ar-EG": "نموذج",
+                    "zh-CN": "表单",
+                    "zh-TW": "表單"
+                  },
+                  "survey": {
+                    "en-US": "Survey",
+                    "de-DE": "Umfrage",
+                    "fr-FR": "Enquête",
+                    "da-DK": "Undersøgelse",
+                    "cs-CZ": "Průzkum",
+                    "ar-EG": "استطلاع",
+                    "zh-CN": "调查",
+                    "zh-TW": "調查"
+                  }
+                }
+              }
+            },
+            "label": {
+              "en-US": "Kind",
+              "de-DE": "Art",
+              "fr-FR": "Type",
+              "da-DK": "Type",
+              "cs-CZ": "Druh",
+              "ar-EG": "النوع",
+              "zh-CN": "类型",
+              "zh-TW": "類型"
+            }
+          },
+          {
+            "ref": "state",
+            "type": "enum",
+            "enum": [
+              "draft",
+              "live",
+              "closed"
+            ],
+            "default": "draft",
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "draft": {
+                    "en-US": "Draft",
+                    "de-DE": "Entwurf",
+                    "fr-FR": "Brouillon",
+                    "da-DK": "Kladde",
+                    "cs-CZ": "Koncept",
+                    "ar-EG": "مسودة",
+                    "zh-CN": "草稿",
+                    "zh-TW": "草稿"
+                  },
+                  "live": {
+                    "en-US": "Live",
+                    "de-DE": "Online",
+                    "fr-FR": "En ligne",
+                    "da-DK": "Online",
+                    "cs-CZ": "Zveřejněný",
+                    "ar-EG": "منشور",
+                    "zh-CN": "已上线",
+                    "zh-TW": "已上線"
+                  },
+                  "closed": {
+                    "en-US": "Closed",
+                    "de-DE": "Geschlossen",
+                    "fr-FR": "Fermé",
+                    "da-DK": "Lukket",
+                    "cs-CZ": "Uzavřený",
+                    "ar-EG": "مغلق",
+                    "zh-CN": "已关闭",
+                    "zh-TW": "已關閉"
+                  }
+                },
+                "tones": {
+                  "draft": "neutral",
+                  "live": "pos",
+                  "closed": "neutral"
+                }
+              }
+            },
+            "label": {
+              "en-US": "Status",
+              "de-DE": "Status",
+              "fr-FR": "Statut",
+              "da-DK": "Status",
+              "cs-CZ": "Stav",
+              "ar-EG": "الحالة",
+              "zh-CN": "状态",
+              "zh-TW": "狀態"
+            }
+          },
+          {
+            "ref": "definition",
+            "type": "json",
+            "label": {
+              "en-US": "Questions",
+              "de-DE": "Fragen",
+              "fr-FR": "Questions",
+              "da-DK": "Spørgsmål",
+              "cs-CZ": "Otázky",
+              "ar-EG": "الأسئلة",
+              "zh-CN": "问题",
+              "zh-TW": "問題"
+            }
+          },
+          {
+            "ref": "settings",
+            "type": "json",
+            "label": {
+              "en-US": "Settings",
+              "de-DE": "Einstellungen",
+              "fr-FR": "Réglages",
+              "da-DK": "Indstillinger",
+              "cs-CZ": "Nastavení",
+              "ar-EG": "الإعدادات",
+              "zh-CN": "设置",
+              "zh-TW": "設定"
+            }
+          },
+          {
+            "ref": "published",
+            "type": "json",
+            "nullable": true,
+            "label": {
+              "en-US": "Published version",
+              "de-DE": "Veröffentlichte Fassung",
+              "fr-FR": "Version publiée",
+              "da-DK": "Offentliggjort version",
+              "cs-CZ": "Zveřejněná verze",
+              "ar-EG": "النسخة المنشورة",
+              "zh-CN": "已发布版本",
+              "zh-TW": "已發布版本"
+            }
+          },
+          {
+            "ref": "published_at",
+            "type": "timestamptz",
+            "nullable": true,
+            "label": {
+              "en-US": "Published on",
+              "de-DE": "Veröffentlicht am",
+              "fr-FR": "Publié le",
+              "da-DK": "Offentliggjort",
+              "cs-CZ": "Zveřejněno",
+              "ar-EG": "تاريخ النشر",
+              "zh-CN": "发布时间",
+              "zh-TW": "發布時間"
+            }
+          },
+          {
+            "ref": "closed_at",
+            "type": "timestamptz",
+            "nullable": true,
+            "rules": {
+              "stamp": {
+                "set": "now",
+                "on": {
+                  "column": "state",
+                  "values": [
+                    "closed"
+                  ]
+                }
+              }
+            },
+            "label": {
+              "en-US": "Closed on",
+              "de-DE": "Geschlossen am",
+              "fr-FR": "Fermé le",
+              "da-DK": "Lukket",
+              "cs-CZ": "Uzavřeno",
+              "ar-EG": "تاريخ الإغلاق",
+              "zh-CN": "关闭时间",
+              "zh-TW": "關閉時間"
+            }
+          },
+          {
+            "ref": "updated_at",
+            "type": "timestamptz",
+            "role": "updated_at",
+            "label": {
+              "en-US": "Updated",
+              "de-DE": "Geändert",
+              "fr-FR": "Modifié",
+              "da-DK": "Ændret",
+              "cs-CZ": "Upraveno",
+              "ar-EG": "آخر تعديل",
+              "zh-CN": "更新时间",
+              "zh-TW": "更新時間"
+            }
+          },
+          {
+            "ref": "created_by_id",
+            "type": "text",
+            "maxLength": 36,
+            "nullable": true,
+            "rules": {
+              "stamp": {
+                "set": "user-id",
+                "on": "create"
+              }
+            },
+            "label": {
+              "en-US": "Made by",
+              "de-DE": "Erstellt von",
+              "fr-FR": "Créé par",
+              "da-DK": "Oprettet af",
+              "cs-CZ": "Vytvořil",
+              "ar-EG": "أنشأه",
+              "zh-CN": "创建人",
+              "zh-TW": "建立者"
+            }
+          }
+        ],
+        "states": {
+          "column": "state",
+          "initial": "draft",
+          "moves": {
+            "draft": [
+              "live"
+            ],
+            "live": [
+              "closed"
+            ],
+            "closed": [
+              "live"
+            ]
+          },
+          "noDelete": {
+            "when": [
+              "live",
+              "closed"
+            ]
+          }
+        }
+      },
+      {
+        "ref": "invitations",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "id",
+            "role": "pk"
+          },
+          {
+            "ref": "form_id",
+            "type": "fk",
+            "references": "forms",
+            "label": {
+              "en-US": "Survey",
+              "de-DE": "Umfrage",
+              "fr-FR": "Enquête",
+              "da-DK": "Undersøgelse",
+              "cs-CZ": "Průzkum",
+              "ar-EG": "الاستطلاع",
+              "zh-CN": "调查",
+              "zh-TW": "調查"
+            }
+          },
+          {
+            "ref": "email",
+            "type": "text",
+            "maxLength": 320,
+            "rules": {
+              "personal": true
+            },
+            "label": {
+              "en-US": "E-mail",
+              "de-DE": "E-Mail",
+              "fr-FR": "E-mail",
+              "da-DK": "E-mail",
+              "cs-CZ": "E-mail",
+              "ar-EG": "البريد الإلكتروني",
+              "zh-CN": "电子邮件",
+              "zh-TW": "電子郵件"
+            }
+          },
+          {
+            "ref": "name",
+            "type": "text",
+            "maxLength": 200,
+            "nullable": true,
+            "rules": {
+              "personal": true
+            },
+            "label": {
+              "en-US": "Name",
+              "de-DE": "Name",
+              "fr-FR": "Nom",
+              "da-DK": "Navn",
+              "cs-CZ": "Jméno",
+              "ar-EG": "الاسم",
+              "zh-CN": "姓名",
+              "zh-TW": "姓名"
+            }
+          },
+          {
+            "ref": "language",
+            "type": "text",
+            "maxLength": 10,
+            "label": {
+              "en-US": "Language",
+              "de-DE": "Sprache",
+              "fr-FR": "Langue",
+              "da-DK": "Sprog",
+              "cs-CZ": "Jazyk",
+              "ar-EG": "اللغة",
+              "zh-CN": "语言",
+              "zh-TW": "語言"
+            }
+          },
+          {
+            "ref": "person_table",
+            "type": "text",
+            "maxLength": 64,
+            "label": {
+              "en-US": "Table of the person",
+              "de-DE": "Tabelle der Person",
+              "fr-FR": "Table de la personne",
+              "da-DK": "Personens tabel",
+              "cs-CZ": "Tabulka osoby",
+              "ar-EG": "جدول الشخص",
+              "zh-CN": "人员所在表",
+              "zh-TW": "人員所在表"
+            }
+          },
+          {
+            "ref": "person_key",
+            "type": "text",
+            "maxLength": 200,
+            "label": {
+              "en-US": "Person",
+              "de-DE": "Person",
+              "fr-FR": "Personne",
+              "da-DK": "Person",
+              "cs-CZ": "Osoba",
+              "ar-EG": "الشخص",
+              "zh-CN": "人员",
+              "zh-TW": "人員"
+            }
+          },
+          {
+            "ref": "record_table",
+            "type": "text",
+            "maxLength": 64,
+            "nullable": true,
+            "label": {
+              "en-US": "Table it is about",
+              "de-DE": "Bezugstabelle",
+              "fr-FR": "Table concernée",
+              "da-DK": "Tabel det handler om",
+              "cs-CZ": "Tabulka záznamu",
+              "ar-EG": "جدول السجل",
+              "zh-CN": "相关表",
+              "zh-TW": "相關表"
+            }
+          },
+          {
+            "ref": "record_key",
+            "type": "text",
+            "maxLength": 200,
+            "nullable": true,
+            "label": {
+              "en-US": "Row it is about",
+              "de-DE": "Bezugszeile",
+              "fr-FR": "Ligne concernée",
+              "da-DK": "Række det handler om",
+              "cs-CZ": "Řádek záznamu",
+              "ar-EG": "السجل المعني",
+              "zh-CN": "相关行",
+              "zh-TW": "相關列"
+            }
+          },
+          {
+            "ref": "token_hash",
+            "type": "text",
+            "maxLength": 64,
+            "nullable": true,
+            "label": {
+              "en-US": "Link check",
+              "de-DE": "Linkprüfung",
+              "fr-FR": "Contrôle du lien",
+              "da-DK": "Linkkontrol",
+              "cs-CZ": "Kontrola odkazu",
+              "ar-EG": "تحقق الرابط",
+              "zh-CN": "链接校验",
+              "zh-TW": "連結校驗"
+            }
+          },
+          {
+            "ref": "class",
+            "type": "enum",
+            "enum": [
+              "marketing",
+              "service"
+            ],
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "marketing": {
+                    "en-US": "Marketing mail",
+                    "de-DE": "Werbe-E-Mail",
+                    "fr-FR": "E-mail marketing",
+                    "da-DK": "Markedsføringsmail",
+                    "cs-CZ": "Marketingový e-mail",
+                    "ar-EG": "بريد تسويقي",
+                    "zh-CN": "营销邮件",
+                    "zh-TW": "行銷郵件"
+                  },
+                  "service": {
+                    "en-US": "Service mail",
+                    "de-DE": "Service-E-Mail",
+                    "fr-FR": "E-mail de service",
+                    "da-DK": "Servicemail",
+                    "cs-CZ": "Servisní e-mail",
+                    "ar-EG": "بريد خدمة",
+                    "zh-CN": "服务邮件",
+                    "zh-TW": "服務郵件"
+                  }
+                }
+              }
+            },
+            "label": {
+              "en-US": "Kind of mail",
+              "de-DE": "Art der E-Mail",
+              "fr-FR": "Type d’e-mail",
+              "da-DK": "Type af mail",
+              "cs-CZ": "Druh e-mailu",
+              "ar-EG": "نوع البريد",
+              "zh-CN": "邮件类型",
+              "zh-TW": "郵件類型"
+            }
+          },
+          {
+            "ref": "invited_at",
+            "type": "timestamptz",
+            "label": {
+              "en-US": "Invited",
+              "de-DE": "Eingeladen",
+              "fr-FR": "Invité le",
+              "da-DK": "Inviteret",
+              "cs-CZ": "Pozváno",
+              "ar-EG": "تاريخ الدعوة",
+              "zh-CN": "邀请时间",
+              "zh-TW": "邀請時間"
+            }
+          },
+          {
+            "ref": "answered_at",
+            "type": "timestamptz",
+            "nullable": true,
+            "label": {
+              "en-US": "Answered",
+              "de-DE": "Beantwortet",
+              "fr-FR": "Répondu le",
+              "da-DK": "Besvaret",
+              "cs-CZ": "Odpovězeno",
+              "ar-EG": "تاريخ الرد",
+              "zh-CN": "回答时间",
+              "zh-TW": "回答時間"
+            }
+          },
+          {
+            "ref": "expires_at",
+            "type": "timestamptz",
+            "nullable": true,
+            "label": {
+              "en-US": "Link ends",
+              "de-DE": "Link endet",
+              "fr-FR": "Fin du lien",
+              "da-DK": "Linket udløber",
+              "cs-CZ": "Odkaz končí",
+              "ar-EG": "ينتهي الرابط",
+              "zh-CN": "链接到期",
+              "zh-TW": "連結到期"
+            }
+          },
+          {
+            "ref": "about",
+            "type": "text",
+            "maxLength": 200,
+            "nullable": true,
+            "label": {
+              "en-US": "About",
+              "de-DE": "Betrifft",
+              "fr-FR": "Au sujet de",
+              "da-DK": "Om",
+              "cs-CZ": "Týká se",
+              "ar-EG": "بخصوص",
+              "zh-CN": "关于",
+              "zh-TW": "關於"
+            }
+          },
+          {
+            "ref": "company",
+            "type": "text",
+            "maxLength": 200,
+            "nullable": true,
+            "rules": {
+              "personal": true
+            },
+            "label": {
+              "en-US": "Company",
+              "de-DE": "Firma",
+              "fr-FR": "Entreprise",
+              "da-DK": "Firma",
+              "cs-CZ": "Firma",
+              "ar-EG": "الشركة",
+              "zh-CN": "公司",
+              "zh-TW": "公司"
+            }
+          },
+          {
+            "ref": "rule_name",
+            "type": "text",
+            "maxLength": 200,
+            "nullable": true,
+            "label": {
+              "en-US": "Sent by the rule",
+              "de-DE": "Gesendet von der Regel",
+              "fr-FR": "Envoyé par la règle",
+              "da-DK": "Sendt af reglen",
+              "cs-CZ": "Odesláno pravidlem",
+              "ar-EG": "أرسلتها القاعدة",
+              "zh-CN": "发送规则",
+              "zh-TW": "發送規則"
+            }
+          }
+        ]
+      },
+      {
+        "ref": "answers",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "id",
+            "role": "pk"
+          },
+          {
+            "ref": "form_id",
+            "type": "fk",
+            "references": "forms",
+            "label": {
+              "en-US": "Form",
+              "de-DE": "Formular",
+              "fr-FR": "Formulaire",
+              "da-DK": "Formular",
+              "cs-CZ": "Formulář",
+              "ar-EG": "النموذج",
+              "zh-CN": "表单",
+              "zh-TW": "表單"
+            }
+          },
+          {
+            "ref": "submitted_at",
+            "type": "timestamptz",
+            "label": {
+              "en-US": "Sent",
+              "de-DE": "Gesendet",
+              "fr-FR": "Envoyé",
+              "da-DK": "Sendt",
+              "cs-CZ": "Odesláno",
+              "ar-EG": "وقت الإرسال",
+              "zh-CN": "发送时间",
+              "zh-TW": "傳送時間"
+            }
+          },
+          {
+            "ref": "language",
+            "type": "text",
+            "maxLength": 10,
+            "label": {
+              "en-US": "Language",
+              "de-DE": "Sprache",
+              "fr-FR": "Langue",
+              "da-DK": "Sprog",
+              "cs-CZ": "Jazyk",
+              "ar-EG": "اللغة",
+              "zh-CN": "语言",
+              "zh-TW": "語言"
+            }
+          },
+          {
+            "ref": "values",
+            "type": "json",
+            "label": {
+              "en-US": "Answers",
+              "de-DE": "Antworten",
+              "fr-FR": "Réponses",
+              "da-DK": "Svar",
+              "cs-CZ": "Odpovědi",
+              "ar-EG": "الإجابات",
+              "zh-CN": "回答",
+              "zh-TW": "回答"
+            },
+            "rules": {
+              "personal": true
+            }
+          },
+          {
+            "ref": "email",
+            "type": "text",
+            "maxLength": 320,
+            "nullable": true,
+            "rules": {
+              "personal": true
+            },
+            "label": {
+              "en-US": "E-mail",
+              "de-DE": "E-Mail",
+              "fr-FR": "E-mail",
+              "da-DK": "E-mail",
+              "cs-CZ": "E-mail",
+              "ar-EG": "البريد الإلكتروني",
+              "zh-CN": "电子邮件",
+              "zh-TW": "電子郵件"
+            }
+          },
+          {
+            "ref": "name",
+            "type": "text",
+            "maxLength": 200,
+            "nullable": true,
+            "rules": {
+              "personal": true
+            },
+            "label": {
+              "en-US": "Name",
+              "de-DE": "Name",
+              "fr-FR": "Nom",
+              "da-DK": "Navn",
+              "cs-CZ": "Jméno",
+              "ar-EG": "الاسم",
+              "zh-CN": "姓名",
+              "zh-TW": "姓名"
+            }
+          },
+          {
+            "ref": "became_table",
+            "type": "text",
+            "maxLength": 64,
+            "nullable": true,
+            "label": {
+              "en-US": "Became a row in",
+              "de-DE": "Wurde zur Zeile in",
+              "fr-FR": "Devenu une ligne de",
+              "da-DK": "Blev en række i",
+              "cs-CZ": "Stal se řádkem v",
+              "ar-EG": "أصبح صفًا في",
+              "zh-CN": "生成的行所在表",
+              "zh-TW": "產生的列所在表"
+            }
+          },
+          {
+            "ref": "became_key",
+            "type": "text",
+            "maxLength": 200,
+            "nullable": true,
+            "label": {
+              "en-US": "Row it became",
+              "de-DE": "Entstandene Zeile",
+              "fr-FR": "Ligne créée",
+              "da-DK": "Række der blev oprettet",
+              "cs-CZ": "Vytvořený řádek",
+              "ar-EG": "الصف الناتج",
+              "zh-CN": "生成的行",
+              "zh-TW": "產生的列"
+            }
+          },
+          {
+            "ref": "invitation_id",
+            "type": "fk",
+            "references": "invitations",
+            "nullable": true,
+            "label": {
+              "en-US": "Invitation",
+              "de-DE": "Einladung",
+              "fr-FR": "Invitation",
+              "da-DK": "Invitation",
+              "cs-CZ": "Pozvánka",
+              "ar-EG": "الدعوة",
+              "zh-CN": "邀请",
+              "zh-TW": "邀請"
+            }
+          },
+          {
+            "ref": "confirm",
+            "type": "enum",
+            "enum": [
+              "none",
+              "pending",
+              "confirmed",
+              "expired"
+            ],
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "none": {
+                    "en-US": "Not asked",
+                    "de-DE": "Nicht gefragt",
+                    "fr-FR": "Non demandée",
+                    "da-DK": "Ikke spurgt",
+                    "cs-CZ": "Nevyžádáno",
+                    "ar-EG": "لم يُطلب",
+                    "zh-CN": "未要求",
+                    "zh-TW": "未要求"
+                  },
+                  "pending": {
+                    "en-US": "Waiting",
+                    "de-DE": "Ausstehend",
+                    "fr-FR": "En attente",
+                    "da-DK": "Afventer",
+                    "cs-CZ": "Čeká",
+                    "ar-EG": "بانتظار التأكيد",
+                    "zh-CN": "待确认",
+                    "zh-TW": "待確認"
+                  },
+                  "confirmed": {
+                    "en-US": "Confirmed",
+                    "de-DE": "Bestätigt",
+                    "fr-FR": "Confirmée",
+                    "da-DK": "Bekræftet",
+                    "cs-CZ": "Potvrzeno",
+                    "ar-EG": "مؤكَّد",
+                    "zh-CN": "已确认",
+                    "zh-TW": "已確認"
+                  },
+                  "expired": {
+                    "en-US": "Expired",
+                    "de-DE": "Abgelaufen",
+                    "fr-FR": "Expirée",
+                    "da-DK": "Udløbet",
+                    "cs-CZ": "Vypršelo",
+                    "ar-EG": "منتهٍ",
+                    "zh-CN": "已过期",
+                    "zh-TW": "已過期"
+                  }
+                },
+                "tones": {
+                  "none": "neutral",
+                  "pending": "warn",
+                  "confirmed": "pos",
+                  "expired": "neutral"
+                }
+              }
+            },
+            "label": {
+              "en-US": "Confirmed by e-mail",
+              "de-DE": "Per E-Mail bestätigt",
+              "fr-FR": "Confirmation par e-mail",
+              "da-DK": "Bekræftet via e-mail",
+              "cs-CZ": "Potvrzení e-mailem",
+              "ar-EG": "التأكيد بالبريد",
+              "zh-CN": "邮件确认",
+              "zh-TW": "郵件確認"
+            }
+          },
+          {
+            "ref": "consent_purpose",
+            "type": "text",
+            "maxLength": 20,
+            "nullable": true,
+            "label": {
+              "en-US": "Agreed to",
+              "de-DE": "Zugestimmt für",
+              "fr-FR": "Accord pour",
+              "da-DK": "Samtykke til",
+              "cs-CZ": "Souhlas s",
+              "ar-EG": "الموافقة على",
+              "zh-CN": "同意事项",
+              "zh-TW": "同意事項"
+            }
+          },
+          {
+            "ref": "consent_wording",
+            "type": "text",
+            "nullable": true,
+            "rules": {
+              "personal": true
+            },
+            "label": {
+              "en-US": "Words agreed to",
+              "de-DE": "Zugestimmter Wortlaut",
+              "fr-FR": "Texte accepté",
+              "da-DK": "Accepteret tekst",
+              "cs-CZ": "Odsouhlasené znění",
+              "ar-EG": "النص المتفق عليه",
+              "zh-CN": "同意的文字",
+              "zh-TW": "同意的文字"
+            }
+          },
+          {
+            "ref": "consent_version",
+            "type": "int",
+            "nullable": true,
+            "label": {
+              "en-US": "Version of the words",
+              "de-DE": "Fassung des Wortlauts",
+              "fr-FR": "Version du texte",
+              "da-DK": "Tekstens version",
+              "cs-CZ": "Verze znění",
+              "ar-EG": "إصدار النص",
+              "zh-CN": "文字版本",
+              "zh-TW": "文字版本"
+            }
+          },
+          {
+            "ref": "ip",
+            "type": "text",
+            "maxLength": 64,
+            "nullable": true,
+            "rules": {
+              "personal": true
+            },
+            "label": {
+              "en-US": "Network address",
+              "de-DE": "Netzwerkadresse",
+              "fr-FR": "Adresse réseau",
+              "da-DK": "Netværksadresse",
+              "cs-CZ": "Síťová adresa",
+              "ar-EG": "عنوان الشبكة",
+              "zh-CN": "网络地址",
+              "zh-TW": "網路位址"
+            }
+          },
+          {
+            "ref": "user_agent",
+            "type": "text",
+            "maxLength": 512,
+            "nullable": true,
+            "rules": {
+              "personal": true
+            },
+            "label": {
+              "en-US": "Browser",
+              "de-DE": "Browser",
+              "fr-FR": "Navigateur",
+              "da-DK": "Browser",
+              "cs-CZ": "Prohlížeč",
+              "ar-EG": "المتصفح",
+              "zh-CN": "浏览器",
+              "zh-TW": "瀏覽器"
+            }
+          },
+          {
+            "ref": "sent_from",
+            "type": "text",
+            "nullable": true,
+            "rules": {
+              "personal": true
+            },
+            "label": {
+              "en-US": "Sent from",
+              "de-DE": "Gesendet von",
+              "fr-FR": "Envoyé depuis",
+              "da-DK": "Sendt fra",
+              "cs-CZ": "Odesláno z",
+              "ar-EG": "أُرسل من",
+              "zh-CN": "提交来源",
+              "zh-TW": "提交來源"
+            }
+          }
+        ]
+      },
+      {
+        "ref": "answer_files",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "id",
+            "role": "pk"
+          },
+          {
+            "ref": "answer_id",
+            "type": "fk",
+            "references": "answers",
+            "nullable": true,
+            "label": {
+              "en-US": "Answer",
+              "de-DE": "Antwort",
+              "fr-FR": "Réponse",
+              "da-DK": "Svar",
+              "cs-CZ": "Odpověď",
+              "ar-EG": "الإجابة",
+              "zh-CN": "回答",
+              "zh-TW": "回答"
+            }
+          },
+          {
+            "ref": "file_id",
+            "type": "text",
+            "maxLength": 64,
+            "label": {
+              "en-US": "File",
+              "de-DE": "Datei",
+              "fr-FR": "Fichier",
+              "da-DK": "Fil",
+              "cs-CZ": "Soubor",
+              "ar-EG": "الملف",
+              "zh-CN": "文件",
+              "zh-TW": "檔案"
+            }
+          },
+          {
+            "ref": "question",
+            "type": "text",
+            "maxLength": 16,
+            "label": {
+              "en-US": "Question",
+              "de-DE": "Frage",
+              "fr-FR": "Question",
+              "da-DK": "Spørgsmål",
+              "cs-CZ": "Otázka",
+              "ar-EG": "السؤال",
+              "zh-CN": "问题",
+              "zh-TW": "問題"
+            }
+          },
+          {
+            "ref": "name",
+            "type": "text",
+            "maxLength": 255,
+            "label": {
+              "en-US": "File name",
+              "de-DE": "Dateiname",
+              "fr-FR": "Nom du fichier",
+              "da-DK": "Filnavn",
+              "cs-CZ": "Název souboru",
+              "ar-EG": "اسم الملف",
+              "zh-CN": "文件名",
+              "zh-TW": "檔案名稱"
+            }
+          },
+          {
+            "ref": "size",
+            "type": "bigint",
+            "label": {
+              "en-US": "Size",
+              "de-DE": "Größe",
+              "fr-FR": "Taille",
+              "da-DK": "Størrelse",
+              "cs-CZ": "Velikost",
+              "ar-EG": "الحجم",
+              "zh-CN": "大小",
+              "zh-TW": "大小"
+            }
+          },
+          {
+            "ref": "kind",
+            "type": "text",
+            "maxLength": 20,
+            "label": {
+              "en-US": "Kind",
+              "de-DE": "Art",
+              "fr-FR": "Type",
+              "da-DK": "Type",
+              "cs-CZ": "Druh",
+              "ar-EG": "النوع",
+              "zh-CN": "类型",
+              "zh-TW": "類型"
+            }
+          },
+          {
+            "ref": "uploaded_at",
+            "type": "timestamptz",
+            "label": {
+              "en-US": "Uploaded",
+              "de-DE": "Hochgeladen",
+              "fr-FR": "Envoyé le",
+              "da-DK": "Uploadet",
+              "cs-CZ": "Nahráno",
+              "ar-EG": "وقت الرفع",
+              "zh-CN": "上传时间",
+              "zh-TW": "上傳時間"
+            }
+          },
+          {
+            "ref": "expires_at",
+            "type": "timestamptz",
+            "nullable": true,
+            "label": {
+              "en-US": "Removed if not sent by",
+              "de-DE": "Entfernt, wenn nicht gesendet bis",
+              "fr-FR": "Retiré s’il n’est pas envoyé avant",
+              "da-DK": "Fjernes hvis ikke sendt inden",
+              "cs-CZ": "Odstraní se, pokud nebude odesláno do",
+              "ar-EG": "يُحذف إن لم يُرسل قبل",
+              "zh-CN": "未提交则删除于",
+              "zh-TW": "未提交則刪除於"
+            }
+          }
+        ]
+      },
+      {
+        "ref": "invitation_mails",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "id",
+            "role": "pk"
+          },
+          {
+            "ref": "kind",
+            "type": "enum",
+            "enum": [
+              "invite-marketing",
+              "invite-service"
+            ],
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "invite-marketing": {
+                    "en-US": "Invitation, marketing mail",
+                    "de-DE": "Einladung, Werbe-E-Mail",
+                    "fr-FR": "Invitation, e-mail marketing",
+                    "da-DK": "Invitation, markedsføringsmail",
+                    "cs-CZ": "Pozvánka, marketingový e-mail",
+                    "ar-EG": "دعوة، بريد تسويقي",
+                    "zh-CN": "邀请，营销邮件",
+                    "zh-TW": "邀請，行銷郵件"
+                  },
+                  "invite-service": {
+                    "en-US": "Invitation, service mail",
+                    "de-DE": "Einladung, Service-E-Mail",
+                    "fr-FR": "Invitation, e-mail de service",
+                    "da-DK": "Invitation, servicemail",
+                    "cs-CZ": "Pozvánka, servisní e-mail",
+                    "ar-EG": "دعوة، بريد خدمة",
+                    "zh-CN": "邀请，服务邮件",
+                    "zh-TW": "邀請，服務郵件"
+                  }
+                }
+              }
+            },
+            "label": {
+              "en-US": "Kind of mail",
+              "de-DE": "Art der E-Mail",
+              "fr-FR": "Type d’e-mail",
+              "da-DK": "Type af mail",
+              "cs-CZ": "Druh e-mailu",
+              "ar-EG": "نوع البريد",
+              "zh-CN": "邮件类型",
+              "zh-TW": "郵件類型"
+            }
+          },
+          {
+            "ref": "status",
+            "type": "enum",
+            "enum": [
+              "queued",
+              "sent",
+              "failed",
+              "skipped"
+            ],
+            "default": "queued",
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "queued": {
+                    "en-US": "Waiting",
+                    "de-DE": "Wartet",
+                    "fr-FR": "En attente",
+                    "da-DK": "Venter",
+                    "cs-CZ": "Čeká",
+                    "ar-EG": "في الانتظار",
+                    "zh-CN": "等待中",
+                    "zh-TW": "等待中"
+                  },
+                  "sent": {
+                    "en-US": "Sent",
+                    "de-DE": "Gesendet",
+                    "fr-FR": "Envoyé",
+                    "da-DK": "Sendt",
+                    "cs-CZ": "Odesláno",
+                    "ar-EG": "أُرسل",
+                    "zh-CN": "已发送",
+                    "zh-TW": "已傳送"
+                  },
+                  "failed": {
+                    "en-US": "Failed",
+                    "de-DE": "Fehlgeschlagen",
+                    "fr-FR": "Échec",
+                    "da-DK": "Mislykkedes",
+                    "cs-CZ": "Selhalo",
+                    "ar-EG": "فشل",
+                    "zh-CN": "失败",
+                    "zh-TW": "失敗"
+                  },
+                  "skipped": {
+                    "en-US": "Skipped",
+                    "de-DE": "Übersprungen",
+                    "fr-FR": "Ignoré",
+                    "da-DK": "Sprunget over",
+                    "cs-CZ": "Přeskočeno",
+                    "ar-EG": "تم تخطيه",
+                    "zh-CN": "已跳过",
+                    "zh-TW": "已略過"
+                  }
+                },
+                "tones": {
+                  "queued": "neutral",
+                  "sent": "pos",
+                  "failed": "danger",
+                  "skipped": "neutral"
+                }
+              }
+            },
+            "label": {
+              "en-US": "Status",
+              "de-DE": "Status",
+              "fr-FR": "Statut",
+              "da-DK": "Status",
+              "cs-CZ": "Stav",
+              "ar-EG": "الحالة",
+              "zh-CN": "状态",
+              "zh-TW": "狀態"
+            }
+          },
+          {
+            "ref": "to_address",
+            "type": "text",
+            "maxLength": 320,
+            "nullable": true,
+            "rules": {
+              "personal": true
+            },
+            "label": {
+              "en-US": "To",
+              "de-DE": "An",
+              "fr-FR": "À",
+              "da-DK": "Til",
+              "cs-CZ": "Komu",
+              "ar-EG": "إلى",
+              "zh-CN": "收件人",
+              "zh-TW": "收件人"
+            }
+          },
+          {
+            "ref": "invitation_id",
+            "type": "fk",
+            "references": "invitations",
+            "nullable": true,
+            "label": {
+              "en-US": "Invitation",
+              "de-DE": "Einladung",
+              "fr-FR": "Invitation",
+              "da-DK": "Invitation",
+              "cs-CZ": "Pozvánka",
+              "ar-EG": "الدعوة",
+              "zh-CN": "邀请",
+              "zh-TW": "邀請"
+            }
+          },
+          {
+            "ref": "error",
+            "type": "text",
+            "maxLength": 200,
+            "nullable": true,
+            "label": {
+              "en-US": "Why it failed",
+              "de-DE": "Fehlergrund",
+              "fr-FR": "Raison de l’échec",
+              "da-DK": "Årsag til fejlen",
+              "cs-CZ": "Důvod selhání",
+              "ar-EG": "سبب الفشل",
+              "zh-CN": "失败原因",
+              "zh-TW": "失敗原因"
+            }
+          },
+          {
+            "ref": "sent_at",
+            "type": "timestamptz",
+            "nullable": true,
+            "label": {
+              "en-US": "Sent",
+              "de-DE": "Gesendet",
+              "fr-FR": "Envoyé",
+              "da-DK": "Sendt",
+              "cs-CZ": "Odesláno",
+              "ar-EG": "وقت الإرسال",
+              "zh-CN": "发送时间",
+              "zh-TW": "傳送時間"
+            }
+          }
+        ]
+      },
+      {
+        "ref": "settings",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "answers_months",
+            "type": "int",
+            "nullable": true,
+            "default": 24,
+            "rules": {
+              "options": {
+                "values": [
+                  {
+                    "value": "3",
+                    "label": {
+                      "en-US": "3 months",
+                      "de-DE": "3 Monate",
+                      "fr-FR": "3 mois",
+                      "da-DK": "3 måneder",
+                      "cs-CZ": "3 měsíce",
+                      "ar-EG": "3 أشهر",
+                      "zh-CN": "3 个月",
+                      "zh-TW": "3 個月"
+                    }
+                  },
+                  {
+                    "value": "6",
+                    "label": {
+                      "en-US": "6 months",
+                      "de-DE": "6 Monate",
+                      "fr-FR": "6 mois",
+                      "da-DK": "6 måneder",
+                      "cs-CZ": "6 měsíců",
+                      "ar-EG": "6 شهرًا",
+                      "zh-CN": "6 个月",
+                      "zh-TW": "6 個月"
+                    }
+                  },
+                  {
+                    "value": "12",
+                    "label": {
+                      "en-US": "12 months",
+                      "de-DE": "12 Monate",
+                      "fr-FR": "12 mois",
+                      "da-DK": "12 måneder",
+                      "cs-CZ": "12 měsíců",
+                      "ar-EG": "12 شهرًا",
+                      "zh-CN": "12 个月",
+                      "zh-TW": "12 個月"
+                    }
+                  },
+                  {
+                    "value": "24",
+                    "label": {
+                      "en-US": "24 months",
+                      "de-DE": "24 Monate",
+                      "fr-FR": "24 mois",
+                      "da-DK": "24 måneder",
+                      "cs-CZ": "24 měsíců",
+                      "ar-EG": "24 شهرًا",
+                      "zh-CN": "24 个月",
+                      "zh-TW": "24 個月"
+                    }
+                  },
+                  {
+                    "value": "36",
+                    "label": {
+                      "en-US": "36 months",
+                      "de-DE": "36 Monate",
+                      "fr-FR": "36 mois",
+                      "da-DK": "36 måneder",
+                      "cs-CZ": "36 měsíců",
+                      "ar-EG": "36 شهرًا",
+                      "zh-CN": "36 个月",
+                      "zh-TW": "36 個月"
+                    }
+                  }
+                ]
+              }
+            },
+            "label": {
+              "en-US": "Keep answers for",
+              "de-DE": "Antworten aufbewahren für",
+              "fr-FR": "Conserver les réponses",
+              "da-DK": "Gem svar i",
+              "cs-CZ": "Uchovávat odpovědi",
+              "ar-EG": "الاحتفاظ بالإجابات لمدة",
+              "zh-CN": "回答保留时长",
+              "zh-TW": "回答保留時長"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "roles": [
+    {
+      "key": "manager",
+      "name": "Forms manager",
+      "names": {
+        "en-US": "Forms manager",
+        "de-DE": "Formulare verwalten",
+        "fr-FR": "Gestion des formulaires",
+        "da-DK": "Formularansvarlig",
+        "cs-CZ": "Správce formulářů",
+        "ar-EG": "مدير النماذج",
+        "zh-CN": "表单管理员",
+        "zh-TW": "表單管理員"
+      },
+      "permissions": [
+        "table:@forms:read",
+        "table:@forms:create",
+        "table:@forms:update",
+        "table:@forms:delete",
+        "table:@answers:read",
+        "table:@answers:delete",
+        "table:@invitations:read",
+        "table:@answer_files:read",
+        "table:@invitation_mails:read",
+        "table:@settings:read",
+        "table:@settings:update",
+        "page:@forms:view",
+        "page:@forms-settings:view"
+      ]
+    },
+    {
+      "key": "reader",
+      "name": "Forms reader",
+      "names": {
+        "en-US": "Forms reader",
+        "de-DE": "Formulare lesen",
+        "fr-FR": "Lecture des formulaires",
+        "da-DK": "Formularlæser",
+        "cs-CZ": "Čtenář formulářů",
+        "ar-EG": "قارئ النماذج",
+        "zh-CN": "表单查看者",
+        "zh-TW": "表單檢視者"
+      },
+      "permissions": [
+        "table:@forms:read",
+        "table:@answers:read",
+        "table:@invitations:read",
+        "table:@answer_files:read",
+        "page:@forms:view"
+      ]
+    }
+  ],
+  "sampleData": {
+    "file": "seeds/forms.sample.json"
+  },
+  "pages": [
+    {
+      "ref": "forms-settings",
+      "template": "page-crud",
+      "title": {
+        "key": "addon.forms.page.settings",
+        "fallback": "Forms settings"
+      },
+      "titles": {
+        "en-US": "Forms settings",
+        "de-DE": "Einstellungen für Formulare",
+        "fr-FR": "Réglages des formulaires",
+        "da-DK": "Indstillinger for formularer",
+        "cs-CZ": "Nastavení formulářů",
+        "ar-EG": "إعدادات النماذج",
+        "zh-CN": "表单设置",
+        "zh-TW": "表單設定"
+      },
+      "nav": {
+        "group": "library",
+        "icon": "settings",
+        "order": 21,
+        "offRail": true
+      },
+      "bindings": {
+        "rows": "settings"
+      },
+      "config": {
+        "form": {
+          "v": 2,
+          "sections": [
+            {
+              "id": "s1",
+              "fields": [
+                {
+                  "column": "answers_months"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "outbox": {
+    "table": "invitation_mails",
+    "columns": {
+      "kind": "kind",
+      "status": "status",
+      "to": "to_address",
+      "error": "error",
+      "sentAt": "sent_at"
+    },
+    "links": {
+      "invitation": "invitation_id"
+    },
+    "recipient": {
+      "via": "invitation_id",
+      "table": "invitations",
+      "email": "email",
+      "name": "name",
+      "language": "language"
+    },
+    "kinds": {
+      "invite-marketing": "forms-invite",
+      "invite-service": "forms-invite"
+    },
+    "classes": {
+      "invite-marketing": "marketing",
+      "invite-service": "service"
+    },
+    "purposes": {
+      "invite-marketing": "surveys",
+      "invite-service": "surveys"
+    },
+    "surveyLinks": [
+      "invite-marketing",
+      "invite-service"
+    ],
+    "producers": [
+      {
+        "kind": "invite-marketing",
+        "link": "invitation_id",
+        "onCreate": {
+          "table": "invitations",
+          "where": {
+            "column": "class",
+            "eq": "marketing"
+          }
+        }
+      },
+      {
+        "kind": "invite-service",
+        "link": "invitation_id",
+        "onCreate": {
+          "table": "invitations",
+          "where": {
+            "column": "class",
+            "eq": "service"
+          }
+        }
+      }
+    ]
+  },
+  "emailTemplates": [
+    {
+      "key": "forms-invite",
+      "name": {
+        "en-US": "Survey invitation",
+        "de-DE": "Einladung zur Umfrage",
+        "fr-FR": "Invitation à une enquête",
+        "da-DK": "Invitation til undersøgelse",
+        "cs-CZ": "Pozvánka do průzkumu",
+        "ar-EG": "دعوة إلى استطلاع",
+        "zh-CN": "调查邀请",
+        "zh-TW": "調查邀請"
+      },
+      "vars": [
+        "recipient.name",
+        "invitation.about",
+        "survey_link"
+      ],
+      "locales": {
+        "en-US": {
+          "subject": "How did we do?",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "How did we do?"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Hello {{recipient.name}},",
+                "onlyWith": "recipient.name"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "About {{invitation.about}}.",
+                "onlyWith": "invitation.about"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "We would like to hear how it went. It takes a minute or two."
+              }
+            },
+            {
+              "block": "email.button",
+              "data": {
+                "label": "Answer the survey",
+                "url": "{{survey_link}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "The link is yours alone. Please do not pass it on."
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "de-DE": {
+          "subject": "Wie war es mit uns?",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Wie war es mit uns?"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Hallo {{recipient.name}},",
+                "onlyWith": "recipient.name"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Betrifft: {{invitation.about}}.",
+                "onlyWith": "invitation.about"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Wir möchten gern hören, wie es gelaufen ist. Es dauert ein, zwei Minuten."
+              }
+            },
+            {
+              "block": "email.button",
+              "data": {
+                "label": "Zur Umfrage",
+                "url": "{{survey_link}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Der Link gilt nur für Sie. Bitte geben Sie ihn nicht weiter."
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "fr-FR": {
+          "subject": "Comment cela s’est-il passé ?",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Comment cela s’est-il passé ?"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Bonjour {{recipient.name}},",
+                "onlyWith": "recipient.name"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Au sujet de : {{invitation.about}}.",
+                "onlyWith": "invitation.about"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Nous aimerions savoir comment cela s’est passé. Cela prend une minute ou deux."
+              }
+            },
+            {
+              "block": "email.button",
+              "data": {
+                "label": "Répondre à l’enquête",
+                "url": "{{survey_link}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Ce lien est personnel. Merci de ne pas le transmettre."
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "da-DK": {
+          "subject": "Hvordan gik det?",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Hvordan gik det?"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Hej {{recipient.name}},",
+                "onlyWith": "recipient.name"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Det handler om: {{invitation.about}}.",
+                "onlyWith": "invitation.about"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Vi vil gerne høre, hvordan det gik. Det tager et minut eller to."
+              }
+            },
+            {
+              "block": "email.button",
+              "data": {
+                "label": "Besvar undersøgelsen",
+                "url": "{{survey_link}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Linket er kun til dig. Del det venligst ikke."
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "cs-CZ": {
+          "subject": "Jak jsme si vedli?",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Jak jsme si vedli?"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Dobrý den, {{recipient.name}},",
+                "onlyWith": "recipient.name"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Týká se: {{invitation.about}}.",
+                "onlyWith": "invitation.about"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Rádi bychom slyšeli, jak to proběhlo. Zabere to minutu nebo dvě."
+              }
+            },
+            {
+              "block": "email.button",
+              "data": {
+                "label": "Vyplnit průzkum",
+                "url": "{{survey_link}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Odkaz je určen jen vám. Prosíme, nepředávejte ho dál."
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "ar-EG": {
+          "subject": "كيف كانت تجربتك معنا؟",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "كيف كانت تجربتك معنا؟"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "مرحبًا {{recipient.name}}،",
+                "onlyWith": "recipient.name"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "بخصوص: {{invitation.about}}.",
+                "onlyWith": "invitation.about"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "نودّ أن نعرف كيف سارت الأمور. يستغرق ذلك دقيقة أو دقيقتين."
+              }
+            },
+            {
+              "block": "email.button",
+              "data": {
+                "label": "أجب عن الاستطلاع",
+                "url": "{{survey_link}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "هذا الرابط لك وحدك. نرجو ألا تشاركه."
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "zh-CN": {
+          "subject": "我们做得怎么样？",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "我们做得怎么样？"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "{{recipient.name}}，您好：",
+                "onlyWith": "recipient.name"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "关于：{{invitation.about}}。",
+                "onlyWith": "invitation.about"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "我们想了解一下情况如何，只需一两分钟。"
+              }
+            },
+            {
+              "block": "email.button",
+              "data": {
+                "label": "填写调查",
+                "url": "{{survey_link}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "此链接仅供您本人使用，请勿转发。"
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "zh-TW": {
+          "subject": "我們做得如何？",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "我們做得如何？"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "{{recipient.name}}，您好：",
+                "onlyWith": "recipient.name"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "關於：{{invitation.about}}。",
+                "onlyWith": "invitation.about"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "我們想了解一下情況如何，只需一兩分鐘。"
+              }
+            },
+            {
+              "block": "email.button",
+              "data": {
+                "label": "填寫調查",
+                "url": "{{survey_link}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "此連結僅供您本人使用，請勿轉寄。"
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        }
+      }
+    }
+  ],
+  "addOn": {
+    "attaches": [
+      {
+        "app": "*",
+        "range": "*"
+      }
+    ],
+    "connect": {
+      "kind": "none"
+    },
+    "hostApi": 2,
+    "settingsTable": "settings",
+    "forms": {
+      "forms": "forms",
+      "answers": "answers",
+      "invitations": "invitations",
+      "files": "answer_files"
+    },
+    "pages": [
+      {
+        "ref": "forms",
+        "title": {
+          "key": "addon.forms.page.forms",
+          "fallback": "Forms"
+        },
+        "titles": {
+          "en-US": "Forms",
+          "de-DE": "Formulare",
+          "fr-FR": "Formulaires",
+          "da-DK": "Formularer",
+          "cs-CZ": "Formuláře",
+          "ar-EG": "النماذج",
+          "zh-CN": "表单",
+          "zh-TW": "表單"
+        },
+        "icon": "clipboard-list",
+        "client": "dist/pages/forms.js",
+        "nav": {
+          "group": "library",
+          "order": 20
+        },
+        "detail": true
+      }
+    ]
+  }
+}

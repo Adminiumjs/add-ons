@@ -84,6 +84,8 @@ describe('release shape: discovery', () => {
       'inventory',
       // The first that answers what an order's reductions come to (`price-adjust@1`), from the same file as its postings.
       'offers',
+      // The first add-on whose pages a stranger fills, drawn and checked by the engine.
+      'forms',
       // The first that moves money: a `payment-provider@1` half the engine loads, and no screen of its own.
       'payments-stripe',
       // The second payment provider, and the first server half that imports Node's own modules (webhook certificates).

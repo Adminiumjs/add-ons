@@ -63,6 +63,7 @@ including the ones that name no company.
 | Invoices & Receipts | `packages/invoices` | `INV` | *(none)* | — |
 | Inventory | `packages/inventory` | `STK` | *(none)* | — |
 | Offers & gift cards | `packages/offers` | `OFF` | *(none)* | — |
+| Forms & surveys | `packages/forms` | `FRM` | *(none)* | — |
 | Card payments | `packages/payments-stripe` | `CP` | **Stripe**, **Link**; ways to pay it names: **PayPal**, **Apple Pay**, **Google Pay**, **Klarna**; card schemes: **Visa**, **Mastercard**, **American Express** | Stripe, Inc.; PayPal, Inc.; Apple Inc.; Google LLC; Klarna Bank AB; Visa Inc.; Mastercard International Incorporated; American Express Company |
 | Wallet payments | `packages/payments-paypal` | `WP` | **PayPal** | PayPal, Inc. |
 
@@ -605,6 +606,45 @@ of this section, and it is empty. The package's `sources.test.ts` checks that
 list, that the manifest declares no connection, and that no source file names
 an address; the release sweep reads every built byte for the words that may
 not ship. The day a paragraph above stops being true, one of those turns red.
+
+---
+
+# Forms & surveys — references no third-party trademarks
+
+## Why an add-on of web forms and mailed surveys references no mark
+
+"Form", "survey" and "recommend score" are ordinary words for things a business
+asks its own visitors and customers. **Every form, survey, answer and
+invitation here is the operator's own row**, written by them or by Adminium for
+them and kept in their own database. Nothing is collected through, hosted on or
+sent with anybody's form service, survey service or mail service.
+
+What this section is about is the marks the PACKAGE ITSELF could have named, in
+its code, its manifest, its template and its sample, and did not:
+
+- **No form or survey service.** A form is drawn and checked by the operator's
+  own Adminium; its link is the operator's own server's address. No answer is
+  copied to, or read from, a third party.
+- **No mail service.** An invitation is mailed by the operator's Adminium,
+  through whatever mail the operator set up there; the add-on names none.
+- **No website builder or app.** A form sits on the operator's website through
+  two lines Adminium gives them; no product is named as the place it goes.
+
+## Affiliation
+
+The add-on is not affiliated with, endorsed by or sponsored by any company,
+because it deals with none: it connects to nothing, holds no credential, names
+no service and reaches no address. The affiliation line therefore has nothing
+to attach itself to, which is exactly why the fact is stated here rather than
+left as an absence.
+
+## How the claim is kept true
+
+`COMPANY_MARKS` in `packages/forms/src/add-on-facts.ts` is the executable half
+of this section, and it is empty. The package's `sources.test.ts` checks that
+list, that the manifest declares no connection, and that no source file names
+an address; `dist.test.ts` reads every built byte for the words that may not
+ship. The day a paragraph above stops being true, one of those turns red.
 
 ---
 
