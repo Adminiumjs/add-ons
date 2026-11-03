@@ -122,6 +122,10 @@ describe('the forms tables', () => {
     }
   });
 
+  it('number the outbox's own rows: Adminium writes them, and fills no text key of a row it writes there', () => {
+    expect(columnOf('invitation_mails', 'id')).toEqual({ ref: 'id', type: 'int', role: 'pk' });
+  });
+
   it('mark as personal every column that holds who answered and what they wrote', () => {
     const personal = (table: string, column: string): boolean => columnOf(table, column).rules?.personal === true;
     for (const name of ['email', 'name', 'values', 'ip', 'user_agent', 'consent_wording', 'sent_from']) expect(personal('answers', name), `answers.${name}`).toBe(true);

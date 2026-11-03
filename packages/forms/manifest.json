@@ -1081,7 +1081,7 @@
         "columns": [
           {
             "ref": "id",
-            "type": "id",
+            "type": "int",
             "role": "pk"
           },
           {
