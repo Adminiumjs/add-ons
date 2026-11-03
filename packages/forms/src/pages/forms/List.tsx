@@ -7,7 +7,7 @@
  */
 import { useState, type ReactNode } from 'react';
 
-import { Button, Card, DataTable, Dialog, DialogBody, DialogFooter, DialogHeader, Divider, EmptyState, Grid, Link, SegmentedControl, Stack, Tabs, TabsList, TabsTrigger, Tag, asDataError, formatSince, lucideByName, useAccess, useFormSummary, useLocaleTag, useNavigate, useRecords, useWrite, type AddOnTranslate, type TableColumn } from '../shared/host.ts';
+import { Button, Card, DataTable, Dialog, DialogBody, DialogFooter, DialogHeader, Divider, EmptyState, Grid, Link, SegmentedControl, Stack, Tabs, TabsContent, TabsList, TabsTrigger, Tag, asDataError, formatSince, lucideByName, useAccess, useFormSummary, useLocaleTag, useNavigate, useRecords, useWrite, type AddOnTranslate, type TableColumn } from '../shared/host.ts';
 import { PageFrame, useSaid } from '../shared/PageFrame.tsx';
 import { formAt, listAt, type Kind } from '../shared/paths.ts';
 import { refusal } from '../shared/refusal.ts';
@@ -91,11 +91,11 @@ function FormCard({ t, form, mayDelete, onDelete }: { t: AddOnTranslate; form: F
   return (
     <Card padded>
       <Stack gap="md">
-        <Stack direction="row" align="center" justify="between">
-          <span className="inline-flex size-9 items-center justify-center rounded-lg bg-accent-soft text-accent" aria-hidden="true">
-            <Icon name={form.kind === 'survey' ? 'message-square-text' : 'clipboard-list'} />
-          </span>
-          <StatePill t={t} state={form.state} />
+              <Stack direction="row" align="center" justify="between">
+                <span className="inline-flex size-9 items-center justify-center rounded-lg bg-accent-soft text-accent" aria-hidden="true">
+                  <Icon name={form.kind === 'survey' ? 'message-square-text' : 'clipboard-list'} />
+                </span>
+                <StatePill t={t} state={form.state} />
         </Stack>
         <Stack gap="xs">
           <span className="font-bold text-fg">
@@ -217,8 +217,9 @@ export function List({ t, kind }: { t: AddOnTranslate; kind: Kind }): ReactNode 
 
   return (
     <PageFrame t={t} title={t('list.title', 'Forms')} actions={newButton} loading={!access.ready || read.loading} refused={access.ready && !access.canRead('forms')} error={read.error} onRetry={read.refetch} status={said} testId="forms-list">
-      <Stack direction="row" align="center" justify="between" wrap>
-        <Tabs value={kind} onValueChange={(value) => void navigate({ to: listAt(value === 'survey' ? 'survey' : 'form') })} variant="underline">
+      {/* The list is the open tab's own panel: the tab names it (`aria-controls`), so it must be there. */}
+      <Tabs value={kind} onValueChange={(value) => void navigate({ to: listAt(value === 'survey' ? 'survey' : 'form') })} variant="underline">
+        <Stack direction="row" align="center" justify="between" wrap>
           <TabsList aria-label={t('list.tabs', 'Forms or surveys')}>
             <TabsTrigger value="form">
               <span className="inline-flex items-center gap-2">
@@ -233,31 +234,35 @@ export function List({ t, kind }: { t: AddOnTranslate; kind: Kind }): ReactNode 
               </span>
             </TabsTrigger>
           </TabsList>
-        </Tabs>
-        {shown.length === 0 ? null : (
-          <SegmentedControl
-            aria-label={t('list.view', 'View')}
-            value={view}
-            onValueChange={(value) => setView(value === 'list' ? 'list' : 'cards')}
-            options={[
-              { value: 'cards', label: <span className="inline-flex items-center gap-1.5"><Icon name="layout-grid" />{t('list.view.cards', 'Cards')}</span> },
-              { value: 'list', label: <span className="inline-flex items-center gap-1.5"><Icon name="list" />{t('list.view.list', 'List')}</span> },
-            ]}
-          />
-        )}
-      </Stack>
-      {shown.length === 0 ? (
-        empty
-      ) : view === 'cards' ? (
-        <Grid columns={3} gap="md">
-          {shown.map((form) => (
-            <FormCard key={form.id} t={t} form={form} mayDelete={mayMake} onDelete={setAsked} />
-          ))}
-        </Grid>
-      ) : (
-        <DataTable columns={columns} rows={read.rows.filter((row) => formRowOf(row).kind === kind)} cardsBelow={680} />
-      )}
-      {read.hasMore ? <span className="text-body-sm text-fg-muted">{t('list.more', 'Showing the {count} most recently changed.', { count: LIST_MAX })}</span> : null}
+          {shown.length === 0 ? null : (
+            <SegmentedControl
+              aria-label={t('list.view', 'View')}
+              value={view}
+              onValueChange={(value) => setView(value === 'list' ? 'list' : 'cards')}
+              options={[
+                { value: 'cards', label: <span className="inline-flex items-center gap-1.5"><Icon name="layout-grid" />{t('list.view.cards', 'Cards')}</span> },
+                { value: 'list', label: <span className="inline-flex items-center gap-1.5"><Icon name="list" />{t('list.view.list', 'List')}</span> },
+              ]}
+            />
+          )}
+        </Stack>
+        <TabsContent value={kind}>
+          <Stack gap="md">
+            {shown.length === 0 ? (
+              empty
+            ) : view === 'cards' ? (
+              <Grid columns={3} gap="md">
+                {shown.map((form) => (
+                  <FormCard key={form.id} t={t} form={form} mayDelete={mayMake} onDelete={setAsked} />
+                ))}
+              </Grid>
+            ) : (
+              <DataTable columns={columns} rows={read.rows.filter((row) => formRowOf(row).kind === kind)} cardsBelow={680} />
+            )}
+            {read.hasMore ? <span className="text-body-sm text-fg-muted">{t('list.more', 'Showing the {count} most recently changed.', { count: LIST_MAX })}</span> : null}
+          </Stack>
+        </TabsContent>
+      </Tabs>
       <Dialog open={asked !== null} onOpenChange={(open) => (open ? undefined : setAsked(null))} size="sm">
         <DialogHeader title={t('list.delete.title', 'Delete this draft?')} closeLabel={t('shared.close', 'Close')} tone="danger" />
         <DialogBody>

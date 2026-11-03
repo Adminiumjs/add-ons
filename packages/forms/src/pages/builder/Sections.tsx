@@ -3,7 +3,7 @@
  * a visitor sees after sending, who is told, the limits and the files.
  */
 import { FORM_FILE_KINDS, FORM_PER_HOUR_MAX, FORM_TELL_MAX, FORM_TICK_PURPOSES, type FormFileKind } from '@adminium/add-on-contracts/forms';
-import { useState, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 
 import { Button, Checkbox, Combobox, IconButton, Input, RadioCard, RadioGroup, Select, Switch, Textarea, useLocaleTag, type AddOnTranslate } from '../shared/host.ts';
 import { isRightToLeft } from '../shared/languages.ts';
@@ -43,6 +43,7 @@ export function TickSection({ t, builder, mayEdit }: { t: AddOnTranslate; builde
   const tick = pickedOf(builder, ticksOf(d));
   const lang = builder.editing;
   const [writing, setWriting] = useState<string | null>(null);
+  const confirmId = useId();
   if (tick === undefined) return <span className="text-[12.5px] text-fg-subtle">{t('builder.tick.add', 'Add an Agreement tick from the list to ask visitors to agree to mail.')}</span>;
   const set = (change: (tick: QuestionOf<'tick'>) => QuestionOf<'tick'>): void => builder.change((draft) => ({ ...draft, definition: updateQuestion(draft.definition, tick.id, (one) => (one.kind === 'tick' ? change(one) : one)) }));
   const changed = new Date(`${tick.wordingChangedAt}T12:00:00`);
@@ -118,10 +119,12 @@ export function TickSection({ t, builder, mayEdit }: { t: AddOnTranslate; builde
       />
       <span className="flex items-start gap-2.5 rounded-lg border border-border bg-surface-2 px-3 py-2.5">
         <span className="flex flex-1 flex-col gap-0.5">
-          <span className="text-[12.5px] font-bold">{t('builder.tick.confirm', 'Ask them to confirm by e-mail')}</span>
+          <label htmlFor={confirmId} className="text-[12.5px] font-bold">
+            {t('builder.tick.confirm', 'Ask them to confirm by e-mail')}
+          </label>
           <span className="text-[11.5px] leading-[1.45] text-fg-subtle">{t('builder.tick.confirmSub', 'Recommended. Turn off only if you have another way to show they agreed.')}</span>
         </span>
-        <Switch checked={tick.confirm !== false} disabled={!mayEdit} onCheckedChange={(checked) => set((one) => ({ ...one, confirm: checked }))} />
+        <Switch id={confirmId} checked={tick.confirm !== false} disabled={!mayEdit} onCheckedChange={(checked) => set((one) => ({ ...one, confirm: checked }))} />
       </span>
       <Lock>{t('builder.card.unticked', 'Always starts unticked. Visitors tick it themselves.')}</Lock>
     </span>
@@ -259,6 +262,7 @@ export function limitsSummary(t: AddOnTranslate, draft: Draft): string {
 }
 
 export function LimitsSection({ t, builder, mayEdit }: { t: AddOnTranslate; builder: Builder; mayEdit: boolean }): ReactNode {
+  const harderId = useId();
   const limits = builder.draft.settings.limits ?? {};
   const set = (next: { perHour?: number; harder?: boolean }): void => builder.change((draft) => ({ ...draft, settings: { ...draft.settings, limits: { perHour: draft.settings.limits?.perHour ?? 200, harder: draft.settings.limits?.harder ?? false, ...next } } }));
   return (
@@ -275,10 +279,12 @@ export function LimitsSection({ t, builder, mayEdit }: { t: AddOnTranslate; buil
       />
       <span className="flex items-start gap-2.5 rounded-lg border border-border bg-surface-2 px-3 py-2.5">
         <span className="flex flex-1 flex-col gap-0.5">
-          <span className="text-[12.5px] font-bold">{t('builder.limits.harder', 'Use a harder check')}</span>
+          <label htmlFor={harderId} className="text-[12.5px] font-bold">
+            {t('builder.limits.harder', 'Use a harder check')}
+          </label>
           <span className="text-[11.5px] leading-[1.45] text-fg-subtle">{t('builder.limits.harderSub', 'Visitors pass one more check before sending. Turn on if junk sends get through.')}</span>
         </span>
-        <Switch checked={limits.harder === true} disabled={!mayEdit} onCheckedChange={(checked) => set({ harder: checked })} />
+        <Switch id={harderId} checked={limits.harder === true} disabled={!mayEdit} onCheckedChange={(checked) => set({ harder: checked })} />
       </span>
     </span>
   );
