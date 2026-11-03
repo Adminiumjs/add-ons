@@ -4,8 +4,8 @@
  * opens, with the section's one-line summary while it is closed. A staff
  * link's `?settings=<section>` opens that section.
  *
- * A survey shows "Each answer becomes", "After sending" and "Tell" here, and
- * its own sections from the surveys' folder (`surveySeam.ts`).
+ * A survey's column is the surveys' own panel (`surveys/SurveySettings.tsx`),
+ * with "Each answer becomes", "After sending" and "Tell" from here inside it.
  */
 import type { ReactNode } from 'react';
 
@@ -17,7 +17,8 @@ import { Icon } from './parts.tsx';
 import { AfterSection, afterSummary, FilesSection, filesSummary, LimitsSection, limitsSummary, nameOf, TellSection, tellSummary, TickSection, tickSummary } from './Sections.tsx';
 import { usePeople, type FormsStatus } from './status.ts';
 import type { Builder } from './store.ts';
-import { SURVEY_SECTIONS, SURVEY_TELL_EXTRA } from './surveySeam.ts';
+import { SurveySettings } from '../surveys/SurveySettings.tsx';
+import type { Settings } from './draft.ts';
 import { sectionName } from './words.ts';
 
 interface Part {
@@ -50,28 +51,28 @@ export function SettingsColumn({ t, form, builder, mayEdit, status }: { t: AddOn
   const survey = draft.definition.kind === 'survey';
   // People are asked for once Tell is open, or someone is told already.
   const people = usePeople(builder.open === 'tell' || (draft.settings.tell ?? []).some((one) => one.kind === 'person'));
-  const seamProps = { t, form, draft, change: builder.change, editing: builder.editing, mayEdit };
-  const Extra = SURVEY_TELL_EXTRA;
-
-  const becomes: Part = { id: 'becomes', icon: 'table-2', title: sectionName(t, 'becomes'), summary: becomesSummary(t, draft, tables), body: () => <BecomesSection t={t} builder={builder} mayEdit={mayEdit} /> };
-  const after: Part = { id: 'after', icon: 'corner-down-right', title: sectionName(t, 'after'), summary: afterSummary(t, draft), body: () => <AfterSection t={t} builder={builder} mayEdit={mayEdit} /> };
-  const tell: Part = {
-    id: 'tell',
-    icon: 'bell-ring',
-    title: sectionName(t, 'tell'),
-    summary: tellSummary(t, draft, nameOf(t, status, people)),
-    body: () => <TellSection t={t} builder={builder} mayEdit={mayEdit} status={status} people={people} {...(survey && Extra !== null ? { extra: <Extra {...seamProps} /> } : {})} />,
-  };
-  const parts: Part[] = survey
-    ? [becomes, after, tell, ...SURVEY_SECTIONS.map((section) => ({ id: section.id, icon: section.icon, title: section.title(t), summary: section.summary(t, draft), body: () => <section.Body {...seamProps} /> }))]
-    : [
+  // A survey's column is its own panel; this folder's three sections are drawn inside it.
+  if (survey)
+    return (
+      <SurveySettings
+        t={t}
+        definition={draft.definition}
+        settings={draft.settings}
+        onChange={(settings) => builder.change((one) => ({ ...one, settings: settings as Settings }))}
+        becomes={<BecomesSection t={t} builder={builder} mayEdit={mayEdit} />}
+        after={<AfterSection t={t} builder={builder} mayEdit={mayEdit} />}
+        tell={<TellSection t={t} builder={builder} mayEdit={mayEdit} status={status} people={people} caption={false} />}
+        disabled={!mayEdit}
+      />
+    );
+  const parts: Part[] = [
         becomes,
         { id: 'tick', icon: 'badge-check', title: sectionName(t, 'tick'), summary: tickSummary(t, draft), body: () => <TickSection t={t} builder={builder} mayEdit={mayEdit} /> },
         after,
         tell,
         { id: 'limits', icon: 'gauge', title: sectionName(t, 'limits'), summary: limitsSummary(t, draft), body: () => <LimitsSection t={t} builder={builder} mayEdit={mayEdit} /> },
         { id: 'files', icon: 'paperclip', title: sectionName(t, 'files'), summary: filesSummary(t, draft), body: () => <FilesSection t={t} builder={builder} mayEdit={mayEdit} /> },
-      ];
+  ];
 
   return (
     <aside aria-label={t('builder.settings', 'Form settings')} className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">

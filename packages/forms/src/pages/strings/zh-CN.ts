@@ -80,7 +80,6 @@ export const builder: Readonly<Record<string, string>> = {
   "builder.becomes.fills": "填写 {column} 的问题",
   "builder.becomes.fixed": "每个新行都会获得此值。",
   "builder.becomes.gone": "已不再向表单开放的表",
-  "builder.becomes.invitation": "来自邀请",
   "builder.becomes.keep": "仅保留回答",
   "builder.becomes.keepSub": "回答保留在这里，位于“回答”下。",
   "builder.becomes.none": "目前还没有应用向表单开放表，因此回答只能保留在这里。",

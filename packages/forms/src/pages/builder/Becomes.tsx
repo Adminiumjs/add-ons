@@ -15,6 +15,7 @@ import type { ReactNode } from 'react';
 import { Input, RadioCard, RadioGroup, Select, useFormTables, type AddOnTranslate } from '../shared/host.ts';
 import { becomesFor, mapColumn, numberOf, wordIn, type Becomes as BecomesValue, type Draft } from './draft.ts';
 import { fillerOf, fillersOf, mapFor, mappable, offEnum, kitTables, type KitTable } from './mapping.ts';
+import { FromInvitation } from '../surveys/SurveySettings.tsx';
 import { Icon } from './parts.tsx';
 import type { Builder } from './store.ts';
 
@@ -105,15 +106,8 @@ export function BecomesSection({ t, builder, mayEdit }: { t: AddOnTranslate; bui
                 ? table.columns
                     .filter((column) => column.link)
                     .map((column) => (
-                      <span key={column.name} className="grid grid-cols-[minmax(0,1fr)_22px_minmax(0,1fr)] items-center gap-1.5 border-t border-border bg-surface-2 px-2.5 py-1.5 text-[12px]">
-                        <span className="flex items-center gap-1.5 font-bold">
-                          <Icon name="lock" />
-                          {t('builder.becomes.invitation', 'From the invitation')}
-                        </span>
-                        <span className="flex text-fg-subtle rtl:-scale-x-100" aria-hidden="true">
-                          <Icon name="arrow-right" />
-                        </span>
-                        <bdi className="font-bold">{column.label}</bdi>
+                      <span key={column.name} className="flex border-t border-border bg-surface-2 px-2.5 py-1.5">
+                        <FromInvitation t={t} column={column.label} />
                       </span>
                     ))
                 : null}

@@ -199,7 +199,7 @@ export const nameOf =
   (tell: Tell): string =>
     (tell.kind === 'role' ? status?.roles.find((role) => role.id === tell.id)?.name : people.find((person) => person.id === tell.id)?.name) ?? (tell.kind === 'role' ? t('builder.tell.someRole', 'A role') : t('builder.tell.someone', 'Someone'));
 
-export function TellSection({ t, builder, mayEdit, status, people, extra }: { t: AddOnTranslate; builder: Builder; mayEdit: boolean; status: FormsStatus | null; people: readonly { id: string; name: string }[]; extra?: ReactNode }): ReactNode {
+export function TellSection({ t, builder, mayEdit, status, people, caption = true }: { t: AddOnTranslate; builder: Builder; mayEdit: boolean; status: FormsStatus | null; people: readonly { id: string; name: string }[]; caption?: boolean }): ReactNode {
   const [adding, setAdding] = useState(false);
   const tell = builder.draft.settings.tell ?? [];
   const name = nameOf(t, status, people);
@@ -244,8 +244,7 @@ export function TellSection({ t, builder, mayEdit, status, people, extra }: { t:
           {t('builder.tell.add', 'Add a person or role')}
         </button>
       ) : null}
-      {extra}
-      <span className="text-[11.5px] text-fg-subtle">{t('builder.tell.sub', 'They get a bell and an e-mail for each answer.')}</span>
+      {caption ? <span className="text-[11.5px] text-fg-subtle">{t('builder.tell.sub', 'They get a bell and an e-mail for each answer.')}</span> : null}
     </span>
   );
 }

@@ -80,7 +80,6 @@ export const builder: Readonly<Record<string, string>> = {
   "builder.becomes.fills": "The question that fills {column}",
   "builder.becomes.fixed": "Every new row gets this value.",
   "builder.becomes.gone": "A table no longer open to forms",
-  "builder.becomes.invitation": "From the invitation",
   "builder.becomes.keep": "Just keep the answers",
   "builder.becomes.keepSub": "Answers stay here, under Answers.",
   "builder.becomes.none": "No app opens a table to forms yet, so answers can only be kept here.",
