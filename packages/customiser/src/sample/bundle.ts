@@ -85,7 +85,8 @@ function part(design: string, code: string, name: string, kind: string, extra: R
 function makerTables(): Bundle['tables'] {
   order = 0;
   const bases: Row[] = [
-    { '@label': 'base:coasters', app: MAKER, name: 'Engraved walnut coasters', kind: 'piece', width_mm: 95, height_mm: 95, corner_mm: 9, material: 'Walnut', thickness_mm: 6, state: 'published', position: 1 },
+    // Engraved on one side, or on both for the priced feature.
+    { '@label': 'base:coasters', app: MAKER, name: 'Engraved walnut coasters', kind: 'piece', width_mm: 95, height_mm: 95, corner_mm: 9, sides: 2, back_feature_id: ref('feature:maker-both-sides'), material: 'Walnut', thickness_mm: 6, state: 'published', position: 1 },
     { '@label': 'base:nook', app: MAKER, name: 'The Little Bookshop', kind: 'kit', width_mm: 110, height_mm: 180, depth_mm: 150, material: 'Birch ply', thickness_mm: 3, state: 'published', position: 2 },
     { '@label': 'base:keyring', app: MAKER, name: 'Name keyring', kind: 'printed', width_mm: 56, height_mm: 24, corner_mm: 11, material: 'PLA', thickness_mm: 4, state: 'published', position: 3 },
     { '@label': 'base:board', app: MAKER, name: 'Walnut cutting board', kind: 'piece', width_mm: 380, height_mm: 260, corner_mm: 16, material: 'Walnut', thickness_mm: 18, state: 'published', position: 4 },
@@ -117,9 +118,9 @@ function makerTables(): Bundle['tables'] {
     { '@label': 'area:coasters-logo', app: MAKER, base_id: ref('base:coasters'), code: 'logo', name: 'Your logo', shape: 'rect', ...boxOf(COASTER, 30, 14, 40, 38), takes: 'logo', required: false, rules: LOGO, feature_id: ref('feature:maker-logo'), position: 1 },
     { '@label': 'area:coasters-words', app: MAKER, base_id: ref('base:coasters'), code: 'words', name: 'Your words', shape: 'rect', ...boxOf(COASTER, 12, 60, 76, 14), takes: 'words', required: false, rules: words({ chars: 24, size: 6, min: 4, max: 8, fonts: COASTER_FONTS, font: SANS, finishes: FINISHES, placeholder: 'The Hartleys' }), position: 2 },
     { '@label': 'area:nook-sign', app: MAKER, base_id: ref('base:nook'), code: 'sign', name: 'The shop sign', piece_id: ref('piece:nook-09'), face: 'front', shape: 'rect', ...boxOf(NOOK_FRONT, 8, 5, 84, 11), takes: 'words', required: true, rules: signWords, position: 3 },
-    { '@label': 'area:nook-lwin', app: MAKER, base_id: ref('base:nook'), code: 'lwin', name: 'The left window', piece_id: ref('piece:nook-10'), face: 'front', shape: 'rect', ...boxOf(NOOK_FRONT, 8, 25, 38, 30), takes: 'both', required: false, rules: windowWords, feature_id: ref('feature:maker-logo'), position: 4 },
+    { '@label': 'area:nook-lwin', app: MAKER, base_id: ref('base:nook'), code: 'lwin', name: 'The left window', piece_id: ref('piece:nook-10'), face: 'front', shape: 'rect', ...boxOf(NOOK_FRONT, 8, 25, 38, 30), takes: 'both', required: false, rules: { ...windowWords, alsoLogo: LOGO }, feature_id: ref('feature:maker-logo'), position: 4 },
     // A 3D-printed item's area is a flat face the shop marks; the words are raised from it.
-    { '@label': 'area:keyring-front', app: MAKER, base_id: ref('base:keyring'), code: 'front', name: 'The front', face: 'front', shape: 'rect', x_mm: 0, y_mm: 0, w_mm: 56, h_mm: 24, takes: 'words', required: true, rules: { mode: 'raised', depthMm: 1, smallestLetterMm: 4 }, position: 5 },
+    { '@label': 'area:keyring-front', app: MAKER, base_id: ref('base:keyring'), code: 'front', name: 'The front', face: 'front', shape: 'rect', x_mm: 0, y_mm: 0, w_mm: 56, h_mm: 24, takes: 'words', required: true, rules: { ...words({ chars: 8, size: 11, min: 6, max: 14, fonts: [SANS, CAPS, SLAB], font: SANS, upper: true, raised: 1, placeholder: 'ALEX' }), mode: 'raised', depthMm: 1, smallestLetterMm: 4 }, position: 5 },
     { '@label': 'area:board-corner', app: MAKER, base_id: ref('base:board'), code: 'corner', name: 'In the corner', shape: 'rect', x_mm: pct(54, 380), y_mm: pct(80, 260), w_mm: pct(40, 380), h_mm: pct(10, 260), takes: 'words', required: false, rules: words({ chars: 32, size: 8, min: 6, max: 10, fonts: [SERIF, SANS], font: SERIF, finishes: ['engraved'], placeholder: 'The Sharmas · 2019' }), position: 6 },
   ];
   const ready: Row[] = [
@@ -283,7 +284,7 @@ function E(code: string, name: string, x: number, y: number, w: number, h: numbe
   return { code, name, kind: 'shape', at: [x, y, w, h], locked: true, rules: { shape: 'ellipse', fill } };
 }
 /** The paper, to the bleed's edge. */
-const PAPER = (fill: string): PrintPart => ({ code: 'paper', name: fill === 'bg' ? 'Paper' : 'Colour', kind: 'shape', at: [-BLEED, -BLEED, CARD.w + 2 * BLEED, CARD.h + 2 * BLEED], locked: true, rules: { shape: 'rect', fill, background: true } });
+const PAPER = (fill: string): PrintPart => ({ code: 'paper', name: fill === 'paper' ? 'Paper' : 'Colour', kind: 'shape', at: [-BLEED, -BLEED, CARD.w + 2 * BLEED, CARD.h + 2 * BLEED], locked: true, rules: { shape: 'rect', fill, background: true } });
 
 interface PrintDesign {
   id: string;
@@ -295,13 +296,13 @@ interface PrintDesign {
 
 const HARBOUR_BACK = (): PrintPart[] => [
   PAPER('accent'),
-  T('phone', 'Phone', 6, 7, 75, { size: 9, weight: 700, colour: 'bg', max: 20, colours: ['bg', 'ink'], hint: HINT.phone }),
-  T('email', 'E-mail', 6, 12.6, 75, { colour: 'bg', max: 34, colours: ['bg', 'ink'], hint: HINT.email }),
-  T('web', 'Website', 6, 17, 75, { colour: 'bg', max: 34, colours: ['bg', 'ink'], hint: HINT.web }),
-  T('addr', 'Address lines', 6, 40, 75, { size: 7, lines: 2, max: 60, colour: 'bg', colours: ['bg', 'ink'], hint: HINT.addr }),
+  T('phone', 'Phone', 6, 7, 75, { size: 9, weight: 700, colour: 'paper', max: 20, colours: ['paper', 'ink'], hint: HINT.phone }),
+  T('email', 'E-mail', 6, 12.6, 75, { colour: 'paper', max: 34, colours: ['paper', 'ink'], hint: HINT.email }),
+  T('web', 'Website', 6, 17, 75, { colour: 'paper', max: 34, colours: ['paper', 'ink'], hint: HINT.web }),
+  T('addr', 'Address lines', 6, 40, 75, { size: 7, lines: 2, max: 60, colour: 'paper', colours: ['paper', 'ink'], hint: HINT.addr }),
 ];
 const PHOTO_FRONT = (): PrintPart[] => [
-  PAPER('bg'),
+  PAPER('paper'),
   T('name', 'Name', 6, 7, 73, { size: 11, weight: 800, max: 26, required: true, sizes: [10, 11, 12], hint: HINT.name }),
   T('title', 'Job title', 6, 12.6, 73, { weight: 600, colour: 'accent', max: 30, hint: HINT.title }),
   T('phone', 'Phone', 6, 38, 73, { size: 7, max: 20, hint: HINT.phone }),
@@ -320,13 +321,13 @@ const CARDS: PrintDesign[] = [
       {
         key: 'left',
         name: 'Logo left',
-        front: [PAPER('bg'), I('logo', 'Logo', 6, 6, 20, 20), T('name', 'Name', 6, 30.5, 75, { font: 'DM Serif Display', size: 13, weight: 400, max: 26, required: true, sizes: [11, 13, 15], fonts: ['DM Serif Display', 'Libre Baskerville', 'Manrope'], hint: HINT.name }), R('rule', 'Rule', 6, 38.4, 8, 0.7, 'accent'), T('title', 'Job title', 6, 40.4, 75, { size: 7.5, weight: 600, colour: 'accent', max: 24, sizes: [7, 7.5, 8.5], colours: ['accent', 'ink'], hint: HINT.title })],
+        front: [PAPER('paper'), I('logo', 'Logo', 6, 6, 20, 20), T('name', 'Name', 6, 30.5, 75, { font: 'DM Serif Display', size: 13, weight: 400, max: 26, required: true, sizes: [11, 13, 15], fonts: ['DM Serif Display', 'Libre Baskerville', 'Manrope'], hint: HINT.name }), R('rule', 'Rule', 6, 38.4, 8, 0.7, 'accent'), T('title', 'Job title', 6, 40.4, 75, { size: 7.5, weight: 600, colour: 'accent', max: 24, sizes: [7, 7.5, 8.5], colours: ['accent', 'ink'], hint: HINT.title })],
         back: HARBOUR_BACK(),
       },
       {
         key: 'top',
         name: 'Logo top',
-        front: [PAPER('bg'), I('logo', 'Logo', 32.5, 6, 20, 18), T('name', 'Name', 6, 28.5, 73, { font: 'DM Serif Display', size: 13, weight: 400, align: 'center', max: 26, required: true, sizes: [11, 13, 15], fonts: ['DM Serif Display', 'Libre Baskerville', 'Manrope'], hint: HINT.name }), R('rule', 'Rule', 38.5, 36.4, 8, 0.7, 'accent'), T('title', 'Job title', 6, 38.4, 73, { size: 7.5, weight: 600, colour: 'accent', align: 'center', max: 24, sizes: [7, 7.5, 8.5], colours: ['accent', 'ink'], hint: HINT.title })],
+        front: [PAPER('paper'), I('logo', 'Logo', 32.5, 6, 20, 18), T('name', 'Name', 6, 28.5, 73, { font: 'DM Serif Display', size: 13, weight: 400, align: 'center', max: 26, required: true, sizes: [11, 13, 15], fonts: ['DM Serif Display', 'Libre Baskerville', 'Manrope'], hint: HINT.name }), R('rule', 'Rule', 38.5, 36.4, 8, 0.7, 'accent'), T('title', 'Job title', 6, 38.4, 73, { size: 7.5, weight: 600, colour: 'accent', align: 'center', max: 24, sizes: [7, 7.5, 8.5], colours: ['accent', 'ink'], hint: HINT.title })],
         back: HARBOUR_BACK(),
       },
     ],
@@ -340,8 +341,8 @@ const CARDS: PrintDesign[] = [
       {
         key: 'std',
         name: 'Standard',
-        front: [PAPER('bg'), T('name', 'Name', 6, 6, 73, { font: 'Libre Baskerville', size: 11, weight: 400, max: 28, required: true, sizes: [10, 11, 12], fonts: P_SERIF, hint: HINT.name }), T('title', 'Job title', 6, 11.6, 73, { size: 7, max: 30, hint: HINT.title }), T('phone', 'Phone', 6, 38, 73, { size: 7, max: 20, hint: HINT.phone }), T('email', 'E-mail', 6, 42, 73, { size: 7, max: 36, hint: HINT.email }), T('web', 'Website', 6, 46, 73, { size: 7, max: 36, hint: HINT.web })],
-        back: [PAPER('bg'), I('logo', 'Logo', 27.5, 12.5, 30, 30)],
+        front: [PAPER('paper'), T('name', 'Name', 6, 6, 73, { font: 'Libre Baskerville', size: 11, weight: 400, max: 28, required: true, sizes: [10, 11, 12], fonts: P_SERIF, hint: HINT.name }), T('title', 'Job title', 6, 11.6, 73, { size: 7, max: 30, hint: HINT.title }), T('phone', 'Phone', 6, 38, 73, { size: 7, max: 20, hint: HINT.phone }), T('email', 'E-mail', 6, 42, 73, { size: 7, max: 36, hint: HINT.email }), T('web', 'Website', 6, 46, 73, { size: 7, max: 36, hint: HINT.web })],
+        back: [PAPER('paper'), I('logo', 'Logo', 27.5, 12.5, 30, 30)],
       },
     ],
   },
@@ -354,7 +355,7 @@ const CARDS: PrintDesign[] = [
       {
         key: 'std',
         name: 'Standard',
-        front: [PAPER('bg'), R('stripe', 'Stripe', -3, -3, 23, 61, 'accent'), I('logo', 'Logo', 5, 5, 12, 12), T('name', 'Name', 25, 16, 56, { font: 'Archivo', size: 12, weight: 800, max: 22, required: true, sizes: [10, 12], hint: HINT.name }), T('title', 'Job title', 25, 22, 56, { weight: 600, colour: 'accent', max: 28, hint: HINT.title }), T('phone', 'Phone', 25, 38, 56, { size: 7, max: 20, hint: HINT.phone }), T('email', 'E-mail', 25, 42.2, 56, { size: 7, max: 30, hint: HINT.email }), T('web', 'Website', 25, 46.4, 56, { size: 7, max: 30, hint: HINT.web })],
+        front: [PAPER('paper'), R('stripe', 'Stripe', -3, -3, 23, 61, 'accent'), I('logo', 'Logo', 5, 5, 12, 12), T('name', 'Name', 25, 16, 56, { font: 'Archivo', size: 12, weight: 800, max: 22, required: true, sizes: [10, 12], hint: HINT.name }), T('title', 'Job title', 25, 22, 56, { weight: 600, colour: 'accent', max: 28, hint: HINT.title }), T('phone', 'Phone', 25, 38, 56, { size: 7, max: 20, hint: HINT.phone }), T('email', 'E-mail', 25, 42.2, 56, { size: 7, max: 30, hint: HINT.email }), T('web', 'Website', 25, 46.4, 56, { size: 7, max: 30, hint: HINT.web })],
         back: [PAPER('accent'), I('logo', 'Logo', 30, 15, 25, 25)],
       },
     ],
@@ -368,8 +369,8 @@ const CARDS: PrintDesign[] = [
       {
         key: 'std',
         name: 'Standard',
-        front: [PAPER('bg'), E('circle', 'Corner circle', 52, -28, 62, 62, 'accent'), I('logo', 'Logo', 64, 6, 15, 15), T('name', 'Name', 6, 29.5, 60, { size: 11, weight: 800, max: 24, required: true, sizes: [10, 11, 12], hint: HINT.name }), T('title', 'Job title', 6, 35, 60, { max: 28, hint: HINT.title }), T('phone', 'Phone', 6, 42, 60, { size: 7, max: 20, hint: HINT.phone }), T('email', 'E-mail', 6, 46, 60, { size: 7, max: 30, hint: HINT.email })],
-        back: [PAPER('ink'), E('circle2', 'Corner circle', -32, 28, 62, 62, 'accent'), T('web', 'Website', 6, 24, 73, { size: 9, weight: 700, colour: 'bg', align: 'center', max: 30, colours: ['bg', 'accent'], hint: HINT.web })],
+        front: [PAPER('paper'), E('circle', 'Corner circle', 52, -28, 62, 62, 'accent'), I('logo', 'Logo', 64, 6, 15, 15), T('name', 'Name', 6, 29.5, 60, { size: 11, weight: 800, max: 24, required: true, sizes: [10, 11, 12], hint: HINT.name }), T('title', 'Job title', 6, 35, 60, { max: 28, hint: HINT.title }), T('phone', 'Phone', 6, 42, 60, { size: 7, max: 20, hint: HINT.phone }), T('email', 'E-mail', 6, 46, 60, { size: 7, max: 30, hint: HINT.email })],
+        back: [PAPER('ink'), E('circle2', 'Corner circle', -32, 28, 62, 62, 'accent'), T('web', 'Website', 6, 24, 73, { size: 9, weight: 700, colour: 'paper', align: 'center', max: 30, colours: ['paper', 'accent'], hint: HINT.web })],
       },
     ],
   },
@@ -382,8 +383,8 @@ const CARDS: PrintDesign[] = [
       {
         key: 'std',
         name: 'Standard',
-        front: [PAPER('bg'), T('initials', 'Initials', 6, 5, 40, { font: 'DM Serif Display', size: 40, weight: 400, max: 3, required: true, sizes: [32, 40], fonts: ['DM Serif Display', 'Libre Baskerville'], hint: HINT.initials }), R('rule', 'Rule', 6, 35.6, 73, 0.4, 'ink'), T('name', 'Name', 6, 38, 73, { font: 'Libre Baskerville', size: 10, weight: 400, max: 30, required: true, fonts: P_SERIF, hint: HINT.name }), T('title', 'Job title', 6, 43.2, 73, { size: 7, max: 34, hint: HINT.title })],
-        back: [PAPER('bg'), T('phone', 'Phone', 6, 17, 73, { size: 8, align: 'center', max: 20, hint: HINT.phone }), T('email', 'E-mail', 6, 21.4, 73, { size: 7.5, align: 'center', max: 36, hint: HINT.email }), T('web', 'Website', 6, 25.6, 73, { size: 7.5, align: 'center', max: 36, hint: HINT.web }), T('addr', 'Address lines', 6, 38, 73, { size: 7, lines: 2, align: 'center', max: 60, hint: HINT.addr })],
+        front: [PAPER('paper'), T('initials', 'Initials', 6, 5, 40, { font: 'DM Serif Display', size: 40, weight: 400, max: 3, required: true, sizes: [32, 40], fonts: ['DM Serif Display', 'Libre Baskerville'], hint: HINT.initials }), R('rule', 'Rule', 6, 35.6, 73, 0.4, 'ink'), T('name', 'Name', 6, 38, 73, { font: 'Libre Baskerville', size: 10, weight: 400, max: 30, required: true, fonts: P_SERIF, hint: HINT.name }), T('title', 'Job title', 6, 43.2, 73, { size: 7, max: 34, hint: HINT.title })],
+        back: [PAPER('paper'), T('phone', 'Phone', 6, 17, 73, { size: 8, align: 'center', max: 20, hint: HINT.phone }), T('email', 'E-mail', 6, 21.4, 73, { size: 7.5, align: 'center', max: 36, hint: HINT.email }), T('web', 'Website', 6, 25.6, 73, { size: 7.5, align: 'center', max: 36, hint: HINT.web }), T('addr', 'Address lines', 6, 38, 73, { size: 7, lines: 2, align: 'center', max: 60, hint: HINT.addr })],
       },
     ],
   },
@@ -393,8 +394,8 @@ const CARDS: PrintDesign[] = [
     tags: ['photo'],
     palettes: [['day', 'Day', '#ffffff', '#1a1a1f', '#c0562f'], ['night', 'Night', '#15161b', '#f2f2f4', '#e8b04a']],
     layouts: [
-      { key: 'full', name: 'Photo to the edge', front: PHOTO_FRONT(), back: [PAPER('bg'), I('photo', 'Photo', -3, -3, 91, 61, true)] },
-      { key: 'border', name: 'Photo with a border', front: PHOTO_FRONT(), back: [PAPER('bg'), I('photo', 'Photo', 5, 5, 75, 45, true)] },
+      { key: 'full', name: 'Photo to the edge', front: PHOTO_FRONT(), back: [PAPER('paper'), I('photo', 'Photo', -3, -3, 91, 61, true)] },
+      { key: 'border', name: 'Photo with a border', front: PHOTO_FRONT(), back: [PAPER('paper'), I('photo', 'Photo', 5, 5, 75, 45, true)] },
     ],
   },
   {
@@ -406,7 +407,7 @@ const CARDS: PrintDesign[] = [
       {
         key: 'std',
         name: 'Standard',
-        front: [PAPER('bg'), R('band', 'Top colour', -3, -3, 91, 33, 'accent'), T('name', 'Name', 6, 13.5, 73, { font: 'Archivo', size: 12, weight: 800, colour: 'bg', max: 24, required: true, colours: ['bg', 'ink'], hint: HINT.name }), T('title', 'Job title', 6, 20.2, 73, { weight: 600, colour: 'bg', max: 30, colours: ['bg', 'ink'], hint: HINT.title }), T('phone', 'Phone', 6, 36, 73, { size: 7, max: 20, hint: HINT.phone }), T('email', 'E-mail', 6, 40.4, 73, { size: 7, max: 36, hint: HINT.email }), T('web', 'Website', 6, 44.8, 73, { size: 7, max: 36, hint: HINT.web })],
+        front: [PAPER('paper'), R('band', 'Top colour', -3, -3, 91, 33, 'accent'), T('name', 'Name', 6, 13.5, 73, { font: 'Archivo', size: 12, weight: 800, colour: 'paper', max: 24, required: true, colours: ['paper', 'ink'], hint: HINT.name }), T('title', 'Job title', 6, 20.2, 73, { weight: 600, colour: 'paper', max: 30, colours: ['paper', 'ink'], hint: HINT.title }), T('phone', 'Phone', 6, 36, 73, { size: 7, max: 20, hint: HINT.phone }), T('email', 'E-mail', 6, 40.4, 73, { size: 7, max: 36, hint: HINT.email }), T('web', 'Website', 6, 44.8, 73, { size: 7, max: 36, hint: HINT.web })],
         back: [PAPER('accent'), I('logo', 'Logo', 30, 15, 25, 25)],
       },
     ],
@@ -420,8 +421,8 @@ const CARDS: PrintDesign[] = [
       {
         key: 'std',
         name: 'Standard',
-        front: [PAPER('bg'), T('name', 'Name', 6, 21, 73, { size: 10, weight: 700, align: 'center', max: 30, required: true, hint: HINT.name }), T('title', 'Job title', 6, 26.4, 73, { size: 7, align: 'center', max: 34, hint: HINT.title })],
-        back: [PAPER('bg'), T('phone', 'Phone', 6, 22, 73, { size: 7.5, align: 'center', max: 20, hint: HINT.phone }), T('email', 'E-mail', 6, 26.4, 73, { size: 7.5, align: 'center', max: 36, hint: HINT.email })],
+        front: [PAPER('paper'), T('name', 'Name', 6, 21, 73, { size: 10, weight: 700, align: 'center', max: 30, required: true, hint: HINT.name }), T('title', 'Job title', 6, 26.4, 73, { size: 7, align: 'center', max: 34, hint: HINT.title })],
+        back: [PAPER('paper'), T('phone', 'Phone', 6, 22, 73, { size: 7.5, align: 'center', max: 20, hint: HINT.phone }), T('email', 'E-mail', 6, 26.4, 73, { size: 7.5, align: 'center', max: 36, hint: HINT.email })],
       },
     ],
   },
@@ -436,9 +437,10 @@ const ROLES: [string, string][] = [
 
 function printingTables(): Bundle['tables'] {
   const bases: Row[] = [
-    { '@label': 'base:cards', app: PRINTING, name: 'Business cards', kind: 'page', width_mm: CARD.w, height_mm: CARD.h, bleed_mm: BLEED, safe_mm: 4, sides: 2, state: 'published', position: 1 },
+    // Printed on the front, and on the back for the priced feature.
+    { '@label': 'base:cards', app: PRINTING, name: 'Business cards', kind: 'page', width_mm: CARD.w, height_mm: CARD.h, bleed_mm: BLEED, safe_mm: 4, sides: 2, back_feature_id: ref('feature:printing-back'), state: 'published', position: 1 },
     // Flyers have no ready-made designs yet: customers start from blank or send their own file.
-    { '@label': 'base:flyer-a5', app: PRINTING, name: 'A5 flyers', kind: 'page', width_mm: 148, height_mm: 210, bleed_mm: BLEED, safe_mm: 4, sides: 2, state: 'published', position: 2 },
+    { '@label': 'base:flyer-a5', app: PRINTING, name: 'A5 flyers', kind: 'page', width_mm: 148, height_mm: 210, bleed_mm: BLEED, safe_mm: 4, sides: 2, back_feature_id: ref('feature:printing-back'), state: 'published', position: 2 },
   ];
   const ready: Row[] = CARDS.map((card, i) => ({ '@label': `ready:${card.id}`, app: PRINTING, base_id: ref('base:cards'), name: card.name, tags: card.tags, layouts: card.layouts.map((layout) => ({ key: layout.key, name: layout.name })), state: 'published', position: i + 1 }));
   const parts: Row[] = [];
@@ -479,7 +481,7 @@ function printingTables(): Bundle['tables'] {
   }
   const features: Row[] = [{ '@label': 'feature:printing-back', app: PRINTING, code: 'print-back', name: 'Print the back', active: true }];
   // Harbour Bakery's cards (order MP-4112): their own details on the Harbour design, logo left.
-  const harbour = { layout: 'left', palette: 'harbour', parts: { name: { text: 'Nell Fairweather' }, title: { text: 'Head baker' }, phone: { text: '01628 471 302' }, email: { text: 'hello@harbourbakery.co.uk' }, web: { text: 'harbourbakery.co.uk' }, addr: { text: '12 Quay Street\nMarlow SL7 1BT' }, logo: { file: 'logo_file' } } };
+  const harbour = { layout: 'left', palette: 'harbour', sides: 2, parts: { name: { text: 'Nell Fairweather' }, title: { text: 'Head baker' }, phone: { text: '01628 471 302' }, email: { text: 'hello@harbourbakery.co.uk' }, web: { text: 'harbourbakery.co.uk' }, addr: { text: '12 Quay Street\nMarlow SL7 1BT' }, logo: { file: 'logo_file' } } };
   const designs: Row[] = [{ '@label': 'design:mp-4112', app: PRINTING, code: 'MP4112C8G2S6E4WB', format: 1, ready_design_id: ref('ready:harbour'), base_id: ref('base:cards'), values: harbour, state: 'ordered' }];
   const versions: Row[] = [{ app: PRINTING, design_id: ref('design:mp-4112'), version: 1, values: harbour, note: 'Both sides, as printed.' }];
   return [

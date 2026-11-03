@@ -99,6 +99,8 @@ export function tables(): Table[] {
         mm('bleed_mm', w('Bleed (mm)', 'Beschnitt (mm)', 'Fond perdu (mm)', 'Beskæring (mm)', 'Spadávka (mm)', 'هامش القص (مم)', '出血（毫米）', '出血（公釐）'), { nullable: true }),
         mm('safe_mm', w('Safe line (mm)', 'Sicherheitsabstand (mm)', 'Marge de sécurité (mm)', 'Sikkerhedsmargen (mm)', 'Bezpečný okraj (mm)', 'خط الأمان (مم)', '安全线（毫米）', '安全線（公釐）'), { nullable: true }),
         col('sides', 'int', w('Sides', 'Seiten', 'Faces', 'Sider', 'Strany', 'الأوجه', '面数', '面數'), { nullable: true, rules: { validation: { min: 1, max: 2 } } }),
+        // The priced feature a design takes when it uses the second side ("Print the back").
+        link('back_feature_id', 'features', w('What a second side costs', 'Aufpreis für die zweite Seite', 'Option payante de la deuxième face', 'Tilvalg for den anden side', 'Příplatek za druhou stranu', 'الميزة المسعّرة للوجه الثاني', '第二面的加价选项', '第二面的加價選項')),
         col('material', 'text', w('Material', 'Material', 'Matière', 'Materiale', 'Materiál', 'الخامة', '材料', '材料'), { maxLength: 80, nullable: true }),
         mm('thickness_mm', w('Thickness (mm)', 'Stärke (mm)', 'Épaisseur (mm)', 'Tykkelse (mm)', 'Tloušťka (mm)', 'السماكة (مم)', '厚度（毫米）', '厚度（公釐）'), { nullable: true }),
         // TODO(J10): a cleaned SVG outline, `rules.file { accept: ['svg'] }`, once Adminium takes the kind.

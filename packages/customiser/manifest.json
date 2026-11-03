@@ -484,6 +484,22 @@
             }
           },
           {
+            "ref": "back_feature_id",
+            "type": "fk",
+            "references": "features",
+            "nullable": true,
+            "label": {
+              "en-US": "What a second side costs",
+              "de-DE": "Aufpreis für die zweite Seite",
+              "fr-FR": "Option payante de la deuxième face",
+              "da-DK": "Tilvalg for den anden side",
+              "cs-CZ": "Příplatek za druhou stranu",
+              "ar-EG": "الميزة المسعّرة للوجه الثاني",
+              "zh-CN": "第二面的加价选项",
+              "zh-TW": "第二面的加價選項"
+            }
+          },
+          {
             "ref": "material",
             "type": "text",
             "maxLength": 80,
@@ -3275,6 +3291,7 @@
         "bleed_mm",
         "safe_mm",
         "sides",
+        "back_feature_id",
         "material",
         "thickness_mm",
         "outline_file",
