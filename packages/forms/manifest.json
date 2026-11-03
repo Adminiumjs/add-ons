@@ -1388,11 +1388,14 @@
         "table:@forms:update",
         "table:@forms:delete",
         "table:@answers:read",
+        "table:@answers:read_pii",
         "table:@answers:delete",
         "table:@answers:export",
         "table:@invitations:read",
+        "table:@invitations:read_pii",
         "table:@answer_files:read",
         "table:@invitation_mails:read",
+        "table:@invitation_mails:read_pii",
         "table:@settings:read",
         "table:@settings:update",
         "page:@forms:view",
@@ -1415,7 +1418,9 @@
       "permissions": [
         "table:@forms:read",
         "table:@answers:read",
+        "table:@answers:read_pii",
         "table:@invitations:read",
+        "table:@invitations:read_pii",
         "table:@answer_files:read",
         "page:@forms:view"
       ]

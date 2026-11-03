@@ -122,7 +122,7 @@ describe('the forms tables', () => {
     }
   });
 
-  it('number the outbox's own rows: Adminium writes them, and fills no text key of a row it writes there', () => {
+  it('number the outbox’s own rows: Adminium writes them, and fills no text key of a row it writes there', () => {
     expect(columnOf('invitation_mails', 'id')).toEqual({ ref: 'id', type: 'int', role: 'pk' });
   });
 
@@ -162,10 +162,13 @@ describe('the roles', () => {
       expect.arrayContaining([
         ...['read', 'create', 'update', 'delete'].map((action) => `table:@forms:${action}`),
         'table:@answers:read',
+        'table:@answers:read_pii',
         'table:@answers:delete',
         'table:@invitations:read',
+        'table:@invitations:read_pii',
         'table:@answer_files:read',
         'table:@invitation_mails:read',
+        'table:@invitation_mails:read_pii',
         'table:@settings:read',
         'table:@settings:update',
       ]),
@@ -173,7 +176,11 @@ describe('the roles', () => {
   });
 
   it('let the reader read and change nothing', () => {
-    expect(role('reader').permissions.filter((grant) => grant.startsWith('table:') && !grant.endsWith(':read'))).toEqual([]);
+    expect(role('reader').permissions.filter((grant) => grant.startsWith('table:') && !grant.endsWith(':read') && !grant.endsWith(':read_pii'))).toEqual([]);
+  });
+
+  it('let both read who answered and what they wrote: every column of an answer is kept personal, and shown blank without it', () => {
+    for (const one of roles) for (const table of ['answers', 'invitations']) expect(one.permissions, `${one.key} ${table}`).toContain(`table:@${table}:read_pii`);
   });
 
   it('open every page to the widest role, and give every page a grant in some role', () => {
