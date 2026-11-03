@@ -24,8 +24,12 @@ function built(dir = DIST): string[] {
 }
 const asRelative = (file: string) => relative(DIST, file);
 const codeOf = (bytes: string) => bytes.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/[^\n]*/g, ' ');
-/** The size the one file stays under: every screen and eight languages of their words. */
-export const PAGE_MAX_BYTES = 600_000;
+/**
+ * The size the one file stays under: every screen and eight languages of their
+ * words, and the forms vocabulary itself (the builder checks a draft with the
+ * same `parseForm` Adminium publishes with, so its schemas ride along).
+ */
+export const PAGE_MAX_BYTES = 750_000;
 
 beforeAll(() => {
   buildForReal();

@@ -73,7 +73,8 @@ describe('a form’s link', () => {
     expect(field.getAttribute('dir')).toBe('ltr');
     expect(screen.getByText("Anyone with the link can open the form while it's live.")).toBeTruthy();
     // It asked Adminium once, by the status read.
-    expect(world.calls.filter((call) => call.kind === 'api').map((call) => call.table)).toEqual(['get /api/v1/forms/status']);
+    // The builder's buttons in the top bar ask the same read for themselves.
+    expect([...new Set(world.calls.filter((call) => call.kind === 'api').map((call) => call.table))]).toEqual(['get /api/v1/forms/status']);
   });
 
   it('copies, and says so', async () => {

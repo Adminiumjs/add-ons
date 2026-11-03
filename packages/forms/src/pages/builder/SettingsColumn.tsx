@@ -45,7 +45,7 @@ function Head({ part, open, onToggle }: { part: Part; open: boolean; onToggle: (
   );
 }
 
-export function SettingsColumn({ t, form, builder, mayEdit, status }: { t: AddOnTranslate; form: FormRow; builder: Builder; mayEdit: boolean; status: FormsStatus | null }): ReactNode {
+export function SettingsColumn({ t, builder, mayEdit, status }: { t: AddOnTranslate; form: FormRow; builder: Builder; mayEdit: boolean; status: FormsStatus | null }): ReactNode {
   const tables = kitTables(useFormTables().tables);
   const draft = builder.draft;
   const survey = draft.definition.kind === 'survey';
@@ -66,12 +66,12 @@ export function SettingsColumn({ t, form, builder, mayEdit, status }: { t: AddOn
       />
     );
   const parts: Part[] = [
-        becomes,
-        { id: 'tick', icon: 'badge-check', title: sectionName(t, 'tick'), summary: tickSummary(t, draft), body: () => <TickSection t={t} builder={builder} mayEdit={mayEdit} /> },
-        after,
-        tell,
-        { id: 'limits', icon: 'gauge', title: sectionName(t, 'limits'), summary: limitsSummary(t, draft), body: () => <LimitsSection t={t} builder={builder} mayEdit={mayEdit} /> },
-        { id: 'files', icon: 'paperclip', title: sectionName(t, 'files'), summary: filesSummary(t, draft), body: () => <FilesSection t={t} builder={builder} mayEdit={mayEdit} /> },
+    { id: 'becomes', icon: 'table-2', title: sectionName(t, 'becomes'), summary: becomesSummary(t, draft, tables), body: () => <BecomesSection t={t} builder={builder} mayEdit={mayEdit} /> },
+    { id: 'tick', icon: 'badge-check', title: sectionName(t, 'tick'), summary: tickSummary(t, draft), body: () => <TickSection t={t} builder={builder} mayEdit={mayEdit} /> },
+    { id: 'after', icon: 'corner-down-right', title: sectionName(t, 'after'), summary: afterSummary(t, draft), body: () => <AfterSection t={t} builder={builder} mayEdit={mayEdit} /> },
+    { id: 'tell', icon: 'bell-ring', title: sectionName(t, 'tell'), summary: tellSummary(t, draft, nameOf(t, status, people)), body: () => <TellSection t={t} builder={builder} mayEdit={mayEdit} status={status} people={people} /> },
+    { id: 'limits', icon: 'gauge', title: sectionName(t, 'limits'), summary: limitsSummary(t, draft), body: () => <LimitsSection t={t} builder={builder} mayEdit={mayEdit} /> },
+    { id: 'files', icon: 'paperclip', title: sectionName(t, 'files'), summary: filesSummary(t, draft), body: () => <FilesSection t={t} builder={builder} mayEdit={mayEdit} /> },
   ];
 
   return (
