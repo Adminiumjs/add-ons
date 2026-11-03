@@ -38,7 +38,7 @@ describe("the screens' looks", () => {
    * found in the dashboard's sources first.
    */
   // Each found in the dashboard's built stylesheet (0.3.40, 2026-11-03) before it was put here.
-  const KNOWN = ['bg-accent-soft', 'flex', 'flex-wrap', 'font-bold', 'font-mono', 'gap-1.5', 'gap-2', 'inline-flex', 'items-center', 'justify-center', 'leading-[normal]', 'rounded-lg', 'size-4', 'size-9', 'sr-only', 'text-accent', 'text-body', 'text-body-sm', 'text-caption', 'text-fg', 'text-fg-muted', 'text-fg-subtle'];
+  const KNOWN = ['bg-accent-soft', 'bg-surface-3', 'block', 'border', 'border-accent', 'border-b', 'border-border', 'break-words', 'flex', 'flex-1', 'flex-col', 'flex-wrap', 'font-bold', 'font-mono', 'font-normal', 'font-semibold', 'gap-0.5', 'gap-1', 'gap-1.5', 'gap-2', 'gap-3', 'hover:underline', 'inline-flex', 'items-center', 'items-start', 'justify-center', 'leading-[normal]', 'max-w-full', 'min-w-0', 'ms-auto', 'overflow-y-auto', 'px-2', 'px-3', 'px-5', 'py-1', 'py-2', 'py-2.5', 'py-4', 'rounded-lg', 'rounded-md', 'shrink-0', 'size-11', 'size-4', 'size-9', 'sr-only', 'text-accent', 'text-body', 'text-body-sm', 'text-caption', 'text-fg', 'text-fg-muted', 'text-fg-subtle', 'text-micro', 'text-start', 'tracking-wide', 'truncate', 'uppercase', 'whitespace-nowrap'];
 
   it('use no class the dashboard does not already draw', () => {
     const used = new Set<string>();

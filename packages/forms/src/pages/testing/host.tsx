@@ -142,6 +142,8 @@ export function seed(table: string, rows: readonly Row[]): void {
 
 const loose = (value: unknown): string => (value === true ? '1' : value === false ? '0' : value === null || value === undefined ? '' : String(value));
 const numberOf = (value: unknown): number => Number(value);
+/** Two values in order: as numbers when both are, else as text (an ISO moment orders as its text does). */
+const order = (a: unknown, b: unknown): number => (Number.isNaN(numberOf(a)) || Number.isNaN(numberOf(b)) ? loose(a).localeCompare(loose(b)) : numberOf(a) - numberOf(b));
 
 function meets(row: Row, filter: Filter): boolean {
   const held = row[filter.column];
@@ -153,13 +155,13 @@ function meets(row: Row, filter: Filter): boolean {
     case 'in':
       return (filter.value as unknown[]).map(loose).includes(loose(held));
     case 'gt':
-      return numberOf(held) > numberOf(filter.value);
+      return order(held, filter.value) > 0;
     case 'gte':
-      return numberOf(held) >= numberOf(filter.value);
+      return order(held, filter.value) >= 0;
     case 'lt':
-      return numberOf(held) < numberOf(filter.value);
+      return order(held, filter.value) < 0;
     case 'lte':
-      return numberOf(held) <= numberOf(filter.value);
+      return order(held, filter.value) <= 0;
     case 'contains':
       return loose(held).toLowerCase().includes(loose(filter.value).toLowerCase());
     case 'empty':
