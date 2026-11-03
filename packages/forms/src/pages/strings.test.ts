@@ -38,7 +38,9 @@ describe("the screens' looks", () => {
    * found in the dashboard's sources first.
    */
   // Each found in the dashboard's built stylesheet (0.3.40, 2026-11-03) before it was put here.
-  const KNOWN = ['bg-accent-soft', 'flex', 'flex-wrap', 'font-bold', 'font-mono', 'gap-1.5', 'gap-2', 'inline-flex', 'items-center', 'justify-center', 'leading-[normal]', 'rounded-lg', 'size-4', 'size-9', 'sr-only', 'text-accent', 'text-body', 'text-body-sm', 'text-caption', 'text-fg', 'text-fg-muted', 'text-fg-subtle'];
+  // The Share tab's, each found in the built stylesheet of the 0.3.41 dashboard (2026-11-03).
+  const SHARE_KNOWN = ['[overflow-wrap:anywhere]', 'bg-surface-2', 'bg-surface-3', 'bg-white', 'block', 'border', 'border-border', 'border-border-strong', 'flex-1', 'flex-col', 'gap-4', 'grid', 'grid-cols-1', 'h-6', 'h-[38px]', 'items-start', 'lg:grid-cols-[1.4fr_1fr]', 'max-w-[360px]', 'min-w-0', 'min-w-[140px]', 'p-2', 'pe-1.5', 'ps-3', 'px-2', 'px-3', 'py-1.5', 'rounded-[10px]', 'rounded-[6px]', 'rounded-md', 'size-3.5', 'size-8', 'text-[11.5px]', 'text-[12.5px]', 'text-[12px]', 'text-start'];
+  const KNOWN = ['bg-accent-soft', 'flex', 'flex-wrap', 'font-bold', 'font-mono', 'gap-1.5', 'gap-2', 'inline-flex', 'items-center', 'justify-center', 'leading-[normal]', 'rounded-lg', 'size-4', 'size-9', 'sr-only', 'text-accent', 'text-body', 'text-body-sm', 'text-caption', 'text-fg', 'text-fg-muted', 'text-fg-subtle', ...SHARE_KNOWN];
 
   it('use no class the dashboard does not already draw', () => {
     const used = new Set<string>();
