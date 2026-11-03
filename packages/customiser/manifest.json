@@ -3550,6 +3550,66 @@
     "connect": {
       "kind": "none"
     },
-    "settingsTable": "settings"
+    "settingsTable": "settings",
+    "provides": [
+      {
+        "contract": "design-check",
+        "version": 1,
+        "server": "dist/check.js"
+      }
+    ],
+    "checker": {
+      "design": "designs",
+      "reads": [
+        {
+          "id": "ready",
+          "table": "ready_designs",
+          "by": {
+            "column": "id",
+            "from": "design.ready_design_id"
+          }
+        },
+        {
+          "id": "parts",
+          "table": "ready_parts",
+          "by": {
+            "column": "ready_design_id",
+            "from": "ready.id"
+          }
+        },
+        {
+          "id": "base",
+          "table": "bases",
+          "by": {
+            "column": "id",
+            "from": "design.base_id"
+          }
+        },
+        {
+          "id": "areas",
+          "table": "base_areas",
+          "by": {
+            "column": "base_id",
+            "from": "base.id"
+          }
+        },
+        {
+          "id": "palettes",
+          "table": "palettes",
+          "by": {
+            "column": "ready_design_id",
+            "from": "ready.id"
+          }
+        },
+        {
+          "id": "features",
+          "table": "features",
+          "by": {
+            "column": "app",
+            "from": "design.app"
+          }
+        }
+      ]
+    }
   }
 }

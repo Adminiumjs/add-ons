@@ -113,6 +113,41 @@ describe('the manifest', () => {
   });
 });
 
+describe('the design question', () => {
+  const addOn = manifest.addOn as unknown as { provides: { contract: string; version: number; server: string }[]; checker: { design: string; reads: { id: string; table: string; by: { column: string; from: string } }[] } };
+
+  it('is answered by the built file, as design-check@1', () => {
+    expect(addOn.provides).toEqual([{ contract: 'design-check', version: 1, server: OUTPUT.check }]);
+  });
+
+  it('reads, keyed from the design, the ready-made design and its parts, the base and its areas, the palettes and the app’s features', () => {
+    expect(addOn.checker.design).toBe('designs');
+    expect(addOn.checker.reads.map((read) => `${read.id}: ${read.table}.${read.by.column} = ${read.by.from}`)).toEqual([
+      'ready: ready_designs.id = design.ready_design_id',
+      'parts: ready_parts.ready_design_id = ready.id',
+      'base: bases.id = design.base_id',
+      'areas: base_areas.base_id = base.id',
+      'palettes: palettes.ready_design_id = ready.id',
+      'features: features.app = design.app',
+    ]);
+    // Each read starts from the design or an earlier read, on a column the table has.
+    const seen = new Set(['design']);
+    for (const read of addOn.checker.reads) {
+      const [from, column] = read.by.from.split('.') as [string, string];
+      expect(seen.has(from), read.id).toBe(true);
+      const table = from === 'design' ? 'designs' : addOn.checker.reads.find((one) => one.id === from)!.table;
+      columnOf(table, column);
+      columnOf(read.table, read.by.column);
+      seen.add(read.id);
+    }
+  });
+
+  it('names the priced feature a base’s second side takes', () => {
+    expect(columnOf('bases', 'back_feature_id')).toMatchObject({ type: 'fk', references: 'features', nullable: true });
+    expect(entries.find((entry) => entry.table === 'bases')!.select).toContain('back_feature_id');
+  });
+});
+
 describe('the tables', () => {
   it('are the ones every other piece builds on, by these names', () => {
     expect(tables.map((table) => table.ref)).toEqual(['settings', 'bases', 'base_pieces', 'base_areas', 'ready_designs', 'ready_parts', 'fonts', 'palettes', 'palette_colours', 'features', 'designs', 'design_versions']);

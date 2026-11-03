@@ -7,8 +7,13 @@ import { defineConfig } from 'vitest/config';
 /**
  * THE FILES THE BUILD WRITES, AND THE NAMES THE MANIFEST AND THE APPS USE.
  *
- * Two kinds of file, built differently because two different places load them:
+ * Three kinds of file, built differently because three different places load them:
  *
+ * - `check`: the file that answers the design question, built from
+ *   `src/check.ts`. Adminium never imports it: it runs its bytes in a bare
+ *   context with no clock, no module loader and nothing else, so it is
+ *   CommonJS with everything inlined, its one export written as
+ *   `module.exports = …`, the assignment Adminium reads.
  * - `pages`: the shop's own screens in the dashboard, one file each, every
  *   language inside, the host's React reached through the published shims
  *   (as every add-on's screens are). None is written yet: the shop's set-up
@@ -22,12 +27,13 @@ import { defineConfig } from 'vitest/config';
  * holds what lands on disk to `BUILT_FILES`.
  */
 export const OUTPUT = {
+  check: 'dist/check.js',
   pages: {} as Readonly<Record<string, string>>,
   browser: 'dist/browser/index.js',
 } as const;
 
 /** Every file the build writes. */
-export const BUILT_FILES: readonly string[] = [OUTPUT.browser, ...Object.values(OUTPUT.pages)];
+export const BUILT_FILES: readonly string[] = [OUTPUT.check, OUTPUT.browser, ...Object.values(OUTPUT.pages)];
 
 /**
  * The host's own copies of React and the dashboard's parts, for the shop's
@@ -41,6 +47,19 @@ function screens(): Plugin {
     name: 'add-on-customiser:screens',
     apply: 'build',
     async closeBundle() {
+      // The design question's answer: one classic script, beside the customer's editor.
+      await build({
+        configFile: false,
+        logLevel: 'warn',
+        build: {
+          emptyOutDir: false,
+          outDir: 'dist',
+          lib: { entry: 'src/check.ts', formats: ['cjs'], fileName: () => 'check.js' },
+          rollupOptions: { external: [], output: { exports: 'default' } },
+          target: 'es2022',
+          sourcemap: false,
+        },
+      });
       for (const file of Object.values(OUTPUT.pages)) {
         const name = file.slice('dist/pages/'.length, -'.js'.length);
         await build({

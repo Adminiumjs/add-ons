@@ -6,13 +6,14 @@
  * clock or a file: the same call gives the same manifest every time.
  *
  * Left for the pieces that build them: the shop's pages and record panels
- * (`addOn.pages`, `addOn.panels`, `hostApi` and the `page:@…:view` grants), and the
- * design question (`provides`, `addOn.checker`). TODO(J1): `uploads` on the
- * designs entry. TODO(J10): the `svg` and `woff2` kinds, and `assets`.
+ * (`addOn.pages`, `addOn.panels`, `hostApi` and the `page:@…:view` grants).
+ * TODO(J1): `uploads` on the designs entry. TODO(J10): the `svg` and `woff2`
+ * kinds, and `assets`.
  */
 import { entries, LINK_KEY } from './entries.ts';
 import { starterFontRows } from './fonts.ts';
 import { tables } from './tables.ts';
+import { CHECKER } from './checker.ts';
 import { DESCRIPTION, ROLE_NAMES } from './words.ts';
 
 /** The add-on's key, its page ref, and the floor whose words it uses (an add-on's own entries on each app's key, expiry, links into it). */
@@ -20,6 +21,8 @@ export const KEY = 'customiser';
 export const FLOOR = '0.3.43';
 /** The package's version; `scripts/sync-manifest-versions.mjs` keeps the two equal at a release. */
 export const VERSION = '1.0.15';
+/** The file that answers the design question, as the build writes it (`vite.config.ts` builds it from `src/check.ts`). */
+export const CHECK_FILE = 'dist/check.js';
 
 /** The shop's own tables: what the shop sets up, and the designer makes and changes. */
 export const SHOP_TABLES = ['bases', 'base_pieces', 'base_areas', 'ready_designs', 'ready_parts', 'fonts', 'palettes', 'palette_colours', 'features'] as const;
@@ -82,6 +85,9 @@ export function buildManifest(): Record<string, unknown> {
       ],
       connect: { kind: 'none' },
       settingsTable: 'settings',
+      // Whether a design may be ordered as it is, and which priced features it takes: asked by an app's order lines.
+      provides: [{ contract: 'design-check', version: 1, server: CHECK_FILE }],
+      checker: CHECKER,
     },
   };
 }
