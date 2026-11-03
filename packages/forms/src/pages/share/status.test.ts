@@ -46,7 +46,9 @@ describe('what the Share tab reads of Adminium', () => {
   });
 
   it('never falls back on a refusal or a reply it cannot read', async () => {
-    const refused = async <T,>(): Promise<T> => {
+    // The mail read would answer: a refusal of the status read must still never reach it.
+    const refused = async <T,>(path: string): Promise<T> => {
+      if (path === MAIL_PATH) return { data: { sends: true, blocked: null } } as T;
       throw new Refused('FORBIDDEN');
     };
     await expect(readShareStatus(refused)).rejects.toMatchObject({ code: 'FORBIDDEN' });
