@@ -159,7 +159,9 @@ describe('the answers table', () => {
 });
 
 describe('the side sheet', () => {
-  const open = (name: string): void => fireEvent.click(screen.getByRole('button', { name }));
+  const open = (name: string): void => {
+    fireEvent.click(screen.getByRole('button', { name }));
+  };
   const line = (label: string): string => {
     const at = within(sheet() as HTMLElement).getByText(label, { exact: true });
     return (at.closest('.flex-col')?.lastElementChild?.textContent ?? '').trim();
