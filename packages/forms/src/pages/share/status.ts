@@ -4,19 +4,20 @@
  *
  * One read, `GET /api/v1/forms/status`, open to anyone who may read a forms
  * add-on's forms (a marketer holds neither the privacy action nor the roles
- * action). Everything the tab says about the address and the websites comes
- * through `statusOf`, so a test pins the one place the reply is read.
+ * action), held for the whole page (`shared/status.ts`): the builder's read
+ * is this one. Everything the tab says about the address and the websites
+ * comes through `statusOf`, so a test pins the one place the reply is read.
  *
  * An Adminium before that read answered only `GET /api/v1/forms/mail`:
  * whether mail goes, and why not. The tab then knows only whether a public
  * address is missing; it shows no link and no websites, and says so.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 
-import { ApiError, api } from '../shared/host.ts';
+import { api } from '../shared/host.ts';
+import { readStatus, useStatusRead, type StatusRead } from '../shared/status.ts';
 
-export const STATUS_PATH = '/api/v1/forms/status';
-export const MAIL_PATH = '/api/v1/forms/mail';
+export { MAIL_PATH, STATUS_PATH } from '../shared/status.ts';
 
 /** "Can visitors reach your public pages?", as the Privacy page's card answers it. */
 export const REACH_STATES = ['network-off', 'desktop', 'not-set', 'this-computer', 'private-network', 'dot-local', 'not-https', 'proxy-hidden', 'reachable'] as const;
@@ -54,22 +55,17 @@ export function mailStatusOf(reply: unknown): ShareStatus | null {
   return { publicOrigin: null, websites: [], reach: data['blocked'] === 'no-public-origin' ? 'not-set' : null };
 }
 
-/**
- * Ask once. A refused or failed read throws; an Adminium with no status read
- * (it answers 404) is asked the mail read instead.
- */
+/** What the tab makes of a read: the status read's reply, else the mail read's; null when it is neither. */
+export function shareStatusOf(read: StatusRead): ShareStatus | null {
+  return read.from === 'status' ? statusOf(read.reply) : mailStatusOf(read.reply);
+}
+
+/** Ask once (`shared/status.ts`), and read the reply as the tab does: a reply that is neither throws. */
 export async function readShareStatus(get: <T>(path: string) => Promise<T> = api.get): Promise<ShareStatus> {
-  try {
-    const status = statusOf(await get<unknown>(STATUS_PATH));
-    if (status === null) throw new Error('The status read answered something else.');
-    return status;
-  } catch (caught) {
-    // TODO(0.3.41): the floor serves the status read; drop the mail read then.
-    if (!(caught instanceof ApiError && caught.status === 404)) throw caught;
-    const status = mailStatusOf(await get<unknown>(MAIL_PATH));
-    if (status === null) throw new Error('The mail read answered something else.');
-    return status;
-  }
+  const read = await readStatus(get);
+  const status = shareStatusOf(read);
+  if (status === null) throw new Error(`The ${read.from} read answered something else.`);
+  return status;
 }
 
 export interface UseShareStatus {
@@ -78,26 +74,10 @@ export interface UseShareStatus {
   retry: () => void;
 }
 
-/** The status, read when the tab opens and again on "Try again". */
+/** The status, read once for the page (the builder's read is this one too), and again on "Try again". */
 export function useShareStatus(): UseShareStatus {
-  const [status, setStatus] = useState<ShareStatus | null>(null);
-  const [failed, setFailed] = useState(false);
-  const [round, setRound] = useState(0);
-  useEffect(() => {
-    let live = true;
-    setFailed(false);
-    readShareStatus().then(
-      (read) => {
-        if (live) setStatus(read);
-      },
-      () => {
-        if (live) setFailed(true);
-      },
-    );
-    return () => {
-      live = false;
-    };
-  }, [round]);
-  const retry = useCallback(() => setRound((n) => n + 1), []);
-  return { status, failed, retry };
+  const { read, failed, loaded, refetch } = useStatusRead();
+  const status = useMemo(() => (read === null ? null : shareStatusOf(read)), [read]);
+  const retry = useCallback(() => void refetch(), [refetch]);
+  return { status, failed: failed || (loaded && read !== null && status === null), retry };
 }

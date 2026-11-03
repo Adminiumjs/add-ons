@@ -4,19 +4,19 @@
  * whether strangers can reach the pages, whether the privacy notice is set,
  * the public address, and the roles a form may tell.
  *
- * One read for every screen of the page, made again when the window comes
- * back into focus: an owner who went to set the privacy notice comes back to
- * a builder that knows it is set.
+ * Read once for every screen of the page (`shared/status.ts`, which the
+ * Share tab reads too); this is what the builder makes of the reply.
  *
  * TODO(0.3.41): `GET /api/v1/forms/status` is Adminium 0.3.41's; on 0.3.40
  * the read fails and the builder shows no card and blocks nothing (Adminium
  * still refuses to publish a form while the notice is unset).
  */
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { api } from '../shared/host.ts';
+import { useStatusRead } from '../shared/status.ts';
 
-export const STATUS = '/api/v1/forms/status';
+export { STATUS_PATH as STATUS } from '../shared/status.ts';
 export const PEOPLE = '/api/v1/people?limit=200';
 
 export interface FormsStatus {
@@ -47,52 +47,14 @@ export function statusOf(reply: unknown): FormsStatus | null {
   };
 }
 
-let held: { status: FormsStatus | null; loaded: boolean } = { status: null, loaded: false };
-let asking: Promise<void> | null = null;
-const listeners = new Set<() => void>();
-const tell = (): void => {
-  for (const listener of listeners) listener();
-};
-
-function ask(): Promise<void> {
-  asking ??= api
-    .get<unknown>(STATUS)
-    .then(
-      (reply) => {
-        held = { status: statusOf(reply), loaded: true };
-      },
-      () => {
-        held = { status: null, loaded: true };
-      },
-    )
-    .finally(() => {
-      asking = null;
-      tell();
-    });
-  return asking;
-}
-
 /** For the screens' own tests: forget the last answer. */
-export function resetStatus(): void {
-  held = { status: null, loaded: false };
-  asking = null;
-}
+export { resetStatus } from '../shared/status.ts';
 
+/** The status as the builder reads it: null while it is asked, when it failed, and from an Adminium without the read. */
 export function useFormsStatus(): { status: FormsStatus | null; loaded: boolean; refetch: () => Promise<void> } {
-  const now = useSyncExternalStore(
-    (listener) => {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
-    () => held,
-  );
-  useEffect(() => {
-    if (!held.loaded) void ask();
-    const again = (): void => void ask();
-    window.addEventListener('focus', again);
-    return () => window.removeEventListener('focus', again);
-  }, []);
-  return { status: now.status, loaded: now.loaded, refetch: ask };
+  const { read, loaded, refetch } = useStatusRead();
+  const status = useMemo(() => (read?.from === 'status' ? statusOf(read.reply) : null), [read]);
+  return { status, loaded, refetch };
 }
 
 /** The people a form may tell, by name: asked once the Tell section needs them. */

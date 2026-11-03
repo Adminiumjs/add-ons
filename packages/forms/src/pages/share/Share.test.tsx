@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { formRow } from '../testing/rows.ts';
 import { Refused, resetWorld, seed, world } from '../testing/host.tsx';
+import { resetStatus } from '../shared/status.ts';
 import Forms from '../forms/index.tsx';
 import { decodeSvg } from './testing/decode.ts';
 import { qrOf } from './qr.ts';
@@ -39,6 +40,7 @@ const open = async (splat = 'forms/showroom-visit/share'): Promise<void> => {
 
 beforeEach(() => {
   resetWorld();
+  resetStatus();
   written = [];
   writeText = async (text) => void written.push(text);
   Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: (text: string) => writeText(text) } });
@@ -72,9 +74,8 @@ describe('a form’s link', () => {
     expect(field.readOnly).toBe(true);
     expect(field.getAttribute('dir')).toBe('ltr');
     expect(screen.getByText("Anyone with the link can open the form while it's live.")).toBeTruthy();
-    // It asked Adminium once, by the status read.
-    // The builder's buttons in the top bar ask the same read for themselves.
-    expect([...new Set(world.calls.filter((call) => call.kind === 'api').map((call) => call.table))]).toEqual(['get /api/v1/forms/status']);
+    // It asked Adminium once, by the status read: the builder's buttons in the top bar share that one read.
+    expect(world.calls.filter((call) => call.kind === 'api').map((call) => call.table)).toEqual(['get /api/v1/forms/status']);
   });
 
   it('copies, and says so', async () => {
@@ -124,6 +125,8 @@ describe('a form’s link', () => {
   it('says why visitors cannot open it, worded from the reach answer', async () => {
     const said = async (reach: string, origin = ORIGIN): Promise<string> => {
       cleanup();
+      // The page holds one status read: a new page in this test asks again.
+      resetStatus();
       serve(status({ reach, publicOrigin: origin }));
       await open();
       return within(card('Link')).getByRole('status').textContent ?? '';
@@ -133,6 +136,7 @@ describe('a form’s link', () => {
     expect(await said('this-computer', 'https://localhost:4600')).toContain('Set the public address');
     expect(await said('desktop')).toContain("This server doesn't serve public pages");
     cleanup();
+    resetStatus();
     serve(status());
     await open();
     expect(within(card('Link')).queryByRole('status')).toBeNull();
@@ -173,6 +177,7 @@ describe('putting it on a website', () => {
     expect(within(screen.getByTestId('share-shows-on')).getByText('www.meridian.example')).toBeTruthy();
     expect(within(screen.getByTestId('share-shows-on')).getByText('shop.meridian.example')).toBeTruthy();
     cleanup();
+    resetStatus();
     serve(status({ websites: [] }));
     await open();
     expect(within(screen.getByTestId('share-shows-on')).getByText('No website is listed yet.')).toBeTruthy();
