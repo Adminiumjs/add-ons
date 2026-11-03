@@ -49,6 +49,13 @@ export function fits(question: Question, column: KitColumn): boolean {
 }
 
 /** The columns a question may be put in: every writable one but a link and the fixed source's. */
+/**
+ * Whether "becomes" names this table: by its id here (what the builder
+ * writes), or by its stored name `<app>:<table>` (what a sample file writes,
+ * as it cannot know a database's ids). Adminium reads both.
+ */
+export const namesTable = (table: Pick<KitTable, 'id' | 'tableRef'>, named: string): boolean => table.id === named || table.tableRef === named;
+
 export const mappable = (table: KitTable): KitColumn[] => table.columns.filter((column) => !column.link && column.name !== table.sourceColumn);
 
 /** The questions that may fill a column. */

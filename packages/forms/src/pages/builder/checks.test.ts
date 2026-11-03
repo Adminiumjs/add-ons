@@ -103,6 +103,12 @@ describe('the map of an answer onto a row', () => {
     expect(at({ q8: 'company_name', q1: 'contact_id' }).map((problem) => problem.code)).toEqual(['column-link']);
     expect(at({ q8: 'company_name', q2: 'brochure' })).toEqual([{ where: { at: 'settings', section: 'becomes' }, code: 'column-values', column: 'Brochure', names: ['choice-1', 'choice-2'], values: ['yes', 'no'] }]);
   });
+
+  it('reads a table named by its stored name, as a sample file names it', () => {
+    const named = mapProblems({ ...d, settings: { ...d.settings, becomes: { table: 'crm:enquiries', map: { q8: 'company_name' } } } }, [ENQUIRIES]);
+    expect(named).toEqual([]);
+    expect(mapProblems({ ...d, settings: { ...d.settings, becomes: { table: 'crm:other', map: { q8: 'company_name' } } } }, [ENQUIRIES]).map((problem) => problem.code)).toEqual(['table-gone']);
+  });
 });
 
 describe('the link name at the first publish', () => {

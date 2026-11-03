@@ -13,7 +13,7 @@
 import { FORM_LANGUAGES, parseForm, type FormIssue } from '@adminium/add-on-contracts/forms';
 
 import type { Definition, Draft, Lang } from './draft.ts';
-import { fillerOf, fits, mappable, offEnum, type KitTable } from './mapping.ts';
+import { fillerOf, fits, mappable, namesTable, offEnum, type KitTable } from './mapping.ts';
 import { isFormSlug } from './slug.ts';
 
 /** The form settings' sections, by the name `?settings=` opens them with. */
@@ -97,7 +97,7 @@ export function mapProblems(draft: Draft, tables: readonly KitTable[] | null): P
   const becomes = draft.settings.becomes;
   if (becomes === null || becomes === undefined || tables === null) return [];
   const where: Where = { at: 'settings', section: 'becomes' };
-  const table = tables.find((one) => one.id === becomes.table);
+  const table = tables.find((one) => namesTable(one, becomes.table));
   if (table === undefined) return [{ where, code: 'table-gone' }];
   const out: Problem[] = [];
   const columns = new Map(table.columns.map((column) => [column.name, column]));

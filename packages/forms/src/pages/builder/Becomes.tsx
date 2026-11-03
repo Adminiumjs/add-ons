@@ -14,7 +14,7 @@ import type { ReactNode } from 'react';
 
 import { Input, RadioCard, RadioGroup, Select, useFormTables, type AddOnTranslate } from '../shared/host.ts';
 import { becomesFor, mapColumn, numberOf, wordIn, type Becomes as BecomesValue, type Draft } from './draft.ts';
-import { fillerOf, fillersOf, mapFor, mappable, offEnum, kitTables, type KitTable } from './mapping.ts';
+import { fillerOf, fillersOf, mapFor, mappable, namesTable, offEnum, kitTables, type KitTable } from './mapping.ts';
 import { FromInvitation } from '../surveys/SurveySettings.tsx';
 import { Icon } from './parts.tsx';
 import type { Builder } from './store.ts';
@@ -29,7 +29,7 @@ const sourceFor = (table: KitTable, draft: Draft): { column: string; value: stri
 export function becomesSummary(t: AddOnTranslate, draft: Draft, tables: readonly KitTable[]): string {
   const becomes = draft.settings.becomes;
   if (becomes === null || becomes === undefined) return t('builder.becomes.keep', 'Just keep the answers');
-  const table = tables.find((one) => one.id === becomes.table);
+  const table = tables.find((one) => namesTable(one, becomes.table));
   return t('builder.becomes.summary', 'A new row in {table}', { table: table === undefined ? becomes.table : `${table.label} — ${table.app}` });
 }
 
@@ -38,7 +38,7 @@ export function BecomesSection({ t, builder, mayEdit }: { t: AddOnTranslate; bui
   const draft = builder.draft;
   const d = draft.definition;
   const becomes = draft.settings.becomes ?? null;
-  const table = becomes === null ? undefined : tables.find((one) => one.id === becomes.table);
+  const table = becomes === null ? undefined : tables.find((one) => namesTable(one, becomes.table));
   const lang = builder.editing;
   const set = (next: BecomesValue | null): void => builder.change((one) => ({ ...one, settings: { ...one.settings, becomes: next } }));
   const pick = (id: string): void => {
@@ -60,7 +60,7 @@ export function BecomesSection({ t, builder, mayEdit }: { t: AddOnTranslate; bui
         <span className="flex flex-col gap-2.5">
           <Select
             aria-label={t('builder.becomes.table', 'Table')}
-            value={becomes.table}
+            value={table?.id ?? becomes.table}
             disabled={!mayEdit}
             options={[...(table === undefined ? [{ value: becomes.table, label: t('builder.becomes.gone', 'A table no longer open to forms') }] : []), ...tables.map((one) => ({ value: one.id, label: `${one.label} — ${one.app}` }))]}
             onChange={(event) => pick(event.target.value)}
