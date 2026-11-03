@@ -73,6 +73,8 @@ describe('release shape: discovery', () => {
     expect(found.length).toBeGreaterThan(3);
     expect(found.map((a) => a.name)).toEqual([
       'barcode-labels',
+      // The add-on that keeps customers' designs and the shop's ready-made designs, and the first with an entry shop apps import into their own pages.
+      'customiser',
       'design-studio',
       'holiday-calendars',
       // The seventh, added 2026-09-10. It is the first add-on here that
@@ -205,7 +207,14 @@ describe.each(found)('release shape: $name', (addOn) => {
      *   auto-installs peers, so that is a real cost).
      */
     const addOnBlock = (addOn.manifest['addOn'] ?? {}) as { slots?: unknown[]; pages?: unknown[] };
-    const hasClient = (addOnBlock.slots ?? []).length > 0 || (addOnBlock.pages ?? []).length > 0;
+    /*
+     * A BROWSER HALF IS ALSO ONE A SHOP APP IMPORTS. The Customiser's editor is
+     * no slot and no page: an app's customer pages import it from the
+     * package's `./browser` entry into their own bundle, where React is the
+     * app's. So it peer-declares React like any add-on with screens.
+     */
+    const exported = Object.keys((addOn.pkg['exports'] ?? {}) as object);
+    const hasClient = (addOnBlock.slots ?? []).length > 0 || (addOnBlock.pages ?? []).length > 0 || exported.includes('./browser');
     /*
      * A SERVER-ONLY BUNDLE MAY ASK FOR NODE'S OWN MODULES, AND NOTHING ELSE.
      * With no slot and no page, no byte of it reaches a browser: the engine

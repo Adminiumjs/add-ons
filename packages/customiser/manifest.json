@@ -1,0 +1,3538 @@
+{
+  "kind": "add-on",
+  "manifestVersion": 1,
+  "key": "customiser",
+  "name": "Customiser",
+  "version": "1.0.15",
+  "publisher": {
+    "id": "adminium",
+    "name": "Adminium"
+  },
+  "license": "AGPL-3.0-only",
+  "description": {
+    "key": "addon.customiser.description",
+    "fallback": "Products your customers make their own: ready-made designs to fill in, their own words, logos and colours, checked and kept as data for you to proof and make."
+  },
+  "categories": [
+    "artwork"
+  ],
+  "compatibility": {
+    "minAdminiumVersion": "0.3.43",
+    "requires": []
+  },
+  "requiredSchema": {
+    "prefixed": true,
+    "tables": [
+      {
+        "ref": "settings",
+        "label": {
+          "en-US": "Customiser settings",
+          "de-DE": "Customiser-Einstellungen",
+          "fr-FR": "Paramètres du Customiser",
+          "da-DK": "Customiser-indstillinger",
+          "cs-CZ": "Nastavení Customiseru",
+          "ar-EG": "إعدادات Customiser",
+          "zh-CN": "Customiser 设置",
+          "zh-TW": "Customiser 設定"
+        },
+        "labelPlural": {
+          "en-US": "Customiser settings",
+          "de-DE": "Customiser-Einstellungen",
+          "fr-FR": "Paramètres du Customiser",
+          "da-DK": "Customiser-indstillinger",
+          "cs-CZ": "Nastavení Customiseru",
+          "ar-EG": "إعدادات Customiser",
+          "zh-CN": "Customiser 设置",
+          "zh-TW": "Customiser 設定"
+        },
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "length_unit",
+            "type": "enum",
+            "enum": [
+              "mm",
+              "in"
+            ],
+            "default": "mm",
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "mm": {
+                    "en-US": "Millimetres",
+                    "de-DE": "Millimeter",
+                    "fr-FR": "Millimètres",
+                    "da-DK": "Millimeter",
+                    "cs-CZ": "Milimetry",
+                    "ar-EG": "المليمترات",
+                    "zh-CN": "毫米",
+                    "zh-TW": "公釐"
+                  },
+                  "in": {
+                    "en-US": "Inches",
+                    "de-DE": "Zoll",
+                    "fr-FR": "Pouces",
+                    "da-DK": "Tommer",
+                    "cs-CZ": "Palce",
+                    "ar-EG": "البوصات",
+                    "zh-CN": "英寸",
+                    "zh-TW": "英寸"
+                  }
+                }
+              }
+            },
+            "label": {
+              "en-US": "Sizes shown in",
+              "de-DE": "Maße anzeigen in",
+              "fr-FR": "Tailles affichées en",
+              "da-DK": "Mål vist i",
+              "cs-CZ": "Rozměry zobrazit v",
+              "ar-EG": "تُعرض المقاسات بـ",
+              "zh-CN": "尺寸显示单位",
+              "zh-TW": "尺寸顯示單位"
+            }
+          },
+          {
+            "ref": "default_bleed_mm",
+            "type": "decimal",
+            "scale": 2,
+            "default": 3,
+            "rules": {
+              "validation": {
+                "min": 0,
+                "max": 20
+              }
+            },
+            "label": {
+              "en-US": "Bleed on a new page (mm)",
+              "de-DE": "Beschnitt einer neuen Seite (mm)",
+              "fr-FR": "Fond perdu d’une nouvelle page (mm)",
+              "da-DK": "Beskæring på en ny side (mm)",
+              "cs-CZ": "Spadávka nové stránky (mm)",
+              "ar-EG": "هامش القص لصفحة جديدة (مم)",
+              "zh-CN": "新页面的出血（毫米）",
+              "zh-TW": "新頁面的出血（公釐）"
+            }
+          },
+          {
+            "ref": "default_safe_mm",
+            "type": "decimal",
+            "scale": 2,
+            "default": 4,
+            "rules": {
+              "validation": {
+                "min": 0,
+                "max": 50
+              }
+            },
+            "label": {
+              "en-US": "Safe line on a new page (mm)",
+              "de-DE": "Sicherheitsabstand einer neuen Seite (mm)",
+              "fr-FR": "Marge de sécurité d’une nouvelle page (mm)",
+              "da-DK": "Sikkerhedsmargen på en ny side (mm)",
+              "cs-CZ": "Bezpečný okraj nové stránky (mm)",
+              "ar-EG": "خط الأمان لصفحة جديدة (مم)",
+              "zh-CN": "新页面的安全线（毫米）",
+              "zh-TW": "新頁面的安全線（公釐）"
+            }
+          },
+          {
+            "ref": "one_colour_threshold",
+            "type": "int",
+            "default": 50,
+            "rules": {
+              "validation": {
+                "min": 1,
+                "max": 99
+              }
+            },
+            "label": {
+              "en-US": "Where light becomes dark, to start with (%)",
+              "de-DE": "Ab wann Hell zu Dunkel wird, zu Beginn (%)",
+              "fr-FR": "Seuil entre clair et foncé, au départ (%)",
+              "da-DK": "Hvor lyst bliver mørkt, til at begynde med (%)",
+              "cs-CZ": "Kde světlá přechází v tmavou, na začátku (%)",
+              "ar-EG": "حيث يصبح الفاتح داكنًا، في البداية (%)",
+              "zh-CN": "明暗分界的初始值（%）",
+              "zh-TW": "明暗分界的初始值（%）"
+            }
+          },
+          {
+            "ref": "smallest_line_mm",
+            "type": "decimal",
+            "scale": 2,
+            "default": 0.2,
+            "rules": {
+              "validation": {
+                "min": 0,
+                "max": 5
+              }
+            },
+            "label": {
+              "en-US": "Thinnest line the machine keeps (mm)",
+              "de-DE": "Dünnste Linie, die die Maschine schafft (mm)",
+              "fr-FR": "Trait le plus fin que garde la machine (mm)",
+              "da-DK": "Tyndeste streg maskinen kan lave (mm)",
+              "cs-CZ": "Nejtenčí čára, kterou stroj zvládne (mm)",
+              "ar-EG": "أدق خط تحتفظ به الآلة (مم)",
+              "zh-CN": "机器可保留的最细线条（毫米）",
+              "zh-TW": "機器可保留的最細線條（公釐）"
+            }
+          },
+          {
+            "ref": "min_dpi",
+            "type": "int",
+            "default": 150,
+            "rules": {
+              "validation": {
+                "min": 50,
+                "max": 1200
+              }
+            },
+            "label": {
+              "en-US": "Sharpness a picture needs at its printed size (dpi)",
+              "de-DE": "Nötige Bildschärfe in Druckgröße (dpi)",
+              "fr-FR": "Netteté requise à la taille imprimée (dpi)",
+              "da-DK": "Skarphed et billede skal have i trykt størrelse (dpi)",
+              "cs-CZ": "Potřebná ostrost obrázku v tištěné velikosti (dpi)",
+              "ar-EG": "الدقة التي تحتاجها الصورة بحجم الطباعة (نقطة/بوصة)",
+              "zh-CN": "图片在印刷尺寸下所需的清晰度（dpi）",
+              "zh-TW": "圖片在印刷尺寸下所需的清晰度（dpi）"
+            }
+          }
+        ]
+      },
+      {
+        "ref": "bases",
+        "keyField": "name",
+        "label": {
+          "en-US": "Base",
+          "de-DE": "Grundform",
+          "fr-FR": "Support",
+          "da-DK": "Grundform",
+          "cs-CZ": "Základ",
+          "ar-EG": "القاعدة",
+          "zh-CN": "底材",
+          "zh-TW": "底材"
+        },
+        "labelPlural": {
+          "en-US": "Bases",
+          "de-DE": "Grundformen",
+          "fr-FR": "Supports",
+          "da-DK": "Grundformer",
+          "cs-CZ": "Základy",
+          "ar-EG": "القواعد",
+          "zh-CN": "底材",
+          "zh-TW": "底材"
+        },
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "app",
+            "type": "text",
+            "maxLength": 40,
+            "nullable": true,
+            "label": {
+              "en-US": "App",
+              "de-DE": "App",
+              "fr-FR": "Application",
+              "da-DK": "App",
+              "cs-CZ": "Aplikace",
+              "ar-EG": "التطبيق",
+              "zh-CN": "应用",
+              "zh-TW": "應用程式"
+            }
+          },
+          {
+            "ref": "name",
+            "type": "text",
+            "maxLength": 120,
+            "label": {
+              "en-US": "Name",
+              "de-DE": "Name",
+              "fr-FR": "Nom",
+              "da-DK": "Navn",
+              "cs-CZ": "Název",
+              "ar-EG": "الاسم",
+              "zh-CN": "名称",
+              "zh-TW": "名稱"
+            }
+          },
+          {
+            "ref": "kind",
+            "type": "enum",
+            "enum": [
+              "page",
+              "piece",
+              "kit",
+              "printed"
+            ],
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "page": {
+                    "en-US": "A flat page",
+                    "de-DE": "Eine flache Seite",
+                    "fr-FR": "Une page à plat",
+                    "da-DK": "En flad side",
+                    "cs-CZ": "Plochá stránka",
+                    "ar-EG": "صفحة مسطحة",
+                    "zh-CN": "平面页面",
+                    "zh-TW": "平面頁面"
+                  },
+                  "piece": {
+                    "en-US": "A flat piece",
+                    "de-DE": "Ein flaches Teil",
+                    "fr-FR": "Une pièce plate",
+                    "da-DK": "Et fladt stykke",
+                    "cs-CZ": "Plochý díl",
+                    "ar-EG": "قطعة مسطحة",
+                    "zh-CN": "平面部件",
+                    "zh-TW": "平面部件"
+                  },
+                  "kit": {
+                    "en-US": "A kit of pieces",
+                    "de-DE": "Ein Bausatz aus Teilen",
+                    "fr-FR": "Un kit de pièces",
+                    "da-DK": "Et sæt af dele",
+                    "cs-CZ": "Stavebnice z dílů",
+                    "ar-EG": "مجموعة قطع",
+                    "zh-CN": "成套部件",
+                    "zh-TW": "成套部件"
+                  },
+                  "printed": {
+                    "en-US": "A 3D-printed item",
+                    "de-DE": "Ein 3D-gedrucktes Stück",
+                    "fr-FR": "Un objet imprimé en 3D",
+                    "da-DK": "En 3D-printet genstand",
+                    "cs-CZ": "Předmět z 3D tisku",
+                    "ar-EG": "قطعة مطبوعة ثلاثية الأبعاد",
+                    "zh-CN": "3D 打印件",
+                    "zh-TW": "3D 列印件"
+                  }
+                }
+              }
+            },
+            "label": {
+              "en-US": "Kind of base",
+              "de-DE": "Art der Grundform",
+              "fr-FR": "Type de support",
+              "da-DK": "Type grundform",
+              "cs-CZ": "Druh základu",
+              "ar-EG": "نوع القاعدة",
+              "zh-CN": "底材类型",
+              "zh-TW": "底材類型"
+            }
+          },
+          {
+            "ref": "width_mm",
+            "type": "decimal",
+            "scale": 2,
+            "rules": {
+              "validation": {
+                "min": 0,
+                "max": 5000
+              }
+            },
+            "label": {
+              "en-US": "Width (mm)",
+              "de-DE": "Breite (mm)",
+              "fr-FR": "Largeur (mm)",
+              "da-DK": "Bredde (mm)",
+              "cs-CZ": "Šířka (mm)",
+              "ar-EG": "العرض (مم)",
+              "zh-CN": "宽度（毫米）",
+              "zh-TW": "寬度（公釐）"
+            }
+          },
+          {
+            "ref": "height_mm",
+            "type": "decimal",
+            "scale": 2,
+            "rules": {
+              "validation": {
+                "min": 0,
+                "max": 5000
+              }
+            },
+            "label": {
+              "en-US": "Height (mm)",
+              "de-DE": "Höhe (mm)",
+              "fr-FR": "Hauteur (mm)",
+              "da-DK": "Højde (mm)",
+              "cs-CZ": "Výška (mm)",
+              "ar-EG": "الارتفاع (مم)",
+              "zh-CN": "高度（毫米）",
+              "zh-TW": "高度（公釐）"
+            }
+          },
+          {
+            "ref": "depth_mm",
+            "type": "decimal",
+            "scale": 2,
+            "nullable": true,
+            "rules": {
+              "validation": {
+                "min": 0,
+                "max": 5000
+              }
+            },
+            "label": {
+              "en-US": "Depth (mm)",
+              "de-DE": "Tiefe (mm)",
+              "fr-FR": "Profondeur (mm)",
+              "da-DK": "Dybde (mm)",
+              "cs-CZ": "Hloubka (mm)",
+              "ar-EG": "العمق (مم)",
+              "zh-CN": "深度（毫米）",
+              "zh-TW": "深度（公釐）"
+            }
+          },
+          {
+            "ref": "corner_mm",
+            "type": "decimal",
+            "scale": 2,
+            "nullable": true,
+            "rules": {
+              "validation": {
+                "min": 0,
+                "max": 5000
+              }
+            },
+            "label": {
+              "en-US": "Corner radius (mm)",
+              "de-DE": "Eckenradius (mm)",
+              "fr-FR": "Rayon des coins (mm)",
+              "da-DK": "Hjørneradius (mm)",
+              "cs-CZ": "Poloměr rohů (mm)",
+              "ar-EG": "نصف قطر الزاوية (مم)",
+              "zh-CN": "圆角半径（毫米）",
+              "zh-TW": "圓角半徑（公釐）"
+            }
+          },
+          {
+            "ref": "bleed_mm",
+            "type": "decimal",
+            "scale": 2,
+            "nullable": true,
+            "rules": {
+              "validation": {
+                "min": 0,
+                "max": 5000
+              }
+            },
+            "label": {
+              "en-US": "Bleed (mm)",
+              "de-DE": "Beschnitt (mm)",
+              "fr-FR": "Fond perdu (mm)",
+              "da-DK": "Beskæring (mm)",
+              "cs-CZ": "Spadávka (mm)",
+              "ar-EG": "هامش القص (مم)",
+              "zh-CN": "出血（毫米）",
+              "zh-TW": "出血（公釐）"
+            }
+          },
+          {
+            "ref": "safe_mm",
+            "type": "decimal",
+            "scale": 2,
+            "nullable": true,
+            "rules": {
+              "validation": {
+                "min": 0,
+                "max": 5000
+              }
+            },
+            "label": {
+              "en-US": "Safe line (mm)",
+              "de-DE": "Sicherheitsabstand (mm)",
+              "fr-FR": "Marge de sécurité (mm)",
+              "da-DK": "Sikkerhedsmargen (mm)",
+              "cs-CZ": "Bezpečný okraj (mm)",
+              "ar-EG": "خط الأمان (مم)",
+              "zh-CN": "安全线（毫米）",
+              "zh-TW": "安全線（公釐）"
+            }
+          },
+          {
+            "ref": "sides",
+            "type": "int",
+            "nullable": true,
+            "rules": {
+              "validation": {
+                "min": 1,
+                "max": 2
+              }
+            },
+            "label": {
+              "en-US": "Sides",
+              "de-DE": "Seiten",
+              "fr-FR": "Faces",
+              "da-DK": "Sider",
+              "cs-CZ": "Strany",
+              "ar-EG": "الأوجه",
+              "zh-CN": "面数",
+              "zh-TW": "面數"
+            }
+          },
+          {
+            "ref": "material",
+            "type": "text",
+            "maxLength": 80,
+            "nullable": true,
+            "label": {
+              "en-US": "Material",
+              "de-DE": "Material",
+              "fr-FR": "Matière",
+              "da-DK": "Materiale",
+              "cs-CZ": "Materiál",
+              "ar-EG": "الخامة",
+              "zh-CN": "材料",
+              "zh-TW": "材料"
+            }
+          },
+          {
+            "ref": "thickness_mm",
+            "type": "decimal",
+            "scale": 2,
+            "nullable": true,
+            "rules": {
+              "validation": {
+                "min": 0,
+                "max": 5000
+              }
+            },
+            "label": {
+              "en-US": "Thickness (mm)",
+              "de-DE": "Stärke (mm)",
+              "fr-FR": "Épaisseur (mm)",
+              "da-DK": "Tykkelse (mm)",
+              "cs-CZ": "Tloušťka (mm)",
+              "ar-EG": "السماكة (مم)",
+              "zh-CN": "厚度（毫米）",
+              "zh-TW": "厚度（公釐）"
+            }
+          },
+          {
+            "ref": "outline_file",
+            "type": "text",
+            "maxLength": 64,
+            "nullable": true,
+            "label": {
+              "en-US": "The outline",
+              "de-DE": "Die Kontur",
+              "fr-FR": "Le contour",
+              "da-DK": "Omridset",
+              "cs-CZ": "Obrys",
+              "ar-EG": "المخطط الخارجي",
+              "zh-CN": "轮廓",
+              "zh-TW": "輪廓"
+            }
+          },
+          {
+            "ref": "state",
+            "type": "enum",
+            "enum": [
+              "draft",
+              "published"
+            ],
+            "default": "draft",
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "draft": {
+                    "en-US": "Not offered yet",
+                    "de-DE": "Noch nicht angeboten",
+                    "fr-FR": "Pas encore proposé",
+                    "da-DK": "Tilbydes ikke endnu",
+                    "cs-CZ": "Zatím nenabízeno",
+                    "ar-EG": "غير معروض بعد",
+                    "zh-CN": "尚未提供",
+                    "zh-TW": "尚未提供"
+                  },
+                  "published": {
+                    "en-US": "Offered for customising",
+                    "de-DE": "Zum Gestalten angeboten",
+                    "fr-FR": "Proposé à personnaliser",
+                    "da-DK": "Tilbydes til tilpasning",
+                    "cs-CZ": "Nabízeno k úpravě",
+                    "ar-EG": "معروض للتخصيص",
+                    "zh-CN": "已开放定制",
+                    "zh-TW": "已開放訂製"
+                  }
+                }
+              }
+            },
+            "label": {
+              "en-US": "Offered",
+              "de-DE": "Angeboten",
+              "fr-FR": "Proposé",
+              "da-DK": "Tilbydes",
+              "cs-CZ": "Nabízeno",
+              "ar-EG": "معروض",
+              "zh-CN": "提供状态",
+              "zh-TW": "提供狀態"
+            }
+          },
+          {
+            "ref": "position",
+            "type": "int",
+            "default": 0,
+            "label": {
+              "en-US": "Order in the list",
+              "de-DE": "Reihenfolge",
+              "fr-FR": "Ordre dans la liste",
+              "da-DK": "Rækkefølge",
+              "cs-CZ": "Pořadí",
+              "ar-EG": "الترتيب في القائمة",
+              "zh-CN": "列表中的顺序",
+              "zh-TW": "清單中的順序"
+            }
+          }
+        ]
+      },
+      {
+        "ref": "base_pieces",
+        "keyField": "name",
+        "unique": [
+          [
+            "base_id",
+            "code"
+          ]
+        ],
+        "label": {
+          "en-US": "Piece",
+          "de-DE": "Teil",
+          "fr-FR": "Pièce",
+          "da-DK": "Del",
+          "cs-CZ": "Díl",
+          "ar-EG": "القطعة",
+          "zh-CN": "部件",
+          "zh-TW": "部件"
+        },
+        "labelPlural": {
+          "en-US": "Pieces",
+          "de-DE": "Teile",
+          "fr-FR": "Pièces",
+          "da-DK": "Dele",
+          "cs-CZ": "Díly",
+          "ar-EG": "القطع",
+          "zh-CN": "部件",
+          "zh-TW": "部件"
+        },
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "app",
+            "type": "text",
+            "maxLength": 40,
+            "nullable": true,
+            "label": {
+              "en-US": "App",
+              "de-DE": "App",
+              "fr-FR": "Application",
+              "da-DK": "App",
+              "cs-CZ": "Aplikace",
+              "ar-EG": "التطبيق",
+              "zh-CN": "应用",
+              "zh-TW": "應用程式"
+            }
+          },
+          {
+            "ref": "base_id",
+            "type": "fk",
+            "references": "bases",
+            "label": {
+              "en-US": "Base",
+              "de-DE": "Grundform",
+              "fr-FR": "Support",
+              "da-DK": "Grundform",
+              "cs-CZ": "Základ",
+              "ar-EG": "القاعدة",
+              "zh-CN": "底材",
+              "zh-TW": "底材"
+            }
+          },
+          {
+            "ref": "code",
+            "type": "text",
+            "maxLength": 16,
+            "label": {
+              "en-US": "Piece number",
+              "de-DE": "Teilnummer",
+              "fr-FR": "Numéro de pièce",
+              "da-DK": "Delnummer",
+              "cs-CZ": "Číslo dílu",
+              "ar-EG": "رقم القطعة",
+              "zh-CN": "部件编号",
+              "zh-TW": "部件編號"
+            }
+          },
+          {
+            "ref": "name",
+            "type": "text",
+            "maxLength": 120,
+            "label": {
+              "en-US": "Name",
+              "de-DE": "Name",
+              "fr-FR": "Nom",
+              "da-DK": "Navn",
+              "cs-CZ": "Název",
+              "ar-EG": "الاسم",
+              "zh-CN": "名称",
+              "zh-TW": "名稱"
+            }
+          },
+          {
+            "ref": "width_mm",
+            "type": "decimal",
+            "scale": 2,
+            "rules": {
+              "validation": {
+                "min": 0,
+                "max": 5000
+              }
+            },
+            "label": {
+              "en-US": "Width (mm)",
+              "de-DE": "Breite (mm)",
+              "fr-FR": "Largeur (mm)",
+              "da-DK": "Bredde (mm)",
+              "cs-CZ": "Šířka (mm)",
+              "ar-EG": "العرض (مم)",
+              "zh-CN": "宽度（毫米）",
+              "zh-TW": "寬度（公釐）"
+            }
+          },
+          {
+            "ref": "height_mm",
+            "type": "decimal",
+            "scale": 2,
+            "rules": {
+              "validation": {
+                "min": 0,
+                "max": 5000
+              }
+            },
+            "label": {
+              "en-US": "Height (mm)",
+              "de-DE": "Höhe (mm)",
+              "fr-FR": "Hauteur (mm)",
+              "da-DK": "Højde (mm)",
+              "cs-CZ": "Výška (mm)",
+              "ar-EG": "الارتفاع (مم)",
+              "zh-CN": "高度（毫米）",
+              "zh-TW": "高度（公釐）"
+            }
+          },
+          {
+            "ref": "layers",
+            "type": "json",
+            "nullable": true,
+            "label": {
+              "en-US": "Layers",
+              "de-DE": "Ebenen",
+              "fr-FR": "Calques",
+              "da-DK": "Lag",
+              "cs-CZ": "Vrstvy",
+              "ar-EG": "الطبقات",
+              "zh-CN": "图层",
+              "zh-TW": "圖層"
+            }
+          },
+          {
+            "ref": "file",
+            "type": "text",
+            "maxLength": 64,
+            "nullable": true,
+            "label": {
+              "en-US": "The piece’s outline",
+              "de-DE": "Kontur des Teils",
+              "fr-FR": "Contour de la pièce",
+              "da-DK": "Delens omrids",
+              "cs-CZ": "Obrys dílu",
+              "ar-EG": "مخطط القطعة",
+              "zh-CN": "部件轮廓",
+              "zh-TW": "部件輪廓"
+            }
+          },
+          {
+            "ref": "position",
+            "type": "int",
+            "default": 0,
+            "label": {
+              "en-US": "Order in the list",
+              "de-DE": "Reihenfolge",
+              "fr-FR": "Ordre dans la liste",
+              "da-DK": "Rækkefølge",
+              "cs-CZ": "Pořadí",
+              "ar-EG": "الترتيب في القائمة",
+              "zh-CN": "列表中的顺序",
+              "zh-TW": "清單中的順序"
+            }
+          }
+        ]
+      },
+      {
+        "ref": "base_areas",
+        "keyField": "name",
+        "unique": [
+          [
+            "base_id",
+            "code"
+          ]
+        ],
+        "label": {
+          "en-US": "Area",
+          "de-DE": "Bereich",
+          "fr-FR": "Zone",
+          "da-DK": "Område",
+          "cs-CZ": "Oblast",
+          "ar-EG": "المنطقة",
+          "zh-CN": "区域",
+          "zh-TW": "區域"
+        },
+        "labelPlural": {
+          "en-US": "Areas",
+          "de-DE": "Bereiche",
+          "fr-FR": "Zones",
+          "da-DK": "Områder",
+          "cs-CZ": "Oblasti",
+          "ar-EG": "المناطق",
+          "zh-CN": "区域",
+          "zh-TW": "區域"
+        },
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "app",
+            "type": "text",
+            "maxLength": 40,
+            "nullable": true,
+            "label": {
+              "en-US": "App",
+              "de-DE": "App",
+              "fr-FR": "Application",
+              "da-DK": "App",
+              "cs-CZ": "Aplikace",
+              "ar-EG": "التطبيق",
+              "zh-CN": "应用",
+              "zh-TW": "應用程式"
+            }
+          },
+          {
+            "ref": "base_id",
+            "type": "fk",
+            "references": "bases",
+            "label": {
+              "en-US": "Base",
+              "de-DE": "Grundform",
+              "fr-FR": "Support",
+              "da-DK": "Grundform",
+              "cs-CZ": "Základ",
+              "ar-EG": "القاعدة",
+              "zh-CN": "底材",
+              "zh-TW": "底材"
+            }
+          },
+          {
+            "ref": "code",
+            "type": "text",
+            "maxLength": 40,
+            "label": {
+              "en-US": "Key",
+              "de-DE": "Schlüssel",
+              "fr-FR": "Clé",
+              "da-DK": "Nøgle",
+              "cs-CZ": "Klíč",
+              "ar-EG": "المفتاح",
+              "zh-CN": "键",
+              "zh-TW": "鍵"
+            }
+          },
+          {
+            "ref": "name",
+            "type": "text",
+            "maxLength": 120,
+            "label": {
+              "en-US": "Name",
+              "de-DE": "Name",
+              "fr-FR": "Nom",
+              "da-DK": "Navn",
+              "cs-CZ": "Název",
+              "ar-EG": "الاسم",
+              "zh-CN": "名称",
+              "zh-TW": "名稱"
+            }
+          },
+          {
+            "ref": "side",
+            "type": "enum",
+            "enum": [
+              "front",
+              "back"
+            ],
+            "nullable": true,
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "front": {
+                    "en-US": "Front",
+                    "de-DE": "Vorderseite",
+                    "fr-FR": "Recto",
+                    "da-DK": "Forside",
+                    "cs-CZ": "Přední strana",
+                    "ar-EG": "الوجه الأمامي",
+                    "zh-CN": "正面",
+                    "zh-TW": "正面"
+                  },
+                  "back": {
+                    "en-US": "Back",
+                    "de-DE": "Rückseite",
+                    "fr-FR": "Verso",
+                    "da-DK": "Bagside",
+                    "cs-CZ": "Zadní strana",
+                    "ar-EG": "الوجه الخلفي",
+                    "zh-CN": "背面",
+                    "zh-TW": "背面"
+                  }
+                }
+              }
+            },
+            "label": {
+              "en-US": "Side",
+              "de-DE": "Seite",
+              "fr-FR": "Face",
+              "da-DK": "Side",
+              "cs-CZ": "Strana",
+              "ar-EG": "الوجه",
+              "zh-CN": "面",
+              "zh-TW": "面"
+            }
+          },
+          {
+            "ref": "piece_id",
+            "type": "fk",
+            "references": "base_pieces",
+            "nullable": true,
+            "label": {
+              "en-US": "Piece",
+              "de-DE": "Teil",
+              "fr-FR": "Pièce",
+              "da-DK": "Del",
+              "cs-CZ": "Díl",
+              "ar-EG": "القطعة",
+              "zh-CN": "部件",
+              "zh-TW": "部件"
+            }
+          },
+          {
+            "ref": "face",
+            "type": "text",
+            "maxLength": 40,
+            "nullable": true,
+            "label": {
+              "en-US": "Marked face",
+              "de-DE": "Markierte Fläche",
+              "fr-FR": "Face marquée",
+              "da-DK": "Markeret flade",
+              "cs-CZ": "Označená plocha",
+              "ar-EG": "الوجه المحدد",
+              "zh-CN": "已标记的面",
+              "zh-TW": "已標記的面"
+            }
+          },
+          {
+            "ref": "shape",
+            "type": "enum",
+            "enum": [
+              "rect",
+              "oval"
+            ],
+            "default": "rect",
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "rect": {
+                    "en-US": "Rectangle",
+                    "de-DE": "Rechteck",
+                    "fr-FR": "Rectangle",
+                    "da-DK": "Rektangel",
+                    "cs-CZ": "Obdélník",
+                    "ar-EG": "مستطيل",
+                    "zh-CN": "矩形",
+                    "zh-TW": "矩形"
+                  },
+                  "oval": {
+                    "en-US": "Oval",
+                    "de-DE": "Oval",
+                    "fr-FR": "Ovale",
+                    "da-DK": "Oval",
+                    "cs-CZ": "Ovál",
+                    "ar-EG": "بيضاوي",
+                    "zh-CN": "椭圆",
+                    "zh-TW": "橢圓"
+                  }
+                }
+              }
+            },
+            "label": {
+              "en-US": "Shape",
+              "de-DE": "Form",
+              "fr-FR": "Forme",
+              "da-DK": "Form",
+              "cs-CZ": "Tvar",
+              "ar-EG": "الشكل",
+              "zh-CN": "形状",
+              "zh-TW": "形狀"
+            }
+          },
+          {
+            "ref": "x_mm",
+            "type": "decimal",
+            "scale": 2,
+            "nullable": true,
+            "label": {
+              "en-US": "From the left edge (mm)",
+              "de-DE": "Vom linken Rand (mm)",
+              "fr-FR": "Depuis le bord gauche (mm)",
+              "da-DK": "Fra venstre kant (mm)",
+              "cs-CZ": "Od levého okraje (mm)",
+              "ar-EG": "من الحافة اليسرى (مم)",
+              "zh-CN": "距左边缘（毫米）",
+              "zh-TW": "距左邊緣（公釐）"
+            }
+          },
+          {
+            "ref": "y_mm",
+            "type": "decimal",
+            "scale": 2,
+            "nullable": true,
+            "label": {
+              "en-US": "From the top edge (mm)",
+              "de-DE": "Vom oberen Rand (mm)",
+              "fr-FR": "Depuis le bord supérieur (mm)",
+              "da-DK": "Fra øverste kant (mm)",
+              "cs-CZ": "Od horního okraje (mm)",
+              "ar-EG": "من الحافة العليا (مم)",
+              "zh-CN": "距上边缘（毫米）",
+              "zh-TW": "距上邊緣（公釐）"
+            }
+          },
+          {
+            "ref": "w_mm",
+            "type": "decimal",
+            "scale": 2,
+            "nullable": true,
+            "rules": {
+              "validation": {
+                "min": 0,
+                "max": 5000
+              }
+            },
+            "label": {
+              "en-US": "Width (mm)",
+              "de-DE": "Breite (mm)",
+              "fr-FR": "Largeur (mm)",
+              "da-DK": "Bredde (mm)",
+              "cs-CZ": "Šířka (mm)",
+              "ar-EG": "العرض (مم)",
+              "zh-CN": "宽度（毫米）",
+              "zh-TW": "寬度（公釐）"
+            }
+          },
+          {
+            "ref": "h_mm",
+            "type": "decimal",
+            "scale": 2,
+            "nullable": true,
+            "rules": {
+              "validation": {
+                "min": 0,
+                "max": 5000
+              }
+            },
+            "label": {
+              "en-US": "Height (mm)",
+              "de-DE": "Höhe (mm)",
+              "fr-FR": "Hauteur (mm)",
+              "da-DK": "Højde (mm)",
+              "cs-CZ": "Výška (mm)",
+              "ar-EG": "الارتفاع (مم)",
+              "zh-CN": "高度（毫米）",
+              "zh-TW": "高度（公釐）"
+            }
+          },
+          {
+            "ref": "takes",
+            "type": "enum",
+            "enum": [
+              "words",
+              "logo",
+              "both"
+            ],
+            "default": "words",
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "words": {
+                    "en-US": "Words",
+                    "de-DE": "Text",
+                    "fr-FR": "Texte",
+                    "da-DK": "Tekst",
+                    "cs-CZ": "Text",
+                    "ar-EG": "كلمات",
+                    "zh-CN": "文字",
+                    "zh-TW": "文字"
+                  },
+                  "logo": {
+                    "en-US": "A logo",
+                    "de-DE": "Ein Logo",
+                    "fr-FR": "Un logo",
+                    "da-DK": "Et logo",
+                    "cs-CZ": "Logo",
+                    "ar-EG": "شعار",
+                    "zh-CN": "标志",
+                    "zh-TW": "標誌"
+                  },
+                  "both": {
+                    "en-US": "Both",
+                    "de-DE": "Beides",
+                    "fr-FR": "Les deux",
+                    "da-DK": "Begge",
+                    "cs-CZ": "Obojí",
+                    "ar-EG": "كلاهما",
+                    "zh-CN": "两者",
+                    "zh-TW": "兩者"
+                  }
+                }
+              }
+            },
+            "label": {
+              "en-US": "What it takes",
+              "de-DE": "Was hineinkommt",
+              "fr-FR": "Ce qu’elle accepte",
+              "da-DK": "Hvad det rummer",
+              "cs-CZ": "Co pojme",
+              "ar-EG": "ما تقبله",
+              "zh-CN": "可放内容",
+              "zh-TW": "可放內容"
+            }
+          },
+          {
+            "ref": "required",
+            "type": "bool",
+            "default": false,
+            "label": {
+              "en-US": "Required",
+              "de-DE": "Pflicht",
+              "fr-FR": "Obligatoire",
+              "da-DK": "Påkrævet",
+              "cs-CZ": "Povinné",
+              "ar-EG": "مطلوب",
+              "zh-CN": "必填",
+              "zh-TW": "必填"
+            }
+          },
+          {
+            "ref": "rules",
+            "type": "json",
+            "nullable": true,
+            "label": {
+              "en-US": "Rules",
+              "de-DE": "Regeln",
+              "fr-FR": "Règles",
+              "da-DK": "Regler",
+              "cs-CZ": "Pravidla",
+              "ar-EG": "القواعد",
+              "zh-CN": "规则",
+              "zh-TW": "規則"
+            }
+          },
+          {
+            "ref": "feature_id",
+            "type": "fk",
+            "references": "features",
+            "nullable": true,
+            "label": {
+              "en-US": "Priced feature",
+              "de-DE": "Aufpreis-Option",
+              "fr-FR": "Option payante",
+              "da-DK": "Tilvalg med pris",
+              "cs-CZ": "Placená volba",
+              "ar-EG": "ميزة بسعر",
+              "zh-CN": "加价选项",
+              "zh-TW": "加價選項"
+            }
+          },
+          {
+            "ref": "position",
+            "type": "int",
+            "default": 0,
+            "label": {
+              "en-US": "Order in the list",
+              "de-DE": "Reihenfolge",
+              "fr-FR": "Ordre dans la liste",
+              "da-DK": "Rækkefølge",
+              "cs-CZ": "Pořadí",
+              "ar-EG": "الترتيب في القائمة",
+              "zh-CN": "列表中的顺序",
+              "zh-TW": "清單中的順序"
+            }
+          }
+        ]
+      },
+      {
+        "ref": "ready_designs",
+        "keyField": "name",
+        "label": {
+          "en-US": "Ready-made design",
+          "de-DE": "Fertiger Entwurf",
+          "fr-FR": "Modèle prêt à l’emploi",
+          "da-DK": "Færdigt design",
+          "cs-CZ": "Hotový návrh",
+          "ar-EG": "تصميم جاهز",
+          "zh-CN": "现成设计",
+          "zh-TW": "現成設計"
+        },
+        "labelPlural": {
+          "en-US": "Ready-made designs",
+          "de-DE": "Fertige Entwürfe",
+          "fr-FR": "Modèles prêts à l’emploi",
+          "da-DK": "Færdige design",
+          "cs-CZ": "Hotové návrhy",
+          "ar-EG": "التصاميم الجاهزة",
+          "zh-CN": "现成设计",
+          "zh-TW": "現成設計"
+        },
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "app",
+            "type": "text",
+            "maxLength": 40,
+            "nullable": true,
+            "label": {
+              "en-US": "App",
+              "de-DE": "App",
+              "fr-FR": "Application",
+              "da-DK": "App",
+              "cs-CZ": "Aplikace",
+              "ar-EG": "التطبيق",
+              "zh-CN": "应用",
+              "zh-TW": "應用程式"
+            }
+          },
+          {
+            "ref": "base_id",
+            "type": "fk",
+            "references": "bases",
+            "label": {
+              "en-US": "Base",
+              "de-DE": "Grundform",
+              "fr-FR": "Support",
+              "da-DK": "Grundform",
+              "cs-CZ": "Základ",
+              "ar-EG": "القاعدة",
+              "zh-CN": "底材",
+              "zh-TW": "底材"
+            }
+          },
+          {
+            "ref": "name",
+            "type": "text",
+            "maxLength": 120,
+            "label": {
+              "en-US": "Name",
+              "de-DE": "Name",
+              "fr-FR": "Nom",
+              "da-DK": "Navn",
+              "cs-CZ": "Název",
+              "ar-EG": "الاسم",
+              "zh-CN": "名称",
+              "zh-TW": "名稱"
+            }
+          },
+          {
+            "ref": "tags",
+            "type": "json",
+            "nullable": true,
+            "label": {
+              "en-US": "Gallery filters",
+              "de-DE": "Galerie-Filter",
+              "fr-FR": "Filtres de la galerie",
+              "da-DK": "Gallerifiltre",
+              "cs-CZ": "Filtry galerie",
+              "ar-EG": "عوامل تصفية المعرض",
+              "zh-CN": "图库筛选",
+              "zh-TW": "圖庫篩選"
+            }
+          },
+          {
+            "ref": "layouts",
+            "type": "json",
+            "nullable": true,
+            "label": {
+              "en-US": "Layout choices",
+              "de-DE": "Layout-Varianten",
+              "fr-FR": "Mises en page proposées",
+              "da-DK": "Layoutvalg",
+              "cs-CZ": "Volby rozvržení",
+              "ar-EG": "خيارات التخطيط",
+              "zh-CN": "版式选项",
+              "zh-TW": "版式選項"
+            }
+          },
+          {
+            "ref": "state",
+            "type": "enum",
+            "enum": [
+              "draft",
+              "published"
+            ],
+            "default": "draft",
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "draft": {
+                    "en-US": "Hidden",
+                    "de-DE": "Ausgeblendet",
+                    "fr-FR": "Masqué",
+                    "da-DK": "Skjult",
+                    "cs-CZ": "Skryto",
+                    "ar-EG": "مخفي",
+                    "zh-CN": "已隐藏",
+                    "zh-TW": "已隱藏"
+                  },
+                  "published": {
+                    "en-US": "Shown to customers",
+                    "de-DE": "Für Kunden sichtbar",
+                    "fr-FR": "Visible des clients",
+                    "da-DK": "Vises for kunder",
+                    "cs-CZ": "Zobrazeno zákazníkům",
+                    "ar-EG": "ظاهر للعملاء",
+                    "zh-CN": "向顾客展示",
+                    "zh-TW": "向顧客展示"
+                  }
+                }
+              }
+            },
+            "label": {
+              "en-US": "Shown",
+              "de-DE": "Sichtbar",
+              "fr-FR": "Visible",
+              "da-DK": "Vises",
+              "cs-CZ": "Zobrazení",
+              "ar-EG": "الظهور",
+              "zh-CN": "展示",
+              "zh-TW": "展示"
+            }
+          },
+          {
+            "ref": "preview_file",
+            "type": "text",
+            "maxLength": 64,
+            "nullable": true,
+            "semantic": "image",
+            "rules": {
+              "file": {
+                "accept": [
+                  "png",
+                  "jpeg",
+                  "webp"
+                ],
+                "maxBytes": 2097152
+              }
+            },
+            "label": {
+              "en-US": "Preview picture",
+              "de-DE": "Vorschaubild",
+              "fr-FR": "Image d’aperçu",
+              "da-DK": "Eksempelbillede",
+              "cs-CZ": "Náhledový obrázek",
+              "ar-EG": "صورة المعاينة",
+              "zh-CN": "预览图",
+              "zh-TW": "預覽圖"
+            }
+          },
+          {
+            "ref": "position",
+            "type": "int",
+            "default": 0,
+            "label": {
+              "en-US": "Order in the list",
+              "de-DE": "Reihenfolge",
+              "fr-FR": "Ordre dans la liste",
+              "da-DK": "Rækkefølge",
+              "cs-CZ": "Pořadí",
+              "ar-EG": "الترتيب في القائمة",
+              "zh-CN": "列表中的顺序",
+              "zh-TW": "清單中的順序"
+            }
+          }
+        ]
+      },
+      {
+        "ref": "ready_parts",
+        "keyField": "name",
+        "label": {
+          "en-US": "Part",
+          "de-DE": "Element",
+          "fr-FR": "Élément",
+          "da-DK": "Element",
+          "cs-CZ": "Prvek",
+          "ar-EG": "الجزء",
+          "zh-CN": "元素",
+          "zh-TW": "元素"
+        },
+        "labelPlural": {
+          "en-US": "Parts",
+          "de-DE": "Elemente",
+          "fr-FR": "Éléments",
+          "da-DK": "Elementer",
+          "cs-CZ": "Prvky",
+          "ar-EG": "الأجزاء",
+          "zh-CN": "元素",
+          "zh-TW": "元素"
+        },
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "app",
+            "type": "text",
+            "maxLength": 40,
+            "nullable": true,
+            "label": {
+              "en-US": "App",
+              "de-DE": "App",
+              "fr-FR": "Application",
+              "da-DK": "App",
+              "cs-CZ": "Aplikace",
+              "ar-EG": "التطبيق",
+              "zh-CN": "应用",
+              "zh-TW": "應用程式"
+            }
+          },
+          {
+            "ref": "ready_design_id",
+            "type": "fk",
+            "references": "ready_designs",
+            "label": {
+              "en-US": "Ready-made design",
+              "de-DE": "Fertiger Entwurf",
+              "fr-FR": "Modèle prêt à l’emploi",
+              "da-DK": "Færdigt design",
+              "cs-CZ": "Hotový návrh",
+              "ar-EG": "تصميم جاهز",
+              "zh-CN": "现成设计",
+              "zh-TW": "現成設計"
+            }
+          },
+          {
+            "ref": "code",
+            "type": "text",
+            "maxLength": 40,
+            "label": {
+              "en-US": "Key",
+              "de-DE": "Schlüssel",
+              "fr-FR": "Clé",
+              "da-DK": "Nøgle",
+              "cs-CZ": "Klíč",
+              "ar-EG": "المفتاح",
+              "zh-CN": "键",
+              "zh-TW": "鍵"
+            }
+          },
+          {
+            "ref": "name",
+            "type": "text",
+            "maxLength": 120,
+            "label": {
+              "en-US": "Name",
+              "de-DE": "Name",
+              "fr-FR": "Nom",
+              "da-DK": "Navn",
+              "cs-CZ": "Název",
+              "ar-EG": "الاسم",
+              "zh-CN": "名称",
+              "zh-TW": "名稱"
+            }
+          },
+          {
+            "ref": "kind",
+            "type": "enum",
+            "enum": [
+              "text",
+              "picture",
+              "colour",
+              "choice",
+              "shape"
+            ],
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "text": {
+                    "en-US": "Words",
+                    "de-DE": "Text",
+                    "fr-FR": "Texte",
+                    "da-DK": "Tekst",
+                    "cs-CZ": "Text",
+                    "ar-EG": "كلمات",
+                    "zh-CN": "文字",
+                    "zh-TW": "文字"
+                  },
+                  "picture": {
+                    "en-US": "A picture or logo",
+                    "de-DE": "Ein Bild oder Logo",
+                    "fr-FR": "Une image ou un logo",
+                    "da-DK": "Et billede eller logo",
+                    "cs-CZ": "Obrázek nebo logo",
+                    "ar-EG": "صورة أو شعار",
+                    "zh-CN": "图片或标志",
+                    "zh-TW": "圖片或標誌"
+                  },
+                  "colour": {
+                    "en-US": "A colour",
+                    "de-DE": "Eine Farbe",
+                    "fr-FR": "Une couleur",
+                    "da-DK": "En farve",
+                    "cs-CZ": "Barva",
+                    "ar-EG": "لون",
+                    "zh-CN": "颜色",
+                    "zh-TW": "顏色"
+                  },
+                  "choice": {
+                    "en-US": "A choice",
+                    "de-DE": "Eine Auswahl",
+                    "fr-FR": "Un choix",
+                    "da-DK": "Et valg",
+                    "cs-CZ": "Volba",
+                    "ar-EG": "اختيار",
+                    "zh-CN": "选项",
+                    "zh-TW": "選項"
+                  },
+                  "shape": {
+                    "en-US": "A shape",
+                    "de-DE": "Eine Form",
+                    "fr-FR": "Une forme",
+                    "da-DK": "En form",
+                    "cs-CZ": "Tvar",
+                    "ar-EG": "شكل",
+                    "zh-CN": "形状",
+                    "zh-TW": "形狀"
+                  }
+                }
+              }
+            },
+            "label": {
+              "en-US": "Kind of part",
+              "de-DE": "Art des Elements",
+              "fr-FR": "Type d’élément",
+              "da-DK": "Type element",
+              "cs-CZ": "Druh prvku",
+              "ar-EG": "نوع الجزء",
+              "zh-CN": "元素类型",
+              "zh-TW": "元素類型"
+            }
+          },
+          {
+            "ref": "locked",
+            "type": "bool",
+            "default": false,
+            "label": {
+              "en-US": "Set by the shop",
+              "de-DE": "Vom Geschäft festgelegt",
+              "fr-FR": "Fixé par la boutique",
+              "da-DK": "Fastlagt af butikken",
+              "cs-CZ": "Určuje obchod",
+              "ar-EG": "يحدده المتجر",
+              "zh-CN": "由店铺设定",
+              "zh-TW": "由店家設定"
+            }
+          },
+          {
+            "ref": "required",
+            "type": "bool",
+            "default": false,
+            "label": {
+              "en-US": "Required",
+              "de-DE": "Pflicht",
+              "fr-FR": "Obligatoire",
+              "da-DK": "Påkrævet",
+              "cs-CZ": "Povinné",
+              "ar-EG": "مطلوب",
+              "zh-CN": "必填",
+              "zh-TW": "必填"
+            }
+          },
+          {
+            "ref": "side",
+            "type": "enum",
+            "enum": [
+              "front",
+              "back"
+            ],
+            "nullable": true,
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "front": {
+                    "en-US": "Front",
+                    "de-DE": "Vorderseite",
+                    "fr-FR": "Recto",
+                    "da-DK": "Forside",
+                    "cs-CZ": "Přední strana",
+                    "ar-EG": "الوجه الأمامي",
+                    "zh-CN": "正面",
+                    "zh-TW": "正面"
+                  },
+                  "back": {
+                    "en-US": "Back",
+                    "de-DE": "Rückseite",
+                    "fr-FR": "Verso",
+                    "da-DK": "Bagside",
+                    "cs-CZ": "Zadní strana",
+                    "ar-EG": "الوجه الخلفي",
+                    "zh-CN": "背面",
+                    "zh-TW": "背面"
+                  }
+                }
+              }
+            },
+            "label": {
+              "en-US": "Side",
+              "de-DE": "Seite",
+              "fr-FR": "Face",
+              "da-DK": "Side",
+              "cs-CZ": "Strana",
+              "ar-EG": "الوجه",
+              "zh-CN": "面",
+              "zh-TW": "面"
+            }
+          },
+          {
+            "ref": "layout",
+            "type": "text",
+            "maxLength": 40,
+            "nullable": true,
+            "label": {
+              "en-US": "Layout",
+              "de-DE": "Layout",
+              "fr-FR": "Mise en page",
+              "da-DK": "Layout",
+              "cs-CZ": "Rozvržení",
+              "ar-EG": "التخطيط",
+              "zh-CN": "版式",
+              "zh-TW": "版式"
+            }
+          },
+          {
+            "ref": "area_id",
+            "type": "fk",
+            "references": "base_areas",
+            "nullable": true,
+            "label": {
+              "en-US": "Area",
+              "de-DE": "Bereich",
+              "fr-FR": "Zone",
+              "da-DK": "Område",
+              "cs-CZ": "Oblast",
+              "ar-EG": "المنطقة",
+              "zh-CN": "区域",
+              "zh-TW": "區域"
+            }
+          },
+          {
+            "ref": "piece_id",
+            "type": "fk",
+            "references": "base_pieces",
+            "nullable": true,
+            "label": {
+              "en-US": "Piece",
+              "de-DE": "Teil",
+              "fr-FR": "Pièce",
+              "da-DK": "Del",
+              "cs-CZ": "Díl",
+              "ar-EG": "القطعة",
+              "zh-CN": "部件",
+              "zh-TW": "部件"
+            }
+          },
+          {
+            "ref": "x_mm",
+            "type": "decimal",
+            "scale": 2,
+            "nullable": true,
+            "label": {
+              "en-US": "From the left edge (mm)",
+              "de-DE": "Vom linken Rand (mm)",
+              "fr-FR": "Depuis le bord gauche (mm)",
+              "da-DK": "Fra venstre kant (mm)",
+              "cs-CZ": "Od levého okraje (mm)",
+              "ar-EG": "من الحافة اليسرى (مم)",
+              "zh-CN": "距左边缘（毫米）",
+              "zh-TW": "距左邊緣（公釐）"
+            }
+          },
+          {
+            "ref": "y_mm",
+            "type": "decimal",
+            "scale": 2,
+            "nullable": true,
+            "label": {
+              "en-US": "From the top edge (mm)",
+              "de-DE": "Vom oberen Rand (mm)",
+              "fr-FR": "Depuis le bord supérieur (mm)",
+              "da-DK": "Fra øverste kant (mm)",
+              "cs-CZ": "Od horního okraje (mm)",
+              "ar-EG": "من الحافة العليا (مم)",
+              "zh-CN": "距上边缘（毫米）",
+              "zh-TW": "距上邊緣（公釐）"
+            }
+          },
+          {
+            "ref": "w_mm",
+            "type": "decimal",
+            "scale": 2,
+            "nullable": true,
+            "rules": {
+              "validation": {
+                "min": 0,
+                "max": 5000
+              }
+            },
+            "label": {
+              "en-US": "Width (mm)",
+              "de-DE": "Breite (mm)",
+              "fr-FR": "Largeur (mm)",
+              "da-DK": "Bredde (mm)",
+              "cs-CZ": "Šířka (mm)",
+              "ar-EG": "العرض (مم)",
+              "zh-CN": "宽度（毫米）",
+              "zh-TW": "寬度（公釐）"
+            }
+          },
+          {
+            "ref": "h_mm",
+            "type": "decimal",
+            "scale": 2,
+            "nullable": true,
+            "rules": {
+              "validation": {
+                "min": 0,
+                "max": 5000
+              }
+            },
+            "label": {
+              "en-US": "Height (mm)",
+              "de-DE": "Höhe (mm)",
+              "fr-FR": "Hauteur (mm)",
+              "da-DK": "Højde (mm)",
+              "cs-CZ": "Výška (mm)",
+              "ar-EG": "الارتفاع (مم)",
+              "zh-CN": "高度（毫米）",
+              "zh-TW": "高度（公釐）"
+            }
+          },
+          {
+            "ref": "rules",
+            "type": "json",
+            "nullable": true,
+            "label": {
+              "en-US": "Rules",
+              "de-DE": "Regeln",
+              "fr-FR": "Règles",
+              "da-DK": "Regler",
+              "cs-CZ": "Pravidla",
+              "ar-EG": "القواعد",
+              "zh-CN": "规则",
+              "zh-TW": "規則"
+            }
+          },
+          {
+            "ref": "value",
+            "type": "json",
+            "nullable": true,
+            "label": {
+              "en-US": "What it starts as",
+              "de-DE": "Anfangswert",
+              "fr-FR": "Valeur de départ",
+              "da-DK": "Startværdi",
+              "cs-CZ": "Výchozí hodnota",
+              "ar-EG": "القيمة الأولى",
+              "zh-CN": "初始内容",
+              "zh-TW": "初始內容"
+            }
+          },
+          {
+            "ref": "feature_id",
+            "type": "fk",
+            "references": "features",
+            "nullable": true,
+            "label": {
+              "en-US": "Priced feature",
+              "de-DE": "Aufpreis-Option",
+              "fr-FR": "Option payante",
+              "da-DK": "Tilvalg med pris",
+              "cs-CZ": "Placená volba",
+              "ar-EG": "ميزة بسعر",
+              "zh-CN": "加价选项",
+              "zh-TW": "加價選項"
+            }
+          },
+          {
+            "ref": "position",
+            "type": "int",
+            "default": 0,
+            "label": {
+              "en-US": "Order in the list",
+              "de-DE": "Reihenfolge",
+              "fr-FR": "Ordre dans la liste",
+              "da-DK": "Rækkefølge",
+              "cs-CZ": "Pořadí",
+              "ar-EG": "الترتيب في القائمة",
+              "zh-CN": "列表中的顺序",
+              "zh-TW": "清單中的順序"
+            }
+          }
+        ]
+      },
+      {
+        "ref": "fonts",
+        "keyField": "name",
+        "label": {
+          "en-US": "Font",
+          "de-DE": "Schrift",
+          "fr-FR": "Police",
+          "da-DK": "Skrifttype",
+          "cs-CZ": "Písmo",
+          "ar-EG": "الخط",
+          "zh-CN": "字体",
+          "zh-TW": "字型"
+        },
+        "labelPlural": {
+          "en-US": "Fonts",
+          "de-DE": "Schriften",
+          "fr-FR": "Polices",
+          "da-DK": "Skrifttyper",
+          "cs-CZ": "Písma",
+          "ar-EG": "الخطوط",
+          "zh-CN": "字体",
+          "zh-TW": "字型"
+        },
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "app",
+            "type": "text",
+            "maxLength": 40,
+            "nullable": true,
+            "label": {
+              "en-US": "App",
+              "de-DE": "App",
+              "fr-FR": "Application",
+              "da-DK": "App",
+              "cs-CZ": "Aplikace",
+              "ar-EG": "التطبيق",
+              "zh-CN": "应用",
+              "zh-TW": "應用程式"
+            }
+          },
+          {
+            "ref": "family",
+            "type": "text",
+            "maxLength": 80,
+            "label": {
+              "en-US": "Font family",
+              "de-DE": "Schriftfamilie",
+              "fr-FR": "Famille de police",
+              "da-DK": "Skriftfamilie",
+              "cs-CZ": "Rodina písma",
+              "ar-EG": "عائلة الخط",
+              "zh-CN": "字体家族",
+              "zh-TW": "字型家族"
+            }
+          },
+          {
+            "ref": "name",
+            "type": "text",
+            "maxLength": 80,
+            "label": {
+              "en-US": "Name",
+              "de-DE": "Name",
+              "fr-FR": "Nom",
+              "da-DK": "Navn",
+              "cs-CZ": "Název",
+              "ar-EG": "الاسم",
+              "zh-CN": "名称",
+              "zh-TW": "名稱"
+            }
+          },
+          {
+            "ref": "style",
+            "type": "text",
+            "maxLength": 40,
+            "nullable": true,
+            "label": {
+              "en-US": "Style",
+              "de-DE": "Stil",
+              "fr-FR": "Style",
+              "da-DK": "Stil",
+              "cs-CZ": "Styl",
+              "ar-EG": "النمط",
+              "zh-CN": "风格",
+              "zh-TW": "風格"
+            }
+          },
+          {
+            "ref": "weights",
+            "type": "text",
+            "maxLength": 40,
+            "nullable": true,
+            "label": {
+              "en-US": "Weights",
+              "de-DE": "Schriftschnitte",
+              "fr-FR": "Graisses",
+              "da-DK": "Vægte",
+              "cs-CZ": "Řezy",
+              "ar-EG": "الأوزان",
+              "zh-CN": "字重",
+              "zh-TW": "字重"
+            }
+          },
+          {
+            "ref": "licence",
+            "type": "text",
+            "maxLength": 120,
+            "label": {
+              "en-US": "Licence",
+              "de-DE": "Lizenz",
+              "fr-FR": "Licence",
+              "da-DK": "Licens",
+              "cs-CZ": "Licence",
+              "ar-EG": "الترخيص",
+              "zh-CN": "许可",
+              "zh-TW": "授權"
+            }
+          },
+          {
+            "ref": "starter",
+            "type": "bool",
+            "default": false,
+            "label": {
+              "en-US": "In the starter set",
+              "de-DE": "Im Grundsortiment",
+              "fr-FR": "Dans le jeu de départ",
+              "da-DK": "I startsættet",
+              "cs-CZ": "V základní sadě",
+              "ar-EG": "ضمن المجموعة الأساسية",
+              "zh-CN": "属于入门套装",
+              "zh-TW": "屬於入門套組"
+            }
+          },
+          {
+            "ref": "smallest_mm",
+            "type": "decimal",
+            "scale": 2,
+            "nullable": true,
+            "rules": {
+              "validation": {
+                "min": 0,
+                "max": 5000
+              }
+            },
+            "label": {
+              "en-US": "Smallest size that still reads (mm)",
+              "de-DE": "Kleinste noch lesbare Größe (mm)",
+              "fr-FR": "Plus petite taille lisible (mm)",
+              "da-DK": "Mindste læselige størrelse (mm)",
+              "cs-CZ": "Nejmenší čitelná velikost (mm)",
+              "ar-EG": "أصغر حجم يظل مقروءًا (مم)",
+              "zh-CN": "仍可辨认的最小尺寸（毫米）",
+              "zh-TW": "仍可辨認的最小尺寸（公釐）"
+            }
+          },
+          {
+            "ref": "file",
+            "type": "text",
+            "maxLength": 64,
+            "nullable": true,
+            "label": {
+              "en-US": "Font file",
+              "de-DE": "Schriftdatei",
+              "fr-FR": "Fichier de police",
+              "da-DK": "Skriftfil",
+              "cs-CZ": "Soubor písma",
+              "ar-EG": "ملف الخط",
+              "zh-CN": "字体文件",
+              "zh-TW": "字型檔案"
+            }
+          },
+          {
+            "ref": "active",
+            "type": "bool",
+            "default": true,
+            "label": {
+              "en-US": "Offered",
+              "de-DE": "Angeboten",
+              "fr-FR": "Proposé",
+              "da-DK": "Tilbydes",
+              "cs-CZ": "Nabízeno",
+              "ar-EG": "معروض",
+              "zh-CN": "提供中",
+              "zh-TW": "提供中"
+            }
+          }
+        ]
+      },
+      {
+        "ref": "palettes",
+        "keyField": "name",
+        "label": {
+          "en-US": "Palette",
+          "de-DE": "Palette",
+          "fr-FR": "Palette",
+          "da-DK": "Palet",
+          "cs-CZ": "Paleta",
+          "ar-EG": "لوحة الألوان",
+          "zh-CN": "色板",
+          "zh-TW": "色票"
+        },
+        "labelPlural": {
+          "en-US": "Palettes",
+          "de-DE": "Paletten",
+          "fr-FR": "Palettes",
+          "da-DK": "Paletter",
+          "cs-CZ": "Palety",
+          "ar-EG": "لوحات الألوان",
+          "zh-CN": "色板",
+          "zh-TW": "色票"
+        },
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "app",
+            "type": "text",
+            "maxLength": 40,
+            "nullable": true,
+            "label": {
+              "en-US": "App",
+              "de-DE": "App",
+              "fr-FR": "Application",
+              "da-DK": "App",
+              "cs-CZ": "Aplikace",
+              "ar-EG": "التطبيق",
+              "zh-CN": "应用",
+              "zh-TW": "應用程式"
+            }
+          },
+          {
+            "ref": "ready_design_id",
+            "type": "fk",
+            "references": "ready_designs",
+            "nullable": true,
+            "label": {
+              "en-US": "Ready-made design",
+              "de-DE": "Fertiger Entwurf",
+              "fr-FR": "Modèle prêt à l’emploi",
+              "da-DK": "Færdigt design",
+              "cs-CZ": "Hotový návrh",
+              "ar-EG": "تصميم جاهز",
+              "zh-CN": "现成设计",
+              "zh-TW": "現成設計"
+            }
+          },
+          {
+            "ref": "kind",
+            "type": "enum",
+            "enum": [
+              "colours",
+              "finishes"
+            ],
+            "default": "colours",
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "colours": {
+                    "en-US": "Colours",
+                    "de-DE": "Farben",
+                    "fr-FR": "Couleurs",
+                    "da-DK": "Farver",
+                    "cs-CZ": "Barvy",
+                    "ar-EG": "ألوان",
+                    "zh-CN": "颜色",
+                    "zh-TW": "顏色"
+                  },
+                  "finishes": {
+                    "en-US": "Finishes",
+                    "de-DE": "Ausführungen",
+                    "fr-FR": "Finitions",
+                    "da-DK": "Overflader",
+                    "cs-CZ": "Povrchové úpravy",
+                    "ar-EG": "التشطيبات",
+                    "zh-CN": "表面处理",
+                    "zh-TW": "表面處理"
+                  }
+                }
+              }
+            },
+            "label": {
+              "en-US": "Kind",
+              "de-DE": "Art",
+              "fr-FR": "Type",
+              "da-DK": "Type",
+              "cs-CZ": "Druh",
+              "ar-EG": "النوع",
+              "zh-CN": "类型",
+              "zh-TW": "類型"
+            }
+          },
+          {
+            "ref": "code",
+            "type": "text",
+            "maxLength": 40,
+            "label": {
+              "en-US": "Key",
+              "de-DE": "Schlüssel",
+              "fr-FR": "Clé",
+              "da-DK": "Nøgle",
+              "cs-CZ": "Klíč",
+              "ar-EG": "المفتاح",
+              "zh-CN": "键",
+              "zh-TW": "鍵"
+            }
+          },
+          {
+            "ref": "name",
+            "type": "text",
+            "maxLength": 80,
+            "label": {
+              "en-US": "Name",
+              "de-DE": "Name",
+              "fr-FR": "Nom",
+              "da-DK": "Navn",
+              "cs-CZ": "Název",
+              "ar-EG": "الاسم",
+              "zh-CN": "名称",
+              "zh-TW": "名稱"
+            }
+          },
+          {
+            "ref": "position",
+            "type": "int",
+            "default": 0,
+            "label": {
+              "en-US": "Order in the list",
+              "de-DE": "Reihenfolge",
+              "fr-FR": "Ordre dans la liste",
+              "da-DK": "Rækkefølge",
+              "cs-CZ": "Pořadí",
+              "ar-EG": "الترتيب في القائمة",
+              "zh-CN": "列表中的顺序",
+              "zh-TW": "清單中的順序"
+            }
+          }
+        ]
+      },
+      {
+        "ref": "palette_colours",
+        "keyField": "name",
+        "unique": [
+          [
+            "palette_id",
+            "code"
+          ]
+        ],
+        "label": {
+          "en-US": "Colour",
+          "de-DE": "Farbe",
+          "fr-FR": "Couleur",
+          "da-DK": "Farve",
+          "cs-CZ": "Barva",
+          "ar-EG": "اللون",
+          "zh-CN": "颜色",
+          "zh-TW": "顏色"
+        },
+        "labelPlural": {
+          "en-US": "Colours",
+          "de-DE": "Farben",
+          "fr-FR": "Couleurs",
+          "da-DK": "Farver",
+          "cs-CZ": "Barvy",
+          "ar-EG": "الألوان",
+          "zh-CN": "颜色",
+          "zh-TW": "顏色"
+        },
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "app",
+            "type": "text",
+            "maxLength": 40,
+            "nullable": true,
+            "label": {
+              "en-US": "App",
+              "de-DE": "App",
+              "fr-FR": "Application",
+              "da-DK": "App",
+              "cs-CZ": "Aplikace",
+              "ar-EG": "التطبيق",
+              "zh-CN": "应用",
+              "zh-TW": "應用程式"
+            }
+          },
+          {
+            "ref": "palette_id",
+            "type": "fk",
+            "references": "palettes",
+            "label": {
+              "en-US": "Palette",
+              "de-DE": "Palette",
+              "fr-FR": "Palette",
+              "da-DK": "Palet",
+              "cs-CZ": "Paleta",
+              "ar-EG": "لوحة الألوان",
+              "zh-CN": "色板",
+              "zh-TW": "色票"
+            }
+          },
+          {
+            "ref": "code",
+            "type": "text",
+            "maxLength": 40,
+            "label": {
+              "en-US": "Key",
+              "de-DE": "Schlüssel",
+              "fr-FR": "Clé",
+              "da-DK": "Nøgle",
+              "cs-CZ": "Klíč",
+              "ar-EG": "المفتاح",
+              "zh-CN": "键",
+              "zh-TW": "鍵"
+            }
+          },
+          {
+            "ref": "role",
+            "type": "enum",
+            "enum": [
+              "paper",
+              "ink",
+              "accent"
+            ],
+            "nullable": true,
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "paper": {
+                    "en-US": "Paper",
+                    "de-DE": "Papier",
+                    "fr-FR": "Papier",
+                    "da-DK": "Papir",
+                    "cs-CZ": "Papír",
+                    "ar-EG": "الورق",
+                    "zh-CN": "纸张",
+                    "zh-TW": "紙張"
+                  },
+                  "ink": {
+                    "en-US": "Ink",
+                    "de-DE": "Druckfarbe",
+                    "fr-FR": "Encre",
+                    "da-DK": "Blæk",
+                    "cs-CZ": "Inkoust",
+                    "ar-EG": "الحبر",
+                    "zh-CN": "油墨",
+                    "zh-TW": "油墨"
+                  },
+                  "accent": {
+                    "en-US": "Accent",
+                    "de-DE": "Akzent",
+                    "fr-FR": "Accent",
+                    "da-DK": "Accent",
+                    "cs-CZ": "Akcent",
+                    "ar-EG": "لون مميز",
+                    "zh-CN": "强调色",
+                    "zh-TW": "強調色"
+                  }
+                }
+              }
+            },
+            "label": {
+              "en-US": "Role in the design",
+              "de-DE": "Rolle im Entwurf",
+              "fr-FR": "Rôle dans le modèle",
+              "da-DK": "Rolle i designet",
+              "cs-CZ": "Úloha v návrhu",
+              "ar-EG": "الدور في التصميم",
+              "zh-CN": "在设计中的作用",
+              "zh-TW": "在設計中的作用"
+            }
+          },
+          {
+            "ref": "name",
+            "type": "text",
+            "maxLength": 80,
+            "label": {
+              "en-US": "Name",
+              "de-DE": "Name",
+              "fr-FR": "Nom",
+              "da-DK": "Navn",
+              "cs-CZ": "Název",
+              "ar-EG": "الاسم",
+              "zh-CN": "名称",
+              "zh-TW": "名稱"
+            }
+          },
+          {
+            "ref": "hex",
+            "type": "text",
+            "maxLength": 7,
+            "rules": {
+              "validation": {
+                "minLength": 7,
+                "maxLength": 7
+              }
+            },
+            "label": {
+              "en-US": "Colour value",
+              "de-DE": "Farbwert",
+              "fr-FR": "Valeur de la couleur",
+              "da-DK": "Farveværdi",
+              "cs-CZ": "Hodnota barvy",
+              "ar-EG": "قيمة اللون",
+              "zh-CN": "颜色值",
+              "zh-TW": "顏色值"
+            }
+          },
+          {
+            "ref": "position",
+            "type": "int",
+            "default": 0,
+            "label": {
+              "en-US": "Order in the list",
+              "de-DE": "Reihenfolge",
+              "fr-FR": "Ordre dans la liste",
+              "da-DK": "Rækkefølge",
+              "cs-CZ": "Pořadí",
+              "ar-EG": "الترتيب في القائمة",
+              "zh-CN": "列表中的顺序",
+              "zh-TW": "清單中的順序"
+            }
+          }
+        ]
+      },
+      {
+        "ref": "features",
+        "keyField": "name",
+        "unique": [
+          [
+            "app",
+            "code"
+          ]
+        ],
+        "label": {
+          "en-US": "Priced feature",
+          "de-DE": "Aufpreis-Option",
+          "fr-FR": "Option payante",
+          "da-DK": "Tilvalg med pris",
+          "cs-CZ": "Placená volba",
+          "ar-EG": "ميزة بسعر",
+          "zh-CN": "加价选项",
+          "zh-TW": "加價選項"
+        },
+        "labelPlural": {
+          "en-US": "Priced features",
+          "de-DE": "Aufpreis-Optionen",
+          "fr-FR": "Options payantes",
+          "da-DK": "Tilvalg med pris",
+          "cs-CZ": "Placené volby",
+          "ar-EG": "الميزات بسعر",
+          "zh-CN": "加价选项",
+          "zh-TW": "加價選項"
+        },
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "app",
+            "type": "text",
+            "maxLength": 40,
+            "nullable": true,
+            "label": {
+              "en-US": "App",
+              "de-DE": "App",
+              "fr-FR": "Application",
+              "da-DK": "App",
+              "cs-CZ": "Aplikace",
+              "ar-EG": "التطبيق",
+              "zh-CN": "应用",
+              "zh-TW": "應用程式"
+            }
+          },
+          {
+            "ref": "code",
+            "type": "text",
+            "maxLength": 40,
+            "label": {
+              "en-US": "Code",
+              "de-DE": "Code",
+              "fr-FR": "Code",
+              "da-DK": "Kode",
+              "cs-CZ": "Kód",
+              "ar-EG": "الرمز",
+              "zh-CN": "代码",
+              "zh-TW": "代碼"
+            }
+          },
+          {
+            "ref": "name",
+            "type": "text",
+            "maxLength": 120,
+            "label": {
+              "en-US": "Name",
+              "de-DE": "Name",
+              "fr-FR": "Nom",
+              "da-DK": "Navn",
+              "cs-CZ": "Název",
+              "ar-EG": "الاسم",
+              "zh-CN": "名称",
+              "zh-TW": "名稱"
+            }
+          },
+          {
+            "ref": "active",
+            "type": "bool",
+            "default": true,
+            "label": {
+              "en-US": "Offered",
+              "de-DE": "Angeboten",
+              "fr-FR": "Proposé",
+              "da-DK": "Tilbydes",
+              "cs-CZ": "Nabízeno",
+              "ar-EG": "معروض",
+              "zh-CN": "提供中",
+              "zh-TW": "提供中"
+            }
+          }
+        ]
+      },
+      {
+        "ref": "designs",
+        "label": {
+          "en-US": "Customer’s design",
+          "de-DE": "Entwurf eines Kunden",
+          "fr-FR": "Création d’un client",
+          "da-DK": "Kundes design",
+          "cs-CZ": "Návrh zákazníka",
+          "ar-EG": "تصميم العميل",
+          "zh-CN": "顾客的设计",
+          "zh-TW": "顧客的設計"
+        },
+        "labelPlural": {
+          "en-US": "Customers’ designs",
+          "de-DE": "Entwürfe der Kunden",
+          "fr-FR": "Créations des clients",
+          "da-DK": "Kunders design",
+          "cs-CZ": "Návrhy zákazníků",
+          "ar-EG": "تصاميم العملاء",
+          "zh-CN": "顾客的设计",
+          "zh-TW": "顧客的設計"
+        },
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "app",
+            "type": "text",
+            "maxLength": 40,
+            "nullable": true,
+            "label": {
+              "en-US": "App",
+              "de-DE": "App",
+              "fr-FR": "Application",
+              "da-DK": "App",
+              "cs-CZ": "Aplikace",
+              "ar-EG": "التطبيق",
+              "zh-CN": "应用",
+              "zh-TW": "應用程式"
+            }
+          },
+          {
+            "ref": "code",
+            "type": "text",
+            "maxLength": 24,
+            "unique": true,
+            "nullable": true,
+            "rules": {
+              "code": {
+                "length": 16
+              }
+            },
+            "label": {
+              "en-US": "Design code",
+              "de-DE": "Entwurfscode",
+              "fr-FR": "Code de la création",
+              "da-DK": "Designkode",
+              "cs-CZ": "Kód návrhu",
+              "ar-EG": "رمز التصميم",
+              "zh-CN": "设计代码",
+              "zh-TW": "設計代碼"
+            }
+          },
+          {
+            "ref": "link_token",
+            "type": "text",
+            "maxLength": 16,
+            "unique": true,
+            "nullable": true,
+            "rules": {
+              "code": {
+                "length": 16,
+                "hiddenFromStaff": true
+              }
+            },
+            "label": {
+              "en-US": "Private link",
+              "de-DE": "Privater Link",
+              "fr-FR": "Lien privé",
+              "da-DK": "Privat link",
+              "cs-CZ": "Soukromý odkaz",
+              "ar-EG": "الرابط الخاص",
+              "zh-CN": "私人链接",
+              "zh-TW": "私人連結"
+            }
+          },
+          {
+            "ref": "format",
+            "type": "int",
+            "default": 1,
+            "rules": {
+              "validation": {
+                "min": 1,
+                "max": 99
+              }
+            },
+            "label": {
+              "en-US": "Saved in format",
+              "de-DE": "Gespeichert im Format",
+              "fr-FR": "Enregistré au format",
+              "da-DK": "Gemt i format",
+              "cs-CZ": "Uloženo ve formátu",
+              "ar-EG": "حُفظ بصيغة",
+              "zh-CN": "保存格式",
+              "zh-TW": "儲存格式"
+            }
+          },
+          {
+            "ref": "ready_design_id",
+            "type": "fk",
+            "references": "ready_designs",
+            "nullable": true,
+            "label": {
+              "en-US": "Ready-made design",
+              "de-DE": "Fertiger Entwurf",
+              "fr-FR": "Modèle prêt à l’emploi",
+              "da-DK": "Færdigt design",
+              "cs-CZ": "Hotový návrh",
+              "ar-EG": "تصميم جاهز",
+              "zh-CN": "现成设计",
+              "zh-TW": "現成設計"
+            }
+          },
+          {
+            "ref": "base_id",
+            "type": "fk",
+            "references": "bases",
+            "nullable": true,
+            "label": {
+              "en-US": "Base",
+              "de-DE": "Grundform",
+              "fr-FR": "Support",
+              "da-DK": "Grundform",
+              "cs-CZ": "Základ",
+              "ar-EG": "القاعدة",
+              "zh-CN": "底材",
+              "zh-TW": "底材"
+            }
+          },
+          {
+            "ref": "values",
+            "type": "json",
+            "nullable": true,
+            "rules": {
+              "personal": true
+            },
+            "label": {
+              "en-US": "What the customer chose",
+              "de-DE": "Was der Kunde gewählt hat",
+              "fr-FR": "Ce que le client a choisi",
+              "da-DK": "Hvad kunden valgte",
+              "cs-CZ": "Co zákazník zvolil",
+              "ar-EG": "ما اختاره العميل",
+              "zh-CN": "顾客的选择",
+              "zh-TW": "顧客的選擇"
+            }
+          },
+          {
+            "ref": "logo_file",
+            "type": "text",
+            "maxLength": 64,
+            "nullable": true,
+            "rules": {
+              "personal": true,
+              "file": {
+                "accept": [
+                  "png",
+                  "jpeg",
+                  "pdf"
+                ],
+                "maxBytes": 10485760
+              }
+            },
+            "label": {
+              "en-US": "The customer’s logo",
+              "de-DE": "Logo des Kunden",
+              "fr-FR": "Logo du client",
+              "da-DK": "Kundens logo",
+              "cs-CZ": "Logo zákazníka",
+              "ar-EG": "شعار العميل",
+              "zh-CN": "顾客的标志",
+              "zh-TW": "顧客的標誌"
+            }
+          },
+          {
+            "ref": "photo_file",
+            "type": "text",
+            "maxLength": 64,
+            "nullable": true,
+            "rules": {
+              "personal": true,
+              "file": {
+                "accept": [
+                  "png",
+                  "jpeg",
+                  "pdf"
+                ],
+                "maxBytes": 10485760
+              }
+            },
+            "label": {
+              "en-US": "The customer’s photo",
+              "de-DE": "Foto des Kunden",
+              "fr-FR": "Photo du client",
+              "da-DK": "Kundens foto",
+              "cs-CZ": "Fotografie zákazníka",
+              "ar-EG": "صورة العميل",
+              "zh-CN": "顾客的照片",
+              "zh-TW": "顧客的照片"
+            }
+          },
+          {
+            "ref": "state",
+            "type": "enum",
+            "enum": [
+              "draft",
+              "ordered"
+            ],
+            "default": "draft",
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "draft": {
+                    "en-US": "Saved",
+                    "de-DE": "Gespeichert",
+                    "fr-FR": "Enregistrée",
+                    "da-DK": "Gemt",
+                    "cs-CZ": "Uloženo",
+                    "ar-EG": "محفوظ",
+                    "zh-CN": "已保存",
+                    "zh-TW": "已儲存"
+                  },
+                  "ordered": {
+                    "en-US": "Ordered",
+                    "de-DE": "Bestellt",
+                    "fr-FR": "Commandée",
+                    "da-DK": "Bestilt",
+                    "cs-CZ": "Objednáno",
+                    "ar-EG": "مطلوب",
+                    "zh-CN": "已下单",
+                    "zh-TW": "已下單"
+                  }
+                }
+              }
+            },
+            "label": {
+              "en-US": "State",
+              "de-DE": "Status",
+              "fr-FR": "État",
+              "da-DK": "Status",
+              "cs-CZ": "Stav",
+              "ar-EG": "الحالة",
+              "zh-CN": "状态",
+              "zh-TW": "狀態"
+            }
+          },
+          {
+            "ref": "email",
+            "type": "text",
+            "maxLength": 254,
+            "nullable": true,
+            "rules": {
+              "personal": true,
+              "normalize": "email",
+              "validation": {
+                "format": "email"
+              }
+            },
+            "label": {
+              "en-US": "E-mail for the link",
+              "de-DE": "E-Mail für den Link",
+              "fr-FR": "E-mail pour le lien",
+              "da-DK": "E-mail til linket",
+              "cs-CZ": "E-mail k odkazu",
+              "ar-EG": "البريد الإلكتروني للرابط",
+              "zh-CN": "接收链接的电子邮件",
+              "zh-TW": "接收連結的電子郵件"
+            }
+          },
+          {
+            "ref": "created_at",
+            "type": "timestamptz",
+            "role": "created_at",
+            "label": {
+              "en-US": "Saved at",
+              "de-DE": "Gespeichert am",
+              "fr-FR": "Enregistrée le",
+              "da-DK": "Gemt den",
+              "cs-CZ": "Uloženo",
+              "ar-EG": "حُفظ في",
+              "zh-CN": "保存时间",
+              "zh-TW": "儲存時間"
+            }
+          },
+          {
+            "ref": "last_changed_at",
+            "type": "timestamptz",
+            "role": "updated_at",
+            "label": {
+              "en-US": "Last changed",
+              "de-DE": "Zuletzt geändert",
+              "fr-FR": "Dernière modification",
+              "da-DK": "Sidst ændret",
+              "cs-CZ": "Naposledy změněno",
+              "ar-EG": "آخر تغيير",
+              "zh-CN": "最后更改",
+              "zh-TW": "最後變更"
+            }
+          }
+        ],
+        "expire": {
+          "after": "last_changed_at",
+          "days": 90,
+          "unless": {
+            "column": "state",
+            "equals": "ordered"
+          }
+        }
+      },
+      {
+        "ref": "design_versions",
+        "unique": [
+          [
+            "design_id",
+            "version"
+          ]
+        ],
+        "label": {
+          "en-US": "Design version",
+          "de-DE": "Entwurfsversion",
+          "fr-FR": "Version de la création",
+          "da-DK": "Designversion",
+          "cs-CZ": "Verze návrhu",
+          "ar-EG": "نسخة التصميم",
+          "zh-CN": "设计版本",
+          "zh-TW": "設計版本"
+        },
+        "labelPlural": {
+          "en-US": "Design versions",
+          "de-DE": "Entwurfsversionen",
+          "fr-FR": "Versions des créations",
+          "da-DK": "Designversioner",
+          "cs-CZ": "Verze návrhů",
+          "ar-EG": "نسخ التصميم",
+          "zh-CN": "设计版本",
+          "zh-TW": "設計版本"
+        },
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "app",
+            "type": "text",
+            "maxLength": 40,
+            "nullable": true,
+            "label": {
+              "en-US": "App",
+              "de-DE": "App",
+              "fr-FR": "Application",
+              "da-DK": "App",
+              "cs-CZ": "Aplikace",
+              "ar-EG": "التطبيق",
+              "zh-CN": "应用",
+              "zh-TW": "應用程式"
+            }
+          },
+          {
+            "ref": "design_id",
+            "type": "fk",
+            "references": "designs",
+            "label": {
+              "en-US": "Design",
+              "de-DE": "Entwurf",
+              "fr-FR": "Création",
+              "da-DK": "Design",
+              "cs-CZ": "Návrh",
+              "ar-EG": "التصميم",
+              "zh-CN": "设计",
+              "zh-TW": "設計"
+            }
+          },
+          {
+            "ref": "version",
+            "type": "int",
+            "rules": {
+              "validation": {
+                "min": 1,
+                "max": 999
+              }
+            },
+            "label": {
+              "en-US": "Version",
+              "de-DE": "Version",
+              "fr-FR": "Version",
+              "da-DK": "Version",
+              "cs-CZ": "Verze",
+              "ar-EG": "النسخة",
+              "zh-CN": "版本",
+              "zh-TW": "版本"
+            }
+          },
+          {
+            "ref": "values",
+            "type": "json",
+            "nullable": true,
+            "rules": {
+              "personal": true
+            },
+            "label": {
+              "en-US": "What it was made from",
+              "de-DE": "Woraus sie gemacht wurde",
+              "fr-FR": "Ce à partir de quoi elle est faite",
+              "da-DK": "Hvad den blev lavet ud fra",
+              "cs-CZ": "Z čeho byla vytvořena",
+              "ar-EG": "ما صُنعت منه",
+              "zh-CN": "制作依据",
+              "zh-TW": "製作依據"
+            }
+          },
+          {
+            "ref": "proof_file",
+            "type": "text",
+            "maxLength": 64,
+            "nullable": true,
+            "rules": {
+              "file": {
+                "accept": [
+                  "png",
+                  "jpeg",
+                  "pdf"
+                ],
+                "maxBytes": 26214400
+              }
+            },
+            "label": {
+              "en-US": "Proof",
+              "de-DE": "Probedruck",
+              "fr-FR": "Épreuve",
+              "da-DK": "Korrektur",
+              "cs-CZ": "Náhled",
+              "ar-EG": "البروفة",
+              "zh-CN": "校样",
+              "zh-TW": "校樣"
+            }
+          },
+          {
+            "ref": "note",
+            "type": "text",
+            "maxLength": 500,
+            "nullable": true,
+            "label": {
+              "en-US": "Note",
+              "de-DE": "Notiz",
+              "fr-FR": "Note",
+              "da-DK": "Note",
+              "cs-CZ": "Poznámka",
+              "ar-EG": "ملاحظة",
+              "zh-CN": "备注",
+              "zh-TW": "備註"
+            }
+          },
+          {
+            "ref": "made_by_id",
+            "type": "text",
+            "maxLength": 36,
+            "nullable": true,
+            "rules": {
+              "stamp": {
+                "set": "user-id",
+                "on": "create"
+              }
+            },
+            "label": {
+              "en-US": "Made by",
+              "de-DE": "Erstellt von",
+              "fr-FR": "Faite par",
+              "da-DK": "Lavet af",
+              "cs-CZ": "Vytvořil",
+              "ar-EG": "أنشأها",
+              "zh-CN": "制作人",
+              "zh-TW": "製作人"
+            }
+          },
+          {
+            "ref": "made_at",
+            "type": "timestamptz",
+            "role": "created_at",
+            "label": {
+              "en-US": "Made at",
+              "de-DE": "Erstellt am",
+              "fr-FR": "Faite le",
+              "da-DK": "Lavet den",
+              "cs-CZ": "Vytvořeno",
+              "ar-EG": "أُنشئت في",
+              "zh-CN": "制作时间",
+              "zh-TW": "製作時間"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "roles": [
+    {
+      "key": "designer",
+      "name": "Customiser designer",
+      "names": {
+        "en-US": "Customiser designer",
+        "de-DE": "Customiser-Gestaltung",
+        "fr-FR": "Conception Customiser",
+        "da-DK": "Customiser-designer",
+        "cs-CZ": "Návrhář Customiseru",
+        "ar-EG": "مصمم Customiser",
+        "zh-CN": "Customiser 设计员",
+        "zh-TW": "Customiser 設計員"
+      },
+      "permissions": [
+        "table:@bases:read",
+        "table:@bases:create",
+        "table:@bases:update",
+        "table:@bases:delete",
+        "table:@base_pieces:read",
+        "table:@base_pieces:create",
+        "table:@base_pieces:update",
+        "table:@base_pieces:delete",
+        "table:@base_areas:read",
+        "table:@base_areas:create",
+        "table:@base_areas:update",
+        "table:@base_areas:delete",
+        "table:@ready_designs:read",
+        "table:@ready_designs:create",
+        "table:@ready_designs:update",
+        "table:@ready_designs:delete",
+        "table:@ready_parts:read",
+        "table:@ready_parts:create",
+        "table:@ready_parts:update",
+        "table:@ready_parts:delete",
+        "table:@fonts:read",
+        "table:@fonts:create",
+        "table:@fonts:update",
+        "table:@fonts:delete",
+        "table:@palettes:read",
+        "table:@palettes:create",
+        "table:@palettes:update",
+        "table:@palettes:delete",
+        "table:@palette_colours:read",
+        "table:@palette_colours:create",
+        "table:@palette_colours:update",
+        "table:@palette_colours:delete",
+        "table:@features:read",
+        "table:@features:create",
+        "table:@features:update",
+        "table:@features:delete",
+        "table:@designs:read",
+        "table:@designs:read_pii",
+        "table:@design_versions:read",
+        "table:@design_versions:read_pii",
+        "table:@design_versions:create",
+        "table:@design_versions:update",
+        "table:@settings:read",
+        "table:@settings:update"
+      ]
+    },
+    {
+      "key": "reader",
+      "name": "Customiser reader",
+      "names": {
+        "en-US": "Customiser reader",
+        "de-DE": "Customiser lesen",
+        "fr-FR": "Lecture Customiser",
+        "da-DK": "Customiser-læser",
+        "cs-CZ": "Čtenář Customiseru",
+        "ar-EG": "قارئ Customiser",
+        "zh-CN": "Customiser 查看者",
+        "zh-TW": "Customiser 檢視者"
+      },
+      "permissions": [
+        "table:@bases:read",
+        "table:@base_pieces:read",
+        "table:@base_areas:read",
+        "table:@ready_designs:read",
+        "table:@ready_parts:read",
+        "table:@fonts:read",
+        "table:@palettes:read",
+        "table:@palette_colours:read",
+        "table:@features:read",
+        "table:@designs:read",
+        "table:@designs:read_pii",
+        "table:@design_versions:read",
+        "table:@design_versions:read_pii",
+        "table:@settings:read"
+      ]
+    }
+  ],
+  "seeds": [
+    {
+      "table": "fonts",
+      "rows": [
+        {
+          "@label": "font:cormorant-garamond",
+          "family": "Cormorant Garamond",
+          "name": "Cormorant Garamond",
+          "style": {
+            "@t": {
+              "en-US": "Serif",
+              "de-DE": "Serifenschrift",
+              "fr-FR": "Avec empattements",
+              "da-DK": "Antikva",
+              "cs-CZ": "Patková",
+              "ar-EG": "مذيّل",
+              "zh-CN": "衬线体",
+              "zh-TW": "襯線體"
+            }
+          },
+          "weights": "300–700",
+          "licence": "SIL Open Font License 1.1",
+          "starter": true,
+          "smallest_mm": 6,
+          "active": true
+        },
+        {
+          "@label": "font:manrope",
+          "family": "Manrope",
+          "name": "Manrope",
+          "style": {
+            "@t": {
+              "en-US": "Sans",
+              "de-DE": "Serifenlos",
+              "fr-FR": "Sans empattements",
+              "da-DK": "Grotesk",
+              "cs-CZ": "Bezpatková",
+              "ar-EG": "غير مذيّل",
+              "zh-CN": "无衬线体",
+              "zh-TW": "無襯線體"
+            }
+          },
+          "weights": "200–800",
+          "licence": "SIL Open Font License 1.1",
+          "starter": true,
+          "smallest_mm": 4,
+          "active": true
+        },
+        {
+          "@label": "font:caveat",
+          "family": "Caveat",
+          "name": "Caveat",
+          "style": {
+            "@t": {
+              "en-US": "Handwriting",
+              "de-DE": "Handschrift",
+              "fr-FR": "Manuscrite",
+              "da-DK": "Håndskrift",
+              "cs-CZ": "Psací",
+              "ar-EG": "خط يدوي",
+              "zh-CN": "手写体",
+              "zh-TW": "手寫體"
+            }
+          },
+          "weights": "400–700",
+          "licence": "SIL Open Font License 1.1",
+          "starter": true,
+          "smallest_mm": 7,
+          "active": true
+        },
+        {
+          "@label": "font:zilla-slab",
+          "family": "Zilla Slab",
+          "name": "Zilla Slab",
+          "style": {
+            "@t": {
+              "en-US": "Slab serif",
+              "de-DE": "Serifenbetonte Schrift",
+              "fr-FR": "Égyptienne",
+              "da-DK": "Slab serif",
+              "cs-CZ": "Egyptienka",
+              "ar-EG": "مذيّل كتلي",
+              "zh-CN": "粗衬线体",
+              "zh-TW": "粗襯線體"
+            }
+          },
+          "weights": "300–700",
+          "licence": "SIL Open Font License 1.1",
+          "starter": true,
+          "smallest_mm": 5,
+          "active": true
+        },
+        {
+          "@label": "font:oswald",
+          "family": "Oswald",
+          "name": "Oswald",
+          "style": {
+            "@t": {
+              "en-US": "Condensed capitals",
+              "de-DE": "Schmale Versalien",
+              "fr-FR": "Capitales étroites",
+              "da-DK": "Smalle versaler",
+              "cs-CZ": "Úzké verzálky",
+              "ar-EG": "أحرف كبيرة مضغوطة",
+              "zh-CN": "窄体大写",
+              "zh-TW": "窄體大寫"
+            }
+          },
+          "weights": "200–700",
+          "licence": "SIL Open Font License 1.1",
+          "starter": true,
+          "smallest_mm": 5,
+          "active": true
+        },
+        {
+          "@label": "font:archivo",
+          "family": "Archivo",
+          "name": "Archivo",
+          "style": {
+            "@t": {
+              "en-US": "Grotesque",
+              "de-DE": "Grotesk",
+              "fr-FR": "Grotesque",
+              "da-DK": "Grotesk",
+              "cs-CZ": "Grotesk",
+              "ar-EG": "غروتسك",
+              "zh-CN": "怪诞体",
+              "zh-TW": "怪誕體"
+            }
+          },
+          "weights": "100–900",
+          "licence": "SIL Open Font License 1.1",
+          "starter": true,
+          "active": true
+        },
+        {
+          "@label": "font:libre-baskerville",
+          "family": "Libre Baskerville",
+          "name": "Libre Baskerville",
+          "style": {
+            "@t": {
+              "en-US": "Serif",
+              "de-DE": "Serifenschrift",
+              "fr-FR": "Avec empattements",
+              "da-DK": "Antikva",
+              "cs-CZ": "Patková",
+              "ar-EG": "مذيّل",
+              "zh-CN": "衬线体",
+              "zh-TW": "襯線體"
+            }
+          },
+          "weights": "400, 700",
+          "licence": "SIL Open Font License 1.1",
+          "starter": true,
+          "active": true
+        },
+        {
+          "@label": "font:dm-serif-display",
+          "family": "DM Serif Display",
+          "name": "DM Serif Display",
+          "style": {
+            "@t": {
+              "en-US": "Display serif",
+              "de-DE": "Auszeichnungs-Serifenschrift",
+              "fr-FR": "Titrage à empattements",
+              "da-DK": "Display-antikva",
+              "cs-CZ": "Titulková patková",
+              "ar-EG": "مذيّل للعناوين",
+              "zh-CN": "标题衬线体",
+              "zh-TW": "標題襯線體"
+            }
+          },
+          "weights": "400",
+          "licence": "SIL Open Font License 1.1",
+          "starter": true,
+          "active": true
+        },
+        {
+          "@label": "font:jetbrains-mono",
+          "family": "JetBrains Mono",
+          "name": "JetBrains Mono",
+          "style": {
+            "@t": {
+              "en-US": "Monospaced",
+              "de-DE": "Dickte",
+              "fr-FR": "Chasse fixe",
+              "da-DK": "Fast bredde",
+              "cs-CZ": "Neproporcionální",
+              "ar-EG": "ثابت العرض",
+              "zh-CN": "等宽",
+              "zh-TW": "等寬"
+            }
+          },
+          "weights": "100–800",
+          "licence": "SIL Open Font License 1.1",
+          "starter": true,
+          "active": true
+        }
+      ]
+    }
+  ],
+  "publicKeys": {
+    "customiser-link": {}
+  },
+  "publicAccess": [
+    {
+      "table": "bases",
+      "methods": [
+        "GET"
+      ],
+      "select": [
+        "id",
+        "name",
+        "kind",
+        "width_mm",
+        "height_mm",
+        "depth_mm",
+        "corner_mm",
+        "bleed_mm",
+        "safe_mm",
+        "sides",
+        "material",
+        "thickness_mm",
+        "outline_file",
+        "position"
+      ],
+      "appColumn": "app",
+      "filters": [
+        {
+          "column": "state",
+          "op": "eq",
+          "value": "published"
+        }
+      ]
+    },
+    {
+      "table": "base_pieces",
+      "methods": [
+        "GET"
+      ],
+      "select": [
+        "id",
+        "base_id",
+        "code",
+        "name",
+        "width_mm",
+        "height_mm",
+        "layers",
+        "position"
+      ],
+      "appColumn": "app"
+    },
+    {
+      "table": "base_areas",
+      "methods": [
+        "GET"
+      ],
+      "select": [
+        "id",
+        "base_id",
+        "code",
+        "name",
+        "side",
+        "piece_id",
+        "face",
+        "shape",
+        "x_mm",
+        "y_mm",
+        "w_mm",
+        "h_mm",
+        "takes",
+        "required",
+        "rules",
+        "feature_id",
+        "position"
+      ],
+      "appColumn": "app"
+    },
+    {
+      "table": "ready_designs",
+      "methods": [
+        "GET"
+      ],
+      "select": [
+        "id",
+        "base_id",
+        "name",
+        "tags",
+        "layouts",
+        "preview_file",
+        "position"
+      ],
+      "appColumn": "app",
+      "filters": [
+        {
+          "column": "state",
+          "op": "eq",
+          "value": "published"
+        }
+      ],
+      "pictures": [
+        "preview_file"
+      ]
+    },
+    {
+      "table": "ready_parts",
+      "methods": [
+        "GET"
+      ],
+      "select": [
+        "id",
+        "ready_design_id",
+        "code",
+        "name",
+        "kind",
+        "locked",
+        "required",
+        "side",
+        "layout",
+        "area_id",
+        "piece_id",
+        "x_mm",
+        "y_mm",
+        "w_mm",
+        "h_mm",
+        "rules",
+        "value",
+        "feature_id",
+        "position"
+      ],
+      "appColumn": "app"
+    },
+    {
+      "table": "fonts",
+      "methods": [
+        "GET"
+      ],
+      "select": [
+        "id",
+        "family",
+        "name",
+        "style",
+        "weights",
+        "licence",
+        "starter",
+        "smallest_mm",
+        "file"
+      ],
+      "filters": [
+        {
+          "column": "active",
+          "op": "eq",
+          "value": true
+        }
+      ]
+    },
+    {
+      "table": "palettes",
+      "methods": [
+        "GET"
+      ],
+      "select": [
+        "id",
+        "ready_design_id",
+        "kind",
+        "code",
+        "name",
+        "position"
+      ],
+      "appColumn": "app"
+    },
+    {
+      "table": "palette_colours",
+      "methods": [
+        "GET"
+      ],
+      "select": [
+        "id",
+        "palette_id",
+        "code",
+        "role",
+        "name",
+        "hex",
+        "position"
+      ],
+      "appColumn": "app"
+    },
+    {
+      "table": "features",
+      "methods": [
+        "GET"
+      ],
+      "select": [
+        "id",
+        "code",
+        "name"
+      ],
+      "appColumn": "app",
+      "filters": [
+        {
+          "column": "active",
+          "op": "eq",
+          "value": true
+        }
+      ]
+    },
+    {
+      "table": "designs",
+      "methods": [
+        "POST"
+      ],
+      "writable": [
+        "format",
+        "ready_design_id",
+        "base_id",
+        "values",
+        "email"
+      ],
+      "select": [
+        "id",
+        "code",
+        "format",
+        "state"
+      ],
+      "humanCheck": true,
+      "appColumn": "app",
+      "anonymous": {
+        "perValue": {
+          "columns": [
+            "email"
+          ],
+          "n": 20
+        },
+        "perKeyHour": 600,
+        "perIpHour": 30
+      }
+    },
+    {
+      "table": "designs",
+      "key": "customiser-link",
+      "methods": [
+        "GET"
+      ],
+      "select": [
+        "id",
+        "code",
+        "format",
+        "ready_design_id",
+        "base_id",
+        "values",
+        "logo_file",
+        "photo_file",
+        "state",
+        "last_changed_at"
+      ],
+      "claim": {
+        "by": "token",
+        "column": "link_token"
+      },
+      "files": [
+        "logo_file",
+        "photo_file"
+      ]
+    }
+  ],
+  "addOn": {
+    "attaches": [
+      {
+        "app": "maker",
+        "range": "*"
+      },
+      {
+        "app": "printing",
+        "range": "*"
+      }
+    ],
+    "connect": {
+      "kind": "none"
+    },
+    "settingsTable": "settings"
+  }
+}

@@ -52,7 +52,8 @@
  */
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { satisfiesSemverRange, validateManifest } from '@adminiumjs/manifest';
@@ -89,15 +90,33 @@ function issuesOf(result: ReturnType<typeof validateManifest>) {
  * which is the whole point of that release order and the reason this helper
  * explains the red rather than tolerating it.
  */
-function whyRejected(result: ReturnType<typeof validateManifest>, what: string): string {
+function whyRejected(result: ReturnType<typeof validateManifest>, what: string, floor?: string): string {
   const issues = issuesOf(result);
   if (issues.length === 0) return what;
   const lines = issues.map((issue) => `  ${issue.path}: ${issue.message}`).join('\n');
   const pending = issues.some((issue) => issue.path.startsWith('addOn.provides'))
     ? '\n  → a `provides` refusal is EXPECTED until 34-T07 releases @adminiumjs/manifest' +
       ' with the new contract in its registry, and the lockfile is refreshed.'
-    : '';
+    : newerThanInstalled(floor) && issues.every((issue) => issue.message.startsWith('Unrecognized key'))
+      ? `\n  → EXPECTED while the installed @adminiumjs/manifest (${INSTALLED}) is older than this` +
+        ` manifest's floor (${String(floor)}): it does not know the newer words yet. It closes when` +
+        " this repo's pins are raised to that release and the lockfile is refreshed."
+      : '';
   return `${what}:\n${lines}${pending}`;
+}
+
+/** The version of the validator this suite runs, read from the package it imported. */
+const INSTALLED = (
+  JSON.parse(readFileSync(join(dirname(createRequire(import.meta.url).resolve('@adminiumjs/manifest')), '..', 'package.json'), 'utf8')) as { version: string }
+).version;
+
+/** Whether a manifest's floor is a release after the installed validator's own. */
+function newerThanInstalled(floor: string | undefined): boolean {
+  if (floor === undefined) return false;
+  const parts = (version: string) => version.split(/[.-]/).slice(0, 3).map(Number);
+  const [a, b] = [parts(floor), parts(INSTALLED)];
+  for (let i = 0; i < 3; i += 1) if ((a[i] ?? 0) !== (b[i] ?? 0)) return (a[i] ?? 0) > (b[i] ?? 0);
+  return false;
 }
 
 /** Every `manifest.json` this repo ships, by the package that owns it. */
@@ -115,7 +134,8 @@ function manifests(): { pkg: string; manifest: unknown }[] {
 describe('the manifests pass @adminiumjs/manifest itself', () => {
   it.each(manifests())('$pkg validates against the frozen v1 schema', ({ manifest }) => {
     const result = validateManifest(manifest);
-    expect(issuesOf(result), whyRejected(result, 'the real validator rejects this manifest')).toEqual(
+    const floor = (manifest as { compatibility?: { minAdminiumVersion?: string } }).compatibility?.minAdminiumVersion;
+    expect(issuesOf(result), whyRejected(result, 'the real validator rejects this manifest', floor)).toEqual(
       [],
     );
     expect(result.ok).toBe(true);

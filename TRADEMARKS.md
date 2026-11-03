@@ -64,6 +64,7 @@ including the ones that name no company.
 | Inventory | `packages/inventory` | `STK` | *(none)* | — |
 | Offers & gift cards | `packages/offers` | `OFF` | *(none)* | — |
 | Forms & surveys | `packages/forms` | `FRM` | *(none)* | — |
+| Customiser | `packages/customiser` | `CZ` | *(none)* | — |
 | Card payments | `packages/payments-stripe` | `CP` | **Stripe**, **Link**; ways to pay it names: **PayPal**, **Apple Pay**, **Google Pay**, **Klarna**; card schemes: **Visa**, **Mastercard**, **American Express** | Stripe, Inc.; PayPal, Inc.; Apple Inc.; Google LLC; Klarna Bank AB; Visa Inc.; Mastercard International Incorporated; American Express Company |
 | Wallet payments | `packages/payments-paypal` | `WP` | **PayPal** | PayPal, Inc. |
 
@@ -645,6 +646,60 @@ of this section, and it is empty. The package's `sources.test.ts` checks that
 list, that the manifest declares no connection, and that no source file names
 an address; `dist.test.ts` reads every built byte for the words that may not
 ship. The day a paragraph above stops being true, one of those turns red.
+
+---
+
+# Customiser — references no third-party trademarks
+
+## Why an add-on of designs, fonts and logos references no mark
+
+"Base", "ready-made design", "proof" and "palette" are ordinary words for what
+a shop sets up and a customer makes. **Every base, design, palette, feature
+and customer's design here is the shop's own row**, kept in the shop's own
+database. Nothing is designed in, stored with or sent to anybody's design
+service, and the add-on connects to nothing.
+
+What this section is about is the marks the PACKAGE ITSELF could have named,
+in its code, its manifest and its samples, and did not:
+
+- **No design tool or design service.** A customer's design is made in the
+  shop app's own pages and kept as data in the shop's Adminium. A customer
+  who made their artwork elsewhere sends it as a file; the add-on names no
+  tool it came from.
+- **No print or machine maker.** A base says what it is (a flat page, a flat
+  piece, a kit, a 3D-printed item) and its sizes and material, never whose
+  machine cuts or prints it.
+- **No customer's logo.** The samples hold no real company's logo: the files a
+  customer sends are their own, and the samples carry none.
+
+## Fonts, by their family names
+
+The starter fonts are named by their family names, as typefaces: Cormorant
+Garamond, Manrope, Caveat, Zilla Slab, Oswald, Archivo, Libre Baskerville,
+DM Serif Display and JetBrains Mono. Each is published under the SIL Open Font
+License 1.1, which lets a shop use it on what it makes and sells; their files
+and licence texts ship with them, unmodified. A family name is used here only
+to say which typeface a design offers. Where a family's name contains the
+name of the people who made it, it is that typeface's own name, not a claim
+about them, and no mark, logo or colour of theirs is drawn. A shop may upload
+its own fonts; the screens say it must hold a licence that lets it use them
+on products it sells.
+
+## Affiliation
+
+The add-on is not affiliated with, endorsed by or sponsored by any company,
+foundry or font's authors: it connects to nothing, holds no credential, names
+no service and reaches no address. The affiliation line therefore has nothing
+to attach itself to, which is exactly why the fact is stated here rather than
+left as an absence.
+
+## How the claim is kept true
+
+`COMPANY_MARKS` in `packages/customiser/src/add-on-facts.ts` is the executable
+half of this section, and it is empty. The package's `sources.test.ts` checks
+that list, that the manifest declares no connection, and that no source file
+names an address; `dist.test.ts` reads every built byte for the words that may
+not ship. The day a paragraph above stops being true, one of those turns red.
 
 ---
 
