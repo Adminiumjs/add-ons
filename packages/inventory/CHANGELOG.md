@@ -1,5 +1,7 @@
 # @adminium/add-on-inventory
 
+## 1.0.15
+
 ## 1.0.14
 
 ### Patch Changes
