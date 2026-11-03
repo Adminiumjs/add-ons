@@ -35,6 +35,8 @@ describe('the sample file', () => {
       ['newsletter-sign-up', 'form', 'draft'],
       ['quick-feedback', 'survey', 'draft'],
     ]);
+    // Each with a key of its own: the loader fills no text key, and Postgres and MySQL refuse a row without one.
+    for (const row of forms) expect(String(row['id'])).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
   });
 
   it('every form parses as the engine will serve it, in all eight languages', () => {

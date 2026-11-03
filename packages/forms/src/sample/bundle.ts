@@ -123,8 +123,9 @@ export function buildSample(): Bundle {
       {
         ref: 'forms',
         rows: [
-          { '@label': 'form:newsletter', name: NEWSLETTER.title['en-US'], slug: 'newsletter-sign-up', kind: 'form', state: 'draft', definition: NEWSLETTER, settings: { becomes: null, tell: [], limits: LIMITS } },
-          { '@label': 'form:feedback', name: FEEDBACK.title['en-US'], slug: 'quick-feedback', kind: 'survey', state: 'draft', definition: FEEDBACK, settings: { becomes: null, tell: [], limits: LIMITS, survey: { mode: 'anonymous', linkNames: false, stopAfterDays: 30 } } },
+          // Each with its own key: nothing fills the forms table's text key on a row the loader writes.
+          { '@label': 'form:newsletter', id: '6f1c2b0e-4d5a-4c7e-9b1f-0a3d5e7c9b21', name: NEWSLETTER.title['en-US'], slug: 'newsletter-sign-up', kind: 'form', state: 'draft', definition: NEWSLETTER, settings: { becomes: null, tell: [], limits: LIMITS } },
+          { '@label': 'form:feedback', id: 'b84e9a37-2c61-4f0d-8e5a-7d9c1b3f6a40', name: FEEDBACK.title['en-US'], slug: 'quick-feedback', kind: 'survey', state: 'draft', definition: FEEDBACK, settings: { becomes: null, tell: [], limits: LIMITS, survey: { mode: 'anonymous', linkNames: false, stopAfterDays: 30 } } },
         ],
       },
     ],
