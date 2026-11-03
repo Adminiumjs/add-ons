@@ -40,10 +40,13 @@ describe("the screens' looks", () => {
   // Each found in the dashboard's built stylesheet (0.3.40, 2026-11-03) before it was put here.
   const KNOWN = ['bg-accent-soft', 'flex', 'flex-wrap', 'font-bold', 'font-mono', 'gap-1.5', 'gap-2', 'inline-flex', 'items-center', 'justify-center', 'leading-[normal]', 'rounded-lg', 'size-4', 'size-9', 'sr-only', 'text-accent', 'text-body', 'text-body-sm', 'text-caption', 'text-fg', 'text-fg-muted', 'text-fg-subtle'];
 
+  // The survey screens' own (results, invitations, settings), each found in the same built stylesheet first.
+  const SURVEYS_KNOWN = ['bg-surface-3', 'block', 'border-border', 'border-t', 'flex-1', 'flex-col', 'font-extrabold', 'gap-1', 'gap-3', 'gap-4', 'gap-6', 'grid', 'items-end', 'justify-between', 'justify-end', 'leading-none', 'm-0', 'max-sm:gap-2', 'max-w-[420px]', 'md:grid-cols-2', 'min-w-0', 'overflow-hidden', 'p-2', 'pt-2', 'px-1', 'py-3', 'rounded-full', 'rounded-md', 'shrink-0', 'text-[10.5px]', 'text-[14.5px]', 'text-[20px]', 'text-[24px]', 'text-[38px]', 'text-center', 'text-danger', 'text-end', 'text-pos', 'text-start', 'text-warn', 'tracking-wide', 'truncate', 'uppercase', 'w-11', 'w-28', 'w-7'];
+
   it('use no class the dashboard does not already draw', () => {
     const used = new Set<string>();
     for (const file of SCREENS) for (const match of readFileSync(file, 'utf8').matchAll(/className="([^"]+)"/g)) for (const name of (match[1] as string).split(/\s+/)) used.add(name);
-    expect([...used].filter((name) => !KNOWN.includes(name)).sort()).toEqual([]);
+    expect([...used].filter((name) => !KNOWN.includes(name) && !SURVEYS_KNOWN.includes(name)).sort()).toEqual([]);
     // And none is put together at run time, where this list could not see it.
     for (const file of SCREENS) expect(readFileSync(file, 'utf8'), file).not.toMatch(/className=\{/);
   });
