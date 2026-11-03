@@ -347,6 +347,7 @@ export const answers: Readonly<Record<string, string>> = {
   "answers.column.pick": "Výběr",
   "answers.column.when": "Kdy",
   "answers.csv": "Stáhnout CSV",
+  "answers.csv.failed": "Soubor CSV se nepodařilo vytvořit. Zkuste to znovu.",
   "answers.csv.started": "Odpovědi se stahují jako CSV.",
   "answers.delete.became": "{count, plural, one {Řádek, který z ní vznikl, zůstane v {table}.} few {Řádky, které z nich vznikly, zůstanou v {table}.} other {Řádky, které z nich vznikly, zůstanou v {table}.}}",
   "answers.delete.body": "Tuto akci nelze vrátit zpět.",

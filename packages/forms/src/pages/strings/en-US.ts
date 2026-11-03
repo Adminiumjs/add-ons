@@ -347,6 +347,7 @@ export const answers: Readonly<Record<string, string>> = {
   "answers.column.pick": "Pick",
   "answers.column.when": "When",
   "answers.csv": "Download CSV",
+  "answers.csv.failed": "The CSV could not be made. Try again.",
   "answers.csv.started": "Downloading the answers as CSV.",
   "answers.delete.became": "{count, plural, one {The row it became stays in {table}.} other {The rows they became stay in {table}.}}",
   "answers.delete.body": "This can’t be undone.",

@@ -347,6 +347,7 @@ export const answers: Readonly<Record<string, string>> = {
   "answers.column.pick": "Valg",
   "answers.column.when": "Hvornår",
   "answers.csv": "Hent CSV",
+  "answers.csv.failed": "CSV-filen kunne ikke laves. Prøv igen.",
   "answers.csv.started": "Svarene hentes som CSV.",
   "answers.delete.became": "{count, plural, one {Rækken, det blev til, bliver i {table}.} other {Rækkerne, de blev til, bliver i {table}.}}",
   "answers.delete.body": "Det kan ikke fortrydes.",

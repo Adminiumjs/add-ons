@@ -347,6 +347,7 @@ export const answers: Readonly<Record<string, string>> = {
   "answers.column.pick": "تحديد",
   "answers.column.when": "متى",
   "answers.csv": "تنزيل CSV",
+  "answers.csv.failed": "تعذّر إنشاء ملف CSV. حاول مرة أخرى.",
   "answers.csv.started": "يجري تنزيل الإجابات بصيغة CSV.",
   "answers.delete.became": "{count, plural, zero {تبقى الصفوف الناتجة عنها في {table}.} one {يبقى الصف الناتج عنها في {table}.} two {يبقى الصفان الناتجان عنهما في {table}.} few {تبقى الصفوف الناتجة عنها في {table}.} many {تبقى الصفوف الناتجة عنها في {table}.} other {تبقى الصفوف الناتجة عنها في {table}.}}",
   "answers.delete.body": "لا يمكن التراجع عن ذلك.",

@@ -48,6 +48,7 @@ import { refusal } from '../shared/refusal.ts';
 import { codeOf, titleOf } from '../shared/row.ts';
 import type { TabProps } from '../shared/slot.ts';
 import { useToast } from '../shared/toast.ts';
+import { ExportNotReady, exportReady } from './exportReady.ts';
 import { AnswerSheet } from './AnswerSheet.tsx';
 import { BecameText, FileChips, LanguageChip } from './cells.tsx';
 import { DataTable, Icon, keyValue, useMayDelete, useNarrow, type Column } from './parts.tsx';
@@ -198,10 +199,13 @@ function AnswersList({ t, form, answer: linked }: TabProps): ReactNode {
   const download = async (): Promise<void> => {
     try {
       const id = await exporter.start('answers', { filter: filters, columns: EXPORT_COLUMNS.filter((column) => access.canRead('answers', [column])), format: 'csv' });
+      // The export is written by a job: opened before it is ready, the file is "Export is processing." instead.
+      await exportReady(id);
       await exporter.download(id);
       toast(t('answers.csv.started', 'Downloading the answers as CSV.'), 'info');
     } catch (caught) {
-      toast(refusal(t, asDataError(caught)).message, 'error');
+      if (caught instanceof ExportNotReady) toast(t('answers.csv.failed', 'The CSV could not be made. Try again.'), 'error');
+      else toast(refusal(t, asDataError(caught)).message, 'error');
     }
   };
 

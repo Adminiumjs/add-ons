@@ -347,6 +347,7 @@ export const answers: Readonly<Record<string, string>> = {
   "answers.column.pick": "Auswahl",
   "answers.column.when": "Wann",
   "answers.csv": "CSV herunterladen",
+  "answers.csv.failed": "Die CSV-Datei konnte nicht erstellt werden. Versuchen Sie es erneut.",
   "answers.csv.started": "Die Antworten werden als CSV heruntergeladen.",
   "answers.delete.became": "{count, plural, one {Die Zeile, die daraus wurde, bleibt in {table}.} other {Die Zeilen, die daraus wurden, bleiben in {table}.}}",
   "answers.delete.body": "Das lässt sich nicht rückgängig machen.",

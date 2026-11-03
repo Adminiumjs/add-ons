@@ -347,6 +347,7 @@ export const answers: Readonly<Record<string, string>> = {
   "answers.column.pick": "選取",
   "answers.column.when": "時間",
   "answers.csv": "下載 CSV",
+  "answers.csv.failed": "無法產生 CSV 檔案。請再試一次。",
   "answers.csv.started": "正在以 CSV 格式下載回答。",
   "answers.delete.became": "{count, plural, other {由其產生的列仍保留在{table}中。}}",
   "answers.delete.body": "此操作無法復原。",
