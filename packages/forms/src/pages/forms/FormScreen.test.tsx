@@ -87,12 +87,12 @@ describe('a form’s screens', () => {
 });
 
 describe('a survey’s screens', () => {
-  it('draw a survey’s four tabs, with its results and its invitations counted, and no preview', () => {
+  it('draw a survey’s four tabs, with its results and its invitations counted, and its preview', () => {
     world.splat = 'forms/surveys/fit-out';
     render(<Forms />);
     expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Questions4', 'Share', 'Results23', 'Invitations41']);
     expect(screen.getByRole('button', { name: 'Close survey' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Preview' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Preview' })).toBeTruthy();
   });
 
   it('open from the address Adminium’s survey links name, on the result they name', () => {
