@@ -43,10 +43,13 @@ describe("the screens' looks", () => {
   // The survey screens' own (results, invitations, settings), each found in the same built stylesheet first.
   const SURVEYS_KNOWN = ['bg-surface-3', 'block', 'border-border', 'border-t', 'flex-1', 'flex-col', 'font-extrabold', 'gap-1', 'gap-3', 'gap-4', 'gap-6', 'grid', 'items-end', 'justify-between', 'justify-end', 'leading-none', 'm-0', 'max-sm:gap-2', 'max-w-[420px]', 'md:grid-cols-2', 'min-w-0', 'overflow-hidden', 'p-2', 'pt-2', 'px-1', 'py-3', 'rounded-full', 'rounded-md', 'shrink-0', 'text-[10.5px]', 'text-[14.5px]', 'text-[20px]', 'text-[24px]', 'text-[38px]', 'text-center', 'text-danger', 'text-end', 'text-pos', 'text-start', 'text-warn', 'tracking-wide', 'truncate', 'uppercase', 'w-11', 'w-28', 'w-7'];
 
+  // The Share tab's, each found in the built stylesheet of the 0.3.41 dashboard (2026-11-03).
+  const SHARE_KNOWN = ['[overflow-wrap:anywhere]', 'bg-surface-2', 'bg-surface-3', 'bg-white', 'block', 'border', 'border-border', 'border-border-strong', 'flex-1', 'flex-col', 'gap-4', 'grid', 'grid-cols-1', 'h-6', 'h-[38px]', 'items-start', 'lg:grid-cols-[1.4fr_1fr]', 'max-w-[360px]', 'min-w-0', 'min-w-[140px]', 'p-2', 'pe-1.5', 'ps-3', 'px-2', 'px-3', 'py-1.5', 'rounded-[10px]', 'rounded-[6px]', 'rounded-md', 'size-3.5', 'size-8', 'text-[11.5px]', 'text-[12.5px]', 'text-[12px]', 'text-start'];
+
   it('use no class the dashboard does not already draw', () => {
     const used = new Set<string>();
     for (const file of SCREENS) for (const match of readFileSync(file, 'utf8').matchAll(/className="([^"]+)"/g)) for (const name of (match[1] as string).split(/\s+/)) used.add(name);
-    expect([...used].filter((name) => !KNOWN.includes(name) && !SURVEYS_KNOWN.includes(name)).sort()).toEqual([]);
+    expect([...used].filter((name) => !KNOWN.includes(name) && !SURVEYS_KNOWN.includes(name) && !SHARE_KNOWN.includes(name)).sort()).toEqual([]);
     // And none is put together at run time, where this list could not see it.
     for (const file of SCREENS) expect(readFileSync(file, 'utf8'), file).not.toMatch(/className=\{/);
   });
