@@ -6,14 +6,17 @@
  * (`routeOf`). A form is `/add-ons/forms/forms/<slug>[/share|/answers]`, a
  * survey `/add-ons/forms/forms/surveys/<slug>[/share|/results|/invitations]`.
  *
- * Adminium's own mails and bells link to `/add-ons/forms/forms/<slug>/answers`
- * and `/add-ons/forms/surveys/<slug>/results`: the second names the page ref
- * `surveys`, which `routeOf` reads as a survey too, so either address opens
- * the same screen whichever page the manifest serves it from.
+ * Adminium's own mails and bells link to these same addresses:
+ * `/add-ons/forms/forms/<slug>/answers?answer=<id>`,
+ * `/add-ons/forms/forms/surveys/<slug>/results?answer=<id>` and
+ * `/add-ons/forms/forms/<slug>?settings=limits`. A page ref must be the
+ * add-on's key or start with it, so there is no page `surveys`: a survey is
+ * a path inside `forms`, and no form may take the slug `surveys` (nor `api`).
  */
 export const ADD_ON = 'forms';
-/** The code page's ref, and the ref Adminium's links name for a survey. */
+/** The code page's ref: the add-on's key, the one ref every add-on may use. */
 export const PAGE = 'forms';
+/** The path segment surveys live under, inside the page. */
 export const SURVEYS = 'surveys';
 
 export type Kind = 'form' | 'survey';

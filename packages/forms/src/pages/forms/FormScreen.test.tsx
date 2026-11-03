@@ -96,7 +96,7 @@ describe('a survey’s screens', () => {
   });
 
   it('open from the address Adminium’s survey links name, on the result they name', () => {
-    world.splat = 'surveys/fit-out/results';
+    world.splat = 'forms/surveys/fit-out/results';
     world.search = { answer: '7' };
     render(<Forms />);
     expect(shown().dataset).toMatchObject({ tab: 'results', form: 'fit-out', answer: '7' });
@@ -126,7 +126,7 @@ describe('an address that names nothing', () => {
   });
 
   it('says the survey is not here', () => {
-    world.splat = 'surveys/gone/results';
+    world.splat = 'forms/surveys/gone/results';
     render(<Forms />);
     expect(screen.getByText('This survey is not here')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Back to surveys' }).getAttribute('href')).toBe('/add-ons/forms/forms/surveys');

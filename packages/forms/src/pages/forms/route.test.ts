@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { formAt, listAt } from '../shared/paths.ts';
+import { newSlug } from './newForm.ts';
 import { routeOf, searchText } from './route.ts';
 
 describe('the address a screen opens from', () => {
@@ -8,7 +9,6 @@ describe('the address a screen opens from', () => {
     expect(routeOf('')).toEqual({ screen: 'list', kind: 'form' });
     expect(routeOf('forms')).toEqual({ screen: 'list', kind: 'form' });
     expect(routeOf('forms/surveys')).toEqual({ screen: 'list', kind: 'survey' });
-    expect(routeOf('surveys')).toEqual({ screen: 'list', kind: 'survey' });
   });
 
   it('opens a form on each of its tabs', () => {
@@ -17,18 +17,19 @@ describe('the address a screen opens from', () => {
     expect(routeOf('forms/showroom-visit/answers')).toEqual({ screen: 'form', kind: 'form', slug: 'showroom-visit', tab: 'answers' });
   });
 
-  it('opens a survey on each of its tabs, under the forms page or the survey ref Adminium’s links name', () => {
+  it('opens a survey on each of its tabs, inside the forms page', () => {
     for (const tab of ['questions', 'share', 'results', 'invitations'] as const) {
       expect(routeOf(`forms/surveys/fit-out/${tab}`)).toEqual({ screen: 'form', kind: 'survey', slug: 'fit-out', tab });
-      expect(routeOf(`surveys/fit-out/${tab}`)).toEqual({ screen: 'form', kind: 'survey', slug: 'fit-out', tab });
     }
+    // There is no page `surveys`: a page ref is the add-on's key or starts with it.
+    expect(routeOf('surveys/fit-out/results')).toEqual({ screen: 'unknown' });
     expect(routeOf('forms/surveys/fit-out')).toEqual({ screen: 'form', kind: 'survey', slug: 'fit-out', tab: 'questions' });
   });
 
   it('opens what Adminium’s staff links name: an answer, a survey’s result, a form’s limits', () => {
-    // `/add-ons/forms/forms/<slug>/answers?answer=<id>`, `/add-ons/forms/surveys/<slug>/results?answer=<id>`, `/add-ons/forms/forms/<slug>?settings=limits`.
+    // `/add-ons/forms/forms/<slug>/answers?answer=<id>`, `/add-ons/forms/forms/surveys/<slug>/results?answer=<id>`, `/add-ons/forms/forms/<slug>?settings=limits`.
     expect(routeOf('forms/showroom-visit/answers')).toMatchObject({ tab: 'answers' });
-    expect(routeOf('surveys/fit-out/results')).toMatchObject({ kind: 'survey', tab: 'results' });
+    expect(routeOf('forms/surveys/fit-out/results')).toMatchObject({ kind: 'survey', tab: 'results' });
     expect(routeOf('forms/showroom-visit')).toMatchObject({ kind: 'form', tab: 'questions' });
     expect(searchText('42')).toBe('42');
     expect(searchText(42)).toBe('42');
@@ -51,5 +52,21 @@ describe('the address a screen opens from', () => {
     expect(routeOf(formAt('form', 'a b', 'answers').replace('/add-ons/forms/', ''))).toEqual({ screen: 'form', kind: 'form', slug: 'a b', tab: 'answers' });
     expect(routeOf(formAt('survey', 'fit-out', 'invitations').replace('/add-ons/forms/', ''))).toEqual({ screen: 'form', kind: 'survey', slug: 'fit-out', tab: 'invitations' });
     expect(formAt('form', 'x', 'questions')).toBe('/add-ons/forms/forms/x');
+  });
+});
+
+describe('a new link name', () => {
+  it('is one Adminium serves, never a word it reserves, and opens its own form', () => {
+    // The door's rule (Adminium 0.3.40, `FORM_SLUG`), as the address bar holds it.
+    const served = /^[a-z0-9](?:[a-z0-9-]{0,78}[a-z0-9])?$/;
+    for (let i = 0; i < 200; i += 1) {
+      for (const kind of ['form', 'survey'] as const) {
+        const slug = newSlug(kind);
+        expect(slug).toMatch(served);
+        expect(['api', 'surveys']).not.toContain(slug);
+        expect(routeOf(formAt(kind, slug).replace('/add-ons/forms/', ''))).toMatchObject({ screen: 'form', kind, slug });
+      }
+    }
+    expect(newSlug('form', (bytes) => bytes.fill(0))).toBe('form-aaaaaa');
   });
 });

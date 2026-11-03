@@ -19,7 +19,13 @@ export function languageFor(locale: string): FormLanguage {
 
 const LETTERS = 'abcdefghijkmnpqrstuvwxyz23456789';
 
-/** `form-k3x9qz`: six letters or digits that read unambiguously, after the kind. */
+/**
+ * `form-k3x9qz`: six letters or digits that read unambiguously, after the
+ * kind — always a slug Adminium serves, and never `api` or `surveys`.
+ * TODO(0.3.41): check a typed slug with `isFormSlug` from
+ * `@adminium/add-on-contracts/forms` (with `FORM_SLUGS_RESERVED`) once the
+ * floor is 0.3.41; the builder's slug field needs it, this maker does not.
+ */
 export function newSlug(kind: Kind, random: (bytes: Uint8Array) => Uint8Array = (bytes) => crypto.getRandomValues(bytes)): string {
   const bytes = random(new Uint8Array(6));
   return `${kind}-${[...bytes].map((byte) => LETTERS[byte % LETTERS.length]).join('')}`;

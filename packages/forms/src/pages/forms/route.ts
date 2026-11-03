@@ -2,9 +2,8 @@
  * WHICH SCREEN AN ADDRESS OPENS.
  *
  * The dashboard hands the page everything after `/add-ons/forms/`: the page
- * ref first (`forms`, or `surveys` where Adminium's survey links name it),
- * then the page's own path. Empty, it is the add-on's root, which opens the
- * list.
+ * ref first (`forms`), then the page's own path. Empty, it is the add-on's
+ * root, which opens the list.
  */
 import { PAGE, SURVEYS, type FormTab, type Kind, type SurveyTab } from '../shared/paths.ts';
 
@@ -42,14 +41,12 @@ function formRoute(rest: readonly string[]): Route {
   return { screen: 'form', kind: 'form', slug, tab };
 }
 
-/** The screen the dashboard's splat (`forms/showroom/answers`) opens. */
+/** The screen the dashboard's splat (`forms/showroom/answers`, `forms/surveys/fit-out/results`) opens. */
 export function routeOf(splat: string): Route {
   const parts = splat.split('/').filter((part) => part !== '');
   if (parts.length === 0) return { screen: 'list', kind: 'form' };
   const [ref, ...rest] = parts;
-  if (ref === PAGE) return formRoute(rest);
-  if (ref === SURVEYS) return surveyRoute(rest);
-  return { screen: 'unknown' };
+  return ref === PAGE ? formRoute(rest) : { screen: 'unknown' };
 }
 
 /** A search value a link put in the address, as text; anything else is nothing. */

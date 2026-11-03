@@ -423,6 +423,9 @@
             "type": "text",
             "maxLength": 64,
             "nullable": true,
+            "rules": {
+              "tableRef": true
+            },
             "label": {
               "en-US": "Table it is about",
               "de-DE": "Bezugstabelle",

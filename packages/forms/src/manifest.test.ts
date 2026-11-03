@@ -102,6 +102,8 @@ describe('the forms tables', () => {
     expect(columnOf('forms', 'closed_at').rules?.stamp).toEqual({ set: 'now', on: { column: 'state', values: ['closed'] } });
     expect(columnOf('forms', 'created_by_id').rules?.stamp).toEqual({ set: 'user-id', on: 'create' });
     for (const name of ['about', 'company', 'rule_name']) expect(columnOf('invitations', name), name).toMatchObject({ type: 'text', maxLength: 200, nullable: true });
+    // The record a survey is about is named by its table's stored name, which Adminium rewrites when the table is renamed.
+    expect(columnOf('invitations', 'record_table').rules).toEqual({ tableRef: true });
   });
 
   it('every column Adminium never fills on the answers and the files may be left empty', () => {
