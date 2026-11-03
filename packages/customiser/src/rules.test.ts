@@ -290,6 +290,9 @@ describe('every reason, each on its part', () => {
     expect(reasons(ask({ ...own, base_id: baseOf('maker', 'Walnut cutting board')['id'] }))).toEqual(['— design-unknown']);
     expect(reasons(ask({ ...own, ready_design_id: 999_999 }))).toEqual(['— design-unknown']);
     expect(reasons(ask({ ...own, base_id: null }))).toEqual(['— design-unknown']);
+    // Another app's ready-made design on this app's own base: rows a shop's staff put together wrongly.
+    const mixed = changed('ready_designs', (row) => (row['id'] === own['ready_design_id'] ? { ...row, app: 'printing' } : row));
+    expect(reasons(ask(own, [], mixed))).toEqual(['— design-unknown']);
   });
 
   it('design-unknown: a part whose priced feature the shop no longer sells', () => {

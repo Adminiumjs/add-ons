@@ -271,10 +271,9 @@ export function checkDesign(facts: DesignFacts): DesignAnswer {
   if (values.palette !== undefined && context.palette === null) refuse(context, 'colour-not-allowed');
   context.live = context.parts.filter((part) => (part.side !== 'back' || sides >= 2) && (part.layout === null || layout === null || part.layout === layout));
 
-  // A value for a part the design does not have, or one only the shop sets.
+  // A value for a part the design does not have (no part at all), or one only the shop sets.
   for (const code of Object.keys(values.parts)) {
-    const all = context.parts.filter((part) => part.code === code);
-    if (all.length === 0 || all.every((part) => part.locked)) refuse(context, 'part-locked', code);
+    if (context.parts.filter((part) => part.code === code).every((part) => part.locked)) refuse(context, 'part-locked', code);
   }
 
   for (const part of context.live) {
