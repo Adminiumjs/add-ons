@@ -179,7 +179,7 @@ describe('the side sheet', () => {
     open('Marta Kovac');
     const at = sheet() as HTMLElement;
     expect(within(at).getByText('Answer · Book a showroom visit')).toBeTruthy();
-    expect(line('Work e-mail')).toBe('marta.kovac@cobaltlegal.example');
+    expect(line('Work e-mail')).toBe('Marta.Kovac@CobaltLegal.example');
     expect(line('What would you like to see?')).toBe('Acoustic booths, Seating');
     expect(line('Roughly how many seats?')).toBe('40');
     expect(line('Which room?')).toBe('North hall');

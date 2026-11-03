@@ -100,7 +100,8 @@ export const ANSWERS: Row[] = [
     consent_purpose: 'newsletter',
     consent_version: 3,
     sent_from: 'https://www.meridian.example',
-    values: { qname: 'Marta Kovac', qmail: 'marta.kovac@cobaltlegal.example', qco: 'Cobalt Legal', qday: '2026-08-06', qcount: 3, qsee: ['booths', 'seating'], qseats: 40, qroom: 'north', qstars: 4, qscore: 9, qfiles: ['UPLOADaaaaaaaaaaaa1'], qtick: true, qsrc: 'flyer', qgone: 'kept from an older version' },
+    // Adminium keeps the address in lower case on the row; the answer keeps it as typed.
+    values: { qname: 'Marta Kovac', qmail: 'Marta.Kovac@CobaltLegal.example', qco: 'Cobalt Legal', qday: '2026-08-06', qcount: 3, qsee: ['booths', 'seating'], qseats: 40, qroom: 'north', qstars: 4, qscore: 9, qfiles: ['UPLOADaaaaaaaaaaaa1'], qtick: true, qsrc: 'flyer', qgone: 'kept from an older version' },
   }),
   answer(2, {
     submitted_at: daysAgo(2),
