@@ -128,7 +128,8 @@ export function Gallery({ catalogue, product, sides, onPick, onBack, onStartBlan
               return (
                 <button key={String(ready.id)} type="button" className="cz-card" aria-label={t('editor.choose.use', 'Customise the {name} design. {chips}.', { name: ready.name, chips: chips.map((chip) => chipWords[chip]).join(', ') })} onClick={() => onPick(ready)}>
                   <span className={two ? 'cz-card-art cz-card-art-two' : 'cz-card-art'}>
-                    <Drawing catalogue={catalogue} design={design} />
+                    {/* The front as the shop's preview picture shows it, where it has one; else drawn here. */}
+                    {ready.picture === null ? <Drawing catalogue={catalogue} design={design} /> : <img src={ready.picture} alt="" className="cz-drawing cz-card-picture" />}
                     {two ? <Drawing catalogue={catalogue} design={design} side="back" /> : null}
                   </span>
                   <span className="cz-card-body">

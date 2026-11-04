@@ -412,6 +412,7 @@ export const designs: Readonly<Record<string, string>> = {
   "designs.sample": "Eksempeltekst",
   "designs.save": "Gem designet",
   "designs.saved.hidden": "Gemt. Det forbliver skjult, indtil du viser det.",
+  "designs.saved.noPicture": "Eksempelbilledet kunne ikke laves. Kunderne ser designet tegnet i stedet.",
   "designs.saved.shown": "Gemt. Kunderne ser det, næste gang de vælger et design.",
   "designs.select": "Vælg {name}",
   "designs.show": "Vis {name}",

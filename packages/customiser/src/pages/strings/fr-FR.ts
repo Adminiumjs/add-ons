@@ -412,6 +412,7 @@ export const designs: Readonly<Record<string, string>> = {
   "designs.sample": "Texte d’exemple",
   "designs.save": "Enregistrer le modèle",
   "designs.saved.hidden": "Enregistré. Il reste masqué jusqu’à ce que vous l’affichiez.",
+  "designs.saved.noPicture": "Son image d’aperçu n’a pas pu être créée. Les clients voient la création dessinée à la place.",
   "designs.saved.shown": "Enregistré. Les clients le verront la prochaine fois qu’ils choisiront un modèle.",
   "designs.select": "Choisir {name}",
   "designs.show": "Afficher {name}",

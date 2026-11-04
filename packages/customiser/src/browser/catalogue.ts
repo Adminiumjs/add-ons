@@ -92,6 +92,8 @@ export interface Ready {
   id: string | number;
   row: Row;
   name: string;
+  /** The design's preview picture, where the shop has made one: what its card shows of its front. */
+  picture: string | null;
   tags: string[];
   layouts: Layout[];
   palettes: Palette[];
@@ -245,6 +247,7 @@ export function readCatalogue(rows: CatalogueRows, baseId: string | number, only
         id: asKey(row['id']),
         row,
         name: str(row['name']) ?? '',
+        picture: str(row['preview_url']),
         tags: wordsOf(row['tags']),
         layouts: layoutsOf(row['layouts']),
         palettes: inOrder(rows.palettes.filter((one) => sameKey(one['ready_design_id'], row['id']))).map((one) => ({ id: asKey(one['id']), code: str(one['code']) ?? '', name: str(one['name']) ?? '', colours: coloursOf(one, rows.colours) })),

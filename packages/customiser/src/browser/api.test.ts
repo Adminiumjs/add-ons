@@ -23,7 +23,7 @@ function fakeClient(name: string, log: Logged[], rows: Record<string, Row[]> = {
   let held: HeldSession | null = null;
   return {
     async config() {
-      return { assets: '/api/v1/public/assets', refs: { [REFS.fonts]: { assets: ['file'], limit: 100 }, [REFS.bases]: { limit: 100, filterable: ['id'] }, [REFS.areas]: { limit: 100, filterable: ['base_id'] }, [REFS.ready]: { limit: 100 }, [REFS.parts]: { limit: 2, filterable: ['ready_design_id'] } } };
+      return { assets: '/api/v1/public/assets', pictures: '/api/v1/public/pictures', refs: { [REFS.fonts]: { assets: ['file'], limit: 100 }, [REFS.bases]: { limit: 100, filterable: ['id'] }, [REFS.areas]: { limit: 100, filterable: ['base_id'] }, [REFS.ready]: { limit: 100, pictures: ['preview_file'] }, [REFS.parts]: { limit: 2, filterable: ['ready_design_id'] } } };
     },
     async list<T>(ref: string, options?: unknown) {
       log.push({ client: name, call: 'list', args: [ref, options] });
@@ -124,6 +124,13 @@ describe('the editor’s calls', () => {
       ['shop', REFS.designs, 'logo_file', 'logo.svg', undefined],
       ['link1', REFS.own, 'logo_file', 'logo.svg', 'sess-7'],
     ]);
+  });
+
+  it('hands each ready-made design its preview picture’s address as the public client builds it, and none without one', async () => {
+    const id = 'file_01HZY0000000000000000000CD';
+    const { api } = setUp({ [REFS.ready]: [{ id: 11, base_id: 3, preview_file: id }, { id: 12, base_id: 3, preview_file: null }] });
+    const read = await api.catalogue(3);
+    expect(read.ready.map((one) => one['preview_url'])).toEqual([`https://shop.example/api/v1/public/pictures/${REFS.ready}/11/preview_file/${id}`, null]);
   });
 
   it('builds a font’s asset address as the public client does, and none for a font with no file', async () => {

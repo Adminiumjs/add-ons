@@ -762,6 +762,10 @@
   block-size: 100%;
   max-block-size: 180px;
 }
+/* The shop's preview picture of a design's front, kept to its own proportions. */
+.cz-card-picture {
+  object-fit: contain;
+}
 .cz-card-body {
   display: flex;
   flex-direction: column;

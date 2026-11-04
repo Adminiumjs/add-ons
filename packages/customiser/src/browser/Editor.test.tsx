@@ -469,6 +469,18 @@ describe('the print look: choose a design (MC-A2, MC-A3)', () => {
     expect(screen.getByText('1 design')).toBeTruthy();
   });
 
+  it('shows a design’s front as the shop’s preview picture where it has one, and draws the rest', async () => {
+    const stub = stubApi('printing');
+    const harbour = stub.tables['ready_designs']!.find((one) => one['name'] === 'Harbour')!;
+    harbour['preview_url'] = 'https://marlow.example/pictures/harbour.png';
+    await print(stub);
+    const card = screen.getByRole('button', { name: /^Customise the Harbour design/ });
+    expect(card.querySelector('img')?.getAttribute('src')).toBe('https://marlow.example/pictures/harbour.png');
+    // Its back is still drawn beside it; a design with no picture is drawn whole.
+    expect(card.querySelectorAll('svg.cz-drawing')).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: /^Customise the / }).filter((one) => one.querySelector('img') !== null)).toHaveLength(1);
+  });
+
   it('offers the two other ways in when a product has no designs (MC-0.WAYS)', async () => {
     const stub = stubApi('printing');
     const onStartBlank = vi.fn();

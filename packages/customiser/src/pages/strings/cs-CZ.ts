@@ -412,6 +412,7 @@ export const designs: Readonly<Record<string, string>> = {
   "designs.sample": "Ukázkový text",
   "designs.save": "Uložit návrh",
   "designs.saved.hidden": "Uloženo. Zůstane skrytý, dokud ho nezobrazíte.",
+  "designs.saved.noPicture": "Náhledový obrázek se nepodařilo vytvořit. Zákazníci místo něj uvidí nakreslený návrh.",
   "designs.saved.shown": "Uloženo. Zákazníci ho uvidí, až budou příště vybírat návrh.",
   "designs.select": "Vybrat {name}",
   "designs.show": "Zobrazit {name}",

@@ -51,7 +51,7 @@ export interface HeldSession {
 
 /** The calls of `@adminium/public-client` the editor makes. */
 export interface ClientLike {
-  config: () => Promise<{ assets?: string; refs: Record<string, { assets?: string[]; limit?: number; filterable?: string[] }> }>;
+  config: () => Promise<{ assets?: string; pictures?: string; refs: Record<string, { assets?: string[]; pictures?: string[]; limit?: number; filterable?: string[] }> }>;
   list: <T = Row>(ref: string, options?: { where?: unknown; limit?: number; offset?: number; code?: string; signal?: AbortSignal }) => Promise<{ data: T[] }>;
   createWithRank: <T = Row>(ref: string, values: Row) => Promise<{ data: T; link: { key: string; token: string; session: string | null; expiresAt: number | null } | null }>;
   update: <T = Row>(ref: string, id: string, values: Row) => Promise<T>;
@@ -171,6 +171,9 @@ export function assetAddress(baseUrl: string, assets: string | undefined, served
   return `${baseUrl.replace(/\/+$/, '')}${assets}/${encodeURIComponent(ref)}/${encodeURIComponent(String(id))}/${encodeURIComponent(column)}/${match[1] ?? value.trim()}`;
 }
 
+/** The address of a picture any visitor may see, the way the public client builds it (`pictureUrl`). */
+export const pictureAddress = assetAddress;
+
 /** The values a save writes: the design's data, and the files it names. */
 const written = (design: DesignData, files: Readonly<Record<string, string>> = {}): Row => ({
   format: 1,
@@ -226,7 +229,10 @@ export function customiserApi(clients: CustomiserClients): CustomiserApi {
         all(REFS.features, undefined, signal),
       ]);
       const parts = ready.length === 0 ? [] : await all(REFS.parts, { column: 'ready_design_id', op: 'in', value: ready.map((one) => one['id']) }, signal);
-      return { bases, pieces, areas, ready, parts, fonts, palettes, colours, features };
+      // Each ready-made design's preview picture, where the shop has made one: the address a card loads it from.
+      const config = await shop.config();
+      const pictured = ready.map((one) => ({ ...one, preview_url: pictureAddress(clients.baseUrl, config.pictures, config.refs[REFS.ready]?.pictures ?? [], REFS.ready, asKey(one['id']), 'preview_file', one['preview_file']) }));
+      return { bases, pieces, areas, ready: pictured, parts, fonts, palettes, colours, features };
     },
     async fontUrl(font) {
       const config = await shop.config();

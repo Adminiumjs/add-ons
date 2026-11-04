@@ -369,6 +369,7 @@ export const designs: Readonly<Record<string, string>> = {
   "designs.sample": "Sample words",
   "designs.save": "Save the design",
   "designs.saved.hidden": "Saved. It stays hidden until you show it.",
+  "designs.saved.noPicture": "Its preview picture couldn’t be made. Customers see the design drawn instead.",
   "designs.saved.shown": "Saved. Customers see it next time they choose a design.",
   "designs.select": "Select {name}",
   "designs.show": "Show {name}",

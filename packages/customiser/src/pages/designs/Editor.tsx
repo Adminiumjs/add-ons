@@ -32,6 +32,7 @@ import { addPart, changesOf, commit, draftOf, endGesture, hasChanges, historyOf,
 import { PagePanel } from './PagePanel.tsx';
 import { PiecePanel } from './PiecePanel.tsx';
 import { CustomerPreview, previewEditor } from './preview.tsx';
+import { usePreviewPicture } from './picture.ts';
 import { useSaveDesign } from './save.ts';
 import { motifName, partWords } from './words.ts';
 
@@ -108,6 +109,7 @@ export function Editor({ t, base, data, design, rows, readOnly, onBack }: Editor
   const hint = useId();
   const toast = useToast();
   const save = useSaveDesign();
+  const makePicture = usePreviewPicture();
   const app = text(base['app']) === '' ? null : text(base['app']);
   const roleNames: Record<Role, string> = { paper: t('designs.role.paper', 'Paper'), ink: t('designs.role.ink', 'Ink'), accent: t('designs.role.accent', 'Accent') };
   const dirty = !readOnly && hasChanges(changesOf(before, draft, app, roleNames));
@@ -145,6 +147,8 @@ export function Editor({ t, base, data, design, rows, readOnly, onBack }: Editor
       setHistory(historyOf(saved));
       if (selected !== null && !saved.parts.some((part) => part.key === selected)) setSelected(null);
       toast(draft.state === 'published' ? t('designs.saved.shown', 'Saved. Customers see it next time they choose a design.') : t('designs.saved.hidden', 'Saved. It stays hidden until you show it.'));
+      // A design customers see gets its preview picture again, from the rows as saved.
+      if (saved.state === 'published' && (await makePicture(base, saved.id)) === 'failed') toast(t('designs.saved.noPicture', 'Its preview picture couldn’t be made. Customers see the design drawn instead.'), 'info');
     } catch (caught) {
       toast(refusal(t, asDataError(caught)).message, 'error');
     } finally {
