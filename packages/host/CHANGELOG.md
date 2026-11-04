@@ -1,5 +1,11 @@
 # @adminium/add-on-host
 
+## 1.0.16
+
+### Patch Changes
+
+- 67e1dc6: `DispatchPayload` gains an optional `chosen` (`{ addOn, code }`, or a whole delivery choice): the service the order stores, which a delivery add-on preselects at dispatch.
+
 ## 1.0.15
 
 ## 1.0.14

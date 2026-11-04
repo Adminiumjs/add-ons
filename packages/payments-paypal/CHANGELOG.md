@@ -1,5 +1,7 @@
 # @adminium/add-on-payments-paypal
 
+## 1.0.16
+
 ## 1.0.15
 
 ## 1.0.14

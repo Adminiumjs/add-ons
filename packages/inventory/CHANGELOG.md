@@ -1,5 +1,11 @@
 # @adminium/add-on-inventory
 
+## 1.0.16
+
+### Patch Changes
+
+- 9c9a52f: Built and tested against the published Adminium 0.3.43 packages (manifest, add-on contracts, public client, tokens, i18n and the dashboard's parts). Nothing changes for a shop.
+
 ## 1.0.15
 
 ## 1.0.14

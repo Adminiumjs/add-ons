@@ -1,5 +1,12 @@
 # @adminium/add-on-shipping-dhl
 
+## 1.0.16
+
+### Patch Changes
+
+- 67e1dc6: Dispatch opens with the delivery service the order stores: a host passes the shopper's checkout choice as `chosen` on `order.dispatch.actions`, and the booking flow picks that service instead of the first rate. A code another add-on made, or one no longer quoted, keeps the first rate.
+- 67e1dc6: Attach to Maker Shop and Print Shop at `^0.1.0 || ^0.2.0`, so a shop with the add-on attached can update to the apps' 0.2 line.
+
 ## 1.0.15
 
 ## 1.0.14

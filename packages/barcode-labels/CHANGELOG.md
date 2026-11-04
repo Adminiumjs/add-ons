@@ -1,5 +1,11 @@
 # @adminium/add-on-barcode-labels
 
+## 1.0.16
+
+### Patch Changes
+
+- 67e1dc6: Attach to Maker Shop and Print Shop at `^0.1.0 || ^0.2.0`, so a shop with the add-on attached can update to the apps' 0.2 line.
+
 ## 1.0.15
 
 ## 1.0.14
