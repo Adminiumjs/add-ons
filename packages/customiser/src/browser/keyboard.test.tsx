@@ -18,7 +18,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { forgetStills } from '../three/PieceView.tsx';
 import { Stage3d, type RendererLike } from '../three/stage3d.ts';
 import { CustomiserEditor, heldDesign, YourDesigns, type CustomiserApi, type HeldDesign } from './index.ts';
-import type { CatalogueRows } from './catalogue.ts';
+import type { CatalogueRows } from './api.ts';
 import { drawn, setWidth, settle, settleUntil } from './testing/render.tsx';
 import { stubApi, type Stub } from './testing/stub.ts';
 import { glbOf, SIGN, WALL } from '../testing/glb.ts';

@@ -16,7 +16,7 @@ import { impuritiesIn, offendingAddresses, RAW_CONTROL_EXPLANATION, rawControlOf
 
 import manifest from '../manifest.json' with { type: 'json' };
 import { COMPANY_MARKS, INERT_ORIGINS, NEVER_IN_A_BROWSER } from './add-on-facts.ts';
-import { bannedHitsIn } from './testing/lexicon.ts';
+import { ALLOWED_TOKENS, bannedHitsIn } from './testing/lexicon.ts';
 
 const SRC = new URL('.', import.meta.url).pathname;
 const ROOT = join(SRC, '..');
@@ -95,5 +95,9 @@ describe('the word check itself', () => {
     for (const word of ['plan', 'the free editor', 'free to use', 'a pro look', 'tier', 'upgrade', 'premium']) expect(bannedHitsIn(word), word).not.toEqual([]);
     // The Customiser's own words: a proof, approved, of a product; the full editor; an open licence.
     for (const word of ['Approve', 'Approved', 'Approving sends it to press', 'Your proof', 'proofs', 'products', 'progressbar', 'the full editor', 'Open licence', 'Promise']) expect(bannedHitsIn(word), word).toEqual([]);
+  });
+
+  it('allows only the Customiser’s own words: a new one is a choice made here, on purpose', () => {
+    expect([...ALLOWED_TOKENS].sort()).toEqual(['__client_internals_do_not_use_or_warn_users_they_cannot_upgrade', 'approve', 'approved', 'approving', 'model', 'product', 'products', 'progressbar', 'promise', 'proof', 'proofs']);
   });
 });
