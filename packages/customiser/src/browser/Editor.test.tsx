@@ -321,7 +321,7 @@ describe('the maker’s look: fill it in (BC-B1, BC-B2, BC-B5, BC-B6)', () => {
 describe('the maker’s look: save and come back (BC-0.SAVE, BC-C1)', () => {
   it('asks for the address first, refuses one that is not, saves, says where the link went, and changes the same design after', async () => {
     const stub = stubApi('maker');
-    const { onSaved } = await openRing(stub, { mailsLink: true });
+    const { onSaved } = await openRing(stub);
     type('Your words', 'The Pinfold · 2019');
     screen.getByRole('button', { name: 'Save and come back' }).focus();
     fireEvent.click(screen.getByRole('button', { name: 'Save and come back' }));
@@ -355,29 +355,23 @@ describe('the maker’s look: save and come back (BC-0.SAVE, BC-C1)', () => {
     expect(stub.calls.filter((one) => one.call === 'change')).toHaveLength(1);
   });
 
-  it('where the link cannot be mailed, saves at once, asks no address, and shows the customer their link to keep', async () => {
+  it('never shows the link on screen: it goes only by e-mail', async () => {
     const stub = stubApi('maker');
-    const { onSaved } = await openRing(stub, { linkUrl: (token) => `https://birchrow.example/design#${token}` });
+    const { onSaved } = await openRing(stub);
     type('Your words', 'The Pinfold · 2019');
+    fireEvent.click(screen.getByRole('button', { name: 'Save and come back' }));
+    // Nothing is saved before the address is given.
+    expect(stub.calls.filter((one) => one.call === 'create' || one.call === 'change')).toEqual([]);
+    fireEvent.change(screen.getByLabelText('Your e-mail'), { target: { value: 'iris@example.com' } });
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Save and come back' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Save it' }));
     });
     await settle();
-    const done = screen.getByRole('dialog', { name: 'Saved. Keep this link to come back to it.' });
-    expect(within(done).queryByLabelText('Your e-mail')).toBeNull();
     const link = stub.designs.get(String((onSaved.mock.calls[0]![0] as { id: unknown }).id))!.link;
-    expect(done.textContent).toContain(`https://birchrow.example/design#${link}`);
-    expect(stub.calls.find((one) => one.call === 'create')!.args[1]).toBeNull();
-    expect(onSaved.mock.calls[0]![1]).toBeNull();
-    expect(document.activeElement).toBe(within(done).getByRole('button', { name: 'Keep going' }));
-    // Saved again, the same design changes, and its link is the one it had.
-    fireEvent.click(within(done).getByRole('button', { name: 'Keep going' }));
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Save and come back' }));
-    });
-    await settle();
-    expect(stub.calls.filter((one) => one.call === 'change')).toHaveLength(1);
-    expect(screen.getByRole('dialog').textContent).toContain(link);
+    expect(document.body.textContent).not.toContain(link);
+    expect(onSaved.mock.calls[0]![1]).toBe('iris@example.com');
+    // The address in the mono face, as the comp draws it.
+    expect(screen.getByText('iris@example.com').className).toBe('cz-mono');
   });
 
   it('closes on Escape and gives the focus back', async () => {
@@ -396,7 +390,7 @@ describe('the maker’s look: save and come back (BC-0.SAVE, BC-C1)', () => {
 
   it('says when the save fails, and saves nothing', async () => {
     const stub = stubApi('maker');
-    await openRing(stub, { mailsLink: true });
+    await openRing(stub);
     stub.failNext(Object.assign(new Error('slow down'), { code: 'PUBLIC_RATE_LIMITED' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save and come back' }));
     fireEvent.change(screen.getByLabelText('Your e-mail'), { target: { value: 'iris@example.com' } });
@@ -497,6 +491,27 @@ describe('the print look: choose a design (MC-A2, MC-A3)', () => {
     fireEvent.click(screen.getByRole('button', { name: /Send your own file/ }));
     expect(onStartBlank).toHaveBeenCalledTimes(1);
     expect(onSendOwnFile).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('the print look: save and come back (MC-0.SAVE, MC-D1)', () => {
+  it('asks for the address in Marlow Press’s words, then says where the link went in the shared dialog', async () => {
+    const stub = stubApi('printing');
+    await openHarbour(stub);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Save and come back' })[0]!);
+    const dialog = screen.getByRole('dialog', { name: 'Save and come back' });
+    expect(within(dialog).getByText('We save the design and e-mail you a private link to it. Only you and Marlow Press can open it.')).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save and send the link' }));
+    expect(within(dialog).getByRole('alert').textContent).toBe('Enter your e-mail so we can send you the link');
+    expect(stub.calls.filter((one) => one.call === 'create')).toEqual([]);
+    fireEvent.change(within(dialog).getByLabelText('E-mail'), { target: { value: 'nell@example.com' } });
+    await act(async () => {
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Save and send the link' }));
+    });
+    await settle();
+    const done = screen.getByRole('dialog', { name: 'Saved. We’ve e-mailed you a link to come back to it.' });
+    expect(done.textContent).toContain('Sent to nell@example.com.');
+    expect(stub.calls.find((one) => one.call === 'create')!.args[1]).toBe('nell@example.com');
   });
 });
 

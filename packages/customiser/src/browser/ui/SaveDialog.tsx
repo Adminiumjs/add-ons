@@ -1,43 +1,38 @@
 /**
  * "SAVE AND COME BACK": the address first, then the design is saved and its
  * private link is on its way (Birch Row's dialog, in both looks, each with
- * its own words).
+ * its own words: BC-0.SAVE and BC-C1; MC-0.SAVE asks the same way, and its
+ * "saved" is drawn as Birch Row's dialog, as the comps' shared component).
  *
  * A guest has no address on file, so the dialog asks for one before it
  * saves; the field starts empty unless this browser already sent a link to
- * the customer's own address. Once saved it says where the link went and
- * offers "Keep going" or "Back to the shop".
- *
- * Where Adminium cannot mail the link yet (`asks` off), nothing is asked: the
- * design is saved at once and the dialog shows the customer their link to
- * keep, with a button to copy it.
+ * the customer's own address. Adminium mails the design's own link there,
+ * the only way the link reaches the customer: it is never shown on screen.
+ * Once saved the dialog says where the link went and offers "Keep going" or
+ * "Back to the shop".
  */
-import { BookmarkCheck, Bookmark, CircleAlert, Copy } from 'lucide-react';
+import { BookmarkCheck, Bookmark, CircleAlert } from 'lucide-react';
 import { useState } from 'react';
 
 import { useShared } from './context.tsx';
 import { Dialog } from './Overlay.tsx';
 
 export interface SaveDialogProps {
-  /** Ask for the address the link is mailed to; off, the design is saved as the dialog opens. */
-  asks: boolean;
   email: string;
   /** Saved, and the link sent to this address. */
   sentTo: string | null;
-  /** The link, shown when this Adminium cannot send it by e-mail. */
-  link: string | null;
   busy: boolean;
   failed: string | null;
   onSubmit: (email: string) => void;
-  onRetry: () => void;
-  onCopied: () => void;
   onClose: () => void;
   onBackToShop?: (() => void) | undefined;
 }
 
 const LOOKS_LIKE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/** Where the address goes in the sentence: a character no language's words hold. */
+const SLOT = '\uE000';
 
-export function SaveDialog({ asks, email: start, sentTo, link, busy, failed, onSubmit, onRetry, onCopied, onClose, onBackToShop }: SaveDialogProps) {
+export function SaveDialog({ email: start, sentTo, busy, failed, onSubmit, onClose, onBackToShop }: SaveDialogProps) {
   const { t, look, shop } = useShared();
   const [email, setEmail] = useState(start);
   const [error, setError] = useState<string | null>(null);
@@ -54,33 +49,7 @@ export function SaveDialog({ asks, email: start, sentTo, link, busy, failed, onS
   const shown = error ?? failed;
   return (
     <Dialog labelledBy="cz-save-title" onClose={onClose}>
-      {sentTo === null && !asks ? (
-        <div className="cz-dialog-body">
-          <h2 id="cz-save-title" className="cz-h2">
-            {t('editor.save', 'Save and come back')}
-          </h2>
-          {failed === null ? (
-            <p role="status" className="cz-sub">
-              {t('editor.save.saving', 'Saving your design…')}
-            </p>
-          ) : (
-            <>
-              <span role="alert" className="cz-error">
-                <CircleAlert aria-hidden="true" />
-                {failed}
-              </span>
-              <div className="cz-dialog-actions">
-                <button type="button" className="cz-primary cz-grow" aria-busy={busy} onClick={onRetry}>
-                  {t('editor.retry', 'Try again')}
-                </button>
-                <button type="button" className="cz-button" onClick={onClose}>
-                  {t('editor.cancel', 'Cancel')}
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      ) : sentTo === null ? (
+      {sentTo === null ? (
         <form
           className="cz-dialog-body"
           noValidate
@@ -123,26 +92,14 @@ export function SaveDialog({ asks, email: start, sentTo, link, busy, failed, onS
             <BookmarkCheck aria-hidden="true" />
           </span>
           <h2 id="cz-save-title" className="cz-h2">
-            {link === null ? t('editor.saved.title', 'Saved. We’ve e-mailed you a link to come back to it.') : t('editor.saved.titleNoMail', 'Saved. Keep this link to come back to it.')}
+            {t('editor.saved.title', 'Saved. We’ve e-mailed you a link to come back to it.')}
           </h2>
-          {link === null ? (
-            <p className="cz-sub">{t('editor.saved.sentTo', 'Sent to {email}. The link opens your designs and nobody else’s.', { email: sentTo })}</p>
-          ) : (
-            <>
-              <p className="cz-sub">{t('editor.saved.linkHere', 'It opens this design and nobody else’s. Anyone with the link can open it, so keep it to yourself.')}</p>
-              <span className="cz-mono cz-wrap cz-link-box">{link}</span>
-              <button
-                type="button"
-                className="cz-button"
-                onClick={() => {
-                  void navigator.clipboard?.writeText(link).then(onCopied, () => {});
-                }}
-              >
-                <Copy aria-hidden="true" />
-                {t('editor.saved.copy', 'Copy the link')}
-              </button>
-            </>
-          )}
+          {/* BC-C1: "Sent to <address>", the address in the mono face, wherever the language puts it. */}
+          <p className="cz-sub">
+            {t('editor.saved.sentTo', 'Sent to {email}. The link opens your designs and nobody else’s.', { email: SLOT })
+              .split(SLOT)
+              .flatMap((piece, at) => (at === 0 ? [piece] : [<span key={at} className="cz-mono">{sentTo}</span>, piece]))}
+          </p>
           <div className="cz-dialog-actions">
             {/* The dialog opened before the design was saved: the focus moves to what it now offers. */}
             {/* eslint-disable-next-line jsx-a11y/no-autofocus */}

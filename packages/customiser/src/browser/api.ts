@@ -93,8 +93,8 @@ export interface SavedDesign extends DesignData {
   files: Readonly<Record<string, string>>;
   /**
    * The code of the design's own link, as the save answered it once or the
-   * link it was opened by: held in memory to show the customer their link,
-   * never kept anywhere.
+   * link it was opened by: held in memory only, never shown and never kept
+   * anywhere. The customer has it in the e-mail.
    */
   link?: string | null;
 }

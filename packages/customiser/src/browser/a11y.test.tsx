@@ -39,7 +39,7 @@ const click = async (name: RegExp): Promise<void> => {
   });
   await settle();
 };
-const maker = (base: (stub: Stub) => number) => (stub: Stub, locale: string) => <CustomiserEditor api={stub.api} base={base(stub)} product={{ name: 'Engraved walnut coasters', price: '£34.00', unit: 'set of 4' }} shop="Birch Row" locale={locale} price={{ total: '£40.00', note: 'Order by 17:00 and we post it by Tue 11 Aug' }} quantity={{ value: 1, breaks: [{ qty: 4, label: '−8%' }], onChange: () => {} }} featurePrices={{ logo: '+£1.50 a piece' }} mailsLink onAddToBasket={() => {}} onBack={() => {}} />;
+const maker = (base: (stub: Stub) => number) => (stub: Stub, locale: string) => <CustomiserEditor api={stub.api} base={base(stub)} product={{ name: 'Engraved walnut coasters', price: '£34.00', unit: 'set of 4' }} shop="Birch Row" locale={locale} price={{ total: '£40.00', note: 'Order by 17:00 and we post it by Tue 11 Aug' }} quantity={{ value: 1, breaks: [{ qty: 4, label: '−8%' }], onChange: () => {} }} featurePrices={{ logo: '+£1.50 a piece' }} onAddToBasket={() => {}} onBack={() => {}} />;
 const print = (base: (stub: Stub) => number, extra: { start?: 'blank' } = {}) => (stub: Stub, locale: string) => <CustomiserEditor api={stub.api} base={base(stub)} product={{ name: 'Business cards' }} shop="Marlow Press" sides={2} locale={locale} price={{ total: '£87.55', each: '£0.18', ready: 'Mon 10 Aug' }} onAddToBasket={() => {}} onSendOwnFile={() => {}} {...extra} />;
 /** A PNG's first bytes: enough for the editor to know what it is. */
 const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -106,7 +106,7 @@ const STATES: State[] = [
     },
   },
   {
-    label: 'print · saved, the link to keep',
+    label: 'print · save dialog, asking',
     app: 'printing',
     draw: print((s) => s.ids.cards),
     after: async () => {
@@ -114,6 +114,23 @@ const STATES: State[] = [
       typeInto('#cz-f-name', 'Nell Fairweather');
       await act(async () => {
         fireEvent.click(document.querySelector('.cz-save, .cz-quote-bar .cz-icon-button')!);
+      });
+      await settle();
+    },
+  },
+  {
+    label: 'print · saved, sent to the address',
+    app: 'printing',
+    draw: print((s) => s.ids.cards),
+    after: async () => {
+      await click(/Harbour/);
+      typeInto('#cz-f-name', 'Nell Fairweather');
+      await act(async () => {
+        fireEvent.click(document.querySelector('.cz-save, .cz-quote-bar .cz-icon-button')!);
+      });
+      typeInto('#cz-save-email', 'nell@example.com');
+      await act(async () => {
+        fireEvent.click(document.querySelector('.cz-dialog .cz-primary')!);
       });
       await settle();
     },

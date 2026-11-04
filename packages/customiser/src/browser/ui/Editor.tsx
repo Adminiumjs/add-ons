@@ -79,14 +79,6 @@ export interface CustomiserEditorProps {
   featurePrices?: Readonly<Record<string, string>>;
   /** A refusal the app's order got for this design (`designRefusal`): shown at its part. */
   refused?: Refusal | null;
-  /**
-   * Whether this Adminium mails a saved design's link to the address it was
-   * saved with. Off, "Save and come back" saves at once and shows the
-   * customer their link to keep, and asks for no address.
-   */
-  mailsLink?: boolean;
-  /** The address of the app's page that opens a saved design, for its link's code (default: this page, the code after `#`). */
-  linkUrl?: (token: string) => string;
   /** The customer's own address, where the app knows it: the save dialog starts with it. */
   email?: string | null;
   /** The label on the basket button ("Update the basket" when editing a line). */
@@ -218,7 +210,7 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
   const [typing, setTyping] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [busy, setBusy] = useState(false);
-  const [saveState, setSaveState] = useState<{ sentTo: string | null; failed: string | null; link: string | null }>({ sentTo: null, failed: null, link: null });
+  const [saveState, setSaveState] = useState<{ sentTo: string | null; failed: string | null }>({ sentTo: null, failed: null });
   const [refused, setRefused] = useState<Refusal | null>(props.refused ?? null);
   const [stripShown, setStripShown] = useState(false);
   const focusNext = useRef<string | null>(null);
@@ -418,28 +410,23 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
       toast(look === 'print' ? t('editor.preview.noSavePrint', 'You’re previewing as a customer — nothing is saved.') : t('editor.preview.noSave', 'Previewing — saving is switched off here.'), 'info');
       return;
     }
-    setSaveState({ sentTo: null, failed: null, link: null });
+    setSaveState({ sentTo: null, failed: null });
     setOverlay('save');
-    if (props.mailsLink !== true) void submitSave(null);
   };
-  const linkOf = (token: string | null | undefined): string => {
-    if (token === null || token === undefined) return '';
-    if (props.linkUrl !== undefined) return props.linkUrl(token);
-    return typeof location === 'undefined' ? `#${token}` : `${location.href.split('#')[0] ?? ''}#${token}`;
-  };
-  const submitSave = async (email: string | null): Promise<void> => {
+  /** Saved with the address the customer gave: Adminium mails the design's own link there (the add-on's one e-mail). */
+  const submitSave = async (email: string): Promise<void> => {
     setBusy(true);
     try {
       const next = ordered ? await api.create(design, email, keptFiles()) : await keep(email);
       if (ordered) {
         setSaved(next);
         pictures.saved(next);
-        if (email !== null) setKnownEmail(email);
+        setKnownEmail(email);
       }
-      setSaveState({ sentTo: email ?? '', failed: null, link: props.mailsLink === true ? null : linkOf(next.link) });
+      setSaveState({ sentTo: email, failed: null });
       props.onSaved?.(next, email);
     } catch (error) {
-      setSaveState({ sentTo: null, failed: wordsFor(error), link: null });
+      setSaveState({ sentTo: null, failed: wordsFor(error) });
     } finally {
       setBusy(false);
     }
@@ -510,14 +497,10 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
       {overlay === 'save' ? (
         <SaveDialog
           email={knownEmail ?? ''}
-          asks={props.mailsLink === true}
           sentTo={saveState.sentTo}
-          link={saveState.link}
           busy={busy}
           failed={saveState.failed}
           onSubmit={(email) => void submitSave(email)}
-          onRetry={() => void submitSave(null)}
-          onCopied={() => toast(t('editor.saved.copied', 'Link copied.'))}
           onClose={() => setOverlay(null)}
           onBackToShop={props.onBack}
         />
