@@ -241,13 +241,15 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
   }, []);
 
   // Tell the app what the design is now, so it can price it.
-  const change = props.onDesignChange;
+  // The app's callback is read when the design changes, never a reason to tell it again.
+  const change = useRef(props.onDesignChange);
+  change.current = props.onDesignChange;
   const key = JSON.stringify([design.ready_design_id, values]);
   useEffect(() => {
-    change?.({ design, used: answer.used, ok: answer.ok });
+    change.current?.({ design, used: answer.used, ok: answer.ok });
     // The design is compared by its contents.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, answer.ok, answer.used.join(','), change]);
+  }, [key, answer.ok, answer.used.join(',')]);
 
   // Focus moves where the customer was sent, once the field is drawn.
   useEffect(() => {

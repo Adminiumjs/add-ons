@@ -51,8 +51,8 @@ export interface HeldSession {
 
 /** The calls of `@adminium/public-client` the editor makes. */
 export interface ClientLike {
-  config: () => Promise<{ assets?: string; refs: Record<string, { assets?: string[] }> }>;
-  list: <T = Row>(ref: string, options?: { where?: unknown; limit?: number; code?: string; signal?: AbortSignal }) => Promise<{ data: T[] }>;
+  config: () => Promise<{ assets?: string; refs: Record<string, { assets?: string[]; limit?: number; filterable?: string[] }> }>;
+  list: <T = Row>(ref: string, options?: { where?: unknown; limit?: number; offset?: number; code?: string; signal?: AbortSignal }) => Promise<{ data: T[] }>;
   createWithRank: <T = Row>(ref: string, values: Row) => Promise<{ data: T; link: { key: string; token: string; session: string | null; expiresAt: number | null } | null }>;
   update: <T = Row>(ref: string, id: string, values: Row) => Promise<T>;
   openShared: (token: string) => Promise<'opened' | 'unknown' | 'closed'>;
@@ -183,9 +183,24 @@ const written = (design: DesignData, files: Readonly<Record<string, string>> = {
 /** The editor's calls, made through the app's clients. */
 export function customiserApi(clients: CustomiserClients): CustomiserApi {
   const { shop, link } = clients;
-  const all = async (ref: string, where?: unknown, signal?: AbortSignal): Promise<Row[]> => {
-    const out = await shop.list<Row>(ref, { ...(where === undefined ? {} : { where }), limit: 500, ...(signal === undefined ? {} : { signal }) });
-    return out.data;
+  /**
+   * Every row an entry serves this app, page by page at the most it answers
+   * at once. A filter is sent only where the entry lets its column be
+   * filtered; the rest are kept here, as the rows are this app's alone anyway.
+   */
+  const all = async (ref: string, where?: { column: string; op: string; value: unknown }, signal?: AbortSignal): Promise<Row[]> => {
+    const config = (await shop.config()).refs[ref];
+    const limit = Math.max(1, Math.min(config?.limit ?? 50, 500));
+    const sent = where !== undefined && (config?.filterable ?? []).includes(where.column) ? where : undefined;
+    const out: Row[] = [];
+    for (let offset = 0; offset < 5000; offset += limit) {
+      const page = (await shop.list<Row>(ref, { ...(sent === undefined ? {} : { where: sent }), limit, ...(offset === 0 ? {} : { offset }), ...(signal === undefined ? {} : { signal }) })).data;
+      out.push(...page);
+      if (page.length < limit) break;
+    }
+    if (where === undefined || sent !== undefined) return out;
+    const wanted = where.op === 'in' && Array.isArray(where.value) ? where.value.map(String) : [String(where.value)];
+    return out.filter((row) => wanted.includes(String(row[where.column])));
   };
   /** A client of the link key holding this session. */
   const holding = (session: HeldSession): ClientLike => {

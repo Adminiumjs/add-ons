@@ -5,11 +5,16 @@
  * or phone width. Not part of what ships: `vite build` only sees `src/`.
  *
  * `?shop=maker|print&base=<id>&lang=<tag>&theme=dark&frame=phone&view=editor|designs|ways`
+ *
+ * Against a real Adminium (the engine's walk server): `&real=<address>&shopKey=<key>&linkKey=<key>`,
+ * the app's own public client in place of the stand-in. "Add to basket" then places an order whose
+ * line names the design by its code, and finds it again, as the app's order lookup does.
  */
-import { StrictMode, useMemo, useState } from 'react';
+import { createPublicClient, type PublicClient } from '@adminium/public-client';
+import { StrictMode, useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
-import { CustomiserEditor, heldDesign, LOCALES, WaysIn, YourDesigns, type DesignForBasket, type HeldDesign, type SavedDesign } from '../src/browser/index.ts';
+import { customiserApi, CustomiserEditor, heldDesign, openSavedLink, LOCALES, WaysIn, YourDesigns, type DesignForBasket, type HeldDesign, type SavedDesign } from '../src/browser/index.ts';
 import { stubApi } from '../src/browser/testing/stub.ts';
 
 const query = new URLSearchParams(location.search);
@@ -21,6 +26,30 @@ const set = (key: string, value: string): void => {
 function Dev() {
   const shop = query.get('shop') === 'print' ? 'print' : 'maker';
   const stub = useMemo(() => stubApi(shop === 'print' ? 'printing' : 'maker'), [shop]);
+  const real = query.get('real');
+  const client = useMemo(() => (real === null ? null : (createPublicClient({ baseUrl: real, publishableKey: query.get('shopKey') ?? '' }) as PublicClient)), [real]);
+  const api = useMemo(() => (real === null || client === null ? stub.api : customiserApi({ shop: client, link: () => createPublicClient({ baseUrl: real, publishableKey: query.get('linkKey') ?? '' })!, baseUrl: real })), [real, client, stub]);
+  const [codes, setCodes] = useState<string[]>([]);
+  // Come back: a saved design's link opens this page with its code after `#`.
+  useEffect(() => {
+    const token = location.hash.replace(/^#/, '');
+    if (token === '') return;
+    void openSavedLink(api, token).then((one) => {
+      if (typeof one === 'string') return setLog(`the link opens nothing: ${one}`);
+      setOpened(one);
+      const kept = heldDesign(one);
+      if (kept !== null) setHeld((all) => [kept, ...all]);
+      setLog(`opened by its link: design ${String(one.id)}`);
+    });
+  }, [api]);
+  /** As the app does: an order whose line names the design, found again by the order's number and code. */
+  const order = async (code: string | null): Promise<void> => {
+    if (client === null || code === null) return;
+    const placed = await client.createTree<{ id: number; link_code: string }>('printing_orders', { values: { name: 'Guest', email: 'guest@example.com' }, children: { order_lines: [{ values: { product_id: 1, qty: 1, design_code: code } }] } });
+    await client.claim({ id: placed.data.id, link_code: placed.data.link_code });
+    setCodes([...codes, code]);
+    setLog(`ordered ${String(placed.data.id)}, found again: ${code}`);
+  };
   const bases = shop === 'print' ? [stub.ids.cards, stub.ids.flyers] : [stub.ids.coasters, stub.ids.nook, stub.ids.keyring, stub.ids.board];
   const base = Number(query.get('base') ?? bases[0]);
   const lang = query.get('lang') ?? 'en-US';
@@ -70,13 +99,13 @@ function Dev() {
       <div className="dev-out">{log}</div>
       <div className={query.get('frame') === 'phone' ? 'dev-frame phone' : 'dev-frame'}>
         {view === 'designs' ? (
-          <YourDesigns api={stub.api} locale={lang} look={shop} shop={shop === 'print' ? 'Marlow Press' : 'Birch Row'} codes={(query.get('codes') ?? '').split(',').filter((one) => one !== '')} held={held} onForget={(one) => setHeld(held.filter((other) => other !== one))} onRestore={(one) => setHeld([one, ...held])} onOpen={(design) => { setOpened(design); setView('editor'); }} onOrder={(design) => setLog(`order ${String(design.code)}`)} onChoose={() => setView('editor')} />
+          <YourDesigns api={api} locale={lang} look={shop} shop={shop === 'print' ? 'Marlow Press' : 'Birch Row'} codes={[...codes, ...(query.get('codes') ?? '').split(',').filter((one) => one !== '')]} held={held} onForget={(one) => setHeld(held.filter((other) => other !== one))} onRestore={(one) => setHeld([one, ...held])} onOpen={(design) => { setOpened(design); setView('editor'); }} onOrder={(design) => setLog(`order ${String(design.code)}`)} onChoose={() => setView('editor')} />
         ) : view === 'ways' ? (
-          <WaysIn api={stub.api} base={base} product={product} locale={lang} onChoose={() => setView('editor')} onStartBlank={() => setLog('start from blank')} onSendOwnFile={() => setLog('send your own file')} />
+          <WaysIn api={api} base={base} product={product} locale={lang} onChoose={() => setView('editor')} onStartBlank={() => setLog('start from blank')} onSendOwnFile={() => setLog('send your own file')} />
         ) : (
           <CustomiserEditor
-            key={`${shop}-${String(base)}`}
-            api={stub.api}
+            key={`${shop}-${String(base)}-${String(opened?.id ?? '')}`}
+            api={api}
             base={base}
             product={{ name: product, ...(shop === 'maker' ? { price: '£34.00', unit: 'set of 4' } : {}) }}
             shop={shop === 'print' ? 'Marlow Press' : 'Birch Row'}
@@ -87,7 +116,12 @@ function Dev() {
             quantity={shop === 'maker' ? { value: qty, breaks: [{ qty: 4, label: '−8%' }, { qty: 8, label: '−14%' }, { qty: 12, label: '−18%' }], onChange: setQty } : undefined}
             featurePrices={{ logo: '+£1.50 a piece' }}
             onDesignChange={({ used, ok }) => setLog(`used: [${used.join(', ')}] · ok: ${String(ok)}`)}
-            onAddToBasket={(design: DesignForBasket) => setLog(`basket: ${String(design.code)} · used [${design.used.join(', ')}]`)}
+            onAddToBasket={(design: DesignForBasket) => {
+              setLog(`basket: ${String(design.code)} · used [${design.used.join(', ')}]`);
+              const one = heldDesign(design);
+              if (one !== null) setHeld([one, ...held.filter((other) => String(other.id) !== String(one.id))]);
+              void order(design.code).catch((error: unknown) => setLog(`order refused: ${String((error as Error).message)}`));
+            }}
             onSaved={(design, email) => {
               const one = heldDesign(design, email);
               if (one !== null) setHeld([one, ...held.filter((other) => String(other.id) !== String(one.id))]);

@@ -154,7 +154,7 @@ function List({ api, held, codes, onOpen, onOrder, onChoose, onForget, onRestore
                   )}
                 </span>
                 <span className="cz-design-text">
-                  <span className="cz-strong">{look === 'print' ? `${name} — ${words}` : words}</span>
+                  <span className="cz-strong">{look === 'print' ? `${name} — ${words.split(' · ')[0] ?? ''}` : words}</span>
                   <span className="cz-small">
                     {look === 'print' ? `${catalogue?.base.name ?? ''} · ${catalogue === null ? '' : `${String(catalogue.base.width)} × ${String(catalogue.base.height)} mm`}` : `${catalogue?.base.name ?? ''} · ${name}`}
                   </span>

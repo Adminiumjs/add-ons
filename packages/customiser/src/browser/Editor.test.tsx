@@ -291,6 +291,20 @@ describe('the maker’s look: fill it in (BC-B1, BC-B2, BC-B5, BC-B6)', () => {
     expect(screen.getByText('110 × 180 × 150 mm · 14 pieces')).toBeTruthy();
   });
 
+  it('tells the app of a change once, however often the app draws it again', async () => {
+    const stub = stubApi('maker');
+    const { onDesignChange, view } = await openRing(stub);
+    const { rerender } = await view;
+    const before = onDesignChange.mock.calls.length;
+    const again = vi.fn();
+    rerender(<CustomiserEditor api={stub.api} base={stub.ids.coasters} product={{ name: 'Engraved walnut coasters' }} onAddToBasket={() => {}} onDesignChange={again} />);
+    await settle();
+    expect(again).not.toHaveBeenCalled();
+    type('Your words', 'Ada');
+    expect(again).toHaveBeenCalledTimes(1);
+    expect(onDesignChange.mock.calls.length).toBe(before);
+  });
+
   it('shows a refusal the shop’s order got at its part', async () => {
     const stub = stubApi('maker');
     await openRing(stub, { refused: { reason: 'font-not-allowed', part: 'words' } });

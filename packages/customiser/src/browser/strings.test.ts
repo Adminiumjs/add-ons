@@ -125,7 +125,7 @@ describe('the formatter', () => {
   });
 
   it('writes a moment with its weekday, as the comps do', () => {
-    expect(shortWhen('2026-08-06T16:12:00Z', 'en-US')).toMatch(/^Thu,? 6 Aug · \d\d:12$|^Thu,? Aug 6 · \d\d:12$/);
+    expect(shortWhen('2026-08-06T16:12:00Z', 'en-US')).toMatch(/^Thu 6 Aug · \d\d:12$/);
     expect(shortWhen(null, 'en-US')).toBe('');
   });
 });

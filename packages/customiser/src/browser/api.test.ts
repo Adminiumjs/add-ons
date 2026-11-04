@@ -23,7 +23,7 @@ function fakeClient(name: string, log: Logged[], rows: Record<string, Row[]> = {
   let held: HeldSession | null = null;
   return {
     async config() {
-      return { assets: '/api/v1/public/assets', refs: { [REFS.fonts]: { assets: ['file'] } } };
+      return { assets: '/api/v1/public/assets', refs: { [REFS.fonts]: { assets: ['file'], limit: 100 }, [REFS.bases]: { limit: 100, filterable: ['id'] }, [REFS.areas]: { limit: 100, filterable: ['base_id'] }, [REFS.ready]: { limit: 100 }, [REFS.parts]: { limit: 2, filterable: ['ready_design_id'] } } };
     },
     async list<T>(ref: string, options?: unknown) {
       log.push({ client: name, call: 'list', args: [ref, options] });
@@ -63,14 +63,18 @@ function setUp(rows: Record<string, Row[]> = {}) {
 
 describe('the editor’s calls', () => {
   it('reads one base’s catalogue through the add-on’s entries on the app’s key, the parts of its designs only', async () => {
-    const { api, log } = setUp({ [REFS.ready]: [{ id: 11 }, { id: 12 }] });
-    await api.catalogue(3);
-    const asked = log.filter((one) => one.client === 'shop' && one.call === 'list').map((one) => [one.args[0], (one.args[1] as { where?: unknown }).where]);
-    expect(asked).toContainEqual([REFS.bases, { column: 'id', op: 'eq', value: 3 }]);
-    expect(asked).toContainEqual([REFS.areas, { column: 'base_id', op: 'eq', value: 3 }]);
-    expect(asked).toContainEqual([REFS.ready, { column: 'base_id', op: 'eq', value: 3 }]);
-    expect(asked).toContainEqual([REFS.parts, { column: 'ready_design_id', op: 'in', value: [11, 12] }]);
-    expect(asked.map(([ref]) => ref)).toContain(REFS.fonts);
+    const { api, log } = setUp({ [REFS.ready]: [{ id: 11, base_id: 3 }, { id: 12, base_id: 3 }, { id: 13, base_id: 4 }] });
+    const read = await api.catalogue(3);
+    // Rows of another base, which the entry could not filter, are left out here.
+    expect(read.ready.map((one) => one['id'])).toEqual([11, 12]);
+    const asked = log.filter((one) => one.client === 'shop' && one.call === 'list').map((one) => [one.args[0], (one.args[1] as { where?: unknown }).where, (one.args[1] as { limit?: number }).limit]);
+    // A filter only where the entry lets its column be filtered, at most the rows it answers at once.
+    expect(asked).toContainEqual([REFS.bases, { column: 'id', op: 'eq', value: 3 }, 100]);
+    expect(asked).toContainEqual([REFS.areas, { column: 'base_id', op: 'eq', value: 3 }, 100]);
+    expect(asked).toContainEqual([REFS.ready, undefined, 100]);
+    expect(asked).toContainEqual([REFS.parts, { column: 'ready_design_id', op: 'in', value: [11, 12] }, 2]);
+    // An entry that says nothing is asked fifty at a time.
+    expect(asked).toContainEqual([REFS.palettes, undefined, 50]);
   });
 
   it('saves a new design with its format, its address and its files, and keeps the session its link answered', async () => {

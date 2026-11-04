@@ -96,8 +96,10 @@ export function shortWhen(iso: string | null, locale: Locale): string {
   if (iso === null) return '';
   const when = new Date(iso.includes('T') || iso.endsWith('Z') ? iso : iso.replace(' ', 'T') + 'Z');
   if (Number.isNaN(when.getTime())) return iso;
-  const day = new Intl.DateTimeFormat(locale, { weekday: 'short', day: 'numeric', month: 'short' }).format(when);
-  const time = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit', hour12: false }).format(when);
+  // The comps' English is British: "Thu 6 Aug", the weekday first, no comma.
+  const tag = locale === 'en-US' ? 'en-GB' : locale;
+  const day = new Intl.DateTimeFormat(tag, { weekday: 'short', day: 'numeric', month: 'short' }).format(when).replace(',', '');
+  const time = new Intl.DateTimeFormat(tag, { hour: '2-digit', minute: '2-digit', hour12: false }).format(when);
   return `${day} · ${time}`;
 }
 
