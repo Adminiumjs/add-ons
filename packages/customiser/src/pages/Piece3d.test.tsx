@@ -14,6 +14,7 @@ import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { glbOf, SIGN } from '../testing/glb.ts';
+import { keyringGlb } from '../testing/keyring.ts';
 import { forgetStills } from '../three/PieceView.tsx';
 import { Stage3d, type RendererLike } from '../three/stage3d.ts';
 import type { View } from '../three/view.ts';
@@ -185,6 +186,59 @@ describe('the order line’s kit: 3D, Flat or Pieces (BC-E1, BC-D9)', () => {
   });
 });
 
+/** Sam's name keyring, ordered: a 3D-printed item, its words raised 1 mm from the front; with the shop's preview model laid over it, or none. */
+const KEYRING = 15;
+const PREVIEW = 'file_01JD00000000000000000000PV';
+const seedKeyring = (preview: boolean): void => {
+  const front = { code: 'front', name: 'The front', piece: null, mesh: '0', normal: [0, 0, 1], point: [0, 24, 4], u: [1, 0, 0], v: [0, -1, 0], bounds: { u0: 0, u1: 56, v0: 0, v1: 24 }, size: { w: 56, h: 24 }, relief: { mode: 'raised', depth: 1, smallest: 3 }, ...(preview ? { preview: { mesh: 'preview', normal: [0, 1, 0], point: [-0.028, 0.004, -0.012], u: [1, 0, 0], v: [0, 0, 1], bounds: { u0: 0, u1: 0.056, v0: 0, v1: 0.024 } } } : {}) };
+  seed('bases', [...world.tables['bases']!, { id: KEYRING, app: 'maker', name: 'Name keyring', kind: 'printed', width_mm: 56, height_mm: 24, corner_mm: 12, material: 'PLA', thickness_mm: 4, outline_file: null, model_file: preview ? PREVIEW : null, print_file: null, faces: JSON.stringify([front]), offered: JSON.stringify({ fonts: ['Manrope'], finishes: [] }), state: 'published', position: 5 }]);
+  seed('base_areas', [...world.tables['base_areas']!, { id: 24, app: 'maker', base_id: KEYRING, code: 'name', name: 'Name', side: null, face: 'front', shape: 'rect', x_mm: 4, y_mm: 4, w_mm: 48, h_mm: 16, takes: 'words', required: true, rules: JSON.stringify({ chars: 8, unit: 'mm', size: 10, fonts: ['Manrope'], font: 'Manrope', mode: 'raised', depthMm: 1, smallestLetterMm: 3 }), position: 1 }]);
+  seed('designs', [{ id: 93, app: 'maker', ready_design_id: null, base_id: KEYRING, values: JSON.stringify({ format: 1, parts: { name: { text: 'SAM' } } }), state: 'ordered', updated_at: '2026-08-05T15:01:00Z' }]);
+};
+
+describe('the order line’s 3D-printed item, 3D or flat (BC-E1, BC-D9)', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('shows the shop’s preview model with the words stood up, and flat on the switch', async () => {
+    seedKeyring(true);
+    const asked: string[] = [];
+    vi.stubGlobal('fetch', async (address: string) => {
+      asked.push(String(address));
+      return String(address).includes('PV/content') ? new Response(keyringGlb()) : new Response('', { status: 404 });
+    });
+    render(<Line {...HOST} linked="93" />);
+    await settle();
+    const views = screen.getByRole('radiogroup', { name: 'How to show the design' });
+    expect([...views.querySelectorAll('[role="radio"]')].map((one) => [one.textContent, one.getAttribute('aria-checked')])).toEqual([
+      ['3D', 'true'],
+      ['Flat', 'false'],
+    ]);
+    expect(asked.some((one) => one.includes('PV/content'))).toBe(true);
+    expect(screen.getByRole('img', { name: 'The plain piece, as it will be made' }).querySelector('img')?.getAttribute('src')).toMatch(/^blob:still\//);
+    fireEvent.click(screen.getByRole('radio', { name: 'Flat' }));
+    await settle();
+    expect(document.querySelector('[data-design-sides] img[src^="blob:still"]')).toBeNull();
+    expect(document.querySelector('[data-design-sides] svg.w-full')!.textContent).toContain('SAM');
+  });
+
+  it('makes the item from its size when there is no preview model, and is flat only without WebGL', async () => {
+    seedKeyring(false);
+    render(<Line {...HOST} linked="93" />);
+    await settle();
+    expect(screen.getByRole('img', { name: 'The plain piece, as it will be made' }).querySelector('img')?.getAttribute('src')).toMatch(/^blob:still\//);
+    expect(screen.getByRole('radiogroup', { name: 'How to show the design' })).toBeTruthy();
+    cleanup();
+    device.webgl = false;
+    device.stills = 0;
+    forgetStills();
+    render(<Line {...HOST} linked="93" />);
+    await settle();
+    expect(screen.queryByRole('radiogroup', { name: 'How to show the design' })).toBeNull();
+    expect(document.querySelector('[data-design-sides] svg')!.textContent).toContain('SAM');
+    expect(device.stills).toBe(0);
+  });
+});
+
 describe('the product’s panel', () => {
   it('shows a flat piece made, its areas named on its top', async () => {
     render(<Product {...HOST} linked={String(IDS.coasters)} />);
@@ -204,16 +258,18 @@ describe('the 3D previews under axe', () => {
   it('are clean, English and Arabic, light and dark', async () => {
     const failures: string[] = [];
     let swept = 0;
-    const states: [string, () => ReactNode, (() => void)?][] = [
+    const states: [string, () => ReactNode, (() => void)?, (() => void)?][] = [
       ['base', () => base(IDS.coasters)],
       ['base waiting', () => base(IDS.sign)],
       ['line 3D', () => <Line {...HOST} linked="91" />, seedLine],
       ['line kit', () => <Line {...HOST} linked="92" />, seedNook],
+      ['line printed, 3D', () => <Line {...HOST} linked="93" />, () => seedKeyring(false)],
+      ['line printed, flat', () => <Line {...HOST} linked="93" />, () => seedKeyring(false), () => fireEvent.click(screen.getByRole('radio', { name: /Flat|مسطّح/ }))],
       ['product', () => <Product {...HOST} linked={String(IDS.coasters)} />],
     ];
     for (const locale of ['en-US', 'ar-EG'] as const)
       for (const theme of ['light', 'dark'] as const)
-        for (const [label, draw, before] of states) {
+        for (const [label, draw, before, then] of states) {
           resetWorld();
           seedShop();
           forgetStills();
@@ -224,6 +280,10 @@ describe('the 3D previews under axe', () => {
           before?.();
           render(<main>{draw()}</main>);
           await settle();
+          if (then !== undefined) {
+            then();
+            await settle();
+          }
           const results = await axe.run(document.body, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] }, rules: { 'color-contrast': { enabled: false } } });
           if (results.passes.length === 0) failures.push(`${locale} · ${theme} · ${label}: axe examined nothing`);
           for (const violation of results.violations.filter((one) => one.impact === 'critical' || one.impact === 'serious')) failures.push(`${locale} · ${theme} · ${label}: ${violation.id} — ${violation.nodes.map((node) => node.html.slice(0, 160)).join(' | ')}`);
@@ -231,6 +291,6 @@ describe('the 3D previews under axe', () => {
           cleanup();
         }
     expect(failures, failures.join('\n')).toEqual([]);
-    expect(swept).toBe(20);
+    expect(swept).toBe(28);
   }, 120_000);
 });

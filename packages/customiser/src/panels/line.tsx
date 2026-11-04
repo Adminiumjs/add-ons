@@ -36,7 +36,7 @@ import { PANEL, SETUP, SHARED } from '../pages/strings/index.ts';
 import { catalogueFor, fileStem, fontBook, makeLaserFiles, pieceSheetFor, makePageProof, makePieceProof, makePrintFiles, picturesOf, sheetsFor, valuesOf, type Made, type MakeWords } from './make.ts';
 import { makePrintedFile, PrintedRefused, reliefOfFace } from './printed.ts';
 import type { PanelProps } from './product.tsx';
-import { KitViews, PieceViews } from './views.tsx';
+import { KitViews, PieceViews, PrintedViews } from './views.tsx';
 
 const t = wordsFor(SHARED, SETUP, PANEL);
 
@@ -292,6 +292,8 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
           <SharedContext.Provider value={shared}>
             {kind === 'kit' ? (
               <KitViews t={t} catalogue={catalogue} design={data} pictures={pictures} label={t('panel.line.drawn', '{design}, as it will be made', { design: designName })} />
+            ) : printed ? (
+              <PrintedViews t={t} catalogue={catalogue} design={data} pictures={pictures} label={t('panel.line.drawn', '{design}, as it will be made', { design: designName })} flat={<Drawing catalogue={catalogue} design={data} empty="hide" pictures={pictures} className="w-full" label={t('panel.line.drawn', '{design}, as it will be made', { design: designName })} />} />
             ) : kind === 'piece' ? (
               <PieceViews t={t} catalogue={catalogue} design={data} pictures={pictures} label={t('panel.line.drawn', '{design}, as it will be made', { design: designName })} flat={<Drawing catalogue={catalogue} design={data} empty="hide" pictures={pictures} className="w-full" label={t('panel.line.drawn', '{design}, as it will be made', { design: designName })} />} />
             ) : (
