@@ -1653,6 +1653,17 @@
   flex-direction: column;
   gap: 8px;
 }
+.cz-link-box {
+  display: block;
+  inline-size: 100%;
+  padding-block: 10px;
+  padding-inline: 12px;
+  border: 1px solid var(--cz-border-strong);
+  border-radius: 10px;
+  background: var(--cz-surface-2);
+  font-size: 12.5px;
+  text-align: start;
+}
 .cz-dialog-actions {
   display: flex;
   gap: 8px;

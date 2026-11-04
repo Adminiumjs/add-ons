@@ -11,6 +11,7 @@ import { describe, expect, it } from 'vitest';
 
 import { assetAddress, customiserApi, REFS, type ClientLike, type HeldSession, type Row } from './api.ts';
 import { designRefusal } from './refusal.ts';
+import { heldDesign } from './store.ts';
 
 interface Logged {
   client: string;
@@ -77,8 +78,9 @@ describe('the editor’s calls', () => {
     const saved = await api.create({ base_id: 3, ready_design_id: 11, values: { parts: { words: { text: 'Ada' } } } }, 'ada@example.com', { logo_file: 'up_1' });
     expect(log[0]).toEqual({ client: 'shop', call: 'create', args: [REFS.designs, { format: 1, base_id: 3, ready_design_id: 11, values: { parts: { words: { text: 'Ada' } } }, logo_file: 'up_1', email: 'ada@example.com' }] });
     expect(saved).toMatchObject({ id: 7, code: 'CZ00000000000007', state: 'draft', session: { token: 'sess-7', level: 'verified' }, files: { logo_file: 'up_1' } });
-    // The link's own code is never kept.
-    expect(JSON.stringify(saved)).not.toContain('LINK000000000007');
+    // The link's own code is held to show the customer, and never in what a browser keeps.
+    expect(saved.link).toBe('LINK000000000007');
+    expect(JSON.stringify(heldDesign(saved, 'ada@example.com'))).not.toContain('LINK000000000007');
     const none = await api.create({ base_id: 3, ready_design_id: null, values: { parts: {} } }, null);
     expect(log[1]!.args[1]).not.toHaveProperty('email');
     expect(none.ready_design_id).toBeNull();

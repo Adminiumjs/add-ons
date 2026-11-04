@@ -74,6 +74,14 @@ export interface CustomiserEditorProps {
   featurePrices?: Readonly<Record<string, string>>;
   /** A refusal the app's order got for this design (`designRefusal`): shown at its part. */
   refused?: Refusal | null;
+  /**
+   * Whether this Adminium mails a saved design's link to the address it was
+   * saved with. Off, "Save and come back" saves at once and shows the
+   * customer their link to keep, and asks for no address.
+   */
+  mailsLink?: boolean;
+  /** The address of the app's page that opens a saved design, for its link's code (default: this page, the code after `#`). */
+  linkUrl?: (token: string) => string;
   /** The customer's own address, where the app knows it: the save dialog starts with it. */
   email?: string | null;
   /** The label on the basket button ("Update the basket" when editing a line). */
@@ -82,7 +90,7 @@ export interface CustomiserEditorProps {
   preview?: boolean;
   onDesignChange?: (change: { design: DesignData; used: string[]; ok: boolean }) => void;
   onAddToBasket: (design: DesignForBasket) => void;
-  onSaved?: (design: SavedDesign, email: string) => void;
+  onSaved?: (design: SavedDesign, email: string | null) => void;
   /** Back to the product ("← Engraved walnut coasters"), and "Back to the shop" after saving. */
   onBack?: () => void;
   /** The print look's other ways in, and its full editor: the app's (or the full editor's) to open. */
@@ -336,7 +344,9 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
   /** Keep the design on the server: a new one, or the draft in place. */
   const keep = async (email: string | null): Promise<SavedDesign> => {
     const through = saved !== null && saved.session !== null && saved.state === 'draft' && (email === null || knownEmail === email);
-    const next = through ? await api.change(saved, values, keptFiles()) : await api.create(design, email, keptFiles());
+    const made = through ? await api.change(saved, values, keptFiles()) : await api.create(design, email, keptFiles());
+    // A change answers no link: the one the save answered, or the design was opened by, stays the design's.
+    const next = { ...made, link: made.link ?? (through ? saved.link : null) ?? null };
     setSaved(next);
     setUploads({});
     if (email !== null) setKnownEmail(email);
@@ -378,16 +388,22 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
     }
     setSaveState({ sentTo: null, failed: null, link: null });
     setOverlay('save');
+    if (props.mailsLink !== true) void submitSave(null);
   };
-  const submitSave = async (email: string): Promise<void> => {
+  const linkOf = (token: string | null | undefined): string => {
+    if (token === null || token === undefined) return '';
+    if (props.linkUrl !== undefined) return props.linkUrl(token);
+    return typeof location === 'undefined' ? `#${token}` : `${location.href.split('#')[0] ?? ''}#${token}`;
+  };
+  const submitSave = async (email: string | null): Promise<void> => {
     setBusy(true);
     try {
       const next = ordered ? await api.create(design, email, keptFiles()) : await keep(email);
       if (ordered) {
         setSaved(next);
-        setKnownEmail(email);
+        if (email !== null) setKnownEmail(email);
       }
-      setSaveState({ sentTo: email, failed: null, link: null });
+      setSaveState({ sentTo: email ?? '', failed: null, link: props.mailsLink === true ? null : linkOf(next.link) });
       props.onSaved?.(next, email);
     } catch (error) {
       setSaveState({ sentTo: null, failed: wordsFor(error), link: null });
@@ -430,11 +446,14 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
       {overlay === 'save' ? (
         <SaveDialog
           email={knownEmail ?? ''}
+          asks={props.mailsLink === true}
           sentTo={saveState.sentTo}
           link={saveState.link}
           busy={busy}
           failed={saveState.failed}
           onSubmit={(email) => void submitSave(email)}
+          onRetry={() => void submitSave(null)}
+          onCopied={() => toast(t('editor.saved.copied', 'Link copied.'))}
           onClose={() => setOverlay(null)}
           onBackToShop={props.onBack}
         />

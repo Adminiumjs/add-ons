@@ -88,6 +88,12 @@ export interface SavedDesign extends DesignData {
   session: HeldSession | null;
   /** The design's file columns that hold a file (a logo, a photo), by column. */
   files: Readonly<Record<string, string>>;
+  /**
+   * The code of the design's own link, as the save answered it once or the
+   * link it was opened by: held in memory to show the customer their link,
+   * never kept anywhere.
+   */
+  link?: string | null;
 }
 
 /** The catalogue rows the editor reads, by table. */
@@ -214,19 +220,20 @@ export function customiserApi(clients: CustomiserClients): CustomiserApi {
     async create(design, email, files) {
       const out = await shop.createWithRank<Row>(REFS.designs, { ...written(design, files), ...(email === null ? {} : { email }) });
       const session = out.link?.session === null || out.link?.session === undefined ? null : { token: out.link.session, level: 'verified' as const, expiresAt: out.link.expiresAt ?? Date.now() + 86_400_000 };
-      return { ...designFromRow({ ...out.data, base_id: design.base_id, ready_design_id: design.ready_design_id, values: design.values }, session), updatedAt: new Date().toISOString(), files: { ...(files ?? {}) } };
+      return { ...designFromRow({ ...out.data, base_id: design.base_id, ready_design_id: design.ready_design_id, values: design.values }, session), updatedAt: new Date().toISOString(), files: { ...(files ?? {}) }, link: out.link?.token ?? null };
     },
     async change(design, values, files) {
       if (design.session === null) throw new Error('This design is not open on this device.');
       const client = holding(design.session);
       const row = await client.update<Row>(REFS.own, String(design.id), { ...written({ ...design, values }, files) });
-      return { ...designFromRow({ ...row, values: row['values'] ?? values }, client.session() ?? design.session), code: design.code };
+      return { ...designFromRow({ ...row, values: row['values'] ?? values }, client.session() ?? design.session), code: design.code, link: design.link ?? null };
     },
     async openLink(token) {
       const client = link();
       const opened = await client.openShared(token);
       if (opened !== 'opened') return opened;
-      return (await readOwn(client)) ?? 'unknown';
+      const read = await readOwn(client);
+      return read === null ? 'unknown' : { ...read, link: token };
     },
     async reopen(session) {
       if (session.expiresAt <= Date.now()) return null;

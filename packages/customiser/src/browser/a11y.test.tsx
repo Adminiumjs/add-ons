@@ -39,7 +39,7 @@ const click = async (name: RegExp): Promise<void> => {
   });
   await settle();
 };
-const maker = (base: (stub: Stub) => number) => (stub: Stub, locale: string) => <CustomiserEditor api={stub.api} base={base(stub)} product={{ name: 'Engraved walnut coasters', price: '£34.00', unit: 'set of 4' }} shop="Birch Row" locale={locale} price={{ total: '£40.00', note: 'Order by 17:00 and we post it by Tue 11 Aug' }} quantity={{ value: 1, breaks: [{ qty: 4, label: '−8%' }], onChange: () => {} }} featurePrices={{ logo: '+£1.50 a piece' }} onAddToBasket={() => {}} onBack={() => {}} />;
+const maker = (base: (stub: Stub) => number) => (stub: Stub, locale: string) => <CustomiserEditor api={stub.api} base={base(stub)} product={{ name: 'Engraved walnut coasters', price: '£34.00', unit: 'set of 4' }} shop="Birch Row" locale={locale} price={{ total: '£40.00', note: 'Order by 17:00 and we post it by Tue 11 Aug' }} quantity={{ value: 1, breaks: [{ qty: 4, label: '−8%' }], onChange: () => {} }} featurePrices={{ logo: '+£1.50 a piece' }} mailsLink onAddToBasket={() => {}} onBack={() => {}} />;
 const print = (base: (stub: Stub) => number) => (stub: Stub, locale: string) => <CustomiserEditor api={stub.api} base={base(stub)} product={{ name: 'Business cards' }} shop="Marlow Press" sides={2} locale={locale} price={{ total: '£87.55', each: '£0.18', ready: 'Mon 10 Aug' }} onAddToBasket={() => {}} onStartBlank={() => {}} onSendOwnFile={() => {}} onFullEditor={() => {}} />;
 const ring = async (): Promise<void> => click(/Ring/);
 const typeInto = (selector: string, text: string): void => {
@@ -91,6 +91,19 @@ const STATES: State[] = [
       typeInto('#cz-save-email', 'iris@example.com');
       await act(async () => {
         fireEvent.click(document.querySelector('.cz-dialog .cz-primary')!);
+      });
+      await settle();
+    },
+  },
+  {
+    label: 'print · saved, the link to keep',
+    app: 'printing',
+    draw: print((s) => s.ids.cards),
+    after: async () => {
+      await click(/Harbour/);
+      typeInto('#cz-f-name', 'Nell Fairweather');
+      await act(async () => {
+        fireEvent.click(document.querySelector('.cz-save, .cz-quote-bar .cz-icon-button')!);
       });
       await settle();
     },

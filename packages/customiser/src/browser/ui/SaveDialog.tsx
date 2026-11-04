@@ -7,14 +7,20 @@
  * saves; the field starts empty unless this browser already sent a link to
  * the customer's own address. Once saved it says where the link went and
  * offers "Keep going" or "Back to the shop".
+ *
+ * Where Adminium cannot mail the link yet (`asks` off), nothing is asked: the
+ * design is saved at once and the dialog shows the customer their link to
+ * keep, with a button to copy it.
  */
-import { BookmarkCheck, Bookmark, CircleAlert } from 'lucide-react';
+import { BookmarkCheck, Bookmark, CircleAlert, Copy } from 'lucide-react';
 import { useState } from 'react';
 
 import { useShared } from './context.tsx';
 import { Dialog } from './Overlay.tsx';
 
 export interface SaveDialogProps {
+  /** Ask for the address the link is mailed to; off, the design is saved as the dialog opens. */
+  asks: boolean;
   email: string;
   /** Saved, and the link sent to this address. */
   sentTo: string | null;
@@ -23,13 +29,15 @@ export interface SaveDialogProps {
   busy: boolean;
   failed: string | null;
   onSubmit: (email: string) => void;
+  onRetry: () => void;
+  onCopied: () => void;
   onClose: () => void;
   onBackToShop?: (() => void) | undefined;
 }
 
 const LOOKS_LIKE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export function SaveDialog({ email: start, sentTo, link, busy, failed, onSubmit, onClose, onBackToShop }: SaveDialogProps) {
+export function SaveDialog({ asks, email: start, sentTo, link, busy, failed, onSubmit, onRetry, onCopied, onClose, onBackToShop }: SaveDialogProps) {
   const { t, look, shop } = useShared();
   const [email, setEmail] = useState(start);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +54,33 @@ export function SaveDialog({ email: start, sentTo, link, busy, failed, onSubmit,
   const shown = error ?? failed;
   return (
     <Dialog labelledBy="cz-save-title" onClose={onClose}>
-      {sentTo === null ? (
+      {sentTo === null && !asks ? (
+        <div className="cz-dialog-body">
+          <h2 id="cz-save-title" className="cz-h2">
+            {t('editor.save', 'Save and come back')}
+          </h2>
+          {failed === null ? (
+            <p role="status" className="cz-sub">
+              {t('editor.save.saving', 'Saving your design…')}
+            </p>
+          ) : (
+            <>
+              <span role="alert" className="cz-error">
+                <CircleAlert aria-hidden="true" />
+                {failed}
+              </span>
+              <div className="cz-dialog-actions">
+                <button type="button" className="cz-primary cz-grow" aria-busy={busy} onClick={onRetry}>
+                  {t('editor.retry', 'Try again')}
+                </button>
+                <button type="button" className="cz-button" onClick={onClose}>
+                  {t('editor.cancel', 'Cancel')}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      ) : sentTo === null ? (
         <form
           className="cz-dialog-body"
           noValidate
@@ -94,12 +128,25 @@ export function SaveDialog({ email: start, sentTo, link, busy, failed, onSubmit,
           {link === null ? (
             <p className="cz-sub">{t('editor.saved.sentTo', 'Sent to {email}. The link opens your designs and nobody else’s.', { email: sentTo })}</p>
           ) : (
-            <p className="cz-sub">
-              {t('editor.saved.linkHere', 'It opens this design and nobody else’s:')} <span className="cz-mono cz-wrap">{link}</span>
-            </p>
+            <>
+              <p className="cz-sub">{t('editor.saved.linkHere', 'It opens this design and nobody else’s. Anyone with the link can open it, so keep it to yourself.')}</p>
+              <span className="cz-mono cz-wrap cz-link-box">{link}</span>
+              <button
+                type="button"
+                className="cz-button"
+                onClick={() => {
+                  void navigator.clipboard?.writeText(link).then(onCopied, () => {});
+                }}
+              >
+                <Copy aria-hidden="true" />
+                {t('editor.saved.copy', 'Copy the link')}
+              </button>
+            </>
           )}
           <div className="cz-dialog-actions">
-            <button type="button" className="cz-primary cz-grow" onClick={onClose}>
+            {/* The dialog opened before the design was saved: the focus moves to what it now offers. */}
+            {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
+            <button type="button" className="cz-primary cz-grow" autoFocus onClick={onClose}>
               {t('editor.saved.keepGoing', 'Keep going')}
             </button>
             {onBackToShop === undefined ? null : (

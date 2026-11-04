@@ -88,7 +88,7 @@ export function stubApi(app: 'maker' | 'printing', options: { fonts?: Row[] } = 
       const id = String(++next);
       const row = { id, app, code: code('CZ'), format: 1, base_id: design.base_id, ready_design_id: design.ready_design_id, values: structuredClone(design.values), state: 'draft', updated_at: new Date().toISOString(), email, link: code('LK'), ...files };
       designs.set(id, row);
-      return { ...designFromRow(row, session(id)), files: { ...files } };
+      return { ...designFromRow(row, session(id)), files: { ...files }, link: row.link };
     },
     async change(design: SavedDesign, values, files = {}) {
       calls.push({ call: 'change', args: [design.id, structuredClone(values), files] });
@@ -97,13 +97,13 @@ export function stubApi(app: 'maker' | 'printing', options: { fonts?: Row[] } = 
       if (row === undefined || design.session === null) throw Object.assign(new Error('not found'), { code: 'PUBLIC_REF_NOT_FOUND' });
       if (row['state'] !== 'draft') throw Object.assign(new Error('refused'), { code: 'PUBLIC_WRITE_REFUSED' });
       Object.assign(row, { values: structuredClone(values), updated_at: new Date().toISOString(), ...files });
-      return { ...designFromRow(row, design.session), code: design.code };
+      return { ...designFromRow(row, design.session), code: design.code, link: design.link ?? null };
     },
     async openLink(token) {
       calls.push({ call: 'openLink', args: [token] });
       const row = [...designs.values()].find((one) => one.link === token);
       if (row === undefined) return 'unknown';
-      return designFromRow(row, session(String(row['id'])));
+      return { ...designFromRow(row, session(String(row['id']))), link: token };
     },
     async reopen(held) {
       calls.push({ call: 'reopen', args: [held.token] });
