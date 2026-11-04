@@ -4,33 +4,120 @@
   "key": "holiday-calendars",
   "name": "Holiday Calendars",
   "version": "1.0.15",
-  "publisher": {
-    "id": "adminium",
-    "name": "Adminium",
-    "url": "https://adminium.dev"
-  },
+  "publisher": { "id": "adminium", "name": "Adminium", "url": "https://adminium.dev" },
   "license": "AGPL-3.0-only",
   "description": {
     "key": "addon.holiday-calendars.line",
     "fallback": "Checked public-holiday day-sets for a handful of countries, carried inside the add-on. Choose a country and a year, look at the days, and import them."
   },
   "categories": ["data"],
-  "compatibility": {
-    "minAdminiumVersion": "0.3.1",
-    "requires": []
+  "compatibility": { "minAdminiumVersion": "0.3.28", "requires": [] },
+  "requiredSchema": {
+    "prefixed": true,
+    "tables": [
+      {
+        "ref": "holidays",
+        "label": {
+          "en-US": "Public holiday",
+          "de-DE": "Feiertag",
+          "fr-FR": "Jour férié",
+          "cs-CZ": "Státní svátek",
+          "da-DK": "Helligdag",
+          "ar-EG": "عطلة رسمية",
+          "zh-CN": "公共假日",
+          "zh-TW": "國定假日"
+        },
+        "labelPlural": {
+          "en-US": "Public holidays",
+          "de-DE": "Feiertage",
+          "fr-FR": "Jours fériés",
+          "cs-CZ": "Státní svátky",
+          "da-DK": "Helligdage",
+          "ar-EG": "العطلات الرسمية",
+          "zh-CN": "公共假日",
+          "zh-TW": "國定假日"
+        },
+        "keyField": "name",
+        "columns": [
+          { "ref": "id", "type": "int", "role": "pk" },
+          {
+            "ref": "country",
+            "type": "text",
+            "maxLength": 2,
+            "label": {
+              "en-US": "Country",
+              "de-DE": "Land",
+              "fr-FR": "Pays",
+              "cs-CZ": "Země",
+              "da-DK": "Land",
+              "ar-EG": "الدولة",
+              "zh-CN": "国家",
+              "zh-TW": "國家"
+            }
+          },
+          {
+            "ref": "region",
+            "type": "text",
+            "maxLength": 40,
+            "nullable": true,
+            "label": {
+              "en-US": "Area",
+              "de-DE": "Gebiet",
+              "fr-FR": "Région",
+              "cs-CZ": "Oblast",
+              "da-DK": "Område",
+              "ar-EG": "المنطقة",
+              "zh-CN": "地区",
+              "zh-TW": "地區"
+            }
+          },
+          {
+            "ref": "day",
+            "type": "date",
+            "label": {
+              "en-US": "Date",
+              "de-DE": "Datum",
+              "fr-FR": "Date",
+              "cs-CZ": "Datum",
+              "da-DK": "Dato",
+              "ar-EG": "التاريخ",
+              "zh-CN": "日期",
+              "zh-TW": "日期"
+            }
+          },
+          {
+            "ref": "name",
+            "type": "text",
+            "maxLength": 120,
+            "label": {
+              "en-US": "Name",
+              "de-DE": "Name",
+              "fr-FR": "Nom",
+              "cs-CZ": "Název",
+              "da-DK": "Navn",
+              "ar-EG": "الاسم",
+              "zh-CN": "名称",
+              "zh-TW": "名稱"
+            }
+          }
+        ],
+        "appGrants": { "actions": ["read"] }
+      }
+    ]
   },
+  "seeds": [{"table": "holidays", "file": "seeds/holidays.json"}],
   "addOn": {
     "attaches": [
       { "app": "hr", "range": "^0.1.0" },
       { "app": "clinic", "range": "^0.2.0 || ^0.3.0" },
       { "app": "clients", "range": "^0.2.0" },
-      { "app": "ordering", "range": "^0.2.0 || ^0.3.0" }
+      { "app": "ordering", "range": "^0.2.0 || ^0.3.0" },
+      { "app": "maker", "range": "^0.2.0" },
+      { "app": "printing", "range": "^0.2.0" }
     ],
     "provides": [],
     "consumes": [],
-    "slots": [
-      { "slot": "settings.add-on.panel", "client": "dist/client.js", "order": 10 }
-    ],
+    "slots": [{"slot": "settings.add-on.panel", "client": "dist/client.js", "order": 10}],
     "events": [],
     "connect": { "kind": "none" },
     "scopes": [],
@@ -41,10 +128,7 @@
       "key": "days",
       "type": "json",
       "default": [],
-      "label": {
-        "key": "addon.holiday-calendars.setting.days",
-        "fallback": "Days the business is closed"
-      }
+      "label": { "key": "addon.holiday-calendars.setting.days", "fallback": "Days the business is closed" }
     }
   ]
 }

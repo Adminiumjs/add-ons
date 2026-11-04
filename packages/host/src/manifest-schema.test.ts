@@ -246,6 +246,14 @@ interface HostApp {
    * and prove nothing at all.
    */
   readsDataFrom: readonly string[];
+  /**
+   * THE ADD-ON KEYS THIS APP'S OWN TABLES LINK INTO (`rules.addOnLink`), the
+   * THIRD way an add-on is used in an app. The app's rows name the add-on's
+   * rows and Adminium reads them across: Maker Shop's closures link to
+   * Holiday Calendars' holidays, and "Add as a closure" is the app's own
+   * action. Read from the app's manifest, which is where that link is declared.
+   */
+  linksInto?: readonly string[];
 }
 
 /**
@@ -487,7 +495,9 @@ function hostApps(): HostApp[] {
       kind?: string;
       key?: string;
       version?: string;
-      requiredSchema?: { tables?: { ref: string }[] };
+      requiredSchema?: {
+        tables?: { ref: string; columns?: { rules?: { addOnLink?: { addOn?: string } } }[] }[];
+      };
     };
     if (doc.kind !== 'app' || typeof doc.key !== 'string') continue;
     out.push({
@@ -497,6 +507,13 @@ function hostApps(): HostApp[] {
       tables: (doc.requiredSchema?.tables ?? []).map((table) => table.ref),
       hostedSlots: constArrayIn(join(root, 'src', 'add-ons', 'slots.ts'), 'HOSTED_SLOTS'),
       readsDataFrom: dataReadersIn(root),
+      linksInto: [
+        ...new Set(
+          (doc.requiredSchema?.tables ?? []).flatMap((table) =>
+            (table.columns ?? []).flatMap((column) => column.rules?.addOnLink?.addOn ?? []),
+          ),
+        ),
+      ].sort(),
     });
   }
   return out;
@@ -548,11 +565,22 @@ function installs(): { pkg: string; app: string; range: string; manifest: unknow
 const FORWARD_ATTACHES: readonly { pkg: string; app: string; range: string; why: string }[] = [
   {
     pkg: 'holiday-calendars',
-    app: 'ordering',
+    app: 'maker',
     range: '^0.2.0',
-    why: 'online ordering 0.2.0, the line with a closures table, is released after this add-on; 0.1.x has none',
+    why: 'Maker Shop 0.2.0, the line whose closures link to its holidays, is released after this add-on; 0.1.x has none',
+  },
+  {
+    pkg: 'holiday-calendars',
+    app: 'printing',
+    range: '^0.2.0',
+    why: 'Print Shop 0.2.0, the line whose closures link to its holidays, is released after this add-on; 0.1.x has none',
   },
 ];
+
+/** Whether a claim is a named forward one the checked-out app has not reached yet. */
+function forwardExcused(pkg: string, app: string, range: string, version: string | null): boolean {
+  return version !== null && !satisfiesSemverRange(version, range) && attachRangeIssue(pkg, app, range, version) === null;
+}
 
 /** Why the installer would refuse this app's version for this range, or `null` when it would not (or the claim is a named forward one). */
 function attachRangeIssue(pkg: string, app: string, range: string, version: string | null): string | null {
@@ -577,9 +605,12 @@ function attachRangeIssue(pkg: string, app: string, range: string, version: stri
  * runs with no host checked out.
  */
 const NEXT_LINES: readonly { app: string; lines: readonly string[] }[] = [
-  { app: 'maker', lines: ['0.1.0', '0.2.0', '0.2.9'] },
-  { app: 'printing', lines: ['0.1.0', '0.2.0', '0.2.9'] },
+  { app: 'maker', lines: ['0.2.0', '0.2.9'] },
+  { app: 'printing', lines: ['0.2.0', '0.2.9'] },
 ];
+
+/** Add-ons a shop may already have attached on the 0.1 line: they keep taking it too. */
+const ATTACHED_ON_THE_OLD_LINE: readonly string[] = ['barcode-labels', 'design-studio', 'import-canva', 'personalizer', 'shipping-dhl'];
 
 describe('an add-on attached to an app never blocks its next line', () => {
   const rows = manifests().flatMap(({ pkg, manifest }) => {
@@ -590,13 +621,14 @@ describe('an add-on attached to an app never blocks its next line', () => {
     });
   });
 
-  it.each(rows)('$pkg takes every line of $app it must ($range)', ({ range, lines }) => {
-    for (const version of lines) expect(satisfiesSemverRange(version, range), version).toBe(true);
+  it.each(rows)('$pkg takes every line of $app it must ($range)', ({ pkg, range, lines }) => {
+    const must = ATTACHED_ON_THE_OLD_LINE.includes(pkg) ? ['0.1.0', ...lines] : lines;
+    for (const version of must) expect(satisfiesSemverRange(version, range), version).toBe(true);
   });
 
   it('finds the add-ons that attach to those apps', () => {
     const pkgs = new Set(rows.map((row) => row.pkg));
-    for (const pkg of ['barcode-labels', 'design-studio', 'import-canva', 'personalizer', 'shipping-dhl']) {
+    for (const pkg of [...ATTACHED_ON_THE_OLD_LINE, 'holiday-calendars']) {
       expect(pkgs.has(pkg), pkg).toBe(true);
     }
   });
@@ -644,15 +676,19 @@ describe.skipIf(HOSTS.length === 0)(
      * forward claim is excused only below its line, and never above it.
      */
     it('holds each app’s version to the add-on’s range', () => {
-      expect(attachRangeIssue('holiday-calendars', 'ordering', '^9.0.0', '0.1.3')).toMatch(/0\.1\.3 is outside holiday-calendars's range \^9\.0\.0/);
-      expect(attachRangeIssue('holiday-calendars', 'ordering', '^0.2.0', '0.2.0')).toBeNull();
-      expect(attachRangeIssue('holiday-calendars', 'ordering', '^0.2.0', '0.2.7')).toBeNull();
+      expect(attachRangeIssue('holiday-calendars', 'maker', '^9.0.0', '0.1.3')).toMatch(/0\.1\.3 is outside holiday-calendars's range \^9\.0\.0/);
+      expect(attachRangeIssue('holiday-calendars', 'maker', '^0.2.0', '0.2.0')).toBeNull();
+      expect(attachRangeIssue('holiday-calendars', 'maker', '^0.2.0', '0.2.7')).toBeNull();
       // Below its line, the named forward claim is excused …
-      expect(attachRangeIssue('holiday-calendars', 'ordering', '^0.2.0', '0.1.3')).toBeNull();
+      expect(attachRangeIssue('holiday-calendars', 'maker', '^0.2.0', '0.1.3')).toBeNull();
+      expect(forwardExcused('holiday-calendars', 'maker', '^0.2.0', '0.1.3')).toBe(true);
       // … above it, never; and nothing else is excused at all.
-      expect(attachRangeIssue('holiday-calendars', 'ordering', '^0.2.0', '0.3.0')).not.toBeNull();
+      expect(attachRangeIssue('holiday-calendars', 'maker', '^0.2.0', '0.3.0')).not.toBeNull();
       expect(attachRangeIssue('holiday-calendars', 'clinic', '^0.2.0', '0.1.9')).not.toBeNull();
-      expect(attachRangeIssue('holiday-calendars', 'ordering', '^0.2.0', null)).not.toBeNull();
+      expect(attachRangeIssue('holiday-calendars', 'maker', '^0.2.0', null)).not.toBeNull();
+      expect(forwardExcused('holiday-calendars', 'maker', '^0.2.0', '0.2.1')).toBe(false);
+      expect(forwardExcused('holiday-calendars', 'maker', '^0.2.0', '0.3.0')).toBe(false);
+      expect(forwardExcused('holiday-calendars', 'clinic', '^0.2.0', '0.1.9')).toBe(false);
     });
 
     it('attaches to no app this repo cannot check it against', () => {
@@ -791,7 +827,7 @@ function emptyAttachClaims(
   for (const { pkg, manifest } of docs) {
     const doc = manifest as {
       key?: string;
-      addOn?: { attaches?: { app?: string; table?: string }[]; slots?: { slot: string }[] };
+      addOn?: { attaches?: { app?: string; range?: string; table?: string }[]; slots?: { slot: string }[] };
     };
     /*
      * The add-on's OWN key, not its package directory name. They agree for every
@@ -804,6 +840,13 @@ function emptyAttachClaims(
       if (target.app === '*') continue;
       const host = byKey.get(target.app ?? '');
       if (host === undefined) continue;
+      /*
+       * A NAMED FORWARD CLAIM ON A LINE THE CHECKED-OUT APP HAS NOT REACHED is
+       * a claim about a version that is not here, so what this version draws
+       * says nothing about it. It is judged when the app's next line is checked
+       * out (point the host root at that branch), like the range itself.
+       */
+      if (target.range !== undefined && forwardExcused(pkg, target.app ?? '', target.range, host.version ?? null)) continue;
       /*
        * AN APP WITH NO ADD-ON SEAM IS NOT AN EMPTY CLAIM, and reading it as one
        * would be this gate's own founding mistake in reverse. The question here
@@ -852,6 +895,8 @@ function emptyAttachClaims(
        * assert rather than assume.
        */
       if (host.readsDataFrom.includes(key)) continue;
+      // The third way: the app's own rows link to the add-on's (see `HostApp.linksInto`).
+      if ((host.linksInto ?? []).includes(key)) continue;
       const shared = fills.filter((slot) => hosted.includes(slot));
       out.push(
         `${pkg} attaches to "${target.app}" (${host.name}), which mounts ` +
@@ -1052,6 +1097,53 @@ describe.skipIf(HOSTS.length === 0)('an attach claim resolves to a surface someb
       },
     };
     expect(emptyAttachClaims([pack], [pretend])).toHaveLength(1);
+  });
+
+  /**
+   * THE LINK CLAUSE AND THE FORWARD CLAUSE, PROVED from both ends against one
+   * pack that fills only its own settings form: an app whose table links into
+   * the pack uses it; an app that links into another add-on does not; and a
+   * named forward claim is skipped only while the checked-out app is below it.
+   */
+  it.each([
+    { name: 'links into it', linksInto: ['fixture-pack'], reports: 0 },
+    { name: 'links into another add-on', linksInto: ['some-other-add-on'], reports: 1 },
+  ])('a data pack an app $name', ({ linksInto, reports }) => {
+    const pretend: HostApp = {
+      name: 'a made-up host',
+      key: 'fixture-app',
+      tables: [],
+      hostedSlots: ['order.dispatch.panel', 'settings.add-on.panel'],
+      readsDataFrom: [],
+      linksInto,
+    };
+    const pack = {
+      pkg: 'fixture-pack',
+      manifest: {
+        key: 'fixture-pack',
+        addOn: { attaches: [{ app: 'fixture-app', range: '^1.0.0' }], slots: [{ slot: 'settings.add-on.panel' }] },
+      },
+    };
+    expect(emptyAttachClaims([pack], [pretend])).toHaveLength(reports);
+  });
+
+  it.each([
+    { version: '0.1.0', reports: 0 },
+    { version: '0.2.0', reports: 1 },
+  ])('judges the forward holiday claim on maker only from its line: maker $version', ({ version, reports }) => {
+    const maker: HostApp = {
+      name: 'maker-shop',
+      key: 'maker',
+      version,
+      tables: ['closures'],
+      hostedSlots: ['order.dispatch.panel', 'settings.add-on.panel'],
+      readsDataFrom: [],
+      linksInto: [],
+    };
+    const holidays = manifests().filter((doc) => doc.pkg === 'holiday-calendars');
+    expect(holidays).toHaveLength(1);
+    const found = emptyAttachClaims(holidays, [maker]);
+    expect(found).toHaveLength(reports);
   });
 
   /**

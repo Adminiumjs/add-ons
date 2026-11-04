@@ -122,9 +122,11 @@ describe("the manifest", () => {
   it("asks for no scope, because it reads and writes no host record", () => {
     // A scope is a request for power. This add-on stores its days under its own
     // settings key and hands them over as data; the honest length of the list
-    // is zero, and it also has no `requiredSchema` — it brings no table.
+    // is zero. Its one table is its own (`holidays`, prefixed), which an app
+    // links to and reads; it never reaches into a table of the app's.
     expect(manifest.addOn.scopes).toEqual([]);
-    expect(manifest).not.toHaveProperty("requiredSchema");
+    expect(manifest.requiredSchema.prefixed).toBe(true);
+    expect(manifest.requiredSchema.tables.map((table) => table.ref)).toEqual(["holidays"]);
   });
 
   it("needs nothing to connect to, so it ships no demo transport", () => {
@@ -194,13 +196,21 @@ describe("the manifest", () => {
    * clinic's desk does — only a row closes the kitchen's pickup slots. Its
    * range is `^0.2.0`, the line that first has a closures table: an install on
    * the 0.1.x line, which has none, is refused rather than claimed.
+   *
+   * THE FIFTH AND SIXTH LINK TO ITS ROWS. Maker Shop (`maker`) and Print Shop
+   * (`printing`) keep a `closures` table their working-day dates read, and
+   * "Add as a closure" is their own action: a closure row that links to one of
+   * this add-on's `holidays` rows. Both ranges are `^0.2.0`, the line that
+   * first has a closures table, for the same reason as ordering's.
    */
-  it("attaches to the four apps that use its days", () => {
+  it("attaches to the six apps that use its days", () => {
     expect(manifest.addOn.attaches).toEqual([
       { app: "hr", range: "^0.1.0" },
       { app: "clinic", range: "^0.2.0 || ^0.3.0" },
       { app: "clients", range: "^0.2.0" },
       { app: "ordering", range: "^0.2.0 || ^0.3.0" },
+      { app: "maker", range: "^0.2.0" },
+      { app: "printing", range: "^0.2.0" },
     ]);
     // The portal reads the days through the public setting, so it must stay public.
     expect(manifest.addOn.publicSettings).toContain(STORAGE_KEY);

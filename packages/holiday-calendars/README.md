@@ -35,6 +35,20 @@ ordering's 0.2.0 line reaches its `main`, so that test names it as a forward cla
 while the checked-out ordering is below 0.2.0; pointed at ordering's 0.2.0 branch, it is held like
 the others.
 
+**Maker Shop (`maker`) and Print Shop (`printing`) link to its rows**, on `^0.2.0`, the line that
+first has a closures table. From this release the add-on keeps its days as rows too, in a table of
+its own: `holidays` (made as `holiday_calendars_holidays`), with the country, the area for a regional
+set, the date and the name as the state writes it. It starts with every reviewed set over every
+reviewed year (`seeds/holidays.json`, written from `src/daysets.ts` by `npm run seed` and held to it
+by `src/holidays-table.test.ts`). An app's role may read it and nothing more (`appGrants`). The app's
+own `closures` table links to a holiday row (`rules.addOnLink` into `holidays`), and "Add as a
+closure" is the app's action, not this add-on's: the add-on never writes an app's table. Both
+ranges are forward claims until those lines reach the apps' `main`. The table needs Adminium 0.3.28.
+
+A seed file holds at most 200 rows. Two reviewed years are 134 rows; a third would be 201, so adding
+a year means dropping a past one from the seed (the panel and the read surface are not limited). Starting rows are written into an empty table only, so an install that
+already has the table keeps its rows when a later release adds a year.
+
 people-ops and clinic-desk vendor the add-on host and read the days at their own mount sites, so the
 attach-surface gate sees them consume this add-on. **The Client Portal has no add-on seam and
 imports no add-on code at all**: it reads this add-on's public setting `days` from the config

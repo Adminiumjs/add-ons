@@ -62,6 +62,12 @@ export interface PackShapeFixtures {
   root: string;
   /** The package's own real build, so `dist/` exists before packing. */
   buildForReal: () => void;
+  /**
+   * Data files the manifest names and the installer reads from the package,
+   * such as a seed's `seeds/<file>.json`. They must ship, and nothing else
+   * beside them may.
+   */
+  dataFiles?: readonly string[];
 }
 
 /** The five entries every add-on allow-lists, and the only ones. */
@@ -173,8 +179,14 @@ export function describePackShape(fixtures: PackShapeFixtures): void {
       }
     });
 
+    it('ships every data file its manifest names', () => {
+      for (const file of fixtures.dataFiles ?? []) {
+        expect(paths, `${file} is missing from the tarball`).toContain(file);
+      }
+    });
+
     it('ships NOTHING else — no sources, no tests, no configs', () => {
-      const allowed = new Set<string>([...REQUIRED_ROOT_FILES, ...distFiles]);
+      const allowed = new Set<string>([...REQUIRED_ROOT_FILES, ...distFiles, ...(fixtures.dataFiles ?? [])]);
       const extra = paths.filter((p) => !allowed.has(p));
       expect(extra, `unexpected files in the tarball: ${extra.join(', ')}`).toEqual([]);
     });

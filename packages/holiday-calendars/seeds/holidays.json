@@ -1,0 +1,806 @@
+[
+  {
+    "country": "US",
+    "region": null,
+    "day": "2026-01-01",
+    "name": "New Year's Day"
+  },
+  {
+    "country": "US",
+    "region": null,
+    "day": "2026-01-19",
+    "name": "Birthday of Martin Luther King, Jr."
+  },
+  {
+    "country": "US",
+    "region": null,
+    "day": "2026-02-16",
+    "name": "Washington's Birthday"
+  },
+  {
+    "country": "US",
+    "region": null,
+    "day": "2026-05-25",
+    "name": "Memorial Day"
+  },
+  {
+    "country": "US",
+    "region": null,
+    "day": "2026-06-19",
+    "name": "Juneteenth National Independence Day"
+  },
+  {
+    "country": "US",
+    "region": null,
+    "day": "2026-07-04",
+    "name": "Independence Day"
+  },
+  {
+    "country": "US",
+    "region": null,
+    "day": "2026-09-07",
+    "name": "Labor Day"
+  },
+  {
+    "country": "US",
+    "region": null,
+    "day": "2026-10-12",
+    "name": "Columbus Day"
+  },
+  {
+    "country": "US",
+    "region": null,
+    "day": "2026-11-11",
+    "name": "Veterans Day"
+  },
+  {
+    "country": "US",
+    "region": null,
+    "day": "2026-11-26",
+    "name": "Thanksgiving Day"
+  },
+  {
+    "country": "US",
+    "region": null,
+    "day": "2026-12-25",
+    "name": "Christmas Day"
+  },
+  {
+    "country": "US",
+    "region": null,
+    "day": "2027-01-01",
+    "name": "New Year's Day"
+  },
+  {
+    "country": "US",
+    "region": null,
+    "day": "2027-01-18",
+    "name": "Birthday of Martin Luther King, Jr."
+  },
+  {
+    "country": "US",
+    "region": null,
+    "day": "2027-02-15",
+    "name": "Washington's Birthday"
+  },
+  {
+    "country": "US",
+    "region": null,
+    "day": "2027-05-31",
+    "name": "Memorial Day"
+  },
+  {
+    "country": "US",
+    "region": null,
+    "day": "2027-06-19",
+    "name": "Juneteenth National Independence Day"
+  },
+  {
+    "country": "US",
+    "region": null,
+    "day": "2027-07-04",
+    "name": "Independence Day"
+  },
+  {
+    "country": "US",
+    "region": null,
+    "day": "2027-09-06",
+    "name": "Labor Day"
+  },
+  {
+    "country": "US",
+    "region": null,
+    "day": "2027-10-11",
+    "name": "Columbus Day"
+  },
+  {
+    "country": "US",
+    "region": null,
+    "day": "2027-11-11",
+    "name": "Veterans Day"
+  },
+  {
+    "country": "US",
+    "region": null,
+    "day": "2027-11-25",
+    "name": "Thanksgiving Day"
+  },
+  {
+    "country": "US",
+    "region": null,
+    "day": "2027-12-25",
+    "name": "Christmas Day"
+  },
+  {
+    "country": "DE",
+    "region": null,
+    "day": "2026-01-01",
+    "name": "Neujahr"
+  },
+  {
+    "country": "DE",
+    "region": null,
+    "day": "2026-04-03",
+    "name": "Karfreitag"
+  },
+  {
+    "country": "DE",
+    "region": null,
+    "day": "2026-04-06",
+    "name": "Ostermontag"
+  },
+  {
+    "country": "DE",
+    "region": null,
+    "day": "2026-05-01",
+    "name": "Tag der Arbeit"
+  },
+  {
+    "country": "DE",
+    "region": null,
+    "day": "2026-05-14",
+    "name": "Christi Himmelfahrt"
+  },
+  {
+    "country": "DE",
+    "region": null,
+    "day": "2026-05-25",
+    "name": "Pfingstmontag"
+  },
+  {
+    "country": "DE",
+    "region": null,
+    "day": "2026-10-03",
+    "name": "Tag der Deutschen Einheit"
+  },
+  {
+    "country": "DE",
+    "region": null,
+    "day": "2026-12-25",
+    "name": "Erster Weihnachtstag"
+  },
+  {
+    "country": "DE",
+    "region": null,
+    "day": "2026-12-26",
+    "name": "Zweiter Weihnachtstag"
+  },
+  {
+    "country": "DE",
+    "region": null,
+    "day": "2027-01-01",
+    "name": "Neujahr"
+  },
+  {
+    "country": "DE",
+    "region": null,
+    "day": "2027-03-26",
+    "name": "Karfreitag"
+  },
+  {
+    "country": "DE",
+    "region": null,
+    "day": "2027-03-29",
+    "name": "Ostermontag"
+  },
+  {
+    "country": "DE",
+    "region": null,
+    "day": "2027-05-01",
+    "name": "Tag der Arbeit"
+  },
+  {
+    "country": "DE",
+    "region": null,
+    "day": "2027-05-06",
+    "name": "Christi Himmelfahrt"
+  },
+  {
+    "country": "DE",
+    "region": null,
+    "day": "2027-05-17",
+    "name": "Pfingstmontag"
+  },
+  {
+    "country": "DE",
+    "region": null,
+    "day": "2027-10-03",
+    "name": "Tag der Deutschen Einheit"
+  },
+  {
+    "country": "DE",
+    "region": null,
+    "day": "2027-12-25",
+    "name": "Erster Weihnachtstag"
+  },
+  {
+    "country": "DE",
+    "region": null,
+    "day": "2027-12-26",
+    "name": "Zweiter Weihnachtstag"
+  },
+  {
+    "country": "FR",
+    "region": null,
+    "day": "2026-01-01",
+    "name": "Jour de l'An"
+  },
+  {
+    "country": "FR",
+    "region": null,
+    "day": "2026-04-06",
+    "name": "Lundi de Pâques"
+  },
+  {
+    "country": "FR",
+    "region": null,
+    "day": "2026-05-01",
+    "name": "Fête du Travail"
+  },
+  {
+    "country": "FR",
+    "region": null,
+    "day": "2026-05-08",
+    "name": "Victoire 1945"
+  },
+  {
+    "country": "FR",
+    "region": null,
+    "day": "2026-05-14",
+    "name": "Ascension"
+  },
+  {
+    "country": "FR",
+    "region": null,
+    "day": "2026-05-25",
+    "name": "Lundi de Pentecôte"
+  },
+  {
+    "country": "FR",
+    "region": null,
+    "day": "2026-07-14",
+    "name": "Fête nationale"
+  },
+  {
+    "country": "FR",
+    "region": null,
+    "day": "2026-08-15",
+    "name": "Assomption"
+  },
+  {
+    "country": "FR",
+    "region": null,
+    "day": "2026-11-01",
+    "name": "Toussaint"
+  },
+  {
+    "country": "FR",
+    "region": null,
+    "day": "2026-11-11",
+    "name": "Armistice 1918"
+  },
+  {
+    "country": "FR",
+    "region": null,
+    "day": "2026-12-25",
+    "name": "Noël"
+  },
+  {
+    "country": "FR",
+    "region": null,
+    "day": "2027-01-01",
+    "name": "Jour de l'An"
+  },
+  {
+    "country": "FR",
+    "region": null,
+    "day": "2027-03-29",
+    "name": "Lundi de Pâques"
+  },
+  {
+    "country": "FR",
+    "region": null,
+    "day": "2027-05-01",
+    "name": "Fête du Travail"
+  },
+  {
+    "country": "FR",
+    "region": null,
+    "day": "2027-05-06",
+    "name": "Ascension"
+  },
+  {
+    "country": "FR",
+    "region": null,
+    "day": "2027-05-08",
+    "name": "Victoire 1945"
+  },
+  {
+    "country": "FR",
+    "region": null,
+    "day": "2027-05-17",
+    "name": "Lundi de Pentecôte"
+  },
+  {
+    "country": "FR",
+    "region": null,
+    "day": "2027-07-14",
+    "name": "Fête nationale"
+  },
+  {
+    "country": "FR",
+    "region": null,
+    "day": "2027-08-15",
+    "name": "Assomption"
+  },
+  {
+    "country": "FR",
+    "region": null,
+    "day": "2027-11-01",
+    "name": "Toussaint"
+  },
+  {
+    "country": "FR",
+    "region": null,
+    "day": "2027-11-11",
+    "name": "Armistice 1918"
+  },
+  {
+    "country": "FR",
+    "region": null,
+    "day": "2027-12-25",
+    "name": "Noël"
+  },
+  {
+    "country": "FR",
+    "region": "alsace-moselle",
+    "day": "2026-01-01",
+    "name": "Jour de l'An"
+  },
+  {
+    "country": "FR",
+    "region": "alsace-moselle",
+    "day": "2026-04-03",
+    "name": "Vendredi saint"
+  },
+  {
+    "country": "FR",
+    "region": "alsace-moselle",
+    "day": "2026-04-06",
+    "name": "Lundi de Pâques"
+  },
+  {
+    "country": "FR",
+    "region": "alsace-moselle",
+    "day": "2026-05-01",
+    "name": "Fête du Travail"
+  },
+  {
+    "country": "FR",
+    "region": "alsace-moselle",
+    "day": "2026-05-08",
+    "name": "Victoire 1945"
+  },
+  {
+    "country": "FR",
+    "region": "alsace-moselle",
+    "day": "2026-05-14",
+    "name": "Ascension"
+  },
+  {
+    "country": "FR",
+    "region": "alsace-moselle",
+    "day": "2026-05-25",
+    "name": "Lundi de Pentecôte"
+  },
+  {
+    "country": "FR",
+    "region": "alsace-moselle",
+    "day": "2026-07-14",
+    "name": "Fête nationale"
+  },
+  {
+    "country": "FR",
+    "region": "alsace-moselle",
+    "day": "2026-08-15",
+    "name": "Assomption"
+  },
+  {
+    "country": "FR",
+    "region": "alsace-moselle",
+    "day": "2026-11-01",
+    "name": "Toussaint"
+  },
+  {
+    "country": "FR",
+    "region": "alsace-moselle",
+    "day": "2026-11-11",
+    "name": "Armistice 1918"
+  },
+  {
+    "country": "FR",
+    "region": "alsace-moselle",
+    "day": "2026-12-25",
+    "name": "Noël"
+  },
+  {
+    "country": "FR",
+    "region": "alsace-moselle",
+    "day": "2026-12-26",
+    "name": "Saint Étienne"
+  },
+  {
+    "country": "FR",
+    "region": "alsace-moselle",
+    "day": "2027-01-01",
+    "name": "Jour de l'An"
+  },
+  {
+    "country": "FR",
+    "region": "alsace-moselle",
+    "day": "2027-03-26",
+    "name": "Vendredi saint"
+  },
+  {
+    "country": "FR",
+    "region": "alsace-moselle",
+    "day": "2027-03-29",
+    "name": "Lundi de Pâques"
+  },
+  {
+    "country": "FR",
+    "region": "alsace-moselle",
+    "day": "2027-05-01",
+    "name": "Fête du Travail"
+  },
+  {
+    "country": "FR",
+    "region": "alsace-moselle",
+    "day": "2027-05-06",
+    "name": "Ascension"
+  },
+  {
+    "country": "FR",
+    "region": "alsace-moselle",
+    "day": "2027-05-08",
+    "name": "Victoire 1945"
+  },
+  {
+    "country": "FR",
+    "region": "alsace-moselle",
+    "day": "2027-05-17",
+    "name": "Lundi de Pentecôte"
+  },
+  {
+    "country": "FR",
+    "region": "alsace-moselle",
+    "day": "2027-07-14",
+    "name": "Fête nationale"
+  },
+  {
+    "country": "FR",
+    "region": "alsace-moselle",
+    "day": "2027-08-15",
+    "name": "Assomption"
+  },
+  {
+    "country": "FR",
+    "region": "alsace-moselle",
+    "day": "2027-11-01",
+    "name": "Toussaint"
+  },
+  {
+    "country": "FR",
+    "region": "alsace-moselle",
+    "day": "2027-11-11",
+    "name": "Armistice 1918"
+  },
+  {
+    "country": "FR",
+    "region": "alsace-moselle",
+    "day": "2027-12-25",
+    "name": "Noël"
+  },
+  {
+    "country": "FR",
+    "region": "alsace-moselle",
+    "day": "2027-12-26",
+    "name": "Saint Étienne"
+  },
+  {
+    "country": "CZ",
+    "region": null,
+    "day": "2026-01-01",
+    "name": "Nový rok a Den obnovy samostatného českého státu"
+  },
+  {
+    "country": "CZ",
+    "region": null,
+    "day": "2026-04-03",
+    "name": "Velký pátek"
+  },
+  {
+    "country": "CZ",
+    "region": null,
+    "day": "2026-04-06",
+    "name": "Velikonoční pondělí"
+  },
+  {
+    "country": "CZ",
+    "region": null,
+    "day": "2026-05-01",
+    "name": "Svátek práce"
+  },
+  {
+    "country": "CZ",
+    "region": null,
+    "day": "2026-05-08",
+    "name": "Den vítězství"
+  },
+  {
+    "country": "CZ",
+    "region": null,
+    "day": "2026-07-05",
+    "name": "Den slovanských věrozvěstů Cyrila a Metoděje"
+  },
+  {
+    "country": "CZ",
+    "region": null,
+    "day": "2026-07-06",
+    "name": "Den upálení mistra Jana Husa"
+  },
+  {
+    "country": "CZ",
+    "region": null,
+    "day": "2026-09-28",
+    "name": "Den české státnosti"
+  },
+  {
+    "country": "CZ",
+    "region": null,
+    "day": "2026-10-28",
+    "name": "Den vzniku samostatného československého státu"
+  },
+  {
+    "country": "CZ",
+    "region": null,
+    "day": "2026-11-17",
+    "name": "Den boje za svobodu a demokracii"
+  },
+  {
+    "country": "CZ",
+    "region": null,
+    "day": "2026-12-24",
+    "name": "Štědrý den"
+  },
+  {
+    "country": "CZ",
+    "region": null,
+    "day": "2026-12-25",
+    "name": "První svátek vánoční"
+  },
+  {
+    "country": "CZ",
+    "region": null,
+    "day": "2026-12-26",
+    "name": "Druhý svátek vánoční"
+  },
+  {
+    "country": "CZ",
+    "region": null,
+    "day": "2027-01-01",
+    "name": "Nový rok a Den obnovy samostatného českého státu"
+  },
+  {
+    "country": "CZ",
+    "region": null,
+    "day": "2027-03-26",
+    "name": "Velký pátek"
+  },
+  {
+    "country": "CZ",
+    "region": null,
+    "day": "2027-03-29",
+    "name": "Velikonoční pondělí"
+  },
+  {
+    "country": "CZ",
+    "region": null,
+    "day": "2027-05-01",
+    "name": "Svátek práce"
+  },
+  {
+    "country": "CZ",
+    "region": null,
+    "day": "2027-05-08",
+    "name": "Den vítězství"
+  },
+  {
+    "country": "CZ",
+    "region": null,
+    "day": "2027-07-05",
+    "name": "Den slovanských věrozvěstů Cyrila a Metoděje"
+  },
+  {
+    "country": "CZ",
+    "region": null,
+    "day": "2027-07-06",
+    "name": "Den upálení mistra Jana Husa"
+  },
+  {
+    "country": "CZ",
+    "region": null,
+    "day": "2027-09-28",
+    "name": "Den české státnosti"
+  },
+  {
+    "country": "CZ",
+    "region": null,
+    "day": "2027-10-28",
+    "name": "Den vzniku samostatného československého státu"
+  },
+  {
+    "country": "CZ",
+    "region": null,
+    "day": "2027-11-17",
+    "name": "Den boje za svobodu a demokracii"
+  },
+  {
+    "country": "CZ",
+    "region": null,
+    "day": "2027-12-24",
+    "name": "Štědrý den"
+  },
+  {
+    "country": "CZ",
+    "region": null,
+    "day": "2027-12-25",
+    "name": "První svátek vánoční"
+  },
+  {
+    "country": "CZ",
+    "region": null,
+    "day": "2027-12-26",
+    "name": "Druhý svátek vánoční"
+  },
+  {
+    "country": "DK",
+    "region": null,
+    "day": "2026-01-01",
+    "name": "Nytårsdag"
+  },
+  {
+    "country": "DK",
+    "region": null,
+    "day": "2026-04-02",
+    "name": "Skærtorsdag"
+  },
+  {
+    "country": "DK",
+    "region": null,
+    "day": "2026-04-03",
+    "name": "Langfredag"
+  },
+  {
+    "country": "DK",
+    "region": null,
+    "day": "2026-04-05",
+    "name": "Påskedag"
+  },
+  {
+    "country": "DK",
+    "region": null,
+    "day": "2026-04-06",
+    "name": "Anden påskedag"
+  },
+  {
+    "country": "DK",
+    "region": null,
+    "day": "2026-05-14",
+    "name": "Kristi himmelfartsdag"
+  },
+  {
+    "country": "DK",
+    "region": null,
+    "day": "2026-05-24",
+    "name": "Pinsedag"
+  },
+  {
+    "country": "DK",
+    "region": null,
+    "day": "2026-05-25",
+    "name": "Anden pinsedag"
+  },
+  {
+    "country": "DK",
+    "region": null,
+    "day": "2026-12-25",
+    "name": "Juledag"
+  },
+  {
+    "country": "DK",
+    "region": null,
+    "day": "2026-12-26",
+    "name": "Anden juledag"
+  },
+  {
+    "country": "DK",
+    "region": null,
+    "day": "2027-01-01",
+    "name": "Nytårsdag"
+  },
+  {
+    "country": "DK",
+    "region": null,
+    "day": "2027-03-25",
+    "name": "Skærtorsdag"
+  },
+  {
+    "country": "DK",
+    "region": null,
+    "day": "2027-03-26",
+    "name": "Langfredag"
+  },
+  {
+    "country": "DK",
+    "region": null,
+    "day": "2027-03-28",
+    "name": "Påskedag"
+  },
+  {
+    "country": "DK",
+    "region": null,
+    "day": "2027-03-29",
+    "name": "Anden påskedag"
+  },
+  {
+    "country": "DK",
+    "region": null,
+    "day": "2027-05-06",
+    "name": "Kristi himmelfartsdag"
+  },
+  {
+    "country": "DK",
+    "region": null,
+    "day": "2027-05-16",
+    "name": "Pinsedag"
+  },
+  {
+    "country": "DK",
+    "region": null,
+    "day": "2027-05-17",
+    "name": "Anden pinsedag"
+  },
+  {
+    "country": "DK",
+    "region": null,
+    "day": "2027-12-25",
+    "name": "Juledag"
+  },
+  {
+    "country": "DK",
+    "region": null,
+    "day": "2027-12-26",
+    "name": "Anden juledag"
+  }
+]
