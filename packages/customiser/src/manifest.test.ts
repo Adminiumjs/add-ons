@@ -221,10 +221,8 @@ describe('the tables', () => {
     expect(pointing).toEqual(['design_versions.design_id']);
   });
 
-  it('mark as personal where to reach a customer and the files they sent, and keep what they chose for the order’s code to read', () => {
-    for (const ref of ['email', 'logo_file', 'photo_file']) expect(columnOf('designs', ref).rules?.personal, `designs.${ref}`).toBe(true);
-    // What the customer chose is read by a guest who found their order again, by the design's code: Adminium shows no personal column there. Apps keep it as a copy of their customer's details.
-    expect(columnOf('designs', 'values').rules?.personal).toBeUndefined();
+  it('mark as personal every column that holds what a customer wrote, sent or where to reach them', () => {
+    for (const ref of ['values', 'email', 'logo_file', 'photo_file']) expect(columnOf('designs', ref).rules?.personal, `designs.${ref}`).toBe(true);
     expect(columnOf('design_versions', 'values').rules?.personal).toBe(true);
   });
 
@@ -292,6 +290,9 @@ describe('the public entries', () => {
     // One design, by the code its order line holds, for a guest the shop signed in: never a list, never the code shown back.
     expect(reads[0]).toMatchObject({ methods: ['GET'], appColumn: 'app', level: 'lookup', unlockBy: { header: true, column: 'code', self: true, length: 16 } });
     expect(reads[0]!.select).toEqual([...DESIGN_BY_CODE]);
+    // The code read still returns what the customer chose, though it is personal: a 16-character self-code read through the shop's sign-in shows personal columns.
+    expect(reads[0]!.select).toContain('values');
+    expect(columnOf('designs', 'values').rules?.personal).toBe(true);
     for (const ref of ['code', 'link_token', 'email', 'logo_file', 'photo_file']) expect(reads[0]!.select, ref).not.toContain(ref);
     expect(reads[0]!.files).toBeUndefined();
   });

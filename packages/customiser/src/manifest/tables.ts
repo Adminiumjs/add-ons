@@ -339,14 +339,14 @@ export function tables(): Table[] {
         link('base_id', 'bases', W.base),
         /*
          * What the customer chose: the words, colours and choices the shop makes
-         * the thing from. Not marked personal, though it may hold a name or a
-         * number: the shop's staff make the order from it, and a guest who found
-         * their order again reads it by the design's code, a reading Adminium
-         * never gives a personal column. A shop app finds, exports and erases it
-         * with its customer as a copy of their details (`people.copies`, `holds:
-         * "details"`). The address, the logo and the photo stay personal.
+         * the thing from. Personal: it may hold a name, a number, an address.
+         * A guest who found their order again still reads it by the design's
+         * code: a 16-character code read through the shop's own sign-in is
+         * proof enough for Adminium to show personal columns. A shop app finds,
+         * exports and erases it with its customer as a copy of their details
+         * (`people.copies`, `holds: "details"`).
          */
-        col('values', 'json', w('What the customer chose', 'Was der Kunde gewählt hat', 'Ce que le client a choisi', 'Hvad kunden valgte', 'Co zákazník zvolil', 'ما اختاره العميل', '顾客的选择', '顧客的選擇'), { nullable: true }),
+        col('values', 'json', w('What the customer chose', 'Was der Kunde gewählt hat', 'Ce que le client a choisi', 'Hvad kunden valgte', 'Co zákazník zvolil', 'ما اختاره العميل', '顾客的选择', '顧客的選擇'), { nullable: true, rules: { personal: true } }),
         // A customer's own files, uploaded from the editor: a logo as a drawing (SVG, kept only as cleaned), a PDF or a picture; a photo as a picture.
         col('logo_file', 'text', w('The customer’s logo', 'Logo des Kunden', 'Logo du client', 'Kundens logo', 'Logo zákazníka', 'شعار العميل', '顾客的标志', '顧客的標誌'), { maxLength: 64, nullable: true, rules: { personal: true, file: { accept: ['svg', 'pdf', 'png', 'jpeg'], maxBytes: CUSTOMER_FILE_BYTES, upload: { kinds: ['svg', 'pdf', 'png', 'jpg'], maxBytes: CUSTOMER_FILE_BYTES } } } }),
         col('photo_file', 'text', w('The customer’s photo', 'Foto des Kunden', 'Photo du client', 'Kundens foto', 'Fotografie zákazníka', 'صورة العميل', '顾客的照片', '顧客的照片'), { maxLength: 64, nullable: true, rules: { personal: true, file: { accept: ['png', 'jpeg'], maxBytes: CUSTOMER_FILE_BYTES, upload: { kinds: ['png', 'jpg'], maxBytes: CUSTOMER_FILE_BYTES } } } }),
