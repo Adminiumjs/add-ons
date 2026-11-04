@@ -14,8 +14,8 @@
  *   colours, priced features, fonts) through the app's key, every visitor;
  * - a new design, saved through the app's key behind the human check: the
  *   reply is the design's code and its own link, once;
- * - a saved design changed in place, through its own link with the session the
- *   save (or the e-mailed link) opened;
+ * - a saved design changed in place, or deleted, through its own link with the
+ *   session the save (or the e-mailed link) opened;
  * - an ordered design read by its code, with the session the app's order
  *   lookup holds on the same client, the code in a header.
  *
@@ -56,6 +56,7 @@ export interface ClientLike {
   list: <T = Row>(ref: string, options?: { where?: unknown; limit?: number; offset?: number; code?: string; signal?: AbortSignal }) => Promise<{ data: T[] }>;
   createWithRank: <T = Row>(ref: string, values: Row) => Promise<{ data: T; link: { key: string; token: string; session: string | null; expiresAt: number | null } | null }>;
   update: <T = Row>(ref: string, id: string, values: Row) => Promise<T>;
+  remove?: (ref: string, id: string) => Promise<unknown>;
   openShared: (token: string) => Promise<'opened' | 'unknown' | 'closed'>;
   adoptSession: (session: { token: string; expiresAt: number; level?: 'lookup' | 'verified' }) => void;
   session: () => HeldSession | null;
@@ -123,6 +124,12 @@ export interface CustomiserApi {
   create: (design: DesignData, email: string | null, files?: Readonly<Record<string, string>>) => Promise<SavedDesign>;
   /** Change a saved draft in place, through its own link. */
   change: (design: SavedDesign, values: DesignValues, files?: Readonly<Record<string, string>>) => Promise<SavedDesign>;
+  /**
+   * Delete a saved draft for good, through its own link: its logo and photo
+   * go with it, and the link stops opening anything. Refused (as gone) once
+   * the design is ordered.
+   */
+  remove: (design: SavedDesign) => Promise<void>;
   /** Open a design by the code of its own link (the e-mailed link's fragment). */
   openLink: (token: string) => Promise<SavedDesign | 'unknown' | 'closed'>;
   /** Read a design again with a session this browser kept; null when the session no longer opens it. */
@@ -260,6 +267,12 @@ export function customiserApi(clients: CustomiserClients): CustomiserApi {
       const client = holding(design.session);
       const row = await client.update<Row>(REFS.own, String(design.id), { ...written({ ...design, values }, files) });
       return { ...designFromRow({ ...row, values: row['values'] ?? values }, client.session() ?? design.session), code: design.code, link: design.link ?? null };
+    },
+    async remove(design) {
+      if (design.session === null) throw new Error('This design is not open on this device.');
+      const client = holding(design.session);
+      if (client.remove === undefined) throw new Error('This shop cannot delete a design yet.');
+      await client.remove(REFS.own, String(design.id));
     },
     async openLink(token) {
       const client = link();

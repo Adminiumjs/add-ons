@@ -10,9 +10,10 @@
  *   codes with the lookup's session (`codes`).
  *
  * Each row: the design drawn flat, its words, the product and the design's
- * name, when it last changed, "Open", "Order it", and a bin. The bin takes
- * the design off this browser's list (with Undo); a design is deleted from
- * the shop's records 90 days after its last change unless it is ordered.
+ * name, when it last changed, "Open", "Order it", and a bin. The bin asks
+ * first, then deletes the design for good through its own link, its logo and
+ * photo with it. Only a draft this browser holds a session on has a bin: an
+ * ordered design is the order's, and the link no longer deletes it.
  */
 import { FolderHeart, PenLine, ShoppingBasket, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -29,9 +30,8 @@ export interface YourDesignsProps {
   api: CustomiserApi;
   /** The designs this browser holds, as the app kept them (`heldDesign`). */
   held?: readonly HeldDesign[];
-  /** Take one off the browser's list (the bin), and put it back (Undo). */
+  /** A design this browser held was deleted: the app lets go of its session. */
   onForget?: (held: HeldDesign) => void;
-  onRestore?: (held: HeldDesign) => void;
   /** The codes the app's order lookup found on the order's lines: read with the lookup's session. */
   codes?: readonly string[];
   locale?: string;
@@ -59,11 +59,12 @@ export function YourDesigns(props: YourDesignsProps) {
   );
 }
 
-function List({ api, held, codes, onOpen, onOrder, onChoose, onForget, onRestore }: YourDesignsProps) {
+function List({ api, held, codes, onOpen, onOrder, onChoose, onForget }: YourDesignsProps) {
   const { t, locale, look } = useShared();
   const [items, setItems] = useState<Item[] | null>(null);
   const [catalogues, setCatalogues] = useState<Record<string, Catalogue | null>>({});
   const [asking, setAsking] = useState<Item | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const byCode = (codes ?? []).length > 0;
   useEffect(() => {
@@ -86,19 +87,38 @@ function List({ api, held, codes, onOpen, onOrder, onChoose, onForget, onRestore
     };
   }, [api, byCode, (codes ?? []).join(','), (held ?? []).map((one) => String(one.id)).join(',')]);
 
-  const toast = (text: string, undo?: () => void): void => {
+  const toast = (text: string, kind: Toast['kind'] = 'info'): void => {
     const id = Date.now() + Math.random();
-    setToasts((all) => [...all, { id, text, kind: 'info', ...(undo === undefined ? {} : { undo }) }]);
-    setTimeout(() => setToasts((all) => all.filter((one) => one.id !== id)), undo === undefined ? 3400 : 6000);
+    setToasts((all) => [...all, { id, text, kind }]);
+    setTimeout(() => setToasts((all) => all.filter((one) => one.id !== id)), 3400);
   };
-  const remove = (item: Item): void => {
+  const nameOf = (item: Item): string => wordsIn(catalogues[String(item.design.base_id)] ?? null, item.design) || t('editor.designs.noWords', 'No words yet');
+  /**
+   * The delete is real: the design goes from the shop's records, its link
+   * stops opening it, and nothing brings it back, so there is no Undo.
+   */
+  const remove = async (item: Item): Promise<void> => {
+    if (deleting) return;
+    setDeleting(true);
+    try {
+      await api.remove(item.design);
+    } catch (error) {
+      setDeleting(false);
+      setAsking(null);
+      const code = typeof error === 'object' && error !== null ? (error as { code?: unknown }).code : undefined;
+      // Gone already, or ordered since (an ordered design answers as gone): it is no longer this list's to delete.
+      if (code === 'PUBLIC_REF_NOT_FOUND' || code === 'PUBLIC_CLAIM_NOT_FOUND') {
+        toast(t('editor.designs.deleteGone', 'This design is with an order now, so it stays.'), 'warn');
+        return;
+      }
+      toast(t('editor.designs.deleteFailed', 'That couldn’t be deleted. Try again.'), 'warn');
+      return;
+    }
+    setDeleting(false);
     setAsking(null);
     if (item.remembered !== null) onForget?.(item.remembered);
     setItems((all) => (all ?? []).filter((one) => one !== item));
-    toast(t('editor.designs.deleted', 'Taken off your designs.'), () => {
-      if (item.remembered !== null) onRestore?.(item.remembered);
-      setItems((all) => [item, ...(all ?? [])]);
-    });
+    toast(look === 'print' ? t('editor.designs.deletedPrint', '{name} is deleted.', { name: nameOf(item) }) : t('editor.designs.deleted', 'Design deleted.'), look === 'print' ? 'ok' : 'info');
     setTimeout(() => document.getElementById('cz-designs-title')?.focus(), 30);
   };
   const email = items?.find((one) => one.remembered?.email !== null && one.remembered?.email !== undefined)?.remembered?.email ?? null;
@@ -171,7 +191,7 @@ function List({ api, held, codes, onOpen, onOrder, onChoose, onForget, onRestore
                     <ShoppingBasket aria-hidden="true" />
                     {t('editor.designs.order', 'Order it')}
                   </button>
-                  {item.remembered === null || onForget === undefined ? null : (
+                  {item.design.state !== 'draft' || item.design.session === null ? null : (
                     <button type="button" className="cz-icon-button" aria-label={t('editor.designs.deleteAria', 'Delete {name}', { name: words })} onClick={() => setAsking(item)}>
                       <Trash2 aria-hidden="true" />
                     </button>
@@ -185,20 +205,36 @@ function List({ api, held, codes, onOpen, onOrder, onChoose, onForget, onRestore
       {asking === null ? null : (
         <Dialog labelledBy="cz-del-title" describedBy="cz-del-body" alert onClose={() => setAsking(null)}>
           <div className="cz-dialog-body">
+            {look === 'print' ? (
+              <span className="cz-tile cz-tile-danger">
+                <Trash2 aria-hidden="true" />
+              </span>
+            ) : null}
             <h2 id="cz-del-title" className="cz-h2">
-              {t('editor.designs.deleteTitle', 'Delete “{name}”?', { name: wordsIn(catalogues[String(asking.design.base_id)] ?? null, asking.design) || t('editor.designs.noWords', 'No words yet') })}
+              {t('editor.designs.deleteTitle', 'Delete “{name}”?', { name: nameOf(asking) })}
             </h2>
             <p id="cz-del-body" className="cz-sub">
-              {t('editor.designs.deleteBody', 'It goes from your designs on this device. A design nobody orders is deleted 90 days after its last change, with any logo you uploaded for it. Orders you’ve already placed keep their copy.')}
+              {look === 'print' ? t('editor.designs.deleteBodyPrint', 'It goes from your designs and its link stops working. Orders you’ve placed keep their own copy.') : t('editor.designs.deleteBody', 'It goes for good, along with any logo you uploaded for it. Orders you’ve already placed keep their copy.')}
             </p>
-            <div className="cz-dialog-actions">
-              <button type="button" className="cz-danger cz-grow" onClick={() => remove(asking)}>
-                {t('editor.designs.deleteYes', 'Delete it')}
-              </button>
-              <button type="button" className="cz-button cz-grow" onClick={() => setAsking(null)}>
-                {t('editor.designs.keep', 'Keep it')}
-              </button>
-            </div>
+            {look === 'print' ? (
+              <div className="cz-dialog-actions cz-dialog-actions-end">
+                <button type="button" className="cz-button" onClick={() => setAsking(null)}>
+                  {t('editor.designs.keep', 'Keep it')}
+                </button>
+                <button type="button" className="cz-danger" aria-busy={deleting} aria-disabled={deleting} onClick={() => void remove(asking)}>
+                  {t('editor.designs.deleteYesPrint', 'Delete')}
+                </button>
+              </div>
+            ) : (
+              <div className="cz-dialog-actions">
+                <button type="button" className="cz-danger cz-grow" aria-busy={deleting} aria-disabled={deleting} onClick={() => void remove(asking)}>
+                  {t('editor.designs.deleteYes', 'Delete it')}
+                </button>
+                <button type="button" className="cz-button cz-grow" onClick={() => setAsking(null)}>
+                  {t('editor.designs.keep', 'Keep it')}
+                </button>
+              </div>
+            )}
           </div>
         </Dialog>
       )}

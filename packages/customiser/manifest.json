@@ -4241,7 +4241,8 @@
       "key": "customiser-link",
       "methods": [
         "GET",
-        "PATCH"
+        "PATCH",
+        "DELETE"
       ],
       "select": [
         "id",

@@ -15,7 +15,7 @@ import { sampleTables, type Tables } from '../../testing/samples.ts';
 import { designFromRow, type CatalogueRows, type CustomiserApi, type DesignData, type HeldSession, type Row, type SavedDesign } from '../api.ts';
 
 export interface StubCall {
-  call: 'catalogue' | 'create' | 'change' | 'openLink' | 'reopen' | 'byCodes' | 'upload' | 'file';
+  call: 'catalogue' | 'create' | 'change' | 'remove' | 'openLink' | 'reopen' | 'byCodes' | 'upload' | 'file';
   args: unknown[];
 }
 
@@ -108,6 +108,14 @@ export function stubApi(app: 'maker' | 'printing', options: { fonts?: Row[]; set
       if (row['state'] !== 'draft') throw Object.assign(new Error('refused'), { code: 'PUBLIC_WRITE_REFUSED' });
       Object.assign(row, { values: structuredClone(values), updated_at: new Date().toISOString(), ...files });
       return { ...designFromRow(row, design.session), code: design.code, link: design.link ?? null };
+    },
+    async remove(design: SavedDesign) {
+      calls.push({ call: 'remove', args: [design.id] });
+      failing();
+      const row = designs.get(String(design.id));
+      // An ordered design answers as one that is not there, as the server's own link does.
+      if (row === undefined || design.session === null || row['state'] !== 'draft') throw Object.assign(new Error('not found'), { code: 'PUBLIC_REF_NOT_FOUND' });
+      designs.delete(String(design.id));
     },
     async openLink(token) {
       calls.push({ call: 'openLink', args: [token] });

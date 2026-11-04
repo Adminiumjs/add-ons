@@ -101,7 +101,7 @@ function Dev() {
       <div className="dev-out">{log}</div>
       <div className={query.get('frame') === 'phone' ? 'dev-frame phone' : 'dev-frame'}>
         {view === 'designs' ? (
-          <YourDesigns api={api} locale={lang} look={shop} shop={shop === 'print' ? 'Marlow Press' : 'Birch Row'} codes={[...codes, ...(query.get('codes') ?? '').split(',').filter((one) => one !== '')]} held={held} onForget={(one) => setHeld(held.filter((other) => other !== one))} onRestore={(one) => setHeld([one, ...held])} onOpen={(design) => { setOpened(design); setView('editor'); }} onOrder={(design) => setLog(`order ${String(design.code)}`)} onChoose={() => setView('editor')} />
+          <YourDesigns api={api} locale={lang} look={shop} shop={shop === 'print' ? 'Marlow Press' : 'Birch Row'} codes={[...codes, ...(query.get('codes') ?? '').split(',').filter((one) => one !== '')]} held={held} onForget={(one) => setHeld(held.filter((other) => other !== one))} onOpen={(design) => { setOpened(design); setView('editor'); }} onOrder={(design) => setLog(`order ${String(design.code)}`)} onChoose={() => setView('editor')} />
         ) : view === 'ways' ? (
           <WaysIn api={api} base={base} product={product} locale={lang} onChoose={() => setView('editor')} onStartBlank={() => { setBlank(true); setView('editor'); }} onSendOwnFile={() => setLog('send your own file')} />
         ) : (

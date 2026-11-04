@@ -229,6 +229,26 @@ const STATES: State[] = [
       await settle();
     },
   },
+  {
+    label: 'your designs, print, asking to delete',
+    app: 'printing',
+    draw: (stub, locale, held) => <YourDesigns api={stub.api} held={held} look="print" shop="Marlow Press" locale={locale} onOpen={() => {}} onOrder={() => {}} onForget={() => {}} />,
+    after: async () => {
+      fireEvent.click(document.querySelector('.cz-design-row .cz-icon-button')!);
+      await settle();
+    },
+  },
+  {
+    label: 'your designs, one deleted',
+    app: 'maker',
+    draw: (stub, locale, held) => <YourDesigns api={stub.api} held={held} locale={locale} onOpen={() => {}} onOrder={() => {}} onForget={() => {}} />,
+    after: async () => {
+      fireEvent.click(document.querySelector('.cz-design-row .cz-icon-button')!);
+      await settle();
+      fireEvent.click(document.querySelector('[role="alertdialog"] .cz-danger')!);
+      await settle();
+    },
+  },
   { label: 'your designs, none', app: 'maker', draw: (stub, locale) => <YourDesigns api={stub.api} held={[]} locale={locale} onOpen={() => {}} onOrder={() => {}} onChoose={() => {}} /> },
   { label: 'your designs, by the order’s codes', app: 'printing', draw: (stub, locale) => <YourDesigns api={stub.api} look="print" codes={['MP4112C8G2S6E4WB']} locale={locale} onOpen={() => {}} onOrder={() => {}} /> },
   { label: 'the ways in', app: 'printing', draw: (stub, locale) => <WaysIn api={stub.api} base={stub.ids.cards} product="business cards" locale={locale} onChoose={() => {}} onStartBlank={() => {}} onSendOwnFile={() => {}} /> },

@@ -69,22 +69,75 @@ describe('Your designs', () => {
     expect(onOrder).toHaveBeenCalledTimes(1);
   });
 
-  it('asks before taking one off, then offers Undo', async () => {
+  it('asks first, then deletes the design for good through its own link, with no Undo', async () => {
     const stub = stubApi('maker');
     const held = [await savedOne(stub, 'Anna & Ben')];
+    const id = String(held[0]!.id);
     const onForget = vi.fn();
-    const onRestore = vi.fn();
-    await drawn(<YourDesigns api={stub.api} held={held} onOpen={() => {}} onOrder={() => {}} onForget={onForget} onRestore={onRestore} />);
+    await drawn(<YourDesigns api={stub.api} held={held} onOpen={() => {}} onOrder={() => {}} onForget={onForget} />);
     await settle();
     fireEvent.click(screen.getByRole('button', { name: 'Delete Anna & Ben · 5.9.2026' }));
     const ask = screen.getByRole('alertdialog', { name: 'Delete “Anna & Ben · 5.9.2026”?' });
-    expect(ask.textContent).toContain('Orders you’ve already placed keep their copy.');
-    fireEvent.click(within(ask).getByRole('button', { name: 'Delete it' }));
+    expect(ask.textContent).toContain('It goes for good, along with any logo you uploaded for it. Orders you’ve already placed keep their copy.');
+    // "Keep it" deletes nothing.
+    fireEvent.click(within(ask).getByRole('button', { name: 'Keep it' }));
+    expect(stub.calls.some((one) => one.call === 'remove')).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Anna & Ben · 5.9.2026' }));
+    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Delete it' }));
+    await settle();
+    expect(stub.calls.filter((one) => one.call === 'remove').map((one) => String(one.args[0]))).toEqual([id]);
+    expect(stub.designs.has(id)).toBe(false);
     expect(onForget).toHaveBeenCalledWith(held[0]);
     expect(screen.queryByRole('listitem')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
-    expect(onRestore).toHaveBeenCalledWith(held[0]);
+    expect(screen.getByText('Design deleted.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull();
+  });
+
+  it('keeps a design whose delete fails, and says so', async () => {
+    const stub = stubApi('maker');
+    const held = [await savedOne(stub, 'Anna & Ben')];
+    const onForget = vi.fn();
+    await drawn(<YourDesigns api={stub.api} held={held} onOpen={() => {}} onOrder={() => {}} onForget={onForget} />);
+    await settle();
+    stub.failNext(Object.assign(new Error('down'), { code: 'PUBLIC_UNAVAILABLE' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Anna & Ben · 5.9.2026' }));
+    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Delete it' }));
+    await settle();
+    expect(onForget).not.toHaveBeenCalled();
     expect(screen.getByRole('listitem')).toBeTruthy();
+    expect(screen.getByText('That couldn’t be deleted. Try again.')).toBeTruthy();
+  });
+
+  it('shows no bin on an ordered design, and says so when one was ordered since the list was read', async () => {
+    const stub = stubApi('maker');
+    const held = [await savedOne(stub, 'Anna & Ben'), await savedOne(stub, 'Cleo')];
+    stub.designs.get(String(held[0]!.id))!['state'] = 'ordered';
+    await drawn(<YourDesigns api={stub.api} held={held} onOpen={() => {}} onOrder={() => {}} onForget={() => {}} />);
+    await settle();
+    expect(screen.queryByRole('button', { name: /^Delete Anna & Ben/ })).toBeNull();
+    // Ordered in another tab after the list was read: the link answers as gone, and the design stays.
+    stub.designs.get(String(held[1]!.id))!['state'] = 'ordered';
+    fireEvent.click(screen.getByRole('button', { name: /^Delete Cleo/ }));
+    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Delete it' }));
+    await settle();
+    expect(screen.getAllByRole('listitem')).toHaveLength(2);
+    expect(screen.getByText('This design is with an order now, so it stays.')).toBeTruthy();
+  });
+
+  it('words the ask and the answer the print shop’s way', async () => {
+    const stub = stubApi('printing');
+    const design = await stub.api.create({ base_id: stub.ids.cards, ready_design_id: stub.ids.harbour, values: { parts: {} } }, 'nell@example.com');
+    const held = [heldDesign(design, 'nell@example.com')!];
+    await drawn(<YourDesigns api={stub.api} held={held} look="print" shop="Marlow Press" onOpen={() => {}} onOrder={() => {}} onForget={() => {}} />);
+    await settle();
+    fireEvent.click(screen.getByRole('button', { name: /^Delete / }));
+    const ask = screen.getByRole('alertdialog');
+    expect(ask.textContent).toContain('It goes from your designs and its link stops working. Orders you’ve placed keep their own copy.');
+    const buttons = within(ask).getAllByRole('button').map((one) => one.textContent);
+    expect(buttons).toEqual(['Keep it', 'Delete']);
+    fireEvent.click(within(ask).getByRole('button', { name: 'Delete' }));
+    await settle();
+    expect(screen.getByText(/ is deleted\.$/)).toBeTruthy();
   });
 
   it('shows the designs an order names after the lookup, and says how they were opened', async () => {

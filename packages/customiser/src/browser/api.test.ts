@@ -3,7 +3,8 @@
  *
  * A fake client records each call: the entries asked for and their filters,
  * the create's link and its session, the change made through the design's
- * own link (a client of the link key, holding that session), the code sent in
+ * own link (a client of the link key, holding that session) and the delete
+ * made the same way, the code sent in
  * the header, the upload's route, the font's asset address, and the refusal
  * an order gets for a design.
  */
@@ -36,6 +37,10 @@ function fakeClient(name: string, log: Logged[], rows: Record<string, Row[]> = {
     async update<T>(ref: string, id: string, values: Row) {
       log.push({ client: name, call: 'update', args: [ref, id, values, held?.token] });
       return { id: 7, ...values, state: 'draft' } as T;
+    },
+    async remove(ref: string, id: string) {
+      log.push({ client: name, call: 'remove', args: [ref, id, held?.token] });
+      return null;
     },
     async openShared(token: string) {
       log.push({ client: name, call: 'openShared', args: [token] });
@@ -98,6 +103,18 @@ describe('the editor’s calls', () => {
     expect(change.client).toBe('link1');
     expect(change.args).toEqual([REFS.own, '7', { format: 1, base_id: 3, ready_design_id: 11, values: { parts: { words: { text: 'Ada Lovelace' } } } }, 'sess-7']);
     await expect(api.change({ ...saved, session: null }, { parts: {} })).rejects.toThrow();
+  });
+
+  it('deletes a draft through its own link, on a fresh client of the link key holding its session', async () => {
+    const { api, log } = setUp();
+    const saved = await api.create({ base_id: 3, ready_design_id: 11, values: { parts: {} } }, 'ada@example.com');
+    await api.remove(saved);
+    const removed = log.find((one) => one.call === 'remove')!;
+    expect(removed.client).toBe('link1');
+    expect(removed.args).toEqual([REFS.own, '7', 'sess-7']);
+    // Without the design's own session, nothing is sent.
+    await expect(api.remove({ ...saved, session: null })).rejects.toThrow();
+    expect(log.filter((one) => one.call === 'remove')).toHaveLength(1);
   });
 
   it('opens a design by its e-mailed link, and reads it through that link', async () => {

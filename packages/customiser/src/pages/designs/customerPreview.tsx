@@ -55,6 +55,7 @@ export function previewApi(rows: CatalogueRows): CustomiserApi {
     fontUrl: async () => null,
     create: never,
     change: never,
+    remove: never,
     openLink: async () => 'unknown',
     reopen: async () => null,
     byCodes: async () => [],

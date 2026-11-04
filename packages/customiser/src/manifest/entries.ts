@@ -17,9 +17,10 @@
  * - That link, on the add-on's own link key, opens that one design and
  *   nothing else, from any device: it reads the design and changes it in
  *   place while it is a draft, so a customer who comes back keeps one design
- *   and one code. Once ordered, the design is the order's: it still reads,
- *   and never changes. The address it is mailed to is never changed through
- *   it.
+ *   and one code. The customer may also delete it there while it is a
+ *   draft, its logo and photo with it. Once ordered, the design is the
+ *   order's: it still reads, and never changes or goes. The address it is
+ *   mailed to is never changed through it.
  * - Whoever a shop signed in (a guest who found their order again) opens a
  *   design by its own code, the one the order's line holds: one design of
  *   that shop, never a list, and the code is never shown back. Nobody else
@@ -98,7 +99,8 @@ export function entries(): Entry[] {
     {
       table: 'designs',
       key: LINK_KEY,
-      methods: ['GET', 'PATCH'],
+      // Read, changed while a draft, and deleted by its holder while a draft (its files to the bin): an ordered design answers as gone.
+      methods: ['GET', 'PATCH', 'DELETE'],
       select: [...DESIGN_OPENED],
       writable: [...DESIGN_CHANGEABLE],
       uploads: [...DESIGN_UPLOADS],

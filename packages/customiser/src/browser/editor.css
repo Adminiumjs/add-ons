@@ -375,6 +375,10 @@
   background: var(--cz-accent-soft);
   color: var(--cz-accent);
 }
+.cz-tile-danger {
+  background: var(--cz-danger-soft);
+  color: var(--cz-danger);
+}
 .cz-tile-good {
   inline-size: 48px;
   block-size: 48px;
@@ -1731,6 +1735,10 @@
   flex-wrap: wrap;
   margin-block-start: 6px;
   inline-size: 100%;
+}
+/* The print look's buttons sit at the end, the safe one first (Marlow Press's dialogs). */
+.cz-dialog-actions-end {
+  justify-content: flex-end;
 }
 .cz-full {
   position: fixed;

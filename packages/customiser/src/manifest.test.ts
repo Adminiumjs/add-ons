@@ -308,17 +308,17 @@ describe('the public entries', () => {
     expect(reads[0]!.files).toBeUndefined();
   });
 
-  it('open a saved design again only by its own link: that one design, changed only while it is a draft, never its address', () => {
+  it('open a saved design again only by its own link: that one design, changed or deleted only while it is a draft, never its address', () => {
     expect(Object.keys(manifest.publicKeys)).toEqual([LINK_KEY]);
     const opened = entries.filter((entry) => entry.key === LINK_KEY);
     expect(opened).toHaveLength(1);
-    expect(opened[0]).toMatchObject({ table: 'designs', methods: ['GET', 'PATCH'], claim: { by: 'token', column: 'link_token', own: true, address: 'email' } });
+    expect(opened[0]).toMatchObject({ table: 'designs', methods: ['GET', 'PATCH', 'DELETE'], claim: { by: 'token', column: 'link_token', own: true, address: 'email' } });
     expect(opened[0]!.select).toEqual([...DESIGN_OPENED]);
     expect(opened[0]!.select).not.toContain('link_token');
     expect(opened[0]!.select).not.toContain('email');
     expect(opened[0]!.writable).toEqual([...DESIGN_CHANGEABLE]);
     for (const ref of ['app', 'state', 'code', 'link_token', 'email', 'updated_at']) expect(opened[0]!.writable, ref).not.toContain(ref);
-    // An ordered design is the order's.
+    // An ordered design is the order's: neither changed nor deleted through the link.
     expect(opened[0]!.writableWhen).toEqual({ state: ['draft'] });
     // The customer uploads a new logo or photo through it, and downloads what they sent.
     expect(opened[0]!.uploads).toEqual([...DESIGN_UPLOADS]);
