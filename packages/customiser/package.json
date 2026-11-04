@@ -35,7 +35,12 @@
   "devDependencies": {
     "@adminium/add-on-contracts": "npm:@adminiumjs/add-on-contracts@0.3.41",
     "@adminium/add-on-host": "*",
+    "@adminium/tokens": "npm:@adminiumjs/tokens@0.2.9",
     "@adminiumjs/manifest": "0.3.41",
     "axe-core": "^4.13.0"
+  },
+  "dependencies": {
+    "fontkit": "2.0.4",
+    "pdf-lib": "1.17.1"
   }
 }
