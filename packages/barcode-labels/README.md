@@ -54,8 +54,9 @@ compares them, so an edit that reached for the handle turns that case red.
 
 ### `attaches` names three apps and not `"*"`
 
-`factory` (factory-ops) and `maker` (maker-shop) on `^0.1.0`, and `pos` (Point of Sale) on `^0.2.0` —
-each the minor line that app ships on. `"*"` claims every app that will ever exist, and an
+`factory` (factory-ops) on `^0.1.0`, `maker` (maker-shop) on `^0.1.0 || ^0.2.0`, and `pos` (Point of
+Sale) on `^0.2.0 || ^0.3.0` — each the minor lines that app ships on, so a shop with it attached can
+update to the app's next line. `"*"` claims every app that will ever exist, and an
 unfalsifiable claim is worse than a wrong one — a reader cannot tell it from a checked one.
 
 ### Shelf labels at a till (`pos`) — the number from the host's own column

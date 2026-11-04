@@ -10,7 +10,7 @@ Add-on key `personalizer`, category **artwork**, `connect: { kind: "none" }`. It
 connects to no outside company, needs no account anywhere, and makes no network
 call of any kind — `src/sources.test.ts` greps for every form of one.
 
-Provides **`product-personalizer@1`**. Attaches to `maker ^0.1.0`, and to the
+Provides **`product-personalizer@1`**. Attaches to `maker ^0.1.0 || ^0.2.0`, and to the
 generated dashboard's `products` and `order_lines` tables, so a shop that runs
 only the dashboard can use it too.
 

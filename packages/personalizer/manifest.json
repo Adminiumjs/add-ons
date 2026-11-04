@@ -24,7 +24,7 @@
 
   "addOn": {
     "attaches": [
-      { "app": "maker", "range": "^0.1.0" },
+      { "app": "maker", "range": "^0.1.0 || ^0.2.0" },
       { "app": "*", "table": "products" },
       { "app": "*", "table": "order_lines" }
     ],

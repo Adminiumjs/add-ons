@@ -566,6 +566,48 @@ function attachRangeIssue(pkg: string, app: string, range: string, version: stri
   return `${app} ${version} is outside ${pkg}'s range ${range}: the installer would refuse it (ADD_ON_RANGE)`;
 }
 
+/**
+ * THE NEXT LINE OF AN APP AN ADD-ON IS ATTACHED TO.
+ *
+ * While an add-on is attached, the installer refuses an app version outside the
+ * add-on's range (`ADD_ON_RANGE`). Maker and Print go from 0.1 to 0.2, so an
+ * add-on that said only `^0.1.0` would stop every shop that has it attached
+ * from updating the app. Each range on those two apps therefore takes both
+ * lines, the installed shops' and the next one. Read from the manifests, so it
+ * runs with no host checked out.
+ */
+const NEXT_LINES: readonly { app: string; lines: readonly string[] }[] = [
+  { app: 'maker', lines: ['0.1.0', '0.2.0', '0.2.9'] },
+  { app: 'printing', lines: ['0.1.0', '0.2.0', '0.2.9'] },
+];
+
+describe('an add-on attached to an app never blocks its next line', () => {
+  const rows = manifests().flatMap(({ pkg, manifest }) => {
+    const doc = manifest as { addOn?: { attaches?: { app?: string; range?: string }[] } };
+    return (doc.addOn?.attaches ?? []).flatMap((target) => {
+      const next = NEXT_LINES.find((entry) => entry.app === target.app);
+      return next === undefined ? [] : [{ pkg, app: next.app, range: target.range ?? '*', lines: next.lines }];
+    });
+  });
+
+  it.each(rows)('$pkg takes every line of $app it must ($range)', ({ range, lines }) => {
+    for (const version of lines) expect(satisfiesSemverRange(version, range), version).toBe(true);
+  });
+
+  it('finds the add-ons that attach to those apps', () => {
+    const pkgs = new Set(rows.map((row) => row.pkg));
+    for (const pkg of ['barcode-labels', 'design-studio', 'import-canva', 'personalizer', 'shipping-dhl']) {
+      expect(pkgs.has(pkg), pkg).toBe(true);
+    }
+  });
+
+  it('would catch a range that names only the old line', () => {
+    expect(satisfiesSemverRange('0.2.0', '^0.1.0')).toBe(false);
+    expect(satisfiesSemverRange('0.2.0', '^0.1.0 || ^0.2.0')).toBe(true);
+    expect(satisfiesSemverRange('0.3.0', '^0.1.0 || ^0.2.0')).toBe(false);
+  });
+});
+
 describe.skipIf(HOSTS.length === 0)(
   'every add-on installs into every app it says it attaches to',
   () => {

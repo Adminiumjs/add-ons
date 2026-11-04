@@ -23,7 +23,7 @@
   "capabilities": ["file-storage"],
 
   "addOn": {
-    "attaches": [{ "app": "printing", "range": "^0.1.0" }],
+    "attaches": [{ "app": "printing", "range": "^0.1.0 || ^0.2.0" }],
     "provides": [
       { "contract": "artwork-source", "version": 1, "server": "dist/server.js" }
     ],

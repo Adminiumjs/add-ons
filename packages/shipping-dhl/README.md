@@ -16,7 +16,8 @@ here. See [TRADEMARKS.md](TRADEMARKS.md).
 ## What it attaches to
 
 An add-on never stands alone. This one attaches to **five** apps — `printing`, `maker`, `factory`,
-`ecommerce-shop` and `helpdesk`, each at `^0.1.0` — and fills five slots. Each app mounts the ones
+`ecommerce-shop` and `helpdesk`, each at `^0.1.0` (`printing` and `maker` at `^0.1.0 || ^0.2.0`, so
+those shops can update to their next line with it attached) — and fills five slots. Each app mounts the ones
 its surfaces have; a fill with no mount simply never renders there:
 
 | Slot | Surface | What appears | Mounted by |
