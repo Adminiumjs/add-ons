@@ -7,5 +7,5 @@
     "erasableSyntaxOnly": false,
     "types": ["node"]
   },
-  "include": ["vite.config.ts"]
+  "include": ["vite.config.ts", "vite.dev.config.ts"]
 }

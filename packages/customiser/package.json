@@ -20,10 +20,12 @@
   ],
   "exports": {
     "./browser": "./dist/browser/index.js",
+    "./browser/editor.css": "./dist/browser/editor.css",
     "./manifest.json": "./manifest.json"
   },
   "scripts": {
     "build": "tsc -b && vite build",
+    "dev": "vite --config vite.dev.config.ts",
     "typecheck": "tsc -b --force",
     "test": "vitest run"
   },

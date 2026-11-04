@@ -33,10 +33,12 @@ export const OUTPUT = {
   pages: { customiser: 'dist/pages/customiser.js' } as Readonly<Record<string, string>>,
   panels: { 'customiser-product': 'dist/panels/product.js', 'customiser-line': 'dist/panels/line.js' } as Readonly<Record<string, string>>,
   browser: 'dist/browser/index.js',
+  /** The customer's editor's stylesheet, which the app links beside it. */
+  browserCss: 'dist/browser/editor.css',
 } as const;
 
 /** Every file the build writes. */
-export const BUILT_FILES: readonly string[] = [OUTPUT.check, OUTPUT.browser, ...Object.values(OUTPUT.pages), ...Object.values(OUTPUT.panels)];
+export const BUILT_FILES: readonly string[] = [OUTPUT.check, OUTPUT.browser, OUTPUT.browserCss, ...Object.values(OUTPUT.pages), ...Object.values(OUTPUT.panels)];
 
 /** Where each screen file is built from. */
 const SCREENS: readonly { file: string; entry: string }[] = [
@@ -115,7 +117,7 @@ export default defineConfig(({ mode }) =>
         build: {
           outDir: 'dist',
           emptyOutDir: true,
-          lib: { entry: 'src/browser/index.ts', formats: ['es'], fileName: () => 'browser/index.js' },
+          lib: { entry: 'src/browser/index.ts', formats: ['es'], fileName: () => 'browser/index.js', cssFileName: 'browser/editor' },
           rollupOptions: {
             // The app that imports the editor brings React; its bundle holds the one copy.
             external: [/^react($|\/)/, /^react-dom($|\/)/],
