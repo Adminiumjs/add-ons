@@ -60,6 +60,17 @@ snapshots the design's version and locks its draft in the same save:
 looking the design up by its code. A design ordered again without a change
 gets no new version.
 
+## The saved design's link
+
+"Save and come back" asks the customer for their e-mail and mails them the
+design's private link: the Customiser's one e-mail, a service message in the
+customer's language. The button in it opens the page each app names on its
+customer side under the route key `customiserDesign`, with the link's code
+after the `#`; an app that names no such page sends the message without a
+button. The link changes the design while it is a draft, and deletes it
+(its logo and photo with it); once ordered it only reads it. The mail never
+keeps a design: one nobody ordered still goes 90 days after its last change.
+
 ## Who sees what
 
 A shop's visitors read what it offers (its published bases, the designs it
