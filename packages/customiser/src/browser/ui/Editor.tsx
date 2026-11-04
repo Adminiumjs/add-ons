@@ -479,7 +479,7 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
   if (view === 'choose')
     return (
       <>
-        <Gallery catalogue={catalogue} product={props.product.name} sides={sides} onPick={pick} onBack={props.onBack} onStartBlank={props.onStartBlank ?? (look === 'print' && props.preview !== true ? startBlank : undefined)} onSendOwnFile={props.onSendOwnFile} onChangeSides={props.onChangeSides} />
+        <Gallery api={props.api} catalogue={catalogue} product={props.product.name} sides={sides} onPick={pick} onBack={props.onBack} onStartBlank={props.onStartBlank ?? (look === 'print' && props.preview !== true ? startBlank : undefined)} onSendOwnFile={props.onSendOwnFile} onChangeSides={props.onChangeSides} />
         <Toasts toasts={toasts} onUndo={(one) => one.undo?.()} />
       </>
     );

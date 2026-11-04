@@ -13,10 +13,12 @@
  */
 import { useEffect, useRef, useState, type MutableRefObject, type ReactNode } from 'react';
 
+import type { FlatSheet } from '../draw/flat.ts';
 import { hasWebGL, loadThree, type ThreeChunk } from './load.ts';
 import type { PieceModel } from './piece.ts';
 import type { Stage3d } from './stage3d.ts';
-import type { View } from './view.ts';
+import { usePieceModel, type OutlineSource } from './usePiece.ts';
+import { startView, type View } from './view.ts';
 
 export interface ModelViewProps {
   model: PieceModel | null;
@@ -90,6 +92,11 @@ export function ModelView({ model, view, className, stageRef, onFail, load = loa
 
 const stills = new Map<string, string | null>();
 
+/** Forget the page's stills, for a test that draws them again. */
+export function forgetStills(): void {
+  stills.clear();
+}
+
 export interface ModelStillProps {
   model: PieceModel | null;
   view: View;
@@ -106,7 +113,7 @@ export interface ModelStillProps {
 }
 
 export function ModelStill({ model, view, width, height, cacheKey, alt, className, fallback, load = loadThree }: ModelStillProps): ReactNode {
-  const [src, setSrc] = useState<string | null>(() => stills.get(cacheKey) ?? null);
+  const [src, setSrc] = useState<string | null>(() => (hasWebGL() ? (stills.get(cacheKey) ?? null) : null));
   useEffect(() => {
     if (model === null || !hasWebGL()) return;
     const known = stills.get(cacheKey);
@@ -128,3 +135,28 @@ export function ModelStill({ model, view, width, height, cacheKey, alt, classNam
   }, [model, view, width, height, cacheKey, load]);
   return src === null ? fallback : <img src={src} alt={alt} className={className} width={width} height={height} />;
 }
+
+export interface PieceStillProps {
+  /** The design laid out flat: what the piece's top carries. */
+  sheet: FlatSheet;
+  thickness: number | null;
+  outline: OutlineSource | null;
+  /** The customer's pictures this page holds, by file column. */
+  pictures?: Readonly<Record<string, string>>;
+  width: number;
+  height: number;
+  alt: string;
+  className?: string;
+  fallback: ReactNode;
+}
+
+/** A flat piece's still, from where the comp first shows it; the fallback (its flat drawing) on a device without WebGL. */
+export function PieceStill({ sheet, thickness, outline, pictures, width, height, alt, className, fallback }: PieceStillProps): ReactNode {
+  const webgl = hasWebGL();
+  const model = usePieceModel(webgl ? sheet : null, thickness, webgl ? outline : null, pictures);
+  const key = `${outline?.key ?? 'plain'}|${String(thickness)}|${String(width)}x${String(height)}|${JSON.stringify(sheet)}|${JSON.stringify(pictures ?? {})}`;
+  return <ModelStill model={model} view={START_PIECE} width={width} height={height} cacheKey={key} alt={alt} {...(className === undefined ? {} : { className })} fallback={fallback} />;
+}
+
+const START_PIECE = startView('piece');
+

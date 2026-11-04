@@ -13,13 +13,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { forgetStills } from '../three/PieceView.tsx';
 import { Stage3d, type RendererLike } from '../three/stage3d.ts';
 import type { View } from '../three/view.ts';
 import { CustomiserEditor } from './index.ts';
 import { drawn, setWidth, settle } from './testing/render.tsx';
 import { stubApi } from './testing/stub.ts';
 
-const device = vi.hoisted(() => ({ webgl: true, views: [] as View[], disposed: 0, made: 0 }));
+const device = vi.hoisted(() => ({ webgl: true, views: [] as View[], disposed: 0, made: 0, stills: [] as { width: number; height: number; thickness: number }[] }));
 
 vi.mock('../three/load.ts', async (original) => {
   const real = await original<typeof import('../three/load.ts')>();
@@ -28,6 +29,10 @@ vi.mock('../three/load.ts', async (original) => {
     hasWebGL: () => device.webgl,
     loadThree: async () => ({
       ...(await import('../three/stage3d.ts')),
+      still: async (model: { thickness: number }, _view: View, width: number, height: number) => {
+        device.stills.push({ width, height, thickness: model.thickness });
+        return `blob:still/${String(device.stills.length)}`;
+      },
       makeStage: () => {
         const renderer: RendererLike = { domElement: document.createElement('canvas'), setPixelRatio: () => {}, setSize: () => {}, render: () => {}, dispose: () => (device.disposed += 1) };
         device.made += 1;
@@ -54,6 +59,8 @@ beforeEach(() => {
   device.views = [];
   device.disposed = 0;
   device.made = 0;
+  device.stills = [];
+  forgetStills();
 });
 afterEach(cleanup);
 
@@ -191,6 +198,31 @@ describe('a device that cannot draw 3D, and a person who asked for less motion',
     await settle();
     await settle();
     expect(stage.querySelector('canvas')).not.toBeNull();
+  });
+});
+
+describe('the gallery’s cards (BC-A2.gallery)', () => {
+  const choose = async (): Promise<void> => {
+    const stub = stubApi('maker');
+    await drawn(<CustomiserEditor api={stub.api} base={stub.ids.coasters} product={{ name: 'Engraved walnut coasters' }} onAddToBasket={() => {}} />);
+    await settle();
+  };
+
+  it('show each flat piece’s design as a 3D still, drawn in memory at the material’s thickness', async () => {
+    await choose();
+    const cards = screen.getAllByRole('button', { name: /^Customise the / });
+    const stills = cards.map((card) => card.querySelector('img')?.getAttribute('src'));
+    expect(stills.every((src) => src?.startsWith('blob:still/') === true)).toBe(true);
+    expect(device.stills.length).toBe(cards.length);
+    expect(device.stills.every((one) => one.width === 400 && one.height === 300 && one.thickness === 6)).toBe(true);
+  });
+
+  it('are drawn flat on a device without WebGL', async () => {
+    device.webgl = false;
+    await choose();
+    const cards = screen.getAllByRole('button', { name: /^Customise the / });
+    expect(cards.every((card) => card.querySelector('svg.cz-drawing') !== null || card.querySelector('img:not([src^="blob:still"])') !== null)).toBe(true);
+    expect(device.stills).toEqual([]);
   });
 });
 
