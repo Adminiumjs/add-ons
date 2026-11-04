@@ -385,6 +385,30 @@ describe('the design editor on a page', () => {
   });
 });
 
+describe('previewing a design as a customer, in the customer’s own editor (MC-E2.preview)', () => {
+  it('opens the design as it is drawn now, unsaved changes and all, where nothing reaches a basket and nothing is saved', async () => {
+    seedCard();
+    const { CustomerEditorPreview } = await import('./customerPreview.tsx');
+    showCustomerEditor(CustomerEditorPreview);
+    at(IDS.cards, 53);
+    render(<Customiser />);
+    // An unsaved change: the design's name, which the customer's editor shows.
+    fireEvent.change(screen.getByRole('textbox', { name: 'Design name' }), { target: { value: 'Harbour, new' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Preview as a customer' }));
+    await settle();
+    await settle();
+    expect(screen.getByText('Previewing as a customer')).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 1, name: 'Harbour, new' })).toBeTruthy();
+    fireEvent.change(document.querySelector('#cz-f-name')!, { target: { value: 'Nell Fairweather' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save and come back' }));
+    await settle();
+    expect(screen.getByText('You’re previewing as a customer — nothing is saved.')).toBeTruthy();
+    expect(writes('create', 'designs')).toEqual([]);
+    fireEvent.click(screen.getByRole('button', { name: 'Back to the design editor' }));
+    expect(screen.getByRole('complementary', { name: 'The design' })).toBeTruthy();
+  });
+});
+
 describe('a reader of the designs', () => {
   it('sees the designs and opens one, with nothing that writes', () => {
     world.cannot.add('update:ready_designs');

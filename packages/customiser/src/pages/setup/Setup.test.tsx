@@ -281,11 +281,28 @@ describe('step 2, areas', () => {
   });
 });
 
-describe('step 6, opened by the customer’s editor', () => {
-  it('says what comes there', () => {
+describe('step 6, opened by the customer’s editor (BC-D7)', () => {
+  it('opens the customising screen as shoppers get it, the shop’s designs in it, where nothing reaches a basket', async () => {
     at(IDS.coasters, 'preview');
     render(<Customiser />);
-    expect(screen.getByRole('button', { name: "Open the shopper's screen" })).toHaveProperty('disabled', true);
+    fireEvent.click(screen.getByRole('button', { name: "Open the shopper's screen" }));
+    await settle();
+    await settle();
+    expect(screen.getByText('Previewing as a shopper')).toBeTruthy();
+    // The customer's own editor, on the base as the set-up holds it: its shown designs, then one filled in.
+    fireEvent.click(screen.getByRole('button', { name: /^Customise the Ring design/ }));
+    await settle();
+    expect(screen.getByRole('heading', { name: 'Make it yours' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Your words'), { target: { value: 'The Pinfold' } });
+    fireEvent.click(document.querySelector('.cz-add')!);
+    await settle();
+    expect(screen.getByText('Previewing — nothing goes in a real basket.')).toBeTruthy();
+    fireEvent.click(document.querySelector('.cz-save')!);
+    await settle();
+    expect(screen.getByText('Previewing — saving is switched off here.')).toBeTruthy();
+    expect(writes('create', 'designs')).toEqual([]);
+    fireEvent.click(screen.getByRole('button', { name: 'Back to set-up' }));
+    expect(screen.getByRole('button', { name: "Open the shopper's screen" })).toBeTruthy();
   });
 });
 

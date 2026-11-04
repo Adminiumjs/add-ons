@@ -402,6 +402,7 @@ export const designs: Readonly<Record<string, string>> = {
   "designs.previewing.noSave": "您正以顧客身分預覽 — 不會儲存任何內容。",
   "designs.previewing.noSaveShop": "預覽中 — 此處已關閉儲存。",
   "designs.previewing.shopper": "以顧客身分預覽中",
+  "designs.previewing.theShop": "店家",
   "designs.previewing.whatPage": "{name} · 這裡的內容不會進入購物車",
   "designs.redo": "重做",
   "designs.remove": "移除 {name}",

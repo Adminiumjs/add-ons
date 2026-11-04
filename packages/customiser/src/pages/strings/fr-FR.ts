@@ -402,6 +402,7 @@ export const designs: Readonly<Record<string, string>> = {
   "designs.previewing.noSave": "Vous êtes en aperçu client — rien n’est enregistré.",
   "designs.previewing.noSaveShop": "Aperçu — l’enregistrement est désactivé ici.",
   "designs.previewing.shopper": "Aperçu en tant que client",
+  "designs.previewing.theShop": "la boutique",
   "designs.previewing.whatPage": "{name} · rien ici n’arrive dans un panier",
   "designs.redo": "Rétablir",
   "designs.remove": "Retirer {name}",

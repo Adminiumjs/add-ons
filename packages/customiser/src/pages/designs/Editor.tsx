@@ -271,7 +271,7 @@ export function Editor({ t, base, data, design, rows, readOnly, onBack }: Editor
   ) : null;
 
   if (previewing) {
-    return <CustomerPreview t={t} base={base} draft={draft} name={draft.name} who={page ? 'customer' : 'shopper'} onBack={() => setPreviewing(false)} />;
+    return <CustomerPreview t={t} base={base} data={data} rows={rows} draft={draft} name={draft.name} who={page ? 'customer' : 'shopper'} onBack={() => setPreviewing(false)} />;
   }
 
   if (page) {

@@ -31,6 +31,7 @@ import { showCustomerEditor } from './designs/preview.tsx';
 const { default: Customiser } = await import('./customiser/index.tsx');
 const { default: Product } = await import('../panels/product.tsx');
 const { default: Line } = await import('../panels/line.tsx');
+const { CustomerEditorPreview } = await import('./designs/customerPreview.tsx');
 
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 const BLOCKING = new Set(['critical', 'serious']);
@@ -187,6 +188,38 @@ const STATES: State[] = [
       fireEvent.click(byIcon('eye'));
       await settle();
       must('[role="status"].bg-fg');
+    },
+  },
+  {
+    label: 'previewing as a customer, in the customer’s own editor',
+    before: () => {
+      seedCard();
+      showCustomerEditor(CustomerEditorPreview);
+    },
+    draw: () => {
+      world.splat = `customiser/${String(IDS.cards)}`;
+      world.search = { step: 'designs', design: '53' };
+      return <Customiser />;
+    },
+    after: async () => {
+      fireEvent.click(byIcon('eye'));
+      await settle();
+      await settle();
+      must('.cz-fill');
+    },
+  },
+  {
+    label: 'step 6, the shopper’s screen open',
+    before: () => showCustomerEditor(CustomerEditorPreview),
+    draw: () => {
+      world.splat = `customiser/${String(IDS.coasters)}`;
+      world.search = { step: 'preview' };
+      return <Customiser />;
+    },
+    after: async () => {
+      fireEvent.click(document.querySelector('[data-part="customiser-preview-step"] button')!);
+      await settle();
+      await settle();
     },
   },
   { label: 'the product panel', draw: () => <Product connectionId="c1" table="t" row="r" linked={String(IDS.coasters)} /> },

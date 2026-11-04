@@ -1,23 +1,34 @@
 /**
  * "PREVIEW AS A CUSTOMER": the customer's own editor, opened on the design
- * the shop is making, under a bar that says it is a preview.
+ * the shop is making, or on every design it shows (the set-up's step 6),
+ * under a bar that says it is a preview.
  *
- * The customer's editor is the add-on's browser part, built beside this
- * screen. Until it is mounted here (`showCustomerEditor`), there is nothing
- * to open: the buttons that would open it are switched off, and say why.
- * Once it is, a preview puts nothing in a basket and saves nothing: its
- * "Add to basket" and "Save" only say so (Birch Row D7, Marlow D2).
+ * The customer's editor is the add-on's browser part, mounted here by the
+ * page (`showCustomerEditor`, `../customiser/index.tsx`); a screen built
+ * without it has nothing to open, and its buttons say so. A preview puts
+ * nothing in a basket and saves nothing: its "Add to basket" and "Save" only
+ * say so (Birch Row D7, Marlow D2).
  */
 import type { ComponentType, ReactNode } from 'react';
 
 import { Button, lucideByName, Stack, type AddOnTranslate, type DataRow } from '../shared/host.ts';
 import { useToast } from '../shared/toast.ts';
-import type { DesignDraft } from './draft.ts';
+import type { SetupData } from '../setup/data.ts';
+import type { DesignRows } from './data.ts';
+import type { DesignDraft, Role } from './draft.ts';
 
 /** What the customer's editor is handed for a preview. */
 export interface PreviewEditorProps {
   base: DataRow;
-  design: DesignDraft;
+  /** The set-up's rows: the base's areas, the fonts, the finishes, the priced features. */
+  data: SetupData;
+  /** The designs' parts and palettes, where the preview shows every design the shop shows. */
+  rows: DesignRows | null;
+  /** The design in the shop's editor as it is drawn now; none to show every design the shop shows. */
+  design: DesignDraft | null;
+  /** How the shop is named to its customer. */
+  shop: string;
+  roleNames: Readonly<Record<Role, string>>;
   /** "Add to basket", in a preview: nothing is added. */
   onAddToBasket: () => void;
   /** "Save and come back", in a preview: nothing is saved. */
@@ -35,7 +46,7 @@ export function showCustomerEditor(editor: ComponentType<PreviewEditorProps> | n
 const EyeIcon = lucideByName('eye');
 const Back = lucideByName('arrow-left');
 
-export function CustomerPreview({ t, base, draft, name, who, onBack }: { t: AddOnTranslate; base: DataRow; draft: DesignDraft; name: string; who: 'customer' | 'shopper'; onBack: () => void }): ReactNode {
+export function CustomerPreview({ t, base, data, rows, draft, name, who, onBack }: { t: AddOnTranslate; base: DataRow; data: SetupData; rows: DesignRows | null; draft: DesignDraft | null; name: string; who: 'customer' | 'shopper'; onBack: () => void }): ReactNode {
   const Editor = mounted;
   const toast = useToast();
   return (
@@ -52,7 +63,11 @@ export function CustomerPreview({ t, base, draft, name, who, onBack }: { t: AddO
       {Editor === null ? null : (
         <Editor
           base={base}
+          data={data}
+          rows={rows}
           design={draft}
+          shop={t('designs.previewing.theShop', 'the shop')}
+          roleNames={{ paper: t('designs.role.paper', 'Paper'), ink: t('designs.role.ink', 'Ink'), accent: t('designs.role.accent', 'Accent') }}
           onAddToBasket={() => toast(who === 'customer' ? t('designs.previewing.noBasket', 'You’re previewing as a customer — nothing goes in a basket.') : t('designs.previewing.noBasketShop', 'Previewing — nothing goes in a real basket.'), 'info')}
           onSave={() => toast(who === 'customer' ? t('designs.previewing.noSave', 'You’re previewing as a customer — nothing is saved.') : t('designs.previewing.noSaveShop', 'Previewing — saving is switched off here.'), 'info')}
         />

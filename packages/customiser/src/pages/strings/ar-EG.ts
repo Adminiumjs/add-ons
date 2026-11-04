@@ -402,6 +402,7 @@ export const designs: Readonly<Record<string, string>> = {
   "designs.previewing.noSave": "أنت تعاين كعميل — لا شيء يُحفظ.",
   "designs.previewing.noSaveShop": "معاينة — الحفظ متوقف هنا.",
   "designs.previewing.shopper": "معاينة كمتسوق",
+  "designs.previewing.theShop": "المتجر",
   "designs.previewing.whatPage": "{name} · لا شيء هنا يصل إلى سلة",
   "designs.redo": "إعادة",
   "designs.remove": "إزالة {name}",
