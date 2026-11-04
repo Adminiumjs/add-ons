@@ -21,11 +21,11 @@
       {"app":"maker","palette_id":{"@ref":"palette:maker-pla"},"code":"amber","name":"Amber","hex":"#c98a2e","position":7}
     ] },
     { "ref": "bases", "rows": [
-      {"@label":"base:coasters","app":"maker","name":"Engraved walnut coasters","kind":"piece","width_mm":95,"height_mm":95,"corner_mm":9,"material":"Walnut","thickness_mm":6,"state":"published","position":1},
-      {"@label":"base:nook","app":"maker","name":"The Little Bookshop","kind":"kit","width_mm":110,"height_mm":180,"depth_mm":150,"material":"Birch ply","thickness_mm":3,"state":"published","position":2},
-      {"@label":"base:keyring","app":"maker","name":"Name keyring","kind":"printed","width_mm":56,"height_mm":24,"corner_mm":11,"material":"PLA","thickness_mm":4,"state":"published","position":3},
-      {"@label":"base:board","app":"maker","name":"Walnut cutting board","kind":"piece","width_mm":380,"height_mm":260,"corner_mm":16,"material":"Walnut","thickness_mm":18,"state":"published","position":4},
-      {"@label":"base:sign","app":"maker","name":"Slate house sign","kind":"piece","width_mm":300,"height_mm":200,"corner_mm":10,"material":"Slate","thickness_mm":5,"state":"draft","position":5}
+      {"@label":"base:coasters","app":"maker","offered":{"fonts":["Cormorant Garamond","Manrope","Caveat","Zilla Slab","Oswald"],"finishes":["engraved","paint-white","paint-black"]},"name":"Engraved walnut coasters","kind":"piece","width_mm":95,"height_mm":95,"corner_mm":9,"material":"Walnut","thickness_mm":6,"state":"published","position":1},
+      {"@label":"base:nook","app":"maker","offered":{"fonts":["Cormorant Garamond","Manrope","Caveat","Zilla Slab","Oswald"],"finishes":["engraved","paint-white","paint-black"]},"name":"The Little Bookshop","kind":"kit","width_mm":110,"height_mm":180,"depth_mm":150,"material":"Birch ply","thickness_mm":3,"state":"published","position":2},
+      {"@label":"base:keyring","app":"maker","offered":{"fonts":["Manrope","Oswald"],"finishes":[]},"name":"Name keyring","kind":"printed","width_mm":56,"height_mm":24,"corner_mm":11,"material":"PLA","thickness_mm":4,"state":"published","position":3},
+      {"@label":"base:board","app":"maker","offered":{"fonts":["Cormorant Garamond","Manrope","Caveat","Zilla Slab","Oswald"],"finishes":["engraved","paint-white","paint-black"]},"name":"Walnut cutting board","kind":"piece","width_mm":380,"height_mm":260,"corner_mm":16,"material":"Walnut","thickness_mm":18,"state":"published","position":4},
+      {"@label":"base:sign","app":"maker","offered":{"fonts":["Cormorant Garamond","Manrope","Caveat","Zilla Slab","Oswald"],"finishes":["engraved","paint-white","paint-black"]},"name":"Slate house sign","kind":"piece","width_mm":300,"height_mm":200,"corner_mm":10,"material":"Slate","thickness_mm":5,"state":"draft","position":5}
     ] },
     { "ref": "base_pieces", "rows": [
       {"@label":"piece:nook-01","app":"maker","base_id":{"@ref":"base:nook"},"code":"01","name":"Base","width_mm":110,"height_mm":150,"layers":["CUT"],"position":1},
