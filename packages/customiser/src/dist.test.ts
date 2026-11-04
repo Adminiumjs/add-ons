@@ -6,8 +6,9 @@
  * sourcemap rides along, the customer's editor leaves React to the app that
  * imports it, and nothing banned is in any of it.
  */
+import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { dirname, join, relative } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import { beforeAll, describe, expect, it } from 'vitest';
 
@@ -15,7 +16,10 @@ import pkg from '../package.json' with { type: 'json' };
 import { BUILT_FILES, FONT_FILES, FONTS_FROM, OUTPUT } from '../vite.config.ts';
 import { STARTER_FONTS } from './manifest/fonts.ts';
 import { starterFontPath, starterLicencePath } from './pages/setup/starter.ts';
-import { buildForReal, DIST } from './testing/build.ts';
+// @ts-expect-error a plain script of the repo, read as the release runs it
+import { xray } from '../../../scripts/tarball-shape.mjs';
+import manifest from '../manifest.json' with { type: 'json' };
+import { buildForReal, DIST, ROOT } from './testing/build.ts';
 import { bannedHitsIn } from './testing/lexicon.ts';
 
 function built(dir = DIST): string[] {
@@ -84,6 +88,41 @@ describe('the starter fonts', () => {
       expect(licence, path).toContain('This Font Software is licensed under the SIL Open Font License, Version 1.1.');
       expect(licence, path).toContain('SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007');
     }
+  });
+});
+
+/**
+ * THE PACKED TARBALL, AS THE RELEASE PACKS IT: `npm pack` over this folder,
+ * the `files` list deciding, held to the repository's own tarball rules
+ * (`scripts/tarball-shape.mjs`, the publish script's X-ray). The shop apps
+ * vendor the customer's editor out of it by these three names
+ * (`scripts/sync-customiser.mjs` in Maker Shop and Print Shop): the editor,
+ * the 3D stage it fetches from beside itself, and its stylesheet.
+ */
+const VENDORED = ['dist/browser/index.js', 'dist/browser/stage3d.js', 'dist/browser/editor.css'];
+const PAPERS = ['LICENSE', 'README.md', 'TRADEMARKS.md', 'manifest.json', 'package.json'];
+
+describe('the packed tarball', () => {
+  const npm = (): string => {
+    const beside = join(dirname(process.execPath), 'npm');
+    return existsSync(beside) ? beside : 'npm';
+  };
+  const packed = (): { path: string; size: number }[] => {
+    const [one] = JSON.parse(execFileSync(npm(), ['pack', '--dry-run', '--json', '--ignore-scripts'], { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })) as [{ files: { path: string; size: number }[] }];
+    return one.files;
+  };
+
+  it('holds the built files, the starter fonts and the package’s papers, and nothing else', () => {
+    const paths = packed().map((file) => file.path);
+    expect([...paths].sort()).toEqual([...BUILT_FILES, ...FONT_FILES, ...PAPERS].sort());
+    // No source, test, map or build config: what the publish script refuses.
+    expect(() => (xray as (label: string, entries: string[], addOn: { manifest: unknown }) => void)('customiser', paths.map((path) => `package/${path}`), { manifest })).not.toThrow();
+  });
+
+  it('carries every file the shop apps vendor, and the design question’s answer the manifest names', () => {
+    const paths = packed().map((file) => file.path);
+    for (const path of [...VENDORED, OUTPUT.check]) expect(paths, path).toContain(path);
+    expect(JSON.stringify(manifest)).toContain(`"server":"${OUTPUT.check}"`);
   });
 });
 
