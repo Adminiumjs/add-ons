@@ -54,6 +54,8 @@ function Dev() {
   const base = Number(query.get('base') ?? bases[0]);
   const lang = query.get('lang') ?? 'en-US';
   const [view, setView] = useState(query.get('view') ?? 'editor');
+  // The ways in's "Start from blank" opens the editor on a blank page, as an app's product page does.
+  const [blank, setBlank] = useState(query.get('start') === 'blank');
   const [held, setHeld] = useState<HeldDesign[]>([]);
   const [opened, setOpened] = useState<SavedDesign | undefined>(undefined);
   const [qty, setQty] = useState(shop === 'print' ? 500 : 1);
@@ -101,10 +103,10 @@ function Dev() {
         {view === 'designs' ? (
           <YourDesigns api={api} locale={lang} look={shop} shop={shop === 'print' ? 'Marlow Press' : 'Birch Row'} codes={[...codes, ...(query.get('codes') ?? '').split(',').filter((one) => one !== '')]} held={held} onForget={(one) => setHeld(held.filter((other) => other !== one))} onRestore={(one) => setHeld([one, ...held])} onOpen={(design) => { setOpened(design); setView('editor'); }} onOrder={(design) => setLog(`order ${String(design.code)}`)} onChoose={() => setView('editor')} />
         ) : view === 'ways' ? (
-          <WaysIn api={api} base={base} product={product} locale={lang} onChoose={() => setView('editor')} onStartBlank={() => setLog('start from blank')} onSendOwnFile={() => setLog('send your own file')} />
+          <WaysIn api={api} base={base} product={product} locale={lang} onChoose={() => setView('editor')} onStartBlank={() => { setBlank(true); setView('editor'); }} onSendOwnFile={() => setLog('send your own file')} />
         ) : (
           <CustomiserEditor
-            key={`${shop}-${String(base)}-${String(opened?.id ?? '')}`}
+            key={`${shop}-${String(base)}-${String(opened?.id ?? '')}-${String(blank)}`}
             api={api}
             base={base}
             product={{ name: product, ...(shop === 'maker' ? { price: '£34.00', unit: 'set of 4' } : {}) }}
@@ -128,9 +130,8 @@ function Dev() {
               setLog(`saved ${String(design.id)} for ${email}`);
             }}
             onBack={() => setLog('back to the shop')}
-            onStartBlank={() => setLog('start from blank')}
+            {...(blank ? { start: 'blank' as const } : {})}
             onSendOwnFile={() => setLog('send your own file')}
-            onFullEditor={() => setLog('the full editor')}
             onChangeSides={() => setLog('change the size or sides')}
           />
         )}

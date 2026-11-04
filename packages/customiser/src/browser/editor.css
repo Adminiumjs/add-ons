@@ -43,10 +43,8 @@
 .cz *::after {
   box-sizing: border-box;
 }
-.cz button,
-.cz input,
-.cz select,
-.cz textarea {
+/* Weightless, so a button's own class (the accent's white words on "Use this") always wins over it. */
+:where(.cz) :where(button, input, select, textarea) {
   font: inherit;
   color: inherit;
 }
