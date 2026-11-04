@@ -52,7 +52,7 @@ export class Refused extends Error {
 }
 
 export interface Call {
-  kind: 'create' | 'update' | 'remove' | 'updateEach' | 'createEach' | 'tree' | 'move' | 'list' | 'get' | 'look-up' | 'document' | 'export' | 'download' | 'api' | 'summary';
+  kind: 'create' | 'update' | 'remove' | 'updateEach' | 'createEach' | 'tree' | 'move' | 'list' | 'get' | 'look-up' | 'document' | 'export' | 'download' | 'api' | 'summary' | 'upload';
   table: string;
   key?: string;
   values?: unknown;
@@ -97,6 +97,14 @@ export const world = {
   formTables: [] as unknown[],
   /** The clock `formatSince` reads. */
   now: Date.parse('2026-11-03T12:00:00Z'),
+  /**
+   * Answers a file put into one of the add-on's file columns, as Adminium
+   * would once it has read the bytes; absent, the file is stored as it came.
+   * Throw a `Refused` to refuse it in Adminium's words.
+   */
+  upload: null as null | ((table: string, key: string, column: string, file: { name: string; size: number; type: string }) => { file: string; name: string; size: number; type: string; removed?: string[] }),
+  /** Whether the host publishes an upload at all (an older Adminium does not). */
+  uploads: true,
 };
 
 const listeners = new Set<() => void>();
@@ -131,6 +139,8 @@ export function resetWorld(): void {
   world.summaries = {};
   world.formTables = [];
   world.now = Date.parse('2026-11-03T12:00:00Z');
+  world.upload = null;
+  world.uploads = true;
   changed();
 }
 
@@ -803,6 +813,15 @@ installAddOnRuntime({
         error: null,
       }),
       useWords: () => ({ ask: async () => [] }),
+      // Read once, when the module that uses it loads: a host either has an upload or has none.
+      get useUpload() {
+        if (!world.uploads) return undefined;
+        return () => async (table: string, key: string | number, column: string, file: File) => {
+          world.calls.push({ kind: 'upload', table, key: String(key), values: { column, name: file.name, size: file.size, type: file.type } });
+          world.before?.('upload', table, { column, name: file.name });
+          return world.upload === null ? { file: `file-${String((world.nextId += 1))}`, name: file.name, size: file.size, type: file.type } : world.upload(table, String(key), column, file);
+        };
+      },
       useDocument: () => ({
         open: async (kind: string, table: string, key: string | number, options?: unknown) => {
           world.calls.push({ kind: 'document', table, key: String(key), values: kind, options });

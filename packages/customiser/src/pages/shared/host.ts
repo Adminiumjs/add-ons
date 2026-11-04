@@ -308,3 +308,32 @@ export function asDataError(caught: unknown): DataError {
   }
   return { code: 'CLIENT_ERROR', message: caught instanceof Error ? caught.message : String(caught) };
 }
+
+/* ── a file into one of the add-on's own file columns ──────────────────── */
+
+/**
+ * What Adminium answers for a file put into a file column of one of the
+ * add-on's own rows: the stored file's id (what the column holds), its name,
+ * size and type as sniffed from its bytes, and — for an SVG — what the
+ * cleaner took out of it, in Adminium's words. `removed` is absent or empty
+ * when nothing was taken out.
+ */
+export interface Uploaded {
+  file: string;
+  name: string;
+  size: number;
+  type: string;
+  removed?: readonly string[];
+}
+export type Upload = (table: string, key: string | number, column: string, file: File) => Promise<Uploaded>;
+
+const hostUpload = data['useUpload'] as (() => Upload) | undefined;
+/**
+ * The host's upload into the add-on's own file columns, or `null` on an
+ * Adminium whose data kit has none: a screen then says so and keeps its
+ * upload button switched off. The same answer on every draw of one page, so
+ * this is a hook called the same way each time.
+ */
+export function useUploader(): Upload | null {
+  return hostUpload === undefined ? null : hostUpload();
+}

@@ -54,6 +54,8 @@ const SLAB = 'Zilla Slab';
 const CAPS = 'Oswald';
 const COASTER_FONTS = [SERIF, SANS, SCRIPT];
 const FINISHES = ['engraved', 'paint-white', 'paint-black'];
+/** What a Birch Row base offers in its set-up's "Fonts & finishes": the five laser fonts and the three finishes. */
+const MAKER_OFFER = { fonts: [SERIF, SANS, SCRIPT, SLAB, CAPS], finishes: FINISHES };
 const COASTER = { w: 95, h: 95 };
 const NOOK_FRONT = { w: 110, h: 180 };
 const KEYRING = { w: 56, h: 24 };
@@ -86,11 +88,11 @@ function makerTables(): Bundle['tables'] {
   order = 0;
   const bases: Row[] = [
     // Engraved on one side, or on both for the priced feature.
-    { '@label': 'base:coasters', app: MAKER, name: 'Engraved walnut coasters', kind: 'piece', width_mm: 95, height_mm: 95, corner_mm: 9, sides: 2, back_feature_id: ref('feature:maker-both-sides'), material: 'Walnut', thickness_mm: 6, state: 'published', position: 1 },
-    { '@label': 'base:nook', app: MAKER, name: 'The Little Bookshop', kind: 'kit', width_mm: 110, height_mm: 180, depth_mm: 150, material: 'Birch ply', thickness_mm: 3, state: 'published', position: 2 },
-    { '@label': 'base:keyring', app: MAKER, name: 'Name keyring', kind: 'printed', width_mm: 56, height_mm: 24, corner_mm: 11, material: 'PLA', thickness_mm: 4, state: 'published', position: 3 },
-    { '@label': 'base:board', app: MAKER, name: 'Walnut cutting board', kind: 'piece', width_mm: 380, height_mm: 260, corner_mm: 16, material: 'Walnut', thickness_mm: 18, state: 'published', position: 4 },
-    { '@label': 'base:sign', app: MAKER, name: 'Slate house sign', kind: 'piece', width_mm: 300, height_mm: 200, corner_mm: 10, material: 'Slate', thickness_mm: 5, state: 'draft', position: 5 },
+    { '@label': 'base:coasters', app: MAKER, offered: MAKER_OFFER, name: 'Engraved walnut coasters', kind: 'piece', width_mm: 95, height_mm: 95, corner_mm: 9, sides: 2, back_feature_id: ref('feature:maker-both-sides'), material: 'Walnut', thickness_mm: 6, state: 'published', position: 1 },
+    { '@label': 'base:nook', app: MAKER, offered: MAKER_OFFER, name: 'The Little Bookshop', kind: 'kit', width_mm: 110, height_mm: 180, depth_mm: 150, material: 'Birch ply', thickness_mm: 3, state: 'published', position: 2 },
+    { '@label': 'base:keyring', app: MAKER, offered: { fonts: [SANS, CAPS], finishes: [] }, name: 'Name keyring', kind: 'printed', width_mm: 56, height_mm: 24, corner_mm: 11, material: 'PLA', thickness_mm: 4, state: 'published', position: 3 },
+    { '@label': 'base:board', app: MAKER, offered: MAKER_OFFER, name: 'Walnut cutting board', kind: 'piece', width_mm: 380, height_mm: 260, corner_mm: 16, material: 'Walnut', thickness_mm: 18, state: 'published', position: 4 },
+    { '@label': 'base:sign', app: MAKER, offered: MAKER_OFFER, name: 'Slate house sign', kind: 'piece', width_mm: 300, height_mm: 200, corner_mm: 10, material: 'Slate', thickness_mm: 5, state: 'draft', position: 5 },
   ];
   const PIECES: [string, number, number, string[]][] = [
     ['Base', 110, 150, ['CUT']],
@@ -234,6 +236,8 @@ const LEADING = 1.25;
 const CARD = { w: 85, h: 55 };
 const P_SANS = ['Manrope', 'Archivo'];
 const P_SERIF = ['Libre Baskerville', 'DM Serif Display'];
+/** What a Marlow Press page offers: its four print fonts; a page's colours are its designs'. */
+const PRINT_OFFER = { fonts: [...P_SANS, ...P_SERIF], finishes: [] };
 const HINT = { name: 'Your name', title: 'Job title', phone: '01234 567 890', email: 'you@example.co.uk', web: 'yourwebsite.co.uk', addr: 'Street\nTown and postcode', initials: 'AB' };
 
 type Side = 'front' | 'back';
@@ -438,9 +442,9 @@ const ROLES: [string, string][] = [
 function printingTables(): Bundle['tables'] {
   const bases: Row[] = [
     // Printed on the front, and on the back for the priced feature.
-    { '@label': 'base:cards', app: PRINTING, name: 'Business cards', kind: 'page', width_mm: CARD.w, height_mm: CARD.h, bleed_mm: BLEED, safe_mm: 4, sides: 2, back_feature_id: ref('feature:printing-back'), state: 'published', position: 1 },
+    { '@label': 'base:cards', app: PRINTING, offered: PRINT_OFFER, name: 'Business cards', kind: 'page', width_mm: CARD.w, height_mm: CARD.h, bleed_mm: BLEED, safe_mm: 4, sides: 2, back_feature_id: ref('feature:printing-back'), state: 'published', position: 1 },
     // Flyers have no ready-made designs yet: customers start from blank or send their own file.
-    { '@label': 'base:flyer-a5', app: PRINTING, name: 'A5 flyers', kind: 'page', width_mm: 148, height_mm: 210, bleed_mm: BLEED, safe_mm: 4, sides: 2, back_feature_id: ref('feature:printing-back'), state: 'published', position: 2 },
+    { '@label': 'base:flyer-a5', app: PRINTING, offered: PRINT_OFFER, name: 'A5 flyers', kind: 'page', width_mm: 148, height_mm: 210, bleed_mm: BLEED, safe_mm: 4, sides: 2, back_feature_id: ref('feature:printing-back'), state: 'published', position: 2 },
   ];
   const ready: Row[] = CARDS.map((card, i) => ({ '@label': `ready:${card.id}`, app: PRINTING, base_id: ref('base:cards'), name: card.name, tags: card.tags, layouts: card.layouts.map((layout) => ({ key: layout.key, name: layout.name })), state: 'published', position: i + 1 }));
   const parts: Row[] = [];

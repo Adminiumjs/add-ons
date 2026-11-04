@@ -542,6 +542,14 @@
             "type": "text",
             "maxLength": 64,
             "nullable": true,
+            "rules": {
+              "file": {
+                "accept": [
+                  "svg"
+                ],
+                "maxBytes": 2097152
+              }
+            },
             "label": {
               "en-US": "The outline",
               "de-DE": "Die Kontur",
@@ -551,6 +559,21 @@
               "ar-EG": "المخطط الخارجي",
               "zh-CN": "轮廓",
               "zh-TW": "輪廓"
+            }
+          },
+          {
+            "ref": "offered",
+            "type": "json",
+            "nullable": true,
+            "label": {
+              "en-US": "Fonts and finishes offered",
+              "de-DE": "Angebotene Schriften und Ausführungen",
+              "fr-FR": "Polices et finitions proposées",
+              "da-DK": "Tilbudte skrifttyper og overflader",
+              "cs-CZ": "Nabízená písma a povrchové úpravy",
+              "ar-EG": "الخطوط والتشطيبات المعروضة",
+              "zh-CN": "提供的字体和表面处理",
+              "zh-TW": "提供的字型和表面處理"
             }
           },
           {
@@ -773,6 +796,14 @@
             "type": "text",
             "maxLength": 64,
             "nullable": true,
+            "rules": {
+              "file": {
+                "accept": [
+                  "svg"
+                ],
+                "maxBytes": 2097152
+              }
+            },
             "label": {
               "en-US": "The piece’s outline",
               "de-DE": "Kontur des Teils",
@@ -2001,6 +2032,14 @@
             "type": "text",
             "maxLength": 64,
             "nullable": true,
+            "rules": {
+              "file": {
+                "accept": [
+                  "woff2"
+                ],
+                "maxBytes": 2097152
+              }
+            },
             "label": {
               "en-US": "Font file",
               "de-DE": "Schriftdatei",
@@ -3036,7 +3075,10 @@
         "table:@design_versions:create",
         "table:@design_versions:update",
         "table:@settings:read",
-        "table:@settings:update"
+        "table:@settings:update",
+        "page:@customiser:view",
+        "page:@customiser-product:view",
+        "page:@customiser-line:view"
       ]
     },
     {
@@ -3066,7 +3108,10 @@
         "table:@designs:read_pii",
         "table:@design_versions:read",
         "table:@design_versions:read_pii",
-        "table:@settings:read"
+        "table:@settings:read",
+        "page:@customiser:view",
+        "page:@customiser-product:view",
+        "page:@customiser-line:view"
       ]
     }
   ],
@@ -3295,6 +3340,7 @@
         "material",
         "thickness_mm",
         "outline_file",
+        "offered",
         "position"
       ],
       "appColumn": "app",
@@ -3304,6 +3350,9 @@
           "op": "eq",
           "value": "published"
         }
+      ],
+      "assets": [
+        "outline_file"
       ]
     },
     {
@@ -3319,9 +3368,13 @@
         "width_mm",
         "height_mm",
         "layers",
+        "file",
         "position"
       ],
-      "appColumn": "app"
+      "appColumn": "app",
+      "assets": [
+        "file"
+      ]
     },
     {
       "table": "base_areas",
@@ -3425,6 +3478,9 @@
           "op": "eq",
           "value": true
         }
+      ],
+      "assets": [
+        "file"
       ]
     },
     {
@@ -3610,6 +3666,75 @@
           }
         }
       ]
-    }
+    },
+    "hostApi": 2,
+    "pages": [
+      {
+        "ref": "customiser",
+        "title": {
+          "key": "addon.customiser.page.setup",
+          "fallback": "Customising set-up"
+        },
+        "titles": {
+          "en-US": "Customising set-up",
+          "de-DE": "Gestaltung einrichten",
+          "fr-FR": "Configuration de la personnalisation",
+          "da-DK": "Opsætning af tilpasning",
+          "cs-CZ": "Nastavení úprav",
+          "ar-EG": "إعداد التخصيص",
+          "zh-CN": "定制设置",
+          "zh-TW": "訂製設定"
+        },
+        "icon": "settings-2",
+        "client": "dist/pages/customiser.js",
+        "nav": {
+          "group": "library",
+          "order": 30
+        },
+        "detail": true
+      }
+    ],
+    "panels": [
+      {
+        "id": "customiser-product",
+        "on": "bases",
+        "client": "dist/panels/product.js",
+        "order": 10,
+        "title": {
+          "key": "addon.customiser.panel.product",
+          "fallback": "Customising"
+        },
+        "titles": {
+          "en-US": "Customising",
+          "de-DE": "Gestaltung",
+          "fr-FR": "Personnalisation",
+          "da-DK": "Tilpasning",
+          "cs-CZ": "Úpravy",
+          "ar-EG": "التخصيص",
+          "zh-CN": "定制",
+          "zh-TW": "訂製"
+        }
+      },
+      {
+        "id": "customiser-line",
+        "on": "designs",
+        "client": "dist/panels/line.js",
+        "order": 10,
+        "title": {
+          "key": "addon.customiser.panel.line",
+          "fallback": "Customising"
+        },
+        "titles": {
+          "en-US": "Customising",
+          "de-DE": "Gestaltung",
+          "fr-FR": "Personnalisation",
+          "da-DK": "Tilpasning",
+          "cs-CZ": "Úpravy",
+          "ar-EG": "التخصيص",
+          "zh-CN": "定制",
+          "zh-TW": "訂製"
+        }
+      }
+    ]
   }
 }

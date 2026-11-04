@@ -17,9 +17,11 @@
  * - A saved design opens again only by its private link, on the add-on's own
  *   link key, which reads that one design and nothing else.
  *
+ * - The shop's outlines, pieces and fonts are served to every visitor as
+ *   files (`assets`): a font a part offers, the outline a preview draws.
+ *
  * TODO(J1): `uploads` on the designs entry, so a guest's logo or photo can
- * ride the create into `designs.logo_file` / `photo_file`. TODO(J10): `assets`, so the shop's
- * fonts and SVG pieces are served to every visitor.
+ * ride the create into `designs.logo_file` / `photo_file`.
  */
 type Entry = Record<string, unknown>;
 
@@ -37,8 +39,8 @@ const read = (table: string, select: readonly string[], extra: Entry = {}): Entr
 
 export function entries(): Entry[] {
   return [
-    read('bases', ['id', 'name', 'kind', 'width_mm', 'height_mm', 'depth_mm', 'corner_mm', 'bleed_mm', 'safe_mm', 'sides', 'back_feature_id', 'material', 'thickness_mm', 'outline_file', 'position'], { filters: published }),
-    read('base_pieces', ['id', 'base_id', 'code', 'name', 'width_mm', 'height_mm', 'layers', 'position']),
+    read('bases', ['id', 'name', 'kind', 'width_mm', 'height_mm', 'depth_mm', 'corner_mm', 'bleed_mm', 'safe_mm', 'sides', 'back_feature_id', 'material', 'thickness_mm', 'outline_file', 'offered', 'position'], { filters: published, assets: ['outline_file'] }),
+    read('base_pieces', ['id', 'base_id', 'code', 'name', 'width_mm', 'height_mm', 'layers', 'file', 'position'], { assets: ['file'] }),
     read('base_areas', ['id', 'base_id', 'code', 'name', 'side', 'piece_id', 'face', 'shape', 'x_mm', 'y_mm', 'w_mm', 'h_mm', 'takes', 'required', 'rules', 'feature_id', 'position']),
     read('ready_designs', ['id', 'base_id', 'name', 'tags', 'layouts', 'preview_file', 'position'], { filters: published, pictures: ['preview_file'] }),
     read('ready_parts', ['id', 'ready_design_id', 'code', 'name', 'kind', 'locked', 'required', 'side', 'layout', 'area_id', 'piece_id', 'x_mm', 'y_mm', 'w_mm', 'h_mm', 'rules', 'value', 'feature_id', 'position']),
@@ -50,7 +52,7 @@ export function entries(): Entry[] {
      * offers the fonts its rules name, so another shop's upload is never
      * offered by this shop's designs.
      */
-    { table: 'fonts', methods: ['GET'], select: ['id', 'family', 'name', 'style', 'weights', 'licence', 'starter', 'smallest_mm', 'file'], filters: [{ column: 'active', op: 'eq', value: true }] },
+    { table: 'fonts', methods: ['GET'], select: ['id', 'family', 'name', 'style', 'weights', 'licence', 'starter', 'smallest_mm', 'file'], filters: [{ column: 'active', op: 'eq', value: true }], assets: ['file'] },
     read('palettes', ['id', 'ready_design_id', 'kind', 'code', 'name', 'position']),
     read('palette_colours', ['id', 'palette_id', 'code', 'role', 'name', 'hex', 'position']),
     read('features', ['id', 'code', 'name'], { filters: [{ column: 'active', op: 'eq', value: true }] }),

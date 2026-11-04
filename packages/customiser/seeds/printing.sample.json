@@ -7,8 +7,8 @@
       {"@label":"feature:printing-back","app":"printing","code":"print-back","name":"Print the back","active":true}
     ] },
     { "ref": "bases", "rows": [
-      {"@label":"base:cards","app":"printing","name":"Business cards","kind":"page","width_mm":85,"height_mm":55,"bleed_mm":3,"safe_mm":4,"sides":2,"back_feature_id":{"@ref":"feature:printing-back"},"state":"published","position":1},
-      {"@label":"base:flyer-a5","app":"printing","name":"A5 flyers","kind":"page","width_mm":148,"height_mm":210,"bleed_mm":3,"safe_mm":4,"sides":2,"back_feature_id":{"@ref":"feature:printing-back"},"state":"published","position":2}
+      {"@label":"base:cards","app":"printing","offered":{"fonts":["Manrope","Archivo","Libre Baskerville","DM Serif Display"],"finishes":[]},"name":"Business cards","kind":"page","width_mm":85,"height_mm":55,"bleed_mm":3,"safe_mm":4,"sides":2,"back_feature_id":{"@ref":"feature:printing-back"},"state":"published","position":1},
+      {"@label":"base:flyer-a5","app":"printing","offered":{"fonts":["Manrope","Archivo","Libre Baskerville","DM Serif Display"],"finishes":[]},"name":"A5 flyers","kind":"page","width_mm":148,"height_mm":210,"bleed_mm":3,"safe_mm":4,"sides":2,"back_feature_id":{"@ref":"feature:printing-back"},"state":"published","position":2}
     ] },
     { "ref": "ready_designs", "rows": [
       {"@label":"ready:harbour","app":"printing","base_id":{"@ref":"base:cards"},"name":"Harbour","tags":["simple"],"layouts":[{"key":"left","name":"Logo left"},{"key":"top","name":"Logo top"}],"state":"published","position":1},

@@ -101,9 +101,17 @@ describe('the manifest', () => {
     expect(manifest.addOn.settingsTable).toBe('settings');
   });
 
-  it('builds no shop screen yet, and names every one it builds', () => {
-    expect(Object.keys(OUTPUT.pages)).toEqual([]);
-    expect((manifest.addOn as Record<string, unknown>)['pages']).toBeUndefined();
+  it('names every shop screen the build writes: the set-up page, and a panel on a product and on an order line', () => {
+    const addOn = manifest.addOn as unknown as { hostApi: number; pages: { ref: string; client: string; detail?: boolean; titles: Record<string, string> }[]; panels: { id: string; on: string; client: string; titles: Record<string, string> }[] };
+    expect(addOn.hostApi).toBe(2);
+    expect(addOn.pages.map((page) => [page.ref, page.client])).toEqual(Object.entries(OUTPUT.pages).map(([ref, file]) => [ref, file]));
+    expect(addOn.pages[0]?.detail).toBe(true);
+    // A product links to its base, an order line to the shopper's design: each panel sits on the table it links into.
+    expect(addOn.panels.map((panel) => [panel.id, panel.on, panel.client])).toEqual([
+      ['customiser-product', 'bases', OUTPUT.panels['customiser-product']],
+      ['customiser-line', 'designs', OUTPUT.panels['customiser-line']],
+    ]);
+    for (const screen of [...addOn.pages, ...addOn.panels]) expect(Object.keys(screen.titles).sort()).toEqual([...LOCALES].sort());
   });
 
   it('describes itself in eight languages', () => {
@@ -211,6 +219,24 @@ describe('the tables', () => {
 });
 
 describe('the public entries', () => {
+  it('serve the shop’s outlines, pieces and fonts to every visitor as files, each an SVG or a WOFF2 of up to 2 MB', () => {
+    const served = entries.filter((entry) => (entry as { assets?: string[] }).assets !== undefined).map((entry) => [entry.table, (entry as { assets?: string[] }).assets]);
+    expect(served).toEqual([
+      ['bases', ['outline_file']],
+      ['base_pieces', ['file']],
+      ['fonts', ['file']],
+    ]);
+    expect(columnOf('bases', 'outline_file').rules?.file).toEqual({ accept: ['svg'], maxBytes: 2 * 1024 * 1024 });
+    expect(columnOf('base_pieces', 'file').rules?.file).toEqual({ accept: ['svg'], maxBytes: 2 * 1024 * 1024 });
+    expect(columnOf('fonts', 'file').rules?.file).toEqual({ accept: ['woff2'], maxBytes: 2 * 1024 * 1024 });
+    // Each read only, on the shop's own key, the column among what it reads.
+    for (const entry of entries.filter((one) => (one as { assets?: string[] }).assets !== undefined)) {
+      expect(entry.methods, entry.table).toEqual(['GET']);
+      expect(entry.key, entry.table).toBeUndefined();
+      for (const column of (entry as { assets?: string[] }).assets ?? []) expect(entry.select, entry.table).toContain(column);
+    }
+  });
+
   it('ride each app’s own key and are held to that app’s rows — all but the fonts, which every shop shares', () => {
     for (const entry of onShopKey) {
       if (entry.table === 'fonts') continue;
@@ -275,8 +301,9 @@ describe('the roles', () => {
     for (const one of roles) for (const action of ['create', 'update', 'delete', 'import']) expect(one.permissions, `${one.key} ${action}`).not.toContain(`table:@designs:${action}`);
   });
 
-  it('let the reader read and change nothing', () => {
-    expect(role('reader').permissions.filter((grant) => !grant.endsWith(':read') && !grant.endsWith(':read_pii'))).toEqual([]);
+  it('let the reader read and change nothing, and open the set-up and both panels', () => {
+    expect(role('reader').permissions.filter((grant) => !grant.endsWith(':read') && !grant.endsWith(':read_pii') && !grant.endsWith(':view'))).toEqual([]);
+    for (const one of roles) expect(one.permissions.filter((grant) => grant.startsWith('page:')).sort(), one.key).toEqual(['page:@customiser-line:view', 'page:@customiser-product:view', 'page:@customiser:view']);
   });
 });
 
