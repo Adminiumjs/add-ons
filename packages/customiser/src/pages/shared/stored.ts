@@ -68,3 +68,26 @@ export async function loadFamilies(fonts: readonly { family: string; file: unkno
   }
 }
 
+
+const facts = new Map<string, Promise<{ name: string | null; size: number | null }>>();
+
+/** A stored file's name and size as the dashboard's files route says them (its headers), asked once a file. */
+export function storedFacts(value: unknown): Promise<{ name: string | null; size: number | null }> {
+  const address = fileAddress(value);
+  if (address === null || typeof fetch === 'undefined') return Promise.resolve({ name: null, size: null });
+  let found = facts.get(address);
+  if (found === undefined) {
+    found = fetch(address, { method: 'HEAD', credentials: 'same-origin' })
+      .then((answer) => {
+        if (!answer.ok) return { name: null, size: null };
+        const disposition = answer.headers.get('content-disposition') ?? '';
+        const star = /filename\*\s*=\s*UTF-8''([^;]+)/i.exec(disposition)?.[1];
+        const plain = /filename\s*=\s*"?([^";]+)"?/i.exec(disposition)?.[1];
+        const length = Number(answer.headers.get('content-length'));
+        return { name: star !== undefined ? decodeURIComponent(star) : (plain ?? null), size: Number.isFinite(length) && length > 0 ? length : null };
+      })
+      .catch(() => ({ name: null, size: null }));
+    facts.set(address, found);
+  }
+  return found;
+}

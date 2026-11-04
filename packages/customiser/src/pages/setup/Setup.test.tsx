@@ -172,10 +172,12 @@ describe('step 1, a flat page and the kinds that come with 3D', () => {
     expect(writes('update', 'bases').at(-1)).toMatchObject({ values: { sides: 1 } });
   });
 
-  it('marks a kit as set up with the 3D preview, which comes later', () => {
+  it('sets a kit up from its pieces and its model, not an outline (the kit’s own tests: Kit.test.tsx)', () => {
     at(IDS.nook);
     render(<Customiser />);
-    expect(screen.getByText('This kind is set up with the 3D preview')).toBeTruthy();
+    expect(screen.getByText('The pieces')).toBeTruthy();
+    expect(screen.getByText('The assembled model')).toBeTruthy();
+    expect(screen.queryByText('This kind is set up with the 3D preview')).toBeNull();
     expect(screen.queryByLabelText('Upload the outline')).toBeNull();
   });
 });

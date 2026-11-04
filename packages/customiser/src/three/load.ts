@@ -124,3 +124,28 @@ export function pieceModel(sheet: FlatSheet, outline: ReadSvg | null, thickness:
     top: topCanvas(sheet, painted),
   };
 }
+
+const files = new Map<string, Promise<ArrayBuffer | null>>();
+
+/** A shop's model file, read once a key (its stored id) for every stage and still on the page; none where it cannot be read. */
+export function bytesOnce(key: string, read: () => Promise<ArrayBuffer | null>): Promise<ArrayBuffer | null> {
+  let found = files.get(key);
+  if (found === undefined) {
+    found = read().catch(() => null);
+    files.set(key, found);
+    // A file that could not be read is asked for again next time.
+    void found.then((bytes) => {
+      if (bytes === null) files.delete(key);
+    });
+  }
+  return found;
+}
+
+/**
+ * A design's sheet painted for a marked face of a model: its words and its
+ * pictures on a see-through ground, so the model's own face shows round
+ * them, and the empty areas as the dashed boxes the stage draws.
+ */
+export function decalCanvas(sheet: FlatSheet, painted: Readonly<Record<string, Painted>>): HTMLCanvasElement | null {
+  return topCanvas({ ...sheet, face: { ...sheet.face, colour: 'transparent' } }, painted);
+}

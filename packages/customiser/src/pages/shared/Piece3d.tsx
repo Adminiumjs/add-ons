@@ -109,18 +109,25 @@ export function PieceTurntable({ t, sheet, thickness, outline, label, meta, fall
       >
         <ModelView model={model} view={view} className="absolute inset-0" onFail={fail} />
       </div>
-      <div className="flex flex-wrap items-center gap-1">
-        {TURNS.map((turn) => {
-          const Icon = ICONS[turn.name];
-          const name = turnName(t, turn.name);
-          return (
-            <button key={turn.name} type="button" aria-label={name} title={name} className="grid size-[34px] place-items-center rounded-[9px] border border-border-strong bg-surface p-0 text-fg-muted hover:border-accent" onClick={() => setView((at) => apply(at, { kind: 'turn', dx: turn.dx, dy: turn.dy }, 'piece'))}>
-              <Icon className="size-[15px]" aria-hidden="true" />
-            </button>
-          );
-        })}
-        <span className="ms-auto">{meta}</span>
-      </div>
+      <TurnButtons t={t} onTurn={(dx, dy) => setView((at) => apply(at, { kind: 'turn', dx, dy }, 'piece'))} meta={meta} />
+    </div>
+  );
+}
+
+/** The comp's four turn buttons under a preview, with what the preview is beside them. */
+export function TurnButtons({ t, onTurn, meta }: { t: AddOnTranslate; onTurn: (dx: number, dy: number) => void; meta: ReactNode }): ReactNode {
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      {TURNS.map((turn) => {
+        const Icon = ICONS[turn.name];
+        const name = turnName(t, turn.name);
+        return (
+          <button key={turn.name} type="button" aria-label={name} title={name} className="grid size-[34px] place-items-center rounded-[9px] border border-border-strong bg-surface p-0 text-fg-muted hover:border-accent" onClick={() => onTurn(turn.dx, turn.dy)}>
+            <Icon className="size-[15px]" aria-hidden="true" />
+          </button>
+        );
+      })}
+      <span className="ms-auto">{meta}</span>
     </div>
   );
 }

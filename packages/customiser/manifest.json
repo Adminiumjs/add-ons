@@ -562,6 +562,45 @@
             }
           },
           {
+            "ref": "model_file",
+            "type": "text",
+            "maxLength": 64,
+            "nullable": true,
+            "rules": {
+              "file": {
+                "accept": [
+                  "glb"
+                ],
+                "maxBytes": 31457280
+              }
+            },
+            "label": {
+              "en-US": "The 3D model",
+              "de-DE": "Das 3D-Modell",
+              "fr-FR": "Le modèle 3D",
+              "da-DK": "3D-modellen",
+              "cs-CZ": "3D model",
+              "ar-EG": "النموذج ثلاثي الأبعاد",
+              "zh-CN": "3D 模型",
+              "zh-TW": "3D 模型"
+            }
+          },
+          {
+            "ref": "faces",
+            "type": "json",
+            "nullable": true,
+            "label": {
+              "en-US": "Marked faces",
+              "de-DE": "Markierte Flächen",
+              "fr-FR": "Faces marquées",
+              "da-DK": "Markerede flader",
+              "cs-CZ": "Označené plochy",
+              "ar-EG": "الأوجه المحددة",
+              "zh-CN": "已标记的面",
+              "zh-TW": "已標記的面"
+            }
+          },
+          {
             "ref": "offered",
             "type": "json",
             "nullable": true,
@@ -4199,6 +4238,8 @@
         "material",
         "thickness_mm",
         "outline_file",
+        "model_file",
+        "faces",
         "offered",
         "position"
       ],
@@ -4211,7 +4252,8 @@
         }
       ],
       "assets": [
-        "outline_file"
+        "outline_file",
+        "model_file"
       ]
     },
     {

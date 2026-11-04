@@ -17,6 +17,8 @@ import { refusal } from '../shared/refusal.ts';
 import { useToast } from '../shared/toast.ts';
 import { Drawing } from './Drawing.tsx';
 import { guidesOf, kindOf, looksSvg, materialsIn, mm, num, OUTLINE_BYTES, sizeOf, svgSize, text } from './facts.ts';
+import { KitFields, KitPreview, useKitPieces } from './KitBase.tsx';
+import { MarkFaces } from './MarkFaces.tsx';
 import { kindName } from './NewBase.tsx';
 
 /** A number field that saves its column when it is left with a new value. */
@@ -38,8 +40,9 @@ export function SavedNumber({ label, value, unit, onSave, decimals = 1 }: { labe
   );
 }
 
-export function BaseStep({ t, base, bases, settings }: { t: AddOnTranslate; base: DataRow; bases: readonly DataRow[]; settings: DataRow | null }): ReactNode {
+export function BaseStep({ t, base, bases, settings, areas = [] }: { t: AddOnTranslate; base: DataRow; bases: readonly DataRow[]; settings: DataRow | null; areas?: readonly DataRow[] }): ReactNode {
   const kind = kindOf(base);
+  const pieces = useKitPieces(base, kind === 'kit');
   const write = useWrite('bases');
   const toast = useToast();
   const id = base['id'] as string | number;
@@ -54,17 +57,27 @@ export function BaseStep({ t, base, bases, settings }: { t: AddOnTranslate; base
         : kind === 'kit'
           ? t('setup.base.note.kit', 'Each piece is cut flat. The model shows them put together.')
           : t('setup.base.note.printed', 'Printed in PLA. Words and logos are raised from, or cut into, a flat face.');
-  return (
+  const step = (
     <Grid columns={2} gap="lg">
       <Stack gap="md">
         <Card title={kindName(t, kind)} description={note} />
         {kind === 'page' ? <PageFields t={t} base={base} settings={settings} save={save} /> : null}
         {kind === 'piece' ? <Outline t={t} base={base} save={save} /> : null}
         {kind === 'piece' ? <Material t={t} base={base} bases={bases} save={save} /> : null}
-        {kind === 'kit' || kind === 'printed' ? <Alert tone="info" title={t('setup.base.later.title', 'This kind is set up with the 3D preview')} body={t('setup.base.later.body', 'Its pieces, models and marked faces come with the 3D preview in a later release. You can name it and give its size now.')} /> : null}
+        {kind === 'kit' ? <KitFields t={t} base={base} pieces={pieces} save={save} /> : null}
+        {kind === 'printed' ? <Alert tone="info" title={t('setup.base.later.title', 'This kind is set up with the 3D preview')} body={t('setup.base.later.body', 'Its pieces, models and marked faces come with the 3D preview in a later release. You can name it and give its size now.')} /> : null}
       </Stack>
-      <Preview t={t} base={base} settings={settings} />
+      {kind === 'kit' ? <KitPreview t={t} base={base} /> : <Preview t={t} base={base} settings={settings} />}
     </Grid>
+  );
+  // A kit's marked faces sit below its base, across the page, as the comp's.
+  return kind === 'kit' ? (
+    <Stack gap="lg">
+      {step}
+      <MarkFaces t={t} base={base} pieces={pieces} areas={areas} />
+    </Stack>
+  ) : (
+    step
   );
 }
 

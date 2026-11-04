@@ -240,14 +240,15 @@ describe('the tables', () => {
 });
 
 describe('the public entries', () => {
-  it('serve the shop’s outlines, pieces and fonts to every visitor as files, each an SVG or a WOFF2 of up to 2 MB', () => {
+  it('serve the shop’s outlines, pieces, models and fonts to every visitor as files: an SVG or a WOFF2 of up to 2 MB, a GLB of up to 30 MB', () => {
     const served = entries.filter((entry) => (entry as { assets?: string[] }).assets !== undefined).map((entry) => [entry.table, (entry as { assets?: string[] }).assets]);
     expect(served).toEqual([
-      ['bases', ['outline_file']],
+      ['bases', ['outline_file', 'model_file']],
       ['base_pieces', ['file']],
       ['fonts', ['file']],
     ]);
     expect(columnOf('bases', 'outline_file').rules?.file).toEqual({ accept: ['svg'], maxBytes: 2 * 1024 * 1024 });
+    expect(columnOf('bases', 'model_file').rules?.file).toEqual({ accept: ['glb'], maxBytes: 30 * 1024 * 1024 });
     expect(columnOf('base_pieces', 'file').rules?.file).toEqual({ accept: ['svg'], maxBytes: 2 * 1024 * 1024 });
     expect(columnOf('fonts', 'file').rules?.file).toEqual({ accept: ['woff2'], maxBytes: 2 * 1024 * 1024 });
     // Each read only, on the shop's own key, the column among what it reads.

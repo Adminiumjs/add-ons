@@ -12,13 +12,13 @@
 import { DirectionalLight, HemisphereLight, MathUtils, PerspectiveCamera, Raycaster, Scene, Vector2, WebGLRenderer, type Intersection, type Mesh, type Object3D } from 'three';
 
 import { faceAt, flatFacesOf, sizeOfModel, type FacePlane, type Picked, type Triangles } from './faces.ts';
-import { buildModel, disposeModel, dress, meshesOf, readModel, trianglesOf, type BuiltModel, type ReadModel, type ShopModel } from './model.ts';
+import { buildModel, disposeModel, dress, meshesOf, readModel, trianglesOf, type BuiltModel, type ReadModel, type ShopModel } from './shopModel.ts';
 import { buildPiece, disposeBuilt, pointOfUv, retexture, sameBody, type Built, type PieceModel } from './piece.ts';
 import type { Point } from './rings.ts';
 import type { View } from './view.ts';
 
 export type { PieceModel } from './piece.ts';
-export type { Decal, Marks, ShopModel } from './model.ts';
+export type { Decal, Marks, ShopModel } from './shopModel.ts';
 export { readSvg } from '../draw/svgread.ts';
 
 /** What a stage draws: a flat piece made from its outline, or a shop's own model. */

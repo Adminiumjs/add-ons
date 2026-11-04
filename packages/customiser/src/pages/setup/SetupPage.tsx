@@ -127,7 +127,7 @@ export function SetupPage({ t }: { t: AddOnTranslate }): ReactNode {
               ))}
             </ol>
           </nav>
-          {step === 'base' ? <BaseStep t={t} base={base} bases={bases.rows} settings={data.settings} /> : null}
+          {step === 'base' ? <BaseStep t={t} base={base} bases={bases.rows} settings={data.settings} areas={data.areas} /> : null}
           {step === 'areas' ? <AreasStep t={t} base={base} data={data} /> : null}
           {step === 'designs' ? <DesignsStep t={t} base={base} data={data} /> : null}
           {step === 'fonts' ? <FontsStep t={t} base={base} data={data} /> : null}

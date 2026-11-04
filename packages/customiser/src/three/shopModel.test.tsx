@@ -15,7 +15,7 @@ import { describe, expect, it } from 'vitest';
 
 import { glbOf, SIGN, stlOf, WALL } from '../testing/glb.ts';
 import { axesOf, faceAt, facesOf, facesValue, flatFacesOf, middleOf, mmPerUnit, onFace, sameFace, sizeOfModel, type MarkedFace, type Triangles } from './faces.ts';
-import { boxModel, readModel, trianglesOf, type ShopModel } from './model.ts';
+import { boxModel, readModel, trianglesOf, type ShopModel } from './shopModel.ts';
 import { isGlb, isStl, isSvg, modelKindOf } from './sniff.ts';
 import { Stage3d, type RendererLike } from './stage3d.ts';
 

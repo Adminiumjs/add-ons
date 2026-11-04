@@ -26,16 +26,20 @@ export interface ModelViewProps {
   /** The stage itself, for the page to ask where a tap landed on the piece. */
   stageRef?: MutableRefObject<Stage3d | null>;
   onFail?: () => void;
+  /** The model is drawn (a shop's model once its file is read): the stage, to be asked about it. */
+  onDrawn?: (stage: Stage3d) => void;
   /** Where the stage's file comes from: a test hands in its own. */
   load?: () => Promise<Pick<ThreeChunk, 'makeStage'>>;
 }
 
-export function ModelView({ model, view, className, stageRef, onFail, load = loadThree }: ModelViewProps): ReactNode {
+export function ModelView({ model, view, className, stageRef, onFail, onDrawn, load = loadThree }: ModelViewProps): ReactNode {
   const host = useRef<HTMLDivElement | null>(null);
   const canvas = useRef<HTMLCanvasElement | null>(null);
   const [stage, setStage] = useState<Stage3d | null>(null);
   const failed = useRef(onFail);
   failed.current = onFail;
+  const drawn = useRef(onDrawn);
+  drawn.current = onDrawn;
 
   useEffect(() => {
     let alive = true;
@@ -73,7 +77,10 @@ export function ModelView({ model, view, className, stageRef, onFail, load = loa
     if (stage === null || model === null) return;
     try {
       // A shop's model is read from its file first; one this device cannot read or draw says so.
-      stage.setModel(model).catch(() => failed.current?.());
+      stage.setModel(model).then(
+        () => drawn.current?.(stage),
+        () => failed.current?.(),
+      );
     } catch {
       failed.current?.();
     }

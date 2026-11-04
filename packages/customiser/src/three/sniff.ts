@@ -3,7 +3,7 @@
  *
  * The shop's set-up reads a picked file's first bytes before it uploads it,
  * so a refusal comes at once and in the shop's words; Adminium reads the
- * whole file again as it stores it (`files/models.ts`, `files/svg.ts`).
+ * whole file again as it stores it (its own model and SVG readers).
  *
  * - an SVG: text whose first tag (after an XML line, comments or a doctype)
  *   is `<svg`;

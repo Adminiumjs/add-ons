@@ -166,7 +166,7 @@ export interface InputProps {
 }
 export const Input = part<InputProps>(data, 'Input');
 /** The same field, choosing a file: it holds no value of its own. */
-export const FileInput = part<{ label?: ReactNode; hint?: ReactNode; error?: ReactNode; type: 'file'; accept?: string; disabled?: boolean; onChange: ChangeEventHandler<HTMLInputElement> }>(data, 'Input');
+export const FileInput = part<{ label?: ReactNode; hint?: ReactNode; error?: ReactNode; type: 'file'; accept?: string; multiple?: boolean; disabled?: boolean; onChange: ChangeEventHandler<HTMLInputElement> }>(data, 'Input');
 
 export interface NumberInputProps {
   value: string;

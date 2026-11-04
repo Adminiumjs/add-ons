@@ -53,6 +53,8 @@ const both = (one: Words, many: Words) => ({ label: one, labelPlural: many });
 export const CUSTOMER_FILE_BYTES = 10 * 1024 * 1024;
 /** An outline, a piece or a font the shop uploads: up to 2 MB, as the comps say and Adminium serves them. */
 export const SHOP_FILE_BYTES = 2 * 1024 * 1024;
+/** A shop's 3D model: up to 30 MB, the most Adminium serves a visitor (a model's cap). */
+export const MODEL_FILE_BYTES = 30 * 1024 * 1024;
 /** A never-ordered design is let go this many days after it last changed. */
 export const DESIGN_KEEP_DAYS = 90;
 
@@ -107,6 +109,16 @@ export function tables(): Table[] {
         mm('thickness_mm', w('Thickness (mm)', 'Stärke (mm)', 'Épaisseur (mm)', 'Tykkelse (mm)', 'Tloušťka (mm)', 'السماكة (مم)', '厚度（毫米）', '厚度（公釐）'), { nullable: true }),
         // The piece's outline: an SVG Adminium cleans as it is stored, served to every visitor of a published base.
         col('outline_file', 'text', w('The outline', 'Die Kontur', 'Le contour', 'Omridset', 'Obrys', 'المخطط الخارجي', '轮廓', '輪廓'), { maxLength: 64, nullable: true, rules: { file: { accept: ['svg'], maxBytes: SHOP_FILE_BYTES } } }),
+        // The model shoppers turn (a kit put together): a GLB with everything inside it, served to every visitor of a published base.
+        col('model_file', 'text', w('The 3D model', 'Das 3D-Modell', 'Le modèle 3D', '3D-modellen', '3D model', 'النموذج ثلاثي الأبعاد', '3D 模型', '3D 模型'), { maxLength: 64, nullable: true, rules: { file: { accept: ['glb'], maxBytes: MODEL_FILE_BYTES } } }),
+        /*
+         * The faces of the model the shop marked to carry words or a logo, each
+         * kept as the model's own numbers (its mesh, its plane, its size) so it
+         * lands on the same spot each time the model is read: one list, written
+         * and replaced with the model it belongs to. An area names its face by
+         * its code (`base_areas.face`).
+         */
+        col('faces', 'json', w('Marked faces', 'Markierte Flächen', 'Faces marquées', 'Markerede flader', 'Označené plochy', 'الأوجه المحددة', '已标记的面', '已標記的面'), { nullable: true }),
         /*
          * What this base offers every part and area on it: the fonts (by family)
          * and the finishes (by colour code) the shop switched on for it in the
