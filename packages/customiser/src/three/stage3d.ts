@@ -46,14 +46,14 @@ export class Stage3d {
   private model: PieceModel | null = null;
   private view: View = { rx: 0, ry: 0, zoom: 1 };
   private readonly raycaster = new Raycaster();
-  private readonly lights = [new HemisphereLight(0xffffff, 0x5a4a3a, 2.2), new DirectionalLight(0xffffff, 2.4)];
+  private readonly lights = [new HemisphereLight(0xffffff, 0x5a4a3a, 2.6), new DirectionalLight(0xffffff, 1.9)];
   private gone = false;
 
   readonly renderer: RendererLike;
 
   constructor(renderer: RendererLike) {
     this.renderer = renderer;
-    this.lights[1]!.position.set(30, 60, 80);
+    this.lights[1]!.position.set(20, 50, 100);
     this.scene.add(...this.lights);
     renderer.setPixelRatio(Math.min(2, typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1));
   }
