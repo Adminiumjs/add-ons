@@ -12,9 +12,11 @@ import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const SECTIONS = ['shared'];
+export const SECTIONS = ['shared', 'setup', 'panel'];
 const here = dirname(fileURLToPath(import.meta.url));
 export const PAGES = resolve(here, '../src/pages');
+/** The record panels, built from their own folder, whose words are the screens' too. */
+export const PANELS = resolve(here, '../src/panels');
 export const TARGET = join(PAGES, 'strings/en-US.ts');
 
 function sources(dir) {
@@ -30,7 +32,7 @@ const CALL = /\bt\(\s*'([A-Za-z0-9_.-]+)',\s*('(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\
 /** Every key with its English, by section; throws on a key written with two different sentences. */
 export function gather() {
   const found = new Map();
-  for (const file of sources(PAGES)) {
+  for (const file of [...sources(PAGES), ...sources(PANELS)]) {
     const text = readFileSync(file, 'utf8');
     for (const match of text.matchAll(CALL)) {
       const key = match[1];

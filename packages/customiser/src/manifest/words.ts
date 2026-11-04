@@ -72,3 +72,9 @@ export const ROLE_NAMES = {
   designer: w('Customiser designer', 'Customiser-Gestaltung', 'Conception Customiser', 'Customiser-designer', 'Návrhář Customiseru', 'مصمم Customiser', 'Customiser 设计员', 'Customiser 設計員'),
   reader: w('Customiser reader', 'Customiser lesen', 'Lecture Customiser', 'Customiser-læser', 'Čtenář Customiseru', 'قارئ Customiser', 'Customiser 查看者', 'Customiser 檢視者'),
 };
+
+/* ── the shop's screens ──────────────────────────────────────────────────── */
+
+/** The set-up page's name in the sidebar, and the record panels' tab name. */
+export const PAGE_TITLE = w('Customising set-up', 'Gestaltung einrichten', 'Configuration de la personnalisation', 'Opsætning af tilpasning', 'Nastavení úprav', 'إعداد التخصيص', '定制设置', '訂製設定');
+export const PANEL_TITLE = w('Customising', 'Gestaltung', 'Personnalisation', 'Tilpasning', 'Úpravy', 'التخصيص', '定制', '訂製');

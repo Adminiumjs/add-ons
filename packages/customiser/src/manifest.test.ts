@@ -101,9 +101,17 @@ describe('the manifest', () => {
     expect(manifest.addOn.settingsTable).toBe('settings');
   });
 
-  it('builds no shop screen yet, and names every one it builds', () => {
-    expect(Object.keys(OUTPUT.pages)).toEqual([]);
-    expect((manifest.addOn as Record<string, unknown>)['pages']).toBeUndefined();
+  it('names every shop screen the build writes: the set-up page, and a panel on a product and on an order line', () => {
+    const addOn = manifest.addOn as unknown as { hostApi: number; pages: { ref: string; client: string; detail?: boolean; titles: Record<string, string> }[]; panels: { id: string; on: string; client: string; titles: Record<string, string> }[] };
+    expect(addOn.hostApi).toBe(2);
+    expect(addOn.pages.map((page) => [page.ref, page.client])).toEqual(Object.entries(OUTPUT.pages).map(([ref, file]) => [ref, file]));
+    expect(addOn.pages[0]?.detail).toBe(true);
+    // A product links to its base, an order line to the shopper's design: each panel sits on the table it links into.
+    expect(addOn.panels.map((panel) => [panel.id, panel.on, panel.client])).toEqual([
+      ['customiser-product', 'bases', OUTPUT.panels['customiser-product']],
+      ['customiser-line', 'designs', OUTPUT.panels['customiser-line']],
+    ]);
+    for (const screen of [...addOn.pages, ...addOn.panels]) expect(Object.keys(screen.titles).sort()).toEqual([...LOCALES].sort());
   });
 
   it('describes itself in eight languages', () => {
@@ -240,8 +248,9 @@ describe('the roles', () => {
     for (const one of roles) for (const action of ['create', 'update', 'delete', 'import']) expect(one.permissions, `${one.key} ${action}`).not.toContain(`table:@designs:${action}`);
   });
 
-  it('let the reader read and change nothing', () => {
-    expect(role('reader').permissions.filter((grant) => !grant.endsWith(':read') && !grant.endsWith(':read_pii'))).toEqual([]);
+  it('let the reader read and change nothing, and open the set-up and both panels', () => {
+    expect(role('reader').permissions.filter((grant) => !grant.endsWith(':read') && !grant.endsWith(':read_pii') && !grant.endsWith(':view'))).toEqual([]);
+    for (const one of roles) expect(one.permissions.filter((grant) => grant.startsWith('page:')).sort(), one.key).toEqual(['page:@customiser-line:view', 'page:@customiser-product:view', 'page:@customiser:view']);
   });
 });
 

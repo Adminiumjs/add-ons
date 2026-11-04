@@ -103,6 +103,12 @@ export function tables(): Table[] {
         mm('thickness_mm', w('Thickness (mm)', 'Stärke (mm)', 'Épaisseur (mm)', 'Tykkelse (mm)', 'Tloušťka (mm)', 'السماكة (مم)', '厚度（毫米）', '厚度（公釐）'), { nullable: true }),
         // TODO(J10): a cleaned SVG outline, `rules.file { accept: ['svg'] }`, once Adminium takes the kind.
         col('outline_file', 'text', w('The outline', 'Die Kontur', 'Le contour', 'Omridset', 'Obrys', 'المخطط الخارجي', '轮廓', '輪廓'), { maxLength: 64, nullable: true }),
+        /*
+         * What this base offers every part and area on it: the fonts (by family)
+         * and the finishes (by colour code) the shop switched on for it in the
+         * set-up's "Fonts & finishes" step. An area or a part offers some of these.
+         */
+        col('offered', 'json', w('Fonts and finishes offered', 'Angebotene Schriften und Ausführungen', 'Polices et finitions proposées', 'Tilbudte skrifttyper og overflader', 'Nabízená písma a povrchové úpravy', 'الخطوط والتشطيبات المعروضة', '提供的字体和表面处理', '提供的字型和表面處理'), { nullable: true }),
         choice(
           'state',
           {

@@ -11,8 +11,10 @@ import { defineConfig } from 'vitest/config';
  *
  * - `pages`: the shop's own screens in the dashboard, one file each, every
  *   language inside, the host's React reached through the published shims
- *   (as every add-on's screens are). None is written yet: the shop's set-up
- *   and its design editor add theirs here, and the manifest names each.
+ *   (as every add-on's screens are), from `src/pages/<name>/index.tsx`;
+ * - `panels`: the record panels on an app's product and order line, built
+ *   the same way from `src/panels/<name>.tsx`, each a file of its own (a
+ *   panel's file is served behind its own gates, never a page's);
  * - `browser`: the customer's editor. It is not served by Adminium at all: a
  *   shop app imports `@adminiumjs/add-on-customiser/browser` into its own
  *   customer bundle, at the range it pins, so React stays the app's own and
@@ -22,12 +24,19 @@ import { defineConfig } from 'vitest/config';
  * holds what lands on disk to `BUILT_FILES`.
  */
 export const OUTPUT = {
-  pages: {} as Readonly<Record<string, string>>,
+  pages: { customiser: 'dist/pages/customiser.js' } as Readonly<Record<string, string>>,
+  panels: { 'customiser-product': 'dist/panels/product.js', 'customiser-line': 'dist/panels/line.js' } as Readonly<Record<string, string>>,
   browser: 'dist/browser/index.js',
 } as const;
 
 /** Every file the build writes. */
-export const BUILT_FILES: readonly string[] = [OUTPUT.browser, ...Object.values(OUTPUT.pages)];
+export const BUILT_FILES: readonly string[] = [OUTPUT.browser, ...Object.values(OUTPUT.pages), ...Object.values(OUTPUT.panels)];
+
+/** Where each screen file is built from. */
+const SCREENS: readonly { file: string; entry: string }[] = [
+  ...Object.values(OUTPUT.pages).map((file) => ({ file, entry: `src/pages/${file.slice('dist/pages/'.length, -'.js'.length)}/index.tsx` })),
+  ...Object.values(OUTPUT.panels).map((file) => ({ file, entry: `src/panels/${file.slice('dist/panels/'.length, -'.js'.length)}.tsx` })),
+];
 
 /**
  * The host's own copies of React and the dashboard's parts, for the shop's
@@ -41,8 +50,8 @@ function screens(): Plugin {
     name: 'add-on-customiser:screens',
     apply: 'build',
     async closeBundle() {
-      for (const file of Object.values(OUTPUT.pages)) {
-        const name = file.slice('dist/pages/'.length, -'.js'.length);
+      for (const { file, entry } of SCREENS) {
+        const name = file.slice(file.lastIndexOf('/') + 1, -'.js'.length);
         await build({
           configFile: false,
           logLevel: 'warn',
@@ -58,8 +67,8 @@ function screens(): Plugin {
           build: {
             // The customer's editor is already in `dist/`: emptying it here would delete it.
             emptyOutDir: false,
-            outDir: 'dist/pages',
-            lib: { entry: `src/pages/${name}/index.tsx`, formats: ['es'], fileName: () => `${name}.js` },
+            outDir: file.slice(0, file.lastIndexOf('/')),
+            lib: { entry, formats: ['es'], fileName: () => `${name}.js` },
             rollupOptions: { external: [], output: { inlineDynamicImports: true } },
             target: 'es2022',
             sourcemap: false,
