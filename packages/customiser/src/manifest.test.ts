@@ -173,13 +173,13 @@ describe('the design question', () => {
 
 describe('the tables', () => {
   it('are the ones every other piece builds on, by these names', () => {
-    expect(tables.map((table) => table.ref)).toEqual(['settings', 'bases', 'base_pieces', 'base_areas', 'ready_designs', 'ready_parts', 'fonts', 'palettes', 'palette_colours', 'features', 'designs', 'design_versions', 'version_files', 'postings']);
-    expect([...SHOP_TABLES, ...CUSTOMER_TABLES, 'settings', 'postings'].sort()).toEqual(tables.map((table) => table.ref).sort());
+    expect(tables.map((table) => table.ref)).toEqual(['settings', 'bases', 'base_pieces', 'base_areas', 'ready_designs', 'ready_parts', 'fonts', 'palettes', 'palette_colours', 'features', 'designs', 'design_versions', 'version_files', 'postings', 'design_mails']);
+    expect([...SHOP_TABLES, ...CUSTOMER_TABLES, 'settings', 'postings', 'design_mails'].sort()).toEqual(tables.map((table) => table.ref).sort());
   });
 
   it('say, every one two shop apps might share, which app a row is for', () => {
-    // The postings are Adminium's own record of what a line posted: it writes them, with the line's table and row, never an app column.
-    for (const table of tables.filter((one) => one.ref !== 'settings' && one.ref !== 'postings')) expect(columnOf(table.ref, 'app'), table.ref).toMatchObject({ type: 'text', nullable: true });
+    // The postings and the mails are Adminium's own records (what a line posted, what it mailed): it writes them, never an app column.
+    for (const table of tables.filter((one) => !['settings', 'postings', 'design_mails'].includes(one.ref))) expect(columnOf(table.ref, 'app'), table.ref).toMatchObject({ type: 'text', nullable: true });
   });
 
   it('take four kinds of base, and a base is offered only once it is published', () => {
@@ -220,9 +220,10 @@ describe('the tables', () => {
     expect(columnOf('designs', 'updated_at')).toMatchObject({ type: 'timestamptz', role: 'updated_at' });
     expect(tableOf('designs').expire).toEqual({ after: 'updated_at', days: 90, unless: { column: 'state', equals: 'ordered' } });
     expect(columnOf('designs', 'state')).toMatchObject({ enum: ['draft', 'ordered'], default: 'draft' });
-    // Nothing of the add-on points at a draft design, or it would never go: only an ordered design has versions.
+    // Nothing of the add-on points at a draft design, or it would never go: only an ordered design has versions, and the mail about its link lets go of it.
     const pointing = tables.flatMap((table) => table.columns.filter((column) => column.references === 'designs').map((column) => `${table.ref}.${column.ref}`));
-    expect(pointing).toEqual(['design_versions.design_id']);
+    expect(pointing).toEqual(['design_versions.design_id', 'design_mails.design_id']);
+    expect(columnOf('design_mails', 'design_id').nullable).toBe(true);
   });
 
   it('mark as personal every column that holds what a customer wrote, sent or where to reach them', () => {
@@ -327,6 +328,59 @@ describe('the public entries', () => {
 
   it('never serve a customer’s file to every visitor', () => {
     for (const entry of entries) for (const ref of DESIGN_UPLOADS) expect((entry as { assets?: string[] }).assets ?? [], `${entry.table} ${ref}`).not.toContain(ref);
+  });
+});
+
+describe('the one e-mail: a saved design’s private link', () => {
+  const outbox = manifest.outbox as unknown as { table: string; columns: Record<string, string>; links: Record<string, string>; recipient: Record<string, string>; pages: { app: Record<string, string> }; kinds: Record<string, string>; classes: Record<string, string>; producers: { kind: string; link: string; onCreate: { table: string; where?: unknown } }[] };
+  const templates = manifest.emailTemplates as unknown as { key: string; vars: string[]; locales: Record<string, { subject: string; blocks: { block: string; data: Record<string, string> }[]; footer: string }> }[];
+
+  it('is sent when a design is saved, to the address it was saved with, as a service mail', () => {
+    expect(outbox.table).toBe('design_mails');
+    expect(outbox.producers).toEqual([{ kind: 'design-link', link: 'design_id', onCreate: { table: 'designs' } }]);
+    expect(outbox.recipient).toEqual({ via: 'design_id', table: 'designs', email: 'email' });
+    // Never marketing: the customer asked for it, so it goes even to an address on the do-not-email list for news.
+    expect(outbox.classes).toEqual({ 'design-link': 'service' });
+    expect(outbox.kinds).toEqual({ 'design-link': 'customiser-design-link' });
+  });
+
+  it('carries the design’s own link to the page each shop app names for it, and no button where an app names none', () => {
+    expect(outbox.pages).toEqual({ app: { design: 'customiserDesign' } });
+    expect(templates.map((one) => one.key)).toEqual(['customiser-design-link']);
+    expect(templates[0]!.vars).toEqual(['app_url.design', 'design.link_token']);
+    for (const [tag, letter] of Object.entries(templates[0]!.locales)) {
+      const button = letter.blocks.find((block) => block.block === 'email.button');
+      expect(button?.data, tag).toMatchObject({ url: '{{app_url.design}}#{{design.link_token}}', onlyWith: 'app_url.design' });
+      // The code a staff member never reads goes only after the `#`: it is never sent to the shop's server as part of an address.
+      expect(JSON.stringify(letter).match(/link_token/g), tag).toHaveLength(1);
+    }
+  });
+
+  it('is written in all eight languages, and says how long a design is kept', () => {
+    expect(Object.keys(templates[0]!.locales).sort()).toEqual([...LOCALES].sort());
+    for (const [tag, letter] of Object.entries(templates[0]!.locales)) {
+      expect(letter.subject.trim(), tag).not.toBe('');
+      for (const block of letter.blocks) expect(Object.values(block.data).every((text) => text.trim() !== ''), `${tag} ${block.block}`).toBe(true);
+      expect(JSON.stringify(letter), tag).toContain('90');
+    }
+    expect(templates[0]!.locales['en-US']!.blocks.map((block) => block.data['text'] ?? block.data['label'])).toEqual([
+      'Your design is saved',
+      'Here is your private link to come back to it. Nobody else can open it.',
+      'Open your design',
+      'We keep a design for 90 days after its last change, unless you order it.',
+    ]);
+  });
+
+  it('keeps a log staff read and never write, whose address is personal', () => {
+    expect(columnOf('design_mails', 'id')).toEqual({ ref: 'id', type: 'int', role: 'pk' });
+    expect(columnOf('design_mails', 'to_address').rules?.personal).toBe(true);
+    expect(columnOf('design_mails', 'status')).toMatchObject({ enum: ['queued', 'sent', 'failed', 'skipped'], default: 'queued' });
+    for (const one of roles) {
+      const grants = one.permissions.filter((grant) => grant.startsWith('table:@design_mails:'));
+      expect(grants, one.key).toEqual(['table:@design_mails:read']);
+    }
+    // No visitor reads or writes it.
+    expect(entries.filter((entry) => entry.table === 'design_mails')).toEqual([]);
   });
 });
 

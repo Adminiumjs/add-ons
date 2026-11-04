@@ -15,6 +15,7 @@ import { starterFontRows } from './fonts.ts';
 import { tables } from './tables.ts';
 import { CHECKER } from './checker.ts';
 import { LEDGER } from './ledger.ts';
+import { emailTemplates, MAIL_TABLE, mailTable, outbox } from './mail.ts';
 import { DESCRIPTION, PAGE_TITLE, PANEL_TITLE, ROLE_NAMES, type Words } from './words.ts';
 
 /** The add-on's key, its page ref, and the floor whose words it uses (an add-on's own entries on each app's key, expiry, links into it). */
@@ -56,6 +57,8 @@ function roles(): Record<string, unknown>[] {
         ...grants('version_files', ['read', 'create', 'update', 'delete']),
         // What an order line posted: read, never written by a person.
         ...grants('postings', ['read']),
+        // The log of the saved designs' links Adminium mailed: read, never written by a person.
+        ...grants(MAIL_TABLE, ['read']),
         ...grants('settings', ['read', 'update']),
         ...VIEWS,
       ],
@@ -64,7 +67,7 @@ function roles(): Record<string, unknown>[] {
       key: 'reader',
       name: ROLE_NAMES.reader['en-US'],
       names: ROLE_NAMES.reader,
-      permissions: [...SHOP_TABLES.flatMap((table) => grants(table, ['read'])), ...CUSTOMER_TABLES.flatMap((table) => grants(table, ['read', 'read_pii'])), ...grants('postings', ['read']), ...grants('settings', ['read']), ...VIEWS],
+      permissions: [...SHOP_TABLES.flatMap((table) => grants(table, ['read'])), ...CUSTOMER_TABLES.flatMap((table) => grants(table, ['read', 'read_pii'])), ...grants('postings', ['read']), ...grants(MAIL_TABLE, ['read']), ...grants('settings', ['read']), ...VIEWS],
     },
   ];
 }
@@ -81,12 +84,15 @@ export function buildManifest(): Record<string, unknown> {
     description: { key: 'addon.customiser.description', fallback: DESCRIPTION['en-US'] },
     categories: ['artwork'],
     compatibility: { minAdminiumVersion: FLOOR, requires: [] },
-    requiredSchema: { prefixed: true, tables: tables() },
+    requiredSchema: { prefixed: true, tables: [...tables(), mailTable()] },
     roles: roles(),
     // The starter fonts, written once at install into an empty fonts table.
     seeds: [{ table: 'fonts', rows: starterFontRows() }],
     publicKeys: { [LINK_KEY]: {} },
     publicAccess: entries(),
+    // The one e-mail: a saved design's private link, to the address it was saved with.
+    outbox: outbox(),
+    emailTemplates: emailTemplates(),
     addOn: {
       /*
        * The two shop apps, at any version. The versions reworked around the

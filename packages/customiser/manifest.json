@@ -3637,6 +3637,202 @@
             }
           }
         ]
+      },
+      {
+        "ref": "design_mails",
+        "label": {
+          "en-US": "Design e-mail",
+          "de-DE": "Entwurfs-E-Mail",
+          "fr-FR": "E-mail de création",
+          "da-DK": "Design-e-mail",
+          "cs-CZ": "E-mail k návrhu",
+          "ar-EG": "بريد التصميم",
+          "zh-CN": "设计邮件",
+          "zh-TW": "設計郵件"
+        },
+        "labelPlural": {
+          "en-US": "Design e-mails",
+          "de-DE": "Entwurfs-E-Mails",
+          "fr-FR": "E-mails de création",
+          "da-DK": "Design-e-mails",
+          "cs-CZ": "E-maily k návrhům",
+          "ar-EG": "رسائل التصاميم",
+          "zh-CN": "设计邮件",
+          "zh-TW": "設計郵件"
+        },
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "kind",
+            "type": "enum",
+            "enum": [
+              "design-link"
+            ],
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "design-link": {
+                    "en-US": "The design’s private link",
+                    "de-DE": "Privater Link zum Entwurf",
+                    "fr-FR": "Lien privé vers la création",
+                    "da-DK": "Designets private link",
+                    "cs-CZ": "Soukromý odkaz na návrh",
+                    "ar-EG": "الرابط الخاص بالتصميم",
+                    "zh-CN": "设计的私人链接",
+                    "zh-TW": "設計的私人連結"
+                  }
+                }
+              }
+            },
+            "label": {
+              "en-US": "Kind of mail",
+              "de-DE": "Art der E-Mail",
+              "fr-FR": "Type d’e-mail",
+              "da-DK": "Type af mail",
+              "cs-CZ": "Druh e-mailu",
+              "ar-EG": "نوع البريد",
+              "zh-CN": "邮件类型",
+              "zh-TW": "郵件類型"
+            }
+          },
+          {
+            "ref": "status",
+            "type": "enum",
+            "enum": [
+              "queued",
+              "sent",
+              "failed",
+              "skipped"
+            ],
+            "default": "queued",
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "queued": {
+                    "en-US": "Waiting",
+                    "de-DE": "Wartet",
+                    "fr-FR": "En attente",
+                    "da-DK": "Venter",
+                    "cs-CZ": "Čeká",
+                    "ar-EG": "في الانتظار",
+                    "zh-CN": "等待中",
+                    "zh-TW": "等待中"
+                  },
+                  "sent": {
+                    "en-US": "Sent",
+                    "de-DE": "Gesendet",
+                    "fr-FR": "Envoyé",
+                    "da-DK": "Sendt",
+                    "cs-CZ": "Odesláno",
+                    "ar-EG": "أُرسل",
+                    "zh-CN": "已发送",
+                    "zh-TW": "已傳送"
+                  },
+                  "failed": {
+                    "en-US": "Failed",
+                    "de-DE": "Fehlgeschlagen",
+                    "fr-FR": "Échec",
+                    "da-DK": "Mislykkedes",
+                    "cs-CZ": "Selhalo",
+                    "ar-EG": "فشل",
+                    "zh-CN": "失败",
+                    "zh-TW": "失敗"
+                  },
+                  "skipped": {
+                    "en-US": "Not sent",
+                    "de-DE": "Nicht gesendet",
+                    "fr-FR": "Non envoyé",
+                    "da-DK": "Ikke sendt",
+                    "cs-CZ": "Neodesláno",
+                    "ar-EG": "لم يُرسل",
+                    "zh-CN": "未发送",
+                    "zh-TW": "未傳送"
+                  }
+                }
+              }
+            },
+            "label": {
+              "en-US": "Status",
+              "de-DE": "Status",
+              "fr-FR": "Statut",
+              "da-DK": "Status",
+              "cs-CZ": "Stav",
+              "ar-EG": "الحالة",
+              "zh-CN": "状态",
+              "zh-TW": "狀態"
+            }
+          },
+          {
+            "ref": "to_address",
+            "type": "text",
+            "maxLength": 254,
+            "nullable": true,
+            "rules": {
+              "personal": true
+            },
+            "label": {
+              "en-US": "Sent to",
+              "de-DE": "Gesendet an",
+              "fr-FR": "Envoyé à",
+              "da-DK": "Sendt til",
+              "cs-CZ": "Odesláno na",
+              "ar-EG": "أُرسل إلى",
+              "zh-CN": "发送至",
+              "zh-TW": "傳送至"
+            }
+          },
+          {
+            "ref": "sent_at",
+            "type": "timestamptz",
+            "nullable": true,
+            "label": {
+              "en-US": "Sent at",
+              "de-DE": "Gesendet am",
+              "fr-FR": "Envoyé le",
+              "da-DK": "Sendt den",
+              "cs-CZ": "Odesláno",
+              "ar-EG": "أُرسل في",
+              "zh-CN": "发送时间",
+              "zh-TW": "傳送時間"
+            }
+          },
+          {
+            "ref": "error",
+            "type": "text",
+            "maxLength": 500,
+            "nullable": true,
+            "label": {
+              "en-US": "What went wrong",
+              "de-DE": "Was schiefging",
+              "fr-FR": "Ce qui n’a pas marché",
+              "da-DK": "Hvad gik galt",
+              "cs-CZ": "Co se nepovedlo",
+              "ar-EG": "ما الخطأ",
+              "zh-CN": "出错原因",
+              "zh-TW": "出錯原因"
+            }
+          },
+          {
+            "ref": "design_id",
+            "type": "fk",
+            "references": "designs",
+            "nullable": true,
+            "label": {
+              "en-US": "Design",
+              "de-DE": "Entwurf",
+              "fr-FR": "Création",
+              "da-DK": "Design",
+              "cs-CZ": "Návrh",
+              "ar-EG": "التصميم",
+              "zh-CN": "设计",
+              "zh-TW": "設計"
+            }
+          }
+        ]
       }
     ]
   },
@@ -3702,6 +3898,7 @@
         "table:@version_files:update",
         "table:@version_files:delete",
         "table:@postings:read",
+        "table:@design_mails:read",
         "table:@settings:read",
         "table:@settings:update",
         "page:@customiser:view",
@@ -3739,6 +3936,7 @@
         "table:@version_files:read",
         "table:@version_files:read_pii",
         "table:@postings:read",
+        "table:@design_mails:read",
         "table:@settings:read",
         "page:@customiser:view",
         "page:@customiser-product:view",
@@ -4283,6 +4481,321 @@
         "logo_file",
         "photo_file"
       ]
+    }
+  ],
+  "outbox": {
+    "table": "design_mails",
+    "columns": {
+      "kind": "kind",
+      "status": "status",
+      "to": "to_address",
+      "sentAt": "sent_at",
+      "error": "error"
+    },
+    "links": {
+      "design": "design_id"
+    },
+    "recipient": {
+      "via": "design_id",
+      "table": "designs",
+      "email": "email"
+    },
+    "pages": {
+      "app": {
+        "design": "customiserDesign"
+      }
+    },
+    "kinds": {
+      "design-link": "customiser-design-link"
+    },
+    "classes": {
+      "design-link": "service"
+    },
+    "producers": [
+      {
+        "kind": "design-link",
+        "link": "design_id",
+        "onCreate": {
+          "table": "designs"
+        }
+      }
+    ]
+  },
+  "emailTemplates": [
+    {
+      "key": "customiser-design-link",
+      "name": {
+        "en-US": "A saved design’s link",
+        "de-DE": "Link zu einem gespeicherten Entwurf",
+        "fr-FR": "Lien d’une création enregistrée",
+        "da-DK": "Link til et gemt design",
+        "cs-CZ": "Odkaz na uložený návrh",
+        "ar-EG": "رابط تصميم محفوظ",
+        "zh-CN": "已保存设计的链接",
+        "zh-TW": "已儲存設計的連結"
+      },
+      "vars": [
+        "app_url.design",
+        "design.link_token"
+      ],
+      "locales": {
+        "en-US": {
+          "subject": "Your design is saved",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Your design is saved"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Here is your private link to come back to it. Nobody else can open it."
+              }
+            },
+            {
+              "block": "email.button",
+              "data": {
+                "label": "Open your design",
+                "url": "{{app_url.design}}#{{design.link_token}}",
+                "onlyWith": "app_url.design"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "We keep a design for 90 days after its last change, unless you order it."
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "de-DE": {
+          "subject": "Ihr Entwurf ist gespeichert",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Ihr Entwurf ist gespeichert"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Hier ist Ihr privater Link, um später weiterzumachen. Niemand sonst kann ihn öffnen."
+              }
+            },
+            {
+              "block": "email.button",
+              "data": {
+                "label": "Entwurf öffnen",
+                "url": "{{app_url.design}}#{{design.link_token}}",
+                "onlyWith": "app_url.design"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Wir bewahren einen Entwurf 90 Tage nach seiner letzten Änderung auf, es sei denn, Sie bestellen ihn."
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "fr-FR": {
+          "subject": "Votre création est enregistrée",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Votre création est enregistrée"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Voici votre lien privé pour y revenir. Personne d’autre ne peut l’ouvrir."
+              }
+            },
+            {
+              "block": "email.button",
+              "data": {
+                "label": "Ouvrir votre création",
+                "url": "{{app_url.design}}#{{design.link_token}}",
+                "onlyWith": "app_url.design"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Nous gardons une création 90 jours après sa dernière modification, sauf si vous la commandez."
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "da-DK": {
+          "subject": "Dit design er gemt",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Dit design er gemt"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Her er dit private link, så du kan vende tilbage til det. Ingen andre kan åbne det."
+              }
+            },
+            {
+              "block": "email.button",
+              "data": {
+                "label": "Åbn dit design",
+                "url": "{{app_url.design}}#{{design.link_token}}",
+                "onlyWith": "app_url.design"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Vi gemmer et design i 90 dage efter sidste ændring, medmindre du bestiller det."
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "cs-CZ": {
+          "subject": "Váš návrh je uložen",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Váš návrh je uložen"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Tady je váš soukromý odkaz, abyste se k němu mohli vrátit. Nikdo jiný ho neotevře."
+              }
+            },
+            {
+              "block": "email.button",
+              "data": {
+                "label": "Otevřít návrh",
+                "url": "{{app_url.design}}#{{design.link_token}}",
+                "onlyWith": "app_url.design"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Návrh uchováváme 90 dní od poslední změny, pokud si ho neobjednáte."
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "ar-EG": {
+          "subject": "تم حفظ تصميمك",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "تم حفظ تصميمك"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "إليك رابطك الخاص للعودة إليه. لا يستطيع أحد غيرك فتحه."
+              }
+            },
+            {
+              "block": "email.button",
+              "data": {
+                "label": "افتح تصميمك",
+                "url": "{{app_url.design}}#{{design.link_token}}",
+                "onlyWith": "app_url.design"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "نحتفظ بالتصميم 90 يومًا بعد آخر تغيير له، ما لم تطلبه."
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "zh-CN": {
+          "subject": "你的设计已保存",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "你的设计已保存"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "这是你的私人链接，可随时回来继续。其他人无法打开。"
+              }
+            },
+            {
+              "block": "email.button",
+              "data": {
+                "label": "打开你的设计",
+                "url": "{{app_url.design}}#{{design.link_token}}",
+                "onlyWith": "app_url.design"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "设计在最后一次更改后保留 90 天，除非你下单。"
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "zh-TW": {
+          "subject": "你的設計已儲存",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "你的設計已儲存"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "這是你的私人連結，可隨時回來繼續。其他人無法開啟。"
+              }
+            },
+            {
+              "block": "email.button",
+              "data": {
+                "label": "開啟你的設計",
+                "url": "{{app_url.design}}#{{design.link_token}}",
+                "onlyWith": "app_url.design"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "設計在最後一次變更後保留 90 天，除非你下單。"
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        }
+      }
     }
   ],
   "addOn": {
