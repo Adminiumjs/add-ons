@@ -14,6 +14,7 @@ import type { CustomiserApi } from '../api.ts';
 import { isRightToLeft } from '../i18n.ts';
 import { readCatalogue } from '../catalogue.ts';
 import { SharedContext, sharedFor, useNarrow } from './context.tsx';
+import { radioKeys } from './radios.ts';
 
 export interface WaysInProps {
   api: CustomiserApi;
@@ -51,7 +52,7 @@ export function WaysIn(props: WaysInProps) {
   ];
   return (
     <SharedContext.Provider value={shared}>
-      <div className="cz cz-look-print" dir={isRightToLeft(shared.locale) ? 'rtl' : 'ltr'} lang={shared.locale}>
+      <div className="cz cz-look-print" dir={isRightToLeft(shared.locale) ? 'rtl' : 'ltr'} lang={shared.locale} onKeyDown={radioKeys}>
         <h2 id="cz-ways" className="cz-h3">
           {t('editor.ways.title', 'How would you like to make it?')}
         </h2>

@@ -49,6 +49,7 @@ import { PieceStage } from './PieceStage.tsx';
 import { PrintFields } from './PrintFields.tsx';
 import { SaveDialog } from './SaveDialog.tsx';
 import { BlockLine, ChecksList, MakerBar, MakerBeforeBar, MakerPhoneBar, QuoteBar, QuotePanel, type EditorPrice, type EditorQuantity } from './Summary.tsx';
+import { radioKeys } from './radios.ts';
 
 export type { EditorPrice, EditorQuantity };
 
@@ -131,7 +132,7 @@ export function CustomiserEditor(props: CustomiserEditorProps) {
   const shared = useMemo(() => sharedFor(props.locale, look, props.shop ?? ''), [props.locale, look, props.shop]);
   return (
     <SharedContext.Provider value={shared}>
-      <div className={`cz cz-look-${look}`} dir={isRightToLeft(shared.locale) ? 'rtl' : 'ltr'} lang={shared.locale}>
+      <div className={`cz cz-look-${look}`} dir={isRightToLeft(shared.locale) ? 'rtl' : 'ltr'} lang={shared.locale} onKeyDown={radioKeys}>
         {catalogue === 'loading' ? <Loading /> : catalogue === 'missing' || catalogue === 'failed' ? <Unavailable failed={catalogue === 'failed'} onRetry={() => setAttempt(attempt + 1)} onBack={props.onBack} /> : <Inside {...props} catalogue={catalogue} />}
       </div>
     </SharedContext.Provider>
@@ -529,11 +530,14 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
           }}
           onUse={() => {
             setOverlay(null);
+            // The button that opened the sheet is gone (the logo is in): the focus goes to the logo's field.
+            focusPart(sheetPart.code);
             setHistory((h) => ({ ...h, typingIn: null }));
             toast(t('editor.oneColour.set', 'Set to engrave in one colour.'));
           }}
           onCancel={() => {
             setOverlay(null);
+            focusPart(sheetPart.code);
             // The line moved while the sheet was open is taken back whole, leaving no step to undo.
             setHistory((h) => (h.typingIn === `threshold:${sheetPart.code}` && h.past.length > 0 ? { past: h.past.slice(0, -1), now: h.past[h.past.length - 1]!, future: [], typingIn: null } : { ...h, typingIn: null }));
           }}

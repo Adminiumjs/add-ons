@@ -25,6 +25,7 @@ import { liveDesigns, type HeldDesign } from '../store.ts';
 import { SharedContext, sharedFor, useShared, type Look } from './context.tsx';
 import { Drawing } from './Drawing.tsx';
 import { Dialog, Toasts, type Toast } from './Overlay.tsx';
+import { radioKeys } from './radios.ts';
 
 export interface YourDesignsProps {
   api: CustomiserApi;
@@ -52,7 +53,7 @@ export function YourDesigns(props: YourDesignsProps) {
   const shared = useMemo(() => sharedFor(props.locale, props.look ?? 'maker', props.shop ?? ''), [props.locale, props.look, props.shop]);
   return (
     <SharedContext.Provider value={shared}>
-      <div className={`cz cz-look-${shared.look}`} dir={isRightToLeft(shared.locale) ? 'rtl' : 'ltr'} lang={shared.locale}>
+      <div className={`cz cz-look-${shared.look}`} dir={isRightToLeft(shared.locale) ? 'rtl' : 'ltr'} lang={shared.locale} onKeyDown={radioKeys}>
         <List {...props} />
       </div>
     </SharedContext.Provider>

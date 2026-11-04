@@ -235,6 +235,35 @@ describe('Mark faces on a 3D-printed item (BC-D2.print)', () => {
     expect(JSON.parse((writes('update', 'base_areas').at(-1)?.values as Record<string, unknown>)['rules'] as string)).toMatchObject({ mode: 'raised', depthMm: 3, smallestLetterMm: 2 });
   });
 
+  it('is marked without a mouse: a face picked from the list, its form reached by Tab in order, and kept', async () => {
+    keyring()['print_file'] = PRINT;
+    render(page());
+    await settle(10);
+    const row = screen.getAllByRole('button', { name: /Flat face 1/ })[0]!;
+    expect(row.tagName).toBe('BUTTON');
+    expect(row.getAttribute('tabindex')).not.toBe('-1');
+    row.focus();
+    // Enter on a button is its click.
+    fireEvent.click(row);
+    await settle();
+    expect(row.getAttribute('aria-pressed')).toBe('true');
+    const name = screen.getByLabelText('Name it');
+    expect(document.activeElement).toBe(name);
+    // The form's parts come after the name, in the order they are read, each a stop for Tab.
+    const stops = [...document.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), [tabindex="0"]')].filter((one) => one.getAttribute('tabindex') !== '-1');
+    const at = (element: Element): number => stops.indexOf(element as HTMLElement);
+    const cut = screen.getByRole('radio', { name: 'Cut in' });
+    const mark = screen.getByRole('button', { name: 'Mark this face' });
+    expect(at(name)).toBeGreaterThan(at(row));
+    expect(at(cut)).toBeGreaterThan(at(name));
+    expect(at(mark)).toBeGreaterThan(at(cut));
+    fireEvent.change(name, { target: { value: 'The front' } });
+    fireEvent.click(cut);
+    fireEvent.click(mark);
+    await settle();
+    expect(facesOf(keyring()['faces'])[0]).toMatchObject({ name: 'The front', relief: { mode: 'cut' } });
+  });
+
   it('lists the curved part, which says it cannot carry words', async () => {
     keyring()['print_file'] = PRINT;
     render(page());
