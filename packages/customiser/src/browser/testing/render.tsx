@@ -26,7 +26,8 @@ export async function drawn(element: ReactElement): Promise<ReturnType<typeof re
   const out = render(element);
   await settle();
   await settle();
-  if (screen.queryByRole('status', { name: '' }) !== null) await settle();
+  // A status still showing may be the loading one (or, on a page without WebGL, the 3D stage's note): one more moment.
+  if (screen.queryAllByRole('status', { name: '' }).length > 0) await settle();
   return out;
 }
 

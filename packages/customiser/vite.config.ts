@@ -33,12 +33,18 @@ export const OUTPUT = {
   pages: { customiser: 'dist/pages/customiser.js' } as Readonly<Record<string, string>>,
   panels: { 'customiser-product': 'dist/panels/product.js', 'customiser-line': 'dist/panels/line.js' } as Readonly<Record<string, string>>,
   browser: 'dist/browser/index.js',
+  /**
+   * The 3D stage, with three.js inside it: fetched by the editor only when a
+   * piece is shown in 3D, from beside `index.js`. An app vendors it with the
+   * editor, under this name.
+   */
+  browser3d: 'dist/browser/stage3d.js',
   /** The customer's editor's stylesheet, which the app links beside it. */
   browserCss: 'dist/browser/editor.css',
 } as const;
 
 /** Every file the build writes. */
-export const BUILT_FILES: readonly string[] = [OUTPUT.check, OUTPUT.browser, OUTPUT.browserCss, ...Object.values(OUTPUT.pages), ...Object.values(OUTPUT.panels)];
+export const BUILT_FILES: readonly string[] = [OUTPUT.check, OUTPUT.browser, OUTPUT.browser3d, OUTPUT.browserCss, ...Object.values(OUTPUT.pages), ...Object.values(OUTPUT.panels)];
 
 /** Where each screen file is built from. */
 const SCREENS: readonly { file: string; entry: string }[] = [
@@ -159,6 +165,8 @@ export default defineConfig(({ mode }) =>
           rollupOptions: {
             // The app that imports the editor brings React; its bundle holds the one copy.
             external: [/^react($|\/)/, /^react-dom($|\/)/],
+            // The 3D stage's file keeps its own name, so the app that vendors the editor knows what to copy beside it.
+            output: { chunkFileNames: 'browser/[name].js' },
           },
           target: 'es2022',
           /*

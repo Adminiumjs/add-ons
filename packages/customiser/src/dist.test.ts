@@ -67,3 +67,23 @@ describe('the customer’s editor', () => {
     expect(file()).not.toMatch(/localStorage|sessionStorage|document\.cookie/);
   });
 });
+
+describe('the 3D stage', () => {
+  const read = (path: string): string => readFileSync(join(DIST, '..', path), 'utf8');
+
+  it('is a file of its own beside the editor, which the editor only fetches when a piece is shown in 3D', () => {
+    const editor = read(OUTPUT.browser);
+    expect(editor).not.toContain('THREE.WebGLRenderer');
+    // Its only way to the stage is the one dynamic import; React is the only thing it imports by name.
+    expect([...editor.matchAll(/\bimport\(\s*["']([^"']+)["']\s*\)/g)].map((one) => one[1])).toEqual(['./stage3d.js']);
+    expect([...editor.matchAll(/^import .* from "([^"]+)";$/gm)].map((one) => one[1]).filter((name) => !/^react(\/|$)/.test(name))).toEqual([]);
+  });
+
+  it('carries three.js inside it and needs nothing from the editor', () => {
+    const stage = read(OUTPUT.browser3d);
+    expect(stage).toContain('THREE.WebGLRenderer');
+    expect(stage).not.toMatch(/^import /m);
+    expect(stage).not.toMatch(/\bimport\(/);
+  });
+});
+

@@ -948,6 +948,188 @@
   padding-inline: 9px;
   white-space: nowrap;
 }
+/*
+ * The 3D stage (a flat piece). A finger's drag turns the piece side to side and
+ * the page still scrolls up and down under it (`pan-y`), flat or not; the stage
+ * takes pinches and drags itself.
+ */
+.cz-stage-3d {
+  touch-action: pan-y;
+  user-select: none;
+  cursor: grab;
+}
+.cz-stage-3d.cz-grabbing {
+  cursor: grabbing;
+}
+.cz-stage-3d.cz-stage-flat {
+  cursor: default;
+}
+.cz-model {
+  position: absolute;
+  inset: 0;
+}
+.cz-model canvas {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+}
+.cz-flat-box {
+  inline-size: 100%;
+  block-size: 100%;
+  display: grid;
+  place-items: center;
+  transition: transform 0.18s ease-out;
+}
+.cz-flat-box .cz-drawing {
+  inline-size: 100%;
+  block-size: 100%;
+}
+.cz-stage-hint {
+  position: absolute;
+  inset-block-start: 10px;
+  inset-inline-start: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--cz-fg-muted);
+  background: color-mix(in srgb, var(--cz-surface) 85%, transparent);
+  border: 1px solid var(--cz-border);
+  border-radius: 99px;
+  padding-block: 4px;
+  padding-inline: 10px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.cz-stage-hint svg.lucide {
+  inline-size: 13px;
+  block-size: 13px;
+}
+.cz-stage-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.cz-flat-switch {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  block-size: 38px;
+  padding-block: 0;
+  padding-inline: 8px 12px;
+  border: 1px solid var(--cz-border-strong);
+  border-radius: 10px;
+  background: var(--cz-surface);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.cz-flat-switch:hover {
+  border-color: var(--cz-accent);
+}
+.cz-flat-switch.cz-locked {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.cz-switch-track {
+  position: relative;
+  inline-size: 32px;
+  block-size: 18px;
+  border-radius: 99px;
+  background: var(--cz-border-strong);
+  transition: background 0.15s;
+  flex: 0 0 auto;
+}
+.cz-switch-track.cz-on {
+  background: var(--cz-accent);
+}
+.cz-switch-knob {
+  position: absolute;
+  inset-block-start: 2px;
+  inset-inline-start: 2px;
+  inline-size: 14px;
+  block-size: 14px;
+  border-radius: 99px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: inset-inline-start 0.15s;
+}
+.cz-switch-track.cz-on .cz-switch-knob {
+  inset-inline-start: 16px;
+}
+.cz-stage-tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-inline-start: auto;
+  flex-wrap: wrap;
+}
+.cz-tool-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid var(--cz-border-strong);
+  border-radius: 10px;
+  background: var(--cz-surface);
+  padding: 2px;
+}
+.cz-tool-button {
+  inline-size: 32px;
+  block-size: 32px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--cz-fg-muted);
+  padding: 0;
+}
+.cz-tool-button:hover {
+  background: var(--cz-surface-3);
+  color: var(--cz-fg);
+}
+.cz-tool-button svg.lucide {
+  inline-size: 15px;
+  block-size: 15px;
+}
+.cz-tool-label {
+  font-size: 11px;
+  font-weight: 700;
+  min-inline-size: 40px;
+  text-align: center;
+}
+.cz-reset {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  block-size: 38px;
+  padding-block: 0;
+  padding-inline: 11px;
+  border: 1px solid var(--cz-border-strong);
+  border-radius: 10px;
+  background: var(--cz-surface);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--cz-fg-muted);
+  white-space: nowrap;
+}
+.cz-reset:hover {
+  border-color: var(--cz-accent);
+  color: var(--cz-accent);
+}
+.cz-reset svg.lucide {
+  inline-size: 14px;
+  block-size: 14px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cz-flat-box,
+  .cz-switch-track,
+  .cz-switch-knob {
+    transition: none;
+  }
+}
 .cz-part {
   cursor: pointer;
   outline: none;
