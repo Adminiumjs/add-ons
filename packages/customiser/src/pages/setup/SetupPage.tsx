@@ -20,6 +20,7 @@ import { BaseStep } from './BaseStep.tsx';
 import { useSetupData } from './data.ts';
 import { FontsStep } from './FontsStep.tsx';
 import { LaterStep } from './LaterStep.tsx';
+import { PreviewStep } from './PreviewStep.tsx';
 import { isPublished, isStep, offeredOf, STEPS, stepDone, text, type PublishFacts, type Step } from './facts.ts';
 import { NewBase } from './NewBase.tsx';
 import { PricesStep } from './PricesStep.tsx';
@@ -79,7 +80,7 @@ export function SetupPage({ t }: { t: AddOnTranslate }): ReactNode {
   if (!bases.loading && bases.error === null && bases.rows.length === 0) {
     return (
       <PageFrame t={t} title={title} actions={newBase}>
-        <LaterStep t={t} kind="none" onAdd={() => setAdding(true)} />
+        <LaterStep t={t} onAdd={() => setAdding(true)} />
         <NewBase t={t} open={adding} onClose={() => setAdding(false)} onMade={(id) => go('base', id)} />
       </PageFrame>
     );
@@ -131,7 +132,7 @@ export function SetupPage({ t }: { t: AddOnTranslate }): ReactNode {
           {step === 'designs' ? <DesignsStep t={t} base={base} data={data} /> : null}
           {step === 'fonts' ? <FontsStep t={t} base={base} data={data} /> : null}
           {step === 'prices' ? <PricesStep t={t} base={base} data={data} /> : null}
-          {step === 'preview' ? <LaterStep t={t} kind="preview" /> : null}
+          {step === 'preview' ? <PreviewStep t={t} base={base} data={data} /> : null}
           {step === 'publish' ? <PublishStep t={t} base={base} facts={facts} go={go} /> : null}
           <Stack direction="row" gap="md" justify="between">
             {at > 0 ? (

@@ -27,6 +27,12 @@ import { inOrder, num, sameKey, str, yes, type Row } from './read.ts';
 import {
   choiceRules,
   DESIGN_FORMAT,
+  PLACED_LINES_MAX,
+  PLACED_SIZE_MAX,
+  PLACED_SIZE_MIN,
+  PICTURE_KINDS,
+  TEXT_MAX,
+  type PlacedPart,
   KIND_OF_TYPE,
   LOGO_SMALLEST_MM,
   pictureRules,
@@ -271,17 +277,20 @@ export function checkDesign(facts: DesignFacts): DesignAnswer {
   if (values.palette !== undefined && context.palette === null) refuse(context, 'colour-not-allowed');
   context.live = context.parts.filter((part) => (part.side !== 'back' || sides >= 2) && (part.layout === null || layout === null || part.layout === layout));
 
-  // A value for a part the design does not have (no part at all), or one only the shop sets.
-  for (const code of Object.keys(values.parts)) {
-    if (context.parts.filter((part) => part.code === code).every((part) => part.locked)) refuse(context, 'part-locked', code);
-  }
+  if (values.placed !== undefined) checkPlaced(context, values.placed, base);
+  else {
+    // A value for a part the design does not have (no part at all), or one only the shop sets.
+    for (const code of Object.keys(values.parts)) {
+      if (context.parts.filter((part) => part.code === code).every((part) => part.locked)) refuse(context, 'part-locked', code);
+    }
 
-  for (const part of context.live) {
-    if (part.locked) continue;
-    const value = values.parts[part.code] ?? part.start;
-    if (part.kind === 'text') checkText(context, part, value);
-    else if (part.kind === 'picture') checkPicture(context, part, part.picture!, value);
-    else if (part.kind === 'colour' || part.kind === 'choice') checkChoice(context, part, value);
+    for (const part of context.live) {
+      if (part.locked) continue;
+      const value = values.parts[part.code] ?? part.start;
+      if (part.kind === 'text') checkText(context, part, value);
+      else if (part.kind === 'picture') checkPicture(context, part, part.picture!, value);
+      else if (part.kind === 'colour' || part.kind === 'choice') checkChoice(context, part, value);
+    }
   }
 
   // A second side costs what the base says it costs.
@@ -466,4 +475,52 @@ function safeLine(context: Context, part: Part, rules: TextRules, value: PartVal
   };
   if (fits(size)) return;
   context.advice.push({ part: part.code, kind: 'past-safe-line', smaller: sizeThatFits(rules, printed(value?.text), size, fits) });
+}
+
+/** The palette roles every page knows, and a colour written out. */
+const ROLES = ['paper', 'ink', 'accent'];
+const HEX = /^#[0-9a-fA-F]{6}$/;
+
+/**
+ * A design made in the full editor: its own parts, on a page only. Each part
+ * stays on a side the design is made with, has a size, and lies on the page
+ * or its bleed; words are as long as any part takes and set at a size from 4
+ * to 200 pt; a colour is a palette role or a colour written out; a picture is
+ * one the design keeps, of a kind a picture may be. None of them is a priced
+ * feature: the second side is the only one, as for any design. The design's
+ * form parts were given up for these, so a value for one is refused.
+ */
+function checkPlaced(context: Context, placed: readonly PlacedPart[], base: Row): void {
+  if (base['kind'] !== 'page') {
+    refuse(context, 'choice-not-allowed');
+    return;
+  }
+  for (const code of Object.keys(context.values.parts)) refuse(context, 'part-locked', code);
+  const sides = context.values.sides ?? 1;
+  const [width, height, bleed] = [num(base['width_mm']) ?? 0, num(base['height_mm']) ?? 0, num(base['bleed_mm']) ?? 0];
+  const palette = context.palette;
+  const roles = [...ROLES, ...(palette === null || context.facts.colours === undefined ? [] : context.facts.colours.filter((one) => sameKey(one['palette_id'], palette['id'])).map((one) => String(one['code'] ?? '')))];
+  for (const part of placed) {
+    if (part.side === 'back' && sides < 2) refuse(context, 'choice-not-allowed', part.id);
+    const onPage = part.w > 0 && part.h > 0 && part.w <= (width + 2 * bleed) * 2 && part.h <= (height + 2 * bleed) * 2 && part.x < width + bleed && part.y < height + bleed && part.x + part.w > -bleed && part.y + part.h > -bleed;
+    if (!onPage) refuse(context, 'size-out-of-range', part.id);
+    if (part.colour !== undefined && !HEX.test(part.colour) && !roles.includes(part.colour)) refuse(context, 'colour-not-allowed', part.id);
+    if (part.kind === 'text') {
+      if (charCount(part.text) > TEXT_MAX || lineCount(part.text) > PLACED_LINES_MAX) refuse(context, 'too-long', part.id);
+      if (part.size !== undefined && (part.size < PLACED_SIZE_MIN || part.size > PLACED_SIZE_MAX)) refuse(context, 'size-out-of-range', part.id);
+    } else if (part.kind === 'image') {
+      const file = part.file === undefined ? undefined : context.facts.files.find((one) => one.column === part.file);
+      if (file === undefined || file.size <= 0 || file.kind === '') {
+        refuse(context, 'file-missing', part.id);
+        continue;
+      }
+      const kind = KIND_OF_TYPE[file.kind.toLowerCase()];
+      if (kind === undefined || !(PICTURE_KINDS as readonly string[]).includes(kind)) {
+        refuse(context, 'file-kind', part.id);
+        continue;
+      }
+      const shown: Part = { code: part.id, kind: 'picture', locked: false, required: false, side: part.side, layout: null, box: { x: part.x, y: part.y, w: part.w, h: part.h }, text: null, picture: null, choice: null, shape: null, start: null, feature: null, area: null };
+      pictureAdvice(context, shown, pictureRules({ fit: part.fit ?? 'inside' }), file, kind, part.fit === 'fill' ? 'fill' : 'inside', 1, null);
+    }
+  }
 }

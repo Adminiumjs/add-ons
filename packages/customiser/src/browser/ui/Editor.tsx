@@ -26,17 +26,22 @@
 import { ArrowLeft, Layers, Maximize2, PenTool, PencilRuler, Redo2, SquareDashed, Undo2, X, MailCheck, ZoomIn, ZoomOut } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react';
 
-import type { DesignValues, FileFact, PartValue, Refusal } from '../../rules/index.ts';
-import { FILE_COLUMNS, type CustomiserApi, type DesignData, type SavedDesign } from '../api.ts';
+import type { DesignValues, PartValue, Refusal } from '../../rules/index.ts';
+import { num } from '../../rules/read.ts';
+import type { CustomiserApi, DesignData, SavedDesign } from '../api.ts';
 import { isRightToLeft } from '../i18n.ts';
-import { answerFor, freshValues, liveParts, paletteOf, partsOf, readCatalogue, readyOf, type Catalogue, type EditPart, type Ready } from '../catalogue.ts';
+import { answerFor, freshValues, liveParts, paletteOf, partsOf, readCatalogue, readyOf, valueOf, type Catalogue, type EditPart, type Ready } from '../catalogue.ts';
+import { backToForm, toPlaced } from '../placed.ts';
 import { checksOf } from '../say.ts';
 import { SharedContext, sharedFor, useNarrow, useShared, type Look } from './context.tsx';
 import { Drawing } from './Drawing.tsx';
-import { fieldId, type Upload } from './fieldKit.tsx';
+import { acceptOf, fieldId } from './fieldKit.tsx';
 import { browserMeasure, loadFonts } from './fonts.ts';
 import { Gallery } from './Gallery.tsx';
 import { MakerFields } from './MakerFields.tsx';
+import { OneColourSheet } from './OneColour.tsx';
+import { thresholdOf, usePictures, type Upload } from './pictures.ts';
+import { FullEditor } from './FullEditor.tsx';
 import { Dialog, Toasts, type Toast } from './Overlay.tsx';
 import { PrintFields } from './PrintFields.tsx';
 import { SaveDialog } from './SaveDialog.tsx';
@@ -93,10 +98,15 @@ export interface CustomiserEditorProps {
   onSaved?: (design: SavedDesign, email: string | null) => void;
   /** Back to the product ("← Engraved walnut coasters"), and "Back to the shop" after saving. */
   onBack?: () => void;
-  /** The print look's other ways in, and its full editor: the app's (or the full editor's) to open. */
+  /**
+   * Open straight into the full editor on a blank page (the print look's
+   * "Start from blank", when the app's product page offers it as its own way
+   * in). The editor's own "Start from blank" opens it too.
+   */
+  start?: 'blank';
+  /** The print look's "Start from blank", when the app opens it itself; otherwise the editor opens its own full editor. */
   onStartBlank?: () => void;
   onSendOwnFile?: () => void;
-  onFullEditor?: (design: DesignData) => void;
   onChangeSides?: () => void;
 }
 
@@ -180,19 +190,6 @@ interface History {
   typingIn: string | null;
 }
 
-/** The file facts the rules read: what was uploaded here, and the files a saved design already keeps. */
-function factsOf(uploads: Readonly<Record<string, Upload>>, kept: Readonly<Record<string, string>>, parts: readonly EditPart[]): FileFact[] {
-  const types: Record<string, string> = { svg: 'image/svg+xml', pdf: 'application/pdf', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg' };
-  return FILE_COLUMNS.flatMap((column): FileFact[] => {
-    const up = uploads[column];
-    if (up !== undefined) return [{ column, kind: types[up.kind] ?? up.kind, size: up.size }];
-    if (kept[column] === undefined) return [];
-    // A file the design already keeps was checked when it was sent; the server reads its facts again on the order.
-    const accept = parts.map((part) => (part.picture ?? part.text?.alsoLogo)).find((rules) => rules?.file === column)?.accept[0] ?? 'png';
-    return [{ column, kind: types[accept] ?? 'image/png', size: 1 }];
-  });
-}
-
 function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
   const { catalogue, api } = props;
   const { t, look, locale } = useShared();
@@ -201,10 +198,13 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
   const savedStart = opened !== undefined && 'id' in opened ? opened : null;
   const sides = props.sides ?? (opened?.values.sides ?? 1);
   const [ready, setReady] = useState<Ready | null>(() => (opened === undefined ? null : readyOf(catalogue, opened.ready_design_id)));
-  const [view, setView] = useState<'choose' | 'fill'>(() => (opened !== undefined || (catalogue.ready.length === 0 && look === 'maker') ? 'fill' : 'choose'));
-  const [history, setHistory] = useState<History>(() => ({ past: [], now: opened?.values ?? freshValues(catalogue, null, sides), future: [], typingIn: null }));
+  const blank = opened === undefined && props.start === 'blank' && look === 'print';
+  // A design made in the full editor on a blank page opens in it; one made from a ready-made design opens on its form, which says so.
+  const [view, setView] = useState<'choose' | 'fill' | 'full'>(() => (blank || (opened?.values.placed !== undefined && opened.ready_design_id === null) ? 'full' : opened !== undefined || (catalogue.ready.length === 0 && look === 'maker') ? 'fill' : 'choose'));
+  const [history, setHistory] = useState<History>(() => ({ past: [], now: blank ? { ...freshValues(catalogue, null, sides), placed: [] } : (opened?.values ?? freshValues(catalogue, null, sides)), future: [], typingIn: null }));
+  /** The full editor was opened from the form: its note says the moves are the customer's now. */
+  const [movedFromForm, setMovedFromForm] = useState(false);
   const [saved, setSaved] = useState<SavedDesign | null>(savedStart);
-  const [uploads, setUploads] = useState<Record<string, Upload>>({});
   const [tried, setTried] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const [lockShown, setLockShown] = useState<string | null>(null);
@@ -212,7 +212,9 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
   const [guides, setGuides] = useState(false);
   // The card drawn larger on a wide screen, as the print shop's comp zooms it: 100 %, 150 %, 200 %, 300 %.
   const [zoom, setZoom] = useState<(typeof ZOOMS)[number]>(1);
-  const [overlay, setOverlay] = useState<'save' | 'full' | null>(null);
+  const [overlay, setOverlay] = useState<'save' | 'full' | 'onecolour' | null>(null);
+  /** The logo "Make it one colour" is open on, and where its line was when it opened (Cancel puts it back). */
+  const [oneColour, setOneColour] = useState<{ part: string } | null>(null);
   const [typing, setTyping] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [busy, setBusy] = useState(false);
@@ -230,7 +232,19 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
   const allParts = partsOf(catalogue, ready);
   const parts = liveParts(catalogue, ready, values);
   const palette = paletteOf(ready, values);
-  const files = useMemo(() => factsOf(uploads, saved?.files ?? {}, allParts), [uploads, saved, allParts]);
+  const pictures = usePictures(api, saved, t);
+  /** Where light becomes dark before the customer moves the line: the shop's own start. */
+  const startThreshold = num(catalogue.rows.settings?.[0]?.['one_colour_threshold']) ?? 50;
+  // Each file is measured at the line the logo that holds it is made one colour at; only a logo the laser engraves is.
+  const thresholds: Record<string, number> = {};
+  const accepts: Record<string, readonly string[]> = {};
+  for (const part of allParts) {
+    const rules = part.picture ?? part.text?.alsoLogo;
+    if (rules === null || rules === undefined) continue;
+    accepts[rules.file] = rules.accept;
+    if (rules.colour === 'one') thresholds[rules.file] = thresholdOf(values.parts[part.code], startThreshold);
+  }
+  const files = pictures.facts(saved?.files ?? {}, thresholds, accepts);
   const answer = answerFor(catalogue, design, files, measure);
   const checks = checksOf(answer, { t, locale, look, parts, values, palette }, refused);
   const blocks = checks.filter((one) => one.block);
@@ -335,14 +349,25 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
   /** What a customer typed into parts that have the same code stays when they change the design. */
   const carried = (from: DesignValues): Pick<DesignValues, 'parts'> => ({ parts: Object.fromEntries(Object.entries(from.parts).filter(([, one]) => (one.text ?? '').trim() !== '').map(([code, one]) => [code, { text: one.text! }])) });
 
-  const keptFiles = (): Record<string, string> => Object.fromEntries(Object.entries(uploads).map(([column, one]) => [column, one.id]));
+  const keptFiles = (): Record<string, string> => pictures.fresh();
 
-  const upload = async (part: EditPart, column: string, file: File): Promise<void> => {
-    if (api.upload === null) throw new Error('uploads are not taken here');
-    const sent = await api.upload(column, file, file.name, saved?.session ?? null);
-    setUploads((all) => ({ ...all, [column]: sent }));
-    const value = values.parts[part.code] ?? {};
-    setPart(part.code, { ...value, file: column, ...(part.kind === 'text' ? { mode: 'logo' as const } : {}) });
+  // The design's value is read when the file arrives, not when it was picked: what the customer did meanwhile stays.
+  const now = useRef(values);
+  now.current = values;
+  const upload = (part: EditPart, column: string, file: File): void => {
+    void pictures.send(column, file, acceptOf(part)).then((taken) => {
+      if (taken === null) return;
+      const value = now.current.parts[part.code] ?? {};
+      setPart(part.code, { ...value, file: column, ...(part.kind === 'text' ? { mode: 'logo' as const } : {}) });
+      if ((part.picture ?? part.text?.alsoLogo)?.colour === 'one' && look === 'maker') {
+        toast(t('editor.oneColour.in', 'Your logo is in. Check how it engraves.'));
+        openOneColour(part.code);
+      } else focusPart(part.code);
+    });
+  };
+  const openOneColour = (code: string): void => {
+    setOneColour({ part: code });
+    setOverlay('onecolour');
   };
 
   /** Keep the design on the server: a new one, or the draft in place. */
@@ -352,7 +377,7 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
     // A change answers no link: the one the save answered, or the design was opened by, stays the design's.
     const next = { ...made, link: made.link ?? (through ? saved.link : null) ?? null };
     setSaved(next);
-    setUploads({});
+    pictures.saved(next);
     if (email !== null) setKnownEmail(email);
     return next;
   };
@@ -371,13 +396,16 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
       return;
     }
     if (props.preview === true) {
-      toast(t('editor.preview.noBasket', 'Previewing — nothing goes in a real basket.'), 'info');
+      toast(look === 'print' ? t('editor.preview.noBasketPrint', 'You’re previewing as a customer — nothing goes in a basket.') : t('editor.preview.noBasket', 'Previewing — nothing goes in a real basket.'), 'info');
       return;
     }
     setBusy(true);
     try {
       const kept = ordered ? await api.create(design, null, keptFiles()) : await keep(null);
-      if (ordered) setSaved(kept);
+      if (ordered) {
+        setSaved(kept);
+        pictures.saved(kept);
+      }
       props.onAddToBasket({ ...kept, used: answer.used });
     } catch (error) {
       toast(wordsFor(error), 'warn');
@@ -387,7 +415,7 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
   };
   const openSave = (): void => {
     if (props.preview === true) {
-      toast(t('editor.preview.noSave', 'Previewing — saving is switched off here.'), 'info');
+      toast(look === 'print' ? t('editor.preview.noSavePrint', 'You’re previewing as a customer — nothing is saved.') : t('editor.preview.noSave', 'Previewing — saving is switched off here.'), 'info');
       return;
     }
     setSaveState({ sentTo: null, failed: null, link: null });
@@ -405,6 +433,7 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
       const next = ordered ? await api.create(design, email, keptFiles()) : await keep(email);
       if (ordered) {
         setSaved(next);
+        pictures.saved(next);
         if (email !== null) setKnownEmail(email);
       }
       setSaveState({ sentTo: email ?? '', failed: null, link: props.mailsLink === true ? null : linkOf(next.link) });
@@ -416,10 +445,40 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
     }
   };
 
+  /** A blank page in the full editor: nothing on it yet. */
+  const startBlank = (): void => {
+    setReady(null);
+    setHistory({ past: [], now: { ...freshValues(catalogue, null, sides), placed: [] }, future: [], typingIn: null });
+    setMovedFromForm(false);
+    setView('full');
+  };
+  /** "Switch to the full editor": the form's parts become the customer's to move, their words kept. */
+  const toFull = (): void => {
+    if (values.placed === undefined) commit(toPlaced(catalogue, ready, values));
+    setMovedFromForm(values.placed === undefined);
+    setView('full');
+  };
+  /** "Go back to the form": the moves go, the words stay. */
+  const toForm = (): void => {
+    commit(backToForm(catalogue, ready, values));
+    setView('fill');
+  };
+  const takeThisDesign = async (): Promise<void> => {
+    if ((values.placed ?? []).length === 0) {
+      toast(t('editor.full.empty', 'Add something to the card first.'), 'warn');
+      return;
+    }
+    if (blocks.length > 0) {
+      toast(blocks[0]!.listed, 'warn');
+      return;
+    }
+    await addToBasket();
+  };
+
   if (view === 'choose')
     return (
       <>
-        <Gallery catalogue={catalogue} product={props.product.name} sides={sides} onPick={pick} onBack={props.onBack} onStartBlank={props.onStartBlank} onSendOwnFile={props.onSendOwnFile} onChangeSides={props.onChangeSides} />
+        <Gallery catalogue={catalogue} product={props.product.name} sides={sides} onPick={pick} onBack={props.onBack} onStartBlank={props.onStartBlank ?? (look === 'print' && props.preview !== true ? startBlank : undefined)} onSendOwnFile={props.onSendOwnFile} onChangeSides={props.onChangeSides} />
         <Toasts toasts={toasts} onUndo={(one) => one.undo?.()} />
       </>
     );
@@ -427,7 +486,8 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
   const editableCount = parts.filter((one) => !one.locked && one.kind !== 'shape').length;
   const designName = ready === null ? (look === 'maker' ? t('editor.fill.plain', 'Plain piece') : t('editor.fill.yourDesign', 'Your design')) : ready.name;
   const bar = { price: props.price, quantity: props.quantity, blocks, addLabel: props.addLabel ?? t('editor.add', 'Add to basket'), onAdd: () => void addToBasket(), onSave: openSave, busy, hidden: typing };
-  const fieldsProps = { catalogue, parts, values, palette, checks, selected, tried, setPart, setDesign, onSelect: select, onTyping: setTyping, featurePrices: props.featurePrices ?? {}, uploads, upload, api, session: saved?.session ?? null };
+  const fieldsProps = { catalogue, parts, values, palette, checks, selected, tried, setPart, setDesign, onSelect: select, onTyping: setTyping, featurePrices: props.featurePrices ?? {}, pictures: pictures.pictures, transfers: pictures.transfers, problems: pictures.problems, upload, onOneColour: (part: EditPart) => openOneColour(part.code), startThreshold, api, session: saved?.session ?? null };
+  const sheetPart = oneColour === null ? null : (allParts.find((one) => one.code === oneColour.part) ?? null);
   const stageLabel = t('editor.stage.label', '{product}, {design}. Shown flat.', { product: props.product.name, design: designName });
   const undoButtons: ReactNode = (
     <span className="cz-undo">
@@ -462,10 +522,69 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
           onBackToShop={props.onBack}
         />
       ) : null}
-      {overlay === 'full' ? <FullScreen catalogue={catalogue} design={design} side={side} setSide={setSide} guides={guides} setGuides={setGuides} narrow={narrow} onClose={() => setOverlay(null)} /> : null}
+      {overlay === 'full' ? <FullScreen catalogue={catalogue} design={design} pictures={pictures.pictures} side={side} setSide={setSide} guides={guides} setGuides={setGuides} narrow={narrow} onClose={() => setOverlay(null)} /> : null}
+      {overlay === 'onecolour' && sheetPart !== null ? (
+        <OneColourSheet
+          catalogue={catalogue}
+          part={sheetPart}
+          value={valueOf(values, sheetPart)}
+          picture={pictures.pictures[(sheetPart.picture ?? sheetPart.text?.alsoLogo)?.file ?? 'logo_file']}
+          startThreshold={startThreshold}
+          fine={checks.some((one) => one.part === sheetPart.code && one.kind === 'fine-detail')}
+          narrow={narrow}
+          onThreshold={(threshold) => {
+            setRefused(null);
+            setHistory((h) => {
+              const parts2 = { ...h.now.parts, [sheetPart.code]: { ...(h.now.parts[sheetPart.code] ?? {}), threshold } };
+              const next = { ...h.now, parts: parts2 };
+              // The line moved while the sheet is open is one change.
+              return h.typingIn === `threshold:${sheetPart.code}` ? { ...h, now: next, future: [] } : { past: [...h.past, h.now].slice(-100), now: next, future: [], typingIn: `threshold:${sheetPart.code}` };
+            });
+          }}
+          onUse={() => {
+            setOverlay(null);
+            setHistory((h) => ({ ...h, typingIn: null }));
+            toast(t('editor.oneColour.set', 'Set to engrave in one colour.'));
+          }}
+          onCancel={() => {
+            setOverlay(null);
+            // The line moved while the sheet was open is taken back whole, leaving no step to undo.
+            setHistory((h) => (h.typingIn === `threshold:${sheetPart.code}` && h.past.length > 0 ? { past: h.past.slice(0, -1), now: h.past[h.past.length - 1]!, future: [], typingIn: null } : { ...h, typingIn: null }));
+          }}
+        />
+      ) : null}
       <Toasts toasts={toasts} onUndo={(one) => one.undo?.()} raised={narrow} />
     </>
   );
+
+  if (view === 'full')
+    return (
+      <>
+        <FullEditor
+          catalogue={catalogue}
+          values={values}
+          palette={palette}
+          sides={sides}
+          from={ready?.name ?? null}
+          answer={answer}
+          pictures={pictures}
+          narrow={narrow}
+          canUndo={history.past.length > 0}
+          canRedo={history.future.length > 0}
+          change={(next, gesture) => commit(next, gesture ?? null)}
+          endGesture={() => setHistory((h) => ({ ...h, typingIn: null }))}
+          undo={undo}
+          redo={redo}
+          onBack={() => (ready !== null ? setView('fill') : catalogue.ready.length > 0 ? setView('choose') : props.onBack?.())}
+          onSave={openSave}
+          onUse={() => void takeThisDesign()}
+          toast={toast}
+          busy={busy}
+          banner={movedFromForm}
+        />
+        {dialogs}
+      </>
+    );
 
   if (look === 'maker') {
     // A printed item says its colour ("PLA · Amber"); a piece its material and thickness ("Walnut 6 mm").
@@ -481,7 +600,7 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
       <section className="cz-fill cz-fill-maker" data-screen="fill" onKeyDown={keys}>
         <div className="cz-stage-col">
           <div className="cz-stage">
-            <Drawing catalogue={catalogue} design={design} empty="dim" onPart={focusPart} selected={selected} lockShown={lockShown} onLock={setLockShown} label={stageLabel} />
+            <Drawing catalogue={catalogue} design={design} pictures={pictures.pictures} startThreshold={startThreshold} empty="dim" onPart={focusPart} selected={selected} lockShown={lockShown} onLock={setLockShown} label={stageLabel} />
             <span className="cz-stage-labels">
               <span className="cz-mono cz-stage-label">{size}</span>
               {material === null ? null : <span className="cz-stage-label">{material}</span>}
@@ -558,7 +677,7 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
       {/* Sticks to the top once the card has scrolled away: placed first, so it has somewhere to stick from. */}
       {narrow && stripShown && !typing ? (
         <button type="button" className="cz-strip" aria-label={t('editor.stage.full', 'Full-screen preview')} onClick={() => setOverlay('full')}>
-          <Drawing catalogue={catalogue} design={design} side={side} empty="dim" className="cz-strip-drawing" />
+          <Drawing catalogue={catalogue} design={design} pictures={pictures.pictures} startThreshold={startThreshold} side={side} empty="dim" className="cz-strip-drawing" />
         </button>
       ) : null}
       <button type="button" className="cz-back" onClick={() => setView('choose')}>
@@ -573,14 +692,29 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
           </p>
         </div>
         {undoButtons}
-        {props.onFullEditor === undefined || props.preview === true ? null : (
-          <button type="button" className="cz-button" onClick={() => props.onFullEditor?.(design)}>
+        {props.preview === true || values.placed !== undefined ? null : (
+          <button type="button" className="cz-button" onClick={toFull}>
             <PencilRuler aria-hidden="true" />
             {t('editor.fill.fullEditor', 'Switch to the full editor')}
           </button>
         )}
       </div>
       {ordinaryNote}
+      {values.placed !== undefined ? (
+        <div className="cz-in-full">
+          <PencilRuler aria-hidden="true" className="cz-in-full-icon" />
+          <h2 className="cz-h3">{t('editor.full.inFull', 'This design is in the full editor')}</h2>
+          <p className="cz-small">{t('editor.full.inFullBody', 'You’ve moved things around, so the form no longer fits it. Carry on in the editor, or go back to the form and lose the moves. Your words stay either way.')}</p>
+          <div className="cz-chips">
+            <button type="button" className="cz-primary" onClick={() => setView('full')}>
+              {t('editor.full.open', 'Open the full editor')}
+            </button>
+            <button type="button" className="cz-button" onClick={toForm}>
+              {t('editor.full.toForm', 'Go back to the form')}
+            </button>
+          </div>
+        </div>
+      ) : (
       <div className="cz-fill-grid">
         <div className="cz-card-col">
           <div ref={sheet} className="cz-sheet">
@@ -601,7 +735,7 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
               </span>
             </div>
             <div className={narrow || zoom === 1 ? 'cz-stage cz-stage-page' : `cz-stage cz-stage-page cz-zoomed cz-zoom-${String(zoom * 100)}`}>
-              <Drawing catalogue={catalogue} design={design} side={side} guides={guides} empty="dim" onPart={focusPart} selected={selected} lockShown={lockShown} onLock={setLockShown} label={stageLabel} />
+              <Drawing catalogue={catalogue} design={design} pictures={pictures.pictures} startThreshold={startThreshold} side={side} guides={guides} empty="dim" onPart={focusPart} selected={selected} lockShown={lockShown} onLock={setLockShown} label={stageLabel} />
             </div>
             {!narrow && guides ? (
               <div className="cz-legend">
@@ -642,7 +776,8 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
           ) : null}
         </div>
       </div>
-      {narrow ? <QuoteBar {...bar} /> : null}
+      )}
+      {narrow && values.placed === undefined ? <QuoteBar {...bar} /> : null}
       {dialogs}
     </section>
   );
@@ -696,7 +831,7 @@ function ModeSwitch({ guides, setGuides, dark = false }: { guides: boolean; setG
 }
 
 /** The design at the size of the screen, both sides, with or without the guides. */
-function FullScreen({ catalogue, design, side, setSide, guides, setGuides, narrow, onClose }: { catalogue: Catalogue; design: DesignData; side: 'front' | 'back'; setSide: (side: 'front' | 'back') => void; guides: boolean; setGuides: (on: boolean) => void; narrow: boolean; onClose: () => void }) {
+function FullScreen({ catalogue, design, pictures, side, setSide, guides, setGuides, narrow, onClose }: { catalogue: Catalogue; design: DesignData; pictures: Readonly<Record<string, Upload>>; side: 'front' | 'back'; setSide: (side: 'front' | 'back') => void; guides: boolean; setGuides: (on: boolean) => void; narrow: boolean; onClose: () => void }) {
   const { t } = useShared();
   const turned = narrow && catalogue.base.width > catalogue.base.height;
   const two = (design.values.sides ?? 1) >= 2 && catalogue.base.sides >= 2;
@@ -713,7 +848,7 @@ function FullScreen({ catalogue, design, side, setSide, guides, setGuides, narro
         </button>
       </div>
       <div className={turned ? 'cz-full-stage cz-turned' : 'cz-full-stage'}>
-        <Drawing catalogue={catalogue} design={design} side={side} guides={guides} empty="hide" />
+        <Drawing catalogue={catalogue} design={design} pictures={pictures} side={side} guides={guides} empty="hide" />
       </div>
       {turned ? <p className="cz-full-note">{t('editor.stage.turned', 'Turned to fill the screen.')}</p> : null}
     </Dialog>

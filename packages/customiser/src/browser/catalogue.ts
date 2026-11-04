@@ -324,7 +324,7 @@ export function factsFor(catalogue: Catalogue, design: DesignData, files: readon
     features: catalogue.rows.features,
     colours: catalogue.rows.colours,
     files,
-    settings: {},
+    settings: catalogue.rows.settings?.[0] ?? {},
     ...(measure === undefined ? {} : { measure }),
   };
 }
@@ -333,10 +333,12 @@ export function factsFor(catalogue: Catalogue, design: DesignData, files: readon
 export const answerFor = (catalogue: Catalogue, design: DesignData, files: readonly FileFact[], measure?: Measure): DesignAnswer => checkDesign(factsFor(catalogue, design, files, measure));
 
 /** Whether a design holds anything the customer gave it. */
-export const isEmpty = (values: DesignValues): boolean => Object.values(values.parts).every((one) => (one.text ?? '').trim() === '' && one.file === undefined && one.choice === undefined);
+export const isEmpty = (values: DesignValues): boolean => Object.values(values.parts).every((one) => (one.text ?? '').trim() === '' && one.file === undefined && one.choice === undefined) && (values.placed ?? []).length === 0;
 
 /** The words a design carries, joined, for a list of designs. */
 export function wordsIn(catalogue: Catalogue | null, design: DesignData): string {
+  // A design made in the full editor: the words it placed.
+  if (design.values.placed !== undefined) return design.values.placed.map((one) => (one.kind === 'text' ? (one.text ?? '').trim() : '')).filter((one) => one !== '').join(' · ');
   const parts = catalogue === null ? [] : liveParts(catalogue, readyOf(catalogue, design.ready_design_id), design.values);
   const words = (parts.length === 0 ? Object.values(design.values.parts) : parts.filter((one) => !one.locked && one.kind === 'text').map((one) => design.values.parts[one.code] ?? {}))
     .map((one) => (one.text ?? '').trim())

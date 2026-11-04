@@ -12,7 +12,7 @@ import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CustomiserEditor, type CustomiserEditorProps } from './index.ts';
-import { drawn, setWidth, settle } from './testing/render.tsx';
+import { drawn, setWidth, settle, settleUntil } from './testing/render.tsx';
 import { stubApi, type Stub } from './testing/stub.ts';
 
 afterEach(cleanup);
@@ -237,9 +237,15 @@ describe('the maker’s look: fill it in (BC-B1, BC-B2, BC-B5, BC-B6)', () => {
     await act(async () => {
       fireEvent.change(input, { target: { files: [new File(['<svg/>'], 'pinfold-sign.svg', { type: 'image/svg+xml' })] } });
     });
-    await settle();
+    await settleUntil(() => stub.calls.some((one) => one.call === 'upload') && screen.queryByRole('progressbar') === null);
     expect(stub.calls.find((one) => one.call === 'upload')!.args).toEqual(['logo_file', 'pinfold-sign.svg']);
-    expect(screen.getByText('pinfold-sign.svg')).toBeTruthy();
+    // The logo is engraved: "Make it one colour" opens by itself, and says why (BC-B3.onecolour).
+    expect(screen.getByRole('dialog', { name: 'Make it one colour' })).toBeTruthy();
+    expect(screen.getByText('Your logo is in. Check how it engraves.')).toBeTruthy();
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Make it one colour' })).getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByRole('dialog', { name: 'Make it one colour' })).toBeNull();
+    // The file row names it, and the piece draws it in its box (here, where no picture is drawn, by its name).
+    expect(screen.getAllByText('pinfold-sign.svg')).toHaveLength(2);
     expect((onDesignChange.mock.calls.at(-1)![0] as { used: string[] }).used).toEqual(['logo']);
     fireEvent.click(screen.getByRole('button', { name: 'Remove your logo' }));
     expect((onDesignChange.mock.calls.at(-1)![0] as { used: string[] }).used).toEqual([]);
@@ -560,13 +566,18 @@ describe('the print look: fill it in (MC-B1, MC-B2, MC-B5, MC-0.CHECKS)', () => 
     expect(screen.getByText('Rule is the shop’s part — it stays as it is.')).toBeTruthy();
   });
 
-  it('switches layout and colours, and opens the full editor through the app (CR11 words)', async () => {
+  it('switches layout and colours, and opens its own full editor with the words kept (MC-B4)', async () => {
     const stub = stubApi('printing');
-    const onFullEditor = vi.fn();
-    await openHarbour(stub, { onFullEditor });
+    const onDesignChange = vi.fn();
+    await openHarbour(stub, { onDesignChange });
     fireEvent.click(screen.getByRole('radio', { name: 'Logo top' }));
+    type('Name', 'Nell Fairweather');
     fireEvent.click(screen.getByRole('button', { name: /Switch to the full editor/ }));
-    expect((onFullEditor.mock.calls[0]![0] as { values: { layout: string } }).values.layout).toBe('top');
+    expect(screen.getByRole('heading', { name: 'Harbour, made your own' })).toBeTruthy();
+    expect(screen.getByRole('status').textContent).toContain('You can move anything now; your words stay.');
+    const placed = (onDesignChange.mock.calls.at(-1)![0] as { design: { values: { parts: object; placed: { id: string; text?: string }[] } } }).design.values;
+    expect(placed.parts).toEqual({});
+    expect(placed.placed.find((one) => one.id === 'name')?.text).toBe('Nell Fairweather');
   });
 
   it('zooms the card on a wide screen, from 100 % to 300 % and back (MC-0.PREVIEW.zoom)', async () => {

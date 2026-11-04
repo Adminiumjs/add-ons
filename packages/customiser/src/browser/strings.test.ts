@@ -92,7 +92,7 @@ describe("the editor's words", () => {
   });
 
   it('fill in every sentence in every language without leaving a name unfilled', () => {
-    const vars = { n: 3, part: 'P', name: 'N', design: 'D', product: 'X', shop: 'S', size: '6 mm', limit: 22, count: 4, email: 'a@b.c', when: 'w', price: '£1', date: 'd', colour: 'Ink', chips: 'c', query: 'q', trim: 't', sides: 's', px: '1 × 2', dpi: 1, w: 1, h: 2, needs: 150, bleed: 3, value: 'v' };
+    const vars = { n: 3, part: 'P', name: 'N', design: 'D', product: 'X', shop: 'S', size: '6 mm', limit: 22, count: 4, email: 'a@b.c', when: 'w', price: '£1', date: 'd', colour: 'Ink', chips: 'c', query: 'q', trim: 't', sides: 's', px: '1 × 2', dpi: 1, w: 1, h: 2, needs: 150, bleed: 3, value: 'v', material: 'walnut', side: 'Front', safe: 4 };
     for (const [tag, words] of Object.entries(ALL)) {
       const t = translator(localeOf(tag));
       for (const key of Object.keys(words)) expect(t(key, english[key]!, vars), `${tag} · ${key}`).not.toMatch(/\{[a-z]+[,}]/i);

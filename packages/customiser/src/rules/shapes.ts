@@ -29,9 +29,20 @@
  * value holding what the customer chose for one part: `text`, `font`, `size`,
  * `colour`, `finish`, `choice`, `mode` (`words` or `logo`, where a part takes
  * either), and for a picture `file` (the design's file column holding it),
- * `fit`, `scale` (per cent of its box), `nx` / `ny` (where it sits in the box)
- * and `threshold` (where light becomes dark, for one colour). Nothing else:
- * a design that holds anything else was not saved in this format.
+ * `fit`, `scale` (per cent of its box), `nx` / `ny` (millimetres it is nudged
+ * from the middle of its box) and `threshold` (where light becomes dark, for
+ * one colour).
+ *
+ * A design made in the full editor (a printed page started blank, or a
+ * ready-made design whose parts the customer moved) holds its parts itself,
+ * in `placed`, and nothing in `parts`: each a box in millimetres from the
+ * trim's top-left on one side (`id`, `side`, `kind`, `x`, `y`, `w`, `h`, a
+ * `name` for its layer), words (`text`, `font`, `size` in points, `weight`,
+ * `align`), a colour (`colour`: a palette role, or a colour written out
+ * `#rrggbb`; a shape's fill, the words' ink), or a picture (`file`, the
+ * design's file column holding it, and `fit`). Their order is the order they
+ * are drawn in, the first at the back. Nothing else: a design that holds
+ * anything else was not saved in this format.
  */
 import { isObject, json, num, numbers, str, words, yes, type Row } from './read.ts';
 
@@ -124,12 +135,78 @@ export interface PartValue {
   threshold?: number;
 }
 
+export type PlacedKind = 'text' | 'image' | 'rect' | 'ellipse' | 'line';
+
+/** One part of a design made in the full editor. */
+export interface PlacedPart {
+  id: string;
+  side: 'front' | 'back';
+  kind: PlacedKind;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  name?: string;
+  text?: string;
+  font?: string;
+  size?: number;
+  weight?: number;
+  align?: Align;
+  colour?: string;
+  file?: string;
+  fit?: Fit;
+}
+
 export interface DesignValues {
   layout?: string;
   palette?: string;
   finish?: string;
   sides?: number;
   parts: Record<string, PartValue>;
+  /** The parts of a design made in the full editor, back to front. */
+  placed?: PlacedPart[];
+}
+
+/** The most parts a design made in the full editor holds, and the longest name a part or its id may have. */
+export const PLACED_MAX = 60;
+export const PLACED_ID_MAX = 32;
+export const PLACED_NAME_MAX = 80;
+/** The sizes words may be set at in the full editor, in points. */
+export const PLACED_SIZE_MIN = 4;
+export const PLACED_SIZE_MAX = 200;
+/** The most lines words may run to in the full editor. */
+export const PLACED_LINES_MAX = 20;
+
+const PLACED_KINDS: readonly PlacedKind[] = ['text', 'image', 'rect', 'ellipse', 'line'];
+const PLACED_TEXT_KEYS = ['id', 'side', 'kind', 'name', 'text', 'font', 'align', 'colour', 'file', 'fit'] as const;
+const PLACED_NUMBER_KEYS = ['x', 'y', 'w', 'h', 'size', 'weight'] as const;
+
+/** A full editor's parts in format 1, or null when they are not in the shape. */
+function readPlaced(raw: unknown): PlacedPart[] | null {
+  if (!Array.isArray(raw) || raw.length > PLACED_MAX) return null;
+  const out: PlacedPart[] = [];
+  const ids = new Set<string>();
+  for (const one of raw) {
+    if (!isObject(one)) return null;
+    for (const [key, field] of Object.entries(one)) {
+      if ((PLACED_TEXT_KEYS as readonly string[]).includes(key)) {
+        if (typeof field !== 'string') return null;
+      } else if ((PLACED_NUMBER_KEYS as readonly string[]).includes(key)) {
+        if (typeof field !== 'number' || !Number.isFinite(field)) return null;
+      } else return null;
+    }
+    const { id, side, kind, align, fit, name } = one as Record<string, unknown>;
+    if (typeof id !== 'string' || id === '' || id.length > PLACED_ID_MAX || ids.has(id)) return null;
+    if (side !== 'front' && side !== 'back') return null;
+    if (!PLACED_KINDS.includes(kind as PlacedKind)) return null;
+    if (['x', 'y', 'w', 'h'].some((key) => typeof (one as Record<string, unknown>)[key] !== 'number')) return null;
+    if (align !== undefined && align !== 'start' && align !== 'center' && align !== 'end') return null;
+    if (fit !== undefined && fit !== 'inside' && fit !== 'fill') return null;
+    if (typeof name === 'string' && name.length > PLACED_NAME_MAX) return null;
+    ids.add(id);
+    out.push(one as unknown as PlacedPart);
+  }
+  return out;
 }
 
 const TEXT_KEYS = ['text', 'font', 'colour', 'finish', 'choice', 'mode', 'file', 'fit'] as const;
@@ -142,7 +219,9 @@ const NUMBER_KEYS = ['size', 'scale', 'nx', 'ny', 'threshold'] as const;
 export function readValues(raw: unknown): { ok: true; values: DesignValues } | { ok: false; bad: string | null } {
   const value = raw === null || raw === undefined ? {} : json(raw);
   if (!isObject(value)) return { ok: false, bad: null };
-  for (const key of Object.keys(value)) if (!['layout', 'palette', 'finish', 'sides', 'parts'].includes(key)) return { ok: false, bad: null };
+  for (const key of Object.keys(value)) if (!['layout', 'palette', 'finish', 'sides', 'parts', 'placed'].includes(key)) return { ok: false, bad: null };
+  const placed = value['placed'] === undefined ? undefined : readPlaced(value['placed']);
+  if (placed === null) return { ok: false, bad: null };
   for (const key of ['layout', 'palette', 'finish'] as const) if (value[key] !== undefined && typeof value[key] !== 'string') return { ok: false, bad: null };
   if (value['sides'] !== undefined && (typeof value['sides'] !== 'number' || !Number.isInteger(value['sides']))) return { ok: false, bad: null };
   const parts = value['parts'] ?? {};
@@ -169,6 +248,7 @@ export function readValues(raw: unknown): { ok: true; values: DesignValues } | {
       ...(value['finish'] === undefined ? {} : { finish: value['finish'] as string }),
       ...(value['sides'] === undefined ? {} : { sides: value['sides'] as number }),
       parts: out,
+      ...(placed === undefined ? {} : { placed }),
     },
   };
 }

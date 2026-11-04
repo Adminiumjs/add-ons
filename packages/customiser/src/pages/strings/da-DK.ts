@@ -402,6 +402,7 @@ export const designs: Readonly<Record<string, string>> = {
   "designs.previewing.noSave": "Du ser en forhåndsvisning som kunde — intet gemmes.",
   "designs.previewing.noSaveShop": "Forhåndsvisning — gemning er slået fra her.",
   "designs.previewing.shopper": "Forhåndsvisning som kunde",
+  "designs.previewing.theShop": "butikken",
   "designs.previewing.whatPage": "{name} · intet herfra kommer i en kurv",
   "designs.redo": "Gentag",
   "designs.remove": "Fjern {name}",

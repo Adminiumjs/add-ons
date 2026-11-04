@@ -138,7 +138,7 @@ describe('the editor’s drawing', () => {
     const shared = sharedFor('en-US', 'print', 'Marlow Press');
     const { container } = render(
       <SharedContext.Provider value={shared}>
-        <Drawing catalogue={catalogue} design={design} side="back" empty="hide" pictures={{ logo_file: { url: 'blob:logo' } }} />
+        <Drawing catalogue={catalogue} design={design} side="back" empty="hide" pictures={{ logo_file: { id: 'up_1', name: 'loaf.svg', size: 1200, kind: 'svg', url: 'blob:logo', fresh: true } }} />
       </SharedContext.Provider>,
     );
     const sheet = flatSheet(catalogue, design, { side: 'back', empty: 'hide', labels: LABELS, holds: () => true });
@@ -147,7 +147,7 @@ describe('the editor’s drawing', () => {
     expect(spans).toEqual(lines.map((one) => ({ text: one.text, x: one.x, y: one.y })));
     const front = render(
       <SharedContext.Provider value={shared}>
-        <Drawing catalogue={catalogue} design={design} side="front" empty="hide" pictures={{ logo_file: { url: 'blob:logo' } }} />
+        <Drawing catalogue={catalogue} design={design} side="front" empty="hide" pictures={{ logo_file: { id: 'up_1', name: 'loaf.svg', size: 1200, kind: 'svg', url: 'blob:logo', fresh: true } }} />
       </SharedContext.Provider>,
     );
     expect(front.container.querySelector('image')?.getAttribute('href')).toBe('blob:logo');

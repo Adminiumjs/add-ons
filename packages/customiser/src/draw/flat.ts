@@ -18,8 +18,9 @@
  *
  * No React and no DOM: the shop's side and the customer's side both read it.
  */
-import { SCALE_MAX, sizeInMm } from '../rules/index.ts';
-import { areaMode, hexOf, liveParts, paletteOf, readyOf, valueOf, type Catalogue, type EditPart } from '../browser/catalogue.ts';
+import { PT_MM, SCALE_MAX, sizeInMm, type PlacedPart } from '../rules/index.ts';
+import { areaMode, hexOf, liveParts, paletteOf, readyOf, valueOf, type Catalogue, type EditPart, type Palette } from '../browser/catalogue.ts';
+import { boxOfPlaced, paintOf, placedOn } from '../browser/placed.ts';
 import type { DesignData } from '../browser/api.ts';
 import type { Box } from './parts.ts';
 
@@ -64,7 +65,7 @@ export type FlatItem =
   /** Where a logo, a photo or an area goes, before there is one: a dashed box and what it takes. */
   | (ItemBase & { kind: 'slot'; label: string; filled: boolean; page: boolean })
   /** A customer's own picture, from the design's file column, inside its box or filling it. */
-  | (ItemBase & { kind: 'picture'; column: string; drawn: Box; fill: boolean; oneColour: boolean; colour: string; picture: 'logo' | 'photo' })
+  | (ItemBase & { kind: 'picture'; column: string; drawn: Box; fill: boolean; oneColour: boolean; colour: string; picture: 'logo' | 'photo'; threshold?: number })
   | (ItemBase & { kind: 'shape'; shape: 'rect' | 'ellipse' | 'door'; fill: string | null; stroke: string | null; line: number })
   /** A choice of motif, named in its frame. */
   | (ItemBase & { kind: 'choice'; label: string; colour: string });
@@ -80,6 +81,8 @@ export interface FlatSheet {
 export interface FlatLabels {
   logo: string;
   photo: string;
+  /** A picture the customer placed in the full editor, before its file is here. */
+  image?: string;
 }
 
 export interface FlatOptions {
@@ -164,6 +167,9 @@ export function flatSheet(catalogue: Catalogue, design: DesignData, options: Fla
     return PAINT[finish] ?? material.engraved;
   };
 
+  // A design made in the full editor holds its own parts, back to front, and nothing else is drawn.
+  if (page && design.values.placed !== undefined) return { side, face, items: placedItems(placedOn(design.values, side), palette, options.labels, holds) };
+
   const items: FlatItem[] = [];
   for (const part of all) {
     if (part.side !== side || part.box === null || part.kind === 'colour') continue;
@@ -209,13 +215,31 @@ export function flatSheet(catalogue: Catalogue, design: DesignData, options: Fla
   return { side, face, items };
 }
 
+/** The parts a customer placed in the full editor, laid out as any part: words hang from their box's top on a page. */
+function placedItems(parts: readonly PlacedPart[], palette: Palette | null, labels: FlatLabels, holds: (column: string) => boolean): FlatItem[] {
+  return parts.map((part): FlatItem => {
+    const box = boxOfPlaced(part);
+    const common: ItemBase = { key: `${part.id}-${part.side}`, code: part.id, box, live: false, locked: false };
+    if (part.kind === 'text') {
+      const sizeMm = (part.size ?? 9) * PT_MM;
+      return { ...common, kind: 'text', ...placeLines((part.text ?? '').split(/\r?\n/), box, sizeMm, part.align ?? 'start', true), font: part.font ?? 'Manrope', sizeMm, weight: part.weight ?? 400, colour: paintOf(palette, part.colour, 'ink'), dim: false };
+    }
+    if (part.kind === 'image') {
+      if (part.file !== undefined && holds(part.file)) return { ...common, kind: 'picture', column: part.file, drawn: box, fill: part.fit === 'fill', oneColour: false, colour: '#000000', picture: 'logo' };
+      return { ...common, kind: 'slot', label: labels.image ?? labels.logo, filled: part.file !== undefined, page: true };
+    }
+    // A line is a thin bar of its colour; a rectangle or an oval is filled with it.
+    return { ...common, kind: 'shape', shape: part.kind === 'ellipse' ? 'ellipse' : 'rect', fill: paintOf(palette, part.colour, part.kind === 'line' ? 'ink' : 'accent'), stroke: null, line: 0 };
+  });
+}
+
 /** A customer's picture in its box: at its size in the box and nudged where they put it, inside it or filling it. */
-function pictureItem(common: ItemBase, value: { scale?: number; nx?: number; ny?: number; fit?: string }, rules: { file: string; fit: string; colour: 'one' | 'full' | null; picture: 'logo' | 'photo' }, page: boolean, colour: string): FlatItem {
+function pictureItem(common: ItemBase, value: { scale?: number; nx?: number; ny?: number; fit?: string; threshold?: number }, rules: { file: string; fit: string; colour: 'one' | 'full' | null; picture: 'logo' | 'photo' }, page: boolean, colour: string): FlatItem {
   const box = common.box;
   const k = (value.scale ?? SCALE_MAX) / 100;
   const [w, h] = [box.w * k, box.h * k];
   const drawn = { x: box.x + (box.w - w) / 2 + (value.nx ?? 0), y: box.y + (box.h - h) / 2 + (value.ny ?? 0), w, h };
-  return { ...common, kind: 'picture', column: rules.file, drawn, fill: (value.fit ?? rules.fit) === 'fill', oneColour: !page && rules.colour === 'one', colour, picture: rules.picture };
+  return { ...common, kind: 'picture', column: rules.file, drawn, fill: (value.fit ?? rules.fit) === 'fill', oneColour: !page && rules.colour === 'one', colour, picture: rules.picture, ...(value.threshold === undefined ? {} : { threshold: value.threshold }) };
 }
 
 /** Every part of a design that may carry the customer's words or picture, by side: what a proof's facts name. */

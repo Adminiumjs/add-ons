@@ -15,7 +15,7 @@ import { sampleTables, type Tables } from '../../testing/samples.ts';
 import { designFromRow, type CatalogueRows, type CustomiserApi, type DesignData, type HeldSession, type Row, type SavedDesign } from '../api.ts';
 
 export interface StubCall {
-  call: 'catalogue' | 'create' | 'change' | 'openLink' | 'reopen' | 'byCodes' | 'upload';
+  call: 'catalogue' | 'create' | 'change' | 'openLink' | 'reopen' | 'byCodes' | 'upload' | 'file';
   args: unknown[];
 }
 
@@ -27,6 +27,12 @@ export interface Stub {
   tables: Tables;
   /** Make the next save fail with this error. */
   failNext: (error: unknown) => void;
+  /** Make the next upload fail with this error (a refusal the server gives). */
+  failNextUpload: (error: unknown) => void;
+  /** The files sent, by the id the upload answered. */
+  files: Map<string, Blob>;
+  /** Hold every upload until the answer is let go: a file seen on its way. */
+  holdUploads: () => () => void;
   /** The ids of the sample rows, by what they are. */
   ids: { coasters: number; nook: number; keyring: number; board: number; cards: number; flyers: number; ring: number; twoLines: number; harbour: number; photo: number };
 }
@@ -36,12 +42,15 @@ const byApp = (rows: readonly Row[] | undefined, app: string): Row[] => (rows ??
 let codes = 0;
 const code = (prefix: string): string => `${prefix}${String(++codes).padStart(16 - prefix.length, '0')}`;
 
-export function stubApi(app: 'maker' | 'printing', options: { fonts?: Row[] } = {}): Stub {
+export function stubApi(app: 'maker' | 'printing', options: { fonts?: Row[]; settings?: Row[] } = {}): Stub {
   const tables = sampleTables();
   const calls: StubCall[] = [];
   const designs = new Map<string, Row & { email: string | null; link: string }>();
   for (const row of tables['designs'] ?? []) if (row['app'] === app) designs.set(String(row['id']), { ...row, email: null, link: code('LK') });
   let fail: unknown = null;
+  let failUpload: unknown = null;
+  let held: Promise<void> | null = null;
+  const files = new Map<string, Blob>();
   let next = 5000;
   const failing = (): void => {
     if (fail === null) return;
@@ -76,6 +85,7 @@ export function stubApi(app: 'maker' | 'printing', options: { fonts?: Row[] } = 
         palettes: byApp(tables['palettes'], app),
         colours: byApp(tables['palette_colours'], app),
         features: byApp(tables['features'], app),
+        settings: options.settings ?? [],
       };
       return structuredClone(rows);
     },
@@ -122,8 +132,22 @@ export function stubApi(app: 'maker' | 'printing', options: { fonts?: Row[] } = 
     },
     async upload(column, file, name) {
       calls.push({ call: 'upload', args: [column, name] });
+      if (held !== null) await held;
+      if (failUpload !== null) {
+        const error = failUpload;
+        failUpload = null;
+        throw error;
+      }
       const kind = /\.svg$/i.test(name) ? 'svg' : /\.pdf$/i.test(name) ? 'pdf' : /\.png$/i.test(name) ? 'png' : 'jpg';
-      return { id: `up_${String(++next)}`, name, size: file.size, kind };
+      const id = `up_${String(++next)}`;
+      files.set(id, file);
+      return { id, name, size: file.size, kind };
+    },
+    async file(design, column) {
+      calls.push({ call: 'file', args: [design.id, column] });
+      const row = designs.get(String(design.id));
+      const id = row?.[column];
+      return design.session === null || typeof id !== 'string' ? null : (files.get(id) ?? null);
     },
   };
   return {
@@ -134,6 +158,20 @@ export function stubApi(app: 'maker' | 'printing', options: { fonts?: Row[] } = 
     failNext: (error) => {
       fail = error;
     },
+    failNextUpload: (error) => {
+      failUpload = error;
+    },
+    holdUploads: () => {
+      let release = (): void => {};
+      held = new Promise<void>((resolve) => {
+        release = () => {
+          held = null;
+          resolve();
+        };
+      });
+      return () => release();
+    },
+    files,
     ids: {
       coasters: idOf('Engraved walnut coasters', 'bases'),
       nook: idOf('The Little Bookshop', 'bases'),

@@ -359,6 +359,7 @@ export const designs: Readonly<Record<string, string>> = {
   "designs.previewing.noSave": "You’re previewing as a customer — nothing is saved.",
   "designs.previewing.noSaveShop": "Previewing — saving is switched off here.",
   "designs.previewing.shopper": "Previewing as a shopper",
+  "designs.previewing.theShop": "the shop",
   "designs.previewing.whatPage": "{name} · nothing here reaches a basket",
   "designs.redo": "Redo",
   "designs.remove": "Remove {name}",

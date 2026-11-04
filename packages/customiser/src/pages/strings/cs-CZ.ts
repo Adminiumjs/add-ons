@@ -402,6 +402,7 @@ export const designs: Readonly<Record<string, string>> = {
   "designs.previewing.noSave": "Prohlížíte si náhled jako zákazník — nic se neukládá.",
   "designs.previewing.noSaveShop": "Náhled — ukládání je tu vypnuté.",
   "designs.previewing.shopper": "Náhled jako zákazník",
+  "designs.previewing.theShop": "obchod",
   "designs.previewing.whatPage": "{name} · nic odsud nejde do košíku",
   "designs.redo": "Znovu",
   "designs.remove": "Odebrat {name}",

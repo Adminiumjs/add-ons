@@ -257,18 +257,25 @@ describe('the public entries', () => {
     }
   });
 
-  it('ride each app’s own key and are held to that app’s rows — all but the fonts, which every shop shares', () => {
+  it('ride each app’s own key and are held to that app’s rows — all but the fonts and the settings, which every shop shares', () => {
     for (const entry of onShopKey) {
-      if (entry.table === 'fonts') continue;
+      if (entry.table === 'fonts' || entry.table === 'settings') continue;
       expect(entry.appColumn, `${entry.table} ${entry.methods.join(',')}`).toBe('app');
     }
     // The starter fonts are written for no app; a font is a typeface and its licence, and a design offers only the fonts its parts name.
     expect(onShopKey.find((entry) => entry.table === 'fonts')?.appColumn).toBeUndefined();
   });
 
+  it('let a visitor read only the figures the checks read of the settings, and change none', () => {
+    const settings = onShopKey.filter((entry) => entry.table === 'settings');
+    expect(settings).toEqual([{ table: 'settings', methods: ['GET'], select: ['min_dpi', 'smallest_line_mm', 'one_colour_threshold'] }]);
+    // The figures are the ones the design question reads, so the browser's advice is the server's.
+    for (const ref of settings[0]!.select ?? []) expect(columnOf('settings', ref).type, ref).toMatch(/int|decimal/);
+  });
+
   it('let every visitor read what a shop offers, and only what it published or shows', () => {
     const reads = onShopKey.filter((entry) => entry.methods.join() === 'GET' && entry.table !== 'designs').map((entry) => entry.table);
-    expect(reads).toEqual(['bases', 'base_pieces', 'base_areas', 'ready_designs', 'ready_parts', 'fonts', 'palettes', 'palette_colours', 'features']);
+    expect(reads).toEqual(['bases', 'base_pieces', 'base_areas', 'ready_designs', 'ready_parts', 'fonts', 'palettes', 'palette_colours', 'features', 'settings']);
     for (const table of ['bases', 'ready_designs']) expect(onShopKey.find((entry) => entry.table === table)?.filters, table).toEqual([{ column: 'state', op: 'eq', value: 'published' }]);
   });
 

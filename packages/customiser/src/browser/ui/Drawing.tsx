@@ -23,16 +23,12 @@ import { Lock } from 'lucide-react';
 import type { KeyboardEvent, ReactNode } from 'react';
 
 import { flatSheet, sheetView, type FlatItem } from '../../draw/flat.ts';
+import { thresholdOf, useOneColour, type Upload } from './pictures.ts';
 import type { Box } from '../../draw/parts.ts';
 import { partsOf, readyOf, type Catalogue } from '../catalogue.ts';
 import type { DesignData } from '../api.ts';
 import { cssFamily } from './fonts.ts';
 import { useShared } from './context.tsx';
-
-/** A picture the page holds for one of the design's file columns: where to load it from. */
-export interface PictureLike {
-  url?: string;
-}
 
 export interface DrawingProps {
   catalogue: Catalogue;
@@ -50,20 +46,22 @@ export interface DrawingProps {
   label?: string;
   className?: string;
   /** The design's logo and photo as this page holds them, by file column: drawn in their boxes; without them a box says it holds one. */
-  pictures?: Readonly<Record<string, PictureLike>>;
+  pictures?: Readonly<Record<string, Upload>>;
+  /** Where light becomes dark for a logo the laser engraves, before the customer moves the line. */
+  startThreshold?: number;
 }
 
 /** The guides of a printed page: a red trim, a blue dashed safe line, the bleed tinted. The printed proof's own colours. */
 const TRIM = '#cf273c';
 const SAFE = '#1c59e0';
 
-export function Drawing({ catalogue, design, side = 'front', guides = false, empty = 'sample', onPart, selected = null, lockShown = null, onLock, label, className, pictures }: DrawingProps) {
+export function Drawing({ catalogue, design, side = 'front', guides = false, empty = 'sample', onPart, selected = null, lockShown = null, onLock, label, className, pictures, startThreshold = 50 }: DrawingProps) {
   const { t, look } = useShared();
   const sheet = flatSheet(catalogue, design, {
     side,
     empty,
-    labels: { logo: t('editor.drawing.logo', 'Your logo'), photo: t('editor.drawing.photo', 'Your photo') },
-    holds: (column) => pictures?.[column]?.url !== undefined,
+    labels: { logo: t('editor.drawing.logo', 'Your logo'), photo: t('editor.drawing.photo', 'Your photo'), image: t('editor.full.image', 'Image') },
+    holds: (column) => pictures?.[column] !== undefined,
   });
   const { face } = sheet;
   const page = face.kind === 'page';
@@ -72,7 +70,7 @@ export function Drawing({ catalogue, design, side = 'front', guides = false, emp
   const clip = `cz-clip-${String(catalogue.base.id)}-${side}-${guides ? 'g' : 'p'}`;
 
   const drawn = sheet.items.map((item) => {
-    const body = bodyOf(item, page, pictures, `${clip}-${item.code}`);
+    const body = bodyOf(item, page, pictures, `${clip}-${item.code}`, startThreshold);
     const outlined = selected === item.code;
     const keyDown = (event: KeyboardEvent<SVGGElement>): void => {
       if (event.key === 'Enter' || event.key === ' ') {
@@ -138,7 +136,7 @@ function nameOf(catalogue: Catalogue, design: DesignData, code: string): string 
 }
 
 /** One item of the sheet, drawn. */
-function bodyOf(item: FlatItem, page: boolean, pictures: Readonly<Record<string, PictureLike>> | undefined, clip: string): ReactNode {
+function bodyOf(item: FlatItem, page: boolean, pictures: Readonly<Record<string, Upload>> | undefined, clip: string, startThreshold: number): ReactNode {
   const { box } = item;
   if (item.kind === 'text')
     return (
@@ -152,20 +150,9 @@ function bodyOf(item: FlatItem, page: boolean, pictures: Readonly<Record<string,
     );
   if (item.kind === 'slot') return <Slot box={box} text={item.label} page={item.page} filled={item.filled} />;
   if (item.kind === 'picture') {
-    const url = pictures?.[item.column]?.url;
-    if (url === undefined) return <Slot box={item.drawn} text="" page={page} filled />;
-    return (
-      <g>
-        {item.fill ? (
-          <defs>
-            <clipPath id={clip}>
-              <rect x={box.x} y={box.y} width={box.w} height={box.h} />
-            </clipPath>
-          </defs>
-        ) : null}
-        <image href={url} x={item.drawn.x} y={item.drawn.y} width={item.drawn.w} height={item.drawn.h} preserveAspectRatio={item.fill ? 'xMidYMid slice' : 'xMidYMid meet'} {...(item.fill ? { clipPath: `url(#${clip})` } : {})} />
-      </g>
-    );
+    const picture = pictures?.[item.column];
+    if (picture === undefined) return <Slot box={item.drawn} text="" page={page} filled />;
+    return <Mark item={item} picture={picture} clip={clip} startThreshold={startThreshold} page={page} />;
   }
   if (item.kind === 'choice')
     return (
@@ -199,6 +186,30 @@ function Slot({ box, text, page, filled = false }: { box: Box; text: string; pag
       <text x={box.x + box.w / 2} y={box.y + box.h / 2} fontSize={Math.max(1.6, Math.min(box.h * 0.16, 3.4))} fill={ink} fillOpacity={0.75} textAnchor="middle" dominantBaseline="middle" fontFamily={cssFamily('Manrope')}>
         {text}
       </text>
+    </g>
+  );
+}
+
+/**
+ * A customer's logo or photo in its box, from its file: inside it or filling
+ * it, at its size in the box and nudged where they put it. A logo the laser
+ * engraves in one colour is drawn as the laser makes it, in the engraving's
+ * colour. A PDF is named in its box: its page is drawn on the shop's side.
+ */
+function Mark({ item, picture, clip, startThreshold, page }: { item: Extract<FlatItem, { kind: 'picture' }>; picture: Upload; clip: string; startThreshold: number; page: boolean }) {
+  const laser = useOneColour(item.oneColour ? picture : undefined, thresholdOf(item, startThreshold), item.colour);
+  const { box, drawn } = item;
+  if (picture.url === undefined) return <Slot box={drawn} text={picture.name === '' ? picture.kind.toUpperCase() : picture.name} page={page} filled />;
+  return (
+    <g>
+      {item.fill ? (
+        <defs>
+          <clipPath id={clip}>
+            <rect x={box.x} y={box.y} width={box.w} height={box.h} />
+          </clipPath>
+        </defs>
+      ) : null}
+      <image href={item.oneColour ? (laser ?? picture.url) : picture.url} x={drawn.x} y={drawn.y} width={drawn.w} height={drawn.h} preserveAspectRatio={item.fill ? 'xMidYMid slice' : 'xMidYMid meet'} {...(item.fill ? { clipPath: `url(#${clip})` } : {})} opacity={item.oneColour && laser === null ? 0.85 : 1} />
     </g>
   );
 }

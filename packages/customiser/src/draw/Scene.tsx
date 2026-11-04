@@ -96,6 +96,21 @@ function partOf(item: Drawn, line: number): ReactNode {
       </>
     );
   }
+  if (item.kind === 'image') {
+    const clip = `cz-scene-clip-${item.key.replace(/[^A-Za-z0-9_-]/g, '')}`;
+    return (
+      <>
+        {item.fill ? (
+          <defs>
+            <clipPath id={clip}>
+              <rect x={box.x} y={box.y} width={box.w} height={box.h} />
+            </clipPath>
+          </defs>
+        ) : null}
+        <image href={item.href} x={box.x} y={box.y} width={box.w} height={box.h} preserveAspectRatio={item.fill ? 'xMidYMid slice' : 'xMidYMid meet'} {...(item.fill ? { clipPath: `url(#${clip})` } : {})} />
+      </>
+    );
+  }
   const paint = { fill: item.fill ?? 'none', stroke: item.stroke ?? 'none', strokeWidth: item.stroke === null ? 0 : line * 1.6 };
   if (item.shape === 'rect') return <rect x={box.x} y={box.y} width={box.w} height={box.h} {...paint} />;
   return <ellipse cx={box.x + box.w / 2} cy={box.y + box.h / 2} rx={box.w / 2} ry={box.h / 2} {...paint} />;
