@@ -554,13 +554,18 @@ describe('the print look: fill it in (MC-B1, MC-B2, MC-B5, MC-0.CHECKS)', () => 
     expect(screen.getByText('Rule is the shop’s part — it stays as it is.')).toBeTruthy();
   });
 
-  it('switches layout and colours, and opens the full editor through the app (CR11 words)', async () => {
+  it('switches layout and colours, and opens its own full editor with the words kept (CR11 words, MC-B4)', async () => {
     const stub = stubApi('printing');
-    const onFullEditor = vi.fn();
-    await openHarbour(stub, { onFullEditor });
+    const onDesignChange = vi.fn();
+    await openHarbour(stub, { onDesignChange });
     fireEvent.click(screen.getByRole('radio', { name: 'Logo top' }));
+    type('Name', 'Nell Fairweather');
     fireEvent.click(screen.getByRole('button', { name: /Switch to the full editor/ }));
-    expect((onFullEditor.mock.calls[0]![0] as { values: { layout: string } }).values.layout).toBe('top');
+    expect(screen.getByRole('heading', { name: 'Harbour, made your own' })).toBeTruthy();
+    expect(screen.getByRole('status').textContent).toContain('You can move anything now; your words stay.');
+    const placed = (onDesignChange.mock.calls.at(-1)![0] as { design: { values: { parts: object; placed: { id: string; text?: string }[] } } }).design.values;
+    expect(placed.parts).toEqual({});
+    expect(placed.placed.find((one) => one.id === 'name')?.text).toBe('Nell Fairweather');
   });
 
   it('opens the full-screen preview with its own sides and guides, and closes on Escape', async () => {

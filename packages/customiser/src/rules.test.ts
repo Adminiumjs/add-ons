@@ -349,3 +349,52 @@ describe('one answer for one design', () => {
     expect(ask({ ...design, values: JSON.stringify(design['values']), format: '1' }, [logo({ px: [96, 64] })], stored)).toEqual(ask(design, [logo({ px: [96, 64] })]));
   });
 });
+
+describe('a design made in the full editor: its own parts, on a page', () => {
+  const words = (over: Row = {}) => ({ id: 'name', side: 'front', kind: 'text', x: 6, y: 8, w: 40, h: 4, name: 'Name', text: 'Nell Fairweather', font: 'Manrope', size: 9, weight: 700, align: 'start', colour: 'ink', ...over });
+  const picture = (over: Row = {}) => ({ id: 'i1', side: 'front', kind: 'image', x: 50, y: 10, w: 20, h: 20, name: 'harbour-loaf.svg', file: 'logo_file', fit: 'inside', ...over });
+  const blank = (placed: unknown[], extra: Row = {}) => plainOn('printing', 'Business cards', { parts: {}, placed, ...extra });
+
+  it('saves its parts in format 1, and refuses parts that are not in the shape', () => {
+    expect(readValues({ parts: {}, placed: [words(), { id: 'r', side: 'back', kind: 'rect', x: 0, y: 0, w: 10, h: 5, colour: '#c0562f' }] }).ok).toBe(true);
+    for (const bad of [[{ ...words(), kind: 'star' }], [{ ...words(), side: 'middle' }], [{ ...words(), size: '9' }], [{ ...words(), script: 'x' }], [words(), words()], [{ ...words(), id: 'x'.repeat(33) }], [{ ...words(), x: undefined }], 'lots'])
+      expect(readValues({ parts: {}, placed: bad }).ok, JSON.stringify(bad)).toBe(false);
+  });
+
+  it('stands on a blank page: words, a shape and the logo it holds, no feature taken', () => {
+    const answer = ask(blank([{ id: 'r', side: 'front', kind: 'rect', x: -3, y: -3, w: 91, h: 12, colour: 'accent' }, words(), picture()]), [logo({ kind: 'image/svg+xml', px: [64, 64] })]);
+    expect(reasons(answer)).toEqual([]);
+    expect(answer.used).toEqual([]);
+  });
+
+  it('is a page’s only: a piece made in it is refused', () => {
+    expect(reasons(ask(plainOn('maker', 'Engraved walnut coasters', { parts: {}, placed: [{ ...words(), size: 9 }] })))).toEqual(['— choice-not-allowed']);
+  });
+
+  it('refuses a part on the back of a one-sided card, off the page, too long, too small or too large, or in a colour the design has not', () => {
+    const answer = ask(blank([words({ id: 'a', side: 'back' }), words({ id: 'b', x: 200 }), words({ id: 'c', text: 'x'.repeat(401) }), words({ id: 'd', size: 3 }), words({ id: 'e', size: 201 }), words({ id: 'f', colour: 'gold' })]));
+    expect(reasons(answer)).toEqual(['a choice-not-allowed', 'b size-out-of-range', 'c too-long', 'd size-out-of-range', 'e size-out-of-range', 'f colour-not-allowed']);
+    // Two sides take the back, and its price.
+    const two = ask(blank([words({ side: 'back' })], { sides: 2 }));
+    expect(reasons(two)).toEqual([]);
+    expect(two.used).toEqual(['print-back']);
+  });
+
+  it('refuses a picture the design does not hold, or of a kind no picture is', () => {
+    expect(reasons(ask(blank([picture()])))).toEqual(['i1 file-missing']);
+    expect(reasons(ask(blank([picture()]), [logo({ kind: 'image/gif' })]))).toEqual(['i1 file-kind']);
+  });
+
+  it('tells a picture that may print blurry at its box, never refuses it: 96 × 64 px across 20 mm is 122 dpi', () => {
+    const answer = ask(blank([picture()]), [logo({ px: [96, 64] })]);
+    expect(reasons(answer)).toEqual([]);
+    expect(answer.advice).toEqual([{ part: 'i1', kind: 'blurry', px: [96, 64], dpi: 122, boxMm: [20, 20], needs: 150 }]);
+  });
+
+  it('gives up the form: a value for a form part beside placed parts is refused, the design’s colours are its palette’s', () => {
+    const harbour = designOn('printing', 'Harbour', { parts: { name: { text: 'Nell' } }, placed: [words()] });
+    expect(reasons(ask(harbour))).toEqual(['name part-locked']);
+    const sand = designOn('printing', 'Harbour', { palette: 'sand', parts: {}, placed: [words({ colour: 'accent' })] });
+    expect(reasons(ask(sand))).toEqual([]);
+  });
+});

@@ -18,7 +18,7 @@ import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { CustomiserEditor, heldDesign, WaysIn, YourDesigns, type HeldDesign } from './index.ts';
-import { drawn, setWidth, settle } from './testing/render.tsx';
+import { drawn, setWidth, settle, settleUntil } from './testing/render.tsx';
 import { stubApi, type Stub } from './testing/stub.ts';
 
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
@@ -40,7 +40,17 @@ const click = async (name: RegExp): Promise<void> => {
   await settle();
 };
 const maker = (base: (stub: Stub) => number) => (stub: Stub, locale: string) => <CustomiserEditor api={stub.api} base={base(stub)} product={{ name: 'Engraved walnut coasters', price: '£34.00', unit: 'set of 4' }} shop="Birch Row" locale={locale} price={{ total: '£40.00', note: 'Order by 17:00 and we post it by Tue 11 Aug' }} quantity={{ value: 1, breaks: [{ qty: 4, label: '−8%' }], onChange: () => {} }} featurePrices={{ logo: '+£1.50 a piece' }} mailsLink onAddToBasket={() => {}} onBack={() => {}} />;
-const print = (base: (stub: Stub) => number) => (stub: Stub, locale: string) => <CustomiserEditor api={stub.api} base={base(stub)} product={{ name: 'Business cards' }} shop="Marlow Press" sides={2} locale={locale} price={{ total: '£87.55', each: '£0.18', ready: 'Mon 10 Aug' }} onAddToBasket={() => {}} onStartBlank={() => {}} onSendOwnFile={() => {}} onFullEditor={() => {}} />;
+const print = (base: (stub: Stub) => number, extra: { start?: 'blank' } = {}) => (stub: Stub, locale: string) => <CustomiserEditor api={stub.api} base={base(stub)} product={{ name: 'Business cards' }} shop="Marlow Press" sides={2} locale={locale} price={{ total: '£87.55', each: '£0.18', ready: 'Mon 10 Aug' }} onAddToBasket={() => {}} onSendOwnFile={() => {}} {...extra} />;
+/** A PNG's first bytes: enough for the editor to know what it is. */
+const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+/** Pick a file in the first file input, and wait until it is taken or refused. */
+const upload = async (name: string, body: BlobPart, type: string): Promise<void> => {
+  const input = document.querySelector<HTMLInputElement>('input[type="file"]')!;
+  await act(async () => {
+    fireEvent.change(input, { target: { files: [new File([body], name, { type })] } });
+  });
+  await settleUntil(() => document.querySelector('[role="progressbar"]') === null && (document.querySelector('.cz-file') !== null || document.querySelector('[role="alert"]') !== null || document.querySelector('.cz-ed-layer') !== null));
+};
 const ring = async (): Promise<void> => click(/Ring/);
 const typeInto = (selector: string, text: string): void => {
   fireEvent.change(document.querySelector(selector)!, { target: { value: text } });
@@ -133,6 +143,79 @@ const STATES: State[] = [
     after: async () => {
       await click(/Harbour/);
       fireEvent.click(document.querySelector('.cz-sheet-tools .cz-icon-button')!);
+      await settle();
+    },
+  },
+  {
+    label: 'maker · Ring, a logo in, the one-colour sheet open',
+    app: 'maker',
+    draw: maker((s) => s.ids.coasters),
+    after: async () => {
+      await ring();
+      await upload('pinfold-sign.png', PNG, 'image/png');
+    },
+  },
+  {
+    label: 'maker · Ring, the logo in its box',
+    app: 'maker',
+    draw: maker((s) => s.ids.coasters),
+    after: async () => {
+      await ring();
+      await upload('pinfold-sign.png', PNG, 'image/png');
+      fireEvent.click(document.querySelector('.cz-oc-foot-bar .cz-button')!);
+      await settle();
+    },
+  },
+  {
+    label: 'maker · Ring, a file refused',
+    app: 'maker',
+    draw: maker((s) => s.ids.coasters),
+    after: async () => {
+      await ring();
+      await upload('notes.txt', 'just words', 'text/plain');
+    },
+  },
+  {
+    label: 'print · Harbour, a logo in, how it sits',
+    app: 'printing',
+    draw: print((s) => s.ids.cards),
+    after: async () => {
+      await click(/Harbour/);
+      await upload('harbour-loaf.png', PNG, 'image/png');
+    },
+  },
+  { label: 'print · the full editor, blank', app: 'printing', draw: print((s) => s.ids.cards, { start: 'blank' }) },
+  {
+    label: 'print · the full editor, words selected, the panel or its sheet',
+    app: 'printing',
+    draw: print((s) => s.ids.cards, { start: 'blank' }),
+    after: async () => {
+      fireEvent.click(document.querySelector('.cz-ed-tool')!);
+      await settle();
+      const sheet = document.querySelector('.cz-ed-foot .cz-button');
+      if (sheet !== null) fireEvent.click(sheet);
+      await settle();
+    },
+  },
+  {
+    label: 'print · Harbour in the full editor, with its note',
+    app: 'printing',
+    draw: print((s) => s.ids.cards),
+    after: async () => {
+      await click(/Harbour/);
+      fireEvent.click(document.querySelector('.cz-title-row .cz-button')!);
+      await settle();
+    },
+  },
+  {
+    label: 'print · Harbour, in the full editor, back on its form',
+    app: 'printing',
+    draw: print((s) => s.ids.cards),
+    after: async () => {
+      await click(/Harbour/);
+      fireEvent.click(document.querySelector('.cz-title-row .cz-button')!);
+      await settle();
+      fireEvent.click(document.querySelector('.cz-ed-head .cz-icon-button')!);
       await settle();
     },
   },

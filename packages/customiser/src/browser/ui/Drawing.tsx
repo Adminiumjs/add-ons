@@ -26,6 +26,8 @@ import type { DesignData } from '../api.ts';
 import { cssFamily } from './fonts.ts';
 import { useShared } from './context.tsx';
 import { thresholdOf, useOneColour, type Upload } from './pictures.ts';
+import { drawnOfPlaced, placedOn } from '../placed.ts';
+import type { Drawn } from '../../draw/parts.ts';
 
 /** The wood, slate or plastic a piece is cut from, and the colour its engraving burns to. */
 const MATERIALS: readonly { test: RegExp; face: string; edge: string; engraved: string }[] = [
@@ -190,6 +192,9 @@ export function Drawing({ catalogue, design, side = 'front', guides = false, emp
     return <g key={key}>{body}</g>;
   });
 
+  // A design made in the full editor draws its own parts, back to front.
+  const placed = design.values.placed === undefined ? null : drawnOfPlaced(placedOn(design.values, side), palette, pictures ?? {}, { image: t('editor.full.image', 'Image') }).map((item) => <PlacedMark key={item.key} item={item} page={page} />);
+
   return (
     <svg direction="ltr" className={className ?? 'cz-drawing'} viewBox={view} role={onPart === undefined ? 'img' : 'group'} aria-label={label} {...(label === undefined ? { 'aria-hidden': true } : {})} preserveAspectRatio="xMidYMid meet">
       <defs>
@@ -199,7 +204,7 @@ export function Drawing({ catalogue, design, side = 'front', guides = false, emp
       </defs>
       {page && guides ? <rect x={-margin} y={-margin} width={w + 2 * margin} height={h + 2 * margin} fill="#cf273c" fillOpacity={0.16} /> : null}
       <rect x={0} y={0} width={w} height={h} rx={page ? 0 : base.corner} fill={face} stroke={edge} strokeWidth={page ? 0.2 : 0.6} />
-      <g clipPath={`url(#${clip})`}>{drawn}</g>
+      <g clipPath={`url(#${clip})`}>{placed ?? drawn}</g>
       {page && guides ? (
         <g fill="none" pointerEvents="none">
           <rect x={0} y={0} width={w} height={h} stroke="#cf273c" strokeWidth={0.3} />
@@ -249,4 +254,26 @@ function Mark({ box, value, rules, picture, ink, engraves, startThreshold, clip 
       <image href={oneColour ? (laser ?? picture.url) : picture.url} x={x} y={y} width={w} height={h} preserveAspectRatio={fill ? 'xMidYMid slice' : 'xMidYMid meet'} {...(fill ? { clipPath: `url(#${clip})` } : {})} opacity={oneColour && laser === null ? 0.85 : 1} />
     </g>
   );
+}
+
+/** One part of a design made in the full editor, drawn as the full editor draws it. */
+function PlacedMark({ item, page }: { item: Drawn; page: boolean }) {
+  const { box } = item;
+  if (item.kind === 'text') {
+    const anchor = item.align === 'center' ? 'middle' : item.align === 'end' ? 'end' : 'start';
+    const x = item.align === 'center' ? box.x + box.w / 2 : item.align === 'end' ? box.x + box.w : box.x;
+    return (
+      <text x={x} y={box.y + item.sizeMm * 0.82} fontFamily={cssFamily(item.font)} fontSize={item.sizeMm} fontWeight={item.weight} textAnchor={anchor} fill={item.colour}>
+        {item.lines.map((line, i) => (
+          <tspan key={i} x={x} dy={i === 0 ? 0 : item.sizeMm * 1.25}>
+            {line}
+          </tspan>
+        ))}
+      </text>
+    );
+  }
+  if (item.kind === 'image') return <image href={item.href} x={box.x} y={box.y} width={box.w} height={box.h} preserveAspectRatio={item.fill ? 'xMidYMid slice' : 'xMidYMid meet'} />;
+  if (item.kind === 'slot') return <Slot box={box} text={item.label} page={page} filled />;
+  if (item.shape === 'ellipse') return <ellipse cx={box.x + box.w / 2} cy={box.y + box.h / 2} rx={box.w / 2} ry={box.h / 2} fill={item.fill ?? 'none'} />;
+  return <rect x={box.x} y={box.y} width={box.w} height={box.h} fill={item.fill ?? 'none'} />;
 }

@@ -31,6 +31,7 @@ import { num } from '../../rules/read.ts';
 import type { CustomiserApi, DesignData, SavedDesign } from '../api.ts';
 import { isRightToLeft } from '../i18n.ts';
 import { answerFor, freshValues, liveParts, paletteOf, partsOf, readCatalogue, readyOf, valueOf, type Catalogue, type EditPart, type Ready } from '../catalogue.ts';
+import { backToForm, toPlaced } from '../placed.ts';
 import { checksOf } from '../say.ts';
 import { SharedContext, sharedFor, useNarrow, useShared, type Look } from './context.tsx';
 import { Drawing } from './Drawing.tsx';
@@ -40,6 +41,7 @@ import { Gallery } from './Gallery.tsx';
 import { MakerFields } from './MakerFields.tsx';
 import { OneColourSheet } from './OneColour.tsx';
 import { thresholdOf, usePictures, type Upload } from './pictures.ts';
+import { FullEditor } from './FullEditor.tsx';
 import { Dialog, Toasts, type Toast } from './Overlay.tsx';
 import { PrintFields } from './PrintFields.tsx';
 import { SaveDialog } from './SaveDialog.tsx';
@@ -96,10 +98,15 @@ export interface CustomiserEditorProps {
   onSaved?: (design: SavedDesign, email: string | null) => void;
   /** Back to the product ("← Engraved walnut coasters"), and "Back to the shop" after saving. */
   onBack?: () => void;
-  /** The print look's other ways in, and its full editor: the app's (or the full editor's) to open. */
+  /**
+   * Open straight into the full editor on a blank page (the print look's
+   * "Start from blank", when the app's product page offers it as its own way
+   * in). The editor's own "Start from blank" opens it too.
+   */
+  start?: 'blank';
+  /** The print look's "Start from blank", when the app opens it itself; otherwise the editor opens its own full editor. */
   onStartBlank?: () => void;
   onSendOwnFile?: () => void;
-  onFullEditor?: (design: DesignData) => void;
   onChangeSides?: () => void;
 }
 
@@ -191,8 +198,12 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
   const savedStart = opened !== undefined && 'id' in opened ? opened : null;
   const sides = props.sides ?? (opened?.values.sides ?? 1);
   const [ready, setReady] = useState<Ready | null>(() => (opened === undefined ? null : readyOf(catalogue, opened.ready_design_id)));
-  const [view, setView] = useState<'choose' | 'fill'>(() => (opened !== undefined || (catalogue.ready.length === 0 && look === 'maker') ? 'fill' : 'choose'));
-  const [history, setHistory] = useState<History>(() => ({ past: [], now: opened?.values ?? freshValues(catalogue, null, sides), future: [], typingIn: null }));
+  const blank = opened === undefined && props.start === 'blank' && look === 'print';
+  // A design made in the full editor on a blank page opens in it; one made from a ready-made design opens on its form, which says so.
+  const [view, setView] = useState<'choose' | 'fill' | 'full'>(() => (blank || (opened?.values.placed !== undefined && opened.ready_design_id === null) ? 'full' : opened !== undefined || (catalogue.ready.length === 0 && look === 'maker') ? 'fill' : 'choose'));
+  const [history, setHistory] = useState<History>(() => ({ past: [], now: blank ? { ...freshValues(catalogue, null, sides), placed: [] } : (opened?.values ?? freshValues(catalogue, null, sides)), future: [], typingIn: null }));
+  /** The full editor was opened from the form: its note says the moves are the customer's now. */
+  const [movedFromForm, setMovedFromForm] = useState(false);
   const [saved, setSaved] = useState<SavedDesign | null>(savedStart);
   const [tried, setTried] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
@@ -432,10 +443,40 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
     }
   };
 
+  /** A blank page in the full editor: nothing on it yet. */
+  const startBlank = (): void => {
+    setReady(null);
+    setHistory({ past: [], now: { ...freshValues(catalogue, null, sides), placed: [] }, future: [], typingIn: null });
+    setMovedFromForm(false);
+    setView('full');
+  };
+  /** "Switch to the full editor": the form's parts become the customer's to move, their words kept. */
+  const toFull = (): void => {
+    if (values.placed === undefined) commit(toPlaced(catalogue, ready, values));
+    setMovedFromForm(values.placed === undefined);
+    setView('full');
+  };
+  /** "Go back to the form": the moves go, the words stay. */
+  const toForm = (): void => {
+    commit(backToForm(catalogue, ready, values));
+    setView('fill');
+  };
+  const takeThisDesign = async (): Promise<void> => {
+    if ((values.placed ?? []).length === 0) {
+      toast(t('editor.full.empty', 'Add something to the card first.'), 'warn');
+      return;
+    }
+    if (blocks.length > 0) {
+      toast(blocks[0]!.listed, 'warn');
+      return;
+    }
+    await addToBasket();
+  };
+
   if (view === 'choose')
     return (
       <>
-        <Gallery catalogue={catalogue} product={props.product.name} sides={sides} onPick={pick} onBack={props.onBack} onStartBlank={props.onStartBlank} onSendOwnFile={props.onSendOwnFile} onChangeSides={props.onChangeSides} />
+        <Gallery catalogue={catalogue} product={props.product.name} sides={sides} onPick={pick} onBack={props.onBack} onStartBlank={props.onStartBlank ?? (look === 'print' && props.preview !== true ? startBlank : undefined)} onSendOwnFile={props.onSendOwnFile} onChangeSides={props.onChangeSides} />
         <Toasts toasts={toasts} onUndo={(one) => one.undo?.()} />
       </>
     );
@@ -513,6 +554,35 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
       <Toasts toasts={toasts} onUndo={(one) => one.undo?.()} raised={narrow} />
     </>
   );
+
+  if (view === 'full')
+    return (
+      <>
+        <FullEditor
+          catalogue={catalogue}
+          values={values}
+          palette={palette}
+          sides={sides}
+          from={ready?.name ?? null}
+          answer={answer}
+          pictures={pictures}
+          narrow={narrow}
+          canUndo={history.past.length > 0}
+          canRedo={history.future.length > 0}
+          change={(next, gesture) => commit(next, gesture ?? null)}
+          endGesture={() => setHistory((h) => ({ ...h, typingIn: null }))}
+          undo={undo}
+          redo={redo}
+          onBack={() => (ready !== null ? setView('fill') : catalogue.ready.length > 0 ? setView('choose') : props.onBack?.())}
+          onSave={openSave}
+          onUse={() => void takeThisDesign()}
+          toast={toast}
+          busy={busy}
+          banner={movedFromForm}
+        />
+        {dialogs}
+      </>
+    );
 
   if (look === 'maker') {
     // A printed item says its colour ("PLA · Amber"); a piece its material and thickness ("Walnut 6 mm").
@@ -620,14 +690,29 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
           </p>
         </div>
         {undoButtons}
-        {props.onFullEditor === undefined || props.preview === true ? null : (
-          <button type="button" className="cz-button" onClick={() => props.onFullEditor?.(design)}>
+        {props.preview === true || values.placed !== undefined ? null : (
+          <button type="button" className="cz-button" onClick={toFull}>
             <PencilRuler aria-hidden="true" />
             {t('editor.fill.fullEditor', 'Switch to the full editor')}
           </button>
         )}
       </div>
       {ordinaryNote}
+      {values.placed !== undefined ? (
+        <div className="cz-in-full">
+          <PencilRuler aria-hidden="true" className="cz-in-full-icon" />
+          <h2 className="cz-h3">{t('editor.full.inFull', 'This design is in the full editor')}</h2>
+          <p className="cz-small">{t('editor.full.inFullBody', 'You’ve moved things around, so the form no longer fits it. Carry on in the editor, or go back to the form and lose the moves. Your words stay either way.')}</p>
+          <div className="cz-chips">
+            <button type="button" className="cz-primary" onClick={() => setView('full')}>
+              {t('editor.full.open', 'Open the full editor')}
+            </button>
+            <button type="button" className="cz-button" onClick={toForm}>
+              {t('editor.full.toForm', 'Go back to the form')}
+            </button>
+          </div>
+        </div>
+      ) : (
       <div className="cz-fill-grid">
         <div className="cz-card-col">
           <div ref={sheet} className="cz-sheet">
@@ -686,7 +771,8 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
           ) : null}
         </div>
       </div>
-      {narrow ? <QuoteBar {...bar} /> : null}
+      )}
+      {narrow && values.placed === undefined ? <QuoteBar {...bar} /> : null}
       {dialogs}
     </section>
   );

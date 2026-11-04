@@ -13,8 +13,8 @@
  * - `design.ts`: whether a design may be ordered, the advice the customer
  *   sees, and the priced features it takes.
  */
-export { DESIGN_FORMAT, LOGO_SMALLEST_MM, PICTURE_KINDS, PT_MM, readValues, SCALE_MAX, SCALE_MIN, TEXT_MAX } from './shapes.ts';
-export type { DesignValues, PartValue, PictureRules, TextRules } from './shapes.ts';
+export { DESIGN_FORMAT, PLACED_MAX, PLACED_SIZE_MAX, PLACED_SIZE_MIN, LOGO_SMALLEST_MM, PICTURE_KINDS, PT_MM, readValues, SCALE_MAX, SCALE_MIN, TEXT_MAX } from './shapes.ts';
+export type { Align, DesignValues, PlacedKind, PlacedPart, PartValue, PictureRules, TextRules } from './shapes.ts';
 export { charCount, charLimit, lineCount, sizeAllowed, sizeInMm, sizeThatFits } from './text.ts';
 export { contrast } from './colour.ts';
 export { checkDesign, DEFAULT_MIN_DPI, DEFAULT_SMALLEST_LINE_MM, REASONS } from './design.ts';

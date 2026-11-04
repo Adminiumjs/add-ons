@@ -48,7 +48,9 @@ export interface Look {
 export type Drawn =
   | { kind: 'text'; key: string; box: Box; lines: string[]; font: string; sizeMm: number; weight: number; align: 'start' | 'center' | 'end'; colour: string }
   | { kind: 'slot'; key: string; box: Box; slot: 'logo' | 'photo' | 'choice'; label: string }
-  | { kind: 'shape'; key: string; box: Box; shape: 'rect' | 'ellipse' | 'ring'; fill: string | null; stroke: string | null; background: boolean };
+  | { kind: 'shape'; key: string; box: Box; shape: 'rect' | 'ellipse' | 'ring'; fill: string | null; stroke: string | null; background: boolean }
+  /** A customer's own picture, drawn from its address in the page (never its markup), inside its box or filling it. */
+  | { kind: 'image'; key: string; box: Box; href: string; fill: boolean };
 
 /** Where a page's words and shapes take their colour when the palette names none: the ink. */
 const INK = '#191920';
