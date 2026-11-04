@@ -32,9 +32,9 @@ import { fileAddress, fileIdOf } from '../pages/shared/stored.ts';
 import { useToast } from '../pages/shared/toast.ts';
 import { jsonOf, kindOf, mm, text } from '../pages/setup/facts.ts';
 import { PANEL, SETUP, SHARED } from '../pages/strings/index.ts';
-import { catalogueFor, fileStem, fontBook, makeLaserFiles, makePageProof, makePieceProof, makePrintFiles, picturesOf, sheetsFor, valuesOf, type Made, type MakeWords } from './make.ts';
+import { catalogueFor, fileStem, fontBook, makeLaserFiles, pieceSheetFor, makePageProof, makePieceProof, makePrintFiles, picturesOf, sheetsFor, valuesOf, type Made, type MakeWords } from './make.ts';
 import type { PanelProps } from './product.tsx';
-import { PieceViews } from './views.tsx';
+import { KitViews, PieceViews } from './views.tsx';
 
 const t = wordsFor(SHARED, SETUP, PANEL);
 
@@ -217,7 +217,7 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
       const sheets = sheetsFor(catalogue, data, (column) => held.pdf[column] !== undefined);
       const book = fontBook(catalogue);
       await book.load(new Set(sheets.flatMap((sheet) => sheet.items.flatMap((item) => (item.kind === 'text' ? [item.font] : [])))));
-      const made: Made[] = page ? await makePrintFiles(sheets, { font: book.font, pictures: held.pdf }, stem, words, book.font(catalogue.fonts[0]?.family ?? '', 400)) : await makeLaserFiles(catalogue, sheets[0]!, book.font, held.svg, stem, words);
+      const made: Made[] = page ? await makePrintFiles(sheets, { font: book.font, pictures: held.pdf }, stem, words, book.font(catalogue.fonts[0]?.family ?? '', 400)) : await makeLaserFiles(catalogue, sheets[0]!, book.font, held.svg, stem, words, undefined, pieceSheetFor(catalogue, data, (column) => held.pdf[column] !== undefined));
       // Making them again replaces what the version had.
       for (const old of files.rows) await fileWrite.remove(old['id'] as string | number);
       for (const [position, one] of made.entries()) {
@@ -258,7 +258,9 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
       <Stack gap="md">
         {catalogue === null ? null : (
           <SharedContext.Provider value={shared}>
-            {kind === 'piece' ? (
+            {kind === 'kit' ? (
+              <KitViews t={t} catalogue={catalogue} design={data} pictures={pictures} label={t('panel.line.drawn', '{design}, as it will be made', { design: designName })} />
+            ) : kind === 'piece' ? (
               <PieceViews t={t} catalogue={catalogue} design={data} pictures={pictures} label={t('panel.line.drawn', '{design}, as it will be made', { design: designName })} flat={<Drawing catalogue={catalogue} design={data} empty="hide" pictures={pictures} className="w-full" label={t('panel.line.drawn', '{design}, as it will be made', { design: designName })} />} />
             ) : (
             <div className="flex flex-wrap gap-3" data-design-sides="">

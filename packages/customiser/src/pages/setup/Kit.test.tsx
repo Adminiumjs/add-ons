@@ -16,7 +16,7 @@ import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { glbOf, SIGN, WALL } from '../../testing/glb.ts';
-import { facesOf } from '../../three/faces.ts';
+import { facesOf } from '../../three/faceStore.ts';
 import { Stage3d, type RendererLike } from '../../three/stage3d.ts';
 import { resetWorld, seed, world, type Call } from '../testing/host.tsx';
 import { IDS, seedShop } from '../testing/rows.ts';

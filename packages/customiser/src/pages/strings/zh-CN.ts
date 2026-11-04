@@ -344,7 +344,8 @@ export const panel: Readonly<Record<string, string>> = {
   "panel.title": "定制",
   "panel.views.3d": "3D",
   "panel.views.flat": "平面",
-  "panel.views.label": "设计的显示方式"
+  "panel.views.label": "设计的显示方式",
+  "panel.views.pieces": "部件"
 };
 
 export const designs: Readonly<Record<string, string>> = {

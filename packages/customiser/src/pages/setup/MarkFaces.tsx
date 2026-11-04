@@ -21,7 +21,8 @@
  */
 import { useCallback, useId, useMemo, useRef, useState, type PointerEvent, type ReactNode } from 'react';
 
-import { facesOf, facesValue, mmPerUnit, sameFace, spanOf, type FacePlane, type MarkedFace } from '../../three/faces.ts';
+import { mmPerUnit, sameFace, spanOf, type FacePlane, type MarkedFace } from '../../three/faces.ts';
+import { facesOf, facesValue } from '../../three/faceStore.ts';
 import { hasWebGL } from '../../three/load.ts';
 import { ModelView } from '../../three/PieceView.tsx';
 import type { Stage3d } from '../../three/stage3d.ts';

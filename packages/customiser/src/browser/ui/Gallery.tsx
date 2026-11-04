@@ -13,11 +13,14 @@ import { ArrowLeft, Image as ImageIcon, SearchX, Sprout, SquareDashed, SquarePen
 import { useId, useState } from 'react';
 
 import { flatSheet } from '../../draw/flat.ts';
+import { carryingPieces, kitPieces } from '../../draw/kit.ts';
 import { PieceStill } from '../../three/PieceView.tsx';
 import type { CustomiserApi } from '../api.ts';
 import { freshValues, type Catalogue, type Ready } from '../catalogue.ts';
 import { useShared, useNarrow } from './context.tsx';
 import { Drawing } from './Drawing.tsx';
+import { KitStill } from './KitStage.tsx';
+import { PiecesDrawing } from './KitPieces.tsx';
 import { outlineOf } from './PieceStage.tsx';
 
 /** What a design lets a customer change, as the chips on its card say. */
@@ -136,7 +139,18 @@ export function Gallery({ api, catalogue, product, sides, onPick, onBack, onStar
                 <button key={String(ready.id)} type="button" className="cz-card" aria-label={t('editor.choose.use', 'Customise the {name} design. {chips}.', { name: ready.name, chips: chips.map((chip) => chipWords[chip]).join(', ') })} onClick={() => onPick(ready)}>
                   <span className={two ? 'cz-card-art cz-card-art-two' : 'cz-card-art'}>
                     {/* The front as the shop's preview picture shows it, where it has one; else drawn here. */}
-                    {base.kind === 'piece' ? (
+                    {base.kind === 'kit' && api !== undefined ? (
+                      // A kit's card is its model with the design on it, the pieces that carry it until then.
+                      <KitStill
+                        api={api}
+                        catalogue={catalogue}
+                        design={design}
+                        width={400}
+                        height={300}
+                        className="cz-drawing cz-card-picture"
+                        fallback={ready.picture === null ? <PiecesDrawing catalogue={catalogue} design={design} pieces={kitPieces(catalogue)} only={carryingPieces(catalogue, ready.parts)} label={ready.name} /> : <img src={ready.picture} alt="" className="cz-drawing cz-card-picture" />}
+                      />
+                    ) : base.kind === 'piece' ? (
                       // A flat piece's card is its 3D still (drawn once for the page), its picture or drawing until then.
                       <PieceStill
                         sheet={flatSheet(catalogue, design, { labels: pictureWords })}

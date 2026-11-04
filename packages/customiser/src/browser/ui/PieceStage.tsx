@@ -25,7 +25,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, 
 import { flatSheet } from '../../draw/flat.ts';
 import { hasWebGL, reducedMotion } from '../../three/load.ts';
 import { ModelView } from '../../three/PieceView.tsx';
-import type { Stage3d } from '../../three/stage3d.ts';
+import type { Stage3d, StageModel } from '../../three/stage3d.ts';
 import { usePieceModel, type OutlineSource } from '../../three/usePiece.ts';
 import { apply, Gestures, keyCommand, startView, TURNS, wheelFactor, zoomed, zoomLabel, ZOOM_IN, ZOOM_OUT, type TurnName, type View } from '../../three/view.ts';
 import type { CustomiserApi, DesignData } from '../api.ts';
@@ -50,6 +50,15 @@ export interface PieceStageProps {
   material: string | null;
   /** A tap on a part of the piece in 3D. */
   onPart: (code: string) => void;
+  /** A kit: started from its own angle, drawn as the shop's model it is given (none: not drawn yet). */
+  kind?: 'piece' | 'kit';
+  model?: StageModel | null;
+  /** Shown flat whatever the switch says (a kit's pieces laid flat). */
+  forceFlat?: boolean;
+  /** Beside the switch: a kit's Assembled / Pieces. */
+  modes?: ReactNode;
+  /** Where a tap on the kit's model landed: the part there, if any. */
+  pickPart?: (stage: Stage3d, x: number, y: number) => string | null;
 }
 
 const ICONS: Readonly<Record<TurnName, typeof ArrowLeft>> = { left: ArrowLeft, right: ArrowRight, up: ArrowUp, down: ArrowDown };
@@ -93,10 +102,11 @@ export function PieceStage(props: PieceStageProps): ReactNode {
   const { t } = useShared();
   const { catalogue, design, pictures, startThreshold, narrow } = props;
   const [no3d, setNo3d] = useState(() => !hasWebGL());
+  const kind = props.kind ?? 'piece';
   const [flat, setFlat] = useState(() => reducedMotion());
-  const [view, setView] = useState<View>(() => startView('piece'));
+  const [view, setView] = useState<View>(() => startView(kind));
   const [dragging, setDragging] = useState(false);
-  const shownFlat = flat || no3d;
+  const shownFlat = flat || no3d || props.forceFlat === true;
   const stage = useRef<HTMLDivElement | null>(null);
   const flatBox = useRef<HTMLDivElement | null>(null);
   const model3d = useRef<Stage3d | null>(null);
@@ -110,7 +120,8 @@ export function PieceStage(props: PieceStageProps): ReactNode {
   );
   const painted = usePaintedPictures(catalogue, design, pictures, startThreshold);
   const outline = useMemo(() => outlineOf(props.api, catalogue), [props.api, catalogue]);
-  const model = usePieceModel(shownFlat ? null : sheet, catalogue.base.thickness, outline, painted);
+  const pieceModel = usePieceModel(shownFlat || props.model !== undefined ? null : sheet, catalogue.base.thickness, outline, painted);
+  const model = props.model !== undefined ? props.model : pieceModel;
 
   // The wheel zooms the piece, not the page: a listener that may stop the page scrolling.
   useEffect(() => {
@@ -150,7 +161,13 @@ export function PieceStage(props: PieceStageProps): ReactNode {
     if (!tap || cancelled || shownFlat || model3d.current === null) return;
     const box = stage.current?.getBoundingClientRect();
     if (box === undefined || box.width <= 0 || box.height <= 0) return;
-    const spot = model3d.current.pick((event.clientX - box.left) / box.width, (event.clientY - box.top) / box.height);
+    const [x, y] = [(event.clientX - box.left) / box.width, (event.clientY - box.top) / box.height];
+    if (props.pickPart !== undefined) {
+      const code = props.pickPart(model3d.current, x, y);
+      if (code !== null) props.onPart(code);
+      return;
+    }
+    const spot = model3d.current.pick(x, y);
     if (spot === null) return;
     // The part on top where the tap landed: the last one drawn there.
     const hit = [...sheet.items].reverse().find((item) => item.live && spot.x >= item.box.x && spot.x <= item.box.x + item.box.w && spot.y >= item.box.y && spot.y <= item.box.y + item.box.h);
@@ -161,7 +178,7 @@ export function PieceStage(props: PieceStageProps): ReactNode {
     const command = keyCommand(event.key, shownFlat);
     if (command === null) return;
     event.preventDefault();
-    setView((now) => apply(now, command, 'piece'));
+    setView((now) => apply(now, command, kind));
   };
   const fail = useCallback(() => setNo3d(true), []);
 
@@ -195,7 +212,7 @@ export function PieceStage(props: PieceStageProps): ReactNode {
           <span className="cz-mono cz-stage-label">{props.size}</span>
           {props.material === null ? null : <span className="cz-stage-label">{props.material}</span>}
         </span>
-        {shownFlat ? null : (
+        {shownFlat || model === null ? null : (
           <span className="cz-stage-hint">
             <Move3d aria-hidden="true" />
             {narrow ? t('editor.stage.hintPhone', 'Drag to turn · pinch to zoom') : t('editor.stage.hint', 'Drag to turn · scroll to zoom')}
@@ -206,18 +223,19 @@ export function PieceStage(props: PieceStageProps): ReactNode {
         <button
           type="button"
           role="switch"
-          aria-checked={shownFlat}
+          aria-checked={flat || no3d}
           aria-disabled={no3d}
           className={no3d ? 'cz-flat-switch cz-locked' : 'cz-flat-switch'}
           onClick={() => {
             if (!no3d) setFlat((now) => !now);
           }}
         >
-          <span className={shownFlat ? 'cz-switch-track cz-on' : 'cz-switch-track'} aria-hidden="true">
+          <span className={flat || no3d ? 'cz-switch-track cz-on' : 'cz-switch-track'} aria-hidden="true">
             <span className="cz-switch-knob" />
           </span>
           {t('editor.stage.seeFlat', 'See it flat')}
         </button>
+        {props.modes}
         <div className="cz-stage-tools">
           {shownFlat ? null : (
             <div role="group" aria-label={t('editor.stage.turn', 'Turn the piece')} className="cz-tool-group">
@@ -225,7 +243,7 @@ export function PieceStage(props: PieceStageProps): ReactNode {
                 const Icon = ICONS[turn.name];
                 const name = turnName(t, turn.name);
                 return (
-                  <button key={turn.name} type="button" className="cz-tool-button" aria-label={name} title={name} onClick={() => setView((now) => apply(now, { kind: 'turn', dx: turn.dx, dy: turn.dy }, 'piece'))}>
+                  <button key={turn.name} type="button" className="cz-tool-button" aria-label={name} title={name} onClick={() => setView((now) => apply(now, { kind: 'turn', dx: turn.dx, dy: turn.dy }, kind))}>
                     <Icon aria-hidden="true" />
                   </button>
                 );
@@ -241,7 +259,7 @@ export function PieceStage(props: PieceStageProps): ReactNode {
               <ZoomIn aria-hidden="true" />
             </button>
           </div>
-          <button type="button" className="cz-reset" onClick={() => setView(startView('piece'))}>
+          <button type="button" className="cz-reset" onClick={() => setView(startView(kind))}>
             <RotateCcw aria-hidden="true" />
             {t('editor.stage.reset', 'Reset the view')}
           </button>

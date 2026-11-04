@@ -126,6 +126,10 @@ export interface CustomiserApi {
    * editor is given no outlines (the piece is then its rectangle).
    */
   outlineUrl?: (base: Row) => Promise<string | null>;
+  /** The address of a kit's model (its GLB), or null without one; left out where the editor is given no models. */
+  modelUrl?: (base: Row) => Promise<string | null>;
+  /** The address of a kit piece's own drawing (its cleaned SVG), or null without one. */
+  pieceUrl?: (piece: Row) => Promise<string | null>;
   /** Save a new design; the e-mail is where its link is sent (none: nothing is sent). */
   create: (design: DesignData, email: string | null, files?: Readonly<Record<string, string>>) => Promise<SavedDesign>;
   /** Change a saved draft in place, through its own link. */
@@ -266,6 +270,14 @@ export function customiserApi(clients: CustomiserClients): CustomiserApi {
     async outlineUrl(base) {
       const config = await shop.config();
       return assetAddress(clients.baseUrl, config.assets, config.refs[REFS.bases]?.assets ?? [], REFS.bases, asKey(base['id']), 'outline_file', base['outline_file']);
+    },
+    async modelUrl(base) {
+      const config = await shop.config();
+      return assetAddress(clients.baseUrl, config.assets, config.refs[REFS.bases]?.assets ?? [], REFS.bases, asKey(base['id']), 'model_file', base['model_file']);
+    },
+    async pieceUrl(piece) {
+      const config = await shop.config();
+      return assetAddress(clients.baseUrl, config.assets, config.refs[REFS.pieces]?.assets ?? [], REFS.pieces, asKey(piece['id']), 'file', piece['file']);
     },
     async create(design, email, files) {
       const out = await shop.createWithRank<Row>(REFS.designs, { ...written(design, files), ...(email === null ? {} : { email }) });

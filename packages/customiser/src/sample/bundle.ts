@@ -57,7 +57,8 @@ const FINISHES = ['engraved', 'paint-white', 'paint-black'];
 /** What a Birch Row base offers in its set-up's "Fonts & finishes": the five laser fonts and the three finishes. */
 const MAKER_OFFER = { fonts: [SERIF, SANS, SCRIPT, SLAB, CAPS], finishes: FINISHES };
 const COASTER = { w: 95, h: 95 };
-const NOOK_FRONT = { w: 110, h: 180 };
+/** The book nook's pieces that carry a design: an area or a part is placed on its own piece, in per cent of it. */
+const NOOK_PIECE: Readonly<Record<string, { w: number; h: number }>> = { '09': { w: 92, h: 22 }, '10': { w: 42, h: 54 }, '11': { w: 42, h: 54 }, '12': { w: 36, h: 68 } };
 const KEYRING = { w: 56, h: 24 };
 
 /** Words on a laser-cut piece: sizes in millimetres, and the limit grows with smaller letters. */
@@ -119,8 +120,8 @@ function makerTables(): Bundle['tables'] {
   const areas: Row[] = [
     { '@label': 'area:coasters-logo', app: MAKER, base_id: ref('base:coasters'), code: 'logo', name: 'Your logo', shape: 'rect', ...boxOf(COASTER, 30, 14, 40, 38), takes: 'logo', required: false, rules: LOGO, feature_id: ref('feature:maker-logo'), position: 1 },
     { '@label': 'area:coasters-words', app: MAKER, base_id: ref('base:coasters'), code: 'words', name: 'Your words', shape: 'rect', ...boxOf(COASTER, 12, 60, 76, 14), takes: 'words', required: false, rules: words({ chars: 24, size: 6, min: 4, max: 8, fonts: COASTER_FONTS, font: SANS, finishes: FINISHES, placeholder: 'The Hartleys' }), position: 2 },
-    { '@label': 'area:nook-sign', app: MAKER, base_id: ref('base:nook'), code: 'sign', name: 'The shop sign', piece_id: ref('piece:nook-09'), face: 'front', shape: 'rect', ...boxOf(NOOK_FRONT, 8, 5, 84, 11), takes: 'words', required: true, rules: signWords, position: 3 },
-    { '@label': 'area:nook-lwin', app: MAKER, base_id: ref('base:nook'), code: 'lwin', name: 'The left window', piece_id: ref('piece:nook-10'), face: 'front', shape: 'rect', ...boxOf(NOOK_FRONT, 8, 25, 38, 30), takes: 'both', required: false, rules: { ...windowWords, alsoLogo: LOGO }, feature_id: ref('feature:maker-logo'), position: 4 },
+    { '@label': 'area:nook-sign', app: MAKER, base_id: ref('base:nook'), code: 'sign', name: 'The shop sign', piece_id: ref('piece:nook-09'), shape: 'rect', ...boxOf(NOOK_PIECE['09']!, 2, 9, 96, 82), takes: 'words', required: true, rules: signWords, position: 3 },
+    { '@label': 'area:nook-lwin', app: MAKER, base_id: ref('base:nook'), code: 'lwin', name: 'The left window', piece_id: ref('piece:nook-10'), shape: 'rect', ...boxOf(NOOK_PIECE['10']!, 5, 4, 90, 92), takes: 'both', required: false, rules: { ...windowWords, alsoLogo: LOGO }, feature_id: ref('feature:maker-logo'), position: 4 },
     // A 3D-printed item's area is a flat face the shop marks; the words are raised from it.
     { '@label': 'area:keyring-front', app: MAKER, base_id: ref('base:keyring'), code: 'front', name: 'The front', face: 'front', shape: 'rect', x_mm: 0, y_mm: 0, w_mm: 56, h_mm: 24, takes: 'words', required: true, rules: { ...words({ chars: 8, size: 11, min: 6, max: 14, fonts: [SANS, CAPS, SLAB], font: SANS, upper: true, raised: 1, placeholder: 'ALEX' }), mode: 'raised', depthMm: 1, smallestLetterMm: 4 }, position: 5 },
     { '@label': 'area:board-corner', app: MAKER, base_id: ref('base:board'), code: 'corner', name: 'In the corner', shape: 'rect', x_mm: pct(54, 380), y_mm: pct(80, 260), w_mm: pct(40, 380), h_mm: pct(10, 260), takes: 'words', required: false, rules: words({ chars: 32, size: 8, min: 6, max: 10, fonts: [SERIF, SANS], font: SERIF, finishes: ['engraved'], placeholder: 'The Sharmas · 2019' }), position: 6 },
@@ -139,11 +140,11 @@ function makerTables(): Bundle['tables'] {
     ['keyring-heart', 'keyring', 'Name and a heart', ['words']],
   ].map(([label, base, name, tags], i) => ({ '@label': `ready:${String(label)}`, app: MAKER, base_id: ref(`base:${String(base)}`), name, tags, state: 'published', position: i + 1 }));
 
-  const nookPart = (design: string, code: string, name: string, kind: string, piece: string, at: [number, number, number, number], extra: Row) => part(design, code, name, kind, { piece_id: ref(`piece:nook-${piece}`), ...boxOf(NOOK_FRONT, ...at), ...extra });
-  const door = (design: string) => nookPart(design, 'door', 'The door', 'shape', '12', [34, 62, 32, 38], { locked: true, rules: { shape: 'door' }, value: { text: 'Panelled door' } });
+  const nookPart = (design: string, code: string, name: string, kind: string, piece: string, at: [number, number, number, number], extra: Row) => part(design, code, name, kind, { piece_id: ref(`piece:nook-${piece}`), ...boxOf(NOOK_PIECE[piece]!, ...at), ...extra });
+  const door = (design: string) => nookPart(design, 'door', 'The door', 'shape', '12', [0, 0, 100, 100], { locked: true, rules: { shape: 'door' }, value: { text: 'Panelled door' } });
   const sign = (design: string, font: string, fonts: string[], placeholder: string, finish?: string) =>
-    nookPart(design, 'sign', 'The shop sign', 'text', '09', [8, 5, 84, 11], { area_id: ref('area:nook-sign'), required: true, rules: { ...signWords, fonts, font, placeholder, ...(finish === undefined ? {} : { finish }) } });
-  const leftWindow = (design: string) => nookPart(design, 'lwin', 'The left window', 'text', '10', [8, 25, 38, 30], { area_id: ref('area:nook-lwin'), rules: { ...windowWords, alsoLogo: LOGO }, feature_id: ref('feature:maker-logo') });
+    nookPart(design, 'sign', 'The shop sign', 'text', '09', [2, 9, 96, 82], { area_id: ref('area:nook-sign'), required: true, rules: { ...signWords, fonts, font, placeholder, ...(finish === undefined ? {} : { finish }) } });
+  const leftWindow = (design: string) => nookPart(design, 'lwin', 'The left window', 'text', '10', [5, 4, 90, 92], { area_id: ref('area:nook-lwin'), rules: { ...windowWords, alsoLogo: LOGO }, feature_id: ref('feature:maker-logo') });
   const nameWords = (chars: number, size: number, min: number, max: number, fonts: string[]) => words({ chars, size, min, max, fonts, font: SANS, upper: true, raised: 1, placeholder: 'ALEX' });
   const plaColour = (design: string, choice: string) => part(design, 'colour', 'Colour', 'colour', { rules: { palette: 'pla', choices: ['chalk', 'grey', 'ink', 'amber'] }, value: { choice } });
 
@@ -164,14 +165,14 @@ function makerTables(): Bundle['tables'] {
     part('coasters-stamp', 'date', 'Your words', 'text', { required: true, ...boxOf(COASTER, 18, 58, 64, 11), rules: words({ chars: 14, size: 5, min: 4, max: 7, fonts: COASTER_FONTS, font: SANS, finishes: FINISHES, placeholder: 'est. 2019' }) }),
     sign('nook-corner', SERIF, [SERIF, SLAB, SCRIPT], 'The Corner Shop'),
     leftWindow('nook-corner'),
-    nookPart('nook-corner', 'rwin', 'The right window', 'choice', '11', [54, 25, 38, 30], { locked: true, value: { choice: 'library', text: 'Books on the shelf' } }),
+    nookPart('nook-corner', 'rwin', 'The right window', 'choice', '11', [5, 4, 90, 92], { locked: true, value: { choice: 'library', text: 'Books on the shelf' } }),
     door('nook-corner'),
     sign('nook-night', SCRIPT, [SERIF, SLAB, SCRIPT], 'The Corner Shop', 'paint-black'),
     leftWindow('nook-night'),
-    nookPart('nook-night', 'rwin', 'The right window', 'choice', '11', [54, 25, 38, 30], { rules: { choices: ['moon', 'star', 'lamp'] }, value: { choice: 'moon' } }),
+    nookPart('nook-night', 'rwin', 'The right window', 'choice', '11', [5, 4, 90, 92], { rules: { choices: ['moon', 'star', 'lamp'] }, value: { choice: 'moon' } }),
     door('nook-night'),
     sign('nook-reading', SLAB, [SERIF, SLAB], 'Reading Room'),
-    nookPart('nook-reading', 'rwin', 'The windows', 'choice', '11', [8, 25, 84, 30], { locked: true, value: { choice: 'book-open', text: 'An open book across both' } }),
+    nookPart('nook-reading', 'rwin', 'The windows', 'choice', '11', [5, 4, 90, 92], { locked: true, value: { choice: 'book-open', text: 'An open book across both' } }),
     door('nook-reading'),
     part('keyring-name', 'name', 'Your name', 'text', { required: true, area_id: ref('area:keyring-front'), ...boxOf(KEYRING, 25, 16, 68, 68), rules: nameWords(8, 11, 6, 14, [SANS, CAPS, SLAB]) }),
     plaColour('keyring-name', 'amber'),

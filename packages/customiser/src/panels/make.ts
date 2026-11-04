@@ -20,7 +20,8 @@ import type { CatalogueRows, DesignData } from '../browser/api.ts';
 import { readCatalogue, type Catalogue } from '../browser/catalogue.ts';
 import { readValues, type DesignValues } from '../rules/index.ts';
 import { sheetPng, type Painted } from '../draw/canvas.ts';
-import { sheetsOf, type FlatSheet } from '../draw/flat.ts';
+import { flatSheet, sheetsOf, type FlatOn, type FlatSheet } from '../draw/flat.ts';
+import { kitPieces, onPiece } from '../draw/kit.ts';
 import { fontAt, textPaths, type Font } from '../draw/outline.ts';
 import { FontMissing, missingFonts, printPdf, printSize, proofPdf, type PdfAssets, type PdfPicture } from '../draw/pdf.ts';
 import { engravedOf, layersOf, pieceSvg } from '../draw/svgfile.ts';
@@ -147,6 +148,12 @@ export function sheetsFor(catalogue: Catalogue, data: DesignData, holds: (column
   return sheetsOf(catalogue, data, { empty: 'hide', labels: NO_LABELS, holds });
 }
 
+/** A kit's design on one of its pieces alone, as made: the parts cut on it, at its size. */
+export const pieceSheetFor =
+  (catalogue: Catalogue, data: DesignData, holds: (column: string) => boolean) =>
+  (on: FlatOn): FlatSheet =>
+    flatSheet(catalogue, data, { on, empty: 'hide', labels: NO_LABELS, holds });
+
 /** A page's print files, one a side. */
 export async function makePrintFiles(sheets: readonly FlatSheet[], assets: PdfAssets, stem: string, words: MakeWords, slugFont: Font | null): Promise<Made[]> {
   const out: Made[] = [];
@@ -181,10 +188,12 @@ const mmSize = (w: number, h: number): string => `${String(Math.round(w * 10) / 
  * from its outline. A kit is a file a piece, each cut from that piece's own
  * outline and engraved with the parts the design puts on that piece.
  */
-export async function makeLaserFiles(catalogue: Catalogue, sheet: FlatSheet, font: (family: string, weight: number) => Font | null, logos: Readonly<Record<string, ReadSvg>>, stem: string, words: MakeWords, read: (file: unknown) => Promise<Uint8Array | null> = fileBytes): Promise<Made[]> {
-  const missing = missingFonts([sheet], { font });
+export async function makeLaserFiles(catalogue: Catalogue, sheet: FlatSheet, font: (family: string, weight: number) => Font | null, logos: Readonly<Record<string, ReadSvg>>, stem: string, words: MakeWords, read: (file: unknown) => Promise<Uint8Array | null> = fileBytes, pieceSheet?: (on: FlatOn) => FlatSheet): Promise<Made[]> {
+  // A kit's design is laid out on each piece at the piece's own size: the file for a piece is drawn from its own sheet.
+  const kit = catalogue.base.kind === 'kit' && pieceSheet !== undefined ? kitPieces(catalogue).map((piece) => ({ piece, sheet: pieceSheet(onPiece(piece)) })) : null;
+  const missing = missingFonts(kit === null ? [sheet] : kit.map((one) => one.sheet), { font });
   if (missing.length > 0) throw new FontMissing(missing);
-  const parts = engravedOf(sheet);
+  let parts = engravedOf(sheet);
   const outlineOf = async (file: unknown): Promise<ReadSvg | null> => {
     const bytes = await read(file);
     return bytes === null ? null : readSvg(new TextDecoder().decode(bytes));
@@ -199,6 +208,16 @@ export async function makeLaserFiles(catalogue: Catalogue, sheet: FlatSheet, fon
     return { name, about: words.pieceAbout(name, mmSize(width, height)), layers: layersOf(input), kind: 'machine', blob: new Blob([pieceSvg(input)], { type: 'image/svg+xml' }), leftOut };
   };
   const base = catalogue.base;
+  if (kit !== null) {
+    const out: Made[] = [];
+    for (const { piece, sheet: own } of kit) {
+      parts = engravedOf(own);
+      const name = `${stem}-${piece.code || piece.id}-${slug(piece.name)}.svg`;
+      const made = await fileOf(name, piece.width, piece.height, 0, await outlineOf(piece.file), null);
+      out.push({ ...made, about: words.pieceAbout(piece.name, mmSize(piece.width, piece.height)) });
+    }
+    return out;
+  }
   if (base.kind === 'kit') {
     // Which piece each part of the design is on, as its ready-made design or the base's areas say.
     const pieceOf = new Map<string, string>();

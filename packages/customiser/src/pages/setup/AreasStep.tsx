@@ -14,7 +14,7 @@
  */
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
 
-import { facesOf } from '../../three/faces.ts';
+import { facesOf } from '../../three/faceStore.ts';
 
 import { asDataError, Button, Figure, Grid, IconButton, Input, lucideByName, SegmentedControl, Select, Stack, Switch, ToggleChip, useWrite, type AddOnTranslate, type DataRow } from '../shared/host.ts';
 import { refusal } from '../shared/refusal.ts';

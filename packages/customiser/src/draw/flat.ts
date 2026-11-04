@@ -85,8 +85,22 @@ export interface FlatLabels {
   image?: string;
 }
 
+/**
+ * One surface of a kit, laid out on its own: a piece (the parts cut on it)
+ * or a marked face of the model (the parts on it, and on the piece it is),
+ * at its own size in millimetres.
+ */
+export interface FlatOn {
+  piece: string | null;
+  face: string | null;
+  width: number;
+  height: number;
+}
+
 export interface FlatOptions {
   side?: Side;
+  /** A kit's piece or marked face alone; the whole base otherwise. */
+  on?: FlatOn;
   /** Empty parts show their example words (a gallery card), are dimmed (the stage), or are left out (a proof, a file). */
   empty?: 'sample' | 'dim' | 'hide';
   labels: FlatLabels;
@@ -152,11 +166,12 @@ export function flatSheet(catalogue: Catalogue, design: DesignData, options: Fla
   const colourPart = all.find((part) => part.kind === 'colour');
   const chosenColour = colourPart === undefined ? undefined : (valueOf(design.values, colourPart).choice ?? colourPart.start?.choice);
   const plastic = colourPart === undefined ? null : (Object.values(catalogue.shared).flat().find((one) => one.code === chosenColour) ?? null);
+  const on = options.on;
   const face: FlatFace = {
     kind: page ? 'page' : 'piece',
-    width: Math.max(base.width, 1),
-    height: Math.max(base.height, 1),
-    corner: page ? 0 : base.corner,
+    width: Math.max(on?.width ?? base.width, 1),
+    height: Math.max(on?.height ?? base.height, 1),
+    corner: page || on !== undefined ? 0 : base.corner,
     bleed: page ? base.bleed : 0,
     safe: page ? base.safe : null,
     colour: page ? (hexOf(palette, 'paper') ?? '#ffffff') : (plastic?.hex ?? material.face),
@@ -177,6 +192,7 @@ export function flatSheet(catalogue: Catalogue, design: DesignData, options: Fla
   const items: FlatItem[] = [];
   for (const part of all) {
     if (part.side !== side || part.box === null || part.kind === 'colour') continue;
+    if (on !== undefined && !((on.face !== null && part.face === on.face) || (on.piece !== null && part.piece === on.piece))) continue;
     const box = part.box;
     const value = valueOf(design.values, part);
     const common: ItemBase = { key: `${part.code}-${part.side}`, code: part.code, box, live: !part.locked, locked: part.locked && !(part.shape?.background ?? false) };

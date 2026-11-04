@@ -344,7 +344,8 @@ export const panel: Readonly<Record<string, string>> = {
   "panel.title": "Tilpasning",
   "panel.views.3d": "3D",
   "panel.views.flat": "Fladt",
-  "panel.views.label": "Sådan vises designet"
+  "panel.views.label": "Sådan vises designet",
+  "panel.views.pieces": "Dele"
 };
 
 export const designs: Readonly<Record<string, string>> = {

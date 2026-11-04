@@ -22,7 +22,7 @@
 import { Lock } from 'lucide-react';
 import type { KeyboardEvent, ReactNode } from 'react';
 
-import { flatSheet, sheetView, type FlatItem } from '../../draw/flat.ts';
+import { flatSheet, sheetView, type FlatItem, type FlatOn } from '../../draw/flat.ts';
 import { thresholdOf, useOneColour, type Upload } from './pictures.ts';
 import type { Box } from '../../draw/parts.ts';
 import { partsOf, readyOf, type Catalogue } from '../catalogue.ts';
@@ -49,17 +49,24 @@ export interface DrawingProps {
   pictures?: Readonly<Record<string, Upload>>;
   /** Where light becomes dark for a logo the laser engraves, before the customer moves the line. */
   startThreshold?: number;
+  /** A kit's piece or marked face alone, at its size. */
+  on?: FlatOn;
+  /** Where it sits inside a larger drawing (a kit's pieces laid flat), in that drawing's millimetres. */
+  place?: Box;
+  /** The piece's own cleaned drawing, laid over its face: its cut and scored lines. */
+  outlineUrl?: string | null;
 }
 
 /** The guides of a printed page: a red trim, a blue dashed safe line, the bleed tinted. The printed proof's own colours. */
 const TRIM = '#cf273c';
 const SAFE = '#1c59e0';
 
-export function Drawing({ catalogue, design, side = 'front', guides = false, empty = 'sample', onPart, selected = null, lockShown = null, onLock, label, className, pictures, startThreshold = 50 }: DrawingProps) {
+export function Drawing({ catalogue, design, side = 'front', guides = false, empty = 'sample', onPart, selected = null, lockShown = null, onLock, label, className, pictures, startThreshold = 50, on, place, outlineUrl }: DrawingProps) {
   const { t, look } = useShared();
   const sheet = flatSheet(catalogue, design, {
     side,
     empty,
+    ...(on === undefined ? {} : { on }),
     labels: { logo: t('editor.drawing.logo', 'Your logo'), photo: t('editor.drawing.photo', 'Your photo'), image: t('editor.full.image', 'Image') },
     holds: (column) => pictures?.[column] !== undefined,
   });
@@ -67,7 +74,7 @@ export function Drawing({ catalogue, design, side = 'front', guides = false, emp
   const page = face.kind === 'page';
   const shown = sheetView(face, guides);
   const view = `${String(shown.x - 0.6)} ${String(shown.y - 0.6)} ${String(shown.w + 1.2)} ${String(shown.h + 1.2)}`;
-  const clip = `cz-clip-${String(catalogue.base.id)}-${side}-${guides ? 'g' : 'p'}`;
+  const clip = `cz-clip-${String(catalogue.base.id)}-${side}-${guides ? 'g' : 'p'}${on === undefined ? '' : `-${on.face ?? ''}-${on.piece ?? ''}`}`;
 
   const drawn = sheet.items.map((item) => {
     const body = bodyOf(item, page, pictures, `${clip}-${item.code}`, startThreshold);
@@ -111,7 +118,7 @@ export function Drawing({ catalogue, design, side = 'front', guides = false, emp
   });
 
   return (
-    <svg direction="ltr" className={className ?? 'cz-drawing'} viewBox={view} role={onPart === undefined ? 'img' : 'group'} aria-label={label} {...(label === undefined ? { 'aria-hidden': true } : {})} preserveAspectRatio="xMidYMid meet">
+    <svg direction="ltr" className={className ?? 'cz-drawing'} viewBox={view} role={onPart === undefined ? 'img' : 'group'} aria-label={label} {...(label === undefined ? { 'aria-hidden': true } : {})} {...(place === undefined ? {} : { x: place.x, y: place.y, width: place.w, height: place.h })} preserveAspectRatio="xMidYMid meet">
       <defs>
         <clipPath id={clip}>
           <rect x={shown.x} y={shown.y} width={shown.w} height={shown.h} rx={page ? 0 : face.corner} />
@@ -119,6 +126,7 @@ export function Drawing({ catalogue, design, side = 'front', guides = false, emp
       </defs>
       {page && guides ? <rect x={shown.x} y={shown.y} width={shown.w} height={shown.h} fill={TRIM} fillOpacity={0.16} /> : null}
       <rect x={0} y={0} width={face.width} height={face.height} rx={face.corner} fill={face.colour} stroke={face.edge} strokeWidth={page ? 0.2 : 0.6} />
+      {outlineUrl === undefined || outlineUrl === null ? null : <image href={outlineUrl} x={0} y={0} width={face.width} height={face.height} preserveAspectRatio="none" opacity={0.7} />}
       <g clipPath={`url(#${clip})`}>{drawn}</g>
       {page && guides ? (
         <g fill="none" pointerEvents="none">

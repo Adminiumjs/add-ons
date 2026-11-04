@@ -15,6 +15,17 @@ import { checkInput, checkLine, sampleDesign, sampleTables, type Tables } from '
 
 export const TABLES: Tables = sampleTables();
 
+/*
+ * The book nook as a shop that uploaded its model sets it up: the sign's area
+ * on the face it marked on the model (the sign board, which is piece 09), the
+ * window's on its own piece. The design question reads the areas as before:
+ * where an area is shown changes nothing a customer may put in it.
+ */
+const NOOK = TABLES['bases']!.find((row) => row['app'] === 'maker' && row['kind'] === 'kit')!;
+const NOOK_SIGN = TABLES['base_pieces']!.find((row) => row['base_id'] === NOOK['id'] && row['code'] === '09')!;
+NOOK['faces'] = JSON.stringify([{ code: 'sign-board', name: 'Sign board', piece: String(NOOK_SIGN['id']), mesh: '0', normal: [0, 0, 1], point: [-0.046, 0.011, 0.075], u: [1, 0, 0], v: [0, -1, 0], bounds: { u0: 0, u1: 0.092, v0: 0, v1: 0.022 }, size: { w: 92, h: 22 } }]);
+for (const area of TABLES['base_areas']!) if (area['base_id'] === NOOK['id'] && area['code'] === 'sign') area['face'] = 'sign-board';
+
 export interface CaseLine {
   key: string;
   design: Row;
@@ -56,6 +67,12 @@ export const CHECK_CASES: CheckCase[] = [
     'br-2288': { ok: true, used: [] },
     'br-2289': { ok: true, used: [] },
     'br-2290': { ok: true, used: ['logo'] },
+  }),
+  make('a plain book nook: words on the marked sign board, a logo in the window on its piece', [{ key: 'nook-faces', design: { id: 9001, app: 'maker', code: 'ZZ00000000000002', format: 1, ready_design_id: null, base_id: NOOK['id'], values: { parts: { sign: { text: 'Iris’s Books', size: 9 }, lwin: { mode: 'logo', file: 'logo_file' } } }, state: 'draft' }, files: [LOGO] }], {
+    'nook-faces': { ok: true, used: ['logo'], reasons: [] },
+  }),
+  make('a plain book nook: the marked sign board holds 14 characters, not 30', [{ key: 'nook-long', design: { id: 9002, app: 'maker', code: 'ZZ00000000000003', format: 1, ready_design_id: null, base_id: NOOK['id'], values: { parts: { sign: { text: 'The Corner Shop of Many Books!', size: 9 } } }, state: 'draft' }, files: [] }], {
+    'nook-long': { ok: false, used: [], reasons: ['too-long'] },
   }),
   make('Tom’s coasters without their logo file', [{ key: 'no-file', design: sample('BR2290H5F3P9V8YA'), files: [] }], { 'no-file': { ok: false, reasons: ['file-missing'] } }),
   make('a 40-character line in a 20-character part', [{ key: 'forty', design: on('maker', 'Sprig', { parts: { words: { text: 'x'.repeat(40), size: 6 } } }), files: [] }], { forty: { ok: false, used: [], reasons: ['too-long'] } }),

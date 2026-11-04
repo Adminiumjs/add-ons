@@ -15,6 +15,8 @@
 import { checkDesign, type DesignAnswer, type DesignValues, type FileFact, type Measure, type PartValue, type PictureRules, type TextRules } from '../rules/index.ts';
 import { inOrder, isObject, json, num, sameKey, str, yes } from '../rules/read.ts';
 import { choiceRules, pictureRules, shapeRules, startValue, textRules } from '../rules/shapes.ts';
+import type { MarkedFace } from '../three/faces.ts';
+import { facesOf } from '../three/faceStore.ts';
 import type { CatalogueRows, DesignData, Row } from './api.ts';
 
 export type BaseKind = 'page' | 'piece' | 'kit' | 'printed';
@@ -34,6 +36,8 @@ export interface Base {
   sides: number;
   material: string | null;
   thickness: number | null;
+  /** A kit's (or a printed item's) faces the shop marked on its model, each carrying areas. */
+  faces: MarkedFace[];
 }
 
 export interface Box {
@@ -67,6 +71,9 @@ export interface EditPart {
   fixed: string;
   /** An area of a plain base, which may be left plain. */
   fromArea: boolean;
+  /** On a kit: the piece it is cut on (its row's id), and the marked face of the model it shows on. */
+  piece: string | null;
+  face: string | null;
 }
 
 export interface Colour {
@@ -125,6 +132,8 @@ export interface Catalogue {
 }
 
 const asKey = (value: unknown): string | number => (typeof value === 'number' ? value : String(value ?? ''));
+/** A row's id as text, or none. */
+const keyOf = (value: unknown): string | null => (value === null || value === undefined || value === '' ? null : String(value));
 
 function rulesOf(raw: unknown): Record<string, unknown> {
   const value = json(raw);
@@ -153,6 +162,7 @@ function baseOf(row: Row): Base {
     sides: Math.max(1, num(row['sides']) ?? 1),
     material: str(row['material']),
     thickness: num(row['thickness_mm']),
+    faces: facesOf(row['faces']),
   };
 }
 
@@ -160,7 +170,7 @@ function featureOf(raw: unknown, features: Catalogue['features']): string | null
   return raw === null || raw === undefined || raw === '' ? null : (features[String(raw)]?.code ?? null);
 }
 
-function partOf(row: Row, features: Catalogue['features']): EditPart {
+function partOf(row: Row, features: Catalogue['features'], faceOf: (area: unknown) => string | null): EditPart {
   const kind = (['text', 'picture', 'colour', 'choice', 'shape'] as const).find((one) => one === row['kind']) ?? 'shape';
   const raw = rulesOf(row['rules']);
   const start = startValue(row['value']);
@@ -185,6 +195,8 @@ function partOf(row: Row, features: Catalogue['features']): EditPart {
     upper: yes(raw['upper']),
     fixed: start?.text ?? '',
     fromArea: false,
+    piece: keyOf(row['piece_id']),
+    face: faceOf(row['area_id']),
   };
 }
 
@@ -214,6 +226,8 @@ function areaPart(row: Row, features: Catalogue['features']): EditPart {
     upper: yes(raw['upper']),
     fixed: '',
     fromArea: true,
+    piece: keyOf(row['piece_id']),
+    face: str(row['face']),
   };
 }
 
@@ -240,6 +254,8 @@ export function readCatalogue(rows: CatalogueRows, baseId: string | number, only
   const shared: Record<string, Colour[]> = {};
   for (const palette of inOrder(rows.palettes.filter((one) => one['ready_design_id'] === null || one['ready_design_id'] === undefined))) shared[str(palette['code']) ?? ''] = coloursOf(palette, rows.colours);
   const finishes = Object.fromEntries((shared['finishes'] ?? []).map((one) => [one.code, one]));
+  // A part on an area is on the face that area is on.
+  const faceOf = (area: unknown): string | null => (area === null || area === undefined ? null : str(rows.areas.find((one) => sameKey(one['id'], area))?.['face']));
   const ready = inOrder(rows.ready.filter((one) => sameKey(one['base_id'], base.id) && (only === undefined || only.some((id) => sameKey(id, one['id'])))))
     .map((row): Ready => {
       const partRows = inOrder(rows.parts.filter((one) => sameKey(one['ready_design_id'], row['id'])));
@@ -251,7 +267,7 @@ export function readCatalogue(rows: CatalogueRows, baseId: string | number, only
         tags: wordsOf(row['tags']),
         layouts: layoutsOf(row['layouts']),
         palettes: inOrder(rows.palettes.filter((one) => sameKey(one['ready_design_id'], row['id']))).map((one) => ({ id: asKey(one['id']), code: str(one['code']) ?? '', name: str(one['name']) ?? '', colours: coloursOf(one, rows.colours) })),
-        parts: partRows.map((one) => partOf(one, features)),
+        parts: partRows.map((one) => partOf(one, features, faceOf)),
         rows: partRows,
       };
     });

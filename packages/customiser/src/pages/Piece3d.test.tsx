@@ -13,6 +13,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { glbOf, SIGN } from '../testing/glb.ts';
 import { forgetStills } from '../three/PieceView.tsx';
 import { Stage3d, type RendererLike } from '../three/stage3d.ts';
 import type { View } from '../three/view.ts';
@@ -140,6 +141,50 @@ describe('the order line’s design, 3D or flat (BC-E1, BC-D9)', () => {
   });
 });
 
+/** Iris's book nook, ordered: the shop's model uploaded and its sign board marked; the sign's words on piece 09. */
+const seedNook = (): void => {
+  const nook = world.tables['bases']!.find((one) => one['id'] === IDS.nook)!;
+  nook['model_file'] = 'file_01JD00000000000000000000MD';
+  nook['faces'] = JSON.stringify([{ code: 'sign-board', name: 'Sign board', piece: '209', mesh: '0', normal: [0, 0, 1], point: [0, 0, 0], u: [1, 0, 0], v: [0, -1, 0], bounds: { u0: 0, u1: 0.092, v0: 0, v1: 0.022 }, size: { w: 92, h: 22 } }]);
+  seed('base_pieces', [
+    { id: 201, app: 'maker', base_id: IDS.nook, code: '01', name: 'Base', width_mm: 110, height_mm: 150, layers: '["CUT"]', file: null, position: 1 },
+    { id: 209, app: 'maker', base_id: IDS.nook, code: '09', name: 'Shop sign', width_mm: 92, height_mm: 22, layers: '["CUT","ENGRAVE"]', file: null, position: 9 },
+  ]);
+  seed('base_areas', [...world.tables['base_areas']!, { id: 23, app: 'maker', base_id: IDS.nook, code: 'sign', name: 'The shop sign', piece_id: 209, face: 'sign-board', shape: 'rect', x_mm: 2, y_mm: 2, w_mm: 88, h_mm: 18, takes: 'words', required: true, rules: JSON.stringify({ chars: 14, grows: true, unit: 'mm', size: 9, min: 6, max: 11, fonts: ['Manrope'], font: 'Manrope' }), position: 1 }]);
+  seed('designs', [{ id: 92, app: 'maker', ready_design_id: null, base_id: IDS.nook, values: JSON.stringify({ format: 1, parts: { sign: { text: "Iris's Books" } } }), state: 'ordered', updated_at: '2026-08-05T15:01:00Z' }]);
+};
+
+describe('the order line’s kit: 3D, Flat or Pieces (BC-E1, BC-D9)', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('shows the model with the design on it, the pieces that carry it, and every piece laid flat', async () => {
+    seedNook();
+    vi.stubGlobal('fetch', async (address: string) => (address.includes('MD/content') ? new Response(glbOf([SIGN])) : new Response('', { status: 404 })));
+    render(<Line {...HOST} linked="92" />);
+    await settle();
+    const views = screen.getByRole('radiogroup', { name: 'How to show the design' });
+    expect([...views.querySelectorAll('[role="radio"]')].map((one) => one.textContent)).toEqual(['3D', 'Flat', 'Pieces']);
+    expect(screen.getByRole('img', { name: 'The plain piece, as it will be made' }).querySelector('img')?.getAttribute('src')).toMatch(/^blob:still\//);
+    fireEvent.click(screen.getByRole('radio', { name: 'Flat' }));
+    await settle();
+    const tags = (): (string | null)[] => [...document.querySelectorAll('[data-kit-pieces] text.cz-piece-tag')].map((one) => one.textContent);
+    expect(tags()).toEqual(['09 · Shop sign']);
+    expect(document.querySelector('[data-kit-pieces]')!.textContent).toContain("Iris's Books");
+    fireEvent.click(screen.getByRole('radio', { name: 'Pieces' }));
+    await settle();
+    expect(tags()).toEqual(['01', '09 · Shop sign']);
+  });
+
+  it('has no 3D without WebGL: Flat and Pieces', async () => {
+    device.webgl = false;
+    seedNook();
+    render(<Line {...HOST} linked="92" />);
+    await settle();
+    expect([...screen.getByRole('radiogroup', { name: 'How to show the design' }).querySelectorAll('[role="radio"]')].map((one) => one.textContent)).toEqual(['Flat', 'Pieces']);
+    expect(device.stills).toBe(0);
+  });
+});
+
 describe('the product’s panel', () => {
   it('shows a flat piece made, its areas named on its top', async () => {
     render(<Product {...HOST} linked={String(IDS.coasters)} />);
@@ -163,6 +208,7 @@ describe('the 3D previews under axe', () => {
       ['base', () => base(IDS.coasters)],
       ['base waiting', () => base(IDS.sign)],
       ['line 3D', () => <Line {...HOST} linked="91" />, seedLine],
+      ['line kit', () => <Line {...HOST} linked="92" />, seedNook],
       ['product', () => <Product {...HOST} linked={String(IDS.coasters)} />],
     ];
     for (const locale of ['en-US', 'ar-EG'] as const)
@@ -185,6 +231,6 @@ describe('the 3D previews under axe', () => {
           cleanup();
         }
     expect(failures, failures.join('\n')).toEqual([]);
-    expect(swept).toBe(16);
+    expect(swept).toBe(20);
   }, 120_000);
 });

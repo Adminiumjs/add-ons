@@ -24,8 +24,7 @@ export interface OutlineSource {
  */
 export function usePieceModel(sheet: FlatSheet | null, thickness: number | null, outline: OutlineSource | null, pictures: Readonly<Record<string, string>> = {}): PieceModel | null {
   const [read, setRead] = useState<{ key: string; svg: ReadSvg | null } | null>(null);
-  const [painted, setPainted] = useState<Readonly<Record<string, Painted>>>({});
-  const [fontsIn, setFontsIn] = useState(0);
+  const { painted, fontsIn } = usePainted(pictures);
 
   useEffect(() => {
     if (outline === null) return;
@@ -39,6 +38,20 @@ export function usePieceModel(sheet: FlatSheet | null, thickness: number | null,
     // Read again only for another outline.
   }, [outline?.key]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const sheetKey = sheet === null ? '' : JSON.stringify(sheet);
+  const ready = outline === null || read?.key === outline.key;
+  const svg = outline === null ? null : (read?.svg ?? null);
+  return useMemo(() => (sheet === null || !ready ? null : pieceModel(sheet, svg, thickness, painted)), [sheetKey, ready, svg, thickness, painted, fontsIn]); // eslint-disable-line react-hooks/exhaustive-deps
+}
+
+/**
+ * The customer's pictures this page holds, loaded to paint (by file column),
+ * and a count that goes up when the shop's fonts arrive, so words painted
+ * before them are painted again in them.
+ */
+export function usePainted(pictures: Readonly<Record<string, string>>): { painted: Readonly<Record<string, Painted>>; fontsIn: number } {
+  const [painted, setPainted] = useState<Readonly<Record<string, Painted>>>({});
+  const [fontsIn, setFontsIn] = useState(0);
   const pictureKey = JSON.stringify(pictures);
   useEffect(() => {
     let alive = true;
@@ -63,8 +76,5 @@ export function usePieceModel(sheet: FlatSheet | null, thickness: number | null,
     };
   }, []);
 
-  const sheetKey = sheet === null ? '' : JSON.stringify(sheet);
-  const ready = outline === null || read?.key === outline.key;
-  const svg = outline === null ? null : (read?.svg ?? null);
-  return useMemo(() => (sheet === null || !ready ? null : pieceModel(sheet, svg, thickness, painted)), [sheetKey, ready, svg, thickness, painted, fontsIn]); // eslint-disable-line react-hooks/exhaustive-deps
+  return { painted, fontsIn };
 }

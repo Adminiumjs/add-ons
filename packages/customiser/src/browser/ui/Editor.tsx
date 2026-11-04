@@ -43,6 +43,7 @@ import { OneColourSheet } from './OneColour.tsx';
 import { thresholdOf, usePictures, type Upload } from './pictures.ts';
 import { FullEditor } from './FullEditor.tsx';
 import { Dialog, Toasts, type Toast } from './Overlay.tsx';
+import { KitStage } from './KitStage.tsx';
 import { PieceStage } from './PieceStage.tsx';
 import { PrintFields } from './PrintFields.tsx';
 import { SaveDialog } from './SaveDialog.tsx';
@@ -583,7 +584,24 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
     return (
       <section className="cz-fill cz-fill-maker" data-screen="fill" onKeyDown={keys}>
         <div className="cz-stage-col">
-          {catalogue.base.kind === 'piece' ? (
+          {catalogue.base.kind === 'kit' ? (
+            <KitStage
+              api={props.api}
+              catalogue={catalogue}
+              design={design}
+              pictures={pictures.pictures}
+              startThreshold={startThreshold}
+              narrow={narrow}
+              product={props.product.name}
+              designName={designName}
+              size={size}
+              material={material}
+              onPart={focusPart}
+              selected={selected}
+              lockShown={lockShown}
+              onLock={setLockShown}
+            />
+          ) : catalogue.base.kind === 'piece' ? (
             <PieceStage
               api={props.api}
               catalogue={catalogue}

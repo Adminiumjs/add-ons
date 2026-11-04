@@ -14,7 +14,8 @@ import { Group, Mesh, MeshStandardMaterial, SphereGeometry, Vector3, type Buffer
 import { describe, expect, it } from 'vitest';
 
 import { glbOf, SIGN, stlOf, WALL } from '../testing/glb.ts';
-import { axesOf, faceAt, facesOf, facesValue, flatFacesOf, middleOf, mmPerUnit, onFace, sameFace, sizeOfModel, type MarkedFace, type Triangles } from './faces.ts';
+import { axesOf, faceAt, flatFacesOf, middleOf, mmPerUnit, onFace, sameFace, sizeOfModel, type MarkedFace, type Triangles } from './faces.ts';
+import { facesOf, facesValue } from './faceStore.ts';
 import { boxModel, readModel, trianglesOf, type ShopModel } from './shopModel.ts';
 import { isGlb, isStl, isSvg, modelKindOf } from './sniff.ts';
 import { Stage3d, type RendererLike } from './stage3d.ts';
