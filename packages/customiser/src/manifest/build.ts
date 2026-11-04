@@ -10,6 +10,7 @@
  * list, as is the file that answers the design question (`provides`,
  * `addOn.checker`).
  */
+import { readFileSync } from 'node:fs';
 import { entries, LINK_KEY } from './entries.ts';
 import { starterFontRows } from './fonts.ts';
 import { tables } from './tables.ts';
@@ -21,8 +22,8 @@ import { DESCRIPTION, PAGE_TITLE, PANEL_TITLE, ROLE_NAMES, type Words } from './
 /** The add-on's key, its page ref, and the floor whose words it uses (an add-on's own entries on each app's key, expiry, links into it). */
 export const KEY = 'customiser';
 export const FLOOR = '0.3.43';
-/** The package's version; `scripts/sync-manifest-versions.mjs` keeps the two equal at a release. */
-export const VERSION = '1.0.15';
+/** The package's version, read from its `package.json`: `changeset version` bumps that file and nothing else. */
+export const VERSION: string = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')).version;
 /** The file that answers the design question, as the build writes it (`vite.config.ts` builds it from `src/check.ts`). */
 export const CHECK_FILE = 'dist/check.js';
 
