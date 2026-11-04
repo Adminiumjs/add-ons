@@ -1,3 +1,4 @@
+import { copyFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
 import react from '@vitejs/plugin-react';
@@ -42,6 +43,21 @@ export const OUTPUT = {
   /** The customer's editor's stylesheet, which the app links beside it. */
   browserCss: 'dist/browser/editor.css',
 } as const;
+
+/**
+ * THE STARTER FONTS, SHIPPED AS THEY ARE: each family's WOFF2 file and its
+ * licence text, from `fonts/` to the folder of the set-up page's code, where
+ * Adminium's page-files route hands them to the page (`fonts/<name>.woff2`
+ * below it). Copied, never built: the bytes that ship are the bytes in the
+ * repository.
+ */
+const here = (path: string): string => new URL(`./${path}`, import.meta.url).pathname;
+export const FONTS_FROM = 'fonts';
+export const FONTS_TO = 'dist/pages/fonts';
+export const FONT_FILES: readonly string[] = readdirSync(here(FONTS_FROM))
+  .filter((name) => /\.(woff2|txt)$/.test(name))
+  .sort()
+  .map((name) => `${FONTS_TO}/${name}`);
 
 /** Every file the build writes. */
 export const BUILT_FILES: readonly string[] = [OUTPUT.check, OUTPUT.browser, OUTPUT.browser3d, OUTPUT.browserCss, ...Object.values(OUTPUT.pages), ...Object.values(OUTPUT.panels)];
@@ -166,6 +182,8 @@ function screens(): Plugin {
           },
         });
       }
+      mkdirSync(here(FONTS_TO), { recursive: true });
+      for (const file of FONT_FILES) copyFileSync(here(`${FONTS_FROM}/${file.slice(FONTS_TO.length + 1)}`), here(file));
     },
   };
 }

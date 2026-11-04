@@ -6,11 +6,15 @@
  * its own family name and its licence, the SIL Open Font License, which lets
  * a shop use it on anything it makes and sells.
  *
- * The rows come without their WOFF2 files. A seed holds plain values, and a
- * file column holds a file Adminium kept, so an add-on's seed cannot name a
- * file of its package: until Adminium can, each starter font's file (and its
- * licence text beside it) is the shop's to upload on the set-up page, which
- * itself waits for the data kit's upload into an add-on's own file column.
+ * The rows come without their WOFF2 files: a seed holds plain values, and a
+ * file column holds a file Adminium kept. The files ship in this package
+ * instead, beside the set-up page (`fonts/`, copied to `dist/pages/fonts/`),
+ * each with its licence text, and the set-up page's "Add the starter fonts"
+ * fetches them through Adminium's page-files route and uploads each into its
+ * row (`src/pages/setup/starter.ts`). The files are the families' own from
+ * Google Fonts (`google/fonts` at `bbda7253`, `ofl/<family>/`), turned from
+ * TrueType into WOFF2 and changed in no other way: a variable font keeps its
+ * axes, so one file gives every weight the row names.
  *
  * `smallest` is the size below which a typeface's thin strokes close up when
  * engraved, in millimetres, where the shop's experience gave one.
@@ -41,7 +45,7 @@ export const STARTER_FONTS: readonly StarterFont[] = [
   { family: 'Cormorant Garamond', style: 'serif', weights: '300–700', smallest: 6 },
   { family: 'Manrope', style: 'sans', weights: '200–800', smallest: 4 },
   { family: 'Caveat', style: 'script', weights: '400–700', smallest: 7 },
-  { family: 'Zilla Slab', style: 'slab', weights: '300–700', smallest: 5 },
+  { family: 'Zilla Slab', style: 'slab', weights: '400', smallest: 5 },
   { family: 'Oswald', style: 'condensed', weights: '200–700', smallest: 5 },
   { family: 'Archivo', style: 'grotesque', weights: '100–900', smallest: null },
   { family: 'Libre Baskerville', style: 'serif', weights: '400, 700', smallest: null },

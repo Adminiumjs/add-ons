@@ -12,7 +12,9 @@ import { gzipSync } from 'node:zlib';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import pkg from '../package.json' with { type: 'json' };
-import { BUILT_FILES, OUTPUT } from '../vite.config.ts';
+import { BUILT_FILES, FONT_FILES, FONTS_FROM, OUTPUT } from '../vite.config.ts';
+import { STARTER_FONTS } from './manifest/fonts.ts';
+import { starterFontPath, starterLicencePath } from './pages/setup/starter.ts';
 import { buildForReal, DIST } from './testing/build.ts';
 import { bannedHitsIn } from './testing/lexicon.ts';
 
@@ -31,7 +33,7 @@ beforeAll(() => {
 describe('the build writes what it promises', () => {
   it('puts every file where it says, and nothing else', () => {
     for (const path of BUILT_FILES) expect(existsSync(join(DIST, '..', path)), path).toBe(true);
-    expect(built().map(asRelative).sort()).toEqual(BUILT_FILES.map((path) => path.replace(/^dist\//, '')).sort());
+    expect(built().map(asRelative).sort()).toEqual([...BUILT_FILES, ...FONT_FILES].map((path) => path.replace(/^dist\//, '')).sort());
   });
 
   it('is the file the package hands the apps as its browser entry', () => {
@@ -46,9 +48,41 @@ describe('the build writes what it promises', () => {
   });
 
   it('passes the word gate', () => {
-    for (const one of built()) {
+    // The starter fonts are not the add-on's words: a font is packed binary, and a licence is the SIL's text, shipped as it is (checked below).
+    const fonts = new Set(FONT_FILES.map((path) => join(DIST, '..', path)));
+    for (const one of built().filter((file) => !fonts.has(file))) {
       const hits = bannedHitsIn(readFileSync(one, 'utf8'));
       expect(hits, `${asRelative(one)}: ${hits.slice(0, 5).map((hit) => `${hit.word} at ${String(hit.at)}`).join(', ')}`).toEqual([]);
+    }
+  });
+});
+
+describe('the starter fonts', () => {
+  const page = OUTPUT.pages['customiser']!;
+  const folder = page.slice(0, page.lastIndexOf('/') + 1);
+
+  it('ship every starter family’s font and its licence beside the set-up page, and nothing else', () => {
+    const expected = STARTER_FONTS.flatMap((font) => [starterFontPath(font.family), starterLicencePath(font.family)]).map((path) => `${folder}${path}`);
+    expect([...FONT_FILES].sort()).toEqual(expected.sort());
+    expect(readdirSync(join(DIST, '..', FONTS_FROM)).sort()).toEqual(expected.map((path) => path.slice(path.lastIndexOf('/') + 1)).sort());
+  });
+
+  it('are the bytes in the repository, each a WOFF2 font under the upload’s 2 MB', () => {
+    for (const path of FONT_FILES) {
+      const shipped = readFileSync(join(DIST, '..', path));
+      expect(shipped.equals(readFileSync(join(DIST, '..', FONTS_FROM, path.slice(path.lastIndexOf('/') + 1)))), path).toBe(true);
+      if (!path.endsWith('.woff2')) continue;
+      expect(shipped.subarray(0, 4).toString('latin1'), path).toBe('wOF2');
+      expect(shipped.length, path).toBeLessThanOrEqual(2 * 1024 * 1024);
+    }
+  });
+
+  it('each carry the SIL Open Font License 1.1 with the family’s own copyright', () => {
+    for (const path of FONT_FILES.filter((one) => one.endsWith('.txt'))) {
+      const licence = readFileSync(join(DIST, '..', path), 'utf8');
+      expect(licence, path).toMatch(/^Copyright /);
+      expect(licence, path).toContain('This Font Software is licensed under the SIL Open Font License, Version 1.1.');
+      expect(licence, path).toContain('SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007');
     }
   });
 });

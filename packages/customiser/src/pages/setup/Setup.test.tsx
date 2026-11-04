@@ -1,9 +1,10 @@
 // @vitest-environment happy-dom
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Refused, resetWorld, seed, world, type Call } from '../testing/host.tsx';
 import { IDS, seedShop } from '../testing/rows.ts';
+import { PAGE_FILES } from './starter.ts';
 
 const { default: Customiser } = await import('../customiser/index.tsx');
 
@@ -411,6 +412,79 @@ describe('step 5, the app’s prices', () => {
   });
 });
 
+describe('the starter fonts’ files', () => {
+  /** Adminium's page-files route as a fetch: each path answered with the status `answer` gives it. */
+  const serve = (answer: (path: string) => number) => {
+    const fake = vi.fn(async (url: string) => {
+      const path = url.slice(PAGE_FILES.length);
+      const status = url.startsWith(PAGE_FILES) ? answer(path) : 404;
+      return new Response(status !== 200 ? 'Not found' : path.endsWith('.woff2') ? new Uint8Array([0x77, 0x4f, 0x46, 0x32, 0, 1]) : 'Copyright', { status });
+    });
+    vi.stubGlobal('fetch', fake);
+    return fake;
+  };
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('fetches each from beside the page and uploads it into its own row, on an Adminium that serves them', async () => {
+    const fetched = serve(() => 200);
+    at(IDS.coasters, 'fonts');
+    render(<Customiser />);
+    await settle();
+    expect(screen.getByText('The open-licence starter fonts have no files yet. Add them once, and every base can offer them.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Add the starter fonts' }));
+    await settle();
+    expect(fetched).toHaveBeenCalledWith(`${PAGE_FILES}fonts/Manrope.woff2`, { credentials: 'same-origin' });
+    expect(writes('upload', 'fonts').map((call) => [call.key, (call.values as { name: string }).name])).toEqual([
+      ['72', 'Caveat.woff2'],
+      ['71', 'Manrope.woff2'],
+      ['73', 'Oswald.woff2'],
+    ]);
+    // Each starter row took its file; no font row was made.
+    for (const id of [71, 72, 73]) expect(row('fonts', id)['file']).toMatch(/^file-/);
+    expect(writes('create', 'fonts')).toEqual([]);
+    expect(world.toasts.at(-1)?.title).toBe('Starter fonts added. Shoppers see each one once you switch it on.');
+    expect(screen.queryByRole('button', { name: 'Add the starter fonts' })).toBeNull();
+  });
+
+  it('names a font Adminium did not hand over, and adds the others', async () => {
+    serve((path) => (path === 'fonts/Oswald.woff2' ? 404 : 200));
+    at(IDS.coasters, 'fonts');
+    render(<Customiser />);
+    await settle();
+    fireEvent.click(screen.getByRole('button', { name: 'Add the starter fonts' }));
+    await settle();
+    expect(writes('upload', 'fonts').map((call) => call.key)).toEqual(['72', '71']);
+    expect(screen.getByText('Oswald: not added. Adminium did not hand over the file.')).toBeTruthy();
+    expect(row('fonts', 73)['file']).toBeNull();
+  });
+
+  it('switches the button off on an Adminium without the page-files route, and says it needs a newer one', async () => {
+    const fetched = serve(() => 404);
+    at(IDS.coasters, 'fonts');
+    render(<Customiser />);
+    await settle();
+    expect(fetched).toHaveBeenCalledWith(`${PAGE_FILES}fonts/Caveat-OFL.txt`, { credentials: 'same-origin' });
+    expect(screen.getByText('Adding the starter fonts needs a newer Adminium.')).toBeTruthy();
+    const button = screen.getByRole('button', { name: 'Add the starter fonts' });
+    expect(button).toHaveProperty('disabled', true);
+    fireEvent.click(button);
+    await settle();
+    expect(writes('upload', 'fonts')).toEqual([]);
+  });
+
+  it('offers nothing once every starter font has its file', async () => {
+    const fetched = serve(() => 200);
+    for (const font of world.tables['fonts']!) font['file'] = 'file_01JX00000000000000000000AA';
+    at(IDS.coasters, 'fonts');
+    render(<Customiser />);
+    await settle();
+    expect(screen.queryByRole('button', { name: 'Add the starter fonts' })).toBeNull();
+    expect(fetched).not.toHaveBeenCalled();
+  });
+});
+
 describe('an Adminium with no upload', () => {
   it('says so by the outline and the font, and keeps both uploads switched off', () => {
     world.uploads = false;
@@ -418,6 +492,13 @@ describe('an Adminium with no upload', () => {
     render(<Customiser />);
     expect(screen.getByText('Uploading here needs a newer Adminium.')).toBeTruthy();
     expect(screen.getByLabelText('Upload the outline')).toHaveProperty('disabled', true);
+  });
+
+  it('keeps “Add the starter fonts” switched off too', () => {
+    world.uploads = false;
+    at(IDS.coasters, 'fonts');
+    render(<Customiser />);
+    expect(screen.getByRole('button', { name: 'Add the starter fonts' })).toHaveProperty('disabled', true);
   });
 });
 
