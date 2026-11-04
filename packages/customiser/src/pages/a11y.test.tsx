@@ -102,7 +102,7 @@ const STATES: State[] = [
   {
     label: 'the order line panel',
     before: () => {
-      seed('designs', [{ id: 91, app: 'maker', ready_design_id: 51, base_id: IDS.coasters, values: JSON.stringify({ format: 1, parts: { words: { text: 'The Hartleys' } } }), state: 'ordered', last_changed_at: '2026-08-05T15:01:00Z' }]);
+      seed('designs', [{ id: 91, app: 'maker', ready_design_id: 51, base_id: IDS.coasters, values: JSON.stringify({ format: 1, parts: { words: { text: 'The Hartleys' } } }), state: 'ordered', updated_at: '2026-08-05T15:01:00Z' }]);
       seed('design_versions', [{ id: 95, app: 'maker', design_id: 91, version: 2, proof_file: 'f' }]);
     },
     draw: () => <Line connectionId="c1" table="t" row="r" linked="91" />,

@@ -213,16 +213,18 @@ describe('the tables', () => {
   });
 
   it('let a design nobody ordered go 90 days after its last change', () => {
-    expect(columnOf('designs', 'last_changed_at')).toMatchObject({ type: 'timestamptz', role: 'updated_at' });
-    expect(tableOf('designs').expire).toEqual({ after: 'last_changed_at', days: 90, unless: { column: 'state', equals: 'ordered' } });
+    expect(columnOf('designs', 'updated_at')).toMatchObject({ type: 'timestamptz', role: 'updated_at' });
+    expect(tableOf('designs').expire).toEqual({ after: 'updated_at', days: 90, unless: { column: 'state', equals: 'ordered' } });
     expect(columnOf('designs', 'state')).toMatchObject({ enum: ['draft', 'ordered'], default: 'draft' });
     // Nothing of the add-on points at a draft design, or it would never go: only an ordered design has versions.
     const pointing = tables.flatMap((table) => table.columns.filter((column) => column.references === 'designs').map((column) => `${table.ref}.${column.ref}`));
     expect(pointing).toEqual(['design_versions.design_id']);
   });
 
-  it('mark as personal every column that holds what a customer wrote, sent or where to reach them', () => {
-    for (const ref of ['values', 'email', 'logo_file', 'photo_file']) expect(columnOf('designs', ref).rules?.personal, `designs.${ref}`).toBe(true);
+  it('mark as personal where to reach a customer and the files they sent, and keep what they chose for the order’s code to read', () => {
+    for (const ref of ['email', 'logo_file', 'photo_file']) expect(columnOf('designs', ref).rules?.personal, `designs.${ref}`).toBe(true);
+    // What the customer chose is read by a guest who found their order again, by the design's code: Adminium shows no personal column there. Apps keep it as a copy of their customer's details.
+    expect(columnOf('designs', 'values').rules?.personal).toBeUndefined();
     expect(columnOf('design_versions', 'values').rules?.personal).toBe(true);
   });
 
@@ -275,7 +277,7 @@ describe('the public entries', () => {
     expect(create[0]!.anonymous).toBeDefined();
     expect(create[0]!.writable).toEqual([...DESIGN_WRITABLE]);
     // Adminium decides these: the app, the state, the code and the link are never a browser's to write.
-    for (const ref of ['app', 'state', 'code', 'link_token', 'last_changed_at']) expect(create[0]!.writable, ref).not.toContain(ref);
+    for (const ref of ['app', 'state', 'code', 'link_token', 'updated_at']) expect(create[0]!.writable, ref).not.toContain(ref);
     expect(create[0]!.defaults).toBeUndefined();
     expect(create[0]!.select).toEqual(['id', 'code', 'format', 'state']);
     expect(create[0]!.uploads).toEqual([...DESIGN_UPLOADS]);
@@ -303,7 +305,7 @@ describe('the public entries', () => {
     expect(opened[0]!.select).not.toContain('link_token');
     expect(opened[0]!.select).not.toContain('email');
     expect(opened[0]!.writable).toEqual([...DESIGN_CHANGEABLE]);
-    for (const ref of ['app', 'state', 'code', 'link_token', 'email', 'last_changed_at']) expect(opened[0]!.writable, ref).not.toContain(ref);
+    for (const ref of ['app', 'state', 'code', 'link_token', 'email', 'updated_at']) expect(opened[0]!.writable, ref).not.toContain(ref);
     // An ordered design is the order's.
     expect(opened[0]!.writableWhen).toEqual({ state: ['draft'] });
     // The customer uploads a new logo or photo through it, and downloads what they sent.

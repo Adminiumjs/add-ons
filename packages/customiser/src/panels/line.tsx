@@ -75,7 +75,7 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
             { label: t('panel.line.design', 'Design'), value: ready.row === null ? t('panel.line.plainPiece', 'The plain piece') : text(ready.row['name']), mono: true },
             ...named.map((part) => ({ label: text(part['name']), value: choiceLine(t, chosen[text(part['code'])], unit, finishName), mono: true })),
             { label: t('panel.line.state', 'State'), value: ordered ? t('panel.line.ordered', 'Ordered') : t('panel.line.saved', 'Saved'), mono: true },
-            { label: t('panel.line.savedAs', 'Saved as'), value: t('panel.line.savedAt', 'designs / {id} · {at}', { id: String(row['id']), at: moment(row['last_changed_at'], locale) }), mono: true },
+            { label: t('panel.line.savedAs', 'Saved as'), value: t('panel.line.savedAt', 'designs / {id} · {at}', { id: String(row['id']), at: moment(row['updated_at'], locale) }), mono: true },
           ]}
         />
         <p className="m-0 text-[12.5px] text-fg-muted">{t('panel.line.files', 'The files for the machine are listed here once they are made.')}</p>

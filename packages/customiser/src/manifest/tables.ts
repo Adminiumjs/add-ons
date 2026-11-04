@@ -337,7 +337,16 @@ export function tables(): Table[] {
         col('format', 'int', w('Saved in format', 'Gespeichert im Format', 'Enregistré au format', 'Gemt i format', 'Uloženo ve formátu', 'حُفظ بصيغة', '保存格式', '儲存格式'), { default: 1, rules: { validation: { min: 1, max: 99 } } }),
         link('ready_design_id', 'ready_designs', W.readyDesign),
         link('base_id', 'bases', W.base),
-        col('values', 'json', w('What the customer chose', 'Was der Kunde gewählt hat', 'Ce que le client a choisi', 'Hvad kunden valgte', 'Co zákazník zvolil', 'ما اختاره العميل', '顾客的选择', '顧客的選擇'), { nullable: true, rules: { personal: true } }),
+        /*
+         * What the customer chose: the words, colours and choices the shop makes
+         * the thing from. Not marked personal, though it may hold a name or a
+         * number: the shop's staff make the order from it, and a guest who found
+         * their order again reads it by the design's code, a reading Adminium
+         * never gives a personal column. A shop app finds, exports and erases it
+         * with its customer as a copy of their details (`people.copies`, `holds:
+         * "details"`). The address, the logo and the photo stay personal.
+         */
+        col('values', 'json', w('What the customer chose', 'Was der Kunde gewählt hat', 'Ce que le client a choisi', 'Hvad kunden valgte', 'Co zákazník zvolil', 'ما اختاره العميل', '顾客的选择', '顧客的選擇'), { nullable: true }),
         // A customer's own files, uploaded from the editor: a logo as a drawing (SVG, kept only as cleaned), a PDF or a picture; a photo as a picture.
         col('logo_file', 'text', w('The customer’s logo', 'Logo des Kunden', 'Logo du client', 'Kundens logo', 'Logo zákazníka', 'شعار العميل', '顾客的标志', '顧客的標誌'), { maxLength: 64, nullable: true, rules: { personal: true, file: { accept: ['svg', 'pdf', 'png', 'jpeg'], maxBytes: CUSTOMER_FILE_BYTES, upload: { kinds: ['svg', 'pdf', 'png', 'jpg'], maxBytes: CUSTOMER_FILE_BYTES } } } }),
         col('photo_file', 'text', w('The customer’s photo', 'Foto des Kunden', 'Photo du client', 'Kundens foto', 'Fotografie zákazníka', 'صورة العميل', '顾客的照片', '顧客的照片'), { maxLength: 64, nullable: true, rules: { personal: true, file: { accept: ['png', 'jpeg'], maxBytes: CUSTOMER_FILE_BYTES, upload: { kinds: ['png', 'jpg'], maxBytes: CUSTOMER_FILE_BYTES } } } }),
@@ -352,9 +361,10 @@ export function tables(): Table[] {
         ),
         col('email', 'text', w('E-mail for the link', 'E-Mail für den Link', 'E-mail pour le lien', 'E-mail til linket', 'E-mail k odkazu', 'البريد الإلكتروني للرابط', '接收链接的电子邮件', '接收連結的電子郵件'), { maxLength: 254, nullable: true, rules: { personal: true, normalize: 'email', validation: { format: 'email' } } }),
         col('created_at', 'timestamptz', w('Saved at', 'Gespeichert am', 'Enregistrée le', 'Gemt den', 'Uloženo', 'حُفظ في', '保存时间', '儲存時間'), { role: 'created_at' }),
-        col('last_changed_at', 'timestamptz', w('Last changed', 'Zuletzt geändert', 'Dernière modification', 'Sidst ændret', 'Naposledy změněno', 'آخر تغيير', '最后更改', '最後變更'), { role: 'updated_at' }),
+        // Named as Adminium knows a row's last change, so every change stamps it (and the 90 days start again).
+        col('updated_at', 'timestamptz', w('Last changed', 'Zuletzt geändert', 'Dernière modification', 'Sidst ændret', 'Naposledy změněno', 'آخر تغيير', '最后更改', '最後變更'), { role: 'updated_at' }),
       ],
-      expire: { after: 'last_changed_at', days: DESIGN_KEEP_DAYS, unless: { column: 'state', equals: 'ordered' } },
+      expire: { after: 'updated_at', days: DESIGN_KEEP_DAYS, unless: { column: 'state', equals: 'ordered' } },
     },
     {
       // The snapshot an order line makes, and the proof the shop sends of it: numbered, never changed by the customer.
@@ -371,7 +381,7 @@ export function tables(): Table[] {
         col('proof_file', 'text', w('Proof', 'Probedruck', 'Épreuve', 'Korrektur', 'Náhled', 'البروفة', '校样', '校樣'), { maxLength: 64, nullable: true, rules: { file: { accept: ['png', 'jpeg', 'pdf'], maxBytes: 25 * 1024 * 1024 } } }),
         col('note', 'text', w('Note', 'Notiz', 'Note', 'Note', 'Poznámka', 'ملاحظة', '备注', '備註'), { maxLength: 500, nullable: true }),
         col('made_by_id', 'text', w('Made by', 'Erstellt von', 'Faite par', 'Lavet af', 'Vytvořil', 'أنشأها', '制作人', '製作人'), { maxLength: 36, nullable: true, rules: { stamp: { set: 'user-id', on: 'create' } } }),
-        col('made_at', 'timestamptz', w('Made at', 'Erstellt am', 'Faite le', 'Lavet den', 'Vytvořeno', 'أُنشئت في', '制作时间', '製作時間'), { role: 'created_at' }),
+        col('made_at', 'timestamptz', w('Made at', 'Erstellt am', 'Faite le', 'Lavet den', 'Vytvořeno', 'أُنشئت في', '制作时间', '製作時間'), { role: 'created_at', default: 'now' }),
       ],
     },
   ];

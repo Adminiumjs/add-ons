@@ -2655,9 +2655,6 @@
             "ref": "values",
             "type": "json",
             "nullable": true,
-            "rules": {
-              "personal": true
-            },
             "label": {
               "en-US": "What the customer chose",
               "de-DE": "Was der Kunde gewählt hat",
@@ -2823,7 +2820,7 @@
             }
           },
           {
-            "ref": "last_changed_at",
+            "ref": "updated_at",
             "type": "timestamptz",
             "role": "updated_at",
             "label": {
@@ -2839,7 +2836,7 @@
           }
         ],
         "expire": {
-          "after": "last_changed_at",
+          "after": "updated_at",
           "days": 90,
           "unless": {
             "column": "state",
@@ -3018,6 +3015,7 @@
             "ref": "made_at",
             "type": "timestamptz",
             "role": "created_at",
+            "default": "now",
             "label": {
               "en-US": "Made at",
               "de-DE": "Erstellt am",
@@ -3599,7 +3597,7 @@
         "base_id",
         "values",
         "state",
-        "last_changed_at"
+        "updated_at"
       ],
       "appColumn": "app",
       "level": "lookup",
@@ -3627,7 +3625,7 @@
         "logo_file",
         "photo_file",
         "state",
-        "last_changed_at"
+        "updated_at"
       ],
       "writable": [
         "format",

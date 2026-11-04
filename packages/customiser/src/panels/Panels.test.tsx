@@ -43,7 +43,7 @@ describe('the panel on a product', () => {
 
 describe('the panel on an order line', () => {
   beforeEach(() => {
-    seed('designs', [{ id: 91, app: 'maker', code: null, format: 1, ready_design_id: 51, base_id: IDS.coasters, values: JSON.stringify({ format: 1, parts: { words: { text: 'The Hartleys', font: 'Manrope', size: 6, finish: 'engraved' } } }), state: 'ordered', last_changed_at: '2026-08-05T15:01:00Z' }]);
+    seed('designs', [{ id: 91, app: 'maker', code: null, format: 1, ready_design_id: 51, base_id: IDS.coasters, values: JSON.stringify({ format: 1, parts: { words: { text: 'The Hartleys', font: 'Manrope', size: 6, finish: 'engraved' } } }), state: 'ordered', updated_at: '2026-08-05T15:01:00Z' }]);
     seed('design_versions', [{ id: 95, app: 'maker', design_id: 91, version: 2, proof_file: 'file-proof-2' }, { id: 94, app: 'maker', design_id: 91, version: 1, proof_file: 'file-proof-1' }]);
   });
 
@@ -63,7 +63,7 @@ describe('the panel on an order line', () => {
   });
 
   it('names a plain piece’s areas, says a part left plain, and a line with no design', () => {
-    seed('designs', [{ id: 92, app: 'maker', ready_design_id: null, base_id: IDS.coasters, values: JSON.stringify({ format: 1, parts: { words: { text: 'Sam' } } }), state: 'draft', last_changed_at: '2026-08-06T10:00:00Z' }]);
+    seed('designs', [{ id: 92, app: 'maker', ready_design_id: null, base_id: IDS.coasters, values: JSON.stringify({ format: 1, parts: { words: { text: 'Sam' } } }), state: 'draft', updated_at: '2026-08-06T10:00:00Z' }]);
     seed('design_versions', []);
     render(<Line {...HOST} linked="92" />);
     expect(items()).toMatchObject({ Design: 'The plain piece', 'Your logo': 'left plain', 'Your words': '“Sam”', State: 'Saved' });

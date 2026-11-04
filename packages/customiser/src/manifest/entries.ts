@@ -46,10 +46,10 @@ export const DESIGN_WRITABLE = ['format', 'ready_design_id', 'base_id', 'values'
 export const DESIGN_CHANGEABLE = DESIGN_WRITABLE.filter((ref) => ref !== 'email');
 
 /** What a visitor reads of a design opened by its link. */
-export const DESIGN_OPENED = ['id', 'code', 'format', 'ready_design_id', 'base_id', 'values', 'logo_file', 'photo_file', 'state', 'last_changed_at'] as const;
+export const DESIGN_OPENED = ['id', 'code', 'format', 'ready_design_id', 'base_id', 'values', 'logo_file', 'photo_file', 'state', 'updated_at'] as const;
 
 /** What a guest the shop signed in reads of a design opened by its code: what makes it up, never the code itself. */
-export const DESIGN_BY_CODE = ['id', 'format', 'ready_design_id', 'base_id', 'values', 'state', 'last_changed_at'] as const;
+export const DESIGN_BY_CODE = ['id', 'format', 'ready_design_id', 'base_id', 'values', 'state', 'updated_at'] as const;
 
 const published = [{ column: 'state', op: 'eq', value: 'published' }];
 const read = (table: string, select: readonly string[], extra: Entry = {}): Entry => ({ table, methods: ['GET'], select: [...select], appColumn: 'app', ...extra });
