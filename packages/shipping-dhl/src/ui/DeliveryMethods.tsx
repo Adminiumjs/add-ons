@@ -26,9 +26,7 @@ import { domesticStandIn, originOf } from "../seed.ts";
 import { publicSettings } from "../settings.ts";
 import { Monogram, Mono, NotAffiliated, Panel, PanelTitle, Tag } from "./atoms.tsx";
 import { contentsLine, serviceName } from "./labels.ts";
-
-/** This add-on's key, as its manifest declares it. */
-const ADD_ON_KEY = "shipping-dhl";
+import { ADD_ON_KEY } from "../add-on-key.ts";
 
 export function DeliveryMethods({
   items,

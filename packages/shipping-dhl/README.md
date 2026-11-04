@@ -28,6 +28,14 @@ its surfaces have; a fill with no mount simply never renders there:
 | `settings.add-on.panel` | admin | the demo switch, the collection cut-off, and the default parcel weights | all five |
 | `record.actions` | both | a prepaid return label, only on a record the host says is a `return` | maker, factory, helpdesk |
 
+**The service the shopper chose comes back at dispatch.** A shop keeps the delivery choice a shopper
+made at checkout on its order, in a column of its own, and passes it to `order.dispatch.actions` as
+`chosen` (`{ addOn, code }`, or the whole choice). The dispatch flow then opens with that service
+picked instead of the first rate. A code another add-on made, or one this add-on no longer quotes,
+leaves the usual first pick. The API key and the account number are never in a form of the app: they
+are `secret` settings, given once when the add-on is connected and kept encrypted by Adminium, and
+only the server half reads them.
+
 The **default parcel weights belong here**, and that is not a detail. The host
 knows its own catalogue and passes one representative job per product family; it
 does not know what any of them weighs, because weight is a property of the

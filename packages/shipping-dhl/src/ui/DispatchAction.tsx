@@ -33,7 +33,8 @@ import { CarrierError, type Address, type FileRef, type Shipment, type TrackEven
 import type { DispatchPayload } from "@adminium/add-on-host";
 import { parseNumber, useFormat, useT } from "../i18n/t.ts";
 import { parcelFor, type ParcelEstimate } from "../parcel.ts";
-import { cheapestCode, COLLECTION_WINDOW, type QuotedRate } from "../rates.ts";
+import { ADD_ON_KEY } from "../add-on-key.ts";
+import { cheapestCode, COLLECTION_WINDOW, preselectedCode, type QuotedRate } from "../rates.ts";
 import { carrier, findShipment, isDemo, labels, rememberRoute, setHostClock } from "../runtime.ts";
 import {
   addressIsUsable,
@@ -197,7 +198,7 @@ export function UnresolvedDestination({
   );
 }
 
-export function DispatchAction({ order, now }: DispatchPayload) {
+export function DispatchAction({ order, now, chosen }: DispatchPayload) {
   const t = useT();
   const { clock: clockOf, money, day, number, timeOfDay } = useFormat();
 
@@ -329,7 +330,8 @@ export function DispatchAction({ order, now }: DispatchPayload) {
         to,
       )) as QuotedRate[];
       setRates(quoted);
-      setSelected(quoted[0]?.code ?? null);
+      // The service the shopper chose at checkout, kept on the order, comes first.
+      setSelected(preselectedCode(quoted, chosen, ADD_ON_KEY));
     } catch (err) {
       // A refusal is DATA. It renders; it does not go to the console and leave
       // the works watching a spinner.
@@ -341,7 +343,7 @@ export function DispatchAction({ order, now }: DispatchPayload) {
     } finally {
       setBusy(false);
     }
-  }, [contents, dims, estimate, from, to, weight]);
+  }, [chosen, contents, dims, estimate, from, to, weight]);
 
   const book = useCallback(async () => {
     const rate = rates?.find((r) => r.code === selected) ?? rates?.[0];
