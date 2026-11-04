@@ -309,6 +309,46 @@ describe('Mark faces (BC-D2.markfaces, BC-F8)', () => {
   });
 });
 
+const SIGN_FACE = { code: 'sign-board', name: 'Sign board', piece: '209', mesh: '0', meshName: 'Sign', normal: [0, 0, 1], point: [-0.046, -0.011, 0.075], u: [1, 0, 0], v: [0, -1, 0], bounds: { u0: 0, u1: 0.092, v0: -0.022, v1: 0 }, size: { w: 92, h: 22 } };
+
+describe('areas on a kit: “On:” a piece or a marked face (BC-D3, BC-F8)', () => {
+  const canvas = (): SVGSVGElement => screen.getByRole('application', { name: 'The piece, with its areas' }) as unknown as SVGSVGElement;
+  /** The size the canvas draws, without the margin round it. */
+  const drawnSize = (): number[] => {
+    const [x, y, w, h] = canvas().getAttribute('viewBox')!.split(' ').map(Number) as [number, number, number, number];
+    return [Math.round((w + 2 * x) * 10) / 10, Math.round((h + 2 * y) * 10) / 10];
+  };
+
+  it('lists the marked faces and the pieces, starts on the first area’s piece, and draws only the areas on it, at its size', async () => {
+    nook()['faces'] = JSON.stringify([SIGN_FACE]);
+    render(page('areas'));
+    await settle();
+    const on = screen.getByLabelText('On') as HTMLSelectElement;
+    expect([...on.options].map((one) => one.textContent)).toEqual(['Sign board · marked face', '01 · Base', '09 · Shop sign']);
+    expect(on.value).toBe('piece:209');
+    expect(drawnSize()).toEqual([92, 22]);
+    expect(within(canvas() as unknown as HTMLElement).getByRole('button', { name: 'Select The shop sign' })).toBeTruthy();
+    fireEvent.change(on, { target: { value: 'piece:201' } });
+    await settle();
+    expect(drawnSize()).toEqual([110, 150]);
+    expect(within(canvas() as unknown as HTMLElement).queryByRole('button', { name: 'Select The shop sign' })).toBeNull();
+    // The list still holds every area, each saying what it sits on.
+    expect(screen.getByRole('button', { name: /The shop sign.*09 · Shop sign/ })).toBeTruthy();
+  });
+
+  it('draws a new area on the marked face picked, kept on the face and its piece, sized for it', async () => {
+    nook()['faces'] = JSON.stringify([SIGN_FACE]);
+    render(page('areas'));
+    await settle();
+    fireEvent.change(screen.getByLabelText('On'), { target: { value: 'face:sign-board' } });
+    await settle();
+    fireEvent.click(screen.getByRole('button', { name: 'Draw a rectangle' }));
+    fireEvent.keyDown(canvas(), { key: 'Enter' });
+    await settle();
+    expect(writes('create', 'base_areas').at(-1)?.values).toMatchObject({ base_id: IDS.nook, face: 'sign-board', piece_id: 209, x_mm: 23, y_mm: 8.5, w_mm: 46, h_mm: 4 });
+  });
+});
+
 describe('the kit’s set-up under axe', () => {
   it('has no violations: before the model, with it, marking a face, and a face that is not flat', async () => {
     const sweep = async (label: string): Promise<void> => {
@@ -326,5 +366,10 @@ describe('the kit’s set-up under axe', () => {
     fireEvent.click(screen.getAllByRole('button', { name: /Flat face 2/ })[0]!);
     await settle();
     await sweep('marking');
+    cleanup();
+    nook()['faces'] = JSON.stringify([SIGN_FACE]);
+    render(page('areas'));
+    await settle();
+    await sweep('areas on a piece');
   });
 });

@@ -12,20 +12,34 @@
  * `grows`, `unit`, `size`, `min`, `max`, `fonts`, `finishes`; a logo's
  * `picture`, `fit`, `colour`, `file`; both under `alsoLogo`).
  */
-import { useEffect, useId, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
 
-import { asDataError, Button, Figure, Grid, IconButton, Input, lucideByName, SegmentedControl, Stack, Switch, ToggleChip, useWrite, type AddOnTranslate, type DataRow } from '../shared/host.ts';
+import { facesOf } from '../../three/faces.ts';
+
+import { asDataError, Button, Figure, Grid, IconButton, Input, lucideByName, SegmentedControl, Select, Stack, Switch, ToggleChip, useWrite, type AddOnTranslate, type DataRow } from '../shared/host.ts';
 import { refusal } from '../shared/refusal.ts';
 import { useToast } from '../shared/toast.ts';
 import type { SetupData } from './data.ts';
 import { Drawing, pointOn, viewOf, type DrawnArea } from './Drawing.tsx';
-import { boxOf, boxValues, codeFor, dragged, drawnEnough, guidesOf, kindOf, logoRules, moved, mm, nudged, num, offeredOf, resized, rulesFor, sizeOf, standardBox, startRules, takesOf, text, wordsRulesOf, yes, type Box, type Shape, type Takes } from './facts.ts';
+import { boxOf, boxValues, codeFor, dragged, drawnEnough, guidesOf, kindOf, logoRules, moved, mm, nudged, num, offeredOf, resized, rulesFor, sizeOf, standardBox, startRules, takesOf, text, wordsRulesOf, yes, type Box, type Shape, type Size, type Takes } from './facts.ts';
+import { useKitPieces } from './KitBase.tsx';
+import { pieceLabel, readSurface, sitsOn, surfaceColumns, surfaceOfArea, surfaceSize, surfacesOf, surfaceValue, type Surface } from './kit.ts';
 
 type Drag = { mode: 'draw'; from: { x: number; y: number }; shape: Shape } | { mode: 'move' | 'resize'; id: string; from: { x: number; y: number }; box: Box; moved: boolean };
 
 export function AreasStep({ t, base, data }: { t: AddOnTranslate; base: DataRow; data: SetupData }): ReactNode {
   const kind = kindOf(base) === 'page' ? 'page' : 'piece';
-  const size = sizeOf(base);
+  // A kit's areas sit on a piece or a marked face ("On:"); the canvas shows that one, at its own size.
+  const kit = kindOf(base) === 'kit';
+  const pieces = useKitPieces(base, kit);
+  const faces = useMemo(() => facesOf(base['faces']), [base['faces']]); // eslint-disable-line react-hooks/exhaustive-deps
+  const surfaces = kit ? surfacesOf(faces, pieces) : [];
+  const [on, setOn] = useState<string | null>(null);
+  const [picked, setPicked] = useState<string | null>(null);
+  // The area picked, else the first: the canvas starts on the surface it sits on.
+  const pickedArea = data.areas.find((one) => String(one['id']) === picked) ?? (picked === null ? data.areas[0] : undefined);
+  const surface: Surface | null = !kit || surfaces.length === 0 ? null : (readSurface(on ?? '') ?? (pickedArea === undefined ? null : surfaceOfArea(pickedArea, faces)) ?? surfaces[0]!);
+  const size = surface === null ? sizeOf(base) : surfaceSize(surface, faces, pieces);
   const guides = guidesOf(base, { bleed: num(data.settings?.['default_bleed_mm']) ?? 3, safe: num(data.settings?.['default_safe_mm']) ?? 4 });
   const offered = offeredOf(base);
   const write = useWrite('base_areas');
@@ -35,10 +49,10 @@ export function AreasStep({ t, base, data }: { t: AddOnTranslate; base: DataRow;
   const [drawMode, setDrawMode] = useState<Shape | null>(null);
   const [draft, setDraft] = useState<Box | null>(null);
   const [live, setLive] = useState<{ id: string; box: Box } | null>(null);
-  const [picked, setPicked] = useState<string | null>(null);
   const [focusName, setFocusName] = useState<string | null>(null);
   const drag = useRef<Drag | null>(null);
-  const areas = data.areas;
+  // The areas on the canvas: on a kit, those on the piece or face it shows.
+  const areas = surface === null ? data.areas : data.areas.filter((one) => sitsOn(one, surface, faces));
   const selected = picked === 'none' ? null : (picked ?? (areas[0] === undefined ? null : String(areas[0]['id'])));
   const view = viewOf(kind, size, guides);
   const failed = (caught: unknown): void => toast(refusal(t, asDataError(caught)).message, 'error');
@@ -51,7 +65,7 @@ export function AreasStep({ t, base, data }: { t: AddOnTranslate; base: DataRow;
 
   const add = (shape: Shape, box: Box): void => {
     const name = shape === 'oval' ? t('setup.areas.newOval', 'New oval area') : t('setup.areas.newRect', 'New area');
-    const codes = areas.map((area) => text(area['code']));
+    const codes = data.areas.map((area) => text(area['code']));
     write
       .create({
         app: text(base['app']) === '' ? null : text(base['app']),
@@ -61,10 +75,11 @@ export function AreasStep({ t, base, data }: { t: AddOnTranslate; base: DataRow;
         shape,
         ...boxValues(box),
         ...(kind === 'page' ? { side: 'front' } : {}),
+        ...(surface === null ? {} : surfaceColumns(surface, faces)),
         takes: 'words',
         required: false,
         rules: JSON.stringify(startRules(kindOf(base), size, offered)),
-        position: areas.length + 1,
+        position: data.areas.length + 1,
       })
       .then(({ row }) => {
         setPicked(String(row['id']));
@@ -146,6 +161,14 @@ export function AreasStep({ t, base, data }: { t: AddOnTranslate; base: DataRow;
     event.preventDefault();
     saveBox(String(area['id']), next);
   };
+  const surfaceOrBase = (area: DataRow): Size => {
+    const own = surfaceOfArea(area, faces);
+    return own === null ? sizeOf(base) : surfaceSize(own, faces, pieces);
+  };
+  const whereOf = (area: DataRow): string | null => {
+    const own = surfaceOfArea(area, faces);
+    return own === null ? null : surfaceName(own);
+  };
   const drawn: DrawnArea[] = areas.map((area) => ({ id: String(area['id']), name: text(area['name']), shape: area['shape'] === 'oval' ? 'oval' : 'rect', box: boxFor(area) }));
   const startDrawing = (shape: Shape): void => {
     setDrawMode(drawMode === shape ? null : shape);
@@ -153,9 +176,26 @@ export function AreasStep({ t, base, data }: { t: AddOnTranslate; base: DataRow;
     svg.current?.focus();
   };
 
+  const surfaceName = (one: Surface): string => {
+    if (one.kind === 'face') return t('setup.areas.onFace', '{name} · marked face', { name: faces.find((face) => face.code === one.code)?.name ?? one.code });
+    const piece = pieces.find((row) => text(row['id']) === one.id);
+    return piece === undefined ? one.id : pieceLabel(piece);
+  };
   return (
     <Grid columns={2} gap="lg">
       <Stack gap="sm">
+        {surface === null ? null : (
+          <Select
+            label={t('setup.areas.on', 'On')}
+            value={surfaceValue(surface)}
+            onChange={(event) => {
+              setOn(event.target.value);
+              setPicked(null);
+              setDraft(null);
+            }}
+            options={surfaces.map((one) => ({ value: surfaceValue(one), label: surfaceName(one) }))}
+          />
+        )}
         <div className="rounded-xl border border-border bg-surface-3 p-3">
           <Drawing
             svgRef={svg}
@@ -185,7 +225,7 @@ export function AreasStep({ t, base, data }: { t: AddOnTranslate; base: DataRow;
               ? t('setup.areas.hintOval', 'Drag across the piece to draw the oval. Or press Enter for a standard size. Esc cancels.')
               : t('setup.areas.hintRect', 'Drag across the piece to draw the rectangle. Or press Enter for a standard size. Esc cancels.')}
         </p>
-        <p className="m-0 text-[12px] text-fg-subtle">{kind === 'page' ? t('setup.areas.wherePage', 'Areas sit on a side of the page, inside the safe line.') : t('setup.areas.where', 'Areas sit on the face of the piece.')}</p>
+        <p className="m-0 text-[12px] text-fg-subtle">{kind === 'page' ? t('setup.areas.wherePage', 'Areas sit on a side of the page, inside the safe line.') : kit ? t('setup.areas.whereKit', 'Areas sit on the piece or the marked face picked above. A marked face shows them on the model.') : t('setup.areas.where', 'Areas sit on the face of the piece.')}</p>
       </Stack>
       <Stack gap="sm">
         {areas.length === 0 ? (
@@ -194,20 +234,37 @@ export function AreasStep({ t, base, data }: { t: AddOnTranslate; base: DataRow;
             <span className="text-[12.5px] leading-relaxed text-fg-muted">{t('setup.areas.noneBody', 'Draw a rectangle or an oval where a shopper may add their own words or logo.')}</span>
           </div>
         ) : null}
-        {areas.map((area) => (
-          <AreaRow key={String(area['id'])} t={t} area={area} base={base} data={data} open={String(area['id']) === selected} onToggle={() => setPicked(String(area['id']) === selected ? 'none' : String(area['id']))} failed={failed} />
+        {data.areas.map((area) => (
+          <AreaRow
+            key={String(area['id'])}
+            t={t}
+            area={area}
+            base={base}
+            data={data}
+            size={kit ? surfaceOrBase(area) : sizeOf(base)}
+            where={kit ? whereOf(area) : null}
+            open={String(area['id']) === selected}
+            onToggle={() => {
+              const id = String(area['id']);
+              if (id === selected) return setPicked('none');
+              setPicked(id);
+              // The canvas shows the surface the area sits on.
+              const own = surfaceOfArea(area, faces);
+              setOn(own === null ? null : surfaceValue(own));
+            }}
+            failed={failed}
+          />
         ))}
       </Stack>
     </Grid>
   );
 }
 
-function AreaRow({ t, area, base, data, open, onToggle, failed }: { t: AddOnTranslate; area: DataRow; base: DataRow; data: SetupData; open: boolean; onToggle: () => void; failed: (caught: unknown) => void }): ReactNode {
+function AreaRow({ t, area, base, data, size, where, open, onToggle, failed }: { t: AddOnTranslate; area: DataRow; base: DataRow; data: SetupData; size: Size; where: string | null; open: boolean; onToggle: () => void; failed: (caught: unknown) => void }): ReactNode {
   const write = useWrite('base_areas');
   const toast = useToast();
   const id = String(area['id']);
   const kind = kindOf(base);
-  const size = sizeOf(base);
   const offered = offeredOf(base);
   const takes = takesOf(area);
   const rules = wordsRulesOf(area);
@@ -226,6 +283,7 @@ function AreaRow({ t, area, base, data, open, onToggle, failed }: { t: AddOnTran
       <button type="button" aria-expanded={open} aria-controls={panel} onClick={onToggle} className="flex w-full items-center gap-2.5 px-3 py-2.5 text-start hover:bg-surface-2">
         <span className="flex-1 text-[13px] font-extrabold">{text(area['name'])}</span>
         <span className="font-mono text-[11px] text-fg-subtle">{yes(area['required']) ? t('setup.areas.metaRequired', '{what} · required', { what }) : what}</span>
+        {where === null ? null : <span className="font-mono text-[11px] text-fg-subtle">{where}</span>}
       </button>
       {open ? (
         <div id={panel} className="flex flex-col gap-3 px-3 pb-4">
