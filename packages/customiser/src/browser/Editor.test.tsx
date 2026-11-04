@@ -554,7 +554,7 @@ describe('the print look: fill it in (MC-B1, MC-B2, MC-B5, MC-0.CHECKS)', () => 
     expect(screen.getByText('Rule is the shop’s part — it stays as it is.')).toBeTruthy();
   });
 
-  it('switches layout and colours, and opens its own full editor with the words kept (CR11 words, MC-B4)', async () => {
+  it('switches layout and colours, and opens its own full editor with the words kept (MC-B4)', async () => {
     const stub = stubApi('printing');
     const onDesignChange = vi.fn();
     await openHarbour(stub, { onDesignChange });
