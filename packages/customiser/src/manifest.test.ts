@@ -136,8 +136,11 @@ describe('the manifest', () => {
 describe('the design question', () => {
   const addOn = manifest.addOn as unknown as { provides: { contract: string; version: number; server: string }[]; checker: { design: string; reads: { id: string; table: string; by: { column: string; from: string } }[] } };
 
-  it('is answered by the built file, as design-check@1', () => {
-    expect(addOn.provides).toEqual([{ contract: 'design-check', version: 1, server: OUTPUT.check }]);
+  it('is answered by the built file, as design-check@1, and the same file answers the snapshot posting (posting-rows@1)', () => {
+    expect(addOn.provides).toEqual([
+      { contract: 'design-check', version: 1, server: OUTPUT.check },
+      { contract: 'posting-rows', version: 1, server: OUTPUT.check },
+    ]);
   });
 
   it('reads, keyed from the design, the ready-made design and its parts, the base and its areas, the palettes and the app’s features', () => {
@@ -170,12 +173,13 @@ describe('the design question', () => {
 
 describe('the tables', () => {
   it('are the ones every other piece builds on, by these names', () => {
-    expect(tables.map((table) => table.ref)).toEqual(['settings', 'bases', 'base_pieces', 'base_areas', 'ready_designs', 'ready_parts', 'fonts', 'palettes', 'palette_colours', 'features', 'designs', 'design_versions']);
-    expect([...SHOP_TABLES, ...CUSTOMER_TABLES, 'settings'].sort()).toEqual(tables.map((table) => table.ref).sort());
+    expect(tables.map((table) => table.ref)).toEqual(['settings', 'bases', 'base_pieces', 'base_areas', 'ready_designs', 'ready_parts', 'fonts', 'palettes', 'palette_colours', 'features', 'designs', 'design_versions', 'version_files', 'postings']);
+    expect([...SHOP_TABLES, ...CUSTOMER_TABLES, 'settings', 'postings'].sort()).toEqual(tables.map((table) => table.ref).sort());
   });
 
   it('say, every one two shop apps might share, which app a row is for', () => {
-    for (const table of tables.filter((one) => one.ref !== 'settings')) expect(columnOf(table.ref, 'app'), table.ref).toMatchObject({ type: 'text', nullable: true });
+    // The postings are Adminium's own record of what a line posted: it writes them, with the line's table and row, never an app column.
+    for (const table of tables.filter((one) => one.ref !== 'settings' && one.ref !== 'postings')) expect(columnOf(table.ref, 'app'), table.ref).toMatchObject({ type: 'text', nullable: true });
   });
 
   it('take four kinds of base, and a base is offered only once it is published', () => {

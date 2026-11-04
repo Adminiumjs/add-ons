@@ -34,7 +34,31 @@ and each app's visitors see only that app's.
   e-mail. A design nobody ordered goes 90 days after its last change, with
   its files.
 - **Design versions**: the snapshot an order is made from, and the proof the
-  shop sends of it.
+  shop sends of it. **Production files**: the print PDF of each side and the
+  laser's SVG of each piece, made in the shop's browser from a version.
+
+## What an app's order lines declare
+
+An order line that names a design checks it (`check`, by
+`{ "addOn": "customiser" }`) and posts it when the line is made, which
+snapshots the design's version and locks its draft in the same save:
+
+```json
+"postings": [
+  {
+    "id": "design",
+    "into": { "addOn": "customiser", "ledger": "designs", "action": "order" },
+    "via": "order_id",
+    "post": { "on": { "create": true } },
+    "map": { "design": "design_id" },
+    "only": { "column": "design_id", "set": true }
+  }
+]
+```
+
+`design_id` is the line's link into the Customiser's designs, filled by
+looking the design up by its code. A design ordered again without a change
+gets no new version.
 
 ## Who sees what
 

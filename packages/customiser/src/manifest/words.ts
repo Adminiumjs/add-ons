@@ -52,6 +52,7 @@ export const W = {
   code: w('Code', 'Code', 'Code', 'Kode', 'Kód', 'الرمز', '代码', '代碼'),
   key: w('Key', 'Schlüssel', 'Clé', 'Nøgle', 'Klíč', 'المفتاح', '键', '鍵'),
   rules: w('Rules', 'Regeln', 'Règles', 'Regler', 'Pravidla', 'القواعد', '规则', '規則'),
+  receipt: w('Made by the posting', 'Erstellt von der Buchung', 'Faite par l’écriture', 'Lavet af posteringen', 'Vytvořeno zaúčtováním', 'أنشأها القيد', '由过账生成', '由過帳產生'),
   required: w('Required', 'Pflicht', 'Obligatoire', 'Påkrævet', 'Povinné', 'مطلوب', '必填', '必填'),
   left: w('From the left edge (mm)', 'Vom linken Rand (mm)', 'Depuis le bord gauche (mm)', 'Fra venstre kant (mm)', 'Od levého okraje (mm)', 'من الحافة اليسرى (مم)', '距左边缘（毫米）', '距左邊緣（公釐）'),
   top: w('From the top edge (mm)', 'Vom oberen Rand (mm)', 'Depuis le bord supérieur (mm)', 'Fra øverste kant (mm)', 'Od horního okraje (mm)', 'من الحافة العليا (مم)', '距上边缘（毫米）', '距上邊緣（公釐）'),

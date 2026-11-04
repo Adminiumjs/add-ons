@@ -382,6 +382,68 @@ export function tables(): Table[] {
         col('note', 'text', w('Note', 'Notiz', 'Note', 'Note', 'Poznámka', 'ملاحظة', '备注', '備註'), { maxLength: 500, nullable: true }),
         col('made_by_id', 'text', w('Made by', 'Erstellt von', 'Faite par', 'Lavet af', 'Vytvořil', 'أنشأها', '制作人', '製作人'), { maxLength: 36, nullable: true, rules: { stamp: { set: 'user-id', on: 'create' } } }),
         col('made_at', 'timestamptz', w('Made at', 'Erstellt am', 'Faite le', 'Lavet den', 'Vytvořeno', 'أُنشئت في', '制作时间', '製作時間'), { role: 'created_at', default: 'now' }),
+        // The posting that made it, for the version an order line snapshots when it orders the design; empty for one the shop made.
+        link('receipt_id', 'postings', W.receipt),
+      ],
+    },
+    {
+      /*
+       * THE FILES THE SHOP MAKES FROM A VERSION: the print PDF of each side,
+       * the laser's SVG of each piece. Made in the shop's browser from the
+       * version's data, stored here, downloaded from the order line's panel.
+       * The proof is the version's own (`proof_file`).
+       */
+      ref: 'version_files',
+      keyField: 'name',
+      ...both(w('Production file', 'Produktionsdatei', 'Fichier de fabrication', 'Produktionsfil', 'Výrobní soubor', 'ملف الإنتاج', '生产文件', '生產檔案'), w('Production files', 'Produktionsdateien', 'Fichiers de fabrication', 'Produktionsfiler', 'Výrobní soubory', 'ملفات الإنتاج', '生产文件', '生產檔案')),
+      columns: [
+        pk,
+        app,
+        link('version_id', 'design_versions', w('Design version', 'Entwurfsversion', 'Version de la création', 'Designversion', 'Verze návrhu', 'نسخة التصميم', '设计版本', '設計版本'), false),
+        choice(
+          'kind',
+          {
+            print: w('Print file', 'Druckdatei', 'Fichier d’impression', 'Trykfil', 'Tiskový soubor', 'ملف الطباعة', '印刷文件', '印刷檔案'),
+            machine: w('File for the machine', 'Datei für die Maschine', 'Fichier pour la machine', 'Fil til maskinen', 'Soubor ke stroji', 'ملف للآلة', '机器文件', '機器檔案'),
+          },
+          w('Kind of file', 'Art der Datei', 'Type de fichier', 'Filtype', 'Druh souboru', 'نوع الملف', '文件类型', '檔案類型'),
+        ),
+        name(160),
+        // What the file is, in a line: "111 × 81 mm page · trim 85 × 55 · 3 mm bleed · crop marks", "Shop sign · 110 × 40 mm".
+        col('about', 'text', w('What it is', 'Was es ist', 'Ce que c’est', 'Hvad det er', 'Co to je', 'ما هو', '说明', '說明'), { maxLength: 240, nullable: true }),
+        // The laser's layers it holds (CUT, SCORE, ENGRAVE); none for a print file.
+        col('layers', 'json', w('Layers', 'Ebenen', 'Calques', 'Lag', 'Vrstvy', 'الطبقات', '图层', '圖層'), { nullable: true }),
+        col('file', 'text', w('File', 'Datei', 'Fichier', 'Fil', 'Soubor', 'الملف', '文件', '檔案'), { maxLength: 64, nullable: true, rules: { file: { accept: ['pdf', 'svg'], maxBytes: 100 * 1024 * 1024 } } }),
+        position,
+        col('made_at', 'timestamptz', w('Made at', 'Erstellt am', 'Faite le', 'Lavet den', 'Vytvořeno', 'أُنشئت في', '制作时间', '製作時間'), { role: 'created_at', default: 'now' }),
+      ],
+    },
+    {
+      /*
+       * THE POSTINGS AN APP'S ORDER LINES MADE INTO THE CUSTOMISER: one row a
+       * phase, written by Adminium alone (a ledger's receipts). A line that
+       * orders a design posts it here, and the design's version is the answer.
+       */
+      ref: 'postings',
+      ...both(w('Posting', 'Buchung', 'Écriture', 'Postering', 'Zaúčtování', 'قيد', '过账', '過帳'), w('Postings', 'Buchungen', 'Écritures', 'Posteringer', 'Zaúčtování', 'القيود', '过账', '過帳')),
+      columns: [
+        pk,
+        col('source_table', 'text', w('From table', 'Aus Tabelle', 'Depuis la table', 'Fra tabel', 'Z tabulky', 'من الجدول', '来源表', '來源表'), { maxLength: 96, rules: { tableRef: true } }),
+        col('source_row', 'text', w('From row', 'Aus Zeile', 'Depuis la ligne', 'Fra række', 'Z řádku', 'من الصف', '来源行', '來源列'), { maxLength: 64 }),
+        col('source_line', 'text', w('From line', 'Aus Position', 'Depuis la ligne de détail', 'Fra linje', 'Z položky', 'من البند', '来源明细', '來源明細'), { maxLength: 64 }),
+        col('line_table', 'text', w('Lines table', 'Positionstabelle', 'Table des lignes', 'Linjetabel', 'Tabulka položek', 'جدول البنود', '明细表', '明細表'), { maxLength: 96, rules: { tableRef: true } }),
+        col('ledger', 'text', w('Ledger', 'Journal', 'Registre', 'Journal', 'Deník', 'السجل', '账簿', '帳簿'), { maxLength: 40 }),
+        col('action', 'text', w('Action', 'Aktion', 'Action', 'Handling', 'Akce', 'الإجراء', '操作', '操作'), { maxLength: 40 }),
+        col('posting', 'text', w('Posting', 'Buchung', 'Écriture', 'Postering', 'Zaúčtování', 'القيد', '过账', '過帳'), { maxLength: 40 }),
+        choice('phase', { reserve: w('Held', 'Reserviert', 'Réservée', 'Reserveret', 'Rezervováno', 'محجوز', '预留', '預留'), post: w('Posted', 'Gebucht', 'Passée', 'Posteret', 'Zaúčtováno', 'مُرحّل', '已过账', '已過帳'), reverse: w('Given back', 'Zurückgebucht', 'Annulée', 'Tilbageført', 'Stornováno', 'معكوس', '已冲回', '已沖回') }, w('Phase', 'Phase', 'Phase', 'Fase', 'Fáze', 'المرحلة', '阶段', '階段')),
+        col('round', 'int', w('Round', 'Runde', 'Tour', 'Runde', 'Kolo', 'الجولة', '轮次', '輪次')),
+        choice('state', { planned: w('Worked out', 'Ausgeführt', 'Calculée', 'Udregnet', 'Vypočteno', 'محسوب', '已计算', '已計算'), unplanned: w('To work out', 'Noch auszuführen', 'À calculer', 'Skal udregnes', 'K výpočtu', 'بانتظار الحساب', '待计算', '待計算') }, w('State', 'Status', 'État', 'Status', 'Stav', 'الحالة', '状态', '狀態')),
+        col('rows', 'int', w('Rows', 'Zeilen', 'Lignes', 'Rækker', 'Řádky', 'الصفوف', '行数', '列數')),
+        col('add_on_version', 'text', w('Add-on version', 'Add-on-Version', 'Version de l’extension', 'Tilføjelsens version', 'Verze doplňku', 'إصدار الإضافة', '插件版本', '附加元件版本'), { maxLength: 32 }),
+        choice('origin', { staff: w('Staff', 'Team', 'Équipe', 'Personale', 'Personál', 'الموظفون', '员工', '員工'), public: w('A customer', 'Ein Kunde', 'Un client', 'En kunde', 'Zákazník', 'عميل', '顾客', '顧客'), system: w('Adminium', 'Adminium', 'Adminium', 'Adminium', 'Adminium', 'Adminium', 'Adminium', 'Adminium') }, w('Made by', 'Ausgelöst von', 'Origine', 'Udløst af', 'Původ', 'المصدر', '来源', '來源')),
+        col('by', 'text', w('By', 'Von', 'Par', 'Af', 'Kým', 'بواسطة', '执行者', '執行者'), { maxLength: 64 }),
+        col('at', 'timestamptz', w('At', 'Am', 'Le', 'Den', 'Kdy', 'في', '时间', '時間')),
+        col('held_until', 'timestamptz', w('Held until', 'Gehalten bis', 'Retenue jusqu’au', 'Holdt til', 'Drženo do', 'محجوز حتى', '保留至', '保留至'), { nullable: true }),
       ],
     },
   ];

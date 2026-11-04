@@ -13,5 +13,7 @@
  * Adminium runs it in a bare context with none of them, at most 250 ms.
  */
 import { check } from './question/answer.ts';
+import { rows } from './versions/snapshot.ts';
 
-export default { check };
+/** And `posting-rows@1`: the version an order line snapshots when it orders a design (`versions/snapshot.ts`). */
+export default { check, rows };

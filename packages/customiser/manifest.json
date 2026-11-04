@@ -3029,6 +3029,612 @@
               "zh-CN": "制作时间",
               "zh-TW": "製作時間"
             }
+          },
+          {
+            "ref": "receipt_id",
+            "type": "fk",
+            "references": "postings",
+            "nullable": true,
+            "label": {
+              "en-US": "Made by the posting",
+              "de-DE": "Erstellt von der Buchung",
+              "fr-FR": "Faite par l’écriture",
+              "da-DK": "Lavet af posteringen",
+              "cs-CZ": "Vytvořeno zaúčtováním",
+              "ar-EG": "أنشأها القيد",
+              "zh-CN": "由过账生成",
+              "zh-TW": "由過帳產生"
+            }
+          }
+        ]
+      },
+      {
+        "ref": "version_files",
+        "keyField": "name",
+        "label": {
+          "en-US": "Production file",
+          "de-DE": "Produktionsdatei",
+          "fr-FR": "Fichier de fabrication",
+          "da-DK": "Produktionsfil",
+          "cs-CZ": "Výrobní soubor",
+          "ar-EG": "ملف الإنتاج",
+          "zh-CN": "生产文件",
+          "zh-TW": "生產檔案"
+        },
+        "labelPlural": {
+          "en-US": "Production files",
+          "de-DE": "Produktionsdateien",
+          "fr-FR": "Fichiers de fabrication",
+          "da-DK": "Produktionsfiler",
+          "cs-CZ": "Výrobní soubory",
+          "ar-EG": "ملفات الإنتاج",
+          "zh-CN": "生产文件",
+          "zh-TW": "生產檔案"
+        },
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "app",
+            "type": "text",
+            "maxLength": 40,
+            "nullable": true,
+            "label": {
+              "en-US": "App",
+              "de-DE": "App",
+              "fr-FR": "Application",
+              "da-DK": "App",
+              "cs-CZ": "Aplikace",
+              "ar-EG": "التطبيق",
+              "zh-CN": "应用",
+              "zh-TW": "應用程式"
+            }
+          },
+          {
+            "ref": "version_id",
+            "type": "fk",
+            "references": "design_versions",
+            "label": {
+              "en-US": "Design version",
+              "de-DE": "Entwurfsversion",
+              "fr-FR": "Version de la création",
+              "da-DK": "Designversion",
+              "cs-CZ": "Verze návrhu",
+              "ar-EG": "نسخة التصميم",
+              "zh-CN": "设计版本",
+              "zh-TW": "設計版本"
+            }
+          },
+          {
+            "ref": "kind",
+            "type": "enum",
+            "enum": [
+              "print",
+              "machine"
+            ],
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "print": {
+                    "en-US": "Print file",
+                    "de-DE": "Druckdatei",
+                    "fr-FR": "Fichier d’impression",
+                    "da-DK": "Trykfil",
+                    "cs-CZ": "Tiskový soubor",
+                    "ar-EG": "ملف الطباعة",
+                    "zh-CN": "印刷文件",
+                    "zh-TW": "印刷檔案"
+                  },
+                  "machine": {
+                    "en-US": "File for the machine",
+                    "de-DE": "Datei für die Maschine",
+                    "fr-FR": "Fichier pour la machine",
+                    "da-DK": "Fil til maskinen",
+                    "cs-CZ": "Soubor ke stroji",
+                    "ar-EG": "ملف للآلة",
+                    "zh-CN": "机器文件",
+                    "zh-TW": "機器檔案"
+                  }
+                }
+              }
+            },
+            "label": {
+              "en-US": "Kind of file",
+              "de-DE": "Art der Datei",
+              "fr-FR": "Type de fichier",
+              "da-DK": "Filtype",
+              "cs-CZ": "Druh souboru",
+              "ar-EG": "نوع الملف",
+              "zh-CN": "文件类型",
+              "zh-TW": "檔案類型"
+            }
+          },
+          {
+            "ref": "name",
+            "type": "text",
+            "maxLength": 160,
+            "label": {
+              "en-US": "Name",
+              "de-DE": "Name",
+              "fr-FR": "Nom",
+              "da-DK": "Navn",
+              "cs-CZ": "Název",
+              "ar-EG": "الاسم",
+              "zh-CN": "名称",
+              "zh-TW": "名稱"
+            }
+          },
+          {
+            "ref": "about",
+            "type": "text",
+            "maxLength": 240,
+            "nullable": true,
+            "label": {
+              "en-US": "What it is",
+              "de-DE": "Was es ist",
+              "fr-FR": "Ce que c’est",
+              "da-DK": "Hvad det er",
+              "cs-CZ": "Co to je",
+              "ar-EG": "ما هو",
+              "zh-CN": "说明",
+              "zh-TW": "說明"
+            }
+          },
+          {
+            "ref": "layers",
+            "type": "json",
+            "nullable": true,
+            "label": {
+              "en-US": "Layers",
+              "de-DE": "Ebenen",
+              "fr-FR": "Calques",
+              "da-DK": "Lag",
+              "cs-CZ": "Vrstvy",
+              "ar-EG": "الطبقات",
+              "zh-CN": "图层",
+              "zh-TW": "圖層"
+            }
+          },
+          {
+            "ref": "file",
+            "type": "text",
+            "maxLength": 64,
+            "nullable": true,
+            "rules": {
+              "file": {
+                "accept": [
+                  "pdf",
+                  "svg"
+                ],
+                "maxBytes": 104857600
+              }
+            },
+            "label": {
+              "en-US": "File",
+              "de-DE": "Datei",
+              "fr-FR": "Fichier",
+              "da-DK": "Fil",
+              "cs-CZ": "Soubor",
+              "ar-EG": "الملف",
+              "zh-CN": "文件",
+              "zh-TW": "檔案"
+            }
+          },
+          {
+            "ref": "position",
+            "type": "int",
+            "default": 0,
+            "label": {
+              "en-US": "Order in the list",
+              "de-DE": "Reihenfolge",
+              "fr-FR": "Ordre dans la liste",
+              "da-DK": "Rækkefølge",
+              "cs-CZ": "Pořadí",
+              "ar-EG": "الترتيب في القائمة",
+              "zh-CN": "列表中的顺序",
+              "zh-TW": "清單中的順序"
+            }
+          },
+          {
+            "ref": "made_at",
+            "type": "timestamptz",
+            "role": "created_at",
+            "default": "now",
+            "label": {
+              "en-US": "Made at",
+              "de-DE": "Erstellt am",
+              "fr-FR": "Faite le",
+              "da-DK": "Lavet den",
+              "cs-CZ": "Vytvořeno",
+              "ar-EG": "أُنشئت في",
+              "zh-CN": "制作时间",
+              "zh-TW": "製作時間"
+            }
+          }
+        ]
+      },
+      {
+        "ref": "postings",
+        "label": {
+          "en-US": "Posting",
+          "de-DE": "Buchung",
+          "fr-FR": "Écriture",
+          "da-DK": "Postering",
+          "cs-CZ": "Zaúčtování",
+          "ar-EG": "قيد",
+          "zh-CN": "过账",
+          "zh-TW": "過帳"
+        },
+        "labelPlural": {
+          "en-US": "Postings",
+          "de-DE": "Buchungen",
+          "fr-FR": "Écritures",
+          "da-DK": "Posteringer",
+          "cs-CZ": "Zaúčtování",
+          "ar-EG": "القيود",
+          "zh-CN": "过账",
+          "zh-TW": "過帳"
+        },
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "source_table",
+            "type": "text",
+            "maxLength": 96,
+            "rules": {
+              "tableRef": true
+            },
+            "label": {
+              "en-US": "From table",
+              "de-DE": "Aus Tabelle",
+              "fr-FR": "Depuis la table",
+              "da-DK": "Fra tabel",
+              "cs-CZ": "Z tabulky",
+              "ar-EG": "من الجدول",
+              "zh-CN": "来源表",
+              "zh-TW": "來源表"
+            }
+          },
+          {
+            "ref": "source_row",
+            "type": "text",
+            "maxLength": 64,
+            "label": {
+              "en-US": "From row",
+              "de-DE": "Aus Zeile",
+              "fr-FR": "Depuis la ligne",
+              "da-DK": "Fra række",
+              "cs-CZ": "Z řádku",
+              "ar-EG": "من الصف",
+              "zh-CN": "来源行",
+              "zh-TW": "來源列"
+            }
+          },
+          {
+            "ref": "source_line",
+            "type": "text",
+            "maxLength": 64,
+            "label": {
+              "en-US": "From line",
+              "de-DE": "Aus Position",
+              "fr-FR": "Depuis la ligne de détail",
+              "da-DK": "Fra linje",
+              "cs-CZ": "Z položky",
+              "ar-EG": "من البند",
+              "zh-CN": "来源明细",
+              "zh-TW": "來源明細"
+            }
+          },
+          {
+            "ref": "line_table",
+            "type": "text",
+            "maxLength": 96,
+            "rules": {
+              "tableRef": true
+            },
+            "label": {
+              "en-US": "Lines table",
+              "de-DE": "Positionstabelle",
+              "fr-FR": "Table des lignes",
+              "da-DK": "Linjetabel",
+              "cs-CZ": "Tabulka položek",
+              "ar-EG": "جدول البنود",
+              "zh-CN": "明细表",
+              "zh-TW": "明細表"
+            }
+          },
+          {
+            "ref": "ledger",
+            "type": "text",
+            "maxLength": 40,
+            "label": {
+              "en-US": "Ledger",
+              "de-DE": "Journal",
+              "fr-FR": "Registre",
+              "da-DK": "Journal",
+              "cs-CZ": "Deník",
+              "ar-EG": "السجل",
+              "zh-CN": "账簿",
+              "zh-TW": "帳簿"
+            }
+          },
+          {
+            "ref": "action",
+            "type": "text",
+            "maxLength": 40,
+            "label": {
+              "en-US": "Action",
+              "de-DE": "Aktion",
+              "fr-FR": "Action",
+              "da-DK": "Handling",
+              "cs-CZ": "Akce",
+              "ar-EG": "الإجراء",
+              "zh-CN": "操作",
+              "zh-TW": "操作"
+            }
+          },
+          {
+            "ref": "posting",
+            "type": "text",
+            "maxLength": 40,
+            "label": {
+              "en-US": "Posting",
+              "de-DE": "Buchung",
+              "fr-FR": "Écriture",
+              "da-DK": "Postering",
+              "cs-CZ": "Zaúčtování",
+              "ar-EG": "القيد",
+              "zh-CN": "过账",
+              "zh-TW": "過帳"
+            }
+          },
+          {
+            "ref": "phase",
+            "type": "enum",
+            "enum": [
+              "reserve",
+              "post",
+              "reverse"
+            ],
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "reserve": {
+                    "en-US": "Held",
+                    "de-DE": "Reserviert",
+                    "fr-FR": "Réservée",
+                    "da-DK": "Reserveret",
+                    "cs-CZ": "Rezervováno",
+                    "ar-EG": "محجوز",
+                    "zh-CN": "预留",
+                    "zh-TW": "預留"
+                  },
+                  "post": {
+                    "en-US": "Posted",
+                    "de-DE": "Gebucht",
+                    "fr-FR": "Passée",
+                    "da-DK": "Posteret",
+                    "cs-CZ": "Zaúčtováno",
+                    "ar-EG": "مُرحّل",
+                    "zh-CN": "已过账",
+                    "zh-TW": "已過帳"
+                  },
+                  "reverse": {
+                    "en-US": "Given back",
+                    "de-DE": "Zurückgebucht",
+                    "fr-FR": "Annulée",
+                    "da-DK": "Tilbageført",
+                    "cs-CZ": "Stornováno",
+                    "ar-EG": "معكوس",
+                    "zh-CN": "已冲回",
+                    "zh-TW": "已沖回"
+                  }
+                }
+              }
+            },
+            "label": {
+              "en-US": "Phase",
+              "de-DE": "Phase",
+              "fr-FR": "Phase",
+              "da-DK": "Fase",
+              "cs-CZ": "Fáze",
+              "ar-EG": "المرحلة",
+              "zh-CN": "阶段",
+              "zh-TW": "階段"
+            }
+          },
+          {
+            "ref": "round",
+            "type": "int",
+            "label": {
+              "en-US": "Round",
+              "de-DE": "Runde",
+              "fr-FR": "Tour",
+              "da-DK": "Runde",
+              "cs-CZ": "Kolo",
+              "ar-EG": "الجولة",
+              "zh-CN": "轮次",
+              "zh-TW": "輪次"
+            }
+          },
+          {
+            "ref": "state",
+            "type": "enum",
+            "enum": [
+              "planned",
+              "unplanned"
+            ],
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "planned": {
+                    "en-US": "Worked out",
+                    "de-DE": "Ausgeführt",
+                    "fr-FR": "Calculée",
+                    "da-DK": "Udregnet",
+                    "cs-CZ": "Vypočteno",
+                    "ar-EG": "محسوب",
+                    "zh-CN": "已计算",
+                    "zh-TW": "已計算"
+                  },
+                  "unplanned": {
+                    "en-US": "To work out",
+                    "de-DE": "Noch auszuführen",
+                    "fr-FR": "À calculer",
+                    "da-DK": "Skal udregnes",
+                    "cs-CZ": "K výpočtu",
+                    "ar-EG": "بانتظار الحساب",
+                    "zh-CN": "待计算",
+                    "zh-TW": "待計算"
+                  }
+                }
+              }
+            },
+            "label": {
+              "en-US": "State",
+              "de-DE": "Status",
+              "fr-FR": "État",
+              "da-DK": "Status",
+              "cs-CZ": "Stav",
+              "ar-EG": "الحالة",
+              "zh-CN": "状态",
+              "zh-TW": "狀態"
+            }
+          },
+          {
+            "ref": "rows",
+            "type": "int",
+            "label": {
+              "en-US": "Rows",
+              "de-DE": "Zeilen",
+              "fr-FR": "Lignes",
+              "da-DK": "Rækker",
+              "cs-CZ": "Řádky",
+              "ar-EG": "الصفوف",
+              "zh-CN": "行数",
+              "zh-TW": "列數"
+            }
+          },
+          {
+            "ref": "add_on_version",
+            "type": "text",
+            "maxLength": 32,
+            "label": {
+              "en-US": "Add-on version",
+              "de-DE": "Add-on-Version",
+              "fr-FR": "Version de l’extension",
+              "da-DK": "Tilføjelsens version",
+              "cs-CZ": "Verze doplňku",
+              "ar-EG": "إصدار الإضافة",
+              "zh-CN": "插件版本",
+              "zh-TW": "附加元件版本"
+            }
+          },
+          {
+            "ref": "origin",
+            "type": "enum",
+            "enum": [
+              "staff",
+              "public",
+              "system"
+            ],
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "staff": {
+                    "en-US": "Staff",
+                    "de-DE": "Team",
+                    "fr-FR": "Équipe",
+                    "da-DK": "Personale",
+                    "cs-CZ": "Personál",
+                    "ar-EG": "الموظفون",
+                    "zh-CN": "员工",
+                    "zh-TW": "員工"
+                  },
+                  "public": {
+                    "en-US": "A customer",
+                    "de-DE": "Ein Kunde",
+                    "fr-FR": "Un client",
+                    "da-DK": "En kunde",
+                    "cs-CZ": "Zákazník",
+                    "ar-EG": "عميل",
+                    "zh-CN": "顾客",
+                    "zh-TW": "顧客"
+                  },
+                  "system": {
+                    "en-US": "Adminium",
+                    "de-DE": "Adminium",
+                    "fr-FR": "Adminium",
+                    "da-DK": "Adminium",
+                    "cs-CZ": "Adminium",
+                    "ar-EG": "Adminium",
+                    "zh-CN": "Adminium",
+                    "zh-TW": "Adminium"
+                  }
+                }
+              }
+            },
+            "label": {
+              "en-US": "Made by",
+              "de-DE": "Ausgelöst von",
+              "fr-FR": "Origine",
+              "da-DK": "Udløst af",
+              "cs-CZ": "Původ",
+              "ar-EG": "المصدر",
+              "zh-CN": "来源",
+              "zh-TW": "來源"
+            }
+          },
+          {
+            "ref": "by",
+            "type": "text",
+            "maxLength": 64,
+            "label": {
+              "en-US": "By",
+              "de-DE": "Von",
+              "fr-FR": "Par",
+              "da-DK": "Af",
+              "cs-CZ": "Kým",
+              "ar-EG": "بواسطة",
+              "zh-CN": "执行者",
+              "zh-TW": "執行者"
+            }
+          },
+          {
+            "ref": "at",
+            "type": "timestamptz",
+            "label": {
+              "en-US": "At",
+              "de-DE": "Am",
+              "fr-FR": "Le",
+              "da-DK": "Den",
+              "cs-CZ": "Kdy",
+              "ar-EG": "في",
+              "zh-CN": "时间",
+              "zh-TW": "時間"
+            }
+          },
+          {
+            "ref": "held_until",
+            "type": "timestamptz",
+            "nullable": true,
+            "label": {
+              "en-US": "Held until",
+              "de-DE": "Gehalten bis",
+              "fr-FR": "Retenue jusqu’au",
+              "da-DK": "Holdt til",
+              "cs-CZ": "Drženo do",
+              "ar-EG": "محجوز حتى",
+              "zh-CN": "保留至",
+              "zh-TW": "保留至"
+            }
           }
         ]
       }
@@ -3091,6 +3697,11 @@
         "table:@design_versions:read_pii",
         "table:@design_versions:create",
         "table:@design_versions:update",
+        "table:@version_files:read",
+        "table:@version_files:create",
+        "table:@version_files:update",
+        "table:@version_files:delete",
+        "table:@postings:read",
         "table:@settings:read",
         "table:@settings:update",
         "page:@customiser:view",
@@ -3125,6 +3736,9 @@
         "table:@designs:read_pii",
         "table:@design_versions:read",
         "table:@design_versions:read_pii",
+        "table:@version_files:read",
+        "table:@version_files:read_pii",
+        "table:@postings:read",
         "table:@settings:read",
         "page:@customiser:view",
         "page:@customiser-product:view",
@@ -3679,6 +4293,11 @@
         "contract": "design-check",
         "version": 1,
         "server": "dist/check.js"
+      },
+      {
+        "contract": "posting-rows",
+        "version": 1,
+        "server": "dist/check.js"
       }
     ],
     "checker": {
@@ -3734,6 +4353,73 @@
         }
       ]
     },
+    "ledgers": [
+      {
+        "id": "designs",
+        "refusal": "stock",
+        "receipts": "postings",
+        "writes": {
+          "design_versions": {
+            "insert": [
+              "app",
+              "design_id",
+              "version",
+              "values",
+              "note"
+            ]
+          },
+          "designs": {
+            "update": {
+              "by": [
+                "id"
+              ],
+              "set": [
+                "state"
+              ]
+            }
+          }
+        },
+        "actions": {
+          "order": {
+            "inputs": {
+              "design": "link"
+            },
+            "phases": [
+              "post"
+            ],
+            "reads": [
+              {
+                "as": "design",
+                "table": "designs",
+                "by": [
+                  {
+                    "column": "id",
+                    "from": "input.design"
+                  }
+                ]
+              },
+              {
+                "as": "versions",
+                "table": "design_versions",
+                "by": [
+                  {
+                    "column": "design_id",
+                    "from": "input.design"
+                  }
+                ]
+              }
+            ],
+            "locks": [
+              {
+                "read": "design",
+                "column": "id",
+                "table": "designs"
+              }
+            ]
+          }
+        }
+      }
+    ],
     "hostApi": 2,
     "pages": [
       {

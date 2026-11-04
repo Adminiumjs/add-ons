@@ -14,6 +14,7 @@ import { entries, LINK_KEY } from './entries.ts';
 import { starterFontRows } from './fonts.ts';
 import { tables } from './tables.ts';
 import { CHECKER } from './checker.ts';
+import { LEDGER } from './ledger.ts';
 import { DESCRIPTION, PAGE_TITLE, PANEL_TITLE, ROLE_NAMES, type Words } from './words.ts';
 
 /** The add-on's key, its page ref, and the floor whose words it uses (an add-on's own entries on each app's key, expiry, links into it). */
@@ -27,7 +28,7 @@ export const CHECK_FILE = 'dist/check.js';
 /** The shop's own tables: what the shop sets up, and the designer makes and changes. */
 export const SHOP_TABLES = ['bases', 'base_pieces', 'base_areas', 'ready_designs', 'ready_parts', 'fonts', 'palettes', 'palette_colours', 'features'] as const;
 /** What customers made: read by staff, never typed in by them. */
-export const CUSTOMER_TABLES = ['designs', 'design_versions'] as const;
+export const CUSTOMER_TABLES = ['designs', 'design_versions', 'version_files'] as const;
 
 const grants = (table: string, actions: readonly string[]): string[] => actions.map((action) => `table:@${table}:${action}`);
 
@@ -50,8 +51,11 @@ function roles(): Record<string, unknown>[] {
       permissions: [
         ...SHOP_TABLES.flatMap((table) => grants(table, ['read', 'create', 'update', 'delete'])),
         ...grants('designs', ['read', 'read_pii']),
-        // A proof is a version the shop makes of a customer's design.
+        // A proof is a version the shop makes of a customer's design, and the files for the press or the machine are made from it.
         ...grants('design_versions', ['read', 'read_pii', 'create', 'update']),
+        ...grants('version_files', ['read', 'create', 'update', 'delete']),
+        // What an order line posted: read, never written by a person.
+        ...grants('postings', ['read']),
         ...grants('settings', ['read', 'update']),
         ...VIEWS,
       ],
@@ -60,7 +64,7 @@ function roles(): Record<string, unknown>[] {
       key: 'reader',
       name: ROLE_NAMES.reader['en-US'],
       names: ROLE_NAMES.reader,
-      permissions: [...SHOP_TABLES.flatMap((table) => grants(table, ['read'])), ...CUSTOMER_TABLES.flatMap((table) => grants(table, ['read', 'read_pii'])), ...grants('settings', ['read']), ...VIEWS],
+      permissions: [...SHOP_TABLES.flatMap((table) => grants(table, ['read'])), ...CUSTOMER_TABLES.flatMap((table) => grants(table, ['read', 'read_pii'])), ...grants('postings', ['read']), ...grants('settings', ['read']), ...VIEWS],
     },
   ];
 }
@@ -96,9 +100,17 @@ export function buildManifest(): Record<string, unknown> {
       ],
       connect: { kind: 'none' },
       settingsTable: 'settings',
-      // Whether a design may be ordered as it is, and which priced features it takes: asked by an app's order lines.
-      provides: [{ contract: 'design-check', version: 1, server: CHECK_FILE }],
+      /*
+       * Whether a design may be ordered as it is, and which priced features it
+       * takes: asked by an app's order lines. And the version a line snapshots
+       * when it orders the design. One file answers both.
+       */
+      provides: [
+        { contract: 'design-check', version: 1, server: CHECK_FILE },
+        { contract: 'posting-rows', version: 1, server: CHECK_FILE },
+      ],
       checker: CHECKER,
+      ledgers: [LEDGER],
       hostApi: 2,
       pages: [{ ref: PAGE_REF, ...titled('addon.customiser.page.setup', PAGE_TITLE), icon: 'settings-2', client: 'dist/pages/customiser.js', nav: { group: 'library', order: 30 }, detail: true }],
       panels: PANELS.map((panel) => ({ ...panel, ...titled(`addon.customiser.panel.${panel.id.slice('customiser-'.length)}`, PANEL_TITLE) })),

@@ -15,7 +15,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import vm from 'node:vm';
 
-import type { CheckInput, CheckOutput, DesignCheckProvider } from '@adminium/add-on-contracts';
+import type { CheckInput, CheckOutput, DesignCheckProvider, PostingInput, PostingOutput, PostingRowsProvider } from '@adminium/add-on-contracts';
 
 import { DIST } from './build.ts';
 
@@ -35,7 +35,7 @@ const STRIP = `(function () {
   Object.defineProperty(Math, 'random', { value: undefined, writable: false, configurable: false });
 })();`;
 
-const entry = (name: 'check'): string => `(function () {
+const entry = (name: 'check' | 'rows'): string => `(function () {
   'use strict';
   var freeze = function (value) {
     if (value !== null && typeof value === 'object') {
@@ -64,19 +64,19 @@ export function builtCheck(): string {
  * A provider that answers from the given source in a fresh bare context per
  * call, as a save does: nothing one call left behind is there for the next.
  */
-export function providerFrom(source: string): DesignCheckProvider {
+export function providerFrom(source: string): DesignCheckProvider & PostingRowsProvider {
   const script = new vm.Script(wrap(source), { filename: 'customiser:check.js' });
-  const call = (name: 'check', input: unknown): unknown => {
+  const call = (name: 'check' | 'rows', input: unknown): unknown => {
     const context = vm.createContext(Object.create(null) as object, { codeGeneration: { strings: false, wasm: false }, microtaskMode: 'afterEvaluate' });
     vm.runInContext(STRIP, context, { timeout: CALL_TIMEOUT_MS });
     script.runInContext(context, { timeout: CALL_TIMEOUT_MS });
     Object.defineProperty(context, '__input', { value: JSON.stringify(input), writable: false });
     return JSON.parse(String(vm.runInContext(entry(name), context, { timeout: CALL_TIMEOUT_MS })));
   };
-  return { check: (input: CheckInput) => call('check', input) as CheckOutput };
+  return { check: (input: CheckInput) => call('check', input) as CheckOutput, rows: (input: PostingInput) => call('rows', input) as PostingOutput };
 }
 
 /** The provider of the built file. Build first (`buildForReal`). */
-export function builtProvider(): DesignCheckProvider {
+export function builtProvider(): DesignCheckProvider & PostingRowsProvider {
   return providerFrom(builtCheck());
 }
