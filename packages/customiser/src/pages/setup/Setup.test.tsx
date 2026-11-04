@@ -75,7 +75,8 @@ describe('the set-up page', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Make it' }));
     await settle();
     expect(within(dialog).getByRole('alert').textContent).toContain('product’s name');
-    expect(within(dialog).getByRole('radio', { name: /A kit of pieces/ })).toHaveProperty('disabled', true);
+    expect(within(dialog).getByRole('radio', { name: /A kit of pieces/ })).toHaveProperty('disabled', false);
+    expect(within(dialog).getByRole('radio', { name: /A 3D-printed item/ })).toHaveProperty('disabled', true);
     fireEvent.change(within(dialog).getByLabelText('Name'), { target: { value: 'Oak serving board' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Make it' }));
     await settle();

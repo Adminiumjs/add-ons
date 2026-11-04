@@ -15,8 +15,8 @@ export const isStep = (value: unknown): value is Step => typeof value === 'strin
 
 export type Kind = 'page' | 'piece' | 'kit' | 'printed';
 export const KINDS: readonly Kind[] = ['page', 'piece', 'kit', 'printed'];
-/** The kinds this release sets up in full; a kit and a 3D-printed item need the 3D preview, which comes later. */
-export const SET_UP_NOW: readonly Kind[] = ['page', 'piece'];
+/** The kinds this release sets up in full; a 3D-printed item needs its model to print, which comes later. */
+export const SET_UP_NOW: readonly Kind[] = ['page', 'piece', 'kit'];
 export const kindOf = (row: DataRow | null): Kind => {
   const kind = row?.['kind'];
   return kind === 'page' || kind === 'kit' || kind === 'printed' ? kind : 'piece';
@@ -101,13 +101,15 @@ export function guidesOf(base: DataRow | null, defaults: { bleed: number; safe: 
   };
 }
 
-/** Whether the base is done: a page has its size; a piece has its size and its outline. */
+/** Whether the base is done: a page has its size; a piece has its size and its outline; a kit its size and its model. */
 export function baseReady(base: DataRow | null): boolean {
   const kind = kindOf(base);
   const { width, height } = sizeOf(base);
   if (width <= 0 || height <= 0) return false;
   if (kind === 'page') return true;
   if (kind === 'piece') return text(base?.['outline_file']) !== '';
+  // A kit is shown to shoppers as its model put together: it is ready once the model is in.
+  if (kind === 'kit') return text(base?.['model_file']) !== '';
   return false;
 }
 

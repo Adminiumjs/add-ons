@@ -226,6 +226,7 @@ export const setup: Readonly<Record<string, string>> = {
   "setup.publish.fonts": "{n, plural, one {# skrifttype} other {# skrifttyper}}",
   "setup.publish.go": "Udgiv",
   "setup.publish.liveNote": "Kunderne kan tilpasse det nu. Det, du ændrer her, når dem med det samme.",
+  "setup.publish.model": "Model · {w} × {h} mm",
   "setup.publish.needed": "mangler endnu",
   "setup.publish.note": "Indtil du udgiver, har produktsiden ingen “Gør den til din” og kunderne kan ikke tilpasse den.",
   "setup.publish.nothingExtra": "intet ekstra",

@@ -56,6 +56,7 @@ describe("a base's set-up, as data", () => {
     expect(baseReady({ kind: 'piece', width_mm: 95, height_mm: 95, outline_file: null })).toBe(false);
     expect(baseReady({ kind: 'piece', width_mm: 95, height_mm: 95, outline_file: 'f1' })).toBe(true);
     expect(baseReady({ kind: 'kit', width_mm: 110, height_mm: 180 })).toBe(false);
+    expect(baseReady({ kind: 'kit', width_mm: 110, height_mm: 180, model_file: 'f2' })).toBe(true);
   });
 
   it('publishes only a finished base with an area or a shown design, and a font (the comp’s checklist)', () => {

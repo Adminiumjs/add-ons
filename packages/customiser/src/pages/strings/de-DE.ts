@@ -226,6 +226,7 @@ export const setup: Readonly<Record<string, string>> = {
   "setup.publish.fonts": "{n, plural, one {# Schrift} other {# Schriften}}",
   "setup.publish.go": "Veröffentlichen",
   "setup.publish.liveNote": "Kunden können es jetzt gestalten. Was Sie hier ändern, erreicht sie sofort.",
+  "setup.publish.model": "Modell · {w} × {h} mm",
   "setup.publish.needed": "fehlt noch",
   "setup.publish.note": "Bis Sie veröffentlichen, hat die Produktseite kein „Selbst gestalten“ und Kunden können es nicht gestalten.",
   "setup.publish.nothingExtra": "nichts extra",

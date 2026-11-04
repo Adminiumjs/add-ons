@@ -226,6 +226,7 @@ export const setup: Readonly<Record<string, string>> = {
   "setup.publish.fonts": "{n, plural, other {# 款字型}}",
   "setup.publish.go": "發布",
   "setup.publish.liveNote": "顧客現在就能訂製。您在這裡的變更會立刻生效。",
+  "setup.publish.model": "模型 · {w} × {h} 公釐",
   "setup.publish.needed": "仍需完成",
   "setup.publish.note": "發布之前，商品頁面沒有「親手訂製」，顧客也無法訂製。",
   "setup.publish.nothingExtra": "無額外費用",

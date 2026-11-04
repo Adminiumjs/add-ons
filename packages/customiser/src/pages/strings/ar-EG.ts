@@ -226,6 +226,7 @@ export const setup: Readonly<Record<string, string>> = {
   "setup.publish.fonts": "{n, plural, zero {لا خطوط} one {خط واحد} two {خطان} few {# خطوط} many {# خطًا} other {# خط}}",
   "setup.publish.go": "نشر",
   "setup.publish.liveNote": "يمكن للمتسوقين تخصيصه الآن. ما تغيّره هنا يصلهم فورًا.",
+  "setup.publish.model": "النموذج · {w} × {h} مم",
   "setup.publish.needed": "ما زال مطلوبًا",
   "setup.publish.note": "حتى تنشر، لا تحتوي صفحة المنتج على «اجعله لك» ولا يمكن للمتسوقين تخصيصه.",
   "setup.publish.nothingExtra": "لا شيء إضافي",

@@ -226,6 +226,7 @@ export const setup: Readonly<Record<string, string>> = {
   "setup.publish.fonts": "{n, plural, one {# písmo} few {# písma} other {# písem}}",
   "setup.publish.go": "Zveřejnit",
   "setup.publish.liveNote": "Zákazníci si ho teď můžou upravit. Co tady změníte, uvidí hned.",
+  "setup.publish.model": "Model · {w} × {h} mm",
   "setup.publish.needed": "ještě chybí",
   "setup.publish.note": "Dokud nezveřejníte, stránka výrobku nemá „Upravit po svém“ a zákazníci si ho nemůžou upravit.",
   "setup.publish.nothingExtra": "nic navíc",
