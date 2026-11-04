@@ -183,7 +183,7 @@ export const editor: Readonly<Record<string, string>> = {
   "editor.saved.copied": "Odkaz zkopírován.",
   "editor.saved.copy": "Zkopírovat odkaz",
   "editor.saved.keepGoing": "Pokračovat",
-  "editor.saved.linkHere": "Otevře tento návrh a žádný jiný. Kdo má odkaz, může ho otevřít, proto si ho nechte jen pro sebe.",
+  "editor.saved.linkHere": "Otevře tento návrh a žádný jiný. Kdo má odkaz, může ho otevřít, proto ho nikomu nedávejte.",
   "editor.saved.sentTo": "Odesláno na {email}. Odkaz otevře vaše návrhy a ničí jiné.",
   "editor.saved.title": "Uloženo. Poslali jsme vám e-mailem odkaz, abyste se k návrhu mohli vrátit.",
   "editor.saved.titleNoMail": "Uloženo. Uschovejte si tento odkaz, abyste se k návrhu mohli vrátit.",
