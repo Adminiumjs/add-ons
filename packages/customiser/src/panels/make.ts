@@ -9,8 +9,8 @@
  * - **a piece or a kit** (Maker): the proof is a picture of the piece as
  *   it will be made; the files are one SVG for the laser per piece, words
  *   and logos as outlines;
- * - **a 3D-printed item**: its model file is made with its 3D preview, not
- *   here.
+ * - **a 3D-printed item**: the proof is a picture of it, as for a piece; the
+ *   file is a 3MF of its model with the words raised or cut in (`printed.ts`).
  *
  * The proof is kept on the version (`proof_file`), each file as a row of
  * `version_files` with the file in it, all through the add-on's own upload.

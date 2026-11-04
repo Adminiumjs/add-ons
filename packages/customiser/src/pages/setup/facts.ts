@@ -15,8 +15,8 @@ export const isStep = (value: unknown): value is Step => typeof value === 'strin
 
 export type Kind = 'page' | 'piece' | 'kit' | 'printed';
 export const KINDS: readonly Kind[] = ['page', 'piece', 'kit', 'printed'];
-/** The kinds this release sets up in full; a 3D-printed item needs its model to print, which comes later. */
-export const SET_UP_NOW: readonly Kind[] = ['page', 'piece', 'kit'];
+/** The kinds this release sets up in full: every one. */
+export const SET_UP_NOW: readonly Kind[] = ['page', 'piece', 'kit', 'printed'];
 export const kindOf = (row: DataRow | null): Kind => {
   const kind = row?.['kind'];
   return kind === 'page' || kind === 'kit' || kind === 'printed' ? kind : 'piece';
@@ -101,7 +101,7 @@ export function guidesOf(base: DataRow | null, defaults: { bleed: number; safe: 
   };
 }
 
-/** Whether the base is done: a page has its size; a piece has its size and its outline; a kit its size and its model. */
+/** Whether the base is done: a page has its size; a piece has its size and its outline; a kit its size and its model; a printed item both its models and a marked face. */
 export function baseReady(base: DataRow | null): boolean {
   const kind = kindOf(base);
   const { width, height } = sizeOf(base);
@@ -110,7 +110,16 @@ export function baseReady(base: DataRow | null): boolean {
   if (kind === 'piece') return text(base?.['outline_file']) !== '';
   // A kit is shown to shoppers as its model put together: it is ready once the model is in.
   if (kind === 'kit') return text(base?.['model_file']) !== '';
-  return false;
+  // A 3D-printed item needs the file the printer gets, the model its shoppers turn, and a face its words sit on.
+  return text(base?.['print_file']) !== '' && text(base?.['model_file']) !== '' && markedCount(base) > 0;
+}
+
+/** How many faces the shop marked on a base's model. */
+function markedCount(base: DataRow | null): number {
+  const raw: unknown = base?.['faces'];
+  const value: unknown = typeof raw === 'string' ? (() => { try { return JSON.parse(raw) as unknown; } catch { return null; } })() : raw;
+  const list: unknown = Array.isArray(value) ? value : typeof value === 'object' && value !== null ? (value as Record<string, unknown>)['faces'] : null;
+  return Array.isArray(list) ? list.length : 0;
 }
 
 /** The materials other bases of the same app are cut from, each once, by material and thickness. */

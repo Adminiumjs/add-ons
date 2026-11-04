@@ -12,6 +12,8 @@ export const editor: Readonly<Record<string, string>> = {
   "editor.check.blurryPhoto": "قد تُطبع صورتك ضبابية بهذا المقاس — ملف أكبر سيكون أوضح",
   "editor.check.fileKind": "لا يمكن استخدام هذا النوع من الملفات هنا.",
   "editor.check.fileKindListed": "{part}: لا يمكن استخدام هذا النوع من الملفات هنا",
+  "editor.check.fileKindPrinted": "يجب أن يكون الشعار البارز رسمًا: أرسله بصيغة SVG. الصورة ليست لها حواف يمكن إبرازها.",
+  "editor.check.fileKindPrintedListed": "{part}: أرسل شعارك كرسم SVG",
   "editor.check.fileMissing": "لم يصل ملف هذا الجزء. ارفعه مرة أخرى.",
   "editor.check.fileMissingListed": "{part}: ارفع الملف مرة أخرى",
   "editor.check.fine": "بعض الخطوط في شعارك أدق من أن تُحفر — قد تختفي",

@@ -14,7 +14,7 @@
 import { useEffect, useRef, useState, type MutableRefObject, type ReactNode } from 'react';
 
 import type { FlatSheet } from '../draw/flat.ts';
-import { hasWebGL, loadThree, type ThreeChunk } from './load.ts';
+import { hasWebGL, loadThree, type ReliefLook, type ThreeChunk } from './load.ts';
 import type { Stage3d, StageModel } from './stage3d.ts';
 import { usePieceModel, type OutlineSource } from './usePiece.ts';
 import { startView, type View } from './view.ts';
@@ -150,6 +150,10 @@ export interface PieceStillProps {
   outline: OutlineSource | null;
   /** The customer's pictures this page holds, by file column. */
   pictures?: Readonly<Record<string, string>>;
+  /** A printed item's words, stood up from its top or cut into it. */
+  relief?: ReliefLook;
+  /** The angle it is drawn from: a piece's, or a printed item's. */
+  kind?: 'piece' | 'printed';
   width: number;
   height: number;
   alt: string;
@@ -158,12 +162,13 @@ export interface PieceStillProps {
 }
 
 /** A flat piece's still, from where the comp first shows it; the fallback (its flat drawing) on a device without WebGL. */
-export function PieceStill({ sheet, thickness, outline, pictures, width, height, alt, className, fallback }: PieceStillProps): ReactNode {
+export function PieceStill({ sheet, thickness, outline, pictures, relief, kind = 'piece', width, height, alt, className, fallback }: PieceStillProps): ReactNode {
   const webgl = hasWebGL();
-  const model = usePieceModel(webgl ? sheet : null, thickness, webgl ? outline : null, pictures);
-  const key = `${outline?.key ?? 'plain'}|${String(thickness)}|${String(width)}x${String(height)}|${JSON.stringify(sheet)}|${JSON.stringify(pictures ?? {})}`;
-  return <ModelStill model={model} view={START_PIECE} width={width} height={height} cacheKey={key} alt={alt} {...(className === undefined ? {} : { className })} fallback={fallback} />;
+  const model = usePieceModel(webgl ? sheet : null, thickness, webgl ? outline : null, pictures, relief);
+  const key = `${outline?.key ?? 'plain'}|${String(thickness)}|${String(width)}x${String(height)}|${JSON.stringify(sheet)}|${JSON.stringify(pictures ?? {})}|${JSON.stringify(relief ?? null)}`;
+  return <ModelStill model={model} view={kind === 'printed' ? START_PRINTED : START_PIECE} width={width} height={height} cacheKey={key} alt={alt} {...(className === undefined ? {} : { className })} fallback={fallback} />;
 }
 
 const START_PIECE = startView('piece');
+const START_PRINTED = startView('printed');
 

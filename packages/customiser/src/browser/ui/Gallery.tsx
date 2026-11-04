@@ -20,6 +20,7 @@ import { freshValues, type Catalogue, type Ready } from '../catalogue.ts';
 import { useShared, useNarrow } from './context.tsx';
 import { Drawing } from './Drawing.tsx';
 import { KitStill } from './KitStage.tsx';
+import { PrintedStill } from './PrintedStage.tsx';
 import { PiecesDrawing } from './KitPieces.tsx';
 import { outlineOf } from './PieceStage.tsx';
 
@@ -149,6 +150,17 @@ export function Gallery({ api, catalogue, product, sides, onPick, onBack, onStar
                         height={300}
                         className="cz-drawing cz-card-picture"
                         fallback={ready.picture === null ? <PiecesDrawing catalogue={catalogue} design={design} pieces={kitPieces(catalogue)} only={carryingPieces(catalogue, ready.parts)} label={ready.name} /> : <img src={ready.picture} alt="" className="cz-drawing cz-card-picture" />}
+                      />
+                    ) : base.kind === 'printed' ? (
+                      // A printed item's card: its words stood up on it, drawn once for the page.
+                      <PrintedStill
+                        api={api}
+                        catalogue={catalogue}
+                        design={design}
+                        width={400}
+                        height={300}
+                        className="cz-drawing cz-card-picture"
+                        fallback={ready.picture === null ? <Drawing catalogue={catalogue} design={design} /> : <img src={ready.picture} alt="" className="cz-drawing cz-card-picture" />}
                       />
                     ) : base.kind === 'piece' ? (
                       // A flat piece's card is its 3D still (drawn once for the page), its picture or drawing until then.

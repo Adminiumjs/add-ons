@@ -10,10 +10,14 @@
  * - a GLB: the glTF binary's header (`glTF`, version 2, its own length the
  *   file's), as the glTF 2 standard writes it;
  * - an STL: a binary one is 84 bytes and 50 a triangle, exactly; a text one
- *   starts `solid` and holds a `facet`.
+ *   starts `solid` and holds a `facet`;
+ * - a 3MF: a zip whose central directory names a 3MF package's parts (its
+ *   relationships, its content types) and a model part. A zip renamed
+ *   `.3mf` without them is not one.
  */
+import { zipEntries } from './zip.ts';
 
-export type ModelKind = 'glb' | 'stl';
+export type ModelKind = 'glb' | 'stl' | '3mf';
 
 const ascii = (bytes: Uint8Array, from: number, to: number): string => String.fromCharCode(...bytes.subarray(from, Math.min(to, bytes.length)));
 const u32 = (bytes: Uint8Array, at: number): number => (bytes[at]! | (bytes[at + 1]! << 8) | (bytes[at + 2]! << 16) | (bytes[at + 3]! << 24)) >>> 0;
@@ -42,9 +46,20 @@ export function isStl(bytes: Uint8Array): boolean {
   return /^solid\b/i.test(head) && /\bfacet\b/i.test(ascii(bytes, 0, 4096));
 }
 
+/** Whether the bytes are a 3MF package: a zip, read from its directory within the caps, that names a 3MF's parts. */
+export function is3mf(bytes: Uint8Array): boolean {
+  try {
+    const names = new Set(zipEntries(bytes).map((one) => one.name));
+    return names.has('_rels/.rels') && names.has('[Content_Types].xml') && [...names].some((name) => /^3D\/[^/]+\.model$/i.test(name));
+  } catch {
+    return false;
+  }
+}
+
 /** The kind of model the bytes are, or none. */
 export function modelKindOf(bytes: Uint8Array): ModelKind | null {
   if (isGlb(bytes)) return 'glb';
   if (isStl(bytes)) return 'stl';
+  if (is3mf(bytes)) return '3mf';
   return null;
 }

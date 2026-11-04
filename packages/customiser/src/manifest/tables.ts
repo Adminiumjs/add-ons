@@ -109,8 +109,10 @@ export function tables(): Table[] {
         mm('thickness_mm', w('Thickness (mm)', 'Stärke (mm)', 'Épaisseur (mm)', 'Tykkelse (mm)', 'Tloušťka (mm)', 'السماكة (مم)', '厚度（毫米）', '厚度（公釐）'), { nullable: true }),
         // The piece's outline: an SVG Adminium cleans as it is stored, served to every visitor of a published base.
         col('outline_file', 'text', w('The outline', 'Die Kontur', 'Le contour', 'Omridset', 'Obrys', 'المخطط الخارجي', '轮廓', '輪廓'), { maxLength: 64, nullable: true, rules: { file: { accept: ['svg'], maxBytes: SHOP_FILE_BYTES } } }),
-        // The model shoppers turn (a kit put together): a GLB with everything inside it, served to every visitor of a published base.
+        // The model shoppers turn (a kit put together, or a printed item's lighter preview): a GLB with everything inside it, served to every visitor of a published base.
         col('model_file', 'text', w('The 3D model', 'Das 3D-Modell', 'Le modèle 3D', '3D-modellen', '3D model', 'النموذج ثلاثي الأبعاد', '3D 模型', '3D 模型'), { maxLength: 64, nullable: true, rules: { file: { accept: ['glb'], maxBytes: MODEL_FILE_BYTES } } }),
+        // A 3D-printed item's model the printer gets (an STL or a 3MF): the shop's own file, never served to a visitor; its 3MF is made from it.
+        col('print_file', 'text', w('The model to print', 'Das Druckmodell', 'Le modèle à imprimer', 'Modellen til print', 'Model k tisku', 'النموذج المُعد للطباعة', '用于打印的模型', '用於列印的模型'), { maxLength: 64, nullable: true, rules: { file: { accept: ['stl', '3mf'], maxBytes: MODEL_FILE_BYTES } } }),
         /*
          * The faces of the model the shop marked to carry words or a logo, each
          * kept as the model's own numbers (its mesh, its plane, its size) so it
@@ -425,11 +427,11 @@ export function tables(): Table[] {
         name(160),
         // What the file is, in a line: "111 × 81 mm page · trim 85 × 55 · 3 mm bleed · crop marks", "Shop sign · 110 × 40 mm".
         col('about', 'text', w('What it is', 'Was es ist', 'Ce que c’est', 'Hvad det er', 'Co to je', 'ما هو', '说明', '說明'), { maxLength: 240, nullable: true }),
-        // The laser's layers it holds (CUT, SCORE, ENGRAVE); none for a print file.
+        // What the file holds, as chips: the laser's layers (CUT, SCORE, ENGRAVE), or a 3MF's parts (MODEL, WORDS RAISED); none for a print file.
         col('layers', 'json', w('Layers', 'Ebenen', 'Calques', 'Lag', 'Vrstvy', 'الطبقات', '图层', '圖層'), { nullable: true }),
         // The customer's pictures the file could not carry (a logo sent as a PNG, a JPEG or a PDF): `[{column, kind}]`, engraved from the customer's own file.
         col('left_out', 'json', w('Left out of the file', 'Nicht in der Datei', 'Absent du fichier', 'Ikke med i filen', 'Není v souboru', 'غير موجود في الملف', '未包含在文件中', '未包含在檔案中'), { nullable: true }),
-        col('file', 'text', w('File', 'Datei', 'Fichier', 'Fil', 'Soubor', 'الملف', '文件', '檔案'), { maxLength: 64, nullable: true, rules: { file: { accept: ['pdf', 'svg'], maxBytes: 100 * 1024 * 1024 } } }),
+        col('file', 'text', w('File', 'Datei', 'Fichier', 'Fil', 'Soubor', 'الملف', '文件', '檔案'), { maxLength: 64, nullable: true, rules: { file: { accept: ['pdf', 'svg', '3mf'], maxBytes: 100 * 1024 * 1024 } } }),
         position,
         col('made_at', 'timestamptz', w('Made at', 'Erstellt am', 'Faite le', 'Lavet den', 'Vytvořeno', 'أُنشئت في', '制作时间', '製作時間'), { role: 'created_at', default: 'now' }),
       ],

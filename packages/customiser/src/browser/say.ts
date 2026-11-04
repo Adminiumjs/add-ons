@@ -42,6 +42,8 @@ interface Context {
   parts: readonly EditPart[];
   values: DesignValues;
   palette: Palette | null;
+  /** A 3D-printed item: its words and logo are raised from it or cut into it. */
+  printed?: boolean;
 }
 
 /** "Add your name", in English: the shop's part names start with a capital, the sentence does not. */
@@ -95,6 +97,8 @@ function refusalCheck(c: Context, refusal: Refusal): Check {
     case 'file-missing':
       return { ...base, icon: 'alert', inline: t('editor.check.fileMissing', 'The file for this part didn’t arrive. Upload it again.'), listed: t('editor.check.fileMissingListed', '{part}: upload the file again', { part: name }) };
     case 'file-kind':
+      // A 3D-printed item stands its logo up from its face: only a drawing has edges to raise.
+      if (c.printed === true) return { ...base, icon: 'alert', inline: t('editor.check.fileKindPrinted', 'A raised logo has to be a drawing: send it as an SVG. A picture has no edges to raise.'), listed: t('editor.check.fileKindPrintedListed', '{part}: send your logo as an SVG drawing', { part: name }) };
       return { ...base, icon: 'alert', inline: t('editor.check.fileKind', 'That kind of file can’t be used here.'), listed: t('editor.check.fileKindListed', '{part}: that kind of file can’t be used here', { part: name }) };
     default:
       break;

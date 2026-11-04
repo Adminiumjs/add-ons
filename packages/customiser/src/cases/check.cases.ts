@@ -26,6 +26,18 @@ const NOOK_SIGN = TABLES['base_pieces']!.find((row) => row['base_id'] === NOOK['
 NOOK['faces'] = JSON.stringify([{ code: 'sign-board', name: 'Sign board', piece: String(NOOK_SIGN['id']), mesh: '0', normal: [0, 0, 1], point: [-0.046, 0.011, 0.075], u: [1, 0, 0], v: [0, -1, 0], bounds: { u0: 0, u1: 0.092, v0: 0, v1: 0.022 }, size: { w: 92, h: 22 } }]);
 for (const area of TABLES['base_areas']!) if (area['base_id'] === NOOK['id'] && area['code'] === 'sign') area['face'] = 'sign-board';
 
+/*
+ * The keyring's front taking a logo as well as words (a shop may offer one):
+ * raised from the face, so only a drawing will do.
+ */
+const KEYRING = TABLES['bases']!.find((row) => row['app'] === 'maker' && row['kind'] === 'printed')!;
+for (const area of TABLES['base_areas']!) {
+  if (area['base_id'] !== KEYRING['id'] || area['code'] !== 'front') continue;
+  area['takes'] = 'both';
+  area['rules'] = { ...(area['rules'] as Row), alsoLogo: { picture: 'logo', fit: 'inside', colour: 'one', file: 'logo_file' } };
+}
+const plainKeyring = (values: unknown): Row => ({ id: 9001, app: 'maker', code: 'ZZ00000000000002', format: 1, ready_design_id: null, base_id: KEYRING['id'], values, state: 'draft' });
+
 export interface CaseLine {
   key: string;
   design: Row;
@@ -108,6 +120,17 @@ export const CHECK_CASES: CheckCase[] = [
       locked: { ok: false, reasons: ['part-locked'] },
       kind: { ok: false, reasons: ['file-kind'] },
       fine: { ok: true, used: [], reasons: [] },
+    },
+  ),
+  make(
+    'a logo raised on the keyring must be a drawing: a picture is refused, an SVG stands',
+    [
+      { key: 'keyring-png', design: plainKeyring({ parts: { front: { mode: 'logo', file: 'logo_file' } } }), files: [LOGO] },
+      { key: 'keyring-svg', design: plainKeyring({ parts: { front: { mode: 'logo', file: 'logo_file' } } }), files: [{ ...LOGO, kind: 'image/svg+xml' }] },
+    ],
+    {
+      'keyring-png': { ok: false, reasons: ['file-kind'] },
+      'keyring-svg': { ok: true, used: [], reasons: [] },
     },
   ),
 ];

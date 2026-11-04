@@ -9,12 +9,13 @@
  * never in a loop. Every buffer and picture it hands the graphics card is let
  * go of when the piece changes and when the stage goes (`dispose`).
  */
-import { DirectionalLight, HemisphereLight, MathUtils, PerspectiveCamera, Raycaster, Scene, Vector2, WebGLRenderer, type Intersection, type Mesh, type Object3D } from 'three';
+import { Box3, DirectionalLight, HemisphereLight, MathUtils, PerspectiveCamera, Raycaster, Scene, Vector2, WebGLRenderer, type Intersection, type Mesh, type Object3D } from 'three';
 
-import { faceAt, flatFacesOf, sizeOfModel, type FacePlane, type Picked, type Triangles } from './faces.ts';
+import { faceAt, flatFacesOf, sizeOfModel, type FacePlane, type Picked, type Triangles, type Vec } from './faces.ts';
 import { buildModel, disposeModel, dress, meshesOf, readModel, trianglesOf, type BuiltModel, type ReadModel, type ShopModel } from './shopModel.ts';
 import { buildPiece, disposeBuilt, pointOfUv, retexture, sameBody, type Built, type PieceModel } from './piece.ts';
 import type { Point } from './rings.ts';
+import type { ModelKind } from './sniff.ts';
 import type { View } from './view.ts';
 
 export type { PieceModel } from './piece.ts';
@@ -285,6 +286,25 @@ export class Stage3d {
     if (group === undefined) return;
     group.rotation.set(MathUtils.degToRad(-this.view.rx), MathUtils.degToRad(this.view.ry), 0, 'XYZ');
     group.scale.setScalar(this.view.zoom);
+  }
+}
+
+/**
+ * What a model's file holds, read without a stage: the box round it in its
+ * own numbers and how many flat faces it has that can carry words. Every
+ * buffer it read is let go of before the answer.
+ */
+export async function modelFacts(bytes: ArrayBuffer, kind: ModelKind, read: ReadModel = readModel): Promise<{ min: Vec; max: Vec; flat: number }> {
+  const root = await read(bytes, kind);
+  const built = buildModel('facts', root);
+  try {
+    root.updateMatrixWorld(true);
+    const box = new Box3().setFromObject(root);
+    const size = Math.hypot(...built.size);
+    const flat = meshesOf(root).reduce((sum, one) => sum + flatFacesOf(trianglesOf(root, one.mesh), one.path, size, 1).length, 0);
+    return { min: [box.min.x, box.min.y, box.min.z], max: [box.max.x, box.max.y, box.max.z], flat };
+  } finally {
+    disposeModel(built);
   }
 }
 

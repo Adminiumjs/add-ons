@@ -20,7 +20,7 @@ export function PublishStep({ t, base, facts, go }: { t: AddOnTranslate; base: D
   const ok = canPublish(facts);
   const size = sizeOf(base);
   const rows: { step: Step; done: boolean; optional: boolean; detail: string }[] = [
-    { step: 'base', done: baseReady(base), optional: false, detail: baseReady(base) ? (kindOf(base) === 'page' ? t('setup.size', '{w} × {h} mm', { w: mm(size.width), h: mm(size.height) }) : kindOf(base) === 'kit' ? t('setup.publish.model', 'Model · {w} × {h} mm', { w: mm(size.width), h: mm(size.height) }) : t('setup.publish.outline', 'Outline · {w} × {h} mm', { w: mm(size.width), h: mm(size.height) })) : t('setup.publish.needed', 'still needed') },
+    { step: 'base', done: baseReady(base), optional: false, detail: baseReady(base) ? (kindOf(base) === 'page' ? t('setup.size', '{w} × {h} mm', { w: mm(size.width), h: mm(size.height) }) : kindOf(base) === 'kit' || kindOf(base) === 'printed' ? t('setup.publish.model', 'Model · {w} × {h} mm', { w: mm(size.width), h: mm(size.height) }) : t('setup.publish.outline', 'Outline · {w} × {h} mm', { w: mm(size.width), h: mm(size.height) })) : t('setup.publish.needed', 'still needed') },
     { step: 'areas', done: facts.areas > 0, optional: true, detail: t('setup.publish.areas', '{n, plural, one {# area} other {# areas}}', { n: facts.areas }) },
     { step: 'designs', done: facts.shown > 0, optional: true, detail: t('setup.publish.designs', '{shown} shown · {hidden} hidden', { shown: facts.shown, hidden: facts.hidden }) },
     { step: 'fonts', done: facts.fonts > 0, optional: false, detail: t('setup.publish.fonts', '{n, plural, one {# font} other {# fonts}}', { n: facts.fonts }) },

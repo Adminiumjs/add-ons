@@ -12,6 +12,8 @@ export const editor: Readonly<Record<string, string>> = {
   "editor.check.blurryPhoto": "此尺寸下照片可能印得模糊——更大的檔案會更清晰",
   "editor.check.fileKind": "這裡不能使用這種檔案。",
   "editor.check.fileKindListed": "{part}：這裡不能使用這種檔案",
+  "editor.check.fileKindPrinted": "凸起的標誌必須是向量圖：請以 SVG 格式傳送。圖片沒有可以凸起的輪廓。",
+  "editor.check.fileKindPrintedListed": "{part}：請以 SVG 向量圖傳送你的標誌",
   "editor.check.fileMissing": "這個部分的檔案沒有上傳成功。請重新上傳。",
   "editor.check.fileMissingListed": "{part}：請重新上傳檔案",
   "editor.check.fine": "你的標誌中有些線條太細，無法雕刻——可能會消失",

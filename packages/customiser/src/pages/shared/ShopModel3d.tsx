@@ -48,11 +48,13 @@ export interface ModelTurntableProps {
   meta: ReactNode;
   /** The built-in preview, where this device cannot draw the model. */
   fallback: ReactNode;
+  /** The angle it starts from and turns by: a kit's, or a 3D-printed item's. */
+  kind?: 'kit' | 'printed';
 }
 
-export function ModelTurntable({ t, source, fileName, label, meta, fallback }: ModelTurntableProps): ReactNode {
+export function ModelTurntable({ t, source, fileName, label, meta, fallback, kind = 'kit' }: ModelTurntableProps): ReactNode {
   const [failed, setFailed] = useState(() => !hasWebGL());
-  const [view, setView] = useState<View>(() => startView('kit'));
+  const [view, setView] = useState<View>(() => startView(kind));
   const gestures = useRef(new Gestures());
   const now = useRef(view);
   now.current = view;
@@ -95,7 +97,7 @@ export function ModelTurntable({ t, source, fileName, label, meta, fallback }: M
           {t('setup.model.badge', 'Your uploaded model · drag to turn')}
         </span>
       </div>
-      <TurnButtons t={t} onTurn={(dx, dy) => setView((at) => apply(at, { kind: 'turn', dx, dy }, 'kit'))} meta={meta} />
+      <TurnButtons t={t} onTurn={(dx, dy) => setView((at) => apply(at, { kind: 'turn', dx, dy }, kind))} meta={meta} />
     </div>
   );
 }
