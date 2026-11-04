@@ -2655,6 +2655,9 @@
             "ref": "values",
             "type": "json",
             "nullable": true,
+            "rules": {
+              "personal": true
+            },
             "label": {
               "en-US": "What the customer chose",
               "de-DE": "Was der Kunde gewählt hat",

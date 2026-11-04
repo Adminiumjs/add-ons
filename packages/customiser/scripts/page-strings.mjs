@@ -12,7 +12,7 @@ import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const SECTIONS = ['shared', 'setup', 'panel'];
+export const SECTIONS = ['shared', 'setup', 'designs', 'panel'];
 const here = dirname(fileURLToPath(import.meta.url));
 export const PAGES = resolve(here, '../src/pages');
 /** The record panels, built from their own folder, whose words are the screens' too. */

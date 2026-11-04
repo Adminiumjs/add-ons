@@ -25,7 +25,8 @@ import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { resetWorld, seed, world } from './testing/host.tsx';
-import { IDS, seedShop } from './testing/rows.ts';
+import { IDS, seedCard, seedShop } from './testing/rows.ts';
+import { showCustomerEditor } from './designs/preview.tsx';
 
 const { default: Customiser } = await import('./customiser/index.tsx');
 const { default: Product } = await import('../panels/product.tsx');
@@ -33,6 +34,12 @@ const { default: Line } = await import('../panels/line.tsx');
 
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 const BLOCKING = new Set(['critical', 'serious']);
+/** The first button that carries a part's icon, whatever the language its name is in. */
+const byIcon = (name: string): HTMLButtonElement => document.querySelector(`[data-icon="${name}"]`)!.closest('button')!;
+/** The state a sweep is about must be on the screen, or the sweep would read the one before it. */
+const must = (selector: string): void => {
+  if (document.querySelector(selector) === null) throw new Error(`not drawn: ${selector}`);
+};
 const STEPS = ['base', 'areas', 'designs', 'fonts', 'prices', 'preview', 'publish'] as const;
 
 type Look = { theme: 'light' | 'dark'; locale: 'en-US' | 'ar-EG'; width: 1024 | 390 };
@@ -70,7 +77,7 @@ const STATES: State[] = [
   },
   {
     label: 'an outline cleaned by Adminium',
-    before: () => void (world.upload = (_t, _k, _c, file) => ({ file: 'file-9', name: file.name, size: file.size, type: 'image/svg+xml', removed: ['a script'] })),
+    before: () => void (world.upload = () => ({ id: 'file-9', mime: 'image/svg+xml', removed: ['<script>'] })),
     draw: page(IDS.sign),
     after: async () => {
       fireEvent.change(document.querySelector('input[type="file"]')!, { target: { files: [new File(['<svg width="10mm" height="10mm"/>'], 'sign.svg', { type: 'image/svg+xml' })] } });
@@ -95,6 +102,91 @@ const STATES: State[] = [
     after: async () => {
       fireEvent.click(screen.getAllByRole('button', { name: /^(Your words)/ })[0]!);
       await settle();
+    },
+  },
+  {
+    label: 'the piece editor, a text part and its rules',
+    draw: page(IDS.coasters, 'designs'),
+    after: async () => {
+      fireEvent.click(byIcon('type'));
+      await settle();
+      must('section[aria-label] [role="switch"]');
+    },
+  },
+  {
+    label: 'the piece editor, a logo box and its rules',
+    draw: page(IDS.coasters, 'designs'),
+    after: async () => {
+      fireEvent.click(byIcon('image'));
+      await settle();
+      must('section[aria-label] [role="switch"]');
+    },
+  },
+  {
+    label: 'the piece editor, a motif and a locked text',
+    draw: page(IDS.coasters, 'designs'),
+    after: async () => {
+      fireEvent.click(byIcon('sprout'));
+      await settle();
+      must('section[aria-label] [role="switch"]');
+    },
+  },
+  {
+    label: 'a design about to be deleted',
+    draw: page(IDS.coasters, 'designs'),
+    after: async () => {
+      fireEvent.click([...document.querySelectorAll('[data-icon="trash-2"]')].at(-1)!.closest('button')!);
+      await settle();
+      must('[role="dialog"]');
+    },
+  },
+  { label: 'the page designs, listed', before: seedCard, draw: page(IDS.cards, 'designs') },
+  { label: 'the page editor, the design', before: seedCard, draw: () => { world.splat = `customiser/${String(IDS.cards)}`; world.search = { step: 'designs', design: '53' }; return <Customiser />; } },
+  {
+    label: 'the page editor, a text part',
+    before: seedCard,
+    draw: () => {
+      world.splat = `customiser/${String(IDS.cards)}`;
+      world.search = { step: 'designs', design: '53' };
+      return <Customiser />;
+    },
+    after: async () => {
+      fireEvent.click(screen.getAllByRole('button', { name: 'Name' }).at(-1)!);
+      await settle();
+      must('aside textarea');
+    },
+  },
+  {
+    label: 'the page editor, a logo part, locked',
+    before: seedCard,
+    draw: () => {
+      world.splat = `customiser/${String(IDS.cards)}`;
+      world.search = { step: 'designs', design: '53' };
+      return <Customiser />;
+    },
+    after: async () => {
+      fireEvent.click(screen.getAllByRole('button', { name: 'Logo' }).at(-1)!);
+      await settle();
+      fireEvent.click(screen.getAllByRole('switch').at(-2)!);
+      await settle();
+      must('aside [role="img"]');
+    },
+  },
+  {
+    label: 'previewing as a customer',
+    before: () => {
+      seedCard();
+      showCustomerEditor(() => <p>The customer’s editor</p>);
+    },
+    draw: () => {
+      world.splat = `customiser/${String(IDS.cards)}`;
+      world.search = { step: 'designs', design: '53' };
+      return <Customiser />;
+    },
+    after: async () => {
+      fireEvent.click(byIcon('eye'));
+      await settle();
+      must('[role="status"].bg-fg');
     },
   },
   { label: 'the product panel', draw: () => <Product connectionId="c1" table="t" row="r" linked={String(IDS.coasters)} /> },
@@ -125,6 +217,7 @@ describe('the shop’s screens under axe', () => {
         document.documentElement.dir = look.locale === 'ar-EG' ? 'rtl' : 'ltr';
         document.documentElement.setAttribute('data-theme', look.theme);
         Object.defineProperty(window, 'innerWidth', { value: look.width, configurable: true });
+        showCustomerEditor(null);
         state.before?.();
         render(<main>{state.draw()}</main>);
         await state.after?.();

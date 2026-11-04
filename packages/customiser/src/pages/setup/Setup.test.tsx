@@ -2,7 +2,7 @@
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { Refused, resetWorld, world, type Call } from '../testing/host.tsx';
+import { Refused, resetWorld, seed, world, type Call } from '../testing/host.tsx';
 import { IDS, seedShop } from '../testing/rows.ts';
 
 const { default: Customiser } = await import('../customiser/index.tsx');
@@ -125,13 +125,16 @@ describe('step 1, a flat piece', () => {
   it('stores the outline through Adminium, takes its size from the file, and says what was removed only when Adminium removed something', async () => {
     at(IDS.sign);
     render(<Customiser />);
-    world.upload = (_table, _key, _column, file) => ({ file: 'file-77', name: file.name, size: file.size, type: 'image/svg+xml', removed: ['a script', 'a link to an outside picture'] });
+    world.upload = () => ({ id: 'file-77', mime: 'image/svg+xml', removed: ['<script>', 'onclick', 'inkscape:*'] });
     fireEvent.change(screen.getByLabelText('Upload the outline'), { target: { files: [svgFile('house-sign.svg')] } });
     await settle();
     expect(writes('upload', 'bases')[0]).toMatchObject({ key: String(IDS.sign), values: { column: 'outline_file', name: 'house-sign.svg' } });
-    expect(writes('update', 'bases').at(-1)).toMatchObject({ values: { outline_file: 'file-77', width_mm: 120, height_mm: 80 } });
-    expect(screen.getByText('We removed 2 things that can’t be used in an outline')).toBeTruthy();
-    expect(screen.getByText('Taken out: a script · a link to an outside picture. The shape itself is unchanged.')).toBeTruthy();
+    // The upload saved the row with the file; the size read from the drawing is the one save that follows.
+    expect(row('bases', IDS.sign)['outline_file']).toBe('file-77');
+    expect(writes('update', 'bases').at(-1)).toMatchObject({ values: { width_mm: 120, height_mm: 80 } });
+    expect(writes('update', 'bases').at(-1)?.values).not.toHaveProperty('outline_file');
+    expect(screen.getByText('We removed 3 things that can’t be used in an outline')).toBeTruthy();
+    expect(screen.getByText('Taken out: a script · a script that runs on onclick · the drawing program’s notes. The shape itself is unchanged.')).toBeTruthy();
     expect(world.toasts.at(-1)?.title).toBe('Outline cleaned and saved.');
   });
 
@@ -278,12 +281,8 @@ describe('step 2, areas', () => {
   });
 });
 
-describe('steps 3 and 6, drawn by the screens that come next', () => {
-  it('say what comes there', () => {
-    at(IDS.coasters, 'designs');
-    render(<Customiser />);
-    expect(screen.getByText(/Ready-made designs are made in the design editor/)).toBeTruthy();
-    cleanup();
+describe('step 6, opened by the customer’s editor', () => {
+  it('says what comes there', () => {
     at(IDS.coasters, 'preview');
     render(<Customiser />);
     expect(screen.getByRole('button', { name: "Open the shopper's screen" })).toHaveProperty('disabled', true);
@@ -323,7 +322,9 @@ describe('step 4, fonts and finishes', () => {
     await settle();
     expect(writes('create', 'fonts')[0]?.values).toMatchObject({ app: 'maker', family: 'Harbour Script', name: 'Harbour Script', starter: false, active: true });
     expect(writes('upload', 'fonts')[0]).toMatchObject({ values: { column: 'file' } });
-    expect(writes('update', 'fonts').at(-1)?.values).toMatchObject({ file: expect.stringMatching(/^file-/) });
+    // The upload saved the font's row with its file; the page makes no second save.
+    expect(writes('update', 'fonts')).toEqual([]);
+    expect(world.tables['fonts']!.at(-1)?.['file']).toMatch(/^file-/);
     expect(world.toasts.at(-1)?.title).toBe('Font added. Shoppers see it once you switch it on.');
     world.upload = () => {
       throw new Refused('FILE_KIND_REFUSED', 'That is not a WOFF2 font.');
@@ -353,6 +354,50 @@ describe('step 5, prices', () => {
     expect(writes('create', 'features')[0]?.values).toEqual({ app: 'maker', code: 'engrave-both-sides', name: 'Engrave both sides', active: true });
     // No figure is written anywhere: the price is the app's.
     expect(world.calls.filter((call) => call.table === 'features').flatMap((call) => Object.keys((call.values ?? {}) as object))).not.toContain('price');
+  });
+});
+
+describe('step 5, the app’s prices', () => {
+  it('shows each feature at the price the app’s own option row holds, in the install’s currency', () => {
+    at(IDS.coasters, 'prices');
+    world.currency = 'GBP';
+    seed('maker:options', [
+      { id: 1, feature_id: IDS.logo, price: '1.50', cost: '0.40' },
+      { id: 2, feature_id: null, price: '3.95', cost: '3.00' },
+    ]);
+    // The app's role reads the link and the price only: a read asking for the cost would be refused.
+    world.unreadable['maker:options'] = ['cost'];
+    render(<Customiser />);
+    expect(screen.getByText('+£1.50 a piece: the product’s own option “logo”, set in the shop app.')).toBeTruthy();
+    expect(screen.getByText('Shoppers see: Your own logo · +£1.50 a piece')).toBeTruthy();
+  });
+
+  it('shows the feature without a price when the reader may not read the app’s options, and asks for nothing', () => {
+    at(IDS.coasters, 'prices');
+    seed('maker:options', [{ id: 1, feature_id: IDS.logo, price: '1.50' }]);
+    world.closed.add('maker:options');
+    render(<Customiser />);
+    expect(screen.getByText('Its price is the product’s own option, named “logo”, set in the shop app.')).toBeTruthy();
+    expect(screen.getByText('Shoppers see: Your own logo')).toBeTruthy();
+    expect(screen.queryByText(/£|1\.50/)).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('shows the feature without a price when the app keeps no option for it', () => {
+    at(IDS.coasters, 'prices');
+    seed('maker:options', [{ id: 1, feature_id: 999, price: '9.00' }]);
+    render(<Customiser />);
+    expect(screen.getByText('Its price is the product’s own option, named “logo”, set in the shop app.')).toBeTruthy();
+  });
+});
+
+describe('an Adminium with no upload', () => {
+  it('says so by the outline and the font, and keeps both uploads switched off', () => {
+    world.uploads = false;
+    at(IDS.sign);
+    render(<Customiser />);
+    expect(screen.getByText('Uploading here needs a newer Adminium.')).toBeTruthy();
+    expect(screen.getByLabelText('Upload the outline')).toHaveProperty('disabled', true);
   });
 });
 

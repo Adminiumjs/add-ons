@@ -6,9 +6,9 @@
  * the picker lists the bases, each named as its product, and a base opens at
  * `/add-ons/customiser/customiser/<base>`, its step in `?step=`.
  *
- * The seven steps are the comp's. Ready-made designs (3) and Preview (6) are
- * drawn by the design editor and the customer's editor; their bodies here
- * say what comes there.
+ * The seven steps are the comp's. Ready-made designs (3) is the design
+ * editor's (`../designs/`); Preview (6) opens the customer's editor, which
+ * comes with that editor, and says so until then.
  */
 import { useState, type ReactNode } from 'react';
 
@@ -24,6 +24,7 @@ import { isPublished, isStep, offeredOf, STEPS, stepDone, text, type PublishFact
 import { NewBase } from './NewBase.tsx';
 import { PricesStep } from './PricesStep.tsx';
 import { PublishStep } from './PublishStep.tsx';
+import { DesignsStep } from '../designs/DesignsStep.tsx';
 
 /** The base an address opens: `customiser/<id>`, or none. */
 export function baseIdOf(splat: string): string | null {
@@ -127,7 +128,7 @@ export function SetupPage({ t }: { t: AddOnTranslate }): ReactNode {
           </nav>
           {step === 'base' ? <BaseStep t={t} base={base} bases={bases.rows} settings={data.settings} /> : null}
           {step === 'areas' ? <AreasStep t={t} base={base} data={data} /> : null}
-          {step === 'designs' ? <LaterStep t={t} kind="designs" /> : null}
+          {step === 'designs' ? <DesignsStep t={t} base={base} data={data} /> : null}
           {step === 'fonts' ? <FontsStep t={t} base={base} data={data} /> : null}
           {step === 'prices' ? <PricesStep t={t} base={base} data={data} /> : null}
           {step === 'preview' ? <LaterStep t={t} kind="preview" /> : null}

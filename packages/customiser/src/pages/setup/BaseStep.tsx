@@ -94,7 +94,7 @@ function PageFields({ t, base, settings, save }: { t: AddOnTranslate; base: Data
 }
 
 function Outline({ t, base, save }: { t: AddOnTranslate; base: DataRow; save: (values: Record<string, string | number | null>) => void }): ReactNode {
-  const upload = useUploader();
+  const upload = useUploader('bases', 'outline_file');
   const toast = useToast();
   const [error, setError] = useState<string | null>(null);
   const [removed, setRemoved] = useState<readonly string[]>([]);
@@ -110,11 +110,12 @@ function Outline({ t, base, save }: { t: AddOnTranslate; base: DataRow; save: (v
     setBusy(true);
     try {
       const measured = svgSize(await file.text());
-      const stored = await upload('bases', base['id'] as string | number, 'outline_file', file);
+      // The upload saves the row with the file in its column; the size read from the drawing follows it.
+      const stored = await upload.upload(base['id'] as string | number, file, { name: file.name });
       setError(null);
-      setRemoved(stored.removed ?? []);
-      save({ outline_file: stored.file, ...(measured === null ? {} : { width_mm: measured.width, height_mm: measured.height }) });
-      toast((stored.removed ?? []).length > 0 ? t('setup.outline.cleaned', 'Outline cleaned and saved.') : t('setup.outline.saved', 'Outline saved.'));
+      setRemoved(stored.removed);
+      if (measured !== null) save({ width_mm: measured.width, height_mm: measured.height });
+      toast(stored.removed.length > 0 ? t('setup.outline.cleaned', 'Outline cleaned and saved.') : t('setup.outline.saved', 'Outline saved.'));
     } catch (caught) {
       // Adminium's own words: it read the bytes and refused them.
       setError(t('setup.outline.refused', '{file}: {why}', { file: file.name, why: asDataError(caught).message || refusal(t, asDataError(caught)).message }));
@@ -137,7 +138,7 @@ function Outline({ t, base, save }: { t: AddOnTranslate; base: DataRow; save: (v
           <Alert
             tone="info"
             title={t('setup.outline.removed', 'We removed {n, plural, one {# thing} other {# things}} that can’t be used in an outline', { n: removed.length })}
-            body={t('setup.outline.removedList', 'Taken out: {list}. The shape itself is unchanged.', { list: removed.join(' · ') })}
+            body={t('setup.outline.removedList', 'Taken out: {list}. The shape itself is unchanged.', { list: removedWords(t, removed).join(' · ') })}
           />
         ) : null}
         {upload === null ? <Alert tone="warn" title={t('setup.upload.none', 'Uploading here needs a newer Adminium.')} body={t('setup.upload.noneBody', 'Ask whoever runs Adminium to update it. Everything else on this page works now.')} /> : null}
@@ -145,6 +146,24 @@ function Outline({ t, base, save }: { t: AddOnTranslate; base: DataRow; save: (v
       </Stack>
     </Card>
   );
+}
+
+/**
+ * What Adminium's cleaner took out of an outline, in words a shop reads:
+ * Adminium names each thing as the drawing wrote it (`<script>`, `onclick`,
+ * `inkscape:*`), and the comp says "a script", "an outside link". A name
+ * this does not know is shown as Adminium wrote it.
+ */
+export function removedWords(t: AddOnTranslate, removed: readonly string[]): string[] {
+  return removed.map((name) => {
+    const plain = name.toLowerCase();
+    if (plain === '<script>') return t('setup.outline.gone.script', 'a script');
+    if (/^on[a-z]+$/.test(plain)) return t('setup.outline.gone.handler', 'a script that runs on {name}', { name });
+    if (/^(inkscape|sodipodi):/.test(plain)) return t('setup.outline.gone.editor', 'the drawing program’s notes');
+    if (plain === '<a>' || plain.endsWith('href')) return t('setup.outline.gone.link', 'a link to an outside page');
+    if (plain === '<metadata>' || /^(rdf|cc|dc):/.test(plain)) return t('setup.outline.gone.notes', 'notes about the file');
+    return name;
+  });
 }
 
 function Material({ t, base, bases, save }: { t: AddOnTranslate; base: DataRow; bases: readonly DataRow[]; save: (values: Record<string, string | number | null>) => void }): ReactNode {

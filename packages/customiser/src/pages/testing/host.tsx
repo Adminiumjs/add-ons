@@ -99,12 +99,15 @@ export const world = {
   now: Date.parse('2026-11-03T12:00:00Z'),
   /**
    * Answers a file put into one of the add-on's file columns, as Adminium
-   * would once it has read the bytes; absent, the file is stored as it came.
-   * Throw a `Refused` to refuse it in Adminium's words.
+   * would once it has read the bytes: the stored file's id, its type and
+   * what an SVG's cleaner took out. Absent, the file is stored as it came.
+   * Throw a `Refused` to refuse it in Adminium's words; nothing is saved then.
    */
-  upload: null as null | ((table: string, key: string, column: string, file: { name: string; size: number; type: string }) => { file: string; name: string; size: number; type: string; removed?: string[] }),
+  upload: null as null | ((table: string, key: string, column: string, file: { name: string; size: number; type: string }) => { id?: string; mime?: string; size?: number; removed?: string[] }),
   /** Whether the host publishes an upload at all (an older Adminium does not). */
   uploads: true,
+  /** The install's currency, as `useAccess` hands it. */
+  currency: null as string | null,
 };
 
 const listeners = new Set<() => void>();
@@ -141,6 +144,7 @@ export function resetWorld(): void {
   world.now = Date.parse('2026-11-03T12:00:00Z');
   world.upload = null;
   world.uploads = true;
+  world.currency = null;
   changed();
 }
 
@@ -346,6 +350,7 @@ function useAccess() {
     canUpdate: (table: string) => !world.cannot.has(`update:${table}`),
     canMove: (table: string, to: string) => !world.cannot.has(`move:${table}:${to}`) && !world.cannot.has(`update:${table}`),
     has: (feature: string) => world.has[feature] === true,
+    currency: world.currency,
   };
 }
 
@@ -816,11 +821,24 @@ installAddOnRuntime({
       // Read once, when the module that uses it loads: a host either has an upload or has none.
       get useUpload() {
         if (!world.uploads) return undefined;
-        return () => async (table: string, key: string | number, column: string, file: File) => {
-          world.calls.push({ kind: 'upload', table, key: String(key), values: { column, name: file.name, size: file.size, type: file.type } });
-          world.before?.('upload', table, { column, name: file.name });
-          return world.upload === null ? { file: `file-${String((world.nextId += 1))}`, name: file.name, size: file.size, type: file.type } : world.upload(table, String(key), column, file);
-        };
+        // As the data kit's: the bytes are judged, then the row is saved with the file in its column.
+        return (table: string, column: string) => ({
+          upload: async (key: string | number, blob: Blob, options?: { name?: string }) => {
+            const name = options?.name ?? (blob as File).name ?? 'file';
+            const file = { name, size: blob.size, type: blob.type };
+            world.calls.push({ kind: 'upload', table, key: String(key), values: { column, ...file } });
+            world.before?.('upload', table, { column, name });
+            const said = world.upload === null ? {} : world.upload(table, String(key), column, file);
+            const id = said.id ?? `file-${String((world.nextId += 1))}`;
+            const row = find(table, key);
+            if (row === undefined) throw new Refused('NOT_FOUND');
+            Object.assign(row, world.decide(table, { ...row, [column]: id }));
+            changed();
+            return { ref: id, id, name, mime: said.mime ?? file.type, size: said.size ?? file.size, removed: said.removed ?? [], row: shown(table, row) };
+          },
+          uploading: false,
+          error: null,
+        });
       },
       useDocument: () => ({
         open: async (kind: string, table: string, key: string | number, options?: unknown) => {
