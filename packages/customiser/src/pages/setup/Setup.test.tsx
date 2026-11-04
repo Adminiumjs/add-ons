@@ -281,12 +281,8 @@ describe('step 2, areas', () => {
   });
 });
 
-describe('steps 3 and 6, drawn by the screens that come next', () => {
-  it('say what comes there', () => {
-    at(IDS.coasters, 'designs');
-    render(<Customiser />);
-    expect(screen.getByText(/Ready-made designs are made in the design editor/)).toBeTruthy();
-    cleanup();
+describe('step 6, opened by the customer’s editor', () => {
+  it('says what comes there', () => {
     at(IDS.coasters, 'preview');
     render(<Customiser />);
     expect(screen.getByRole('button', { name: "Open the shopper's screen" })).toHaveProperty('disabled', true);

@@ -5,10 +5,10 @@
 import type { ReactNode } from 'react';
 
 import { wordsFor } from '../shared/messages.ts';
-import { SETUP, SHARED } from '../strings/index.ts';
+import { DESIGNS, SETUP, SHARED } from '../strings/index.ts';
 import { SetupPage } from '../setup/SetupPage.tsx';
 
-const t = wordsFor(SHARED, SETUP);
+const t = wordsFor(SHARED, SETUP, DESIGNS);
 
 export default function Customiser(): ReactNode {
   return <SetupPage t={t} />;

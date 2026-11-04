@@ -5,7 +5,7 @@
  * Press's business cards (a page), and a book nook (a kit). Names and
  * figures are the comps' and the samples'; no customer's name is here.
  */
-import { seed } from './host.tsx';
+import { seed, world } from './host.tsx';
 
 export const IDS = { coasters: 11, sign: 12, cards: 13, nook: 14, finishes: 31, logo: 41 } as const;
 
@@ -38,4 +38,24 @@ export function seedShop(): void {
     { id: 83, app: 'maker', palette_id: IDS.finishes, code: 'paint-black', role: null, name: 'Painted black', hex: '#17140f', position: 3 },
   ]);
   seed('features', [{ id: IDS.logo, app: 'maker', code: 'logo', name: 'Your own logo', active: true }]);
+}
+
+/** Marlow Press's Harbour card: a paper, a logo and a name on the front in two layouts, the paper on the back; one palette. */
+export function seedCard(): void {
+  seed('ready_designs', [...world.tables['ready_designs']!, { id: 53, app: 'printing', base_id: IDS.cards, name: 'Harbour', tags: '["simple"]', layouts: JSON.stringify([{ key: 'left', name: 'Logo left' }, { key: 'top', name: 'Logo top' }]), state: 'published', position: 1 }]);
+  seed('ready_parts', [
+    ...world.tables['ready_parts']!,
+    { id: 101, app: 'printing', ready_design_id: 53, code: 'paper', name: 'Paper', kind: 'shape', locked: true, required: false, side: 'front', layout: 'left', x_mm: -3, y_mm: -3, w_mm: 91, h_mm: 61, rules: JSON.stringify({ shape: 'rect', fill: 'paper', background: true }), value: null, position: 1 },
+    { id: 102, app: 'printing', ready_design_id: 53, code: 'logo', name: 'Logo', kind: 'picture', locked: false, required: false, side: 'front', layout: 'left', x_mm: 6, y_mm: 6, w_mm: 20, h_mm: 20, rules: JSON.stringify({ picture: 'logo', fit: 'inside', file: 'logo_file' }), value: null, position: 2 },
+    { id: 103, app: 'printing', ready_design_id: 53, code: 'name', name: 'Name', kind: 'text', locked: false, required: true, side: 'front', layout: 'left', x_mm: 6, y_mm: 30.5, w_mm: 75, h_mm: 5.73, rules: JSON.stringify({ chars: 26, grows: false, unit: 'pt', size: 13, sizes: [11, 13, 15], fonts: ['Manrope'], font: 'Manrope', weight: 400, colours: ['ink', 'accent'], colour: 'ink', align: 'start', lines: 1, placeholder: 'Your name' }), value: null, position: 3 },
+    { id: 104, app: 'printing', ready_design_id: 53, code: 'name', name: 'Name', kind: 'text', locked: false, required: true, side: 'front', layout: 'top', x_mm: 6, y_mm: 28.5, w_mm: 73, h_mm: 5.73, rules: JSON.stringify({ chars: 26, grows: false, unit: 'pt', size: 13, sizes: [13], fonts: ['Manrope'], font: 'Manrope', colours: ['ink'], colour: 'ink', align: 'center', lines: 1, placeholder: 'Your name' }), value: null, position: 4 },
+    { id: 105, app: 'printing', ready_design_id: 53, code: 'paper', name: 'Colour', kind: 'shape', locked: true, required: false, side: 'back', layout: 'left', x_mm: -3, y_mm: -3, w_mm: 91, h_mm: 61, rules: JSON.stringify({ shape: 'rect', fill: 'accent', background: true }), value: null, position: 5 },
+  ]);
+  seed('palettes', [...world.tables['palettes']!, { id: 91, app: 'printing', ready_design_id: 53, kind: 'colours', code: 'harbour', name: 'Harbour', position: 1 }]);
+  seed('palette_colours', [
+    ...world.tables['palette_colours']!,
+    { id: 92, app: 'printing', palette_id: 91, code: 'paper', role: 'paper', name: 'Paper', hex: '#f4efe6', position: 1 },
+    { id: 93, app: 'printing', palette_id: 91, code: 'ink', role: 'ink', name: 'Ink', hex: '#1f2a36', position: 2 },
+    { id: 94, app: 'printing', palette_id: 91, code: 'accent', role: 'accent', name: 'Accent', hex: '#c0562f', position: 3 },
+  ]);
 }
