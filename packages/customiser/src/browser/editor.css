@@ -1421,6 +1421,65 @@
   max-block-size: 400px;
   block-size: auto;
 }
+/* The card drawn larger: the stage scrolls both ways and the card keeps its proportions. */
+.cz-stage-page.cz-zoomed {
+  overflow: auto;
+  display: block;
+}
+.cz-stage-page.cz-zoomed .cz-drawing {
+  max-block-size: none;
+  max-inline-size: none;
+}
+.cz-zoom-150 .cz-drawing {
+  inline-size: 150%;
+}
+.cz-zoom-200 .cz-drawing {
+  inline-size: 200%;
+}
+.cz-zoom-300 .cz-drawing {
+  inline-size: 300%;
+}
+.cz-sheet-end {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.cz-zoom {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid var(--cz-border-strong);
+  border-radius: 9px;
+  background: var(--cz-surface-2);
+  padding: 2px;
+}
+.cz-zoom-button {
+  inline-size: 28px;
+  block-size: 28px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  border-radius: 7px;
+  color: var(--cz-fg-muted);
+}
+.cz-zoom-button:hover:not(:disabled) {
+  background: var(--cz-surface-3);
+}
+.cz-zoom-button:disabled {
+  opacity: 0.45;
+}
+.cz-zoom-button svg {
+  inline-size: 14px;
+  block-size: 14px;
+}
+.cz-zoom-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  min-inline-size: 42px;
+  text-align: center;
+  color: var(--cz-fg-muted);
+}
 .cz-legend {
   display: flex;
   flex-wrap: wrap;

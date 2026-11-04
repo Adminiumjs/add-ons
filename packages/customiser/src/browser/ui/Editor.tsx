@@ -23,7 +23,7 @@
  * Undo and redo go back and forward one change at a time (a run of typing in
  * one field is one change), by the buttons or Ctrl/Cmd+Z and Shift+Ctrl/Cmd+Z.
  */
-import { ArrowLeft, Layers, Maximize2, PenTool, PencilRuler, Redo2, SquareDashed, Undo2, X, MailCheck } from 'lucide-react';
+import { ArrowLeft, Layers, Maximize2, PenTool, PencilRuler, Redo2, SquareDashed, Undo2, X, MailCheck, ZoomIn, ZoomOut } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react';
 
 import type { DesignValues, FileFact, PartValue, Refusal } from '../../rules/index.ts';
@@ -210,6 +210,8 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
   const [lockShown, setLockShown] = useState<string | null>(null);
   const [side, setSide] = useState<'front' | 'back'>('front');
   const [guides, setGuides] = useState(false);
+  // The card drawn larger on a wide screen, as the print shop's comp zooms it: 100 %, 150 %, 200 %, 300 %.
+  const [zoom, setZoom] = useState<(typeof ZOOMS)[number]>(1);
   const [overlay, setOverlay] = useState<'save' | 'full' | null>(null);
   const [typing, setTyping] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -591,11 +593,14 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
               ) : (
                 <ModeSwitch guides={guides} setGuides={setGuides} />
               )}
-              <button type="button" className="cz-icon-button cz-push" aria-label={t('editor.stage.full', 'Full-screen preview')} title={t('editor.stage.full', 'Full-screen preview')} onClick={() => setOverlay('full')}>
-                <Maximize2 aria-hidden="true" />
-              </button>
+              <span className="cz-push cz-sheet-end">
+                {narrow ? null : <ZoomControl zoom={zoom} setZoom={setZoom} />}
+                <button type="button" className="cz-icon-button" aria-label={t('editor.stage.full', 'Full-screen preview')} title={t('editor.stage.full', 'Full-screen preview')} onClick={() => setOverlay('full')}>
+                  <Maximize2 aria-hidden="true" />
+                </button>
+              </span>
             </div>
-            <div className="cz-stage cz-stage-page">
+            <div className={narrow || zoom === 1 ? 'cz-stage cz-stage-page' : `cz-stage cz-stage-page cz-zoomed cz-zoom-${String(zoom * 100)}`}>
               <Drawing catalogue={catalogue} design={design} side={side} guides={guides} empty="dim" onPart={focusPart} selected={selected} lockShown={lockShown} onLock={setLockShown} label={stageLabel} />
             </div>
             {!narrow && guides ? (
@@ -640,6 +645,26 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
       {narrow ? <QuoteBar {...bar} /> : null}
       {dialogs}
     </section>
+  );
+}
+
+/** How much larger the card may be drawn on a wide screen. */
+const ZOOMS = [1, 1.5, 2, 3] as const;
+
+/** Zoom out, the size it is drawn at, zoom in: the print shop's card on a wide screen. */
+function ZoomControl({ zoom, setZoom }: { zoom: (typeof ZOOMS)[number]; setZoom: (zoom: (typeof ZOOMS)[number]) => void }) {
+  const { t } = useShared();
+  const at = ZOOMS.indexOf(zoom);
+  return (
+    <span role="group" aria-label={t('editor.stage.zoom', 'Zoom')} className="cz-zoom">
+      <button type="button" className="cz-zoom-button" aria-label={t('editor.stage.zoomOut', 'Zoom out')} disabled={at <= 0} onClick={() => setZoom(ZOOMS[Math.max(0, at - 1)]!)}>
+        <ZoomOut aria-hidden="true" />
+      </button>
+      <span aria-live="polite" className="cz-mono cz-zoom-label">{`${String(Math.round(zoom * 100))}%`}</span>
+      <button type="button" className="cz-zoom-button" aria-label={t('editor.stage.zoomIn', 'Zoom in')} disabled={at >= ZOOMS.length - 1} onClick={() => setZoom(ZOOMS[Math.min(ZOOMS.length - 1, at + 1)]!)}>
+        <ZoomIn aria-hidden="true" />
+      </button>
+    </span>
   );
 }
 

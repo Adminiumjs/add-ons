@@ -557,6 +557,20 @@ describe('the print look: fill it in (MC-B1, MC-B2, MC-B5, MC-0.CHECKS)', () => 
     expect((onFullEditor.mock.calls[0]![0] as { values: { layout: string } }).values.layout).toBe('top');
   });
 
+  it('zooms the card on a wide screen, from 100 % to 300 % and back (MC-0.PREVIEW.zoom)', async () => {
+    const stub = stubApi('printing');
+    await openHarbour(stub);
+    const zoom = screen.getByRole('group', { name: 'Zoom' });
+    expect(within(zoom).getByText('100%')).toBeTruthy();
+    expect((within(zoom).getByRole('button', { name: 'Zoom out' }) as HTMLButtonElement).disabled).toBe(true);
+    for (let i = 0; i < 3; i += 1) fireEvent.click(within(zoom).getByRole('button', { name: 'Zoom in' }));
+    expect(within(zoom).getByText('300%')).toBeTruthy();
+    expect((within(zoom).getByRole('button', { name: 'Zoom in' }) as HTMLButtonElement).disabled).toBe(true);
+    expect(document.querySelector('.cz-stage-page')!.className).toContain('cz-zoom-300');
+    fireEvent.click(within(zoom).getByRole('button', { name: 'Zoom out' }));
+    expect(within(zoom).getByText('200%')).toBeTruthy();
+  });
+
   it('opens the full-screen preview with its own sides and guides, and closes on Escape', async () => {
     const stub = stubApi('printing');
     await openHarbour(stub);
@@ -576,6 +590,8 @@ describe('the print look on a phone (MC-B6b, FX-M)', () => {
     await openHarbour(stub);
     const tools = document.querySelector('.cz-sheet-tools') as HTMLElement;
     expect(within(tools).getByRole('radio', { name: 'Front' })).toBeTruthy();
+    // The phone has the full-screen preview, not the zoom (MC-0.PREVIEW.zoom).
+    expect(within(tools).queryByRole('group', { name: 'Zoom' })).toBeNull();
     expect(within(tools).getByRole('button', { name: 'Guides' }).getAttribute('aria-pressed')).toBe('false');
     expect(within(tools).queryByRole('radio', { name: 'With guides' })).toBeNull();
     const bar = screen.getByRole('region', { name: 'Your quote' });

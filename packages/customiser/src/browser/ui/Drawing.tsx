@@ -1,15 +1,17 @@
 /**
  * A DESIGN DRAWN FLAT: the base, its parts, the customer's words.
  *
- * A plain drawing in millimetres from the design's data, the same data the
- * shop makes the piece or the print from. It is the stand-in the previews
- * proper (both sides "As printed", the piece in 3D) replace: kept simple, one
- * function, every preview of the editor drawn by it (the stage, the gallery's
- * cards, the list of saved designs).
+ * Drawn from the design's flat sheet (`src/draw/flat.ts`), the same sheet the
+ * shop's proof, print file and laser files are made from: every word on the
+ * baseline the files put it on, every picture in the box the files put it
+ * in. Every preview of the editor is drawn by it (the stage, the full-screen
+ * preview, the gallery's cards, the list of saved designs).
  *
  * Always left to right: it is the thing that will be made, and an Arabic page
  * must not mirror it. Colours here are the design's own (the paper, the ink,
- * the wood), never the page's theme, so they are SVG paint, not tokens.
+ * the wood), never the page's theme, so they are SVG paint, not tokens. A
+ * customer's logo or photo is drawn from its file, as a picture the page
+ * loads (`<image>`), never as markup in the page.
  *
  * On the stage it is also a way in: each part a customer may change is a
  * button ("Edit Your words") that takes them to its field, and the part being
@@ -18,22 +20,19 @@
  * list is the stop; the print look lets it be reached, as its comp does).
  */
 import { Lock } from 'lucide-react';
-import type { KeyboardEvent } from 'react';
+import type { KeyboardEvent, ReactNode } from 'react';
 
-import { sizeInMm } from '../../rules/index.ts';
-import { areaMode, hexOf, liveParts, paletteOf, readyOf, valueOf, type Catalogue, type EditPart } from '../catalogue.ts';
+import { flatSheet, sheetView, type FlatItem } from '../../draw/flat.ts';
+import type { Box } from '../../draw/parts.ts';
+import { partsOf, readyOf, type Catalogue } from '../catalogue.ts';
 import type { DesignData } from '../api.ts';
 import { cssFamily } from './fonts.ts';
 import { useShared } from './context.tsx';
 
-/** The wood, slate or plastic a piece is cut from, and the colour its engraving burns to. */
-const MATERIALS: readonly { test: RegExp; face: string; edge: string; engraved: string }[] = [
-  { test: /walnut/i, face: '#6b4428', edge: '#3b2413', engraved: '#24130a' },
-  { test: /ply|birch/i, face: '#d9b98a', edge: '#a8845a', engraved: '#6a4321' },
-  { test: /slate/i, face: '#3b4248', edge: '#272c30', engraved: '#c3cacf' },
-  { test: /oak/i, face: '#c9a26b', edge: '#9a7444', engraved: '#4a2f16' },
-];
-const PAINT: Readonly<Record<string, string>> = { 'paint-white': '#f3f1ea', 'paint-black': '#15120e' };
+/** A picture the page holds for one of the design's file columns: where to load it from. */
+export interface PictureLike {
+  url?: string;
+}
 
 export interface DrawingProps {
   catalogue: Catalogue;
@@ -50,127 +49,58 @@ export interface DrawingProps {
   onLock?: (code: string | null) => void;
   label?: string;
   className?: string;
+  /** The design's logo and photo as this page holds them, by file column: drawn in their boxes; without them a box says it holds one. */
+  pictures?: Readonly<Record<string, PictureLike>>;
 }
 
-function mix(hex: string, toward: string, share: number): string {
-  const parse = (value: string) => [1, 3, 5].map((at) => parseInt(value.slice(at, at + 2), 16));
-  const [a, b] = [parse(hex), parse(toward)];
-  return `#${a.map((one, i) => Math.round(one + ((b[i] ?? 0) - one) * share).toString(16).padStart(2, '0')).join('')}`;
-}
+/** The guides of a printed page: a red trim, a blue dashed safe line, the bleed tinted. The printed proof's own colours. */
+const TRIM = '#cf273c';
+const SAFE = '#1c59e0';
 
-export function Drawing({ catalogue, design, side = 'front', guides = false, empty = 'sample', onPart, selected = null, lockShown = null, onLock, label, className }: DrawingProps) {
+export function Drawing({ catalogue, design, side = 'front', guides = false, empty = 'sample', onPart, selected = null, lockShown = null, onLock, label, className, pictures }: DrawingProps) {
   const { t, look } = useShared();
-  const { base } = catalogue;
-  const ready = readyOf(catalogue, design.ready_design_id);
-  const palette = paletteOf(ready, design.values);
-  const parts = liveParts(catalogue, ready, design.values).filter((part) => part.side === side);
-  const page = base.kind === 'page';
-  const material = MATERIALS.find((one) => one.test.test(base.material ?? '')) ?? { face: '#e9e4da', edge: '#b9b2a5', engraved: '#3a3530' };
-  // A printed item takes the colour its colour part chose.
-  const colourPart = liveParts(catalogue, ready, design.values).find((part) => part.kind === 'colour');
-  const plastic = colourPart === undefined ? null : (Object.values(catalogue.shared).flat().find((one) => one.code === (valueOf(design.values, colourPart).choice ?? colourPart.start?.choice)) ?? null);
-  const face = page ? (hexOf(palette, 'paper') ?? '#ffffff') : (plastic?.hex ?? material.face);
-  const edge = page ? '#d0d0d6' : plastic === null ? material.edge : mix(plastic.hex, '#000000', 0.3);
-  const margin = page && guides ? base.bleed : 0;
-  const [w, h] = [base.width, base.height];
-  const view = `${String(-margin - 0.6)} ${String(-margin - 0.6)} ${String(w + 2 * margin + 1.2)} ${String(h + 2 * margin + 1.2)}`;
-  const clip = `cz-clip-${String(base.id)}-${side}-${guides ? 'g' : 'p'}`;
+  const sheet = flatSheet(catalogue, design, {
+    side,
+    empty,
+    labels: { logo: t('editor.drawing.logo', 'Your logo'), photo: t('editor.drawing.photo', 'Your photo') },
+    holds: (column) => pictures?.[column]?.url !== undefined,
+  });
+  const { face } = sheet;
+  const page = face.kind === 'page';
+  const shown = sheetView(face, guides);
+  const view = `${String(shown.x - 0.6)} ${String(shown.y - 0.6)} ${String(shown.w + 1.2)} ${String(shown.h + 1.2)}`;
+  const clip = `cz-clip-${String(catalogue.base.id)}-${side}-${guides ? 'g' : 'p'}`;
 
-  const inkFor = (part: EditPart): string => {
-    const value = valueOf(design.values, part);
-    if (page) return hexOf(palette, value.colour ?? part.text?.colour ?? 'ink') ?? '#191920';
-    if (plastic !== null) return mix(plastic.hex, '#000000', 0.42);
-    const finish = value.finish ?? design.values.finish ?? part.text?.finish ?? 'engraved';
-    return PAINT[finish] ?? material.engraved;
-  };
-
-  const drawn = parts.map((part) => {
-    const box = part.box;
-    if (box === null) return null;
-    const value = valueOf(design.values, part);
-    const live = onPart !== undefined && !part.locked;
-    const key = `${part.code}-${part.side}`;
-    let body = null;
-    if (part.kind === 'shape' && part.shape !== null) {
-      const fill = page ? (hexOf(palette, part.shape.fill) ?? 'none') : 'none';
-      const stroke = page ? 'none' : inkFor(part);
-      const line = page ? 0 : 1;
-      if (part.shape.shape === 'ellipse' || part.shape.shape === 'ring') body = <ellipse cx={box.x + box.w / 2} cy={box.y + box.h / 2} rx={box.w / 2 - line / 2} ry={box.h / 2 - line / 2} fill={fill} stroke={stroke} strokeWidth={line} />;
-      else if (part.shape.shape === 'door')
-        body = (
-          <g fill="none" stroke={stroke} strokeWidth={0.8}>
-            <rect x={box.x} y={box.y} width={box.w} height={box.h} />
-            <rect x={box.x + box.w * 0.15} y={box.y + box.h * 0.1} width={box.w * 0.7} height={box.h * 0.35} />
-            <rect x={box.x + box.w * 0.15} y={box.y + box.h * 0.52} width={box.w * 0.7} height={box.h * 0.38} />
-          </g>
-        );
-      else body = <rect x={box.x} y={box.y} width={box.w} height={box.h} fill={fill} stroke={stroke} strokeWidth={line} />;
-    } else if (part.kind === 'text') {
-      const rules = part.text!;
-      const mode = areaMode(design.values, part);
-      if (mode === 'logo') body = <Slot box={box} text={t('editor.drawing.logo', 'Your logo')} page={page} />;
-      else {
-        const typed = (value.text ?? '').trim();
-        const shownText = typed !== '' ? typed : empty === 'hide' || (part.fromArea && mode === null && empty !== 'sample') ? '' : part.placeholder;
-        const lines = (part.upper ? shownText.toLocaleUpperCase() : shownText).split(/\r?\n/);
-        const size = sizeInMm(rules, value.size ?? rules.size) || box.h * 0.7;
-        const anchor = rules.align === 'center' ? 'middle' : rules.align === 'end' ? 'end' : 'start';
-        const x = rules.align === 'center' ? box.x + box.w / 2 : rules.align === 'end' ? box.x + box.w : box.x;
-        const top = box.y + box.h / 2 - ((lines.length - 1) * size * 1.2) / 2;
-        const dim = typed === '' && empty === 'dim';
-        body = (
-          <text x={x} y={top} fontFamily={cssFamily(value.font ?? rules.font ?? 'Manrope')} fontSize={size} fontWeight={rules.weight} fill={inkFor(part)} textAnchor={look === 'maker' && !page ? 'middle' : anchor} dominantBaseline="middle" opacity={dim ? 0.4 : 1}>
-            {lines.map((line, i) => (
-              <tspan key={i} x={look === 'maker' && !page ? box.x + box.w / 2 : x} dy={i === 0 ? 0 : size * 1.2}>
-                {line}
-              </tspan>
-            ))}
-          </text>
-        );
-        if (shownText === '' && part.fromArea) body = <Slot box={box} text={part.name} page={page} />;
-      }
-    } else if (part.kind === 'picture') {
-      const what = part.picture?.picture === 'photo' ? t('editor.drawing.photo', 'Your photo') : t('editor.drawing.logo', 'Your logo');
-      body = <Slot box={box} text={value.file === undefined ? what : `${what} ✓`} page={page} filled={value.file !== undefined} />;
-    } else if (part.kind === 'choice' || part.kind === 'colour') {
-      if (part.kind === 'colour') return null;
-      body = (
-        <g>
-          <rect x={box.x + box.w * 0.2} y={box.y + box.h * 0.2} width={box.w * 0.6} height={box.h * 0.6} rx={Math.min(box.w, box.h) * 0.12} fill="none" stroke={inkFor(part)} strokeWidth={0.8} />
-          <text x={box.x + box.w / 2} y={box.y + box.h / 2} fontSize={Math.min(box.h * 0.14, 4)} fill={inkFor(part)} textAnchor="middle" dominantBaseline="middle" fontFamily={cssFamily('Manrope')}>
-            {value.choice ?? part.start?.choice ?? ''}
-          </text>
-        </g>
-      );
-    }
-    const outlined = selected === part.code;
-    const locked = part.locked && !(part.shape?.background ?? false);
+  const drawn = sheet.items.map((item) => {
+    const body = bodyOf(item, page, pictures, `${clip}-${item.code}`);
+    const outlined = selected === item.code;
     const keyDown = (event: KeyboardEvent<SVGGElement>): void => {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
-        onPart?.(part.code);
+        onPart?.(item.code);
       }
     };
-    if (onPart === undefined) return <g key={key}>{body}</g>;
-    if (live)
+    const { box } = item;
+    if (onPart === undefined) return <g key={item.key}>{body}</g>;
+    if (item.live)
       return (
-        <g key={key} role="button" tabIndex={0} aria-label={t('editor.drawing.edit', 'Edit {name}', { name: part.name })} className="cz-part" onClick={() => onPart(part.code)} onKeyDown={keyDown} onFocus={() => onLock?.(null)}>
+        <g key={item.key} role="button" tabIndex={0} aria-label={t('editor.drawing.edit', 'Edit {name}', { name: nameOf(catalogue, design, item.code) })} className="cz-part" onClick={() => onPart(item.code)} onKeyDown={keyDown} onFocus={() => onLock?.(null)}>
           <rect x={box.x - 0.6} y={box.y - 0.6} width={box.w + 1.2} height={box.h + 1.2} fill="transparent" className={outlined ? 'cz-part-on' : 'cz-part-ring'} />
           {body}
         </g>
       );
-    if (locked)
+    if (item.locked)
       return (
         <g
-          key={key}
+          key={item.key}
           className="cz-part-locked"
-          {...(look === 'print' ? { role: 'img', tabIndex: 0, 'aria-label': t('editor.drawing.locked', '{name} — the shop’s part. It stays as it is.', { name: part.name }), onFocus: () => onLock?.(part.code), onBlur: () => onLock?.(null) } : { 'aria-hidden': true })}
-          onMouseEnter={() => onLock?.(part.code)}
+          {...(look === 'print' ? { role: 'img', tabIndex: 0, 'aria-label': t('editor.drawing.locked', '{name} — the shop’s part. It stays as it is.', { name: nameOf(catalogue, design, item.code) }), onFocus: () => onLock?.(item.code), onBlur: () => onLock?.(null) } : { 'aria-hidden': true })}
+          onMouseEnter={() => onLock?.(item.code)}
           onMouseLeave={() => onLock?.(null)}
         >
-          <rect x={box.x - 0.6} y={box.y - 0.6} width={box.w + 1.2} height={box.h + 1.2} fill="transparent" className={lockShown === part.code ? 'cz-part-lock-on' : ''} />
+          <rect x={box.x - 0.6} y={box.y - 0.6} width={box.w + 1.2} height={box.h + 1.2} fill="transparent" className={lockShown === item.code ? 'cz-part-lock-on' : ''} />
           {body}
-          {lockShown === part.code ? (
+          {lockShown === item.code ? (
             <foreignObject x={box.x + box.w - 5} y={box.y - 2.5} width={5} height={5}>
               <span className="cz-lock-badge">
                 <Lock aria-hidden="true" />
@@ -179,31 +109,89 @@ export function Drawing({ catalogue, design, side = 'front', guides = false, emp
           ) : null}
         </g>
       );
-    return <g key={key}>{body}</g>;
+    return <g key={item.key}>{body}</g>;
   });
 
   return (
     <svg direction="ltr" className={className ?? 'cz-drawing'} viewBox={view} role={onPart === undefined ? 'img' : 'group'} aria-label={label} {...(label === undefined ? { 'aria-hidden': true } : {})} preserveAspectRatio="xMidYMid meet">
       <defs>
         <clipPath id={clip}>
-          {page ? <rect x={-margin} y={-margin} width={w + 2 * margin} height={h + 2 * margin} /> : <rect x={0} y={0} width={w} height={h} rx={base.corner} />}
+          <rect x={shown.x} y={shown.y} width={shown.w} height={shown.h} rx={page ? 0 : face.corner} />
         </clipPath>
       </defs>
-      {page && guides ? <rect x={-margin} y={-margin} width={w + 2 * margin} height={h + 2 * margin} fill="#cf273c" fillOpacity={0.16} /> : null}
-      <rect x={0} y={0} width={w} height={h} rx={page ? 0 : base.corner} fill={face} stroke={edge} strokeWidth={page ? 0.2 : 0.6} />
+      {page && guides ? <rect x={shown.x} y={shown.y} width={shown.w} height={shown.h} fill={TRIM} fillOpacity={0.16} /> : null}
+      <rect x={0} y={0} width={face.width} height={face.height} rx={face.corner} fill={face.colour} stroke={face.edge} strokeWidth={page ? 0.2 : 0.6} />
       <g clipPath={`url(#${clip})`}>{drawn}</g>
       {page && guides ? (
         <g fill="none" pointerEvents="none">
-          <rect x={0} y={0} width={w} height={h} stroke="#cf273c" strokeWidth={0.3} />
-          {base.safe !== null ? <rect x={base.safe} y={base.safe} width={w - 2 * base.safe} height={h - 2 * base.safe} stroke="#1c59e0" strokeWidth={0.3} strokeDasharray="1 0.8" /> : null}
+          <rect x={0} y={0} width={face.width} height={face.height} stroke={TRIM} strokeWidth={0.3} />
+          {face.safe !== null ? <rect x={face.safe} y={face.safe} width={face.width - 2 * face.safe} height={face.height - 2 * face.safe} stroke={SAFE} strokeWidth={0.3} strokeDasharray="1 0.8" /> : null}
         </g>
       ) : null}
     </svg>
   );
 }
 
+/** The name a part goes by, for the words read out on the stage. */
+function nameOf(catalogue: Catalogue, design: DesignData, code: string): string {
+  return partsOf(catalogue, readyOf(catalogue, design.ready_design_id)).find((one) => one.code === code)?.name ?? code;
+}
+
+/** One item of the sheet, drawn. */
+function bodyOf(item: FlatItem, page: boolean, pictures: Readonly<Record<string, PictureLike>> | undefined, clip: string): ReactNode {
+  const { box } = item;
+  if (item.kind === 'text')
+    return (
+      <text fontFamily={cssFamily(item.font)} fontSize={item.sizeMm} fontWeight={item.weight} fill={item.colour} textAnchor={item.anchor} opacity={item.dim ? 0.4 : 1}>
+        {item.lines.map((line, index) => (
+          <tspan key={String(index)} x={line.x} y={line.y}>
+            {line.text}
+          </tspan>
+        ))}
+      </text>
+    );
+  if (item.kind === 'slot') return <Slot box={box} text={item.label} page={item.page} filled={item.filled} />;
+  if (item.kind === 'picture') {
+    const url = pictures?.[item.column]?.url;
+    if (url === undefined) return <Slot box={item.drawn} text="" page={page} filled />;
+    return (
+      <g>
+        {item.fill ? (
+          <defs>
+            <clipPath id={clip}>
+              <rect x={box.x} y={box.y} width={box.w} height={box.h} />
+            </clipPath>
+          </defs>
+        ) : null}
+        <image href={url} x={item.drawn.x} y={item.drawn.y} width={item.drawn.w} height={item.drawn.h} preserveAspectRatio={item.fill ? 'xMidYMid slice' : 'xMidYMid meet'} {...(item.fill ? { clipPath: `url(#${clip})` } : {})} />
+      </g>
+    );
+  }
+  if (item.kind === 'choice')
+    return (
+      <g>
+        <rect x={box.x + box.w * 0.2} y={box.y + box.h * 0.2} width={box.w * 0.6} height={box.h * 0.6} rx={Math.min(box.w, box.h) * 0.12} fill="none" stroke={item.colour} strokeWidth={0.8} />
+        <text x={box.x + box.w / 2} y={box.y + box.h / 2} fontSize={Math.min(box.h * 0.14, 4)} fill={item.colour} textAnchor="middle" dominantBaseline="middle" fontFamily={cssFamily('Manrope')}>
+          {item.label}
+        </text>
+      </g>
+    );
+  const fill = item.fill ?? 'none';
+  const stroke = item.stroke ?? 'none';
+  if (item.shape === 'ellipse') return <ellipse cx={box.x + box.w / 2} cy={box.y + box.h / 2} rx={box.w / 2 - item.line / 2} ry={box.h / 2 - item.line / 2} fill={fill} stroke={stroke} strokeWidth={item.line} />;
+  if (item.shape === 'door')
+    return (
+      <g fill="none" stroke={stroke} strokeWidth={item.line}>
+        <rect x={box.x} y={box.y} width={box.w} height={box.h} />
+        <rect x={box.x + box.w * 0.15} y={box.y + box.h * 0.1} width={box.w * 0.7} height={box.h * 0.35} />
+        <rect x={box.x + box.w * 0.15} y={box.y + box.h * 0.52} width={box.w * 0.7} height={box.h * 0.38} />
+      </g>
+    );
+  return <rect x={box.x} y={box.y} width={box.w} height={box.h} fill={fill} stroke={stroke} strokeWidth={item.line} />;
+}
+
 /** Where a logo or photo goes, before there is one. */
-function Slot({ box, text, page, filled = false }: { box: { x: number; y: number; w: number; h: number }; text: string; page: boolean; filled?: boolean }) {
+function Slot({ box, text, page, filled = false }: { box: Box; text: string; page: boolean; filled?: boolean }) {
   const ink = page ? '#3a3a44' : '#2a2018';
   return (
     <g>
