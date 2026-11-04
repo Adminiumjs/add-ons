@@ -151,6 +151,7 @@ export const setup: Readonly<Record<string, string>> = {
   "setup.piece.height": "Højde",
   "setup.piece.meta": "{w} × {h} × {d} mm",
   "setup.piece.width": "Bredde",
+  "setup.preview.alt": "Forhåndsvisning af {name}",
   "setup.preview.body": "Åbner tilpasningsskærmen præcis som kunderne ser den, med dine færdige design, områder, skrifttyper og priser. Intet, du gør der, bliver bestilt.",
   "setup.preview.later": "Kundeskærmen åbner herfra, når den kommer med kundens editor.",
   "setup.preview.open": "Åbn kundeskærmen",
@@ -201,6 +202,10 @@ export const setup: Readonly<Record<string, string>> = {
   "setup.step.publish": "Udgiv",
   "setup.steps": "Trin",
   "setup.title": "Opsætning af tilpasning",
+  "setup.turn.down": "Drej nedad",
+  "setup.turn.left": "Drej til venstre",
+  "setup.turn.right": "Drej til højre",
+  "setup.turn.up": "Drej opad",
   "setup.upload.none": "Upload her kræver et nyere Adminium.",
   "setup.upload.noneBody": "Bed den, der driver Adminium, om at opdatere det. Alt andet på denne side virker nu."
 };
@@ -261,6 +266,7 @@ export const panel: Readonly<Record<string, string>> = {
   "panel.open": "Åbn opsætningen",
   "panel.priced": "Med pris",
   "panel.product.alt": "{name}, tegnet fladt med dets områder",
+  "panel.product.alt3d": "{name}, færdig, med sine områder",
   "panel.product.none": "Ikke sat op til tilpasning",
   "panel.product.noneBody": "Knyt dette produkt til en grundform i Customiser, og sæt derefter områder, skrifttyper og priser op.",
   "panel.product.sub": "sat op i Customiser",
@@ -283,7 +289,10 @@ export const panel: Readonly<Record<string, string>> = {
   "panel.takes.both": "tekst eller et logo",
   "panel.takes.logo": "et logo",
   "panel.takes.words": "tekst",
-  "panel.title": "Tilpasning"
+  "panel.title": "Tilpasning",
+  "panel.views.3d": "3D",
+  "panel.views.flat": "Fladt",
+  "panel.views.label": "Sådan vises designet"
 };
 
 export const designs: Readonly<Record<string, string>> = {

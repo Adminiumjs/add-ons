@@ -85,7 +85,7 @@ export class Stage3d {
 
   resize(width: number, height: number): void {
     if (this.gone || width <= 0 || height <= 0) return;
-    this.renderer.setSize(width, height, false);
+    this.renderer.setSize(width, height);
     this.camera.aspect = width / height;
     this.frame();
     this.render();

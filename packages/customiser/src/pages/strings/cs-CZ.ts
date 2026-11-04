@@ -151,6 +151,7 @@ export const setup: Readonly<Record<string, string>> = {
   "setup.piece.height": "Výška",
   "setup.piece.meta": "{w} × {h} × {d} mm",
   "setup.piece.width": "Šířka",
+  "setup.preview.alt": "Náhled: {name}",
   "setup.preview.body": "Otevře obrazovku úprav přesně tak, jak ji vidí zákazníci, s vašimi hotovými návrhy, oblastmi, písmy a cenami. Nic, co tam uděláte, se neobjedná.",
   "setup.preview.later": "Obrazovka zákazníka se odsud otevře, jakmile přijde se zákaznickým editorem.",
   "setup.preview.open": "Otevřít obrazovku zákazníka",
@@ -201,6 +202,10 @@ export const setup: Readonly<Record<string, string>> = {
   "setup.step.publish": "Zveřejnění",
   "setup.steps": "Kroky",
   "setup.title": "Nastavení úprav",
+  "setup.turn.down": "Otočit dolů",
+  "setup.turn.left": "Otočit doleva",
+  "setup.turn.right": "Otočit doprava",
+  "setup.turn.up": "Otočit nahoru",
   "setup.upload.none": "Nahrávání tady potřebuje novější Adminium.",
   "setup.upload.noneBody": "Požádejte správce Adminia o aktualizaci. Vše ostatní na této stránce už funguje."
 };
@@ -261,6 +266,7 @@ export const panel: Readonly<Record<string, string>> = {
   "panel.open": "Otevřít nastavení",
   "panel.priced": "Placené",
   "panel.product.alt": "{name}, nakreslené naplocho s oblastmi",
+  "panel.product.alt3d": "{name}, hotový, s oblastmi",
   "panel.product.none": "Není nastaveno k úpravám",
   "panel.product.noneBody": "Připojte tento výrobek k základu v Customiseru a pak nastavte jeho oblasti, písma a ceny.",
   "panel.product.sub": "nastaveno v Customiseru",
@@ -283,7 +289,10 @@ export const panel: Readonly<Record<string, string>> = {
   "panel.takes.both": "text nebo logo",
   "panel.takes.logo": "logo",
   "panel.takes.words": "text",
-  "panel.title": "Úpravy"
+  "panel.title": "Úpravy",
+  "panel.views.3d": "3D",
+  "panel.views.flat": "Naplocho",
+  "panel.views.label": "Jak návrh zobrazit"
 };
 
 export const designs: Readonly<Record<string, string>> = {

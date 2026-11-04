@@ -151,6 +151,7 @@ export const setup: Readonly<Record<string, string>> = {
   "setup.piece.height": "Height",
   "setup.piece.meta": "{w} × {h} × {d} mm",
   "setup.piece.width": "Width",
+  "setup.preview.alt": "{name} preview",
   "setup.preview.body": "Opens the customising screen exactly as shoppers get it, with your ready-made designs, areas, fonts and prices. Nothing you do there is ordered.",
   "setup.preview.later": "The shopper's screen opens from here once it comes with the customer's editor.",
   "setup.preview.open": "Open the shopper's screen",
@@ -201,6 +202,10 @@ export const setup: Readonly<Record<string, string>> = {
   "setup.step.publish": "Publish",
   "setup.steps": "Steps",
   "setup.title": "Customising set-up",
+  "setup.turn.down": "Turn down",
+  "setup.turn.left": "Turn left",
+  "setup.turn.right": "Turn right",
+  "setup.turn.up": "Turn up",
   "setup.upload.none": "Uploading here needs a newer Adminium.",
   "setup.upload.noneBody": "Ask whoever runs Adminium to update it. Everything else on this page works now."
 };
@@ -462,6 +467,7 @@ export const panel: Readonly<Record<string, string>> = {
   "panel.open": "Open the set-up",
   "panel.priced": "Priced",
   "panel.product.alt": "{name}, drawn flat with its areas",
+  "panel.product.alt3d": "{name}, made, with its areas",
   "panel.product.none": "Not set up for customising",
   "panel.product.noneBody": "Link this product to a base in the Customiser, then set up its areas, fonts and prices.",
   "panel.product.sub": "set up in the Customiser",
@@ -484,5 +490,8 @@ export const panel: Readonly<Record<string, string>> = {
   "panel.takes.both": "words or a logo",
   "panel.takes.logo": "a logo",
   "panel.takes.words": "words",
-  "panel.title": "Customising"
+  "panel.title": "Customising",
+  "panel.views.3d": "3D",
+  "panel.views.flat": "Flat",
+  "panel.views.label": "How to show the design"
 };
