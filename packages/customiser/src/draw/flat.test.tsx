@@ -76,6 +76,30 @@ describe('a page', () => {
   });
 });
 
+describe('a page made in the full editor', () => {
+  it('lays out the parts the customer placed, back to front, and nothing of the form', async () => {
+    const { catalogue, stub } = await catalogueOf('printing', 'cards');
+    const design = designOf(stub, 'MP4112C8G2S6E4WB');
+    design.values = { ...design.values, parts: {}, placed: [
+      { id: 's1', side: 'front', kind: 'rect', x: -3, y: -3, w: 91, h: 20, colour: '#c8a35a' },
+      { id: 't1', side: 'front', kind: 'text', x: 6, y: 30, w: 70, h: 6, text: 'Fresh every morning', font: 'Manrope', size: 12, weight: 700, align: 'center', colour: 'accent' },
+      { id: 'i1', side: 'front', kind: 'image', x: 60, y: 4, w: 20, h: 20, file: 'logo_file', fit: 'fill' },
+      { id: 't2', side: 'back', kind: 'text', x: 6, y: 6, w: 70, h: 6, text: 'Back words', size: 9 },
+    ] };
+    const sheet = flatSheet(catalogue, design, { side: 'front', empty: 'hide', labels: { ...LABELS, image: 'Image' }, holds: () => true });
+    expect(sheet.items.map((one) => [one.code, one.kind])).toEqual([['s1', 'shape'], ['t1', 'text'], ['i1', 'picture']]);
+    const words = textOf(sheet.items, 't1');
+    const size = 12 * (25.4 / 72);
+    expect(words).toMatchObject({ anchor: 'middle', weight: 700, sizeMm: size });
+    expect(words.lines[0]).toMatchObject({ text: 'Fresh every morning', x: 41 });
+    expect(words.lines[0]!.y).toBeCloseTo(30 + size * BASELINE, 6);
+    expect(sheet.items[0]).toMatchObject({ fill: '#c8a35a' });
+    expect(sheet.items[2]).toMatchObject({ column: 'logo_file', fill: true, drawn: { x: 60, y: 4, w: 20, h: 20 } });
+    const unheld = flatSheet(catalogue, design, { side: 'front', empty: 'hide', labels: { ...LABELS, image: 'Image' } });
+    expect(unheld.items[2]).toMatchObject({ kind: 'slot', label: 'Image' });
+  });
+});
+
 describe('a piece', () => {
   it('sets the words in the middle of their box, in the wood’s engraving colour', async () => {
     const { catalogue, stub } = await catalogueOf('maker', 'coasters');

@@ -88,6 +88,14 @@ describe('the print file of a side (MC-F1.print)', () => {
     expect(printSize(sheets[0]!.face)).toEqual({ page: '111 × 81', trim: '85 × 55', bleed: '3' });
   });
 
+  it('prints a page made in the full editor from the parts the customer placed', async () => {
+    const placed: DesignData = { ...harbour, values: { ...harbour.values, parts: {}, placed: [{ id: 't1', side: 'front', kind: 'text', x: 6, y: 20, w: 70, h: 6, text: 'Fresh every morning', size: 12, weight: 700, colour: 'ink' }, { id: 'i1', side: 'front', kind: 'image', x: 60, y: 4, w: 20, h: 20, file: 'logo_file' }] } };
+    const sheet = flatSheet(cards, placed, { empty: 'hide', labels: LABELS, holds: () => true });
+    const doc = await PDFDocument.load(await printPdf(sheet, assets(), { font: null, text: '' }));
+    expect(pageBox(doc.getPage(0), 'TrimBox')).toEqual([13, 13, 85, 55]);
+    expect(noFonts(doc.getPage(0))).toBe(true);
+  });
+
   it('is not made while a family the design sets words in has no font file, and says which', async () => {
     const sheet = flatSheet(cards, harbour, { empty: 'hide', labels: LABELS });
     await expect(printPdf(sheet, { font: () => null, pictures: {} }, { font: null, text: '' })).rejects.toBeInstanceOf(FontMissing);
