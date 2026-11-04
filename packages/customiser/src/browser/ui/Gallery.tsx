@@ -84,7 +84,7 @@ export function Gallery({ api, catalogue, product, sides, onPick, onBack, onStar
     <section className="cz-choose" data-screen="choose">
       {onBack === undefined ? null : (
         <button type="button" className="cz-back" onClick={onBack}>
-          <ArrowLeft aria-hidden="true" />
+          <ArrowLeft aria-hidden="true" className="cz-flip" />
           {product}
         </button>
       )}

@@ -63,6 +63,7 @@
 }
 .cz [dir='rtl'] .cz-flip,
 .cz[dir='rtl'] .cz-flip {
+  /* An arrow that means back or forward points the other way when the page reads right to left. */
   transform: scaleX(-1);
 }
 .cz-mono {
@@ -2224,6 +2225,7 @@
   fill: var(--cz-accent);
 }
 .cz[dir='rtl'] .cz-transfer-fill {
+  /* The bar fills from the reading start: an SVG's x runs left to right, so it is turned round. */
   transform: scaleX(-1);
 }
 .cz-transfer-waiting .cz-transfer-fill {
@@ -2489,6 +2491,7 @@
 }
 @keyframes cz-sheet {
   from {
+    /* A transform has no logical form: the sheet slides in from the inline end, and the rtl twin below mirrors it. */
     transform: translateX(100%);
   }
   to {
@@ -2500,6 +2503,7 @@
 }
 @keyframes cz-sheet-rtl {
   from {
+    /* The same sheet from the inline end of a right-to-left page, which is its left. */
     transform: translateX(-100%);
   }
   to {

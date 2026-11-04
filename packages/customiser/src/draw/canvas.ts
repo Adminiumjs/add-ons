@@ -48,6 +48,7 @@ export interface Painted {
 /** How many pixels a millimetre takes, so the longer side is at most `longest` pixels (and at most 12 a millimetre). */
 export const pixelsPerMm = (sheet: FlatSheet, longest: number): number => Math.min(12, longest / Math.max(sheet.face.width, sheet.face.height));
 
+/** A canvas's own coordinates: the drawing is the thing made, always left to right, whatever the page's direction. */
 const ALIGN: Readonly<Record<'start' | 'middle' | 'end', CanvasTextAlign>> = { start: 'left', middle: 'center', end: 'right' };
 
 /** The box a picture takes inside its frame: inside it whole, or filling it (cut by the frame). */
