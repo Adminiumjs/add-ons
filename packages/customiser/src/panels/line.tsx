@@ -10,7 +10,8 @@
  * - **the proof** of the newest version (an A4 PDF of a page, a picture of a
  *   piece), kept on the version for the app's proof sheet to send;
  * - **the files**: a print PDF a side for the press, an SVG a piece for the
- *   laser, kept as the version's files and listed to download.
+ *   laser, a 3MF for a 3D-printed item's printer (the model with the words
+ *   raised or cut in), kept as the version's files and listed to download.
  *
  * Below, the versions in turn, newest first, the older ones greyed: each
  * order snapshots one, and the shop's proofs are made of them. Whether a
@@ -33,6 +34,7 @@ import { useToast } from '../pages/shared/toast.ts';
 import { jsonOf, kindOf, mm, text } from '../pages/setup/facts.ts';
 import { PANEL, SETUP, SHARED } from '../pages/strings/index.ts';
 import { catalogueFor, fileStem, fontBook, makeLaserFiles, pieceSheetFor, makePageProof, makePieceProof, makePrintFiles, picturesOf, sheetsFor, valuesOf, type Made, type MakeWords } from './make.ts';
+import { makePrintedFile, PrintedRefused, reliefOfFace } from './printed.ts';
 import type { PanelProps } from './product.tsx';
 import { KitViews, PieceViews } from './views.tsx';
 
@@ -91,6 +93,29 @@ function leftOutWords(t: AddOnTranslate, left: { column: string; kind: string })
   return t('panel.files.leftLogo', 'The logo is a picture, so it is not in the cut file: engrave it from the shopper’s logo.');
 }
 
+/** How a printed item's words are made: "raised 1 mm", "cut in 1.5 mm". */
+function howWords(t: AddOnTranslate, mode: 'raised' | 'cut', depth: string): string {
+  return mode === 'raised' ? t('panel.files.raised', 'raised {n} mm', { n: depth }) : t('panel.files.cutIn', 'cut in {n} mm', { n: depth });
+}
+
+/** Why a printed item's 3MF could not be made, and what the shop does about it. */
+function printedProblem(t: AddOnTranslate, problem: PrintedRefused['problem']): string {
+  switch (problem) {
+    case 'no-model':
+      return t('panel.make.noPrintModel', 'Upload the model to print in the set-up first.');
+    case 'no-face':
+      return t('panel.make.noPrintFace', 'Mark a face for the words in the set-up first.');
+    case 'empty':
+      return t('panel.make.noWords', 'There are no words or drawn logo to raise or cut in.');
+    case 'off-face':
+      return t('panel.make.offFace', 'The words run off the marked face or too near its edge. Make them smaller or shorter, or mark a bigger face.');
+    case 'no-room':
+      return t('panel.make.noRoom', 'The model is too thin under the words for that depth, or something stands over them. Choose a smaller depth in the set-up.');
+    default:
+      return t('panel.make.unreadable', 'The model to print can’t be read here. Upload it again in the set-up.');
+  }
+}
+
 /** The words the files and the proof say, in the reader's language. */
 function makeWords(t: AddOnTranslate, design: string, version: number, spec: string): MakeWords {
   return {
@@ -134,6 +159,7 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
 
   const kind = kindOf(base.row);
   const page = kind === 'page';
+  const printed = kind === 'printed';
   const unit = page ? 'pt' : 'mm';
   // The newest version is what is made; a design no line snapshotted yet is drawn as it stands.
   const values = valuesOf(latest?.['values'] ?? row['values']) ?? { parts: {} };
@@ -167,7 +193,8 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
   };
 
   const fail = (caught: unknown): void => {
-    if (caught instanceof FontMissing) setProblem(t('panel.make.noFont', 'The files need the font file of {families}. Upload it in Fonts & finishes, then make them again.', { families: caught.families.join(', ') }));
+    if (caught instanceof PrintedRefused) setProblem(printedProblem(t, caught.problem));
+    else if (caught instanceof FontMissing) setProblem(t('panel.make.noFont', 'The files need the font file of {families}. Upload it in Fonts & finishes, then make them again.', { families: caught.families.join(', ') }));
     else setProblem(refusal(t, asDataError(caught)).message);
   };
 
@@ -217,7 +244,11 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
       const sheets = sheetsFor(catalogue, data, (column) => held.pdf[column] !== undefined);
       const book = fontBook(catalogue);
       await book.load(new Set(sheets.flatMap((sheet) => sheet.items.flatMap((item) => (item.kind === 'text' ? [item.font] : [])))));
-      const made: Made[] = page ? await makePrintFiles(sheets, { font: book.font, pictures: held.pdf }, stem, words, book.font(catalogue.fonts[0]?.family ?? '', 400)) : await makeLaserFiles(catalogue, sheets[0]!, book.font, held.svg, stem, words, undefined, pieceSheetFor(catalogue, data, (column) => held.pdf[column] !== undefined));
+      const raise = (name: string, said: string, mode: 'raised' | 'cut', depth: string): string => t('panel.files.printedAbout', '{name} — “{words}” {how}', { name, words: said, how: howWords(t, mode, depth) });
+      const made: Made[] = printed
+        ? [await makePrintedFile(catalogue, data, book.font, held.svg, (column) => held.pdf[column] !== undefined, stem, { about: raise })]
+        : page
+          ? await makePrintFiles(sheets, { font: book.font, pictures: held.pdf }, stem, words, book.font(catalogue.fonts[0]?.family ?? '', 400)) : await makeLaserFiles(catalogue, sheets[0]!, book.font, held.svg, stem, words, undefined, pieceSheetFor(catalogue, data, (column) => held.pdf[column] !== undefined));
       // Making them again replaces what the version had.
       for (const old of files.rows) await fileWrite.remove(old['id'] as string | number);
       for (const [position, one] of made.entries()) {
@@ -247,7 +278,8 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
     }
   };
 
-  const printed = kind === 'printed';
+  const firstFace = catalogue?.base.faces[0];
+  const printedHow = printed && catalogue !== null && firstFace !== undefined ? reliefOfFace(catalogue, firstFace) : null;
   const proofed = proofOf(latest);
   return (
     <Card
@@ -290,18 +322,14 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
             {t('panel.line.private', 'The shopper’s logo is private to them and the shop.')}
           </p>
         ) : null}
-        {printed ? (
-          <p className="m-0 text-[12.5px] text-fg-muted">{t('panel.make.model', 'A 3D-printed item’s model file is made with its 3D preview.')}</p>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            <Button variant="primary" iconLeft={<ImageIcon />} disabled={busy !== null || proofUpload === null} onClick={() => void makeProof()}>
-              {busy === 'proof' ? t('panel.make.making', 'Making the file…') : t('panel.make.proof', 'Make the proof')}
-            </Button>
-            <Button variant="secondary" iconLeft={<FileDown />} disabled={busy !== null || fileUpload === null} onClick={() => void makeFiles()}>
-              {busy === 'files' ? t('panel.make.making', 'Making the file…') : page ? t('panel.make.print', 'Make the print file') : files.rows.length > 0 ? t('panel.make.again', 'Make the files again') : t('panel.make.files', 'Make the files')}
-            </Button>
-          </div>
-        )}
+        <div className="flex flex-wrap gap-2">
+          <Button variant="primary" iconLeft={<ImageIcon />} disabled={busy !== null || proofUpload === null} onClick={() => void makeProof()}>
+            {busy === 'proof' ? t('panel.make.making', 'Making the file…') : t('panel.make.proof', 'Make the proof')}
+          </Button>
+          <Button variant="secondary" iconLeft={<FileDown />} disabled={busy !== null || fileUpload === null} onClick={() => void makeFiles()}>
+            {busy === 'files' ? t('panel.make.making', 'Making the file…') : page ? t('panel.make.print', 'Make the print file') : files.rows.length > 0 ? t('panel.make.again', 'Make the files again') : t('panel.make.files', 'Make the files')}
+          </Button>
+        </div>
         {proofUpload === null || fileUpload === null ? <p className="m-0 text-[12.5px] text-fg-muted">{t('panel.make.newer', 'Making files here needs a newer Adminium.')}</p> : null}
         {problem === null ? null : (
           <p role="alert" className="m-0 text-[12.5px] text-danger">
@@ -396,7 +424,13 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
                 );
               })}
             </ul>
-            <p className="m-0 bg-surface-2 px-4 py-2.5 text-[12.5px] text-fg-muted">{page ? t('panel.files.pressNote', 'It goes to press once the proof is approved.') : t('panel.files.machineNote', 'Words and logos are outlines, so the laser needs no fonts.')}</p>
+            <p className="m-0 bg-surface-2 px-4 py-2.5 text-[12.5px] text-fg-muted">
+              {page
+                ? t('panel.files.pressNote', 'It goes to press once the proof is approved.')
+                : printedHow !== null
+                  ? t('panel.files.printedNote', 'The 3MF holds the model with the words {how}, ready for the slicer.', { how: howWords(t, printedHow.mode, mm(printedHow.depth)) })
+                  : t('panel.files.machineNote', 'Words and logos are outlines, so the laser needs no fonts.')}
+            </p>
           </section>
         )}
         <Figure>{t('panel.line.foot', "read-only · made from the shopper's saved design")}</Figure>
