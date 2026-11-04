@@ -120,6 +120,12 @@ export interface CustomiserApi {
   catalogue: (base: string | number, signal?: AbortSignal) => Promise<CatalogueRows>;
   /** The address of a font's file, or null when the shop has not uploaded one. */
   fontUrl: (font: Row) => Promise<string | null>;
+  /**
+   * The address of a piece's outline (the cleaned SVG its 3D preview is made
+   * from), or null when the shop has not uploaded one; left out where the
+   * editor is given no outlines (the piece is then its rectangle).
+   */
+  outlineUrl?: (base: Row) => Promise<string | null>;
   /** Save a new design; the e-mail is where its link is sent (none: nothing is sent). */
   create: (design: DesignData, email: string | null, files?: Readonly<Record<string, string>>) => Promise<SavedDesign>;
   /** Change a saved draft in place, through its own link. */
@@ -256,6 +262,10 @@ export function customiserApi(clients: CustomiserClients): CustomiserApi {
     async fontUrl(font) {
       const config = await shop.config();
       return assetAddress(clients.baseUrl, config.assets, config.refs[REFS.fonts]?.assets ?? [], REFS.fonts, asKey(font['id']), 'file', font['file']);
+    },
+    async outlineUrl(base) {
+      const config = await shop.config();
+      return assetAddress(clients.baseUrl, config.assets, config.refs[REFS.bases]?.assets ?? [], REFS.bases, asKey(base['id']), 'outline_file', base['outline_file']);
     },
     async create(design, email, files) {
       const out = await shop.createWithRank<Row>(REFS.designs, { ...written(design, files), ...(email === null ? {} : { email }) });

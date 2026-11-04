@@ -151,6 +151,7 @@ export const setup: Readonly<Record<string, string>> = {
   "setup.piece.height": "Hauteur",
   "setup.piece.meta": "{w} × {h} × {d} mm",
   "setup.piece.width": "Largeur",
+  "setup.preview.alt": "Aperçu de {name}",
   "setup.preview.body": "Ouvre l’écran de personnalisation tel que les clients le voient, avec vos modèles, zones, polices et prix. Rien de ce que vous y faites n’est commandé.",
   "setup.preview.later": "L’écran client s’ouvrira d’ici quand il arrivera avec l’éditeur du client.",
   "setup.preview.open": "Ouvrir l’écran client",
@@ -201,6 +202,10 @@ export const setup: Readonly<Record<string, string>> = {
   "setup.step.publish": "Publier",
   "setup.steps": "Étapes",
   "setup.title": "Configuration de la personnalisation",
+  "setup.turn.down": "Tourner vers le bas",
+  "setup.turn.left": "Tourner à gauche",
+  "setup.turn.right": "Tourner à droite",
+  "setup.turn.up": "Tourner vers le haut",
   "setup.upload.none": "L’envoi de fichiers ici demande un Adminium plus récent.",
   "setup.upload.noneBody": "Demandez à la personne qui gère Adminium de le mettre à jour. Tout le reste de cette page fonctionne déjà."
 };
@@ -266,6 +271,7 @@ export const panel: Readonly<Record<string, string>> = {
   "panel.open": "Ouvrir la configuration",
   "panel.priced": "Payant",
   "panel.product.alt": "{name}, dessiné à plat avec ses zones",
+  "panel.product.alt3d": "{name}, fabriqué, avec ses zones",
   "panel.product.none": "Pas configuré pour la personnalisation",
   "panel.product.noneBody": "Reliez ce produit à un support dans le Customiser, puis configurez ses zones, polices et prix.",
   "panel.product.sub": "configuré dans le Customiser",
@@ -288,7 +294,10 @@ export const panel: Readonly<Record<string, string>> = {
   "panel.takes.both": "du texte ou un logo",
   "panel.takes.logo": "un logo",
   "panel.takes.words": "du texte",
-  "panel.title": "Personnalisation"
+  "panel.title": "Personnalisation",
+  "panel.views.3d": "3D",
+  "panel.views.flat": "À plat",
+  "panel.views.label": "Comment montrer le motif"
 };
 
 export const designs: Readonly<Record<string, string>> = {

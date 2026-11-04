@@ -12,6 +12,7 @@ import { wordsFor } from '../pages/shared/messages.ts';
 import { PANEL, SETUP, SHARED } from '../pages/strings/index.ts';
 import { Card, EmptyState, Grid, KeyValueList, Link, Stack, StatusPill, useRecord, useRecords, type AddOnTranslate } from '../pages/shared/host.ts';
 import { pageAt } from '../pages/shared/paths.ts';
+import { PieceStillBox, plainSheet, storedOutline } from '../pages/shared/Piece3d.tsx';
 import { Drawing } from '../pages/setup/Drawing.tsx';
 import { boxOf, guidesOf, isPublished, kindOf, mm, num, sizeOf, takesOf, text, wordsRulesOf, yes } from '../pages/setup/facts.ts';
 import { kindName } from '../pages/setup/NewBase.tsx';
@@ -51,6 +52,8 @@ export function ProductPanel({ t, linked }: { t: AddOnTranslate } & PanelProps):
       return t('panel.area', '{name} ({parts})', { name: text(area['name']), parts: parts.join(', ') });
     })
     .join(' · ');
+  const drawnAreas = areas.rows.map((area) => ({ id: String(area['id']), name: text(area['name']), shape: area['shape'] === 'oval' ? ('oval' as const) : ('rect' as const), box: boxOf(area) }));
+  const flat = <Drawing kind={kind === 'page' ? 'page' : 'piece'} size={size} guides={guidesOf(row)} corner={num(row['corner_mm']) ?? 0} areas={drawnAreas} label={t('panel.product.alt', '{name}, drawn flat with its areas', { name: text(row['name']) })} />;
   return (
     <Card
       title={t('panel.title', 'Customising')}
@@ -58,14 +61,18 @@ export function ProductPanel({ t, linked }: { t: AddOnTranslate } & PanelProps):
       actions={<StatusPill status={published ? 'published' : 'draft'} tone={published ? 'pos' : 'warn'}>{published ? t('panel.published', 'Published') : t('panel.notOffered', 'Not offered yet')}</StatusPill>}
     >
       <Grid columns={2} gap="lg">
-        <Drawing
-          kind={kind === 'page' ? 'page' : 'piece'}
-          size={size}
-          guides={guidesOf(row)}
-          corner={num(row['corner_mm']) ?? 0}
-          areas={areas.rows.map((area) => ({ id: String(area['id']), name: text(area['name']), shape: area['shape'] === 'oval' ? 'oval' : 'rect', box: boxOf(area) }))}
-          label={t('panel.product.alt', '{name}, drawn flat with its areas', { name: text(row['name']) })}
-        />
+        {kind === 'piece' ? (
+          // A flat piece is shown made: its outline at its thickness, its areas named on its top.
+          <PieceStillBox
+            sheet={plainSheet(size, num(row['corner_mm']) ?? 0, text(row['material']) || null, drawnAreas)}
+            thickness={num(row['thickness_mm'])}
+            outline={storedOutline(row['outline_file'])}
+            label={t('panel.product.alt3d', '{name}, made, with its areas', { name: text(row['name']) })}
+            fallback={flat}
+          />
+        ) : (
+          flat
+        )}
         <Stack gap="md">
           <KeyValueList
             items={[

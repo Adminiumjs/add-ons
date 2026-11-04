@@ -34,6 +34,7 @@ import { jsonOf, kindOf, mm, text } from '../pages/setup/facts.ts';
 import { PANEL, SETUP, SHARED } from '../pages/strings/index.ts';
 import { catalogueFor, fileStem, fontBook, makeLaserFiles, makePageProof, makePieceProof, makePrintFiles, picturesOf, sheetsFor, valuesOf, type Made, type MakeWords } from './make.ts';
 import type { PanelProps } from './product.tsx';
+import { PieceViews } from './views.tsx';
 
 const t = wordsFor(SHARED, SETUP, PANEL);
 
@@ -257,6 +258,9 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
       <Stack gap="md">
         {catalogue === null ? null : (
           <SharedContext.Provider value={shared}>
+            {kind === 'piece' ? (
+              <PieceViews t={t} catalogue={catalogue} design={data} pictures={pictures} label={t('panel.line.drawn', '{design}, as it will be made', { design: designName })} flat={<Drawing catalogue={catalogue} design={data} empty="hide" pictures={pictures} className="w-full" label={t('panel.line.drawn', '{design}, as it will be made', { design: designName })} />} />
+            ) : (
             <div className="flex flex-wrap gap-3" data-design-sides="">
               {sides.map((side) => (
                 <div key={side} className="flex min-w-0 flex-1 flex-col gap-1.5">
@@ -267,6 +271,7 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
                 </div>
               ))}
             </div>
+            )}
           </SharedContext.Provider>
         )}
         <KeyValueList

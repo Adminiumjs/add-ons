@@ -12,6 +12,7 @@
 import { useId, useState, type ChangeEvent, type ReactNode } from 'react';
 
 import { Alert, asDataError, Card, FileInput, Figure, Grid, Input, NumberInput, SegmentedControl, Stack, ToggleChip, useUploader, useWrite, type AddOnTranslate, type DataRow } from '../shared/host.ts';
+import { PieceTurntable, plainSheet, storedOutline, WaitingSquare } from '../shared/Piece3d.tsx';
 import { refusal } from '../shared/refusal.ts';
 import { useToast } from '../shared/toast.ts';
 import { Drawing } from './Drawing.tsx';
@@ -220,21 +221,27 @@ function Preview({ t, base, settings }: { t: AddOnTranslate; base: DataRow; sett
     );
   }
   if (kind !== 'piece' || text(base['outline_file']) === '') {
-    return (
+    return kind === 'piece' ? (
+      <WaitingSquare words={t('setup.preview.waiting', 'the 3D preview appears once the outline is in')} />
+    ) : (
       <div className="flex items-center justify-center rounded-xl border border-dashed border-border-strong bg-surface-2 px-4 py-4">
         <Figure>{t('setup.preview.waiting', 'the 3D preview appears once the outline is in')}</Figure>
       </div>
     );
   }
+  const corner = num(base['corner_mm']) ?? 0;
+  const thickness = num(base['thickness_mm']);
+  // The piece made from its outline and thickness, as the shoppers will turn it.
   return (
-    <Stack gap="sm">
-      <div className="rounded-xl border border-border bg-surface-3 p-3">
-        <Drawing kind="piece" size={size} corner={num(base['corner_mm']) ?? 0} label={t('setup.piece.alt', '{name}, drawn flat', { name: text(base['name']) })} />
-      </div>
-      <Stack direction="row" justify="end">
-        <Figure>{t('setup.piece.meta', '{w} × {h} × {d} mm', { w: mm(size.width), h: mm(size.height), d: mm(num(base['thickness_mm']) ?? 0) })}</Figure>
-      </Stack>
-    </Stack>
+    <PieceTurntable
+      t={t}
+      sheet={plainSheet(size, corner, text(base['material']) || null)}
+      thickness={thickness}
+      outline={storedOutline(base['outline_file'])}
+      label={t('setup.preview.alt', '{name} preview', { name: text(base['name']) })}
+      meta={<Figure>{t('setup.piece.meta', '{w} × {h} × {d} mm', { w: mm(size.width), h: mm(size.height), d: mm(thickness ?? 0) })}</Figure>}
+      fallback={<Drawing kind="piece" size={size} corner={corner} label={t('setup.piece.alt', '{name}, drawn flat', { name: text(base['name']) })} />}
+    />
   );
 }
 

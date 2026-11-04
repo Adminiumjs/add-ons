@@ -151,6 +151,7 @@ export const setup: Readonly<Record<string, string>> = {
   "setup.piece.height": "الارتفاع",
   "setup.piece.meta": "{w} × {h} × {d} مم",
   "setup.piece.width": "العرض",
+  "setup.preview.alt": "معاينة {name}",
   "setup.preview.body": "يفتح شاشة التخصيص كما يراها المتسوقون تمامًا، مع تصاميمك الجاهزة ومناطقك وخطوطك وأسعارك. لا يُطلب شيء مما تفعله هناك.",
   "setup.preview.later": "تُفتح شاشة المتسوق من هنا عندما تأتي مع محرر العميل.",
   "setup.preview.open": "افتح شاشة المتسوق",
@@ -201,6 +202,10 @@ export const setup: Readonly<Record<string, string>> = {
   "setup.step.publish": "النشر",
   "setup.steps": "الخطوات",
   "setup.title": "إعداد التخصيص",
+  "setup.turn.down": "دوّر للأسفل",
+  "setup.turn.left": "دوّر لليسار",
+  "setup.turn.right": "دوّر لليمين",
+  "setup.turn.up": "دوّر للأعلى",
   "setup.upload.none": "يتطلب الرفع هنا إصدارًا أحدث من Adminium.",
   "setup.upload.noneBody": "اطلب ممن يدير Adminium تحديثه. كل ما عدا ذلك في هذه الصفحة يعمل الآن."
 };
@@ -266,6 +271,7 @@ export const panel: Readonly<Record<string, string>> = {
   "panel.open": "افتح الإعداد",
   "panel.priced": "بسعر",
   "panel.product.alt": "{name}، مرسوم مسطحًا مع مناطقه",
+  "panel.product.alt3d": "{name} مصنوعة، مع مناطقها",
   "panel.product.none": "غير مُعدّ للتخصيص",
   "panel.product.noneBody": "اربط هذا المنتج بقاعدة في Customiser، ثم أعدّ مناطقه وخطوطه وأسعاره.",
   "panel.product.sub": "مُعدّ في Customiser",
@@ -288,7 +294,10 @@ export const panel: Readonly<Record<string, string>> = {
   "panel.takes.both": "كلمات أو شعار",
   "panel.takes.logo": "شعار",
   "panel.takes.words": "كلمات",
-  "panel.title": "التخصيص"
+  "panel.title": "التخصيص",
+  "panel.views.3d": "ثلاثي الأبعاد",
+  "panel.views.flat": "مسطّح",
+  "panel.views.label": "طريقة عرض التصميم"
 };
 
 export const designs: Readonly<Record<string, string>> = {

@@ -24,7 +24,7 @@ function fakeClient(name: string, log: Logged[], rows: Record<string, Row[]> = {
   let held: HeldSession | null = null;
   return {
     async config() {
-      return { assets: '/api/v1/public/assets', pictures: '/api/v1/public/pictures', refs: { [REFS.fonts]: { assets: ['file'], limit: 100 }, [REFS.bases]: { limit: 100, filterable: ['id'] }, [REFS.areas]: { limit: 100, filterable: ['base_id'] }, [REFS.ready]: { limit: 100, pictures: ['preview_file'] }, [REFS.parts]: { limit: 2, filterable: ['ready_design_id'] } } };
+      return { assets: '/api/v1/public/assets', pictures: '/api/v1/public/pictures', refs: { [REFS.fonts]: { assets: ['file'], limit: 100 }, [REFS.bases]: { limit: 100, filterable: ['id'], assets: ['outline_file'] }, [REFS.areas]: { limit: 100, filterable: ['base_id'] }, [REFS.ready]: { limit: 100, pictures: ['preview_file'] }, [REFS.parts]: { limit: 2, filterable: ['ready_design_id'] } } };
     },
     async list<T>(ref: string, options?: unknown) {
       log.push({ client: name, call: 'list', args: [ref, options] });
@@ -156,6 +156,13 @@ describe('the editor’s calls', () => {
     expect(await api.fontUrl({ id: 4, file: id })).toBe(`https://shop.example/api/v1/public/assets/${REFS.fonts}/4/file/${id}`);
     expect(await api.fontUrl({ id: 4, file: null })).toBeNull();
     expect(assetAddress('https://x', '/a', [], REFS.fonts, 4, 'file', id)).toBeNull();
+  });
+
+  it('builds a piece’s outline address, which its 3D preview is made from, and none for a piece with no outline', async () => {
+    const { api } = setUp();
+    const id = 'file_01HZY0000000000000000000EF';
+    expect(await api.outlineUrl?.({ id: 3, outline_file: id })).toBe(`https://shop.example/api/v1/public/assets/${REFS.bases}/3/outline_file/${id}`);
+    expect(await api.outlineUrl?.({ id: 3, outline_file: null })).toBeNull();
   });
 });
 

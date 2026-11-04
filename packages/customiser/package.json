@@ -37,10 +37,12 @@
     "@adminium/add-on-host": "*",
     "@adminium/tokens": "npm:@adminiumjs/tokens@0.2.9",
     "@adminiumjs/manifest": "0.3.41",
+    "@types/three": "0.186.0",
     "axe-core": "^4.13.0"
   },
   "dependencies": {
     "fontkit": "2.0.4",
-    "pdf-lib": "1.17.1"
+    "pdf-lib": "1.17.1",
+    "three": "0.186.1"
   }
 }

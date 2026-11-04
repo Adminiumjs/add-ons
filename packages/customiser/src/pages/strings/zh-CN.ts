@@ -151,6 +151,7 @@ export const setup: Readonly<Record<string, string>> = {
   "setup.piece.height": "高度",
   "setup.piece.meta": "{w} × {h} × {d} 毫米",
   "setup.piece.width": "宽度",
+  "setup.preview.alt": "{name}预览",
   "setup.preview.body": "按顾客看到的样子打开定制界面，包含您的现成设计、区域、字体和价格。在那里的操作都不会下单。",
   "setup.preview.later": "顾客界面随顾客编辑器提供后即可从这里打开。",
   "setup.preview.open": "打开顾客界面",
@@ -201,6 +202,10 @@ export const setup: Readonly<Record<string, string>> = {
   "setup.step.publish": "发布",
   "setup.steps": "步骤",
   "setup.title": "定制设置",
+  "setup.turn.down": "向下转",
+  "setup.turn.left": "向左转",
+  "setup.turn.right": "向右转",
+  "setup.turn.up": "向上转",
   "setup.upload.none": "在此上传需要更新版本的 Adminium。",
   "setup.upload.noneBody": "请让管理 Adminium 的人更新它。此页面的其他功能现在都可用。"
 };
@@ -266,6 +271,7 @@ export const panel: Readonly<Record<string, string>> = {
   "panel.open": "打开设置",
   "panel.priced": "加价",
   "panel.product.alt": "{name}，平面绘制及其区域",
+  "panel.product.alt3d": "{name}，成品效果，含区域",
   "panel.product.none": "尚未设置定制",
   "panel.product.noneBody": "在 Customiser 中把此商品关联到一个底材，然后设置其区域、字体和价格。",
   "panel.product.sub": "在 Customiser 中设置",
@@ -288,7 +294,10 @@ export const panel: Readonly<Record<string, string>> = {
   "panel.takes.both": "文字或标志",
   "panel.takes.logo": "标志",
   "panel.takes.words": "文字",
-  "panel.title": "定制"
+  "panel.title": "定制",
+  "panel.views.3d": "3D",
+  "panel.views.flat": "平面",
+  "panel.views.label": "设计的显示方式"
 };
 
 export const designs: Readonly<Record<string, string>> = {

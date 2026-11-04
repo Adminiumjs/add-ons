@@ -151,6 +151,7 @@ export const setup: Readonly<Record<string, string>> = {
   "setup.piece.height": "Höhe",
   "setup.piece.meta": "{w} × {h} × {d} mm",
   "setup.piece.width": "Breite",
+  "setup.preview.alt": "Vorschau von {name}",
   "setup.preview.body": "Öffnet den Gestaltungsbildschirm genau so, wie Kunden ihn sehen, mit Ihren fertigen Entwürfen, Bereichen, Schriften und Preisen. Nichts, was Sie dort tun, wird bestellt.",
   "setup.preview.later": "Der Kundenbildschirm öffnet sich hier, sobald er mit dem Kunden-Editor kommt.",
   "setup.preview.open": "Kundenbildschirm öffnen",
@@ -201,6 +202,10 @@ export const setup: Readonly<Record<string, string>> = {
   "setup.step.publish": "Veröffentlichen",
   "setup.steps": "Schritte",
   "setup.title": "Gestaltung einrichten",
+  "setup.turn.down": "Nach unten drehen",
+  "setup.turn.left": "Nach links drehen",
+  "setup.turn.right": "Nach rechts drehen",
+  "setup.turn.up": "Nach oben drehen",
   "setup.upload.none": "Hochladen braucht hier ein neueres Adminium.",
   "setup.upload.noneBody": "Bitten Sie die Person, die Adminium betreibt, um ein Update. Alles andere auf dieser Seite funktioniert schon."
 };
@@ -266,6 +271,7 @@ export const panel: Readonly<Record<string, string>> = {
   "panel.open": "Einrichtung öffnen",
   "panel.priced": "Mit Aufpreis",
   "panel.product.alt": "{name}, flach gezeichnet mit seinen Bereichen",
+  "panel.product.alt3d": "{name}, gefertigt, mit seinen Bereichen",
   "panel.product.none": "Nicht zum Gestalten eingerichtet",
   "panel.product.noneBody": "Verknüpfen Sie dieses Produkt mit einer Grundform im Customiser und richten Sie dann Bereiche, Schriften und Preise ein.",
   "panel.product.sub": "im Customiser eingerichtet",
@@ -288,7 +294,10 @@ export const panel: Readonly<Record<string, string>> = {
   "panel.takes.both": "Text oder ein Logo",
   "panel.takes.logo": "ein Logo",
   "panel.takes.words": "Text",
-  "panel.title": "Gestaltung"
+  "panel.title": "Gestaltung",
+  "panel.views.3d": "3D",
+  "panel.views.flat": "Flach",
+  "panel.views.label": "Wie das Design gezeigt wird"
 };
 
 export const designs: Readonly<Record<string, string>> = {

@@ -12,9 +12,13 @@
 import { ArrowLeft, Image as ImageIcon, SearchX, Sprout, SquareDashed, SquarePen, Type, Upload, Wand2, Search } from 'lucide-react';
 import { useId, useState } from 'react';
 
+import { flatSheet } from '../../draw/flat.ts';
+import { PieceStill } from '../../three/PieceView.tsx';
+import type { CustomiserApi } from '../api.ts';
 import { freshValues, type Catalogue, type Ready } from '../catalogue.ts';
 import { useShared, useNarrow } from './context.tsx';
 import { Drawing } from './Drawing.tsx';
+import { outlineOf } from './PieceStage.tsx';
 
 /** What a design lets a customer change, as the chips on its card say. */
 export function chipsOf(ready: Ready): ('words' | 'logo' | 'photo' | 'motif')[] {
@@ -30,6 +34,8 @@ export function chipsOf(ready: Ready): ('words' | 'logo' | 'photo' | 'motif')[] 
 }
 
 export interface GalleryProps {
+  /** Where a piece's outline is read from, for its cards drawn in 3D. */
+  api?: CustomiserApi;
   catalogue: Catalogue;
   product: string;
   sides: number;
@@ -40,13 +46,14 @@ export interface GalleryProps {
   onChangeSides?: (() => void) | undefined;
 }
 
-export function Gallery({ catalogue, product, sides, onPick, onBack, onStartBlank, onSendOwnFile, onChangeSides }: GalleryProps) {
+export function Gallery({ api, catalogue, product, sides, onPick, onBack, onStartBlank, onSendOwnFile, onChangeSides }: GalleryProps) {
   const { t, look, locale } = useShared();
   const narrow = useNarrow();
   const [filter, setFilter] = useState('all');
   const [query, setQuery] = useState('');
   const searchId = useId();
   const { base } = catalogue;
+  const pictureWords = { logo: t('editor.drawing.logo', 'Your logo'), photo: t('editor.drawing.photo', 'Your photo') };
   const chipWords = { words: t('editor.chip.words', 'Your words'), logo: t('editor.chip.logo', 'Your logo'), photo: t('editor.chip.photo', 'Photo'), motif: t('editor.chip.motif', 'Motifs') };
   const tagWords: Record<string, string> = {
     words: t('editor.filter.words', 'Words only'),
@@ -129,7 +136,23 @@ export function Gallery({ catalogue, product, sides, onPick, onBack, onStartBlan
                 <button key={String(ready.id)} type="button" className="cz-card" aria-label={t('editor.choose.use', 'Customise the {name} design. {chips}.', { name: ready.name, chips: chips.map((chip) => chipWords[chip]).join(', ') })} onClick={() => onPick(ready)}>
                   <span className={two ? 'cz-card-art cz-card-art-two' : 'cz-card-art'}>
                     {/* The front as the shop's preview picture shows it, where it has one; else drawn here. */}
-                    {ready.picture === null ? <Drawing catalogue={catalogue} design={design} /> : <img src={ready.picture} alt="" className="cz-drawing cz-card-picture" />}
+                    {base.kind === 'piece' ? (
+                      // A flat piece's card is its 3D still (drawn once for the page), its picture or drawing until then.
+                      <PieceStill
+                        sheet={flatSheet(catalogue, design, { labels: pictureWords })}
+                        thickness={base.thickness}
+                        outline={api === undefined ? null : outlineOf(api, catalogue)}
+                        width={400}
+                        height={300}
+                        alt=""
+                        className="cz-drawing cz-card-picture"
+                        fallback={ready.picture === null ? <Drawing catalogue={catalogue} design={design} /> : <img src={ready.picture} alt="" className="cz-drawing cz-card-picture" />}
+                      />
+                    ) : ready.picture === null ? (
+                      <Drawing catalogue={catalogue} design={design} />
+                    ) : (
+                      <img src={ready.picture} alt="" className="cz-drawing cz-card-picture" />
+                    )}
                     {two ? <Drawing catalogue={catalogue} design={design} side="back" /> : null}
                   </span>
                   <span className="cz-card-body">

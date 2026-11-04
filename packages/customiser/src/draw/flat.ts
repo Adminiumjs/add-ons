@@ -103,6 +103,10 @@ const MATERIALS: readonly { test: RegExp; face: string; edge: string; engraved: 
 ];
 const PLAIN_MATERIAL = { face: '#e9e4da', edge: '#b9b2a5', engraved: '#3a3530' };
 const PAINT: Readonly<Record<string, string>> = { 'paint-white': '#f3f1ea', 'paint-black': '#15120e' };
+/** The colours of the wood, slate or plastic a piece is cut from, by its material's name. */
+export function materialColours(material: string | null): { face: string; edge: string; engraved: string } {
+  return MATERIALS.find((one) => one.test.test(material ?? '')) ?? PLAIN_MATERIAL;
+}
 /** A page's words when the palette names no ink. */
 const INK = '#191920';
 const PAGE_EDGE = '#d0d0d6';
@@ -143,7 +147,7 @@ export function flatSheet(catalogue: Catalogue, design: DesignData, options: Fla
   const ready = readyOf(catalogue, design.ready_design_id);
   const palette = paletteOf(ready, design.values);
   const all = liveParts(catalogue, ready, design.values);
-  const material = MATERIALS.find((one) => one.test.test(base.material ?? '')) ?? PLAIN_MATERIAL;
+  const material = materialColours(base.material);
   // A printed item takes the colour its colour part chose.
   const colourPart = all.find((part) => part.kind === 'colour');
   const chosenColour = colourPart === undefined ? undefined : (valueOf(design.values, colourPart).choice ?? colourPart.start?.choice);

@@ -20,6 +20,7 @@ import editorCss from '../../browser/editor.css?inline';
 import type { CatalogueRows, CustomiserApi, Row } from '../../browser/api.ts';
 import { CustomiserEditor } from '../../browser/ui/Editor.tsx';
 import { useLocaleTag, type DataRow } from '../shared/host.ts';
+import { fileAddress } from '../shared/stored.ts';
 import type { SetupData } from '../setup/data.ts';
 import { text } from '../setup/facts.ts';
 import type { DesignRows } from './data.ts';
@@ -53,6 +54,8 @@ export function previewApi(rows: CatalogueRows): CustomiserApi {
   return {
     catalogue: async () => rows,
     fontUrl: async () => null,
+    // The piece's outline as the shop stored it, so the preview's 3D piece is the one shoppers turn.
+    outlineUrl: async (base: Row) => fileAddress(base['outline_file']),
     create: never,
     change: never,
     remove: never,
