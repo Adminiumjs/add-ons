@@ -818,6 +818,21 @@ const SELF_MANAGEMENT_SLOTS: readonly string[] = ['settings.add-on.panel'];
  * mutation to the rule fails the proof — which is not true of a proof that
  * restates the rule beside it.
  */
+/**
+ * Add-ons an app's NEXT line requires, while the app's released line predates
+ * them. The Customiser is required by Maker Shop and Print Shop from 0.2.0 on;
+ * 0.1.x, on each app's main until 0.2.0 ships, has no seam for it.
+ */
+const AWAITING_HOST_LINE: readonly { pkg: string; app: string; line: string; why: string }[] = [
+  { pkg: 'customiser', app: 'maker', line: '0.2.0', why: 'Maker Shop 0.2.0 requires the Customiser and links its lines into it; 0.1.x has none' },
+  { pkg: 'customiser', app: 'printing', line: '0.2.0', why: 'Print Shop 0.2.0 requires the Customiser and links its jobs into it; 0.1.x has none' },
+];
+
+function awaitingHostLine(pkg: string, app: string, version: string | null): boolean {
+  const entry = AWAITING_HOST_LINE.find((row) => row.pkg === pkg && row.app === app);
+  return entry !== undefined && version !== null && satisfiesSemverRange(version, `<${entry.line}`);
+}
+
 function emptyAttachClaims(
   docs: readonly { pkg: string; manifest: unknown }[],
   hosts: readonly HostApp[],
@@ -859,6 +874,13 @@ function emptyAttachClaims(
        * as an app that stopped hosting add-ons rather than as a gate going
        * green.
        */
+      /*
+       * AN ADD-ON THE APP'S NEXT LINE REQUIRES is drawn by that line, not this one:
+       * the version checked out predates it and links nothing into it. Named, with
+       * the line, in `AWAITING_HOST_LINE`, and judged again once the app's main
+       * reaches that line (its rows then link into the add-on: the third way below).
+       */
+      if (awaitingHostLine(key, target.app ?? '', host.version ?? null)) continue;
       const hosted = host.hostedSlots;
       if (hosted === undefined) continue;
       const working = fills.filter(
