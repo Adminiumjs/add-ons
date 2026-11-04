@@ -14,7 +14,7 @@ import { useState } from 'react';
 import { pt } from '../i18n.ts';
 import { hexOf, valueOf, type EditPart, type Ready } from '../catalogue.ts';
 import { useShared } from './context.tsx';
-import { CheckIcon, fieldId, fileMeta, fullness, Swatch, TransferBar, usePicker, WarnIcon, type FieldsProps } from './fieldKit.tsx';
+import { acceptOf, CheckIcon, fieldId, fileMeta, fullness, Swatch, TransferBar, usePicker, WarnIcon, type FieldsProps } from './fieldKit.tsx';
 import { CAP_WORDS } from './pictures.ts';
 
 /** What a browser may fill a field with, by the part's code, where the code says what it is. */
@@ -224,7 +224,7 @@ function ImageField({ part, values, pictures, transfers, problems, upload, setPa
       <div className="cz-row-head">
         <span className="cz-label">{part.name}</span>
         {part.required ? <span className="cz-req">{t('editor.fields.neededLower', 'needed')}</span> : null}
-        <span className="cz-mono cz-hint cz-push">{`${rules.accept.map((one) => (one === 'jpg' ? 'JPEG' : one.toUpperCase())).join(' · ')} · ${CAP_WORDS}`}</span>
+        <span className="cz-mono cz-hint cz-push">{`${acceptOf(part).map((one) => one.toUpperCase()).join(' · ')} · ${CAP_WORDS}`}</span>
       </div>
       {picker.element}
       {transfer !== undefined ? (

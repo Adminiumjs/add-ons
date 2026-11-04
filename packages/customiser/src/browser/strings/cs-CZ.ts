@@ -219,6 +219,7 @@ export const editor: Readonly<Record<string, string>> = {
   "editor.full.sending": "Nahrává se váš obrázek",
   "editor.full.size": "{w} × {h} mm · spadávka {bleed} mm · bezpečný okraj {safe} mm",
   "editor.full.sizeNoSafe": "{w} × {h} mm · spadávka {bleed} mm",
+  "editor.full.sizePt": "Velikost v bodech",
   "editor.full.start": "Na začátek",
   "editor.full.toForm": "Vrátit se k formuláři",
   "editor.full.tools": "Nástroje",

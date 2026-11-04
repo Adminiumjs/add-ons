@@ -19,7 +19,7 @@
  * Escape; each part is a button on the card and in the layers; every value
  * is a field.
  */
-import { AlignCenterHorizontal, AlignCenterVertical, AlignEndHorizontal, AlignEndVertical, AlignStartHorizontal, AlignStartVertical, AlignCenter, AlignLeft, AlignRight, ArrowLeft, ChevronDown, ChevronUp, Circle, Image as ImageIcon, ImageOff, Minus, Move, Redo2, Ruler, SlidersHorizontal, Square, Trash2, TriangleAlert, Type, Undo2, Upload as UploadIcon, X, ZoomIn, ZoomOut } from 'lucide-react';
+import { AlignCenterHorizontal, AlignCenterVertical, AlignEndHorizontal, AlignEndVertical, AlignStartHorizontal, AlignStartVertical, AlignCenter, AlignLeft, AlignRight, ArrowLeft, ChevronDown, ChevronUp, Circle, CircleAlert, Image as ImageIcon, ImageOff, Minus, Move, Redo2, Ruler, SlidersHorizontal, Square, Trash2, TriangleAlert, Type, Undo2, Upload as UploadIcon, X, ZoomIn, ZoomOut } from 'lucide-react';
 import { useId, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
 
 import type { DesignAnswer, DesignValues, PlacedKind, PlacedPart } from '../../rules/index.ts';
@@ -33,13 +33,11 @@ import { fileMeta, TransferBar } from './fieldKit.tsx';
 import { browserMeasure } from './fonts.ts';
 import { Dialog } from './Overlay.tsx';
 import type { Pictures } from './pictures.ts';
-import { CAP_WORDS } from './pictures.ts';
+import { CAP_WORDS, COLUMN_KINDS } from './pictures.ts';
 
 const ZOOMS = [0.5, 0.75, 1, 1.5, 2, 3] as const;
 /** The card's width on screen at 100 %, in pixels, on a wide screen. */
 const PAGE_PX = 460;
-/** The kinds a picture column takes: the logo any of the four, the photo a PNG or a JPEG. */
-const COLUMN_KINDS: Readonly<Record<string, readonly string[]>> = { logo_file: ['svg', 'pdf', 'png', 'jpeg'], photo_file: ['png', 'jpeg'] };
 
 export interface FullEditorProps {
   catalogue: Catalogue;
@@ -121,16 +119,12 @@ export function FullEditor(props: FullEditorProps) {
   const sent = (column: string, picked: File): void => {
     const replace = replacing.current;
     void pictures.send(column, picked, COLUMN_KINDS[column] ?? []).then((taken) => {
-      if (!taken) {
-        const problem = pictures.problems[column];
-        if (problem !== undefined) props.toast(problem.text, 'warn');
-        return;
-      }
+      if (taken === null) return;
       if (replace !== null) {
         patch(replace, { file: column });
         return;
       }
-      const part = newImage(values, side, base, column, picked.name.slice(0, 80) || t('editor.full.image', 'Image'), pictures.pictures[column]?.px);
+      const part = newImage(values, side, base, column, picked.name.slice(0, 80) || t('editor.full.image', 'Image'), taken.px);
       set([...(values.placed ?? []), part]);
       setSelected(part.id);
     });
@@ -319,6 +313,22 @@ export function FullEditor(props: FullEditorProps) {
         <div className="cz-ed-canvas">
           <div className="cz-ed-card">
             {FILE_COLUMNS.map((column) => (pictures.transfers[column] === undefined ? null : <TransferBar key={column} transfer={pictures.transfers[column]!} label={t('editor.full.sending', 'Uploading your image')} />))}
+            {FILE_COLUMNS.map((column) => {
+              const problem = pictures.problems[column];
+              return problem === undefined ? null : (
+                <p key={column} role="alert" className="cz-error">
+                  <CircleAlert aria-hidden="true" />
+                  <span>
+                    {problem.text}
+                    {problem.detail === undefined ? null : (
+                      <span lang="en" className="cz-detail">
+                        {problem.detail}
+                      </span>
+                    )}
+                  </span>
+                </p>
+              );
+            })}
             <Scene
               face={sceneFace}
               drawn={drawnOfPlaced(shown, palette, pictures.pictures, label)}
@@ -507,6 +517,7 @@ function Inspector(props: InspectorProps) {
                       step={0.5}
                       min={4}
                       max={200}
+                      aria-label={t('editor.full.sizePt', 'Size in points')}
                       className="cz-mono"
                       value={String(part.size ?? 9)}
                       onChange={(event) => {

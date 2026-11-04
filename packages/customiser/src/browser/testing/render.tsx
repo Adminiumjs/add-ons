@@ -39,3 +39,55 @@ export async function settleUntil(holds: () => boolean, moments = 60): Promise<v
   }
   if (!holds()) throw new Error('it never held');
 }
+
+/**
+ * A page that draws pictures, as a browser does and the test page does not:
+ * every picture decodes at `px`, and a canvas hands back `light` (a lightness
+ * a pixel, 0 black to 255 white) as its pixels. Gives the page back as it was.
+ */
+export function drawsPictures(px: readonly [number, number], light?: (x: number, y: number) => number): () => void {
+  const saved = { Image: globalThis.Image, create: URL.createObjectURL, revoke: URL.revokeObjectURL, context: HTMLCanvasElement.prototype.getContext, toBlob: HTMLCanvasElement.prototype.toBlob };
+  let made = 0;
+  URL.createObjectURL = () => `blob:test/${String((made += 1))}`;
+  URL.revokeObjectURL = () => {};
+  class Decoded {
+    naturalWidth = px[0];
+    naturalHeight = px[1];
+    width = px[0];
+    height = px[1];
+    onload: (() => void) | null = null;
+    onerror: (() => void) | null = null;
+    set src(_value: string) {
+      setTimeout(() => this.onload?.(), 0);
+    }
+  }
+  globalThis.Image = Decoded as unknown as typeof Image;
+  HTMLCanvasElement.prototype.getContext = function context(this: HTMLCanvasElement) {
+    const canvas = this;
+    return {
+      drawImage: () => {},
+      getImageData: (_x: number, _y: number, w: number, h: number) => {
+        const data = new Uint8ClampedArray(w * h * 4);
+        for (let y = 0; y < h; y += 1)
+          for (let x = 0; x < w; x += 1) {
+            const value = light === undefined ? 255 : light(x, y);
+            data.set([value, value, value, 255], (y * w + x) * 4);
+          }
+        return { data, width: w, height: h };
+      },
+      createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4), width: w, height: h }),
+      putImageData: () => {},
+      canvas,
+    } as unknown as CanvasRenderingContext2D;
+  } as unknown as typeof HTMLCanvasElement.prototype.getContext;
+  HTMLCanvasElement.prototype.toBlob = function toBlob(done: BlobCallback) {
+    setTimeout(() => done(new Blob(['png'], { type: 'image/png' })), 0);
+  };
+  return () => {
+    globalThis.Image = saved.Image;
+    URL.createObjectURL = saved.create;
+    URL.revokeObjectURL = saved.revoke;
+    HTMLCanvasElement.prototype.getContext = saved.context;
+    HTMLCanvasElement.prototype.toBlob = saved.toBlob;
+  };
+}

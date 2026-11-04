@@ -120,11 +120,12 @@ const isDark = (value: number, threshold: number): boolean => (value / 255) * 10
  * The finest line a picture has once made one colour, as a share of its
  * width; undefined when nothing is dark at all.
  *
- * Each dark pixel's line is as wide as the shortest run of dark through it,
- * across, down and along both diagonals (a diagonal step is the square root
- * of two pixels long), so a line at any angle is read at its own width. The
- * finest line is read where the thinnest twentieth of the ink starts: one
- * stray pixel is not a line, and shading that is a twentieth of the logo is.
+ * Each dark pixel's line is as wide as the shorter run of dark through it,
+ * across or down: a rule or a block is read at its own width, a line at an
+ * angle a little wider than it is (at 45° by the square root of two), so a
+ * slanted line is never told too fine when it is not. The finest line is
+ * read where the thinnest twentieth of the ink starts: one stray pixel is not
+ * a line, and shading that is a twentieth of the logo is.
  */
 export function finestLine(light: Lightness, threshold: number): number | undefined {
   const { data, width, height } = light;
@@ -137,7 +138,7 @@ export function finestLine(light: Lightness, threshold: number): number | undefi
     }
   if (inked === 0) return undefined;
   const run = new Float32Array(width * height).fill(Number.POSITIVE_INFINITY);
-  const walk = (dx: number, dy: number, step: number): void => {
+  const walk = (dx: number, dy: number): void => {
     const seen = new Uint8Array(width * height);
     for (let y = 0; y < height; y += 1)
       for (let x = 0; x < width; x += 1) {
@@ -148,17 +149,15 @@ export function finestLine(light: Lightness, threshold: number): number | undefi
         while (sx - dx >= 0 && sx - dx < width && sy - dy >= 0 && sy - dy < height && dark[(sy - dy) * width + (sx - dx)] === 1) [sx, sy] = [sx - dx, sy - dy];
         const cells: number[] = [];
         for (let [cx, cy] = [sx, sy]; cx >= 0 && cx < width && cy >= 0 && cy < height && dark[cy * width + cx] === 1; cx += dx, cy += dy) cells.push(cy * width + cx);
-        const length = cells.length * step;
+        const length = cells.length;
         for (const cell of cells) {
           seen[cell] = 1;
           if (length < run[cell]!) run[cell] = length;
         }
       }
   };
-  walk(1, 0, 1);
-  walk(0, 1, 1);
-  walk(1, 1, Math.SQRT2);
-  walk(1, -1, Math.SQRT2);
+  walk(1, 0);
+  walk(0, 1);
   const widths = new Float32Array(inked);
   for (let i = 0, at = 0; i < run.length; i += 1) if (dark[i] === 1) widths[at++] = run[i]!;
   widths.sort();

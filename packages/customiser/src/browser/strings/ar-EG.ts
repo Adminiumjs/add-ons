@@ -219,6 +219,7 @@ export const editor: Readonly<Record<string, string>> = {
   "editor.full.sending": "جارٍ رفع صورتك",
   "editor.full.size": "{w} × {h} مم · هامش القص {bleed} مم · خط الأمان {safe} مم",
   "editor.full.sizeNoSafe": "{w} × {h} مم · هامش القص {bleed} مم",
+  "editor.full.sizePt": "الحجم بالنقاط",
   "editor.full.start": "البداية",
   "editor.full.toForm": "ارجع إلى النموذج",
   "editor.full.tools": "الأدوات",

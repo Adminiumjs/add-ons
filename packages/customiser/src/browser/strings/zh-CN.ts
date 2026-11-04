@@ -219,6 +219,7 @@ export const editor: Readonly<Record<string, string>> = {
   "editor.full.sending": "正在上传图片",
   "editor.full.size": "{w} × {h} 毫米 · 出血 {bleed} 毫米 · 安全线 {safe} 毫米",
   "editor.full.sizeNoSafe": "{w} × {h} 毫米 · 出血 {bleed} 毫米",
+  "editor.full.sizePt": "字号（磅）",
   "editor.full.start": "起始端",
   "editor.full.toForm": "回到表单",
   "editor.full.tools": "工具",

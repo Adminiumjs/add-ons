@@ -219,6 +219,7 @@ export const editor: Readonly<Record<string, string>> = {
   "editor.full.sending": "Envoi de votre image",
   "editor.full.size": "{w} × {h} mm · fond perdu {bleed} mm · marge de sécurité {safe} mm",
   "editor.full.sizeNoSafe": "{w} × {h} mm · fond perdu {bleed} mm",
+  "editor.full.sizePt": "Taille en points",
   "editor.full.start": "Début",
   "editor.full.toForm": "Revenir au formulaire",
   "editor.full.tools": "Outils",

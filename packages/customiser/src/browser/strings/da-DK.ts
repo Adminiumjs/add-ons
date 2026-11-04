@@ -219,6 +219,7 @@ export const editor: Readonly<Record<string, string>> = {
   "editor.full.sending": "Dit billede uploades",
   "editor.full.size": "{w} × {h} mm · beskæring {bleed} mm · sikkerhedsmargen {safe} mm",
   "editor.full.sizeNoSafe": "{w} × {h} mm · beskæring {bleed} mm",
+  "editor.full.sizePt": "Størrelse i punkter",
   "editor.full.start": "Start",
   "editor.full.toForm": "Gå tilbage til formularen",
   "editor.full.tools": "Værktøjer",

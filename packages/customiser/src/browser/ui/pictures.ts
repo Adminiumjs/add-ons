@@ -58,6 +58,10 @@ export interface Problem {
 
 const LOGO_KINDS = ['svg', 'pdf', 'png', 'jpeg'];
 const PHOTO_KINDS = ['png', 'jpeg'];
+/** The kinds each of the design's file columns takes, as Adminium's upload of it does: the logo any of the four, the photo a PNG or a JPEG. */
+export const COLUMN_KINDS: Readonly<Record<string, readonly string[]>> = { logo_file: LOGO_KINDS, photo_file: PHOTO_KINDS };
+/** The kinds a picture part takes: what its rules allow that its column takes. */
+export const kindsFor = (accept: readonly string[], column: string): string[] => accept.map((one) => (one === 'jpg' ? 'jpeg' : one)).filter((one, at, all) => all.indexOf(one) === at && (COLUMN_KINDS[column] ?? LOGO_KINDS).includes(one));
 const sameKinds = (a: readonly string[], b: readonly string[]): boolean => a.length === b.length && a.every((one) => b.includes(one === 'jpg' ? 'jpeg' : one));
 
 /** The size cap, as the customer reads it. */
@@ -93,8 +97,8 @@ export interface Pictures {
   pictures: Readonly<Record<string, Upload>>;
   transfers: Readonly<Record<string, Transfer>>;
   problems: Readonly<Record<string, Problem>>;
-  /** Check, read, send and measure one file; true when it was taken. */
-  send: (column: string, file: File, accept: readonly string[]) => Promise<boolean>;
+  /** Check, read, send and measure one file: what was taken, or null when it was not. */
+  send: (column: string, file: File, accept: readonly string[]) => Promise<Upload | null>;
   /** The ids the next save names: the files sent since the last one. */
   fresh: () => Record<string, string>;
   /** The design was saved: its files are its own now. */
@@ -149,25 +153,25 @@ export function usePictures(api: CustomiserApi, design: SavedDesign | null, t: T
       return out;
     });
 
-  const send = async (column: string, file: File, accept: readonly string[]): Promise<boolean> => {
+  const send = async (column: string, file: File, accept: readonly string[]): Promise<Upload | null> => {
     tell(column, null);
     const kind = sniff(await headOf(file));
     const takes = accept.map((one) => (one === 'jpg' ? 'jpeg' : one));
     if (kind === 'heic') {
       tell(column, { text: t('editor.upload.heic', 'That photo is in HEIC, which we can’t print from. Save it as JPEG or PNG and upload it again.') });
-      return false;
+      return null;
     }
     if (kind === 'other' || !takes.includes(kind)) {
       tell(column, { text: wrongKind(t, accept) });
-      return false;
+      return null;
     }
     if (file.size > PICTURE_MAX_BYTES) {
       tell(column, { text: t('editor.upload.big', 'That file is over {size}', { size: CAP_WORDS }) });
-      return false;
+      return null;
     }
     if (api.upload === null) {
       tell(column, { text: t('editor.upload.off', 'This shop doesn’t take files here yet.') });
-      return false;
+      return null;
     }
     moving(column, { name: file.name, share: 0 });
     try {
@@ -176,11 +180,12 @@ export function usePictures(api: CustomiserApi, design: SavedDesign | null, t: T
       const sent = await api.upload(column, file, file.name, design?.session ?? null);
       const blob = new Blob([bytes], { type: TYPE_OF[kind] ?? '' });
       const read = await readPicture(blob, kind);
-      put(column, { id: sent.id, name: sent.name, size: sent.size, kind, fresh: true, ...(kind === 'pdf' ? {} : { url: addressOf(blob) }), ...read });
-      return true;
+      const taken: Upload = { id: sent.id, name: sent.name, size: sent.size, kind, fresh: true, ...(kind === 'pdf' ? {} : { url: addressOf(blob) }), ...read };
+      put(column, taken);
+      return taken;
     } catch (error) {
       tell(column, uploadProblem(t, error, accept, kind));
-      return false;
+      return null;
     } finally {
       moving(column, null);
     }

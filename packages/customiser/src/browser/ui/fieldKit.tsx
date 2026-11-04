@@ -11,7 +11,7 @@ import type { CustomiserApi, HeldSession } from '../api.ts';
 import type { Catalogue, EditPart, Palette } from '../catalogue.ts';
 import type { Check } from '../say.ts';
 import { useShared } from './context.tsx';
-import type { Problem, Transfer, Upload } from './pictures.ts';
+import { kindsFor, type Problem, type Transfer, type Upload } from './pictures.ts';
 
 export type { Upload };
 
@@ -76,9 +76,10 @@ export function Swatch({ hex, size = 20 }: { hex: string; size?: number }) {
   );
 }
 
-/** The kinds of file a picture part takes, as a file input names them (so a phone offers to convert what it can). */
+/** The kinds of file a picture part takes: what its rules allow that its file column takes. */
 export function acceptOf(part: EditPart): readonly string[] {
-  return (part.picture ?? part.text?.alsoLogo)?.accept ?? ['svg', 'pdf', 'png', 'jpeg'];
+  const rules = part.picture ?? part.text?.alsoLogo;
+  return kindsFor(rules?.accept ?? ['svg', 'pdf', 'png', 'jpeg'], rules?.file ?? 'logo_file');
 }
 
 /** A hidden file picker, a drop zone's handlers, and the call that sends what either was given. */

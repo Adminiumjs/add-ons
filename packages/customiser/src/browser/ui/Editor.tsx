@@ -354,7 +354,7 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
   now.current = values;
   const upload = (part: EditPart, column: string, file: File): void => {
     void pictures.send(column, file, acceptOf(part)).then((taken) => {
-      if (!taken) return;
+      if (taken === null) return;
       const value = now.current.parts[part.code] ?? {};
       setPart(part.code, { ...value, file: column, ...(part.kind === 'text' ? { mode: 'logo' as const } : {}) });
       if ((part.picture ?? part.text?.alsoLogo)?.colour === 'one' && look === 'maker') {

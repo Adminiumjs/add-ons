@@ -31,6 +31,8 @@ export interface Stub {
   failNextUpload: (error: unknown) => void;
   /** The files sent, by the id the upload answered. */
   files: Map<string, Blob>;
+  /** Hold every upload until the answer is let go: a file seen on its way. */
+  holdUploads: () => () => void;
   /** The ids of the sample rows, by what they are. */
   ids: { coasters: number; nook: number; keyring: number; board: number; cards: number; flyers: number; ring: number; twoLines: number; harbour: number; photo: number };
 }
@@ -40,13 +42,14 @@ const byApp = (rows: readonly Row[] | undefined, app: string): Row[] => (rows ??
 let codes = 0;
 const code = (prefix: string): string => `${prefix}${String(++codes).padStart(16 - prefix.length, '0')}`;
 
-export function stubApi(app: 'maker' | 'printing', options: { fonts?: Row[] } = {}): Stub {
+export function stubApi(app: 'maker' | 'printing', options: { fonts?: Row[]; settings?: Row[] } = {}): Stub {
   const tables = sampleTables();
   const calls: StubCall[] = [];
   const designs = new Map<string, Row & { email: string | null; link: string }>();
   for (const row of tables['designs'] ?? []) if (row['app'] === app) designs.set(String(row['id']), { ...row, email: null, link: code('LK') });
   let fail: unknown = null;
   let failUpload: unknown = null;
+  let held: Promise<void> | null = null;
   const files = new Map<string, Blob>();
   let next = 5000;
   const failing = (): void => {
@@ -82,6 +85,7 @@ export function stubApi(app: 'maker' | 'printing', options: { fonts?: Row[] } = 
         palettes: byApp(tables['palettes'], app),
         colours: byApp(tables['palette_colours'], app),
         features: byApp(tables['features'], app),
+        settings: options.settings ?? [],
       };
       return structuredClone(rows);
     },
@@ -128,6 +132,7 @@ export function stubApi(app: 'maker' | 'printing', options: { fonts?: Row[] } = 
     },
     async upload(column, file, name) {
       calls.push({ call: 'upload', args: [column, name] });
+      if (held !== null) await held;
       if (failUpload !== null) {
         const error = failUpload;
         failUpload = null;
@@ -155,6 +160,16 @@ export function stubApi(app: 'maker' | 'printing', options: { fonts?: Row[] } = 
     },
     failNextUpload: (error) => {
       failUpload = error;
+    },
+    holdUploads: () => {
+      let release = (): void => {};
+      held = new Promise<void>((resolve) => {
+        release = () => {
+          held = null;
+          resolve();
+        };
+      });
+      return () => release();
     },
     files,
     ids: {
