@@ -1,7 +1,7 @@
 import { createRequire } from 'node:module';
 
 import react from '@vitejs/plugin-react';
-import { build, type Plugin } from 'vite';
+import { build, transformWithEsbuild, type Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
 
 /**
@@ -93,6 +93,32 @@ export function quietLibraries(): Plugin {
     },
   };
 }
+/**
+ * THE SHIPPED FILES, WITH THE SPACES AND THE LONG SPELLINGS TAKEN OUT.
+ *
+ * A library build in ES form keeps its whitespace, so the editor's 3D stage
+ * and the shop's screens went out at their full size. Each file is passed
+ * through esbuild once more, as it is written: whitespace out, syntax
+ * shortened. Names are left as they are: a renamer makes new short names of
+ * its own, and one of them could be a word the sweep refuses (`pro`, `plan`),
+ * in a file nobody wrote; it saves nothing here besides (measured: the
+ * same bytes to a hundred). The design question's file is left whole: it is
+ * small, and Adminium reads its one `module.exports =` as written.
+ */
+export function minified(): Plugin {
+  return {
+    name: 'add-on-customiser:minified',
+    apply: 'build',
+    enforce: 'post',
+    // Last, on the finished chunks: what is written is what was measured.
+    async generateBundle(_options, bundle) {
+      for (const chunk of Object.values(bundle)) {
+        if (chunk.type !== 'chunk') continue;
+        chunk.code = (await transformWithEsbuild(chunk.code, chunk.fileName, { loader: 'js', format: 'esm', target: 'es2022', minifyWhitespace: true, minifySyntax: true, minifyIdentifiers: false, legalComments: 'none' })).code;
+      }
+    },
+  };
+}
 const STANDARD_FONTS = new URL('./src/build/standard-fonts.ts', import.meta.url).pathname;
 
 /** The shop's screens, one file each, built after the customer's editor in the same `vite build`. */
@@ -119,7 +145,7 @@ function screens(): Plugin {
         await build({
           configFile: false,
           logLevel: 'warn',
-          plugins: [quietLibraries(), react()],
+          plugins: [quietLibraries(), react(), minified()],
           resolve: {
             alias: [
               { find: /^@pdf-lib\/standard-fonts$/, replacement: STANDARD_FONTS },
@@ -157,7 +183,7 @@ export default defineConfig(({ mode }) =>
         },
       }
     : {
-        plugins: [react(), screens()],
+        plugins: [react(), screens(), minified()],
         build: {
           outDir: 'dist',
           emptyOutDir: true,
