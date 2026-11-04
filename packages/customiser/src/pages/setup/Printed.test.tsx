@@ -276,25 +276,45 @@ describe('Mark faces on a 3D-printed item (BC-D2.print)', () => {
 });
 
 describe('the printed item’s set-up under axe', () => {
-  it('has no violations: before the models, with them, marking a face, and the curved part', async () => {
-    const sweep = async (label: string): Promise<void> => {
-      const found = await axe.run(document.body, { rules: { region: { enabled: false }, 'color-contrast': { enabled: false } } });
-      expect(found.violations.map((one) => `${label}: ${one.id}`)).toEqual([]);
-    };
-    render(page());
-    await settle();
-    await sweep('no models');
-    cleanup();
-    keyring()['print_file'] = PRINT;
-    keyring()['model_file'] = PREVIEW;
-    render(page());
-    await settle(10);
-    await sweep('models');
-    fireEvent.click(screen.getAllByRole('button', { name: /Flat face 1/ })[0]!);
-    await settle();
-    await sweep('marking');
-    fireEvent.click(screen.getByRole('button', { name: /The curved part/ }));
-    await settle();
-    await sweep('curved');
+  it('has no violations: before the models, with them, marking a face, and the curved part; English and Arabic, light and dark', async () => {
+    let swept = 0;
+    for (const locale of ['en-US', 'ar-EG'] as const)
+      for (const theme of ['light', 'dark'] as const) {
+        const sweep = async (label: string): Promise<void> => {
+          const found = await axe.run(document.body, { rules: { region: { enabled: false }, 'color-contrast': { enabled: false } } });
+          expect(found.passes.length, `${locale} · ${theme} · ${label}: axe examined nothing`).toBeGreaterThan(0);
+          expect(found.violations.map((one) => `${locale} · ${theme} · ${label}: ${one.id}`)).toEqual([]);
+          swept += 1;
+        };
+        resetWorld();
+        seedShop();
+        seed('bases', [...world.tables['bases']!, { id: KEYRING, app: 'maker', name: 'Name keyring', kind: 'printed', width_mm: 56, height_mm: 24, corner_mm: 12, material: 'PLA', thickness_mm: 4, outline_file: null, model_file: null, print_file: null, faces: null, offered: JSON.stringify({ fonts: ['Manrope'], finishes: [] }), state: 'draft', position: 5 }]);
+        world.locale = locale;
+        document.documentElement.lang = locale;
+        document.documentElement.dir = locale === 'ar-EG' ? 'rtl' : 'ltr';
+        document.documentElement.setAttribute('data-theme', theme);
+        render(page());
+        await settle();
+        await sweep('no models');
+        cleanup();
+        keyring()['print_file'] = PRINT;
+        keyring()['model_file'] = PREVIEW;
+        render(page());
+        await settle(10);
+        await sweep('models');
+        // The keyboard's list, whatever the language: the flat faces first, the curved part last.
+        const rows = (): HTMLElement[] => [...document.querySelectorAll<HTMLElement>('ul button[aria-pressed]')];
+        fireEvent.click(rows()[0]!);
+        await settle();
+        await sweep('marking');
+        fireEvent.click(rows().at(-1)!);
+        await settle();
+        await sweep('curved');
+        cleanup();
+      }
+    document.documentElement.dir = 'ltr';
+    document.documentElement.lang = 'en-US';
+    document.documentElement.removeAttribute('data-theme');
+    expect(swept).toBe(16);
   });
 });

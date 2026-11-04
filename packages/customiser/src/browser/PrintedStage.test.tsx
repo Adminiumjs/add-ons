@@ -51,10 +51,10 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-async function openSam(): Promise<HTMLElement> {
+async function openSam(locale = 'en-US'): Promise<HTMLElement> {
   const stub = stubApi('maker');
   const [ordered] = await stub.api.byCodes(['BR2289R4W8N2T6JC']);
-  await drawn(<CustomiserEditor api={stub.api} base={stub.ids.keyring} product={{ name: 'Name keyring' }} design={ordered!} onAddToBasket={() => {}} />);
+  await drawn(<CustomiserEditor api={stub.api} base={stub.ids.keyring} product={{ name: 'Name keyring' }} design={ordered!} locale={locale} onAddToBasket={() => {}} />);
   await settle();
   await settle();
   return document.querySelector<HTMLElement>('.cz-stage-3d')!;
@@ -94,9 +94,21 @@ describe('the name keyring on the stage', () => {
     for (const still of stills) expect(still.relief).toMatchObject({ mode: 'raised', depth: 1 });
   });
 
-  it('passes axe', async () => {
-    await openSam();
-    const found = await axe.run(document.body, { rules: { region: { enabled: false }, 'color-contrast': { enabled: false } } });
-    expect(found.violations.map((one) => one.id)).toEqual([]);
+  it('passes axe in 3D and seen flat, English and Arabic', async () => {
+    for (const locale of ['en-US', 'ar-EG']) {
+      document.documentElement.lang = locale;
+      await openSam(locale);
+      for (const state of ['3d', 'flat']) {
+        if (state === 'flat') {
+          fireEvent.click(screen.getByRole('switch'));
+          await settle();
+        }
+        const found = await axe.run(document.body, { rules: { region: { enabled: false }, 'color-contrast': { enabled: false } } });
+        expect(found.passes.length).toBeGreaterThan(0);
+        expect(found.violations.map((one) => `${locale} · ${state}: ${one.id}`)).toEqual([]);
+      }
+      cleanup();
+    }
+    document.documentElement.lang = 'en-US';
   });
 });

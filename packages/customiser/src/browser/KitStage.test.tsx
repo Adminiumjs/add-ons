@@ -95,10 +95,11 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-async function openCorner(): Promise<void> {
+async function openCorner(locale = 'en-US'): Promise<void> {
   const { api, nook } = kitApi();
-  await drawn(<CustomiserEditor api={api} base={nook} product={{ name: 'The Little Bookshop' }} onAddToBasket={() => {}} />);
-  fireEvent.click(screen.getByRole('button', { name: /^Customise the Corner shop design/ }));
+  await drawn(<CustomiserEditor api={api} base={nook} product={{ name: 'The Little Bookshop' }} locale={locale} onAddToBasket={() => {}} />);
+  // The card is named in the page's language around the design's own name, which the shop typed.
+  fireEvent.click(screen.getAllByRole('button', { name: /Corner shop/ })[0]!);
   for (let i = 0; i < 4; i += 1) await settle();
 }
 
@@ -193,5 +194,23 @@ describe('a kit on a device that cannot draw 3D', () => {
     expect(document.querySelectorAll('[data-kit-pieces] text.cz-piece-tag')).toHaveLength(4);
     expect(device.models).toEqual([]);
     await sweep('no 3d');
+  });
+});
+
+describe('a kit’s stage in Arabic, under axe', () => {
+  it('is clean assembled, in pieces and seen flat, laid out right to left', async () => {
+    document.documentElement.lang = 'ar-EG';
+    await openCorner('ar-EG');
+    expect(document.querySelector('.cz')!.getAttribute('dir')).toBe('rtl');
+    await sweep('ar · assembled');
+    const modes = document.querySelectorAll<HTMLElement>('.cz-seg [role="radio"]');
+    fireEvent.click([...modes].at(-1)!);
+    await settle();
+    expect(document.querySelector('[data-kit-pieces]')).not.toBeNull();
+    await sweep('ar · pieces');
+    fireEvent.click(screen.getByRole('switch'));
+    await settle();
+    await sweep('ar · flat');
+    document.documentElement.lang = 'en-US';
   });
 });

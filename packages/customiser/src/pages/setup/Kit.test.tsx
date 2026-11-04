@@ -350,26 +350,51 @@ describe('areas on a kit: “On:” a piece or a marked face (BC-D3, BC-F8)', ()
 });
 
 describe('the kit’s set-up under axe', () => {
-  it('has no violations: before the model, with it, marking a face, and a face that is not flat', async () => {
-    const sweep = async (label: string): Promise<void> => {
-      const found = await axe.run(document.body, { rules: { region: { enabled: false }, 'color-contrast': { enabled: false } } });
-      expect(found.violations.map((one) => `${label}: ${one.id}`)).toEqual([]);
-    };
-    render(page());
-    await settle();
-    await sweep('no model');
-    cleanup();
-    nook()['model_file'] = MODEL;
-    render(page());
-    await settle(6);
-    await sweep('model');
-    fireEvent.click(screen.getAllByRole('button', { name: /Flat face 2/ })[0]!);
-    await settle();
-    await sweep('marking');
-    cleanup();
-    nook()['faces'] = JSON.stringify([SIGN_FACE]);
-    render(page('areas'));
-    await settle();
-    await sweep('areas on a piece');
+  it('has no violations: before the model, with it, marking a face, and the areas on a face; English and Arabic, light and dark', async () => {
+    let swept = 0;
+    for (const locale of ['en-US', 'ar-EG'] as const)
+      for (const theme of ['light', 'dark'] as const) {
+        const look = (): void => {
+          world.locale = locale;
+          document.documentElement.lang = locale;
+          document.documentElement.dir = locale === 'ar-EG' ? 'rtl' : 'ltr';
+          document.documentElement.setAttribute('data-theme', theme);
+        };
+        const sweep = async (label: string): Promise<void> => {
+          const found = await axe.run(document.body, { rules: { region: { enabled: false }, 'color-contrast': { enabled: false } } });
+          expect(found.passes.length, `${locale} · ${theme} · ${label}: axe examined nothing`).toBeGreaterThan(0);
+          expect(found.violations.map((one) => `${locale} · ${theme} · ${label}: ${one.id}`)).toEqual([]);
+          swept += 1;
+        };
+        resetWorld();
+        seedShop();
+        seed('base_pieces', [
+          { id: 201, app: 'maker', base_id: IDS.nook, code: '01', name: 'Base', width_mm: 110, height_mm: 150, layers: '["CUT"]', file: null, position: 1 },
+          { id: 209, app: 'maker', base_id: IDS.nook, code: '09', name: 'Shop sign', width_mm: 92, height_mm: 22, layers: '["CUT","ENGRAVE"]', file: null, position: 9 },
+        ]);
+        look();
+        render(page());
+        await settle();
+        await sweep('no model');
+        cleanup();
+        nook()['model_file'] = MODEL;
+        render(page());
+        await settle(6);
+        await sweep('model');
+        // The keyboard's list of the model's flat faces, whatever the language: the second is the sign board.
+        fireEvent.click(document.querySelectorAll('ul button[aria-pressed]')[1]!);
+        await settle();
+        await sweep('marking');
+        cleanup();
+        nook()['faces'] = JSON.stringify([SIGN_FACE]);
+        render(page('areas'));
+        await settle();
+        await sweep('areas on a face');
+        cleanup();
+      }
+    document.documentElement.dir = 'ltr';
+    document.documentElement.lang = 'en-US';
+    document.documentElement.removeAttribute('data-theme');
+    expect(swept).toBe(16);
   });
 });
