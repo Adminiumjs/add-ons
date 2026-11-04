@@ -81,7 +81,8 @@ export function uploadProblem(t: Translate, error: unknown, accept: readonly str
   if (code === 'PUBLIC_UPLOAD_REFUSED') {
     if (reason === 'too-big') return { text: t('editor.upload.big', 'That file is over {size}', { size: CAP_WORDS }) };
     if (reason === 'kind' && sent === 'svg' && typeof message === 'string' && message.includes('SVG'))
-      return { text: t('editor.upload.svgCleaned', 'This SVG holds something we can’t print from. Save it as a plain SVG and upload it again.'), detail: message };
+      // The server's own sentence says what it found; the advice after it is already in ours.
+      return { text: t('editor.upload.svgCleaned', 'This SVG holds something we can’t print from. Save it as a plain SVG and upload it again.'), detail: message.replace(/\s*Save it as a plain SVG( and upload it again)?\.?\s*$/, '') };
     if (reason === 'kind') return { text: wrongKind(t, accept) };
     if (reason === 'cap') return { text: t('editor.upload.cap', 'You’ve sent as many files as we take in a day. Try again tomorrow.') };
     if (reason === 'quota') return { text: t('editor.upload.quota', 'We can’t take files just now. Try again later.') };

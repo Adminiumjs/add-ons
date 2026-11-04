@@ -130,7 +130,10 @@ describe('what a file is refused for, in the customer’s words (BC-B3.refusals,
     await pick(new File(['<svg xmlns="http://www.w3.org/2000/svg"><script/></svg>'], 'harbour.svg', { type: 'image/svg+xml' }));
     const alert = screen.getByRole('alert');
     expect(alert.textContent).toContain('This SVG holds something we can’t print from. Save it as a plain SVG and upload it again.');
-    expect(within(alert).getByText(/This SVG has a <script>/).getAttribute('lang')).toBe('en');
+    // The server's own sentence, in its own language, without the advice said twice.
+    const detail = within(alert).getByText(/This SVG has a <script>/);
+    expect(detail.getAttribute('lang')).toBe('en');
+    expect(detail.textContent).toBe('This SVG has a <script>, which is not taken.');
   });
 
   it('a day’s files sent, or no room just now: the server’s reasons, said plainly', async () => {
