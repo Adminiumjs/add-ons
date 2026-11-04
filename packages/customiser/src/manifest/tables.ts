@@ -140,6 +140,8 @@ export function tables(): Table[] {
         mm('width_mm', W.width),
         mm('height_mm', W.height),
         col('layers', 'json', w('Layers', 'Ebenen', 'Calques', 'Lag', 'Vrstvy', 'الطبقات', '图层', '圖層'), { nullable: true }),
+        // The customer's pictures the file could not carry (a logo sent as a PNG, a JPEG or a PDF): `[{column, kind}]`, engraved from the customer's own file.
+        col('left_out', 'json', w('Left out of the file', 'Nicht in der Datei', 'Absent du fichier', 'Ikke med i filen', 'Není v souboru', 'غير موجود في الملف', '未包含在文件中', '未包含在檔案中'), { nullable: true }),
         // The piece's cleaned SVG, served to every visitor as the base's is.
         col('file', 'text', w('The piece’s outline', 'Kontur des Teils', 'Contour de la pièce', 'Delens omrids', 'Obrys dílu', 'مخطط القطعة', '部件轮廓', '部件輪廓'), { maxLength: 64, nullable: true, rules: { file: { accept: ['svg'], maxBytes: SHOP_FILE_BYTES } } }),
         position,
@@ -413,6 +415,8 @@ export function tables(): Table[] {
         col('about', 'text', w('What it is', 'Was es ist', 'Ce que c’est', 'Hvad det er', 'Co to je', 'ما هو', '说明', '說明'), { maxLength: 240, nullable: true }),
         // The laser's layers it holds (CUT, SCORE, ENGRAVE); none for a print file.
         col('layers', 'json', w('Layers', 'Ebenen', 'Calques', 'Lag', 'Vrstvy', 'الطبقات', '图层', '圖層'), { nullable: true }),
+        // The customer's pictures the file could not carry (a logo sent as a PNG, a JPEG or a PDF): `[{column, kind}]`, engraved from the customer's own file.
+        col('left_out', 'json', w('Left out of the file', 'Nicht in der Datei', 'Absent du fichier', 'Ikke med i filen', 'Není v souboru', 'غير موجود في الملف', '未包含在文件中', '未包含在檔案中'), { nullable: true }),
         col('file', 'text', w('File', 'Datei', 'Fichier', 'Fil', 'Soubor', 'الملف', '文件', '檔案'), { maxLength: 64, nullable: true, rules: { file: { accept: ['pdf', 'svg'], maxBytes: 100 * 1024 * 1024 } } }),
         position,
         col('made_at', 'timestamptz', w('Made at', 'Erstellt am', 'Faite le', 'Lavet den', 'Vytvořeno', 'أُنشئت في', '制作时间', '製作時間'), { role: 'created_at', default: 'now' }),

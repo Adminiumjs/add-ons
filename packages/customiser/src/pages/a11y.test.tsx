@@ -236,12 +236,12 @@ const STATES: State[] = [
     label: 'the order line panel, its versions, its files made and a refusal',
     before: () => {
       seed('ready_parts', world.tables['ready_parts']!.map((one) => (one['id'] === 61 ? { ...one, x_mm: 11.5, y_mm: 57, w_mm: 72, h_mm: 13.5 } : one)));
-      seed('designs', [{ id: 91, app: 'maker', ready_design_id: 51, base_id: IDS.coasters, values: JSON.stringify({ parts: { words: { text: 'The Hartleys' } } }), logo_file: 'file_01HZY00000000000000000LOG1', state: 'ordered', updated_at: '2026-08-05T15:01:00Z' }]);
+      seed('designs', [{ id: 91, app: 'maker', ready_design_id: 51, base_id: IDS.coasters, values: JSON.stringify({ parts: { words: { text: 'The Hartleys' } } }), logo_file: 'file_01HZY00000000000000000GGG1', state: 'ordered', updated_at: '2026-08-05T15:01:00Z' }]);
       seed('design_versions', [
         { id: 95, app: 'maker', design_id: 91, version: 2, proof_file: 'file_01HZY00000000000000000PRF2', note: 'Words set at 6 mm.', made_at: '2026-08-06T10:05:00Z' },
         { id: 94, app: 'maker', design_id: 91, version: 1, proof_file: 'file_01HZY00000000000000000PRF1', receipt_id: 3, made_at: '2026-08-05T15:01:00Z' },
       ]);
-      seed('version_files', [{ id: 7, app: 'maker', version_id: 95, kind: 'machine', name: 'design-91-v2-engraved-walnut-coasters.svg', about: 'Engraved walnut coasters · 95 × 95 mm', layers: '["CUT","ENGRAVE"]', file: 'file_01HZY00000000000000000SVG1', position: 1 }]);
+      seed('version_files', [{ id: 7, app: 'maker', version_id: 95, kind: 'machine', name: 'design-91-v2-engraved-walnut-coasters.svg', about: 'Engraved walnut coasters · 95 × 95 mm', layers: '["CUT","ENGRAVE"]', left_out: '[{"column":"logo_file","kind":"png"}]', file: 'file_01HZY00000000000000000SVG1', position: 1 }]);
     },
     draw: () => <Line connectionId="c1" table="t" row="r" linked="91" />,
     after: async () => {
@@ -250,6 +250,8 @@ const STATES: State[] = [
       for (let i = 0; i < 4; i += 1) await settle();
       must('[role="alert"]');
       must('[data-design-sides] svg');
+      // The logo the laser's file left out, said beside it with the logo to download.
+      must('a[href="/api/v1/files/file_01HZY00000000000000000GGG1/content"]');
     },
   },
   { label: 'the order line panel, no design', draw: () => <Line connectionId="c1" table="t" row="r" linked={null} /> },

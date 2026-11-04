@@ -43,6 +43,7 @@ const Download = lucideByName('download');
 const FileText = lucideByName('file-text');
 const FileCode = lucideByName('file-code-2');
 const LockKeyhole = lucideByName('lock-keyhole');
+const TriangleAlert = lucideByName('triangle-alert');
 
 /** A moment as people read it, with its weekday: "Thu 6 Aug 2026 · 16:12". */
 export function moment(value: unknown, locale: string): string {
@@ -74,6 +75,20 @@ const by = (column: string, value: DataValue, enabled = true) => ({ filter: [{ c
 
 /** The English a sentence is written in, its values filled: what a file says where its font has no letters for the reader's language. */
 const english: AddOnTranslate = ((_key: string, words: string, vars?: Readonly<Record<string, unknown>>) => words.replace(/\{(\w+)\}/g, (whole, name: string) => (vars?.[name] === undefined ? whole : String(vars[name])))) as AddOnTranslate;
+
+/** What a laser's file left out, as its row keeps it: `[{column, kind}]`. */
+function leftOutOf(raw: unknown): { column: string; kind: string }[] {
+  const value = typeof raw === 'string' ? (() => { try { return JSON.parse(raw) as unknown; } catch { return null; } })() : raw;
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((one) => (typeof one === 'object' && one !== null && typeof (one as { column?: unknown }).column === 'string' ? [{ column: String((one as { column: string }).column), kind: String((one as { kind?: unknown }).kind ?? '') }] : []));
+}
+
+/** Why a customer's picture is not in a laser's file, and where the shop engraves it from. */
+function leftOutWords(t: AddOnTranslate, left: { column: string; kind: string }): string {
+  if (left.column === 'photo_file') return t('panel.files.leftPhoto', 'The photo is a picture, so it is not in the cut file: engrave it from the shopper’s photo.');
+  if (left.kind === 'pdf') return t('panel.files.leftLogoPdf', 'The logo is a PDF, so it is not in the cut file: engrave it from the shopper’s logo.');
+  return t('panel.files.leftLogo', 'The logo is a picture, so it is not in the cut file: engrave it from the shopper’s logo.');
+}
 
 /** The words the files and the proof say, in the reader's language. */
 function makeWords(t: AddOnTranslate, design: string, version: number, spec: string): MakeWords {
@@ -205,7 +220,8 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
       // Making them again replaces what the version had.
       for (const old of files.rows) await fileWrite.remove(old['id'] as string | number);
       for (const [position, one] of made.entries()) {
-        const { row: saved } = await fileWrite.create({ app: row['app'] as DataValue, version_id: version['id'] as DataValue, kind: one.kind, name: one.name, about: one.about, layers: one.layers === null ? null : JSON.stringify(one.layers), position: position + 1 });
+        const leftOut = one.leftOut.map((column) => ({ column, kind: held.pdf[column]?.kind ?? 'png' }));
+        const { row: saved } = await fileWrite.create({ app: row['app'] as DataValue, version_id: version['id'] as DataValue, kind: one.kind, name: one.name, about: one.about, layers: one.layers === null ? null : JSON.stringify(one.layers), left_out: leftOut.length === 0 ? null : JSON.stringify(leftOut), position: position + 1 });
         await fileUpload.upload(saved['id'] as string | number, one.blob, { name: one.name });
       }
       toast(page ? t('panel.make.printMade', 'The print files are made, one per side.') : t('panel.make.filesMade', 'The files for the machine are made.'));
@@ -332,12 +348,27 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
                   return Array.isArray(raw) ? raw.map(String) : [];
                 })();
                 const address = fileAddress(one['file']);
+                const leftOut = leftOutOf(one['left_out']);
                 return (
                   <li key={String(one['id'])} className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-2.5">
                     {text(one['kind']) === 'print' ? <FileText /> : <FileCode />}
                     <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                       <span className="font-mono text-[12px] font-bold">{text(one['name'])}</span>
                       <span className="font-mono text-[12px] text-fg-subtle">{text(one['about'])}</span>
+                      {leftOut.map((left) => {
+                        const own = fileAddress(row[left.column]);
+                        return (
+                          <span key={left.column} className="flex flex-wrap items-center gap-2 text-[12px] text-warn">
+                            <TriangleAlert />
+                            {leftOutWords(t, left)}
+                            {own === null ? null : (
+                              <a href={own} download className="font-bold text-accent">
+                                {left.column === 'photo_file' ? t('panel.files.getPhoto', 'Download the photo') : t('panel.files.getLogo', 'Download the logo')}
+                              </a>
+                            )}
+                          </span>
+                        );
+                      })}
                     </span>
                     {layers.length === 0 ? null : (
                       <span className="flex flex-wrap gap-1">

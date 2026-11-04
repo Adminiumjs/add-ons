@@ -121,6 +121,47 @@ describe('the panel on an order line', () => {
     expect(world.tables['version_files']).toHaveLength(1);
   });
 
+  /** Design 91 as a plain coaster with only the customer's logo on it, sent as this file. */
+  const withLogo = (bytes: Uint8Array): void => {
+    const values = JSON.stringify({ format: 1, parts: { logo: { file: 'logo_file' } } });
+    seed('designs', [{ ...world.tables['designs']![0]!, ready_design_id: null, values, logo_file: LOGO }]);
+    seed('design_versions', [{ ...world.tables['design_versions']![0]!, values }]);
+    vi.stubGlobal('fetch', async (address: string) => (address === `/api/v1/files/${LOGO}/content` ? new Response(bytes as BlobPart) : new Response('', { status: 404 })));
+  };
+  const LOGO = 'file_01HZY00000000000000000GGG1';
+  const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
+
+  it('says, beside a laser’s file, that a logo sent as a picture is not in it, and where to engrave it from', async () => {
+    withLogo(PNG);
+    world.upload = () => ({ id: 'file_01HZY00000000000000000SVG1' });
+    render(<Line {...HOST} linked="91" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Make the files' }));
+    await settle();
+    const created = world.calls.filter((call) => call.kind === 'create' && call.table === 'version_files').map((call) => call.values as Record<string, unknown>);
+    expect(created.map((one) => one['left_out'])).toEqual([JSON.stringify([{ column: 'logo_file', kind: 'png' }])]);
+    const list = within(screen.getByRole('region', { name: 'Files for the machine' }));
+    expect(list.getByText('The logo is a picture, so it is not in the cut file: engrave it from the shopper’s logo.')).toBeTruthy();
+    expect(list.getByRole('link', { name: 'Download the logo' }).getAttribute('href')).toBe(`/api/v1/files/${LOGO}/content`);
+  });
+
+  it('says a PDF logo is left out in its own words, and says nothing of a logo drawn as an SVG', async () => {
+    withLogo(new TextEncoder().encode('%PDF-1.7\n'));
+    world.upload = () => ({ id: 'file_01HZY00000000000000000SVG1' });
+    render(<Line {...HOST} linked="91" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Make the files' }));
+    await settle();
+    expect(screen.getByText('The logo is a PDF, so it is not in the cut file: engrave it from the shopper’s logo.')).toBeTruthy();
+    cleanup();
+    world.calls.length = 0;
+    withLogo(new TextEncoder().encode('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10"/></svg>'));
+    render(<Line {...HOST} linked="91" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Make the files again' }));
+    await settle();
+    const created = world.calls.filter((call) => call.kind === 'create' && call.table === 'version_files').map((call) => call.values as Record<string, unknown>);
+    expect(created.map((one) => one['left_out'])).toEqual([null]);
+    expect(screen.queryByText(/so it is not in the cut file/)).toBeNull();
+  });
+
   it('says which font file is missing, and makes nothing', async () => {
     render(<Line {...HOST} linked="91" />);
     fireEvent.click(screen.getByRole('button', { name: 'Make the files' }));

@@ -792,6 +792,21 @@
             }
           },
           {
+            "ref": "left_out",
+            "type": "json",
+            "nullable": true,
+            "label": {
+              "en-US": "Left out of the file",
+              "de-DE": "Nicht in der Datei",
+              "fr-FR": "Absent du fichier",
+              "da-DK": "Ikke med i filen",
+              "cs-CZ": "Není v souboru",
+              "ar-EG": "غير موجود في الملف",
+              "zh-CN": "未包含在文件中",
+              "zh-TW": "未包含在檔案中"
+            }
+          },
+          {
             "ref": "file",
             "type": "text",
             "maxLength": 64,
@@ -3196,6 +3211,21 @@
               "ar-EG": "الطبقات",
               "zh-CN": "图层",
               "zh-TW": "圖層"
+            }
+          },
+          {
+            "ref": "left_out",
+            "type": "json",
+            "nullable": true,
+            "label": {
+              "en-US": "Left out of the file",
+              "de-DE": "Nicht in der Datei",
+              "fr-FR": "Absent du fichier",
+              "da-DK": "Ikke med i filen",
+              "cs-CZ": "Není v souboru",
+              "ar-EG": "غير موجود في الملف",
+              "zh-CN": "未包含在文件中",
+              "zh-TW": "未包含在檔案中"
             }
           },
           {

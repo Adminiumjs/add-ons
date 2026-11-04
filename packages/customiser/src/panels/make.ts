@@ -65,6 +65,14 @@ export interface Made {
   layers: string[] | null;
   kind: 'print' | 'machine';
   blob: Blob;
+  /**
+   * The customer's files a part on this file shows that the file cannot
+   * carry, by column: a logo or a photo sent as a picture or a PDF has no
+   * lines a laser can follow, so the file leaves it out and the shop engraves
+   * it from the customer's own file. Empty for a print file, which carries
+   * every picture.
+   */
+  leftOut: string[];
 }
 
 /** What the shop's words say about what is made, in its language. */
@@ -144,7 +152,7 @@ export async function makePrintFiles(sheets: readonly FlatSheet[], assets: PdfAs
   const out: Made[] = [];
   for (const sheet of sheets) {
     const bytes = await printPdf(sheet, assets, { font: slugFont, text: words.slug(words.side(sheet.side)) });
-    out.push({ name: `${stem}-${sheet.side}-print.pdf`, about: words.printAbout(printSize(sheet.face)), layers: null, kind: 'print', blob: new Blob([bytes as BlobPart], { type: 'application/pdf' }) });
+    out.push({ name: `${stem}-${sheet.side}-print.pdf`, about: words.printAbout(printSize(sheet.face)), layers: null, kind: 'print', blob: new Blob([bytes as BlobPart], { type: 'application/pdf' }), leftOut: [] });
   }
   return out;
 }
@@ -185,8 +193,10 @@ export async function makeLaserFiles(catalogue: Catalogue, sheet: FlatSheet, fon
     const on = <T extends { code: string }>(list: readonly T[]): T[] => (codes === null ? [...list] : list.filter((one) => codes.has(one.code)));
     const wordPaths = on(parts.words).flatMap((item) => textPaths(item, font(item.font, item.weight)!));
     const drawn = on(parts.pictures).flatMap((item) => (logos[item.column] === undefined ? [] : [{ item, svg: logos[item.column]! }]));
+    // A picture with no drawing behind it (a PNG, a JPEG or a PDF) is not in the file: said beside it, never dropped in silence.
+    const leftOut = [...new Set(on(parts.pictures).flatMap((item) => (logos[item.column] === undefined ? [item.column] : [])))];
     const input = { width, height, corner, outline, words: wordPaths, logos: drawn, lines: on(parts.lines) };
-    return { name, about: words.pieceAbout(name, mmSize(width, height)), layers: layersOf(input), kind: 'machine', blob: new Blob([pieceSvg(input)], { type: 'image/svg+xml' }) };
+    return { name, about: words.pieceAbout(name, mmSize(width, height)), layers: layersOf(input), kind: 'machine', blob: new Blob([pieceSvg(input)], { type: 'image/svg+xml' }), leftOut };
   };
   const base = catalogue.base;
   if (base.kind === 'kit') {
