@@ -68,7 +68,7 @@ export function KitFields({ t, base, pieces, save }: { t: AddOnTranslate; base: 
 }
 
 /** One file of the kit in its card's list: its number, its name, its file, its size. */
-function FileRow({ number, icon, name, file, meta }: { number: string; icon: ReactNode; name: string; file: string | null; meta: string }): ReactNode {
+export function FileRow({ number, icon, name, file, meta }: { number: string; icon: ReactNode; name: string; file: string | null; meta: string }): ReactNode {
   return (
     <li className="flex items-center gap-2.5 border-b border-border px-0 py-2 last:border-b-0">
       <span className="w-5 font-mono text-[10.5px] font-bold text-fg-subtle">{number}</span>

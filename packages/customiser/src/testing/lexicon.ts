@@ -90,6 +90,11 @@ export const ALLOWED_TOKENS: readonly string[] = [
   /** `Promise` — the JavaScript built-in. */
   'promise',
   /**
+   * `model` — a 3MF's root element: the file the printer gets closes with
+   * `</model>`, whose slash and first two letters fall together as `/mo`.
+   */
+  'model',
+  /**
    * React's own export name. A screen's file inlines the host's React shim,
    * which re-exports every name React has, this one included: an identifier
    * nobody reads and nobody can rename. Allowing the bare word instead would

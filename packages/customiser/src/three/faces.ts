@@ -41,6 +41,13 @@ export interface FacePlane {
   bounds: { u0: number; u1: number; v0: number; v1: number };
 }
 
+/** How a 3D-printed item's words sit on a face: raised from it or cut into it, by how much, and the smallest letter the printer keeps, in millimetres. */
+export interface FaceRelief {
+  mode: 'raised' | 'cut';
+  depth: number;
+  smallest: number;
+}
+
 /** A face the shop marked: its plane, what it is called, the kit's piece it is, and its size in millimetres. */
 export interface MarkedFace extends FacePlane {
   code: string;
@@ -48,6 +55,14 @@ export interface MarkedFace extends FacePlane {
   /** The kit's piece this face is (a `base_pieces` row's id), or none. */
   piece: string | null;
   size: { w: number; h: number };
+  /** On a 3D-printed item: how the words sit on it. */
+  relief?: FaceRelief;
+  /**
+   * On a 3D-printed item: the same face on the shoppers' preview model (its
+   * GLB), in that model's own numbers. The face is marked on the model to
+   * print; the preview is drawn from the lighter model.
+   */
+  preview?: FacePlane;
 }
 
 export const sub = (a: Vec, b: Vec): Vec => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
@@ -240,6 +255,35 @@ export function flatFacesOf(tris: Triangles, mesh: string, size: number, limit =
     if (isFlatFace(plane, region.area, size)) found.push({ plane, area: region.area });
   }
   return found.sort((a, b) => b.area - a.area).slice(0, limit);
+}
+
+/**
+ * A model's surface in brief: its flat faces that can carry words (largest
+ * first) and how much of its surface is not on any of them (its curved
+ * part, as a share of the whole). A model with more triangles than `most`
+ * is not walked: none is said.
+ */
+export function surveyOf(tris: Triangles, mesh: string, most = 200_000): { faces: { plane: FacePlane; area: number }[]; curved: number } | null {
+  const total = count(tris);
+  if (total > most || total === 0) return null;
+  const size = sizeOfModel(tris);
+  const joined = neighbours(tris, Math.max(size * 1e-6, 1e-9));
+  const done = new Uint8Array(total);
+  const faces: { plane: FacePlane; area: number }[] = [];
+  let all = 0;
+  let flat = 0;
+  for (let t = 0; t < total; t += 1) {
+    if (done[t] === 1) continue;
+    const region = regionAround(tris, t, size, joined);
+    for (const one of region.triangles) done[one] = 1;
+    all += region.area;
+    // A patch big enough to be a face of the model, flat: not part of a curve (a twentieth of its size each way).
+    const plane = planeOf(tris, region, mesh);
+    const span = spanOf(plane);
+    if (Math.min(span.w, span.h) >= size * LEAST_SIDE) flat += region.area;
+    if (isFlatFace(plane, region.area, size)) faces.push({ plane, area: region.area });
+  }
+  return { faces: faces.sort((a, b) => b.area - a.area), curved: all > 0 ? Math.max(0, 1 - flat / all) : 0 };
 }
 
 /** The middle of a face, on its plane. */

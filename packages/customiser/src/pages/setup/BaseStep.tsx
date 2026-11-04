@@ -6,8 +6,11 @@
  *   bleed", legend Trim · Bleed · Safe line).
  * - A flat piece (Birch Row): the outline as an SVG Adminium cleans as it
  *   comes in, and the material and its thickness.
- * - A kit of pieces and a 3D-printed item: set up with the 3D preview, which
- *   comes later; their step says so.
+ * - A kit of pieces (`KitBase.tsx`): its pieces, its assembled model, its
+ *   thickness, and its marked faces below.
+ * - A 3D-printed item (`PrintedBase.tsx`): the model to print and the
+ *   preview model, and its marked faces below, each saying how the words
+ *   sit on it (raised or cut in).
  */
 import { useId, useState, type ChangeEvent, type ReactNode } from 'react';
 
@@ -19,6 +22,7 @@ import { Drawing } from './Drawing.tsx';
 import { guidesOf, kindOf, looksSvg, materialsIn, mm, num, OUTLINE_BYTES, sizeOf, svgSize, text } from './facts.ts';
 import { KitFields, KitPreview, useKitPieces } from './KitBase.tsx';
 import { MarkFaces } from './MarkFaces.tsx';
+import { PrintedFields, PrintedPreview } from './PrintedBase.tsx';
 import { kindName } from './NewBase.tsx';
 
 /** A number field that saves its column when it is left with a new value. */
@@ -65,13 +69,13 @@ export function BaseStep({ t, base, bases, settings, areas = [] }: { t: AddOnTra
         {kind === 'piece' ? <Outline t={t} base={base} save={save} /> : null}
         {kind === 'piece' ? <Material t={t} base={base} bases={bases} save={save} /> : null}
         {kind === 'kit' ? <KitFields t={t} base={base} pieces={pieces} save={save} /> : null}
-        {kind === 'printed' ? <Alert tone="info" title={t('setup.base.later.title', 'This kind is set up with the 3D preview')} body={t('setup.base.later.body', 'Its pieces, models and marked faces come with the 3D preview in a later release. You can name it and give its size now.')} /> : null}
+        {kind === 'printed' ? <PrintedFields t={t} base={base} save={save} /> : null}
       </Stack>
-      {kind === 'kit' ? <KitPreview t={t} base={base} /> : <Preview t={t} base={base} settings={settings} />}
+      {kind === 'kit' ? <KitPreview t={t} base={base} /> : kind === 'printed' ? <PrintedPreview t={t} base={base} /> : <Preview t={t} base={base} settings={settings} />}
     </Grid>
   );
-  // A kit's marked faces sit below its base, across the page, as the comp's.
-  return kind === 'kit' ? (
+  // A kit's and a printed item's marked faces sit below the base, across the page, as the comp's.
+  return kind === 'kit' || kind === 'printed' ? (
     <Stack gap="lg">
       {step}
       <MarkFaces t={t} base={base} pieces={pieces} areas={areas} />

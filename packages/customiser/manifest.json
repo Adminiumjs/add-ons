@@ -586,6 +586,31 @@
             }
           },
           {
+            "ref": "print_file",
+            "type": "text",
+            "maxLength": 64,
+            "nullable": true,
+            "rules": {
+              "file": {
+                "accept": [
+                  "stl",
+                  "3mf"
+                ],
+                "maxBytes": 31457280
+              }
+            },
+            "label": {
+              "en-US": "The model to print",
+              "de-DE": "Das Druckmodell",
+              "fr-FR": "Le modèle à imprimer",
+              "da-DK": "Modellen til print",
+              "cs-CZ": "Model k tisku",
+              "ar-EG": "النموذج المُعد للطباعة",
+              "zh-CN": "用于打印的模型",
+              "zh-TW": "用於列印的模型"
+            }
+          },
+          {
             "ref": "faces",
             "type": "json",
             "nullable": true,
@@ -3276,7 +3301,8 @@
               "file": {
                 "accept": [
                   "pdf",
-                  "svg"
+                  "svg",
+                  "3mf"
                 ],
                 "maxBytes": 104857600
               }
