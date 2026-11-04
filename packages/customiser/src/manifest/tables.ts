@@ -51,6 +51,8 @@ const both = (one: Words, many: Words) => ({ label: one, labelPlural: many });
 
 /** The ten megabytes a customer's own file may be, as the comps say ("up to 10 MB"). */
 export const CUSTOMER_FILE_BYTES = 10 * 1024 * 1024;
+/** An outline, a piece or a font the shop uploads: up to 2 MB, as the comps say and Adminium serves them. */
+export const SHOP_FILE_BYTES = 2 * 1024 * 1024;
 /** A never-ordered design is let go this many days after it last changed. */
 export const DESIGN_KEEP_DAYS = 90;
 
@@ -101,8 +103,8 @@ export function tables(): Table[] {
         col('sides', 'int', w('Sides', 'Seiten', 'Faces', 'Sider', 'Strany', 'الأوجه', '面数', '面數'), { nullable: true, rules: { validation: { min: 1, max: 2 } } }),
         col('material', 'text', w('Material', 'Material', 'Matière', 'Materiale', 'Materiál', 'الخامة', '材料', '材料'), { maxLength: 80, nullable: true }),
         mm('thickness_mm', w('Thickness (mm)', 'Stärke (mm)', 'Épaisseur (mm)', 'Tykkelse (mm)', 'Tloušťka (mm)', 'السماكة (مم)', '厚度（毫米）', '厚度（公釐）'), { nullable: true }),
-        // TODO(J10): a cleaned SVG outline, `rules.file { accept: ['svg'] }`, once Adminium takes the kind.
-        col('outline_file', 'text', w('The outline', 'Die Kontur', 'Le contour', 'Omridset', 'Obrys', 'المخطط الخارجي', '轮廓', '輪廓'), { maxLength: 64, nullable: true }),
+        // The piece's outline: an SVG Adminium cleans as it is stored, served to every visitor of a published base.
+        col('outline_file', 'text', w('The outline', 'Die Kontur', 'Le contour', 'Omridset', 'Obrys', 'المخطط الخارجي', '轮廓', '輪廓'), { maxLength: 64, nullable: true, rules: { file: { accept: ['svg'], maxBytes: SHOP_FILE_BYTES } } }),
         /*
          * What this base offers every part and area on it: the fonts (by family)
          * and the finishes (by colour code) the shop switched on for it in the
@@ -136,8 +138,8 @@ export function tables(): Table[] {
         mm('width_mm', W.width),
         mm('height_mm', W.height),
         col('layers', 'json', w('Layers', 'Ebenen', 'Calques', 'Lag', 'Vrstvy', 'الطبقات', '图层', '圖層'), { nullable: true }),
-        // TODO(J10): the piece's cleaned SVG, `rules.file { accept: ['svg'] }`.
-        col('file', 'text', w('The piece’s outline', 'Kontur des Teils', 'Contour de la pièce', 'Delens omrids', 'Obrys dílu', 'مخطط القطعة', '部件轮廓', '部件輪廓'), { maxLength: 64, nullable: true }),
+        // The piece's cleaned SVG, served to every visitor as the base's is.
+        col('file', 'text', w('The piece’s outline', 'Kontur des Teils', 'Contour de la pièce', 'Delens omrids', 'Obrys dílu', 'مخطط القطعة', '部件轮廓', '部件輪廓'), { maxLength: 64, nullable: true, rules: { file: { accept: ['svg'], maxBytes: SHOP_FILE_BYTES } } }),
         position,
       ],
     },
@@ -254,8 +256,8 @@ export function tables(): Table[] {
         col('licence', 'text', w('Licence', 'Lizenz', 'Licence', 'Licens', 'Licence', 'الترخيص', '许可', '授權'), { maxLength: 120 }),
         col('starter', 'bool', w('In the starter set', 'Im Grundsortiment', 'Dans le jeu de départ', 'I startsættet', 'V základní sadě', 'ضمن المجموعة الأساسية', '属于入门套装', '屬於入門套組'), { default: false }),
         mm('smallest_mm', w('Smallest size that still reads (mm)', 'Kleinste noch lesbare Größe (mm)', 'Plus petite taille lisible (mm)', 'Mindste læselige størrelse (mm)', 'Nejmenší čitelná velikost (mm)', 'أصغر حجم يظل مقروءًا (مم)', '仍可辨认的最小尺寸（毫米）', '仍可辨認的最小尺寸（公釐）'), { nullable: true }),
-        // TODO(J10): the WOFF2 file, `rules.file { accept: ['woff2'] }`, served to visitors through the entry's assets.
-        col('file', 'text', w('Font file', 'Schriftdatei', 'Fichier de police', 'Skriftfil', 'Soubor písma', 'ملف الخط', '字体文件', '字型檔案'), { maxLength: 64, nullable: true }),
+        // The WOFF2 file, served to every visitor through the fonts entry's assets.
+        col('file', 'text', w('Font file', 'Schriftdatei', 'Fichier de police', 'Skriftfil', 'Soubor písma', 'ملف الخط', '字体文件', '字型檔案'), { maxLength: 64, nullable: true, rules: { file: { accept: ['woff2'], maxBytes: SHOP_FILE_BYTES } } }),
         col('active', 'bool', W.active, { default: true }),
       ],
     },

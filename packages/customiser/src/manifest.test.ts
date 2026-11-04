@@ -184,6 +184,24 @@ describe('the tables', () => {
 });
 
 describe('the public entries', () => {
+  it('serve the shop’s outlines, pieces and fonts to every visitor as files, each an SVG or a WOFF2 of up to 2 MB', () => {
+    const served = entries.filter((entry) => (entry as { assets?: string[] }).assets !== undefined).map((entry) => [entry.table, (entry as { assets?: string[] }).assets]);
+    expect(served).toEqual([
+      ['bases', ['outline_file']],
+      ['base_pieces', ['file']],
+      ['fonts', ['file']],
+    ]);
+    expect(columnOf('bases', 'outline_file').rules?.file).toEqual({ accept: ['svg'], maxBytes: 2 * 1024 * 1024 });
+    expect(columnOf('base_pieces', 'file').rules?.file).toEqual({ accept: ['svg'], maxBytes: 2 * 1024 * 1024 });
+    expect(columnOf('fonts', 'file').rules?.file).toEqual({ accept: ['woff2'], maxBytes: 2 * 1024 * 1024 });
+    // Each read only, on the shop's own key, the column among what it reads.
+    for (const entry of entries.filter((one) => (one as { assets?: string[] }).assets !== undefined)) {
+      expect(entry.methods, entry.table).toEqual(['GET']);
+      expect(entry.key, entry.table).toBeUndefined();
+      for (const column of (entry as { assets?: string[] }).assets ?? []) expect(entry.select, entry.table).toContain(column);
+    }
+  });
+
   it('ride each app’s own key and are held to that app’s rows — all but the fonts, which every shop shares', () => {
     for (const entry of onShopKey) {
       if (entry.table === 'fonts') continue;
