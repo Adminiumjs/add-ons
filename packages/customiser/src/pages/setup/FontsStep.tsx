@@ -42,7 +42,7 @@ export function FontsStep({ t, base, data }: { t: AddOnTranslate; base: DataRow;
 }
 
 function Fonts({ t, base, data, offered, offer }: { t: AddOnTranslate; base: DataRow; data: SetupData; offered: Offered; offer: (next: Offered) => void }): ReactNode {
-  const upload = useUploader();
+  const upload = useUploader('fonts', 'file');
   const fonts = useWrite('fonts');
   const toast = useToast();
   const licence = useId();
@@ -65,8 +65,8 @@ function Fonts({ t, base, data, offered, offer }: { t: AddOnTranslate; base: Dat
       const name = taken.includes(family) ? codeFor(family, taken, 'font') : family;
       const { row } = await fonts.create({ app: text(base['app']) === '' ? null : text(base['app']), family: name, name, licence: t('setup.font.ownLicence', 'The shop’s own licence'), starter: false, active: true });
       made = row['id'] as string | number;
-      const stored = await upload('fonts', made, 'file', file);
-      await fonts.update(made, { file: stored.file });
+      // The upload saves the font's row with its file: no second save.
+      await upload.upload(made, file, { name: file.name });
       setError(null);
       toast(t('setup.font.added', 'Font added. Shoppers see it once you switch it on.'));
     } catch (caught) {

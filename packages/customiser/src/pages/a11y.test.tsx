@@ -70,7 +70,7 @@ const STATES: State[] = [
   },
   {
     label: 'an outline cleaned by Adminium',
-    before: () => void (world.upload = (_t, _k, _c, file) => ({ file: 'file-9', name: file.name, size: file.size, type: 'image/svg+xml', removed: ['a script'] })),
+    before: () => void (world.upload = () => ({ id: 'file-9', mime: 'image/svg+xml', removed: ['<script>'] })),
     draw: page(IDS.sign),
     after: async () => {
       fireEvent.change(document.querySelector('input[type="file"]')!, { target: { files: [new File(['<svg width="10mm" height="10mm"/>'], 'sign.svg', { type: 'image/svg+xml' })] } });

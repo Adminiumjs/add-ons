@@ -313,27 +313,35 @@ export function asDataError(caught: unknown): DataError {
 
 /**
  * What Adminium answers for a file put into a file column of one of the
- * add-on's own rows: the stored file's id (what the column holds), its name,
- * size and type as sniffed from its bytes, and — for an SVG — what the
- * cleaner took out of it, in Adminium's words. `removed` is absent or empty
- * when nothing was taken out.
+ * add-on's own rows: the reference the column now holds, the stored file's
+ * id, its name, its type as read from its bytes, its size, and — for an SVG
+ * — what the cleaner took out of it, by name (empty when nothing was). The
+ * row comes back as it was saved with the file: the upload saves it.
  */
 export interface Uploaded {
-  file: string;
+  ref: string;
+  id: string;
   name: string;
+  mime: string;
   size: number;
-  type: string;
-  removed?: readonly string[];
+  removed: readonly string[];
+  row: DataRow;
 }
-export type Upload = (table: string, key: string | number, column: string, file: File) => Promise<Uploaded>;
+export interface Uploader {
+  /** Uploads `file` and saves it into the column of the row `key`. */
+  upload: (key: string | number, file: Blob, options?: { name?: string }) => Promise<Uploaded>;
+  uploading: boolean;
+  error: DataError | null;
+}
 
-const hostUpload = data['useUpload'] as (() => Upload) | undefined;
 /**
- * The host's upload into the add-on's own file columns, or `null` on an
- * Adminium whose data kit has none: a screen then says so and keeps its
- * upload button switched off. The same answer on every draw of one page, so
- * this is a hook called the same way each time.
+ * The host's upload into one file column of the add-on's own rows, or
+ * `null` on an Adminium whose data kit has none (older than 0.3.43): a
+ * screen then says so and keeps its upload switched off. A host either has
+ * the hook or has none for as long as the page is open, so this is called
+ * the same way on every draw.
  */
-export function useUploader(): Upload | null {
-  return hostUpload === undefined ? null : hostUpload();
+export function useUploader(table: string, column: string): Uploader | null {
+  const hostUpload = data['useUpload'] as ((table: string, column: string) => Uploader) | undefined;
+  return hostUpload === undefined ? null : hostUpload(table, column);
 }
