@@ -8,8 +8,7 @@
  * The shop's set-up page and the two record panels are named by the build's
  * `OUTPUT` (`vite.config.ts`), so the manifest and the files on disk are one
  * list, as is the file that answers the design question (`provides`,
- * `addOn.checker`). TODO(J1): `uploads` on the designs entry, and `svg` among
- * a customer's logo kinds.
+ * `addOn.checker`).
  */
 import { entries, LINK_KEY } from './entries.ts';
 import { starterFontRows } from './fonts.ts';

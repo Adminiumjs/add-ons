@@ -11,28 +11,45 @@
  *   and areas, its shown ready-made designs and their parts, its palettes,
  *   colours, priced features, and the fonts.
  * - Anyone may save a design, behind the human check and the limits on a
- *   stranger's create. The answer is the design's code, which the app's order
- *   line looks the design up by. Nobody reads a design through the shop's
- *   key: a table anyone may add to is never one anyone may read.
- * - A saved design opens again only by its private link, on the add-on's own
- *   link key, which reads that one design and nothing else.
+ *   stranger's create, with the logo or photo they uploaded for it. The
+ *   answer is the design's code, which the app's order line looks the design
+ *   up by, and the design's own link, handed once to whoever saved it.
+ * - That link, on the add-on's own link key, opens that one design and
+ *   nothing else, from any device: it reads the design and changes it in
+ *   place while it is a draft, so a customer who comes back keeps one design
+ *   and one code. Once ordered, the design is the order's: it still reads,
+ *   and never changes. The address it is mailed to is never changed through
+ *   it.
+ * - Whoever a shop signed in (a guest who found their order again) opens a
+ *   design by its own code, the one the order's line holds: one design of
+ *   that shop, never a list, and the code is never shown back. Nobody else
+ *   reads a design through a shop's key: a table anyone may add to is never
+ *   one anyone may read.
  *
  * - The shop's outlines, pieces and fonts are served to every visitor as
- *   files (`assets`): a font a part offers, the outline a preview draws.
- *
- * TODO(J1): `uploads` on the designs entry, so a guest's logo or photo can
- * ride the create into `designs.logo_file` / `photo_file`.
+ *   files (`assets`): a font a part offers, the outline a preview draws. A
+ *   customer's logo or photo is never one: it is private, handed back only to
+ *   the design's own link, as a download.
  */
 type Entry = Record<string, unknown>;
 
 /** The add-on's one link key: a saved design's private link. */
 export const LINK_KEY = 'customiser-link';
 
+/** What a customer may upload into a design: the logo and the photo. */
+export const DESIGN_UPLOADS = ['logo_file', 'photo_file'] as const;
+
 /** What a visitor may write into a new design. */
-export const DESIGN_WRITABLE = ['format', 'ready_design_id', 'base_id', 'values', 'email'] as const;
+export const DESIGN_WRITABLE = ['format', 'ready_design_id', 'base_id', 'values', ...DESIGN_UPLOADS, 'email'] as const;
+
+/** What the design's own link may change, while it is a draft: all a visitor wrote, but the address the link is mailed to. */
+export const DESIGN_CHANGEABLE = DESIGN_WRITABLE.filter((ref) => ref !== 'email');
 
 /** What a visitor reads of a design opened by its link. */
 export const DESIGN_OPENED = ['id', 'code', 'format', 'ready_design_id', 'base_id', 'values', 'logo_file', 'photo_file', 'state', 'last_changed_at'] as const;
+
+/** What a guest the shop signed in reads of a design opened by its code: what makes it up, never the code itself. */
+export const DESIGN_BY_CODE = ['id', 'format', 'ready_design_id', 'base_id', 'values', 'state', 'last_changed_at'] as const;
 
 const published = [{ column: 'state', op: 'eq', value: 'published' }];
 const read = (table: string, select: readonly string[], extra: Entry = {}): Entry => ({ table, methods: ['GET'], select: [...select], appColumn: 'app', ...extra });
@@ -60,18 +77,26 @@ export function entries(): Entry[] {
       table: 'designs',
       methods: ['POST'],
       writable: [...DESIGN_WRITABLE],
+      uploads: [...DESIGN_UPLOADS],
       select: ['id', 'code', 'format', 'state'],
       humanCheck: true,
       appColumn: 'app',
       anonymous: { perValue: { columns: ['email'], n: 20 }, perKeyHour: 600, perIpHour: 30 },
+      // The reply carries the new design's own link, once: the page that saved it keeps changing it with no claim.
+      shareLink: 'link_token',
     },
+    // A design read by its own code, by a guest the shop signed in: the code an order line holds.
+    { table: 'designs', methods: ['GET'], select: [...DESIGN_BY_CODE], appColumn: 'app', level: 'lookup', unlockBy: { header: true, column: 'code', self: true, length: 16 } },
     {
       table: 'designs',
       key: LINK_KEY,
-      methods: ['GET'],
+      methods: ['GET', 'PATCH'],
       select: [...DESIGN_OPENED],
-      claim: { by: 'token', column: 'link_token' },
-      files: ['logo_file', 'photo_file'],
+      writable: [...DESIGN_CHANGEABLE],
+      uploads: [...DESIGN_UPLOADS],
+      writableWhen: { state: ['draft'] },
+      claim: { by: 'token', column: 'link_token', own: true, address: 'email' },
+      files: [...DESIGN_UPLOADS],
     },
   ];
 }

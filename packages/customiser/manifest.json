@@ -2678,11 +2678,21 @@
               "personal": true,
               "file": {
                 "accept": [
+                  "svg",
+                  "pdf",
                   "png",
-                  "jpeg",
-                  "pdf"
+                  "jpeg"
                 ],
-                "maxBytes": 10485760
+                "maxBytes": 10485760,
+                "upload": {
+                  "kinds": [
+                    "svg",
+                    "pdf",
+                    "png",
+                    "jpg"
+                  ],
+                  "maxBytes": 10485760
+                }
               }
             },
             "label": {
@@ -2706,10 +2716,16 @@
               "file": {
                 "accept": [
                   "png",
-                  "jpeg",
-                  "pdf"
+                  "jpeg"
                 ],
-                "maxBytes": 10485760
+                "maxBytes": 10485760,
+                "upload": {
+                  "kinds": [
+                    "png",
+                    "jpg"
+                  ],
+                  "maxBytes": 10485760
+                }
               }
             },
             "label": {
@@ -3543,7 +3559,13 @@
         "ready_design_id",
         "base_id",
         "values",
+        "logo_file",
+        "photo_file",
         "email"
+      ],
+      "uploads": [
+        "logo_file",
+        "photo_file"
       ],
       "select": [
         "id",
@@ -3562,13 +3584,38 @@
         },
         "perKeyHour": 600,
         "perIpHour": 30
+      },
+      "shareLink": "link_token"
+    },
+    {
+      "table": "designs",
+      "methods": [
+        "GET"
+      ],
+      "select": [
+        "id",
+        "format",
+        "ready_design_id",
+        "base_id",
+        "values",
+        "state",
+        "last_changed_at"
+      ],
+      "appColumn": "app",
+      "level": "lookup",
+      "unlockBy": {
+        "header": true,
+        "column": "code",
+        "self": true,
+        "length": 16
       }
     },
     {
       "table": "designs",
       "key": "customiser-link",
       "methods": [
-        "GET"
+        "GET",
+        "PATCH"
       ],
       "select": [
         "id",
@@ -3582,9 +3629,28 @@
         "state",
         "last_changed_at"
       ],
+      "writable": [
+        "format",
+        "ready_design_id",
+        "base_id",
+        "values",
+        "logo_file",
+        "photo_file"
+      ],
+      "uploads": [
+        "logo_file",
+        "photo_file"
+      ],
+      "writableWhen": {
+        "state": [
+          "draft"
+        ]
+      },
       "claim": {
         "by": "token",
-        "column": "link_token"
+        "column": "link_token",
+        "own": true,
+        "address": "email"
       },
       "files": [
         "logo_file",

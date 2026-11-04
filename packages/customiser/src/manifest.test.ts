@@ -4,10 +4,11 @@
  * Validated with the validator an install uses, then held to what a validator
  * cannot know: that the file is what `scripts/manifest.mjs` writes; that every
  * table two shop apps might share says which app a row is for, and every entry
- * is held to it; that a customer's design is saved by anyone, read by nobody
- * through a shop's key, and opened again only by its private link; that a
- * design nobody ordered is let go; and that every word a person reads is there
- * in all eight languages.
+ * is held to it; that a customer's design is saved by anyone with the files
+ * they uploaded, changed only by its own link and only while a draft, read
+ * through a shop's key only by its own code, by a guest the shop signed in;
+ * that a design nobody ordered is let go; and that every word a person reads
+ * is there in all eight languages.
  */
 import { validateManifest } from '@adminiumjs/manifest';
 import { describe, expect, it } from 'vitest';
@@ -16,11 +17,16 @@ import manifest from '../manifest.json' with { type: 'json' };
 // @ts-expect-error — a build script, plain JavaScript with no types of its own.
 import { TARGET, written } from '../scripts/manifest.mjs';
 import { readFileSync } from 'node:fs';
-import { DESIGN_OPENED, DESIGN_WRITABLE, LINK_KEY } from './manifest/entries.ts';
+import { DESIGN_BY_CODE, DESIGN_CHANGEABLE, DESIGN_OPENED, DESIGN_UPLOADS, DESIGN_WRITABLE, LINK_KEY } from './manifest/entries.ts';
 import { CUSTOMER_TABLES, SHOP_TABLES } from './manifest/build.ts';
 import { DESCRIPTION, LOCALES } from './manifest/words.ts';
 import { OUTPUT } from '../vite.config.ts';
 
+interface FileRule {
+  accept: string[];
+  maxBytes: number;
+  upload?: { kinds: string[]; maxBytes: number };
+}
 interface Column {
   ref: string;
   type: string;
@@ -34,7 +40,7 @@ interface Column {
   rules?: {
     personal?: boolean;
     code?: { length?: number; hiddenFromStaff?: boolean };
-    file?: { accept: string[]; maxBytes: number };
+    file?: FileRule;
     enumLabels?: { labels: Record<string, Record<string, string>> };
   };
 }
@@ -53,8 +59,14 @@ interface Entry {
   writable?: string[];
   defaults?: Record<string, unknown>;
   appColumn?: string;
-  claim?: { by?: string; column?: string };
+  claim?: { by?: string; column?: string; own?: boolean; address?: string };
   humanCheck?: boolean;
+  uploads?: string[];
+  files?: string[];
+  shareLink?: string;
+  writableWhen?: Record<string, string[]>;
+  level?: string;
+  unlockBy?: Record<string, unknown>;
   anonymous?: unknown;
   filters?: { column: string; op: string; value: unknown }[];
 }
@@ -193,7 +205,11 @@ describe('the tables', () => {
     expect(columnOf('designs', 'format')).toMatchObject({ type: 'int', default: 1 });
     expect(columnOf('designs', 'values').type).toBe('json');
     // A customer's own files sit in file columns of the design, where the design question is handed them.
-    for (const ref of ['logo_file', 'photo_file']) expect(columnOf('designs', ref).rules?.file, ref).toEqual({ accept: ['png', 'jpeg', 'pdf'], maxBytes: 10 * 1024 * 1024 });
+    const ten = 10 * 1024 * 1024;
+    // "SVG, PDF, PNG or JPEG, up to 10 MB": a logo the customer uploads, an SVG kept only as Adminium cleans it.
+    expect(columnOf('designs', 'logo_file').rules?.file).toEqual({ accept: ['svg', 'pdf', 'png', 'jpeg'], maxBytes: ten, upload: { kinds: ['svg', 'pdf', 'png', 'jpg'], maxBytes: ten } });
+    // A photo is a picture.
+    expect(columnOf('designs', 'photo_file').rules?.file).toEqual({ accept: ['png', 'jpeg'], maxBytes: ten, upload: { kinds: ['png', 'jpg'], maxBytes: ten } });
   });
 
   it('let a design nobody ordered go 90 days after its last change', () => {
@@ -247,13 +263,13 @@ describe('the public entries', () => {
   });
 
   it('let every visitor read what a shop offers, and only what it published or shows', () => {
-    const reads = onShopKey.filter((entry) => entry.methods.join() === 'GET').map((entry) => entry.table);
+    const reads = onShopKey.filter((entry) => entry.methods.join() === 'GET' && entry.table !== 'designs').map((entry) => entry.table);
     expect(reads).toEqual(['bases', 'base_pieces', 'base_areas', 'ready_designs', 'ready_parts', 'fonts', 'palettes', 'palette_colours', 'features']);
     for (const table of ['bases', 'ready_designs']) expect(onShopKey.find((entry) => entry.table === table)?.filters, table).toEqual([{ column: 'state', op: 'eq', value: 'published' }]);
   });
 
-  it('let anyone save a design behind the human check and a stranger’s limits, answering its code and nothing personal', () => {
-    const create = onShopKey.filter((entry) => entry.table === 'designs');
+  it('let anyone save a design behind the human check and a stranger’s limits, with the files they uploaded, answering its code, its own link and nothing personal', () => {
+    const create = onShopKey.filter((entry) => entry.table === 'designs' && entry.methods.includes('POST'));
     expect(create).toHaveLength(1);
     expect(create[0]).toMatchObject({ methods: ['POST'], humanCheck: true, appColumn: 'app' });
     expect(create[0]!.anonymous).toBeDefined();
@@ -262,20 +278,41 @@ describe('the public entries', () => {
     for (const ref of ['app', 'state', 'code', 'link_token', 'last_changed_at']) expect(create[0]!.writable, ref).not.toContain(ref);
     expect(create[0]!.defaults).toBeUndefined();
     expect(create[0]!.select).toEqual(['id', 'code', 'format', 'state']);
+    expect(create[0]!.uploads).toEqual([...DESIGN_UPLOADS]);
+    for (const ref of DESIGN_UPLOADS) expect(create[0]!.writable, ref).toContain(ref);
+    // The reply hands the new design's own link to whoever saved it, once.
+    expect(create[0]!.shareLink).toBe('link_token');
   });
 
-  it('let nobody read a customer’s design through a shop’s key', () => {
-    for (const entry of onShopKey.filter((one) => CUSTOMER_TABLES.includes(one.table as (typeof CUSTOMER_TABLES)[number]))) expect(entry.methods, entry.table).not.toContain('GET');
+  it('let nobody read a customer’s design through a shop’s key but by its own code, signed in by the shop', () => {
+    const reads = onShopKey.filter((one) => CUSTOMER_TABLES.includes(one.table as (typeof CUSTOMER_TABLES)[number]) && one.methods.includes('GET'));
+    expect(reads.map((one) => one.table)).toEqual(['designs']);
+    // One design, by the code its order line holds, for a guest the shop signed in: never a list, never the code shown back.
+    expect(reads[0]).toMatchObject({ methods: ['GET'], appColumn: 'app', level: 'lookup', unlockBy: { header: true, column: 'code', self: true, length: 16 } });
+    expect(reads[0]!.select).toEqual([...DESIGN_BY_CODE]);
+    for (const ref of ['code', 'link_token', 'email', 'logo_file', 'photo_file']) expect(reads[0]!.select, ref).not.toContain(ref);
+    expect(reads[0]!.files).toBeUndefined();
   });
 
-  it('open a saved design again only by its private link: one design, read only', () => {
+  it('open a saved design again only by its own link: that one design, changed only while it is a draft, never its address', () => {
     expect(Object.keys(manifest.publicKeys)).toEqual([LINK_KEY]);
     const opened = entries.filter((entry) => entry.key === LINK_KEY);
     expect(opened).toHaveLength(1);
-    expect(opened[0]).toMatchObject({ table: 'designs', methods: ['GET'], claim: { by: 'token', column: 'link_token' } });
+    expect(opened[0]).toMatchObject({ table: 'designs', methods: ['GET', 'PATCH'], claim: { by: 'token', column: 'link_token', own: true, address: 'email' } });
     expect(opened[0]!.select).toEqual([...DESIGN_OPENED]);
     expect(opened[0]!.select).not.toContain('link_token');
     expect(opened[0]!.select).not.toContain('email');
+    expect(opened[0]!.writable).toEqual([...DESIGN_CHANGEABLE]);
+    for (const ref of ['app', 'state', 'code', 'link_token', 'email', 'last_changed_at']) expect(opened[0]!.writable, ref).not.toContain(ref);
+    // An ordered design is the order's.
+    expect(opened[0]!.writableWhen).toEqual({ state: ['draft'] });
+    // The customer uploads a new logo or photo through it, and downloads what they sent.
+    expect(opened[0]!.uploads).toEqual([...DESIGN_UPLOADS]);
+    expect(opened[0]!.files).toEqual([...DESIGN_UPLOADS]);
+  });
+
+  it('never serve a customer’s file to every visitor', () => {
+    for (const entry of entries) for (const ref of DESIGN_UPLOADS) expect((entry as { assets?: string[] }).assets ?? [], `${entry.table} ${ref}`).not.toContain(ref);
   });
 });
 

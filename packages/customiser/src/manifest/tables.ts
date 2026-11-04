@@ -338,9 +338,9 @@ export function tables(): Table[] {
         link('ready_design_id', 'ready_designs', W.readyDesign),
         link('base_id', 'bases', W.base),
         col('values', 'json', w('What the customer chose', 'Was der Kunde gewählt hat', 'Ce que le client a choisi', 'Hvad kunden valgte', 'Co zákazník zvolil', 'ما اختاره العميل', '顾客的选择', '顧客的選擇'), { nullable: true, rules: { personal: true } }),
-        // TODO(J1): `file.upload { kinds, maxBytes }` on both, so a guest's create can carry them. TODO(J10): 'svg' among the kinds.
-        col('logo_file', 'text', w('The customer’s logo', 'Logo des Kunden', 'Logo du client', 'Kundens logo', 'Logo zákazníka', 'شعار العميل', '顾客的标志', '顧客的標誌'), { maxLength: 64, nullable: true, rules: { personal: true, file: { accept: ['png', 'jpeg', 'pdf'], maxBytes: CUSTOMER_FILE_BYTES } } }),
-        col('photo_file', 'text', w('The customer’s photo', 'Foto des Kunden', 'Photo du client', 'Kundens foto', 'Fotografie zákazníka', 'صورة العميل', '顾客的照片', '顧客的照片'), { maxLength: 64, nullable: true, rules: { personal: true, file: { accept: ['png', 'jpeg', 'pdf'], maxBytes: CUSTOMER_FILE_BYTES } } }),
+        // A customer's own files, uploaded from the editor: a logo as a drawing (SVG, kept only as cleaned), a PDF or a picture; a photo as a picture.
+        col('logo_file', 'text', w('The customer’s logo', 'Logo des Kunden', 'Logo du client', 'Kundens logo', 'Logo zákazníka', 'شعار العميل', '顾客的标志', '顧客的標誌'), { maxLength: 64, nullable: true, rules: { personal: true, file: { accept: ['svg', 'pdf', 'png', 'jpeg'], maxBytes: CUSTOMER_FILE_BYTES, upload: { kinds: ['svg', 'pdf', 'png', 'jpg'], maxBytes: CUSTOMER_FILE_BYTES } } } }),
+        col('photo_file', 'text', w('The customer’s photo', 'Foto des Kunden', 'Photo du client', 'Kundens foto', 'Fotografie zákazníka', 'صورة العميل', '顾客的照片', '顧客的照片'), { maxLength: 64, nullable: true, rules: { personal: true, file: { accept: ['png', 'jpeg'], maxBytes: CUSTOMER_FILE_BYTES, upload: { kinds: ['png', 'jpg'], maxBytes: CUSTOMER_FILE_BYTES } } } }),
         choice(
           'state',
           {

@@ -4,8 +4,13 @@
  * Written once at install into the fonts table (`seeds`), for no app in
  * particular, so both shop apps on one install offer them. Each is named by
  * its own family name and its licence, the SIL Open Font License, which lets
- * a shop use it on anything it makes and sells. The font files and their
- * licence texts ship with the files of a later release (TODO(J10)).
+ * a shop use it on anything it makes and sells.
+ *
+ * The rows come without their WOFF2 files. A seed holds plain values, and a
+ * file column holds a file Adminium kept, so an add-on's seed cannot name a
+ * file of its package: until Adminium can, each starter font's file (and its
+ * licence text beside it) is the shop's to upload on the set-up page, which
+ * itself waits for the data kit's upload into an add-on's own file column.
  *
  * `smallest` is the size below which a typeface's thin strokes close up when
  * engraved, in millimetres, where the shop's experience gave one.
