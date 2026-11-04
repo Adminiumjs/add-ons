@@ -18,7 +18,7 @@ import { clip, concatTransformationMatrix, endPath, PDFDocument, popGraphicsStat
 
 import { fitted } from './canvas.ts';
 import type { FlatItem, FlatSheet } from './flat.ts';
-import { linePath, textPaths, type Font } from './outline.ts';
+import { linePath, missingIn, textPaths, type Font } from './outline.ts';
 import { frameInto, times, type Matrix, type ReadSvg } from './svgread.ts';
 
 /** Points in a millimetre. */
@@ -131,8 +131,11 @@ async function drawSheet(doc: PDFDocument, page: PDFPage, sheet: FlatSheet, plac
 }
 
 /** A line of the page's own words, as outlines, at a size in points, its baseline `y` from the page's bottom. */
-function label(page: PDFPage, font: Font | null, text: string, x: number, y: number, sizePt: number, hex = '#191920'): void {
-  if (font === null || text === '') return;
+function label(page: PDFPage, font: Font | null, said: string | readonly [string, string], x: number, y: number, sizePt: number, hex = '#191920'): void {
+  if (font === null) return;
+  // In the shop's language where its font has every letter of it, else in English.
+  const text = typeof said === 'string' ? said : missingIn(font, said[0]).length === 0 ? said[0] : said[1];
+  if (text === '' || missingIn(font, text).length > 0) return;
   // Set in millimetres (y down) from the page's top-left, then drawn at the page's points.
   const { d } = linePath(font, text, 0, 0, sizePt / MM, 'start');
   if (d !== '') page.drawSvgPath(d, { x, y, scale: MM, color: colour(hex) });
@@ -177,6 +180,8 @@ export interface ProofWords {
   spec: string;
   sides: Readonly<Record<'front' | 'back', string>>;
   note: string;
+  /** The same in English: what is printed where the font has no letters for the shop's language. */
+  english?: Omit<ProofWords, 'english'>;
 }
 
 /** The proof: every side on one A4 page, larger, with the trim, bleed and safe line drawn. */
@@ -186,14 +191,15 @@ export async function proofPdf(sheets: readonly FlatSheet[], assets: PdfAssets, 
   const doc = await PDFDocument.create();
   const page = doc.addPage([A4.w, A4.h]);
   const left = 56;
-  label(page, font, words.title, left, A4.h - 56, 15);
-  label(page, font, words.spec, left, A4.h - 74, 9.5, '#4a4a54');
+  const en = words.english ?? words;
+  label(page, font, [words.title, en.title], left, A4.h - 56, 15);
+  label(page, font, [words.spec, en.spec], left, A4.h - 74, 9.5, '#4a4a54');
   let top = A4.h - 112;
   for (const sheet of sheets) {
     const { face } = sheet;
     // As large as fits the page across, at most 160 % of its size.
     const k = Math.min(1.6 * MM, (A4.w - 2 * left) / (face.width + 2 * face.bleed), (A4.h - 220) / sheets.length / (face.height + 2 * face.bleed));
-    label(page, font, words.sides[sheet.side], left, top + 4, 10.5);
+    label(page, font, [words.sides[sheet.side], en.sides[sheet.side]], left, top + 4, 10.5);
     const place: Place = { x: left + face.bleed * k, top: top - 12 - face.bleed * k, k };
     await drawSheet(doc, page, sheet, place, assets);
     const bleed = rectOf(place, { x: -face.bleed, y: -face.bleed, w: face.width + 2 * face.bleed, h: face.height + 2 * face.bleed });
@@ -205,7 +211,7 @@ export async function proofPdf(sheets: readonly FlatSheet[], assets: PdfAssets, 
     if (face.safe !== null && face.safe > 0) page.drawRectangle({ ...rectOf(place, { x: face.safe, y: face.safe, w: face.width - 2 * face.safe, h: face.height - 2 * face.safe }), borderColor: colour('#1c59e0'), borderWidth: 0.8, borderDashArray: [3, 2.4] });
     top -= 12 + bleed.height + 34;
   }
-  label(page, font, words.note, left, 60, 9, '#4a4a54');
+  label(page, font, [words.note, en.note], left, 60, 9, '#4a4a54');
   doc.setTitle(words.title);
   doc.setCreator('Customiser');
   return await doc.save();
