@@ -20,9 +20,9 @@
  */
 import { BoxGeometry, Box3, BufferAttribute, BufferGeometry, CanvasTexture, DoubleSide, Group, LineBasicMaterial, LineLoop, Matrix4, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, SRGBColorSpace, Texture, Vector3, type Material } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 
 import { middleOf, spanOf, type FacePlane, type Triangles, type Vec } from './faces.ts';
+import { readPrintModel, type PrintModel } from './printModel.ts';
 import type { ModelKind } from './sniff.ts';
 
 /** A design laid on one marked face: the face's plane and the picture painted for it (none: nothing on it). */
@@ -60,13 +60,27 @@ export interface ShopModel {
 /** Reads a model's file into a tree of meshes; a test hands in its own. */
 export type ReadModel = (bytes: ArrayBuffer, kind: ModelKind) => Promise<Object3D>;
 
-/** three.js's own readers: a GLB with everything inside it, or an STL. */
+/** A model to print as one mesh, its corners in millimetres as read, each triangle flat-shaded. */
+export function printMesh(model: PrintModel, colour = '#c98a2e'): Mesh {
+  const geometry = new BufferGeometry();
+  geometry.setAttribute('position', new BufferAttribute(model.positions, 3));
+  if (model.index !== null) geometry.setIndex(new BufferAttribute(model.index, 1));
+  // A printed model's faces are flat: each triangle is shaded as its own.
+  const flat = geometry.index === null ? geometry : geometry.toNonIndexed();
+  if (flat !== geometry) geometry.dispose();
+  flat.computeVertexNormals();
+  const mesh = new Mesh(flat, new MeshStandardMaterial({ color: colour, roughness: 0.6, metalness: 0 }));
+  mesh.name = 'print';
+  return mesh;
+}
+
+/**
+ * The model's file read: a GLB by three.js's own reader (everything inside
+ * it), a model to print (an STL or a 3MF) by the package's own, which the
+ * set-up and the files read it with too.
+ */
 export const readModel: ReadModel = async (bytes, kind) => {
-  if (kind === 'stl') {
-    const geometry = new STLLoader().parse(bytes);
-    if (geometry.getAttribute('normal') === undefined) geometry.computeVertexNormals();
-    return new Mesh(geometry, new MeshStandardMaterial({ color: '#c98a2e', roughness: 0.6, metalness: 0 }));
-  }
+  if (kind === 'stl' || kind === '3mf') return printMesh(await readPrintModel(new Uint8Array(bytes)));
   return await new Promise<Object3D>((resolve, reject) => {
     new GLTFLoader().parse(bytes, '', (read) => resolve(read.scene), (error) => reject(error instanceof Error ? error : new Error(String(error))));
   });
