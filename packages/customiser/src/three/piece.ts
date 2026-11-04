@@ -17,6 +17,7 @@ import { BufferAttribute, CanvasTexture, ExtrudeGeometry, Group, Mesh, MeshStand
 import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader.js';
 
 import { frameInto, matrixText, times, type ReadSvg } from '../draw/svgread.ts';
+import { darker, sliceCount } from './look.ts';
 import { roundedRing, solidsOf, type Point, type Solid } from './rings.ts';
 
 /** What a piece is made from, as the stage draws it. */
@@ -33,6 +34,12 @@ export interface PieceModel {
   edge: string;
   /** The top face as painted from the design's flat sheet, the full piece's box; none for the bare material. */
   top: HTMLCanvasElement | null;
+  /**
+   * A 3D-printed item's words, raised from its top or cut into it: the
+   * design's words and logo painted white on nothing (`mask`, the piece's
+   * box), stood up by `depth` millimetres or sunk as a darker inset.
+   */
+  relief?: { mode: 'raised' | 'cut'; depth: number; mask: HTMLCanvasElement | null };
 }
 
 /** Path data is passed on as it was read, and only drawing commands and numbers. */
@@ -136,11 +143,44 @@ export function buildPiece(model: PieceModel): Built {
   topMesh.name = 'top';
   const group = new Group();
   group.add(bodyMesh, topMesh);
-  return { group, top: topMesh, geometries: [body, topShape], materials: [cap, side, top], textures };
+  const built: Built = { group, top: topMesh, geometries: [body, topShape], materials: [cap, side, top], textures };
+  if (model.relief?.mask !== null && model.relief !== undefined) reliefLayers(built, model, shapes, width, height);
+  return built;
 }
 
-/** Whether two models make the same body, so only the picture on top need change. */
+/**
+ * A printed item's words, stood up from its top (raised) or sunk into it
+ * (cut in), drawn from the mask of its words: raised, a stack of slices of
+ * the words up to the depth, the sides in the plastic's shade and the top in
+ * its colour; cut in, the words as a darker floor just on the top.
+ */
+function reliefLayers(built: Built, model: PieceModel, shapes: readonly Shape[], width: number, height: number): void {
+  const relief = model.relief!;
+  const mask = new CanvasTexture(relief.mask!);
+  mask.colorSpace = SRGBColorSpace;
+  built.textures.push(mask);
+  const slice = (lift: number, colour: string, name: string): void => {
+    const geometry = topGeometry(shapes, width, height, model.thickness);
+    geometry.translate(0, 0, lift);
+    const material = new MeshStandardMaterial({ color: colour, map: mask, alphaTest: 0.5, roughness: 0.7, metalness: 0 });
+    const mesh = new Mesh(geometry, material);
+    mesh.name = name;
+    built.group.add(mesh);
+    built.geometries.push(geometry);
+    built.materials.push(material);
+  };
+  if (relief.mode === 'cut') {
+    slice(0.01, darker(model.face, 0.4), 'cut');
+    return;
+  }
+  const count = sliceCount(relief.depth);
+  for (let k = 1; k <= count; k += 1) slice((relief.depth * k) / count, k === count ? model.face : darker(model.face, 0.25), k === count ? 'raised-top' : 'raised-side');
+}
+
+/** Whether two models make the same body, so only the picture on top need change (a printed item's words stand on it: it is built again). */
 export const sameBody = (a: PieceModel, b: PieceModel): boolean =>
+  a.relief === undefined &&
+  b.relief === undefined &&
   a.width === b.width && a.height === b.height && a.corner === b.corner && a.thickness === b.thickness && a.outline === b.outline && a.face === b.face && a.edge === b.edge;
 
 /** A new picture on the top face of a built piece; the old one is let go of. */

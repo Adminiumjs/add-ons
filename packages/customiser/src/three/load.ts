@@ -13,7 +13,7 @@
  * itself), so the editor's own file stays one file and the stage's another.
  */
 import { paintSheet, pixelsPerMm, type Painted, type Pen } from '../draw/canvas.ts';
-import type { FlatSheet } from '../draw/flat.ts';
+import type { FlatItem, FlatSheet } from '../draw/flat.ts';
 import type { ReadSvg } from '../draw/svgread.ts';
 import type { PieceModel } from './piece.ts';
 
@@ -111,8 +111,26 @@ export function topCanvas(sheet: FlatSheet, painted: Readonly<Record<string, Pai
   return canvas;
 }
 
-/** A flat piece as the stage draws it: the sheet's face, the outline, the thickness and the painted top. */
-export function pieceModel(sheet: FlatSheet, outline: ReadSvg | null, thickness: number | null, painted: Readonly<Record<string, Painted>>): PieceModel {
+/** How a 3D-printed item's words sit on it: raised from it or cut into it, by how many millimetres. */
+export interface ReliefLook {
+  mode: 'raised' | 'cut';
+  depth: number;
+}
+
+/** What a printed item's words stand up from: everything on the sheet but its words and its logo (example words, dimmed, stay flat on it). */
+const withoutWords = (sheet: FlatSheet): FlatSheet => ({ ...sheet, items: sheet.items.filter((item) => (item.kind !== 'text' || item.dim) && item.kind !== 'picture') });
+
+/**
+ * The mask a printed item's words are stood up from: its words in white, and
+ * its logo, on nothing, the sheet's box. The stage colours it the plastic's.
+ */
+export function reliefCanvas(sheet: FlatSheet, painted: Readonly<Record<string, Painted>>): HTMLCanvasElement | null {
+  const items = sheet.items.flatMap((item): FlatItem[] => (item.kind === 'text' && !item.dim ? [{ ...item, colour: '#ffffff' }] : item.kind === 'picture' ? [item] : []));
+  return topCanvas({ ...sheet, items, face: { ...sheet.face, colour: 'transparent' } }, painted);
+}
+
+/** A flat piece as the stage draws it: the sheet's face, the outline, the thickness and the painted top; a printed item's words stood up from it. */
+export function pieceModel(sheet: FlatSheet, outline: ReadSvg | null, thickness: number | null, painted: Readonly<Record<string, Painted>>, relief?: ReliefLook): PieceModel {
   return {
     width: sheet.face.width,
     height: sheet.face.height,
@@ -121,7 +139,8 @@ export function pieceModel(sheet: FlatSheet, outline: ReadSvg | null, thickness:
     outline,
     face: sheet.face.colour,
     edge: sheet.face.edge,
-    top: topCanvas(sheet, painted),
+    top: topCanvas(relief === undefined ? sheet : withoutWords(sheet), painted),
+    ...(relief === undefined ? {} : { relief: { ...relief, mask: reliefCanvas(sheet, painted) } }),
   };
 }
 

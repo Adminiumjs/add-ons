@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Painted } from '../draw/canvas.ts';
 import type { FlatSheet } from '../draw/flat.ts';
 import type { ReadSvg } from '../draw/svgread.ts';
-import { outlineOnce, paintedOnce, pieceModel } from './load.ts';
+import { outlineOnce, paintedOnce, pieceModel, type ReliefLook } from './load.ts';
 import type { PieceModel } from './piece.ts';
 
 /** Where a piece's outline comes from: a key it is kept under, and how its text is read. */
@@ -20,9 +20,10 @@ export interface OutlineSource {
 /**
  * The piece for a sheet; none until its outline has been read (a piece with
  * no outline is its rectangle at once). `pictures` are the addresses of the
- * customer's pictures this page holds, by file column.
+ * customer's pictures this page holds, by file column; a printed item's
+ * words are stood up from its top, or cut into it, as `relief` says.
  */
-export function usePieceModel(sheet: FlatSheet | null, thickness: number | null, outline: OutlineSource | null, pictures: Readonly<Record<string, string>> = {}): PieceModel | null {
+export function usePieceModel(sheet: FlatSheet | null, thickness: number | null, outline: OutlineSource | null, pictures: Readonly<Record<string, string>> = {}, relief?: ReliefLook): PieceModel | null {
   const [read, setRead] = useState<{ key: string; svg: ReadSvg | null } | null>(null);
   const { painted, fontsIn } = usePainted(pictures);
 
@@ -41,7 +42,8 @@ export function usePieceModel(sheet: FlatSheet | null, thickness: number | null,
   const sheetKey = sheet === null ? '' : JSON.stringify(sheet);
   const ready = outline === null || read?.key === outline.key;
   const svg = outline === null ? null : (read?.svg ?? null);
-  return useMemo(() => (sheet === null || !ready ? null : pieceModel(sheet, svg, thickness, painted)), [sheetKey, ready, svg, thickness, painted, fontsIn]); // eslint-disable-line react-hooks/exhaustive-deps
+  const reliefKey = relief === undefined ? '' : `${relief.mode}:${String(relief.depth)}`;
+  return useMemo(() => (sheet === null || !ready ? null : pieceModel(sheet, svg, thickness, painted, relief)), [sheetKey, ready, svg, thickness, painted, fontsIn, reliefKey]); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
 /**

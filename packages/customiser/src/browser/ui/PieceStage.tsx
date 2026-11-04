@@ -23,7 +23,7 @@ import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Box, Move3d, RotateCcw, Zoom
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
 
 import { flatSheet } from '../../draw/flat.ts';
-import { hasWebGL, reducedMotion } from '../../three/load.ts';
+import { hasWebGL, reducedMotion, type ReliefLook } from '../../three/load.ts';
 import { ModelView } from '../../three/PieceView.tsx';
 import type { Stage3d, StageModel } from '../../three/stage3d.ts';
 import { usePieceModel, type OutlineSource } from '../../three/usePiece.ts';
@@ -50,8 +50,10 @@ export interface PieceStageProps {
   material: string | null;
   /** A tap on a part of the piece in 3D. */
   onPart: (code: string) => void;
-  /** A kit: started from its own angle, drawn as the shop's model it is given (none: not drawn yet). */
-  kind?: 'piece' | 'kit';
+  /** A kit or a printed item: started from its own angle, drawn as the shop's model it is given (none: not drawn yet). */
+  kind?: 'piece' | 'kit' | 'printed';
+  /** A printed item drawn from its size alone: its words stood up from its top, or cut into it. */
+  relief?: ReliefLook;
   model?: StageModel | null;
   /** Shown flat whatever the switch says (a kit's pieces laid flat). */
   forceFlat?: boolean;
@@ -120,7 +122,7 @@ export function PieceStage(props: PieceStageProps): ReactNode {
   );
   const painted = usePaintedPictures(catalogue, design, pictures, startThreshold);
   const outline = useMemo(() => outlineOf(props.api, catalogue), [props.api, catalogue]);
-  const pieceModel = usePieceModel(shownFlat || props.model !== undefined ? null : sheet, catalogue.base.thickness, outline, painted);
+  const pieceModel = usePieceModel(shownFlat || props.model !== undefined ? null : sheet, catalogue.base.thickness, outline, painted, props.relief);
   const model = props.model !== undefined ? props.model : pieceModel;
 
   // The wheel zooms the piece, not the page: a listener that may stop the page scrolling.

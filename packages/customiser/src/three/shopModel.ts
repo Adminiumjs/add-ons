@@ -22,6 +22,7 @@ import { BoxGeometry, Box3, BufferAttribute, BufferGeometry, CanvasTexture, Doub
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 import { middleOf, spanOf, type FacePlane, type Triangles, type Vec } from './faces.ts';
+import { darker, sliceCount } from './look.ts';
 import { readPrintModel, type PrintModel } from './printModel.ts';
 import type { ModelKind } from './sniff.ts';
 
@@ -33,6 +34,13 @@ export interface Decal {
   /** The size in millimetres the picture stands for, so a tap on it is a point of the design. */
   width: number;
   height: number;
+  /**
+   * On a 3D-printed item: the picture is the mask of its words (white on
+   * nothing), stood up from the face by `depth` (in the model's units; it is
+   * `depthMm` millimetres) in the plastic's colour, or sunk into it as a
+   * darker inset.
+   */
+  relief?: { mode: 'raised' | 'cut'; depth: number; depthMm: number; colour: string };
 }
 
 /** The faces outlined while the shop marks them, and the one picked or under the pointer. */
@@ -173,15 +181,30 @@ export function dress(built: BuiltModel, model: ShopModel): void {
     const map = new CanvasTexture(decal.canvas);
     map.colorSpace = SRGBColorSpace;
     map.anisotropy = 4;
-    const material = new MeshStandardMaterial({ map, transparent: true, depthWrite: false, roughness: 0.8, metalness: 0, polygonOffset: true, polygonOffsetFactor: -2, side: DoubleSide });
-    const mesh = new Mesh(geometry, material);
-    mesh.applyMatrix4(basisOf(decal.plane, lift));
-    mesh.name = `decal:${decal.code}`;
-    mesh.userData = { code: decal.code, width: decal.width, height: decal.height };
-    built.decals.add(mesh);
     built.dressing.geometries.push(geometry);
-    built.dressing.materials.push(material);
     built.dressing.textures.push(map);
+    /** One sheet of the decal, `lift` in front of the face. */
+    const sheet = (at: number, material: Material, name: string): void => {
+      const mesh = new Mesh(geometry, material);
+      mesh.applyMatrix4(basisOf(decal.plane, at));
+      mesh.name = name;
+      mesh.userData = { code: decal.code, width: decal.width, height: decal.height };
+      built.decals.add(mesh);
+      built.dressing.materials.push(material);
+    };
+    const relief = decal.relief;
+    if (relief === undefined) {
+      sheet(lift, new MeshStandardMaterial({ map, transparent: true, depthWrite: false, roughness: 0.8, metalness: 0, polygonOffset: true, polygonOffsetFactor: -2, side: DoubleSide }), `decal:${decal.code}`);
+      continue;
+    }
+    // A printed item's words: slices of the mask up to the depth, or a darker floor on the face.
+    const solid = (colour: string): MeshStandardMaterial => new MeshStandardMaterial({ color: colour, map, alphaTest: 0.5, roughness: 0.7, metalness: 0, side: DoubleSide });
+    if (relief.mode === 'cut') {
+      sheet(lift, solid(darker(relief.colour, 0.4)), `decal:${decal.code}`);
+      continue;
+    }
+    const count = sliceCount(relief.depthMm);
+    for (let k = 1; k <= count; k += 1) sheet(lift + (relief.depth * k) / count, solid(k === count ? relief.colour : darker(relief.colour, 0.25)), `decal:${decal.code}`);
   }
   const marks = model.marks;
   if (marks === undefined) return;
