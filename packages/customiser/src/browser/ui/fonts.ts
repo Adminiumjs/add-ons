@@ -13,7 +13,7 @@
  * editor's markup carries no inline style.
  */
 import type { CustomiserApi } from '../api.ts';
-import type { Font } from '../model.ts';
+import type { Font } from '../catalogue.ts';
 
 const loaded = new Map<string, number>();
 let sheet: { text: string; node: HTMLStyleElement | null } = { text: '', node: null };
@@ -22,7 +22,7 @@ let sheet: { text: string; node: HTMLStyleElement | null } = { text: '', node: n
 export function cssFamily(family: string): string {
   const quoted = `"${family.replace(/["\\]/g, '')}"`;
   const lower = family.toLowerCase();
-  const kind = /mono/.test(lower) ? 'ui-monospace, monospace' : /caveat|script|hand/.test(lower) ? 'cursive' : /garamond|baskerville|serif|slab/.test(lower) && !/sans/.test(lower) ? 'ui-serif, serif' : 'ui-sans-serif, system-ui, sans-serif';
+  const kind = lower.includes('mono') ? 'ui-monospace, monospace' : /caveat|script|hand/.test(lower) ? 'cursive' : /garamond|baskerville|serif|slab/.test(lower) && !/sans/.test(lower) ? 'ui-serif, serif' : 'ui-sans-serif, system-ui, sans-serif';
   return `${quoted}, ${kind}`;
 }
 

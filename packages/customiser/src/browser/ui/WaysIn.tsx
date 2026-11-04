@@ -12,7 +12,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import type { CustomiserApi } from '../api.ts';
 import { isRightToLeft } from '../i18n.ts';
-import { readCatalogue } from '../model.ts';
+import { readCatalogue } from '../catalogue.ts';
 import { SharedContext, sharedFor, useNarrow } from './context.tsx';
 
 export interface WaysInProps {

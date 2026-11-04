@@ -19,9 +19,11 @@
  *   come back, add it to the basket.
  * - `YourDesigns`: the designs this browser holds, and those an order names.
  * - `WaysIn`: a print shop's three ways in, for its product page.
- * - `openSavedLink`, `readDesigns`, `hasSavedDesigns`, `designRefusal`: what
- *   the app's own routes call (the e-mailed link's page, the order lookup,
- *   the header's "Your designs", a refused order).
+ * - `openSavedLink`, `readDesigns`, `heldDesign`, `hasSavedDesigns`,
+ *   `designRefusal`: what the app's own routes call (the e-mailed link's
+ *   page, the order lookup, keeping a design's session, the header's "Your
+ *   designs", a refused order). The editor keeps nothing in the browser's
+ *   storage: the app keeps the sessions it is handed, where it keeps its own.
  */
 import './editor.css';
 
@@ -35,6 +37,7 @@ export { YourDesigns } from './ui/YourDesigns.tsx';
 export type { YourDesignsProps } from './ui/YourDesigns.tsx';
 export { WaysIn } from './ui/WaysIn.tsx';
 export type { WaysInProps } from './ui/WaysIn.tsx';
-export { forgetDesign, hasSavedDesigns, openSavedLink, readDesigns, rememberedDesigns } from './store.ts';
+export { hasSavedDesigns, heldDesign, liveDesigns, openSavedLink, readDesigns } from './store.ts';
+export type { HeldDesign } from './store.ts';
 export { designRefusal } from './refusal.ts';
 export { LOCALES } from './i18n.ts';

@@ -29,9 +29,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent a
 import type { DesignValues, FileFact, PartValue, Refusal } from '../../rules/index.ts';
 import { FILE_COLUMNS, type CustomiserApi, type DesignData, type SavedDesign } from '../api.ts';
 import { isRightToLeft } from '../i18n.ts';
-import { answerFor, freshValues, liveParts, paletteOf, partsOf, readCatalogue, readyOf, type Catalogue, type EditPart, type Ready } from '../model.ts';
+import { answerFor, freshValues, liveParts, paletteOf, partsOf, readCatalogue, readyOf, type Catalogue, type EditPart, type Ready } from '../catalogue.ts';
 import { checksOf } from '../say.ts';
-import { rememberDesign, rememberedDesigns } from '../store.ts';
 import { SharedContext, sharedFor, useNarrow, useShared, type Look } from './context.tsx';
 import { Drawing } from './Drawing.tsx';
 import { fieldId, type Upload } from './fieldKit.tsx';
@@ -75,6 +74,8 @@ export interface CustomiserEditorProps {
   featurePrices?: Readonly<Record<string, string>>;
   /** A refusal the app's order got for this design (`designRefusal`): shown at its part. */
   refused?: Refusal | null;
+  /** The customer's own address, where the app knows it: the save dialog starts with it. */
+  email?: string | null;
   /** The label on the basket button ("Update the basket" when editing a line). */
   addLabel?: string;
   /** The shop previews its own design: nothing is saved and nothing goes in a basket. */
@@ -90,8 +91,6 @@ export interface CustomiserEditorProps {
   onFullEditor?: (design: DesignData) => void;
   onChangeSides?: () => void;
 }
-
-const sameKey = (a: unknown, b: unknown): boolean => String(a ?? '') === String(b ?? '');
 
 /** The editor, its catalogue loaded. */
 export function CustomiserEditor(props: CustomiserEditorProps) {
@@ -213,7 +212,7 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
   const focusNext = useRef<string | null>(null);
   const sheet = useRef<HTMLDivElement>(null);
   const measure = useMemo(() => browserMeasure(), []);
-  const knownEmail = useMemo(() => (saved === null ? null : (rememberedDesigns().find((one) => sameKey(one.id, saved.id))?.email ?? null)), [saved]);
+  const [knownEmail, setKnownEmail] = useState<string | null>(props.email ?? null);
   useEffect(() => setRefused(props.refused ?? null), [props.refused]);
 
   const values = history.now;
@@ -340,7 +339,7 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
     const next = through ? await api.change(saved, values, keptFiles()) : await api.create(design, email, keptFiles());
     setSaved(next);
     setUploads({});
-    rememberDesign(next, email);
+    if (email !== null) setKnownEmail(email);
     return next;
   };
   const wordsFor = (error: unknown): string => {
@@ -364,10 +363,7 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
     setBusy(true);
     try {
       const kept = ordered ? await api.create(design, null, keptFiles()) : await keep(null);
-      if (ordered) {
-        setSaved(kept);
-        rememberDesign(kept);
-      }
+      if (ordered) setSaved(kept);
       props.onAddToBasket({ ...kept, used: answer.used });
     } catch (error) {
       toast(wordsFor(error), 'warn');
@@ -389,7 +385,7 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
       const next = ordered ? await api.create(design, email, keptFiles()) : await keep(email);
       if (ordered) {
         setSaved(next);
-        rememberDesign(next, email);
+        setKnownEmail(email);
       }
       setSaveState({ sentTo: email, failed: null, link: null });
       props.onSaved?.(next, email);
@@ -449,8 +445,15 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
   );
 
   if (look === 'maker') {
-    const material = catalogue.base.material === null ? null : catalogue.base.thickness === null ? catalogue.base.material : `${catalogue.base.material} ${String(catalogue.base.thickness)} mm`;
-    const size = [catalogue.base.width, catalogue.base.height, ...(catalogue.base.thickness === null ? [] : [catalogue.base.thickness])].map(String).join(' × ') + ' mm';
+    // A printed item says its colour ("PLA · Amber"); a piece its material and thickness ("Walnut 6 mm").
+    const colourPart = parts.find((one) => one.kind === 'colour');
+    const colourCode = colourPart === undefined ? undefined : (values.parts[colourPart.code]?.choice ?? colourPart.start?.choice);
+    const colourName = colourPart === undefined ? undefined : (catalogue.shared[colourPart.palette ?? '']?.find((one) => one.code === colourCode)?.name ?? colourCode);
+    const material = catalogue.base.material === null ? null : catalogue.base.kind === 'printed' && colourName !== undefined ? `${catalogue.base.material} · ${colourName}` : catalogue.base.thickness === null ? catalogue.base.material : `${catalogue.base.material} ${String(catalogue.base.thickness)} mm`;
+    // A kit is its assembled size and its pieces; a piece its outline and thickness.
+    const kit = catalogue.base.kind === 'kit';
+    const depth = kit ? catalogue.base.depth : catalogue.base.thickness;
+    const size = [catalogue.base.width, catalogue.base.height, ...(depth === null ? [] : [depth])].map(String).join(' × ') + ' mm' + (kit && catalogue.rows.pieces.length > 0 ? ` · ${t('editor.stage.pieces', '{n, plural, one {# piece} other {# pieces}}', { n: catalogue.rows.pieces.length })}` : '');
     return (
       <section className="cz-fill cz-fill-maker" data-screen="fill" onKeyDown={keys}>
         <div className="cz-stage-col">

@@ -8,7 +8,7 @@ import { useRef, useState } from 'react';
 
 import { charCount, charLimit, sizeAllowed, type DesignValues, type PartValue } from '../../rules/index.ts';
 import type { CustomiserApi, HeldSession } from '../api.ts';
-import type { Catalogue, EditPart, Palette } from '../model.ts';
+import type { Catalogue, EditPart, Palette } from '../catalogue.ts';
 import type { Check } from '../say.ts';
 import { useShared } from './context.tsx';
 

@@ -12,7 +12,7 @@
 import { ArrowLeft, Image as ImageIcon, SearchX, Sprout, SquareDashed, SquarePen, Type, Upload, Wand2, Search } from 'lucide-react';
 import { useId, useState } from 'react';
 
-import { freshValues, type Catalogue, type Ready } from '../model.ts';
+import { freshValues, type Catalogue, type Ready } from '../catalogue.ts';
 import { useShared, useNarrow } from './context.tsx';
 import { Drawing } from './Drawing.tsx';
 
@@ -86,7 +86,7 @@ export function Gallery({ catalogue, product, sides, onPick, onBack, onStartBlan
         ) : null}
         <h1 className="cz-h1">{t('editor.choose.title', 'Choose a design')}</h1>
         {look === 'maker' ? (
-          <p className="cz-sub">{t('editor.choose.subMaker', '{n, plural, one {# ready-made design for the {product}.} other {# ready-made designs for the {product}.}} Pick one, then change what it lets you change.', { n: catalogue.ready.length, product })}</p>
+          <p className="cz-sub">{t('editor.choose.subMaker', '{n, plural, one {# ready-made design} other {# ready-made designs}} for the {product}. Pick one, then change what it lets you change.', { n: catalogue.ready.length, product })}</p>
         ) : (
           <p className="cz-sub">
             {t('editor.choose.subPrint', 'Shown on your {trim} {product}, {sides}. Each one has parts you fill in; the rest stays as the shop made it.', { trim, product: locale.startsWith('en') ? product.toLocaleLowerCase(locale) : product, sides: sides >= 2 ? t('editor.sides.both', 'both sides') : t('editor.sides.one', 'one side') })}{' '}

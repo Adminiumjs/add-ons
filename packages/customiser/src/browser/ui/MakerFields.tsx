@@ -17,7 +17,7 @@ import { useState } from 'react';
 
 import { sizeAllowed, type PartValue } from '../../rules/index.ts';
 import { mm, pt } from '../i18n.ts';
-import { areaMode, valueOf, type EditPart } from '../model.ts';
+import { areaMode, valueOf, type EditPart } from '../catalogue.ts';
 import { useShared } from './context.tsx';
 import { CheckIcon, fieldId, fullness, Swatch, usePicker, type FieldsProps } from './fieldKit.tsx';
 import { fontClass } from './fonts.ts';
@@ -62,7 +62,7 @@ function Row(props: FieldsProps & { part: EditPart }) {
     const either = part.text?.alsoLogo !== null && part.text?.alsoLogo !== undefined;
     if (either && mode === null && !part.required) return <EitherRow {...props} />;
     if (mode === 'logo') return <LogoRow {...props} either />;
-    return <TextRow {...props} either={either || part.fromArea} />;
+    return <TextRow {...props} either={either} />;
   }
   if (part.kind === 'picture') return <LogoRow {...props} either={false} />;
   if (part.kind === 'colour' || part.kind === 'choice') return <ChoiceRow {...props} />;

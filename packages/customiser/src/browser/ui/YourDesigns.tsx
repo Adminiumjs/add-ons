@@ -19,14 +19,19 @@ import { useEffect, useMemo, useState } from 'react';
 
 import type { CustomiserApi, SavedDesign } from '../api.ts';
 import { isRightToLeft, shortWhen } from '../i18n.ts';
-import { readCatalogue, readyOf, wordsIn, type Catalogue } from '../model.ts';
-import { forgetDesign, rememberedDesigns, restoreDesign, type Remembered } from '../store.ts';
+import { readCatalogue, readyOf, wordsIn, type Catalogue } from '../catalogue.ts';
+import { liveDesigns, type HeldDesign } from '../store.ts';
 import { SharedContext, sharedFor, useShared, type Look } from './context.tsx';
 import { Drawing } from './Drawing.tsx';
 import { Dialog, Toasts, type Toast } from './Overlay.tsx';
 
 export interface YourDesignsProps {
   api: CustomiserApi;
+  /** The designs this browser holds, as the app kept them (`heldDesign`). */
+  held?: readonly HeldDesign[];
+  /** Take one off the browser's list (the bin), and put it back (Undo). */
+  onForget?: (held: HeldDesign) => void;
+  onRestore?: (held: HeldDesign) => void;
   /** The codes the app's order lookup found on the order's lines: read with the lookup's session. */
   codes?: readonly string[];
   locale?: string;
@@ -40,7 +45,7 @@ export interface YourDesignsProps {
 
 interface Item {
   design: SavedDesign;
-  remembered: Remembered | null;
+  remembered: HeldDesign | null;
 }
 
 export function YourDesigns(props: YourDesignsProps) {
@@ -54,7 +59,7 @@ export function YourDesigns(props: YourDesignsProps) {
   );
 }
 
-function List({ api, codes, onOpen, onOrder, onChoose }: YourDesignsProps) {
+function List({ api, held, codes, onOpen, onOrder, onChoose, onForget, onRestore }: YourDesignsProps) {
   const { t, locale, look } = useShared();
   const [items, setItems] = useState<Item[] | null>(null);
   const [catalogues, setCatalogues] = useState<Record<string, Catalogue | null>>({});
@@ -65,10 +70,9 @@ function List({ api, codes, onOpen, onOrder, onChoose }: YourDesignsProps) {
     let live = true;
     void (async () => {
       const found: Item[] = [];
-      for (const one of rememberedDesigns()) {
+      for (const one of liveDesigns(held ?? [])) {
         const design = await api.reopen(one.session);
-        if (design === null) forgetDesign(one.id);
-        else found.push({ design, remembered: one });
+        if (design !== null) found.push({ design, remembered: one });
       }
       if (byCode) for (const design of await api.byCodes(codes!).catch(() => [])) if (!found.some((one) => String(one.design.id) === String(design.id))) found.push({ design, remembered: null });
       if (!live) return;
@@ -80,7 +84,7 @@ function List({ api, codes, onOpen, onOrder, onChoose }: YourDesignsProps) {
     return () => {
       live = false;
     };
-  }, [api, byCode, (codes ?? []).join(',')]);
+  }, [api, byCode, (codes ?? []).join(','), (held ?? []).map((one) => String(one.id)).join(',')]);
 
   const toast = (text: string, undo?: () => void): void => {
     const id = Date.now() + Math.random();
@@ -89,10 +93,10 @@ function List({ api, codes, onOpen, onOrder, onChoose }: YourDesignsProps) {
   };
   const remove = (item: Item): void => {
     setAsking(null);
-    const gone = forgetDesign(item.design.id);
+    if (item.remembered !== null) onForget?.(item.remembered);
     setItems((all) => (all ?? []).filter((one) => one !== item));
     toast(t('editor.designs.deleted', 'Taken off your designs.'), () => {
-      if (gone !== null) restoreDesign(gone);
+      if (item.remembered !== null) onRestore?.(item.remembered);
       setItems((all) => [item, ...(all ?? [])]);
     });
     setTimeout(() => document.getElementById('cz-designs-title')?.focus(), 30);
@@ -167,7 +171,7 @@ function List({ api, codes, onOpen, onOrder, onChoose }: YourDesignsProps) {
                     <ShoppingBasket aria-hidden="true" />
                     {t('editor.designs.order', 'Order it')}
                   </button>
-                  {item.remembered === null ? null : (
+                  {item.remembered === null || onForget === undefined ? null : (
                     <button type="button" className="cz-icon-button" aria-label={t('editor.designs.deleteAria', 'Delete {name}', { name: words })} onClick={() => setAsking(item)}>
                       <Trash2 aria-hidden="true" />
                     </button>

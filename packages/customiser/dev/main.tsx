@@ -9,7 +9,7 @@
 import { StrictMode, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
-import { CustomiserEditor, LOCALES, WaysIn, YourDesigns, type DesignForBasket, type SavedDesign } from '../src/browser/index.ts';
+import { CustomiserEditor, heldDesign, LOCALES, WaysIn, YourDesigns, type DesignForBasket, type HeldDesign, type SavedDesign } from '../src/browser/index.ts';
 import { stubApi } from '../src/browser/testing/stub.ts';
 
 const query = new URLSearchParams(location.search);
@@ -24,7 +24,8 @@ function Dev() {
   const bases = shop === 'print' ? [stub.ids.cards, stub.ids.flyers] : [stub.ids.coasters, stub.ids.nook, stub.ids.keyring, stub.ids.board];
   const base = Number(query.get('base') ?? bases[0]);
   const lang = query.get('lang') ?? 'en-US';
-  const view = query.get('view') ?? 'editor';
+  const [view, setView] = useState(query.get('view') ?? 'editor');
+  const [held, setHeld] = useState<HeldDesign[]>([]);
   const [opened, setOpened] = useState<SavedDesign | undefined>(undefined);
   const [qty, setQty] = useState(shop === 'print' ? 500 : 1);
   const [log, setLog] = useState('');
@@ -54,7 +55,7 @@ function Dev() {
             <option key={one}>{one}</option>
           ))}
         </select>
-        <select value={view} onChange={(e) => set('view', e.target.value)} aria-label="View">
+        <select value={view} onChange={(e) => setView(e.target.value)} aria-label="View">
           <option value="editor">Editor</option>
           <option value="designs">Your designs</option>
           <option value="ways">Ways in</option>
@@ -69,9 +70,9 @@ function Dev() {
       <div className="dev-out">{log}</div>
       <div className={query.get('frame') === 'phone' ? 'dev-frame phone' : 'dev-frame'}>
         {view === 'designs' ? (
-          <YourDesigns api={stub.api} locale={lang} look={shop} shop={shop === 'print' ? 'Marlow Press' : 'Birch Row'} codes={(query.get('codes') ?? '').split(',').filter((one) => one !== '')} onOpen={(design) => { setOpened(design); set('view', 'editor'); }} onOrder={(design) => setLog(`order ${String(design.code)}`)} onChoose={() => set('view', 'editor')} />
+          <YourDesigns api={stub.api} locale={lang} look={shop} shop={shop === 'print' ? 'Marlow Press' : 'Birch Row'} codes={(query.get('codes') ?? '').split(',').filter((one) => one !== '')} held={held} onForget={(one) => setHeld(held.filter((other) => other !== one))} onRestore={(one) => setHeld([one, ...held])} onOpen={(design) => { setOpened(design); setView('editor'); }} onOrder={(design) => setLog(`order ${String(design.code)}`)} onChoose={() => setView('editor')} />
         ) : view === 'ways' ? (
-          <WaysIn api={stub.api} base={base} product={product} locale={lang} onChoose={() => set('view', 'editor')} onStartBlank={() => setLog('start from blank')} onSendOwnFile={() => setLog('send your own file')} />
+          <WaysIn api={stub.api} base={base} product={product} locale={lang} onChoose={() => setView('editor')} onStartBlank={() => setLog('start from blank')} onSendOwnFile={() => setLog('send your own file')} />
         ) : (
           <CustomiserEditor
             key={`${shop}-${String(base)}`}
@@ -87,7 +88,11 @@ function Dev() {
             featurePrices={{ logo: '+£1.50 a piece' }}
             onDesignChange={({ used, ok }) => setLog(`used: [${used.join(', ')}] · ok: ${String(ok)}`)}
             onAddToBasket={(design: DesignForBasket) => setLog(`basket: ${String(design.code)} · used [${design.used.join(', ')}]`)}
-            onSaved={(design, email) => setLog(`saved ${String(design.id)} for ${email}`)}
+            onSaved={(design, email) => {
+              const one = heldDesign(design, email);
+              if (one !== null) setHeld([one, ...held.filter((other) => String(other.id) !== String(one.id))]);
+              setLog(`saved ${String(design.id)} for ${email}`);
+            }}
             onBack={() => setLog('back to the shop')}
             onStartBlank={() => setLog('start from blank')}
             onSendOwnFile={() => setLog('send your own file')}

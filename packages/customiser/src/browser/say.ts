@@ -15,7 +15,7 @@
  */
 import { charCount, charLimit, lineCount, sizeAllowed, sizeThatFits, type Advice, type DesignAnswer, type DesignValues, type PartValue, type Refusal } from '../rules/index.ts';
 import { mm, type Locale, type Translate } from './i18n.ts';
-import { hexOf, valueOf, type EditPart, type Palette } from './model.ts';
+import { hexOf, valueOf, type EditPart, type Palette } from './catalogue.ts';
 import type { Look } from './ui/context.tsx';
 
 export type FixAction = { label: string; value: PartValue };

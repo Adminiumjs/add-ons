@@ -125,7 +125,7 @@ function Total({ price, big = true }: { price: EditorPrice | undefined; big?: bo
   if (price.pending === true)
     return (
       <span role="status" className="cz-pending">
-        {t('editor.bar.pricing', 'Working out the price…')}
+        {t('editor.bar.working', 'Working out the price…')}
       </span>
     );
   return <span className={big ? 'cz-mono cz-total' : 'cz-mono cz-total cz-total-small'}>{price.total}</span>;
@@ -233,7 +233,7 @@ export function QuotePanel(props: BarProps & { nothingAdded: boolean; onShow: ()
         <div aria-live="polite" className="cz-quote-price">
           {price === undefined ? null : price.pending === true ? (
             <span role="status" className="cz-pending">
-              {t('editor.bar.pricing', 'Working out the price…')}
+              {t('editor.bar.working', 'Working out the price…')}
             </span>
           ) : (
             <>
@@ -291,7 +291,7 @@ export function QuoteBar(props: BarProps) {
       <div aria-live="polite" className="cz-quote-bar-price">
         {price === undefined ? null : price.pending === true ? (
           <span role="status" className="cz-pending">
-            {t('editor.bar.pricing', 'Working out the price…')}
+            {t('editor.bar.working', 'Working out the price…')}
           </span>
         ) : (
           <>

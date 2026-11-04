@@ -21,7 +21,7 @@ import { Lock } from 'lucide-react';
 import type { KeyboardEvent } from 'react';
 
 import { sizeInMm } from '../../rules/index.ts';
-import { areaMode, hexOf, liveParts, paletteOf, readyOf, valueOf, type Catalogue, type EditPart } from '../model.ts';
+import { areaMode, hexOf, liveParts, paletteOf, readyOf, valueOf, type Catalogue, type EditPart } from '../catalogue.ts';
 import type { DesignData } from '../api.ts';
 import { cssFamily } from './fonts.ts';
 import { useShared } from './context.tsx';

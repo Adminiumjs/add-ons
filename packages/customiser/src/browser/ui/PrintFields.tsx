@@ -12,7 +12,7 @@ import { ChevronDown, ChevronUp, FlipHorizontal2, ImageUp, LayoutPanelLeft, Lock
 import { useState } from 'react';
 
 import { pt } from '../i18n.ts';
-import { hexOf, valueOf, type EditPart, type Ready } from '../model.ts';
+import { hexOf, valueOf, type EditPart, type Ready } from '../catalogue.ts';
 import { useShared } from './context.tsx';
 import { CheckIcon, fieldId, fullness, Swatch, usePicker, WarnIcon, type FieldsProps } from './fieldKit.tsx';
 
