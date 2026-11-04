@@ -1922,3 +1922,340 @@
     inset-block-end: 80px;
   }
 }
+
+/* A logo or a photo: the drop zone lit while a file is over it, the file on its way, its box. */
+.cz-drop-over {
+  border-color: var(--cz-accent);
+  background: var(--cz-accent-soft);
+}
+.cz-transfer {
+  border: 1px solid var(--cz-border);
+  border-radius: 12px;
+  padding-block: 12px;
+  padding-inline: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cz-transfer-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cz-transfer-name {
+  flex: 1;
+  min-inline-size: 0;
+  font-size: 12.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cz-transfer-pct {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--cz-fg-subtle);
+}
+.cz-transfer-track {
+  display: block;
+  block-size: 6px;
+  border-radius: 99px;
+  background: var(--cz-surface-3);
+  overflow: hidden;
+}
+.cz-transfer-fill {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  fill: var(--cz-accent);
+}
+.cz[dir='rtl'] .cz-transfer-fill {
+  transform: scaleX(-1);
+}
+.cz-transfer-waiting .cz-transfer-fill {
+  animation: cz-waiting 1.2s ease-in-out infinite alternate;
+}
+@keyframes cz-waiting {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.cz-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.5px;
+}
+.cz-button-small {
+  min-block-size: 36px;
+  padding-inline: 11px;
+  border-radius: 9px;
+  font-size: 12.5px;
+}
+.cz-logo-tools {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+.cz-logo-tool {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cz-tool-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--cz-fg-muted);
+}
+.cz-nudge {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid var(--cz-border-strong);
+  border-radius: 10px;
+  background: var(--cz-surface);
+  padding: 2px;
+}
+.cz-nudge button {
+  inline-size: var(--cz-hit);
+  block-size: var(--cz-hit);
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--cz-fg-muted);
+  padding: 0;
+}
+.cz-nudge button:hover {
+  background: var(--cz-surface-3);
+}
+.cz-scale,
+.cz-oc-line {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cz-oc-line {
+  gap: 8px;
+}
+.cz-scale-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12px;
+}
+.cz-oc-line .cz-scale-head {
+  font-size: 13px;
+}
+.cz-range {
+  inline-size: 100%;
+  accent-color: var(--cz-accent);
+}
+.cz-file-print {
+  border-color: var(--cz-border-strong);
+  background: var(--cz-surface);
+  padding: 10px;
+}
+.cz-thumb {
+  inline-size: 58px;
+  block-size: 44px;
+  border-radius: 8px;
+  background: repeating-conic-gradient(var(--cz-surface-3) 0 25%, var(--cz-surface) 0 50%) 0 0 / 10px 10px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+.cz-thumb-img {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: contain;
+  display: block;
+}
+.cz-thumb-kind {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--cz-fg-muted);
+}
+.cz-seg-start {
+  align-self: flex-start;
+}
+
+/* "Make it one colour": a sheet from the end side, or from the foot on a phone. */
+.cz-scrim-sheet {
+  display: block;
+  padding: 0;
+  backdrop-filter: blur(2px);
+}
+.cz-oc {
+  position: absolute;
+  background: var(--cz-surface);
+  color: var(--cz-fg);
+  border: 1px solid var(--cz-border-strong);
+  box-shadow: var(--cz-shadow-lift);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+.cz-oc-side {
+  inset-block: 0;
+  inset-inline-end: 0;
+  inline-size: min(460px, 100%);
+  animation: cz-sheet 0.22s ease-out;
+}
+.cz-oc-foot {
+  inset-inline: 0;
+  inset-block-end: 0;
+  margin-inline: auto;
+  max-block-size: 92vh;
+  border-start-start-radius: 18px;
+  border-start-end-radius: 18px;
+  animation: cz-up 0.22s ease-out;
+}
+.cz-oc-head {
+  padding-block: 15px;
+  padding-inline: 17px;
+  border-block-end: 1px solid var(--cz-border);
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  position: sticky;
+  inset-block-start: 0;
+  background: var(--cz-surface);
+  z-index: 2;
+}
+.cz-oc-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  white-space: nowrap;
+  flex: 1;
+  min-inline-size: 0;
+}
+.cz-oc-body {
+  padding-block: 16px;
+  padding-inline: 17px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.cz-oc-lead {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--cz-fg-muted);
+  text-wrap: pretty;
+}
+.cz-oc-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 180px));
+  justify-content: center;
+  gap: 10px;
+}
+.cz-oc-one {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cz-oc-frame {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: 12px;
+  border: 1px solid var(--cz-border);
+  background: var(--cz-surface-3);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+.cz-oc-paper {
+  background: #ffffff;
+}
+.cz-oc-img {
+  inline-size: 88%;
+  block-size: 88%;
+  object-fit: contain;
+}
+.cz-oc-svg {
+  inline-size: 100%;
+  block-size: 100%;
+  display: block;
+}
+.cz-oc-ends {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11.5px;
+  color: var(--cz-fg-subtle);
+}
+.cz-oc-warn {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--cz-warn-soft);
+  color: var(--cz-warn);
+  border-radius: 12px;
+  padding-block: 12px;
+  padding-inline: 13px;
+}
+.cz-oc-warn svg.lucide {
+  inline-size: 17px;
+  block-size: 17px;
+  margin-block-start: 1px;
+}
+.cz-oc-warn-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.cz-oc-warn-text .cz-strong {
+  font-size: 13.5px;
+  font-weight: 800;
+}
+.cz-oc-foot-bar {
+  margin-block-start: auto;
+  padding-block: 13px;
+  padding-inline: 17px;
+  border-block-start: 1px solid var(--cz-border);
+  display: flex;
+  gap: 8px;
+  position: sticky;
+  inset-block-end: 0;
+  background: var(--cz-surface);
+}
+.cz-oc-foot-bar .cz-primary,
+.cz-oc-foot-bar .cz-button {
+  min-block-size: 46px;
+  border-radius: 12px;
+}
+@keyframes cz-sheet {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+.cz[dir='rtl'] .cz-oc-side {
+  animation-name: cz-sheet-rtl;
+}
+@keyframes cz-sheet-rtl {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes cz-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}

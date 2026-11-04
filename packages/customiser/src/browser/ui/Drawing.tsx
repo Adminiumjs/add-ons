@@ -20,11 +20,12 @@
 import { Lock } from 'lucide-react';
 import type { KeyboardEvent } from 'react';
 
-import { sizeInMm } from '../../rules/index.ts';
+import { SCALE_MAX, sizeInMm, type PartValue, type PictureRules } from '../../rules/index.ts';
 import { areaMode, hexOf, liveParts, paletteOf, readyOf, valueOf, type Catalogue, type EditPart } from '../catalogue.ts';
 import type { DesignData } from '../api.ts';
 import { cssFamily } from './fonts.ts';
 import { useShared } from './context.tsx';
+import { thresholdOf, useOneColour, type Upload } from './pictures.ts';
 
 /** The wood, slate or plastic a piece is cut from, and the colour its engraving burns to. */
 const MATERIALS: readonly { test: RegExp; face: string; edge: string; engraved: string }[] = [
@@ -50,6 +51,10 @@ export interface DrawingProps {
   onLock?: (code: string | null) => void;
   label?: string;
   className?: string;
+  /** The design's logo and photo as this page holds them, drawn in their boxes; without them a box says it holds one. */
+  pictures?: Readonly<Record<string, Upload>>;
+  /** Where light becomes dark for a logo the laser engraves, before the customer moves the line. */
+  startThreshold?: number;
 }
 
 function mix(hex: string, toward: string, share: number): string {
@@ -58,7 +63,7 @@ function mix(hex: string, toward: string, share: number): string {
   return `#${a.map((one, i) => Math.round(one + ((b[i] ?? 0) - one) * share).toString(16).padStart(2, '0')).join('')}`;
 }
 
-export function Drawing({ catalogue, design, side = 'front', guides = false, empty = 'sample', onPart, selected = null, lockShown = null, onLock, label, className }: DrawingProps) {
+export function Drawing({ catalogue, design, side = 'front', guides = false, empty = 'sample', onPart, selected = null, lockShown = null, onLock, label, className, pictures, startThreshold = 50 }: DrawingProps) {
   const { t, look } = useShared();
   const { base } = catalogue;
   const ready = readyOf(catalogue, design.ready_design_id);
@@ -108,7 +113,9 @@ export function Drawing({ catalogue, design, side = 'front', guides = false, emp
     } else if (part.kind === 'text') {
       const rules = part.text!;
       const mode = areaMode(design.values, part);
-      if (mode === 'logo') body = <Slot box={box} text={t('editor.drawing.logo', 'Your logo')} page={page} />;
+      const held = rules.alsoLogo === null || value.file === undefined ? undefined : pictures?.[rules.alsoLogo.file];
+      if (mode === 'logo' && held !== undefined && rules.alsoLogo !== null) body = <Mark box={box} value={value} rules={rules.alsoLogo} picture={held} ink={inkFor(part)} engraves={!page} startThreshold={startThreshold} clip={`${clip}-${part.code}`} />;
+      else if (mode === 'logo') body = <Slot box={box} text={value.file === undefined ? t('editor.drawing.logo', 'Your logo') : `${t('editor.drawing.logo', 'Your logo')} ✓`} page={page} filled={value.file !== undefined} />;
       else {
         const typed = (value.text ?? '').trim();
         const shownText = typed !== '' ? typed : empty === 'hide' || (part.fromArea && mode === null && empty !== 'sample') ? '' : part.placeholder;
@@ -131,7 +138,8 @@ export function Drawing({ catalogue, design, side = 'front', guides = false, emp
       }
     } else if (part.kind === 'picture') {
       const what = part.picture?.picture === 'photo' ? t('editor.drawing.photo', 'Your photo') : t('editor.drawing.logo', 'Your logo');
-      body = <Slot box={box} text={value.file === undefined ? what : `${what} ✓`} page={page} filled={value.file !== undefined} />;
+      const held = value.file === undefined || part.picture === null ? undefined : pictures?.[part.picture.file];
+      body = held !== undefined && part.picture !== null ? <Mark box={box} value={value} rules={part.picture} picture={held} ink={inkFor(part)} engraves={!page} startThreshold={startThreshold} clip={`${clip}-${part.code}`} /> : <Slot box={box} text={value.file === undefined ? what : `${what} ✓`} page={page} filled={value.file !== undefined} />;
     } else if (part.kind === 'choice' || part.kind === 'colour') {
       if (part.kind === 'colour') return null;
       body = (
@@ -211,6 +219,34 @@ function Slot({ box, text, page, filled = false }: { box: { x: number; y: number
       <text x={box.x + box.w / 2} y={box.y + box.h / 2} fontSize={Math.max(1.6, Math.min(box.h * 0.16, 3.4))} fill={ink} fillOpacity={0.75} textAnchor="middle" dominantBaseline="middle" fontFamily={cssFamily('Manrope')}>
         {text}
       </text>
+    </g>
+  );
+}
+
+/**
+ * A customer's logo or photo in its box: inside it or filling it, at its size
+ * in the box and nudged where they put it. A logo the laser engraves in one
+ * colour is drawn as the laser makes it, in the engraving's colour. A PDF is
+ * named in its box: its page is drawn on the shop's side.
+ */
+function Mark({ box, value, rules, picture, ink, engraves, startThreshold, clip }: { box: { x: number; y: number; w: number; h: number }; value: PartValue; rules: PictureRules; picture: Upload; ink: string; engraves: boolean; startThreshold: number; clip: string }) {
+  const oneColour = engraves && rules.colour === 'one';
+  const laser = useOneColour(oneColour ? picture : undefined, thresholdOf(value, startThreshold), ink);
+  const k = (value.scale ?? SCALE_MAX) / 100;
+  const [w, h] = [box.w * k, box.h * k];
+  const [x, y] = [box.x + (box.w - w) / 2 + (value.nx ?? 0), box.y + (box.h - h) / 2 + (value.ny ?? 0)];
+  const fill = (value.fit ?? rules.fit) === 'fill';
+  if (picture.url === undefined) return <Slot box={{ x, y, w, h }} text={picture.name === '' ? picture.kind.toUpperCase() : picture.name} page={!engraves} filled />;
+  return (
+    <g>
+      {fill ? (
+        <defs>
+          <clipPath id={clip}>
+            <rect x={box.x} y={box.y} width={box.w} height={box.h} />
+          </clipPath>
+        </defs>
+      ) : null}
+      <image href={oneColour ? (laser ?? picture.url) : picture.url} x={x} y={y} width={w} height={h} preserveAspectRatio={fill ? 'xMidYMid slice' : 'xMidYMid meet'} {...(fill ? { clipPath: `url(#${clip})` } : {})} opacity={oneColour && laser === null ? 0.85 : 1} />
     </g>
   );
 }

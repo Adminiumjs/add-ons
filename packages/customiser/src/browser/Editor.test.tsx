@@ -12,7 +12,7 @@ import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CustomiserEditor, type CustomiserEditorProps } from './index.ts';
-import { drawn, setWidth, settle } from './testing/render.tsx';
+import { drawn, setWidth, settle, settleUntil } from './testing/render.tsx';
 import { stubApi, type Stub } from './testing/stub.ts';
 
 afterEach(cleanup);
@@ -237,9 +237,15 @@ describe('the maker’s look: fill it in (BC-B1, BC-B2, BC-B5, BC-B6)', () => {
     await act(async () => {
       fireEvent.change(input, { target: { files: [new File(['<svg/>'], 'pinfold-sign.svg', { type: 'image/svg+xml' })] } });
     });
-    await settle();
+    await settleUntil(() => stub.calls.some((one) => one.call === 'upload') && screen.queryByRole('progressbar') === null);
     expect(stub.calls.find((one) => one.call === 'upload')!.args).toEqual(['logo_file', 'pinfold-sign.svg']);
-    expect(screen.getByText('pinfold-sign.svg')).toBeTruthy();
+    // The logo is engraved: "Make it one colour" opens by itself, and says why (BC-B3.onecolour).
+    expect(screen.getByRole('dialog', { name: 'Make it one colour' })).toBeTruthy();
+    expect(screen.getByText('Your logo is in. Check how it engraves.')).toBeTruthy();
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Make it one colour' })).getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByRole('dialog', { name: 'Make it one colour' })).toBeNull();
+    // The file row names it, and the piece draws it in its box (here, where no picture is drawn, by its name).
+    expect(screen.getAllByText('pinfold-sign.svg')).toHaveLength(2);
     expect((onDesignChange.mock.calls.at(-1)![0] as { used: string[] }).used).toEqual(['logo']);
     fireEvent.click(screen.getByRole('button', { name: 'Remove your logo' }));
     expect((onDesignChange.mock.calls.at(-1)![0] as { used: string[] }).used).toEqual([]);

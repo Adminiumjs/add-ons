@@ -9,7 +9,7 @@
  *
  * - Everyone reads what a shop offers: its published bases and their pieces
  *   and areas, its shown ready-made designs and their parts, its palettes,
- *   colours, priced features, and the fonts.
+ *   colours, priced features, the fonts, and the figures its checks read.
  * - Anyone may save a design, behind the human check and the limits on a
  *   stranger's create, with the logo or photo they uploaded for it. The
  *   answer is the design's code, which the app's order line looks the design
@@ -73,6 +73,14 @@ export function entries(): Entry[] {
     read('palettes', ['id', 'ready_design_id', 'kind', 'code', 'name', 'position']),
     read('palette_colours', ['id', 'palette_id', 'code', 'role', 'name', 'hex', 'position']),
     read('features', ['id', 'code', 'name'], { filters: [{ column: 'active', op: 'eq', value: true }] }),
+    /*
+     * THE FIGURES THE CUSTOMER'S CHECKS READ: the sharpness a picture needs at
+     * its printed size, the finest line the machine keeps, and where light
+     * becomes dark to start with. The same figures the design question reads,
+     * so the advice a customer sees is the advice the server gives. One row for
+     * the install, held to no app (as the fonts are): numbers, nothing personal.
+     */
+    { table: 'settings', methods: ['GET'], select: ['min_dpi', 'smallest_line_mm', 'one_colour_threshold'] },
     {
       table: 'designs',
       methods: ['POST'],

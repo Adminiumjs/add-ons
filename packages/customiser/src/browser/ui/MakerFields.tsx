@@ -12,14 +12,15 @@
  * colour: chips. A part only the shop sets: its value, and "Set by the
  * studio" shown when it is pointed at or reached.
  */
-import { FileImage, ImageUp, Lock, LockKeyhole, Minus, Plus, Ruler, Trash2, Type, Upload as UploadIcon } from 'lucide-react';
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Contrast, Crosshair, FileImage, ImageUp, Lock, LockKeyhole, Minus, Plus, Ruler, ScanLine, Trash2, Type, Upload as UploadIcon } from 'lucide-react';
 import { useState } from 'react';
 
-import { sizeAllowed, type PartValue } from '../../rules/index.ts';
+import { SCALE_MAX, SCALE_MIN, sizeAllowed, type PartValue } from '../../rules/index.ts';
 import { mm, pt } from '../i18n.ts';
 import { areaMode, valueOf, type EditPart } from '../catalogue.ts';
 import { useShared } from './context.tsx';
-import { CheckIcon, fieldId, fullness, Swatch, usePicker, type FieldsProps } from './fieldKit.tsx';
+import { CheckIcon, fieldId, fileMeta, fullness, Swatch, TransferBar, usePicker, type FieldsProps } from './fieldKit.tsx';
+import { CAP_WORDS } from './pictures.ts';
 import { fontClass } from './fonts.ts';
 
 /** The next size a stepper goes to: half a millimetre at 10 mm or under, a millimetre above, or the next of a list. */
@@ -200,17 +201,31 @@ function TextRow({ part, values, checks, tried, setPart, onTyping, catalogue, ei
   );
 }
 
-function LogoRow({ part, values, featurePrices, uploads, upload, setPart, checks, either }: FieldsProps & { part: EditPart; either: boolean }) {
-  const { t } = useShared();
+function LogoRow({ part, values, featurePrices, pictures, transfers, problems, upload, setPart, checks, either, onOneColour }: FieldsProps & { part: EditPart; either: boolean }) {
+  const { t, locale } = useShared();
   const rules = part.picture ?? part.text?.alsoLogo ?? null;
   const column = rules?.file ?? 'logo_file';
   const value = valueOf(values, part);
   const id = fieldId(part.code);
-  const have = value.file !== undefined ? uploads[column] : undefined;
+  const held = value.file !== undefined ? pictures[column] : undefined;
+  const transfer = transfers[column];
+  const problem = problems[column];
   const picker = usePicker(part, column, upload);
   const price = part.feature === null ? undefined : featurePrices[part.feature];
   const mine = checks.filter((one) => one.part === part.code);
+  const fine = mine.some((one) => one.kind === 'fine-detail');
   const photo = rules?.picture === 'photo';
+  const set = (patch: PartValue): void => setPart(part.code, { ...value, ...patch, ...(either ? { mode: 'logo' as const } : {}) });
+  const box = part.box;
+  const scale = value.scale ?? SCALE_MAX;
+  const across = box === null ? null : (Math.min(box.w, box.h) * scale) / 100;
+  /** One millimetre a press, the logo's middle kept inside its box. */
+  const nudge = (dx: number, dy: number, centre = false) => (): void => {
+    if (centre) return set({ nx: 0, ny: 0 });
+    const [mx, my] = box === null ? [12, 12] : [box.w / 2, box.h / 2];
+    set({ nx: Math.max(-mx, Math.min(mx, (value.nx ?? 0) + dx)), ny: Math.max(-my, Math.min(my, (value.ny ?? 0) + dy)) });
+  };
+  const errId = `${id}-err`;
   return (
     <>
       <div className="cz-row-head">
@@ -223,61 +238,140 @@ function LogoRow({ part, values, featurePrices, uploads, upload, setPart, checks
         ) : null}
       </div>
       {picker.element}
-      {value.file === undefined ? (
-        <div className="cz-drop">
+      {transfer !== undefined ? (
+        <TransferBar transfer={transfer} label={photo ? t('editor.upload.sendingPhoto', 'Uploading your photo') : t('editor.upload.sendingLogo', 'Uploading your logo')} />
+      ) : value.file === undefined ? (
+        <div className={picker.over ? 'cz-drop cz-drop-over' : 'cz-drop'} {...picker.drop}>
           <span className="cz-tile">
             <ImageUp aria-hidden="true" />
           </span>
           <span className="cz-drop-text">
             <span className="cz-strong">{photo ? t('editor.fields.dropPhoto', 'Drop your photo here') : t('editor.fields.dropLogo', 'Drop your logo here')}</span>
-            <span className="cz-small">{t('editor.fields.logoKinds', 'SVG, PDF, PNG or JPEG, up to {size}', { size: '10 MB' })}</span>
+            <span className="cz-small">{photo ? t('editor.fields.photoKinds', 'PNG or JPEG, up to {size}', { size: CAP_WORDS }) : t('editor.fields.logoKinds', 'SVG, PDF, PNG or JPEG, up to {size}', { size: CAP_WORDS })}</span>
           </span>
-          <button id={id} type="button" className="cz-primary" aria-describedby={picker.failed ? `${id}-err` : undefined} aria-busy={picker.busy} onClick={picker.pick}>
+          <button id={id} type="button" className="cz-primary" aria-describedby={problem === undefined ? undefined : errId} onClick={picker.pick}>
             <UploadIcon aria-hidden="true" />
             {photo ? t('editor.fields.uploadPhoto', 'Upload your photo') : t('editor.fields.uploadLogo', 'Upload your logo')}
           </button>
         </div>
-      ) : (
-        <div className="cz-file">
-          <span className="cz-tile">
-            <FileImage aria-hidden="true" />
-          </span>
-          <span className="cz-file-text">
-            <span className="cz-mono cz-strong">{have?.name ?? t('editor.fields.kept', 'Kept with your design')}</span>
-            {have === undefined ? null : <span className="cz-mono cz-small">{`${have.kind.toUpperCase()} · ${String(Math.max(1, Math.round(have.size / 1024)))} KB`}</span>}
-          </span>
-          <button id={id} type="button" className="cz-button" onClick={picker.pick}>
-            {t('editor.fields.replace', 'Replace')}
-          </button>
-          <button
-            type="button"
-            className="cz-icon-button"
-            aria-label={photo ? t('editor.fields.removePhoto', 'Remove your photo') : t('editor.fields.removeLogo', 'Remove your logo')}
-            onClick={() => {
-              const { file: _file, ...rest } = value;
-              void _file;
-              setPart(part.code, either ? { ...rest, mode: 'logo' } : Object.keys(rest).length === 0 ? null : rest);
-            }}
-          >
-            <Trash2 aria-hidden="true" />
-          </button>
-        </div>
-      )}
-      {picker.failed ? (
-        <span id={`${id}-err`} role="alert" className="cz-error">
-          <CheckIcon icon="alert" />
-          {picker.failedText}
-        </span>
       ) : null}
-      {mine.map((one, i) => (
-        <span key={i} className={one.block ? 'cz-error' : 'cz-advice'}>
-          <CheckIcon icon={one.icon} />
-          {one.inline}
+      {problem === undefined ? null : (
+        <span id={errId} role="alert" className="cz-error">
+          <CheckIcon icon="alert" />
+          <span>
+            {problem.text}
+            {problem.detail === undefined ? null : (
+              <span lang="en" className="cz-detail">
+                {problem.detail}
+              </span>
+            )}
+          </span>
         </span>
-      ))}
+      )}
+      {value.file === undefined || transfer !== undefined ? null : (
+        <>
+          <div className="cz-file">
+            <span className="cz-tile cz-tile-small">
+              <FileImage aria-hidden="true" />
+            </span>
+            <span className="cz-file-text">
+              <span className="cz-mono cz-strong cz-ellipsis">{held === undefined || held.name === '' ? t('editor.fields.kept', 'Kept with your design') : held.name}</span>
+              {held === undefined ? null : <span className="cz-mono cz-small">{fileMeta(held, false)}</span>}
+            </span>
+            <button id={id} type="button" className="cz-button cz-button-small" aria-describedby={problem === undefined ? undefined : errId} onClick={picker.pick}>
+              {t('editor.fields.replace', 'Replace')}
+            </button>
+            <button
+              type="button"
+              className="cz-icon-button"
+              aria-label={photo ? t('editor.fields.removePhoto', 'Remove your photo') : t('editor.fields.removeLogo', 'Remove your logo')}
+              onClick={() => {
+                const { file: _file, ...rest } = value;
+                void _file;
+                setPart(part.code, either ? { ...rest, mode: 'logo' } : Object.keys(rest).length === 0 ? null : rest);
+              }}
+            >
+              <Trash2 aria-hidden="true" />
+            </button>
+          </div>
+          <div className="cz-logo-tools">
+            <div className="cz-logo-tool">
+              <span id={`${id}-fit`} className="cz-tool-label">
+                {t('editor.logo.inBox', 'In its box')}
+              </span>
+              <div role="radiogroup" aria-label={t('editor.logo.fitAria', 'How the logo sits in its box')} className="cz-seg">
+                {(['inside', 'fill'] as const).map((fit) => (
+                  <button key={fit} type="button" role="radio" aria-checked={(value.fit ?? rules?.fit ?? 'inside') === fit} className={(value.fit ?? rules?.fit ?? 'inside') === fit ? 'cz-on' : ''} onClick={() => set({ fit })}>
+                    {fit === 'inside' ? t('editor.logo.fitInside', 'Fit inside') : t('editor.logo.fill', 'Fill')}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="cz-logo-tool">
+              <span className="cz-tool-label">{t('editor.logo.nudge', 'Nudge')}</span>
+              <div role="group" aria-label={t('editor.logo.nudgeAria', 'Nudge the logo')} className="cz-nudge">
+                {(
+                  [
+                    [t('editor.logo.left', 'Nudge left'), ArrowLeft, nudge(-1, 0)],
+                    [t('editor.logo.up', 'Nudge up'), ArrowUp, nudge(0, -1)],
+                    [t('editor.logo.centre', 'Centre it'), Crosshair, nudge(0, 0, true)],
+                    [t('editor.logo.down', 'Nudge down'), ArrowDown, nudge(0, 1)],
+                    [t('editor.logo.right', 'Nudge right'), ArrowRight, nudge(1, 0)],
+                  ] as const
+                ).map(([label, Icon, go]) => (
+                  <button key={label} type="button" aria-label={label} title={label} onClick={go}>
+                    <Icon aria-hidden="true" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <label className="cz-scale">
+            <span className="cz-scale-head">
+              <span className="cz-tool-label">{t('editor.logo.size', 'Size in its box')}</span>
+              {across === null ? null : <span className="cz-mono cz-strong cz-push">{t('editor.logo.across', '{size} across', { size: mm(across, locale) })}</span>}
+            </span>
+            <input
+              type="range"
+              className="cz-range"
+              min={SCALE_MIN}
+              max={SCALE_MAX}
+              step={5}
+              value={scale}
+              {...(across === null ? {} : { 'aria-valuetext': t('editor.logo.across', '{size} across', { size: mm(across, locale) }) })}
+              onChange={(event) => set({ scale: Number(event.target.value) })}
+            />
+          </label>
+          {rules?.colour === 'one' ? (
+            <div className="cz-chips">
+              <button type="button" className="cz-button" onClick={() => onOneColour(part)}>
+                <Contrast aria-hidden="true" />
+                {t('editor.oneColour.open', 'Make it one colour')}
+              </button>
+              {fine ? (
+                <span className="cz-advice">
+                  <ScanLine aria-hidden="true" />
+                  {t('editor.oneColour.mayBeFine', 'Some lines may be too fine')}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+        </>
+      )}
+      {mine
+        .filter((one) => one.kind !== 'fine-detail' || rules?.colour !== 'one')
+        .map((one, i) => (
+          <span key={i} className={one.block ? 'cz-error' : 'cz-advice'}>
+            <CheckIcon icon={one.icon} />
+            <span>
+              {one.inline}
+              {one.detail === undefined ? null : <span className="cz-mono cz-detail">{one.detail}</span>}
+            </span>
+          </span>
+        ))}
       <span className="cz-private">
         <LockKeyhole aria-hidden="true" />
-        {t('editor.fields.privateMaker', 'Your logo is private. Only you and the studio can see it.')}
+        {photo ? t('editor.fields.privateMakerPhoto', 'Your photo is private. Only you and the studio can see it.') : t('editor.fields.privateMaker', 'Your logo is private. Only you and the studio can see it.')}
       </span>
     </>
   );

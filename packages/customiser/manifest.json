@@ -3551,6 +3551,17 @@
       ]
     },
     {
+      "table": "settings",
+      "methods": [
+        "GET"
+      ],
+      "select": [
+        "min_dpi",
+        "smallest_line_mm",
+        "one_colour_threshold"
+      ]
+    },
+    {
       "table": "designs",
       "methods": [
         "POST"

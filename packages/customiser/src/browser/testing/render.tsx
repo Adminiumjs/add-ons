@@ -29,3 +29,13 @@ export async function drawn(element: ReactElement): Promise<ReturnType<typeof re
   if (screen.queryByRole('status', { name: '' }) !== null) await settle();
   return out;
 }
+
+/** Wait, a moment at a time, until something holds: a file is read and sent over several moments. */
+export async function settleUntil(holds: () => boolean, moments = 60): Promise<void> {
+  for (let at = 0; at < moments && !holds(); at += 1) {
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 5));
+    });
+  }
+  if (!holds()) throw new Error('it never held');
+}

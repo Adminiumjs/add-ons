@@ -37,6 +37,7 @@ export const REFS = {
   palettes: 'customiser_palettes',
   colours: 'customiser_palette_colours',
   features: 'customiser_features',
+  settings: 'customiser_settings',
   designs: 'customiser_designs',
   own: 'customiser_designs_claimed',
   byCode: 'customiser_designs_unlocked',
@@ -59,6 +60,7 @@ export interface ClientLike {
   adoptSession: (session: { token: string; expiresAt: number; level?: 'lookup' | 'verified' }) => void;
   session: () => HeldSession | null;
   upload?: (ref: string, column: string, file: Blob, name?: string) => Promise<{ id: string; name: string; size: number; kind: string }>;
+  file?: (ref: string, id: string | number, column: string) => Promise<{ blob: Blob }>;
 }
 
 export interface CustomiserClients {
@@ -107,6 +109,8 @@ export interface CatalogueRows {
   palettes: Row[];
   colours: Row[];
   features: Row[];
+  /** The shop's settings the checks read (the sharpness a picture needs, the finest line the machine keeps), where served. */
+  settings?: Row[];
 }
 
 /** What the editor asks of Adminium. A test, or the dev page, hands in its own. */
@@ -127,6 +131,12 @@ export interface CustomiserApi {
   byCodes: (codes: readonly string[]) => Promise<SavedDesign[]>;
   /** Send one file for a design's file column; the answer is what the next save names in that column. Null when this Adminium takes none. */
   upload: ((column: string, file: Blob, name: string, session: HeldSession | null) => Promise<{ id: string; name: string; size: number; kind: string }>) | null;
+  /**
+   * A file a saved design keeps (its logo, its photo), read back through the
+   * design's own link: the copy Adminium keeps, an SVG as it was cleaned.
+   * Null when this browser holds no session on the design, or none is there.
+   */
+  file: (design: SavedDesign, column: string) => Promise<Blob | null>;
 }
 
 /** The design's own file columns. */
@@ -215,7 +225,7 @@ export function customiserApi(clients: CustomiserClients): CustomiserApi {
   return {
     async catalogue(base, signal) {
       const at = { column: 'base_id', op: 'eq', value: base };
-      const [bases, pieces, areas, ready, fonts, palettes, colours, features] = await Promise.all([
+      const [bases, pieces, areas, ready, fonts, palettes, colours, features, settings] = await Promise.all([
         all(REFS.bases, { column: 'id', op: 'eq', value: base }, signal),
         all(REFS.pieces, at, signal),
         all(REFS.areas, at, signal),
@@ -224,9 +234,11 @@ export function customiserApi(clients: CustomiserClients): CustomiserApi {
         all(REFS.palettes, undefined, signal),
         all(REFS.colours, undefined, signal),
         all(REFS.features, undefined, signal),
+        // An Adminium that serves no settings to a visitor: the checks take the shop's defaults.
+        all(REFS.settings, undefined, signal).catch(() => [] as Row[]),
       ]);
       const parts = ready.length === 0 ? [] : await all(REFS.parts, { column: 'ready_design_id', op: 'in', value: ready.map((one) => one['id']) }, signal);
-      return { bases, pieces, areas, ready, parts, fonts, palettes, colours, features };
+      return { bases, pieces, areas, ready, parts, fonts, palettes, colours, features, settings };
     },
     async fontUrl(font) {
       const config = await shop.config();
@@ -265,6 +277,16 @@ export function customiserApi(clients: CustomiserClients): CustomiserApi {
         if (rows[0] !== undefined) out.push({ ...designFromRow(rows[0], null), code });
       }
       return out;
+    },
+    async file(design, column) {
+      if (design.session === null || design.files[column] === undefined) return null;
+      const client = holding(design.session);
+      if (client.file === undefined) return null;
+      try {
+        return (await client.file(REFS.own, design.id, column)).blob;
+      } catch {
+        return null;
+      }
     },
     upload:
       shop.upload === undefined

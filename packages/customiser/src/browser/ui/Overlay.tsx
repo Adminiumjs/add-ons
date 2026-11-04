@@ -18,11 +18,13 @@ interface DialogProps {
   onClose: () => void;
   children: ReactNode;
   className?: string;
+  /** The scrim's own class: a sheet sits at the side or the foot, not in the middle. */
+  scrimClass?: string;
 }
 
 const FOCUSABLE = 'button:not([disabled]), input:not([disabled]):not([type="hidden"]), textarea, select, a[href], [tabindex="0"]';
 
-export function Dialog({ labelledBy, describedBy, alert = false, onClose, children, className }: DialogProps) {
+export function Dialog({ labelledBy, describedBy, alert = false, onClose, children, className, scrimClass }: DialogProps) {
   const box = useRef<HTMLDivElement>(null);
   const close = useRef(onClose);
   close.current = onClose;
@@ -58,7 +60,7 @@ export function Dialog({ labelledBy, describedBy, alert = false, onClose, childr
     };
   }, []);
   return (
-    <div className="cz-scrim" onClick={onClose}>
+    <div className={scrimClass ?? 'cz-scrim'} onClick={onClose}>
       <div ref={box} role={alert ? 'alertdialog' : 'dialog'} aria-modal="true" aria-labelledby={labelledBy} {...(describedBy === undefined ? {} : { 'aria-describedby': describedBy })} className={className ?? 'cz-dialog'} onClick={(event) => event.stopPropagation()}>
         {children}
       </div>

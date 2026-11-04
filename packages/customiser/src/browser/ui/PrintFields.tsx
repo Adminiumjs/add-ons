@@ -14,7 +14,8 @@ import { useState } from 'react';
 import { pt } from '../i18n.ts';
 import { hexOf, valueOf, type EditPart, type Ready } from '../catalogue.ts';
 import { useShared } from './context.tsx';
-import { CheckIcon, fieldId, fullness, Swatch, usePicker, WarnIcon, type FieldsProps } from './fieldKit.tsx';
+import { CheckIcon, fieldId, fileMeta, fullness, Swatch, TransferBar, usePicker, WarnIcon, type FieldsProps } from './fieldKit.tsx';
+import { CAP_WORDS } from './pictures.ts';
 
 /** What a browser may fill a field with, by the part's code, where the code says what it is. */
 const AUTOCOMPLETE: Readonly<Record<string, string>> = { name: 'name', title: 'organization-title', phone: 'tel', email: 'email', web: 'url', addr: 'street-address' };
@@ -204,26 +205,32 @@ function TextField({ part, values, checks, setPart, onSelect, onTyping, catalogu
   );
 }
 
-function ImageField({ part, values, uploads, upload, setPart, checks, onSelect }: FieldsProps & { part: EditPart }) {
+function ImageField({ part, values, pictures, transfers, problems, upload, setPart, checks, onSelect }: FieldsProps & { part: EditPart }) {
   const { t, shop } = useShared();
   const rules = part.picture!;
   const value = valueOf(values, part);
   const id = fieldId(part.code);
-  const have = value.file !== undefined ? uploads[rules.file] : undefined;
+  const held = value.file !== undefined ? pictures[rules.file] : undefined;
+  const transfer = transfers[rules.file];
+  const problem = problems[rules.file];
   const picker = usePicker(part, rules.file, upload);
   const photo = rules.picture === 'photo';
   const mine = checks.filter((one) => one.part === part.code);
-  const describedBy = [...(picker.failed ? [`${id}-err`] : []), ...mine.map((_, i) => `${id}-m${String(i)}`)].join(' ');
+  const errId = `${id}-err`;
+  const describedBy = [...(problem === undefined ? [] : [errId]), ...mine.map((_, i) => `${id}-m${String(i)}`)].join(' ');
+  const fit = value.fit ?? rules.fit;
   return (
     <div className="cz-field">
       <div className="cz-row-head">
         <span className="cz-label">{part.name}</span>
         {part.required ? <span className="cz-req">{t('editor.fields.neededLower', 'needed')}</span> : null}
-        <span className="cz-mono cz-hint cz-push">{rules.accept.map((one) => one.toUpperCase()).join(' · ')} · 10 MB</span>
+        <span className="cz-mono cz-hint cz-push">{`${rules.accept.map((one) => (one === 'jpg' ? 'JPEG' : one.toUpperCase())).join(' · ')} · ${CAP_WORDS}`}</span>
       </div>
       {picker.element}
-      {value.file === undefined ? (
-        <div className="cz-drop cz-drop-centre">
+      {transfer !== undefined ? (
+        <TransferBar transfer={transfer} label={photo ? t('editor.upload.sendingPhoto', 'Uploading your photo') : t('editor.upload.sendingLogo', 'Uploading your logo')} />
+      ) : value.file === undefined ? (
+        <div className={picker.over ? 'cz-drop cz-drop-centre cz-drop-over' : 'cz-drop cz-drop-centre'} {...picker.drop}>
           <ImageUp aria-hidden="true" />
           <span className="cz-small">{photo ? t('editor.fields.dropPhoto', 'Drop your photo here') : t('editor.fields.dropLogo', 'Drop your logo here')}</span>
           <button id={id} type="button" className="cz-primary" aria-describedby={describedBy === '' ? undefined : describedBy} onFocus={() => onSelect(part.code)} onClick={picker.pick}>
@@ -232,31 +239,52 @@ function ImageField({ part, values, uploads, upload, setPart, checks, onSelect }
           </button>
         </div>
       ) : (
-        <div className="cz-file">
-          <span className="cz-mono cz-strong cz-file-text">{have?.name ?? t('editor.fields.kept', 'Kept with your design')}</span>
-          <button id={id} type="button" className="cz-button" onFocus={() => onSelect(part.code)} onClick={picker.pick}>
-            {t('editor.fields.replace', 'Replace')}
-          </button>
-          <button
-            type="button"
-            className="cz-icon-button"
-            aria-label={photo ? t('editor.fields.removePhotoPrint', 'Remove the photo') : t('editor.fields.removeLogoPrint', 'Remove the logo')}
-            onClick={() => {
-              const { file: _file, ...rest } = value;
-              void _file;
-              setPart(part.code, Object.keys(rest).length === 0 ? null : rest);
-            }}
-          >
-            <Trash2 aria-hidden="true" />
-          </button>
+        <>
+          <div className="cz-file cz-file-print">
+            <span className="cz-thumb">{held?.url === undefined ? <span className="cz-mono cz-thumb-kind">{held === undefined ? '' : held.kind.toUpperCase()}</span> : <img src={held.url} alt="" className="cz-thumb-img" />}</span>
+            <span className="cz-file-text">
+              <span className="cz-mono cz-strong cz-ellipsis">{held === undefined || held.name === '' ? t('editor.fields.kept', 'Kept with your design') : held.name}</span>
+              {held === undefined ? null : <span className="cz-mono cz-small">{fileMeta(held, true)}</span>}
+            </span>
+            <button id={id} type="button" className="cz-button cz-button-small" aria-describedby={describedBy === '' ? undefined : describedBy} onFocus={() => onSelect(part.code)} onClick={picker.pick}>
+              {t('editor.fields.replace', 'Replace')}
+            </button>
+            <button
+              type="button"
+              className="cz-icon-button"
+              aria-label={photo ? t('editor.fields.removePhotoPrint', 'Remove the photo') : t('editor.fields.removeLogoPrint', 'Remove the logo')}
+              title={photo ? t('editor.fields.removePhotoPrint', 'Remove the photo') : t('editor.fields.removeLogoPrint', 'Remove the logo')}
+              onClick={() => {
+                const { file: _file, ...rest } = value;
+                void _file;
+                setPart(part.code, Object.keys(rest).length === 0 ? null : rest);
+              }}
+            >
+              <Trash2 aria-hidden="true" />
+            </button>
+          </div>
+          <div role="radiogroup" aria-label={photo ? t('editor.fields.fitPhotoAria', 'How the photo sits in its box') : t('editor.logo.fitAria', 'How the logo sits in its box')} className="cz-seg cz-seg-start">
+            {(['inside', 'fill'] as const).map((one) => (
+              <button key={one} type="button" role="radio" aria-checked={fit === one} className={fit === one ? 'cz-on' : ''} onClick={() => setPart(part.code, { ...value, fit: one })}>
+                {one === 'inside' ? t('editor.logo.fitInside', 'Fit inside') : t('editor.logo.fill', 'Fill')}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      {problem === undefined ? null : (
+        <div id={errId} role="alert" className="cz-error">
+          <CheckIcon icon="alert" />
+          <span>
+            {problem.text}
+            {problem.detail === undefined ? null : (
+              <span lang="en" className="cz-detail">
+                {problem.detail}
+              </span>
+            )}
+          </span>
         </div>
       )}
-      {picker.failed ? (
-        <div id={`${id}-err`} role="alert" className="cz-error">
-          <CheckIcon icon="alert" />
-          {picker.failedText}
-        </div>
-      ) : null}
       {mine.map((one, i) => (
         <div key={i} id={`${id}-m${String(i)}`} className={one.block ? 'cz-error' : 'cz-advice'}>
           <CheckIcon icon={one.icon} />

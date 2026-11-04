@@ -321,7 +321,7 @@ export function factsFor(catalogue: Catalogue, design: DesignData, files: readon
     features: catalogue.rows.features,
     colours: catalogue.rows.colours,
     files,
-    settings: {},
+    settings: catalogue.rows.settings?.[0] ?? {},
     ...(measure === undefined ? {} : { measure }),
   };
 }

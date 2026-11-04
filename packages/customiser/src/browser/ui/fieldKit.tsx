@@ -4,20 +4,16 @@
  * character counter, a swatch, a picture's upload).
  */
 import { CircleAlert, ImageOff, Ruler, Contrast, ScanLine, Search, TriangleAlert } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useRef, useState, type DragEvent } from 'react';
 
 import { charCount, charLimit, sizeAllowed, type DesignValues, type PartValue } from '../../rules/index.ts';
 import type { CustomiserApi, HeldSession } from '../api.ts';
 import type { Catalogue, EditPart, Palette } from '../catalogue.ts';
 import type { Check } from '../say.ts';
 import { useShared } from './context.tsx';
+import type { Problem, Transfer, Upload } from './pictures.ts';
 
-export interface Upload {
-  id: string;
-  name: string;
-  size: number;
-  kind: string;
-}
+export type { Upload };
 
 export interface FieldsProps {
   catalogue: Catalogue;
@@ -34,8 +30,17 @@ export interface FieldsProps {
   /** A text field has focus: the phone hides its bar. */
   onTyping: (typing: boolean) => void;
   featurePrices: Readonly<Record<string, string>>;
-  uploads: Readonly<Record<string, Upload>>;
-  upload: (part: EditPart, column: string, file: File) => Promise<void>;
+  /** The design's logo and photo, by column, as the browser holds them. */
+  pictures: Readonly<Record<string, Upload>>;
+  /** A file on its way, by column. */
+  transfers: Readonly<Record<string, Transfer>>;
+  /** Why the last file was not taken, by column. */
+  problems: Readonly<Record<string, Problem>>;
+  upload: (part: EditPart, column: string, file: File) => void;
+  /** Open "Make it one colour" for a logo the laser engraves. */
+  onOneColour: (part: EditPart) => void;
+  /** Where light becomes dark when the customer has not moved the line: the shop's start. */
+  startThreshold: number;
   api: CustomiserApi;
   session: HeldSession | null;
 }
@@ -71,13 +76,15 @@ export function Swatch({ hex, size = 20 }: { hex: string; size?: number }) {
   );
 }
 
-/** A hidden file picker and the call that sends what it picked. */
+/** The kinds of file a picture part takes, as a file input names them (so a phone offers to convert what it can). */
+export function acceptOf(part: EditPart): readonly string[] {
+  return (part.picture ?? part.text?.alsoLogo)?.accept ?? ['svg', 'pdf', 'png', 'jpeg'];
+}
+
+/** A hidden file picker, a drop zone's handlers, and the call that sends what either was given. */
 export function usePicker(part: EditPart, column: string, upload: FieldsProps['upload']) {
   const input = useRef<HTMLInputElement>(null);
-  const [failed, setFailed] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const { t } = useShared();
-  const accept = (part.picture ?? part.text?.alsoLogo)?.accept ?? ['svg', 'pdf', 'png', 'jpeg'];
+  const [over, setOver] = useState(false);
   const types: Record<string, string> = { svg: '.svg,image/svg+xml', pdf: '.pdf,application/pdf', png: '.png,image/png', jpeg: '.jpg,.jpeg,image/jpeg', jpg: '.jpg,.jpeg,image/jpeg' };
   const element = (
     <input
@@ -86,18 +93,54 @@ export function usePicker(part: EditPart, column: string, upload: FieldsProps['u
       className="cz-hidden-file"
       tabIndex={-1}
       aria-hidden="true"
-      accept={accept.map((one) => types[one] ?? `.${one}`).join(',')}
+      accept={acceptOf(part).map((one) => types[one] ?? `.${one}`).join(',')}
       onChange={(event) => {
         const file = event.target.files?.[0];
         event.target.value = '';
-        if (file === undefined) return;
-        setBusy(true);
-        setFailed(false);
-        upload(part, column, file)
-          .catch(() => setFailed(true))
-          .finally(() => setBusy(false));
+        if (file !== undefined) upload(part, column, file);
       }}
     />
   );
-  return { element, pick: () => input.current?.click(), failed, busy, failedText: t('editor.upload.failed', 'That file couldn’t be sent. Try again.') };
+  const drop = {
+    onDragOver: (event: DragEvent) => {
+      event.preventDefault();
+      setOver(true);
+    },
+    onDragLeave: () => setOver(false),
+    onDrop: (event: DragEvent) => {
+      event.preventDefault();
+      setOver(false);
+      const file = event.dataTransfer?.files?.[0];
+      if (file !== undefined) upload(part, column, file);
+    },
+  };
+  return { element, pick: () => input.current?.click(), drop, over };
+}
+
+/** A file's kind and weight, as the comps write them: "SVG · 48 KB". */
+export function fileMeta(one: Upload, withPixels: boolean): string {
+  const size = one.size >= 1024 * 1024 ? `${(one.size / (1024 * 1024)).toFixed(1)} MB` : `${String(Math.max(1, Math.round(one.size / 1024)))} KB`;
+  const kind = one.kind === 'jpeg' ? 'JPEG' : one.kind.toUpperCase();
+  if (!withPixels) return `${kind} · ${size}`;
+  const pixels = one.kind === 'svg' || one.kind === 'pdf' ? null : one.px === undefined ? null : `${String(one.px[0])} × ${String(one.px[1])} px`;
+  return [kind, pixels, size].filter((part) => part !== null).join(' · ');
+}
+
+/** How a file is moving: read first (the bar fills as it is read), then sent (the bar waits, the client tells nothing more). */
+export function TransferBar({ transfer, label }: { transfer: Transfer; label: string }) {
+  const { t } = useShared();
+  const percent = transfer.share === null ? null : Math.round(transfer.share * 100);
+  return (
+    <div role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} {...(percent === null ? { 'aria-valuetext': t('editor.upload.sending', 'Sending') } : { 'aria-valuenow': percent })} className="cz-transfer">
+      <span className="cz-transfer-line">
+        <span className="cz-mono cz-strong cz-transfer-name">{transfer.name}</span>
+        <span className="cz-mono cz-transfer-pct">{percent === null ? t('editor.upload.sending', 'Sending') : `${String(percent)}%`}</span>
+      </span>
+      <span className={percent === null ? 'cz-transfer-track cz-transfer-waiting' : 'cz-transfer-track'}>
+        <svg className="cz-transfer-fill" viewBox="0 0 100 6" preserveAspectRatio="none" aria-hidden="true">
+          <rect x="0" y="0" width={percent === null ? 100 : percent} height="6" />
+        </svg>
+      </span>
+    </div>
+  );
 }
