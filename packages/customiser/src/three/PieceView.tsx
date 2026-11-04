@@ -15,13 +15,12 @@ import { useEffect, useRef, useState, type MutableRefObject, type ReactNode } fr
 
 import type { FlatSheet } from '../draw/flat.ts';
 import { hasWebGL, loadThree, type ThreeChunk } from './load.ts';
-import type { PieceModel } from './piece.ts';
-import type { Stage3d } from './stage3d.ts';
+import type { Stage3d, StageModel } from './stage3d.ts';
 import { usePieceModel, type OutlineSource } from './usePiece.ts';
 import { startView, type View } from './view.ts';
 
 export interface ModelViewProps {
-  model: PieceModel | null;
+  model: StageModel | null;
   view: View;
   className?: string;
   /** The stage itself, for the page to ask where a tap landed on the piece. */
@@ -73,7 +72,8 @@ export function ModelView({ model, view, className, stageRef, onFail, load = loa
   useEffect(() => {
     if (stage === null || model === null) return;
     try {
-      stage.setModel(model);
+      // A shop's model is read from its file first; one this device cannot read or draw says so.
+      stage.setModel(model).catch(() => failed.current?.());
     } catch {
       failed.current?.();
     }
@@ -98,7 +98,7 @@ export function forgetStills(): void {
 }
 
 export interface ModelStillProps {
-  model: PieceModel | null;
+  model: StageModel | null;
   view: View;
   /** The picture's size in pixels. */
   width: number;
