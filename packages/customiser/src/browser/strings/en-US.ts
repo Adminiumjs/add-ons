@@ -12,6 +12,8 @@ export const editor: Readonly<Record<string, string>> = {
   "editor.check.blurryPhoto": "Your photo may print blurry at this size — a bigger file will be sharper",
   "editor.check.fileKind": "That kind of file can’t be used here.",
   "editor.check.fileKindListed": "{part}: that kind of file can’t be used here",
+  "editor.check.fileKindPrinted": "A raised logo has to be a drawing: send it as an SVG. A picture has no edges to raise.",
+  "editor.check.fileKindPrintedListed": "{part}: send your logo as an SVG drawing",
   "editor.check.fileMissing": "The file for this part didn’t arrive. Upload it again.",
   "editor.check.fileMissingListed": "{part}: upload the file again",
   "editor.check.fine": "Some lines in your logo are too fine to engrave — they may disappear",

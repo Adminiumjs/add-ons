@@ -369,6 +369,8 @@ function checkPicture(context: Context, part: Part, rules: PictureRules, value: 
   }
   const kind = KIND_OF_TYPE[file.kind.toLowerCase()];
   if (kind === undefined || !rules.accept.includes(kind)) refuse(context, 'file-kind', part.code);
+  // A 3D-printed item's words and logo are raised from its face or cut into it: only a drawing (an SVG) has edges to raise.
+  else if (raisedOrCut(context) && kind !== 'svg') refuse(context, 'file-kind', part.code);
   const fit = value.fit ?? rules.fit;
   if (fit !== 'inside' && fit !== 'fill') refuse(context, 'choice-not-allowed', part.code);
   const scale = value.scale ?? SCALE_MAX;
@@ -377,6 +379,15 @@ function checkPicture(context: Context, part: Part, rules: PictureRules, value: 
   const finish = finishOf(context, part, rules, value);
   costs(context, part.feature, part.code);
   if (part.box !== null && kind !== undefined) pictureAdvice(context, part, rules, file, kind, fit === 'fill' ? 'fill' : 'inside', scale / 100, finish);
+}
+
+/**
+ * Whether a design's pictures are raised from, or cut into, a 3D-printed
+ * item: every part of a printed base is, its marked faces carrying its words
+ * and logo as solid shapes (raised unless the face says cut in).
+ */
+function raisedOrCut(context: Context): boolean {
+  return context.facts.base?.['kind'] === 'printed';
 }
 
 /** What the customer should know about a picture at its printed size. */

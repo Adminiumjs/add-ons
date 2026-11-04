@@ -241,7 +241,7 @@ function Inside(props: CustomiserEditorProps & { catalogue: Catalogue }) {
   }
   const files = pictures.facts(saved?.files ?? {}, thresholds, accepts);
   const answer = answerFor(catalogue, design, files, measure);
-  const checks = checksOf(answer, { t, locale, look, parts, values, palette }, refused);
+  const checks = checksOf(answer, { t, locale, look, parts, values, palette, printed: catalogue.base.kind === 'printed' }, refused);
   const blocks = checks.filter((one) => one.block);
   const ordered = saved?.state === 'ordered';
 

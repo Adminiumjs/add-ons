@@ -12,6 +12,8 @@ export const editor: Readonly<Record<string, string>> = {
   "editor.check.blurryPhoto": "Vaše fotka může v této velikosti vyjít rozmazaná — větší soubor bude ostřejší",
   "editor.check.fileKind": "Tento typ souboru tu nelze použít.",
   "editor.check.fileKindListed": "{part}: tento typ souboru tu nelze použít",
+  "editor.check.fileKindPrinted": "Vystouplé logo musí být kresba: pošlete ho jako SVG. Obrázek nemá okraje, které by mohly vystoupit.",
+  "editor.check.fileKindPrintedListed": "{part}: pošlete logo jako kresbu SVG",
   "editor.check.fileMissing": "Soubor k této části nedorazil. Nahrajte ho znovu.",
   "editor.check.fileMissingListed": "{part}: nahrajte soubor znovu",
   "editor.check.fine": "Některé čáry ve vašem logu jsou na gravírování příliš jemné — mohou zmizet",

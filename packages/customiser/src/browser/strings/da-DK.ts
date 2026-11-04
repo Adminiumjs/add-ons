@@ -12,6 +12,8 @@ export const editor: Readonly<Record<string, string>> = {
   "editor.check.blurryPhoto": "Dit foto kan blive uskarpt i denne størrelse — en større fil bliver skarpere",
   "editor.check.fileKind": "Den slags fil kan ikke bruges her.",
   "editor.check.fileKindListed": "{part}: den slags fil kan ikke bruges her",
+  "editor.check.fileKindPrinted": "Et hævet logo skal være en tegning: send det som SVG. Et billede har ingen kanter, der kan hæves.",
+  "editor.check.fileKindPrintedListed": "{part}: send dit logo som en SVG-tegning",
   "editor.check.fileMissing": "Filen til denne del kom ikke frem. Upload den igen.",
   "editor.check.fileMissingListed": "{part}: upload filen igen",
   "editor.check.fine": "Nogle streger i dit logo er for fine til at gravere — de kan forsvinde",
