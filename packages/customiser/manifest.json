@@ -80,7 +80,7 @@
                     "cs-CZ": "Palce",
                     "ar-EG": "البوصات",
                     "zh-CN": "英寸",
-                    "zh-TW": "英寸"
+                    "zh-TW": "英吋"
                   }
                 }
               }
@@ -90,7 +90,7 @@
               "de-DE": "Maße anzeigen in",
               "fr-FR": "Tailles affichées en",
               "da-DK": "Mål vist i",
-              "cs-CZ": "Rozměry zobrazit v",
+              "cs-CZ": "Zobrazovat rozměry v",
               "ar-EG": "تُعرض المقاسات بـ",
               "zh-CN": "尺寸显示单位",
               "zh-TW": "尺寸顯示單位"
@@ -113,7 +113,7 @@
               "fr-FR": "Fond perdu d’une nouvelle page (mm)",
               "da-DK": "Beskæring på en ny side (mm)",
               "cs-CZ": "Spadávka nové stránky (mm)",
-              "ar-EG": "هامش القص لصفحة جديدة (مم)",
+              "ar-EG": "هامش القص الزائد لصفحة جديدة (مم)",
               "zh-CN": "新页面的出血（毫米）",
               "zh-TW": "新頁面的出血（公釐）"
             }
@@ -155,7 +155,7 @@
               "de-DE": "Ab wann Hell zu Dunkel wird, zu Beginn (%)",
               "fr-FR": "Seuil entre clair et foncé, au départ (%)",
               "da-DK": "Hvor lyst bliver mørkt, til at begynde med (%)",
-              "cs-CZ": "Kde světlá přechází v tmavou, na začátku (%)",
+              "cs-CZ": "Výchozí hranice mezi světlou a tmavou (%)",
               "ar-EG": "حيث يصبح الفاتح داكنًا، في البداية (%)",
               "zh-CN": "明暗分界的初始值（%）",
               "zh-TW": "明暗分界的初始值（%）"
@@ -176,7 +176,7 @@
               "en-US": "Thinnest line the machine keeps (mm)",
               "de-DE": "Dünnste Linie, die die Maschine schafft (mm)",
               "fr-FR": "Trait le plus fin que garde la machine (mm)",
-              "da-DK": "Tyndeste streg maskinen kan lave (mm)",
+              "da-DK": "Tyndeste streg, maskinen kan lave (mm)",
               "cs-CZ": "Nejtenčí čára, kterou stroj zvládne (mm)",
               "ar-EG": "أدق خط تحتفظ به الآلة (مم)",
               "zh-CN": "机器可保留的最细线条（毫米）",
@@ -199,7 +199,7 @@
               "fr-FR": "Netteté requise à la taille imprimée (dpi)",
               "da-DK": "Skarphed et billede skal have i trykt størrelse (dpi)",
               "cs-CZ": "Potřebná ostrost obrázku v tištěné velikosti (dpi)",
-              "ar-EG": "الدقة التي تحتاجها الصورة بحجم الطباعة (نقطة/بوصة)",
+              "ar-EG": "الدقة التي تحتاجها الصورة بحجم الطباعة (dpi)",
               "zh-CN": "图片在印刷尺寸下所需的清晰度（dpi）",
               "zh-TW": "圖片在印刷尺寸下所需的清晰度（dpi）"
             }
@@ -292,7 +292,7 @@
                     "en-US": "A flat piece",
                     "de-DE": "Ein flaches Teil",
                     "fr-FR": "Une pièce plate",
-                    "da-DK": "Et fladt stykke",
+                    "da-DK": "Et fladt emne",
                     "cs-CZ": "Plochý díl",
                     "ar-EG": "قطعة مسطحة",
                     "zh-CN": "平面部件",
@@ -302,11 +302,11 @@
                     "en-US": "A kit of pieces",
                     "de-DE": "Ein Bausatz aus Teilen",
                     "fr-FR": "Un kit de pièces",
-                    "da-DK": "Et sæt af dele",
+                    "da-DK": "Et sæt af emner",
                     "cs-CZ": "Stavebnice z dílů",
                     "ar-EG": "مجموعة قطع",
                     "zh-CN": "成套部件",
-                    "zh-TW": "成套部件"
+                    "zh-TW": "套件"
                   },
                   "printed": {
                     "en-US": "A 3D-printed item",
@@ -435,7 +435,7 @@
               "fr-FR": "Fond perdu (mm)",
               "da-DK": "Beskæring (mm)",
               "cs-CZ": "Spadávka (mm)",
-              "ar-EG": "هامش القص (مم)",
+              "ar-EG": "هامش القص الزائد (مم)",
               "zh-CN": "出血（毫米）",
               "zh-TW": "出血（公釐）"
             }
@@ -491,8 +491,8 @@
             "label": {
               "en-US": "What a second side costs",
               "de-DE": "Aufpreis für die zweite Seite",
-              "fr-FR": "Option payante de la deuxième face",
-              "da-DK": "Tilvalg for den anden side",
+              "fr-FR": "Supplément pour la deuxième face",
+              "da-DK": "Pris for den anden side",
               "cs-CZ": "Příplatek za druhou stranu",
               "ar-EG": "الميزة المسعّرة للوجه الثاني",
               "zh-CN": "第二面的加价选项",
@@ -664,7 +664,7 @@
                   "published": {
                     "en-US": "Offered for customising",
                     "de-DE": "Zum Gestalten angeboten",
-                    "fr-FR": "Proposé à personnaliser",
+                    "fr-FR": "Proposé à la personnalisation",
                     "da-DK": "Tilbydes til tilpasning",
                     "cs-CZ": "Nabízeno k úpravě",
                     "ar-EG": "معروض للتخصيص",
@@ -715,7 +715,7 @@
           "en-US": "Piece",
           "de-DE": "Teil",
           "fr-FR": "Pièce",
-          "da-DK": "Del",
+          "da-DK": "Emne",
           "cs-CZ": "Díl",
           "ar-EG": "القطعة",
           "zh-CN": "部件",
@@ -725,7 +725,7 @@
           "en-US": "Pieces",
           "de-DE": "Teile",
           "fr-FR": "Pièces",
-          "da-DK": "Dele",
+          "da-DK": "Emner",
           "cs-CZ": "Díly",
           "ar-EG": "القطع",
           "zh-CN": "部件",
@@ -776,7 +776,7 @@
               "en-US": "Piece number",
               "de-DE": "Teilnummer",
               "fr-FR": "Numéro de pièce",
-              "da-DK": "Delnummer",
+              "da-DK": "Emnenummer",
               "cs-CZ": "Číslo dílu",
               "ar-EG": "رقم القطعة",
               "zh-CN": "部件编号",
@@ -887,7 +887,7 @@
               "en-US": "The piece’s outline",
               "de-DE": "Kontur des Teils",
               "fr-FR": "Contour de la pièce",
-              "da-DK": "Delens omrids",
+              "da-DK": "Emnets omrids",
               "cs-CZ": "Obrys dílu",
               "ar-EG": "مخطط القطعة",
               "zh-CN": "部件轮廓",
@@ -1061,7 +1061,7 @@
               "en-US": "Piece",
               "de-DE": "Teil",
               "fr-FR": "Pièce",
-              "da-DK": "Del",
+              "da-DK": "Emne",
               "cs-CZ": "Díl",
               "ar-EG": "القطعة",
               "zh-CN": "部件",
@@ -1302,7 +1302,7 @@
               "fr-FR": "Option payante",
               "da-DK": "Tilvalg med pris",
               "cs-CZ": "Placená volba",
-              "ar-EG": "ميزة بسعر",
+              "ar-EG": "ميزة مسعّرة",
               "zh-CN": "加价选项",
               "zh-TW": "加價選項"
             }
@@ -1329,7 +1329,7 @@
         "keyField": "name",
         "label": {
           "en-US": "Ready-made design",
-          "de-DE": "Fertiger Entwurf",
+          "de-DE": "Fertiges Design",
           "fr-FR": "Modèle prêt à l’emploi",
           "da-DK": "Færdigt design",
           "cs-CZ": "Hotový návrh",
@@ -1339,9 +1339,9 @@
         },
         "labelPlural": {
           "en-US": "Ready-made designs",
-          "de-DE": "Fertige Entwürfe",
+          "de-DE": "Fertige Designs",
           "fr-FR": "Modèles prêts à l’emploi",
-          "da-DK": "Færdige design",
+          "da-DK": "Færdige designs",
           "cs-CZ": "Hotové návrhy",
           "ar-EG": "التصاميم الجاهزة",
           "zh-CN": "现成设计",
@@ -1468,7 +1468,7 @@
               "de-DE": "Sichtbar",
               "fr-FR": "Visible",
               "da-DK": "Vises",
-              "cs-CZ": "Zobrazení",
+              "cs-CZ": "Zobrazeno",
               "ar-EG": "الظهور",
               "zh-CN": "展示",
               "zh-TW": "展示"
@@ -1569,7 +1569,7 @@
             "references": "ready_designs",
             "label": {
               "en-US": "Ready-made design",
-              "de-DE": "Fertiger Entwurf",
+              "de-DE": "Fertiges Design",
               "fr-FR": "Modèle prêt à l’emploi",
               "da-DK": "Færdigt design",
               "cs-CZ": "Hotový návrh",
@@ -1691,7 +1691,7 @@
             "default": false,
             "label": {
               "en-US": "Set by the shop",
-              "de-DE": "Vom Geschäft festgelegt",
+              "de-DE": "Vom Shop festgelegt",
               "fr-FR": "Fixé par la boutique",
               "da-DK": "Fastlagt af butikken",
               "cs-CZ": "Určuje obchod",
@@ -1801,7 +1801,7 @@
               "en-US": "Piece",
               "de-DE": "Teil",
               "fr-FR": "Pièce",
-              "da-DK": "Del",
+              "da-DK": "Emne",
               "cs-CZ": "Díl",
               "ar-EG": "القطعة",
               "zh-CN": "部件",
@@ -1909,7 +1909,7 @@
               "fr-FR": "Valeur de départ",
               "da-DK": "Startværdi",
               "cs-CZ": "Výchozí hodnota",
-              "ar-EG": "القيمة الأولى",
+              "ar-EG": "القيمة المبدئية",
               "zh-CN": "初始内容",
               "zh-TW": "初始內容"
             }
@@ -1925,7 +1925,7 @@
               "fr-FR": "Option payante",
               "da-DK": "Tilvalg med pris",
               "cs-CZ": "Placená volba",
-              "ar-EG": "ميزة بسعر",
+              "ar-EG": "ميزة مسعّرة",
               "zh-CN": "加价选项",
               "zh-TW": "加價選項"
             }
@@ -2158,7 +2158,7 @@
           "cs-CZ": "Paleta",
           "ar-EG": "لوحة الألوان",
           "zh-CN": "色板",
-          "zh-TW": "色票"
+          "zh-TW": "配色"
         },
         "labelPlural": {
           "en-US": "Palettes",
@@ -2168,7 +2168,7 @@
           "cs-CZ": "Palety",
           "ar-EG": "لوحات الألوان",
           "zh-CN": "色板",
-          "zh-TW": "色票"
+          "zh-TW": "配色"
         },
         "columns": [
           {
@@ -2199,7 +2199,7 @@
             "nullable": true,
             "label": {
               "en-US": "Ready-made design",
-              "de-DE": "Fertiger Entwurf",
+              "de-DE": "Fertiges Design",
               "fr-FR": "Modèle prêt à l’emploi",
               "da-DK": "Færdigt design",
               "cs-CZ": "Hotový návrh",
@@ -2363,7 +2363,7 @@
               "cs-CZ": "Paleta",
               "ar-EG": "لوحة الألوان",
               "zh-CN": "色板",
-              "zh-TW": "色票"
+              "zh-TW": "配色"
             }
           },
           {
@@ -2400,24 +2400,24 @@
                     "da-DK": "Papir",
                     "cs-CZ": "Papír",
                     "ar-EG": "الورق",
-                    "zh-CN": "纸张",
-                    "zh-TW": "紙張"
+                    "zh-CN": "纸色",
+                    "zh-TW": "紙色"
                   },
                   "ink": {
                     "en-US": "Ink",
                     "de-DE": "Druckfarbe",
                     "fr-FR": "Encre",
-                    "da-DK": "Blæk",
+                    "da-DK": "Trykfarve",
                     "cs-CZ": "Inkoust",
                     "ar-EG": "الحبر",
-                    "zh-CN": "油墨",
-                    "zh-TW": "油墨"
+                    "zh-CN": "墨色",
+                    "zh-TW": "墨色"
                   },
                   "accent": {
                     "en-US": "Accent",
                     "de-DE": "Akzent",
                     "fr-FR": "Accent",
-                    "da-DK": "Accent",
+                    "da-DK": "Accentfarve",
                     "cs-CZ": "Akcent",
                     "ar-EG": "لون مميز",
                     "zh-CN": "强调色",
@@ -2428,7 +2428,7 @@
             },
             "label": {
               "en-US": "Role in the design",
-              "de-DE": "Rolle im Entwurf",
+              "de-DE": "Rolle im Design",
               "fr-FR": "Rôle dans le modèle",
               "da-DK": "Rolle i designet",
               "cs-CZ": "Úloha v návrhu",
@@ -2505,7 +2505,7 @@
           "fr-FR": "Option payante",
           "da-DK": "Tilvalg med pris",
           "cs-CZ": "Placená volba",
-          "ar-EG": "ميزة بسعر",
+          "ar-EG": "ميزة مسعّرة",
           "zh-CN": "加价选项",
           "zh-TW": "加價選項"
         },
@@ -2515,7 +2515,7 @@
           "fr-FR": "Options payantes",
           "da-DK": "Tilvalg med pris",
           "cs-CZ": "Placené volby",
-          "ar-EG": "الميزات بسعر",
+          "ar-EG": "الميزات المسعّرة",
           "zh-CN": "加价选项",
           "zh-TW": "加價選項"
         },
@@ -2592,9 +2592,9 @@
         "ref": "designs",
         "label": {
           "en-US": "Customer’s design",
-          "de-DE": "Entwurf eines Kunden",
+          "de-DE": "Design eines Kunden",
           "fr-FR": "Création d’un client",
-          "da-DK": "Kundes design",
+          "da-DK": "Kundedesign",
           "cs-CZ": "Návrh zákazníka",
           "ar-EG": "تصميم العميل",
           "zh-CN": "顾客的设计",
@@ -2602,9 +2602,9 @@
         },
         "labelPlural": {
           "en-US": "Customers’ designs",
-          "de-DE": "Entwürfe der Kunden",
+          "de-DE": "Designs der Kunden",
           "fr-FR": "Créations des clients",
-          "da-DK": "Kunders design",
+          "da-DK": "Kundedesigns",
           "cs-CZ": "Návrhy zákazníků",
           "ar-EG": "تصاميم العملاء",
           "zh-CN": "顾客的设计",
@@ -2645,7 +2645,7 @@
             },
             "label": {
               "en-US": "Design code",
-              "de-DE": "Entwurfscode",
+              "de-DE": "Designcode",
               "fr-FR": "Code de la création",
               "da-DK": "Designkode",
               "cs-CZ": "Kód návrhu",
@@ -2705,7 +2705,7 @@
             "nullable": true,
             "label": {
               "en-US": "Ready-made design",
-              "de-DE": "Fertiger Entwurf",
+              "de-DE": "Fertiges Design",
               "fr-FR": "Modèle prêt à l’emploi",
               "da-DK": "Færdigt design",
               "cs-CZ": "Hotový návrh",
@@ -2845,7 +2845,7 @@
                     "fr-FR": "Commandée",
                     "da-DK": "Bestilt",
                     "cs-CZ": "Objednáno",
-                    "ar-EG": "مطلوب",
+                    "ar-EG": "تم طلبه",
                     "zh-CN": "已下单",
                     "zh-TW": "已下單"
                   }
@@ -2882,7 +2882,7 @@
               "da-DK": "E-mail til linket",
               "cs-CZ": "E-mail k odkazu",
               "ar-EG": "البريد الإلكتروني للرابط",
-              "zh-CN": "接收链接的电子邮件",
+              "zh-CN": "接收链接的邮箱",
               "zh-TW": "接收連結的電子郵件"
             }
           },
@@ -2912,7 +2912,7 @@
               "da-DK": "Sidst ændret",
               "cs-CZ": "Naposledy změněno",
               "ar-EG": "آخر تغيير",
-              "zh-CN": "最后更改",
+              "zh-CN": "最后修改",
               "zh-TW": "最後變更"
             }
           }
@@ -2936,7 +2936,7 @@
         ],
         "label": {
           "en-US": "Design version",
-          "de-DE": "Entwurfsversion",
+          "de-DE": "Designversion",
           "fr-FR": "Version de la création",
           "da-DK": "Designversion",
           "cs-CZ": "Verze návrhu",
@@ -2946,7 +2946,7 @@
         },
         "labelPlural": {
           "en-US": "Design versions",
-          "de-DE": "Entwurfsversionen",
+          "de-DE": "Designversionen",
           "fr-FR": "Versions des créations",
           "da-DK": "Designversioner",
           "cs-CZ": "Verze návrhů",
@@ -2982,7 +2982,7 @@
             "references": "designs",
             "label": {
               "en-US": "Design",
-              "de-DE": "Entwurf",
+              "de-DE": "Design",
               "fr-FR": "Création",
               "da-DK": "Design",
               "cs-CZ": "Návrh",
@@ -3021,7 +3021,7 @@
             "label": {
               "en-US": "What it was made from",
               "de-DE": "Woraus sie gemacht wurde",
-              "fr-FR": "Ce à partir de quoi elle est faite",
+              "fr-FR": "Point de départ",
               "da-DK": "Hvad den blev lavet ud fra",
               "cs-CZ": "Z čeho byla vytvořena",
               "ar-EG": "ما صُنعت منه",
@@ -3046,7 +3046,7 @@
             },
             "label": {
               "en-US": "Proof",
-              "de-DE": "Probedruck",
+              "de-DE": "Korrekturabzug",
               "fr-FR": "Épreuve",
               "da-DK": "Korrektur",
               "cs-CZ": "Náhled",
@@ -3178,7 +3178,7 @@
             "references": "design_versions",
             "label": {
               "en-US": "Design version",
-              "de-DE": "Entwurfsversion",
+              "de-DE": "Designversion",
               "fr-FR": "Version de la création",
               "da-DK": "Designversion",
               "cs-CZ": "Verze návrhu",
@@ -3571,7 +3571,7 @@
                 "labels": {
                   "planned": {
                     "en-US": "Worked out",
-                    "de-DE": "Ausgeführt",
+                    "de-DE": "Berechnet",
                     "fr-FR": "Calculée",
                     "da-DK": "Udregnet",
                     "cs-CZ": "Vypočteno",
@@ -3581,7 +3581,7 @@
                   },
                   "unplanned": {
                     "en-US": "To work out",
-                    "de-DE": "Noch auszuführen",
+                    "de-DE": "Noch zu berechnen",
                     "fr-FR": "À calculer",
                     "da-DK": "Skal udregnes",
                     "cs-CZ": "K výpočtu",
@@ -3722,9 +3722,9 @@
             "nullable": true,
             "label": {
               "en-US": "Held until",
-              "de-DE": "Gehalten bis",
-              "fr-FR": "Retenue jusqu’au",
-              "da-DK": "Holdt til",
+              "de-DE": "Reserviert bis",
+              "fr-FR": "Réservée jusqu’au",
+              "da-DK": "Reserveret til",
               "cs-CZ": "Drženo do",
               "ar-EG": "محجوز حتى",
               "zh-CN": "保留至",
@@ -3737,7 +3737,7 @@
         "ref": "design_mails",
         "label": {
           "en-US": "Design e-mail",
-          "de-DE": "Entwurfs-E-Mail",
+          "de-DE": "Design-E-Mail",
           "fr-FR": "E-mail de création",
           "da-DK": "Design-e-mail",
           "cs-CZ": "E-mail k návrhu",
@@ -3747,7 +3747,7 @@
         },
         "labelPlural": {
           "en-US": "Design e-mails",
-          "de-DE": "Entwurfs-E-Mails",
+          "de-DE": "Design-E-Mails",
           "fr-FR": "E-mails de création",
           "da-DK": "Design-e-mails",
           "cs-CZ": "E-maily k návrhům",
@@ -3772,7 +3772,7 @@
                 "labels": {
                   "design-link": {
                     "en-US": "The design’s private link",
-                    "de-DE": "Privater Link zum Entwurf",
+                    "de-DE": "Privater Link zum Design",
                     "fr-FR": "Lien privé vers la création",
                     "da-DK": "Designets private link",
                     "cs-CZ": "Soukromý odkaz na návrh",
@@ -3918,7 +3918,7 @@
             "nullable": true,
             "label": {
               "en-US": "Design",
-              "de-DE": "Entwurf",
+              "de-DE": "Design",
               "fr-FR": "Création",
               "da-DK": "Design",
               "cs-CZ": "Návrh",
@@ -3937,12 +3937,12 @@
       "name": "Customiser designer",
       "names": {
         "en-US": "Customiser designer",
-        "de-DE": "Customiser-Gestaltung",
+        "de-DE": "Customiser-Gestalter",
         "fr-FR": "Conception Customiser",
         "da-DK": "Customiser-designer",
         "cs-CZ": "Návrhář Customiseru",
         "ar-EG": "مصمم Customiser",
-        "zh-CN": "Customiser 设计员",
+        "zh-CN": "Customiser 设计师",
         "zh-TW": "Customiser 設計員"
       },
       "permissions": [
@@ -4006,7 +4006,7 @@
       "name": "Customiser reader",
       "names": {
         "en-US": "Customiser reader",
-        "de-DE": "Customiser lesen",
+        "de-DE": "Customiser-Leser",
         "fr-FR": "Lecture Customiser",
         "da-DK": "Customiser-læser",
         "cs-CZ": "Čtenář Customiseru",
@@ -4072,7 +4072,7 @@
           "style": {
             "@t": {
               "en-US": "Sans",
-              "de-DE": "Serifenlos",
+              "de-DE": "Serifenlose Schrift",
               "fr-FR": "Sans empattements",
               "da-DK": "Grotesk",
               "cs-CZ": "Bezpatková",
@@ -4118,7 +4118,7 @@
               "en-US": "Slab serif",
               "de-DE": "Serifenbetonte Schrift",
               "fr-FR": "Égyptienne",
-              "da-DK": "Slab serif",
+              "da-DK": "Egyptienne",
               "cs-CZ": "Egyptienka",
               "ar-EG": "مذيّل كتلي",
               "zh-CN": "粗衬线体",
@@ -4223,13 +4223,13 @@
           "style": {
             "@t": {
               "en-US": "Monospaced",
-              "de-DE": "Dickte",
+              "de-DE": "Festbreitenschrift",
               "fr-FR": "Chasse fixe",
               "da-DK": "Fast bredde",
               "cs-CZ": "Neproporcionální",
               "ar-EG": "ثابت العرض",
-              "zh-CN": "等宽",
-              "zh-TW": "等寬"
+              "zh-CN": "等宽体",
+              "zh-TW": "等寬體"
             }
           },
           "weights": "100–800",
@@ -4624,7 +4624,7 @@
       "key": "customiser-design-link",
       "name": {
         "en-US": "A saved design’s link",
-        "de-DE": "Link zu einem gespeicherten Entwurf",
+        "de-DE": "Link zu einem gespeicherten Design",
         "fr-FR": "Lien d’une création enregistrée",
         "da-DK": "Link til et gemt design",
         "cs-CZ": "Odkaz na uložený návrh",
@@ -4670,12 +4670,12 @@
           "footer": "{{appName}}"
         },
         "de-DE": {
-          "subject": "Ihr Entwurf ist gespeichert",
+          "subject": "Ihr Design ist gespeichert",
           "blocks": [
             {
               "block": "email.heading",
               "data": {
-                "text": "Ihr Entwurf ist gespeichert"
+                "text": "Ihr Design ist gespeichert"
               }
             },
             {
@@ -4687,7 +4687,7 @@
             {
               "block": "email.button",
               "data": {
-                "label": "Entwurf öffnen",
+                "label": "Ihr Design öffnen",
                 "url": "{{app_url.design}}#{{design.link_token}}",
                 "onlyWith": "app_url.design"
               }
@@ -4695,7 +4695,7 @@
             {
               "block": "email.text",
               "data": {
-                "text": "Wir bewahren einen Entwurf 90 Tage nach seiner letzten Änderung auf, es sei denn, Sie bestellen ihn."
+                "text": "Wir bewahren ein Design 90 Tage nach seiner letzten Änderung auf, es sei denn, Sie bestellen es."
               }
             }
           ],
@@ -4727,7 +4727,7 @@
             {
               "block": "email.text",
               "data": {
-                "text": "Nous gardons une création 90 jours après sa dernière modification, sauf si vous la commandez."
+                "text": "Nous conservons votre création 90 jours après sa dernière modification, sauf si vous la commandez."
               }
             }
           ],
@@ -4791,7 +4791,7 @@
             {
               "block": "email.text",
               "data": {
-                "text": "Návrh uchováváme 90 dní od poslední změny, pokud si ho neobjednáte."
+                "text": "Pokud si návrh neobjednáte, uchováme ho 90 dní od poslední změny."
               }
             }
           ],
@@ -4855,7 +4855,7 @@
             {
               "block": "email.text",
               "data": {
-                "text": "设计在最后一次更改后保留 90 天，除非你下单。"
+                "text": "设计自最后一次修改起保留 90 天；已下单的设计除外。"
               }
             }
           ],
@@ -4887,7 +4887,7 @@
             {
               "block": "email.text",
               "data": {
-                "text": "設計在最後一次變更後保留 90 天，除非你下單。"
+                "text": "我們會在設計最後一次變更後保留 90 天，除非你下單。"
               }
             }
           ],

@@ -67,15 +67,15 @@ export function tables(): Table[] {
         pk,
         choice(
           'length_unit',
-          { mm: w('Millimetres', 'Millimeter', 'Millimètres', 'Millimeter', 'Milimetry', 'المليمترات', '毫米', '公釐'), in: w('Inches', 'Zoll', 'Pouces', 'Tommer', 'Palce', 'البوصات', '英寸', '英寸') },
-          w('Sizes shown in', 'Maße anzeigen in', 'Tailles affichées en', 'Mål vist i', 'Rozměry zobrazit v', 'تُعرض المقاسات بـ', '尺寸显示单位', '尺寸顯示單位'),
+          { mm: w('Millimetres', 'Millimeter', 'Millimètres', 'Millimeter', 'Milimetry', 'المليمترات', '毫米', '公釐'), in: w('Inches', 'Zoll', 'Pouces', 'Tommer', 'Palce', 'البوصات', '英寸', '英吋') },
+          w('Sizes shown in', 'Maße anzeigen in', 'Tailles affichées en', 'Mål vist i', 'Zobrazovat rozměry v', 'تُعرض المقاسات بـ', '尺寸显示单位', '尺寸顯示單位'),
           { default: 'mm' },
         ),
-        col('default_bleed_mm', 'decimal', w('Bleed on a new page (mm)', 'Beschnitt einer neuen Seite (mm)', 'Fond perdu d’une nouvelle page (mm)', 'Beskæring på en ny side (mm)', 'Spadávka nové stránky (mm)', 'هامش القص لصفحة جديدة (مم)', '新页面的出血（毫米）', '新頁面的出血（公釐）'), { scale: 2, default: 3, rules: { validation: { min: 0, max: 20 } } }),
+        col('default_bleed_mm', 'decimal', w('Bleed on a new page (mm)', 'Beschnitt einer neuen Seite (mm)', 'Fond perdu d’une nouvelle page (mm)', 'Beskæring på en ny side (mm)', 'Spadávka nové stránky (mm)', 'هامش القص الزائد لصفحة جديدة (مم)', '新页面的出血（毫米）', '新頁面的出血（公釐）'), { scale: 2, default: 3, rules: { validation: { min: 0, max: 20 } } }),
         col('default_safe_mm', 'decimal', w('Safe line on a new page (mm)', 'Sicherheitsabstand einer neuen Seite (mm)', 'Marge de sécurité d’une nouvelle page (mm)', 'Sikkerhedsmargen på en ny side (mm)', 'Bezpečný okraj nové stránky (mm)', 'خط الأمان لصفحة جديدة (مم)', '新页面的安全线（毫米）', '新頁面的安全線（公釐）'), { scale: 2, default: 4, rules: { validation: { min: 0, max: 50 } } }),
-        col('one_colour_threshold', 'int', w('Where light becomes dark, to start with (%)', 'Ab wann Hell zu Dunkel wird, zu Beginn (%)', 'Seuil entre clair et foncé, au départ (%)', 'Hvor lyst bliver mørkt, til at begynde med (%)', 'Kde světlá přechází v tmavou, na začátku (%)', 'حيث يصبح الفاتح داكنًا، في البداية (%)', '明暗分界的初始值（%）', '明暗分界的初始值（%）'), { default: 50, rules: { validation: { min: 1, max: 99 } } }),
-        col('smallest_line_mm', 'decimal', w('Thinnest line the machine keeps (mm)', 'Dünnste Linie, die die Maschine schafft (mm)', 'Trait le plus fin que garde la machine (mm)', 'Tyndeste streg maskinen kan lave (mm)', 'Nejtenčí čára, kterou stroj zvládne (mm)', 'أدق خط تحتفظ به الآلة (مم)', '机器可保留的最细线条（毫米）', '機器可保留的最細線條（公釐）'), { scale: 2, default: 0.2, rules: { validation: { min: 0, max: 5 } } }),
-        col('min_dpi', 'int', w('Sharpness a picture needs at its printed size (dpi)', 'Nötige Bildschärfe in Druckgröße (dpi)', 'Netteté requise à la taille imprimée (dpi)', 'Skarphed et billede skal have i trykt størrelse (dpi)', 'Potřebná ostrost obrázku v tištěné velikosti (dpi)', 'الدقة التي تحتاجها الصورة بحجم الطباعة (نقطة/بوصة)', '图片在印刷尺寸下所需的清晰度（dpi）', '圖片在印刷尺寸下所需的清晰度（dpi）'), { default: 150, rules: { validation: { min: 50, max: 1200 } } }),
+        col('one_colour_threshold', 'int', w('Where light becomes dark, to start with (%)', 'Ab wann Hell zu Dunkel wird, zu Beginn (%)', 'Seuil entre clair et foncé, au départ (%)', 'Hvor lyst bliver mørkt, til at begynde med (%)', 'Výchozí hranice mezi světlou a tmavou (%)', 'حيث يصبح الفاتح داكنًا، في البداية (%)', '明暗分界的初始值（%）', '明暗分界的初始值（%）'), { default: 50, rules: { validation: { min: 1, max: 99 } } }),
+        col('smallest_line_mm', 'decimal', w('Thinnest line the machine keeps (mm)', 'Dünnste Linie, die die Maschine schafft (mm)', 'Trait le plus fin que garde la machine (mm)', 'Tyndeste streg, maskinen kan lave (mm)', 'Nejtenčí čára, kterou stroj zvládne (mm)', 'أدق خط تحتفظ به الآلة (مم)', '机器可保留的最细线条（毫米）', '機器可保留的最細線條（公釐）'), { scale: 2, default: 0.2, rules: { validation: { min: 0, max: 5 } } }),
+        col('min_dpi', 'int', w('Sharpness a picture needs at its printed size (dpi)', 'Nötige Bildschärfe in Druckgröße (dpi)', 'Netteté requise à la taille imprimée (dpi)', 'Skarphed et billede skal have i trykt størrelse (dpi)', 'Potřebná ostrost obrázku v tištěné velikosti (dpi)', 'الدقة التي تحتاجها الصورة بحجم الطباعة (dpi)', '图片在印刷尺寸下所需的清晰度（dpi）', '圖片在印刷尺寸下所需的清晰度（dpi）'), { default: 150, rules: { validation: { min: 50, max: 1200 } } }),
       ],
     },
     {
@@ -90,8 +90,8 @@ export function tables(): Table[] {
           'kind',
           {
             page: w('A flat page', 'Eine flache Seite', 'Une page à plat', 'En flad side', 'Plochá stránka', 'صفحة مسطحة', '平面页面', '平面頁面'),
-            piece: w('A flat piece', 'Ein flaches Teil', 'Une pièce plate', 'Et fladt stykke', 'Plochý díl', 'قطعة مسطحة', '平面部件', '平面部件'),
-            kit: w('A kit of pieces', 'Ein Bausatz aus Teilen', 'Un kit de pièces', 'Et sæt af dele', 'Stavebnice z dílů', 'مجموعة قطع', '成套部件', '成套部件'),
+            piece: w('A flat piece', 'Ein flaches Teil', 'Une pièce plate', 'Et fladt emne', 'Plochý díl', 'قطعة مسطحة', '平面部件', '平面部件'),
+            kit: w('A kit of pieces', 'Ein Bausatz aus Teilen', 'Un kit de pièces', 'Et sæt af emner', 'Stavebnice z dílů', 'مجموعة قطع', '成套部件', '套件'),
             printed: w('A 3D-printed item', 'Ein 3D-gedrucktes Stück', 'Un objet imprimé en 3D', 'En 3D-printet genstand', 'Předmět z 3D tisku', 'قطعة مطبوعة ثلاثية الأبعاد', '3D 打印件', '3D 列印件'),
           },
           w('Kind of base', 'Art der Grundform', 'Type de support', 'Type grundform', 'Druh základu', 'نوع القاعدة', '底材类型', '底材類型'),
@@ -100,11 +100,11 @@ export function tables(): Table[] {
         mm('height_mm', W.height),
         mm('depth_mm', w('Depth (mm)', 'Tiefe (mm)', 'Profondeur (mm)', 'Dybde (mm)', 'Hloubka (mm)', 'العمق (مم)', '深度（毫米）', '深度（公釐）'), { nullable: true }),
         mm('corner_mm', w('Corner radius (mm)', 'Eckenradius (mm)', 'Rayon des coins (mm)', 'Hjørneradius (mm)', 'Poloměr rohů (mm)', 'نصف قطر الزاوية (مم)', '圆角半径（毫米）', '圓角半徑（公釐）'), { nullable: true }),
-        mm('bleed_mm', w('Bleed (mm)', 'Beschnitt (mm)', 'Fond perdu (mm)', 'Beskæring (mm)', 'Spadávka (mm)', 'هامش القص (مم)', '出血（毫米）', '出血（公釐）'), { nullable: true }),
+        mm('bleed_mm', w('Bleed (mm)', 'Beschnitt (mm)', 'Fond perdu (mm)', 'Beskæring (mm)', 'Spadávka (mm)', 'هامش القص الزائد (مم)', '出血（毫米）', '出血（公釐）'), { nullable: true }),
         mm('safe_mm', w('Safe line (mm)', 'Sicherheitsabstand (mm)', 'Marge de sécurité (mm)', 'Sikkerhedsmargen (mm)', 'Bezpečný okraj (mm)', 'خط الأمان (مم)', '安全线（毫米）', '安全線（公釐）'), { nullable: true }),
         col('sides', 'int', w('Sides', 'Seiten', 'Faces', 'Sider', 'Strany', 'الأوجه', '面数', '面數'), { nullable: true, rules: { validation: { min: 1, max: 2 } } }),
         // The priced feature a design takes when it uses the second side ("Print the back").
-        link('back_feature_id', 'features', w('What a second side costs', 'Aufpreis für die zweite Seite', 'Option payante de la deuxième face', 'Tilvalg for den anden side', 'Příplatek za druhou stranu', 'الميزة المسعّرة للوجه الثاني', '第二面的加价选项', '第二面的加價選項')),
+        link('back_feature_id', 'features', w('What a second side costs', 'Aufpreis für die zweite Seite', 'Supplément pour la deuxième face', 'Pris for den anden side', 'Příplatek za druhou stranu', 'الميزة المسعّرة للوجه الثاني', '第二面的加价选项', '第二面的加價選項')),
         col('material', 'text', w('Material', 'Material', 'Matière', 'Materiale', 'Materiál', 'الخامة', '材料', '材料'), { maxLength: 80, nullable: true }),
         mm('thickness_mm', w('Thickness (mm)', 'Stärke (mm)', 'Épaisseur (mm)', 'Tykkelse (mm)', 'Tloušťka (mm)', 'السماكة (مم)', '厚度（毫米）', '厚度（公釐）'), { nullable: true }),
         // The piece's outline: an SVG Adminium cleans as it is stored, served to every visitor of a published base.
@@ -131,7 +131,7 @@ export function tables(): Table[] {
           'state',
           {
             draft: w('Not offered yet', 'Noch nicht angeboten', 'Pas encore proposé', 'Tilbydes ikke endnu', 'Zatím nenabízeno', 'غير معروض بعد', '尚未提供', '尚未提供'),
-            published: w('Offered for customising', 'Zum Gestalten angeboten', 'Proposé à personnaliser', 'Tilbydes til tilpasning', 'Nabízeno k úpravě', 'معروض للتخصيص', '已开放定制', '已開放訂製'),
+            published: w('Offered for customising', 'Zum Gestalten angeboten', 'Proposé à la personnalisation', 'Tilbydes til tilpasning', 'Nabízeno k úpravě', 'معروض للتخصيص', '已开放定制', '已開放訂製'),
           },
           w('Offered', 'Angeboten', 'Proposé', 'Tilbydes', 'Nabízeno', 'معروض', '提供状态', '提供狀態'),
           { default: 'draft' },
@@ -144,12 +144,12 @@ export function tables(): Table[] {
       ref: 'base_pieces',
       keyField: 'name',
       unique: [['base_id', 'code']],
-      ...both(W.piece, w('Pieces', 'Teile', 'Pièces', 'Dele', 'Díly', 'القطع', '部件', '部件')),
+      ...both(W.piece, w('Pieces', 'Teile', 'Pièces', 'Emner', 'Díly', 'القطع', '部件', '部件')),
       columns: [
         pk,
         app,
         link('base_id', 'bases', W.base, false),
-        col('code', 'text', w('Piece number', 'Teilnummer', 'Numéro de pièce', 'Delnummer', 'Číslo dílu', 'رقم القطعة', '部件编号', '部件編號'), { maxLength: 16 }),
+        col('code', 'text', w('Piece number', 'Teilnummer', 'Numéro de pièce', 'Emnenummer', 'Číslo dílu', 'رقم القطعة', '部件编号', '部件編號'), { maxLength: 16 }),
         name(),
         mm('width_mm', W.width),
         mm('height_mm', W.height),
@@ -157,7 +157,7 @@ export function tables(): Table[] {
         // The customer's pictures the file could not carry (a logo sent as a PNG, a JPEG or a PDF): `[{column, kind}]`, engraved from the customer's own file.
         col('left_out', 'json', w('Left out of the file', 'Nicht in der Datei', 'Absent du fichier', 'Ikke med i filen', 'Není v souboru', 'غير موجود في الملف', '未包含在文件中', '未包含在檔案中'), { nullable: true }),
         // The piece's cleaned SVG, served to every visitor as the base's is.
-        col('file', 'text', w('The piece’s outline', 'Kontur des Teils', 'Contour de la pièce', 'Delens omrids', 'Obrys dílu', 'مخطط القطعة', '部件轮廓', '部件輪廓'), { maxLength: 64, nullable: true, rules: { file: { accept: ['svg'], maxBytes: SHOP_FILE_BYTES } } }),
+        col('file', 'text', w('The piece’s outline', 'Kontur des Teils', 'Contour de la pièce', 'Emnets omrids', 'Obrys dílu', 'مخطط القطعة', '部件轮廓', '部件輪廓'), { maxLength: 64, nullable: true, rules: { file: { accept: ['svg'], maxBytes: SHOP_FILE_BYTES } } }),
         position,
       ],
     },
@@ -203,7 +203,7 @@ export function tables(): Table[] {
       // A shop's ready-made design. Its own table, apart from customers' designs: anyone may read these, and nobody may read those.
       ref: 'ready_designs',
       keyField: 'name',
-      ...both(W.readyDesign, w('Ready-made designs', 'Fertige Entwürfe', 'Modèles prêts à l’emploi', 'Færdige design', 'Hotové návrhy', 'التصاميم الجاهزة', '现成设计', '現成設計')),
+      ...both(W.readyDesign, w('Ready-made designs', 'Fertige Designs', 'Modèles prêts à l’emploi', 'Færdige designs', 'Hotové návrhy', 'التصاميم الجاهزة', '现成设计', '現成設計')),
       columns: [
         pk,
         app,
@@ -217,7 +217,7 @@ export function tables(): Table[] {
             draft: w('Hidden', 'Ausgeblendet', 'Masqué', 'Skjult', 'Skryto', 'مخفي', '已隐藏', '已隱藏'),
             published: w('Shown to customers', 'Für Kunden sichtbar', 'Visible des clients', 'Vises for kunder', 'Zobrazeno zákazníkům', 'ظاهر للعملاء', '向顾客展示', '向顧客展示'),
           },
-          w('Shown', 'Sichtbar', 'Visible', 'Vises', 'Zobrazení', 'الظهور', '展示', '展示'),
+          w('Shown', 'Sichtbar', 'Visible', 'Vises', 'Zobrazeno', 'الظهور', '展示', '展示'),
           { default: 'draft' },
         ),
         col('preview_file', 'text', w('Preview picture', 'Vorschaubild', 'Image d’aperçu', 'Eksempelbillede', 'Náhledový obrázek', 'صورة المعاينة', '预览图', '預覽圖'), { maxLength: 64, nullable: true, semantic: 'image', rules: { file: { accept: ['png', 'jpeg', 'webp'], maxBytes: 2 * 1024 * 1024 } } }),
@@ -246,7 +246,7 @@ export function tables(): Table[] {
           },
           w('Kind of part', 'Art des Elements', 'Type d’élément', 'Type element', 'Druh prvku', 'نوع الجزء', '元素类型', '元素類型'),
         ),
-        col('locked', 'bool', w('Set by the shop', 'Vom Geschäft festgelegt', 'Fixé par la boutique', 'Fastlagt af butikken', 'Určuje obchod', 'يحدده المتجر', '由店铺设定', '由店家設定'), { default: false }),
+        col('locked', 'bool', w('Set by the shop', 'Vom Shop festgelegt', 'Fixé par la boutique', 'Fastlagt af butikken', 'Určuje obchod', 'يحدده المتجر', '由店铺设定', '由店家設定'), { default: false }),
         col('required', 'bool', W.required, { default: false }),
         side,
         col('layout', 'text', w('Layout', 'Layout', 'Mise en page', 'Layout', 'Rozvržení', 'التخطيط', '版式', '版式'), { maxLength: 40, nullable: true }),
@@ -254,7 +254,7 @@ export function tables(): Table[] {
         link('piece_id', 'base_pieces', W.piece),
         ...box,
         rules(),
-        col('value', 'json', w('What it starts as', 'Anfangswert', 'Valeur de départ', 'Startværdi', 'Výchozí hodnota', 'القيمة الأولى', '初始内容', '初始內容'), { nullable: true }),
+        col('value', 'json', w('What it starts as', 'Anfangswert', 'Valeur de départ', 'Startværdi', 'Výchozí hodnota', 'القيمة المبدئية', '初始内容', '初始內容'), { nullable: true }),
         link('feature_id', 'features', W.feature),
         position,
       ],
@@ -283,7 +283,7 @@ export function tables(): Table[] {
       // A set of colours or finishes a part may offer: a design's own (Paper, Ink, Accent) or the shop's (the colours it prints in).
       ref: 'palettes',
       keyField: 'name',
-      ...both(w('Palette', 'Palette', 'Palette', 'Palet', 'Paleta', 'لوحة الألوان', '色板', '色票'), w('Palettes', 'Paletten', 'Palettes', 'Paletter', 'Palety', 'لوحات الألوان', '色板', '色票')),
+      ...both(w('Palette', 'Palette', 'Palette', 'Palet', 'Paleta', 'لوحة الألوان', '色板', '配色'), w('Palettes', 'Paletten', 'Palettes', 'Paletter', 'Palety', 'لوحات الألوان', '色板', '配色')),
       columns: [
         pk,
         app,
@@ -311,16 +311,16 @@ export function tables(): Table[] {
       columns: [
         pk,
         app,
-        link('palette_id', 'palettes', w('Palette', 'Palette', 'Palette', 'Palet', 'Paleta', 'لوحة الألوان', '色板', '色票'), false),
+        link('palette_id', 'palettes', w('Palette', 'Palette', 'Palette', 'Palet', 'Paleta', 'لوحة الألوان', '色板', '配色'), false),
         col('code', 'text', W.key, { maxLength: 40 }),
         choice(
           'role',
           {
-            paper: w('Paper', 'Papier', 'Papier', 'Papir', 'Papír', 'الورق', '纸张', '紙張'),
-            ink: w('Ink', 'Druckfarbe', 'Encre', 'Blæk', 'Inkoust', 'الحبر', '油墨', '油墨'),
-            accent: w('Accent', 'Akzent', 'Accent', 'Accent', 'Akcent', 'لون مميز', '强调色', '強調色'),
+            paper: w('Paper', 'Papier', 'Papier', 'Papir', 'Papír', 'الورق', '纸色', '紙色'),
+            ink: w('Ink', 'Druckfarbe', 'Encre', 'Trykfarve', 'Inkoust', 'الحبر', '墨色', '墨色'),
+            accent: w('Accent', 'Akzent', 'Accent', 'Accentfarve', 'Akcent', 'لون مميز', '强调色', '強調色'),
           },
-          w('Role in the design', 'Rolle im Entwurf', 'Rôle dans le modèle', 'Rolle i designet', 'Úloha v návrhu', 'الدور في التصميم', '在设计中的作用', '在設計中的作用'),
+          w('Role in the design', 'Rolle im Design', 'Rôle dans le modèle', 'Rolle i designet', 'Úloha v návrhu', 'الدور في التصميم', '在设计中的作用', '在設計中的作用'),
           { nullable: true },
         ),
         name(80),
@@ -333,7 +333,7 @@ export function tables(): Table[] {
       ref: 'features',
       keyField: 'name',
       unique: [['app', 'code']],
-      ...both(W.feature, w('Priced features', 'Aufpreis-Optionen', 'Options payantes', 'Tilvalg med pris', 'Placené volby', 'الميزات بسعر', '加价选项', '加價選項')),
+      ...both(W.feature, w('Priced features', 'Aufpreis-Optionen', 'Options payantes', 'Tilvalg med pris', 'Placené volby', 'الميزات المسعّرة', '加价选项', '加價選項')),
       columns: [pk, app, col('code', 'text', W.code, { maxLength: 40 }), name(), col('active', 'bool', W.active, { default: true })],
     },
     {
@@ -344,11 +344,11 @@ export function tables(): Table[] {
        * ordered goes 90 days after its last change, with its files.
        */
       ref: 'designs',
-      ...both(w('Customer’s design', 'Entwurf eines Kunden', 'Création d’un client', 'Kundes design', 'Návrh zákazníka', 'تصميم العميل', '顾客的设计', '顧客的設計'), w('Customers’ designs', 'Entwürfe der Kunden', 'Créations des clients', 'Kunders design', 'Návrhy zákazníků', 'تصاميم العملاء', '顾客的设计', '顧客的設計')),
+      ...both(w('Customer’s design', 'Design eines Kunden', 'Création d’un client', 'Kundedesign', 'Návrh zákazníka', 'تصميم العميل', '顾客的设计', '顧客的設計'), w('Customers’ designs', 'Designs der Kunden', 'Créations des clients', 'Kundedesigns', 'Návrhy zákazníků', 'تصاميم العملاء', '顾客的设计', '顧客的設計')),
       columns: [
         pk,
         app,
-        col('code', 'text', w('Design code', 'Entwurfscode', 'Code de la création', 'Designkode', 'Kód návrhu', 'رمز التصميم', '设计代码', '設計代碼'), { maxLength: 24, unique: true, nullable: true, rules: { code: { length: 16 } } }),
+        col('code', 'text', w('Design code', 'Designcode', 'Code de la création', 'Designkode', 'Kód návrhu', 'رمز التصميم', '设计代码', '設計代碼'), { maxLength: 24, unique: true, nullable: true, rules: { code: { length: 16 } } }),
         col('link_token', 'text', w('Private link', 'Privater Link', 'Lien privé', 'Privat link', 'Soukromý odkaz', 'الرابط الخاص', '私人链接', '私人連結'), { maxLength: 16, unique: true, nullable: true, rules: { code: { length: 16, hiddenFromStaff: true } } }),
         col('format', 'int', w('Saved in format', 'Gespeichert im Format', 'Enregistré au format', 'Gemt i format', 'Uloženo ve formátu', 'حُفظ بصيغة', '保存格式', '儲存格式'), { default: 1, rules: { validation: { min: 1, max: 99 } } }),
         link('ready_design_id', 'ready_designs', W.readyDesign),
@@ -370,15 +370,15 @@ export function tables(): Table[] {
           'state',
           {
             draft: w('Saved', 'Gespeichert', 'Enregistrée', 'Gemt', 'Uloženo', 'محفوظ', '已保存', '已儲存'),
-            ordered: w('Ordered', 'Bestellt', 'Commandée', 'Bestilt', 'Objednáno', 'مطلوب', '已下单', '已下單'),
+            ordered: w('Ordered', 'Bestellt', 'Commandée', 'Bestilt', 'Objednáno', 'تم طلبه', '已下单', '已下單'),
           },
           w('State', 'Status', 'État', 'Status', 'Stav', 'الحالة', '状态', '狀態'),
           { default: 'draft' },
         ),
-        col('email', 'text', w('E-mail for the link', 'E-Mail für den Link', 'E-mail pour le lien', 'E-mail til linket', 'E-mail k odkazu', 'البريد الإلكتروني للرابط', '接收链接的电子邮件', '接收連結的電子郵件'), { maxLength: 254, nullable: true, rules: { personal: true, normalize: 'email', validation: { format: 'email' } } }),
+        col('email', 'text', w('E-mail for the link', 'E-Mail für den Link', 'E-mail pour le lien', 'E-mail til linket', 'E-mail k odkazu', 'البريد الإلكتروني للرابط', '接收链接的邮箱', '接收連結的電子郵件'), { maxLength: 254, nullable: true, rules: { personal: true, normalize: 'email', validation: { format: 'email' } } }),
         col('created_at', 'timestamptz', w('Saved at', 'Gespeichert am', 'Enregistrée le', 'Gemt den', 'Uloženo', 'حُفظ في', '保存时间', '儲存時間'), { role: 'created_at' }),
         // Named as Adminium knows a row's last change, so every change stamps it (and the 90 days start again).
-        col('updated_at', 'timestamptz', w('Last changed', 'Zuletzt geändert', 'Dernière modification', 'Sidst ændret', 'Naposledy změněno', 'آخر تغيير', '最后更改', '最後變更'), { role: 'updated_at' }),
+        col('updated_at', 'timestamptz', w('Last changed', 'Zuletzt geändert', 'Dernière modification', 'Sidst ændret', 'Naposledy změněno', 'آخر تغيير', '最后修改', '最後變更'), { role: 'updated_at' }),
       ],
       expire: { after: 'updated_at', days: DESIGN_KEEP_DAYS, unless: { column: 'state', equals: 'ordered' } },
     },
@@ -386,15 +386,15 @@ export function tables(): Table[] {
       // The snapshot an order line makes, and the proof the shop sends of it: numbered, never changed by the customer.
       ref: 'design_versions',
       unique: [['design_id', 'version']],
-      ...both(w('Design version', 'Entwurfsversion', 'Version de la création', 'Designversion', 'Verze návrhu', 'نسخة التصميم', '设计版本', '設計版本'), w('Design versions', 'Entwurfsversionen', 'Versions des créations', 'Designversioner', 'Verze návrhů', 'نسخ التصميم', '设计版本', '設計版本')),
+      ...both(w('Design version', 'Designversion', 'Version de la création', 'Designversion', 'Verze návrhu', 'نسخة التصميم', '设计版本', '設計版本'), w('Design versions', 'Designversionen', 'Versions des créations', 'Designversioner', 'Verze návrhů', 'نسخ التصميم', '设计版本', '設計版本')),
       columns: [
         pk,
         app,
-        link('design_id', 'designs', w('Design', 'Entwurf', 'Création', 'Design', 'Návrh', 'التصميم', '设计', '設計'), false),
+        link('design_id', 'designs', w('Design', 'Design', 'Création', 'Design', 'Návrh', 'التصميم', '设计', '設計'), false),
         // 1, 2, 3 … per design. A plain number, not a running one: a table a posting writes into carries no number without gaps.
         col('version', 'int', w('Version', 'Version', 'Version', 'Version', 'Verze', 'النسخة', '版本', '版本'), { rules: { validation: { min: 1, max: 999 } } }),
-        col('values', 'json', w('What it was made from', 'Woraus sie gemacht wurde', 'Ce à partir de quoi elle est faite', 'Hvad den blev lavet ud fra', 'Z čeho byla vytvořena', 'ما صُنعت منه', '制作依据', '製作依據'), { nullable: true, rules: { personal: true } }),
-        col('proof_file', 'text', w('Proof', 'Probedruck', 'Épreuve', 'Korrektur', 'Náhled', 'البروفة', '校样', '校樣'), { maxLength: 64, nullable: true, rules: { file: { accept: ['png', 'jpeg', 'pdf'], maxBytes: 25 * 1024 * 1024 } } }),
+        col('values', 'json', w('What it was made from', 'Woraus sie gemacht wurde', 'Point de départ', 'Hvad den blev lavet ud fra', 'Z čeho byla vytvořena', 'ما صُنعت منه', '制作依据', '製作依據'), { nullable: true, rules: { personal: true } }),
+        col('proof_file', 'text', w('Proof', 'Korrekturabzug', 'Épreuve', 'Korrektur', 'Náhled', 'البروفة', '校样', '校樣'), { maxLength: 64, nullable: true, rules: { file: { accept: ['png', 'jpeg', 'pdf'], maxBytes: 25 * 1024 * 1024 } } }),
         col('note', 'text', w('Note', 'Notiz', 'Note', 'Note', 'Poznámka', 'ملاحظة', '备注', '備註'), { maxLength: 500, nullable: true }),
         col('made_by_id', 'text', w('Made by', 'Erstellt von', 'Faite par', 'Lavet af', 'Vytvořil', 'أنشأها', '制作人', '製作人'), { maxLength: 36, nullable: true, rules: { stamp: { set: 'user-id', on: 'create' } } }),
         col('made_at', 'timestamptz', w('Made at', 'Erstellt am', 'Faite le', 'Lavet den', 'Vytvořeno', 'أُنشئت في', '制作时间', '製作時間'), { role: 'created_at', default: 'now' }),
@@ -415,7 +415,7 @@ export function tables(): Table[] {
       columns: [
         pk,
         app,
-        link('version_id', 'design_versions', w('Design version', 'Entwurfsversion', 'Version de la création', 'Designversion', 'Verze návrhu', 'نسخة التصميم', '设计版本', '設計版本'), false),
+        link('version_id', 'design_versions', w('Design version', 'Designversion', 'Version de la création', 'Designversion', 'Verze návrhu', 'نسخة التصميم', '设计版本', '設計版本'), false),
         choice(
           'kind',
           {
@@ -455,13 +455,13 @@ export function tables(): Table[] {
         col('posting', 'text', w('Posting', 'Buchung', 'Écriture', 'Postering', 'Zaúčtování', 'القيد', '过账', '過帳'), { maxLength: 40 }),
         choice('phase', { reserve: w('Held', 'Reserviert', 'Réservée', 'Reserveret', 'Rezervováno', 'محجوز', '预留', '預留'), post: w('Posted', 'Gebucht', 'Passée', 'Posteret', 'Zaúčtováno', 'مُرحّل', '已过账', '已過帳'), reverse: w('Given back', 'Zurückgebucht', 'Annulée', 'Tilbageført', 'Stornováno', 'معكوس', '已冲回', '已沖回') }, w('Phase', 'Phase', 'Phase', 'Fase', 'Fáze', 'المرحلة', '阶段', '階段')),
         col('round', 'int', w('Round', 'Runde', 'Tour', 'Runde', 'Kolo', 'الجولة', '轮次', '輪次')),
-        choice('state', { planned: w('Worked out', 'Ausgeführt', 'Calculée', 'Udregnet', 'Vypočteno', 'محسوب', '已计算', '已計算'), unplanned: w('To work out', 'Noch auszuführen', 'À calculer', 'Skal udregnes', 'K výpočtu', 'بانتظار الحساب', '待计算', '待計算') }, w('State', 'Status', 'État', 'Status', 'Stav', 'الحالة', '状态', '狀態')),
+        choice('state', { planned: w('Worked out', 'Berechnet', 'Calculée', 'Udregnet', 'Vypočteno', 'محسوب', '已计算', '已計算'), unplanned: w('To work out', 'Noch zu berechnen', 'À calculer', 'Skal udregnes', 'K výpočtu', 'بانتظار الحساب', '待计算', '待計算') }, w('State', 'Status', 'État', 'Status', 'Stav', 'الحالة', '状态', '狀態')),
         col('rows', 'int', w('Rows', 'Zeilen', 'Lignes', 'Rækker', 'Řádky', 'الصفوف', '行数', '列數')),
         col('add_on_version', 'text', w('Add-on version', 'Add-on-Version', 'Version de l’extension', 'Tilføjelsens version', 'Verze doplňku', 'إصدار الإضافة', '插件版本', '附加元件版本'), { maxLength: 32 }),
         choice('origin', { staff: w('Staff', 'Team', 'Équipe', 'Personale', 'Personál', 'الموظفون', '员工', '員工'), public: w('A customer', 'Ein Kunde', 'Un client', 'En kunde', 'Zákazník', 'عميل', '顾客', '顧客'), system: w('Adminium', 'Adminium', 'Adminium', 'Adminium', 'Adminium', 'Adminium', 'Adminium', 'Adminium') }, w('Made by', 'Ausgelöst von', 'Origine', 'Udløst af', 'Původ', 'المصدر', '来源', '來源')),
         col('by', 'text', w('By', 'Von', 'Par', 'Af', 'Kým', 'بواسطة', '执行者', '執行者'), { maxLength: 64 }),
         col('at', 'timestamptz', w('At', 'Am', 'Le', 'Den', 'Kdy', 'في', '时间', '時間')),
-        col('held_until', 'timestamptz', w('Held until', 'Gehalten bis', 'Retenue jusqu’au', 'Holdt til', 'Drženo do', 'محجوز حتى', '保留至', '保留至'), { nullable: true }),
+        col('held_until', 'timestamptz', w('Held until', 'Reserviert bis', 'Réservée jusqu’au', 'Reserveret til', 'Drženo do', 'محجوز حتى', '保留至', '保留至'), { nullable: true }),
       ],
     },
   ];

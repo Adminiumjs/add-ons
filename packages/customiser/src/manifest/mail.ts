@@ -39,16 +39,16 @@ const enumOf = (ref: string, values: Record<string, Words>, label: Words, extra:
 export function mailTable(): Record<string, unknown> {
   return {
     ref: MAIL_TABLE,
-    label: w('Design e-mail', 'Entwurfs-E-Mail', 'E-mail de création', 'Design-e-mail', 'E-mail k návrhu', 'بريد التصميم', '设计邮件', '設計郵件'),
-    labelPlural: w('Design e-mails', 'Entwurfs-E-Mails', 'E-mails de création', 'Design-e-mails', 'E-maily k návrhům', 'رسائل التصاميم', '设计邮件', '設計郵件'),
+    label: w('Design e-mail', 'Design-E-Mail', 'E-mail de création', 'Design-e-mail', 'E-mail k návrhu', 'بريد التصميم', '设计邮件', '設計郵件'),
+    labelPlural: w('Design e-mails', 'Design-E-Mails', 'E-mails de création', 'Design-e-mails', 'E-maily k návrhům', 'رسائل التصاميم', '设计邮件', '設計郵件'),
     columns: [
       { ref: 'id', type: 'int', role: 'pk' },
-      enumOf('kind', { [LINK_KIND]: w('The design’s private link', 'Privater Link zum Entwurf', 'Lien privé vers la création', 'Designets private link', 'Soukromý odkaz na návrh', 'الرابط الخاص بالتصميم', '设计的私人链接', '設計的私人連結') }, w('Kind of mail', 'Art der E-Mail', 'Type d’e-mail', 'Type af mail', 'Druh e-mailu', 'نوع البريد', '邮件类型', '郵件類型')),
+      enumOf('kind', { [LINK_KIND]: w('The design’s private link', 'Privater Link zum Design', 'Lien privé vers la création', 'Designets private link', 'Soukromý odkaz na návrh', 'الرابط الخاص بالتصميم', '设计的私人链接', '設計的私人連結') }, w('Kind of mail', 'Art der E-Mail', 'Type d’e-mail', 'Type af mail', 'Druh e-mailu', 'نوع البريد', '邮件类型', '郵件類型')),
       enumOf('status', STATUS, w('Status', 'Status', 'Statut', 'Status', 'Stav', 'الحالة', '状态', '狀態'), { default: 'queued' }),
       { ref: 'to_address', type: 'text', maxLength: 254, nullable: true, rules: { personal: true }, label: w('Sent to', 'Gesendet an', 'Envoyé à', 'Sendt til', 'Odesláno na', 'أُرسل إلى', '发送至', '傳送至') },
       { ref: 'sent_at', type: 'timestamptz', nullable: true, label: w('Sent at', 'Gesendet am', 'Envoyé le', 'Sendt den', 'Odesláno', 'أُرسل في', '发送时间', '傳送時間') },
       { ref: 'error', type: 'text', maxLength: 500, nullable: true, label: w('What went wrong', 'Was schiefging', 'Ce qui n’a pas marché', 'Hvad gik galt', 'Co se nepovedlo', 'ما الخطأ', '出错原因', '出錯原因') },
-      { ref: 'design_id', type: 'fk', references: 'designs', nullable: true, label: w('Design', 'Entwurf', 'Création', 'Design', 'Návrh', 'التصميم', '设计', '設計') },
+      { ref: 'design_id', type: 'fk', references: 'designs', nullable: true, label: w('Design', 'Design', 'Création', 'Design', 'Návrh', 'التصميم', '设计', '設計') },
     ],
   };
 }
@@ -76,20 +76,20 @@ interface Letter {
 
 const LETTERS: Readonly<Record<string, Letter>> = {
   'en-US': { subject: 'Your design is saved', heading: 'Your design is saved', body: 'Here is your private link to come back to it. Nobody else can open it.', button: 'Open your design', keep: 'We keep a design for 90 days after its last change, unless you order it.' },
-  'de-DE': { subject: 'Ihr Entwurf ist gespeichert', heading: 'Ihr Entwurf ist gespeichert', body: 'Hier ist Ihr privater Link, um später weiterzumachen. Niemand sonst kann ihn öffnen.', button: 'Entwurf öffnen', keep: 'Wir bewahren einen Entwurf 90 Tage nach seiner letzten Änderung auf, es sei denn, Sie bestellen ihn.' },
-  'fr-FR': { subject: 'Votre création est enregistrée', heading: 'Votre création est enregistrée', body: 'Voici votre lien privé pour y revenir. Personne d’autre ne peut l’ouvrir.', button: 'Ouvrir votre création', keep: 'Nous gardons une création 90 jours après sa dernière modification, sauf si vous la commandez.' },
+  'de-DE': { subject: 'Ihr Design ist gespeichert', heading: 'Ihr Design ist gespeichert', body: 'Hier ist Ihr privater Link, um später weiterzumachen. Niemand sonst kann ihn öffnen.', button: 'Ihr Design öffnen', keep: 'Wir bewahren ein Design 90 Tage nach seiner letzten Änderung auf, es sei denn, Sie bestellen es.' },
+  'fr-FR': { subject: 'Votre création est enregistrée', heading: 'Votre création est enregistrée', body: 'Voici votre lien privé pour y revenir. Personne d’autre ne peut l’ouvrir.', button: 'Ouvrir votre création', keep: 'Nous conservons votre création 90 jours après sa dernière modification, sauf si vous la commandez.' },
   'da-DK': { subject: 'Dit design er gemt', heading: 'Dit design er gemt', body: 'Her er dit private link, så du kan vende tilbage til det. Ingen andre kan åbne det.', button: 'Åbn dit design', keep: 'Vi gemmer et design i 90 dage efter sidste ændring, medmindre du bestiller det.' },
-  'cs-CZ': { subject: 'Váš návrh je uložen', heading: 'Váš návrh je uložen', body: 'Tady je váš soukromý odkaz, abyste se k němu mohli vrátit. Nikdo jiný ho neotevře.', button: 'Otevřít návrh', keep: 'Návrh uchováváme 90 dní od poslední změny, pokud si ho neobjednáte.' },
+  'cs-CZ': { subject: 'Váš návrh je uložen', heading: 'Váš návrh je uložen', body: 'Tady je váš soukromý odkaz, abyste se k němu mohli vrátit. Nikdo jiný ho neotevře.', button: 'Otevřít návrh', keep: 'Pokud si návrh neobjednáte, uchováme ho 90 dní od poslední změny.' },
   'ar-EG': { subject: 'تم حفظ تصميمك', heading: 'تم حفظ تصميمك', body: 'إليك رابطك الخاص للعودة إليه. لا يستطيع أحد غيرك فتحه.', button: 'افتح تصميمك', keep: 'نحتفظ بالتصميم 90 يومًا بعد آخر تغيير له، ما لم تطلبه.' },
-  'zh-CN': { subject: '你的设计已保存', heading: '你的设计已保存', body: '这是你的私人链接，可随时回来继续。其他人无法打开。', button: '打开你的设计', keep: '设计在最后一次更改后保留 90 天，除非你下单。' },
-  'zh-TW': { subject: '你的設計已儲存', heading: '你的設計已儲存', body: '這是你的私人連結，可隨時回來繼續。其他人無法開啟。', button: '開啟你的設計', keep: '設計在最後一次變更後保留 90 天，除非你下單。' },
+  'zh-CN': { subject: '你的设计已保存', heading: '你的设计已保存', body: '这是你的私人链接，可随时回来继续。其他人无法打开。', button: '打开你的设计', keep: '设计自最后一次修改起保留 90 天；已下单的设计除外。' },
+  'zh-TW': { subject: '你的設計已儲存', heading: '你的設計已儲存', body: '這是你的私人連結，可隨時回來繼續。其他人無法開啟。', button: '開啟你的設計', keep: '我們會在設計最後一次變更後保留 90 天，除非你下單。' },
 };
 
 export function emailTemplates(): Record<string, unknown>[] {
   return [
     {
       key: LINK_TEMPLATE,
-      name: w('A saved design’s link', 'Link zu einem gespeicherten Entwurf', 'Lien d’une création enregistrée', 'Link til et gemt design', 'Odkaz na uložený návrh', 'رابط تصميم محفوظ', '已保存设计的链接', '已儲存設計的連結'),
+      name: w('A saved design’s link', 'Link zu einem gespeicherten Design', 'Lien d’une création enregistrée', 'Link til et gemt design', 'Odkaz na uložený návrh', 'رابط تصميم محفوظ', '已保存设计的链接', '已儲存設計的連結'),
       vars: ['app_url.design', 'design.link_token'],
       locales: Object.fromEntries(
         Object.entries(LETTERS).map(([tag, letter]) => [

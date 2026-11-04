@@ -21,13 +21,13 @@ export const OPEN_LICENCE = 'SIL Open Font License 1.1';
 
 const STYLE = {
   serif: w('Serif', 'Serifenschrift', 'Avec empattements', 'Antikva', 'Patková', 'مذيّل', '衬线体', '襯線體'),
-  sans: w('Sans', 'Serifenlos', 'Sans empattements', 'Grotesk', 'Bezpatková', 'غير مذيّل', '无衬线体', '無襯線體'),
+  sans: w('Sans', 'Serifenlose Schrift', 'Sans empattements', 'Grotesk', 'Bezpatková', 'غير مذيّل', '无衬线体', '無襯線體'),
   script: w('Handwriting', 'Handschrift', 'Manuscrite', 'Håndskrift', 'Psací', 'خط يدوي', '手写体', '手寫體'),
-  slab: w('Slab serif', 'Serifenbetonte Schrift', 'Égyptienne', 'Slab serif', 'Egyptienka', 'مذيّل كتلي', '粗衬线体', '粗襯線體'),
+  slab: w('Slab serif', 'Serifenbetonte Schrift', 'Égyptienne', 'Egyptienne', 'Egyptienka', 'مذيّل كتلي', '粗衬线体', '粗襯線體'),
   condensed: w('Condensed capitals', 'Schmale Versalien', 'Capitales étroites', 'Smalle versaler', 'Úzké verzálky', 'أحرف كبيرة مضغوطة', '窄体大写', '窄體大寫'),
   grotesque: w('Grotesque', 'Grotesk', 'Grotesque', 'Grotesk', 'Grotesk', 'غروتسك', '怪诞体', '怪誕體'),
   display: w('Display serif', 'Auszeichnungs-Serifenschrift', 'Titrage à empattements', 'Display-antikva', 'Titulková patková', 'مذيّل للعناوين', '标题衬线体', '標題襯線體'),
-  mono: w('Monospaced', 'Dickte', 'Chasse fixe', 'Fast bredde', 'Neproporcionální', 'ثابت العرض', '等宽', '等寬'),
+  mono: w('Monospaced', 'Festbreitenschrift', 'Chasse fixe', 'Fast bredde', 'Neproporcionální', 'ثابت العرض', '等宽体', '等寬體'),
 } satisfies Record<string, Words>;
 
 export interface StarterFont {
