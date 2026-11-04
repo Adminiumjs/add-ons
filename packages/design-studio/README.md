@@ -1,5 +1,8 @@
 # Design Studio
 
+> **Retired: replaced by the Customiser.** This is its last release. Its range takes Print Shop
+> 0.1 and 0.2, so a shop with it attached can still update the app; then detach and remove it.
+
 A small artwork editor that runs inside a print shop's own site. The customer
 picks a starting layout, edits on a canvas drawn at exactly the finished size
 with the bleed and safe-area guides on it, and sends the result into the order

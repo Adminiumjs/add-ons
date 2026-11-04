@@ -12,7 +12,7 @@
   "license": "AGPL-3.0-only",
   "description": {
     "key": "addon.design-studio.line",
-    "fallback": "A small artwork editor inside your site. Customers pick a starting layout and edit it on a canvas drawn at the finished size, with the bleed and safe area already on it."
+    "fallback": "Retired: replaced by the Customiser. A small artwork editor inside your site. Customers pick a starting layout and edit it on a canvas drawn at the finished size, with the bleed and safe area already on it."
   },
   "categories": ["artwork"],
 

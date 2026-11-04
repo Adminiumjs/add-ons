@@ -1,5 +1,8 @@
 # Live Personalizer
 
+> **Retired: replaced by the Customiser.** This is its last release. Its range takes Maker Shop
+> 0.1 and 0.2, so a shop with it attached can still update the app; then detach and remove it.
+
 The maker prepares a piece once — puts up its artwork and draws the areas a
 customer may change, with their limits — and from then on a shopper types their
 own words and watches them appear on the piece, at the right size, in the right

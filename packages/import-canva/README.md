@@ -1,5 +1,9 @@
 # Canva Import
 
+> **Retired: download your design from Canva as PDF Print and send the file.** This is its last
+> release. Its range takes Print Shop 0.1 and 0.2, so a shop with it attached can still update the
+> app; then detach and remove it.
+
 An **add-on** for [Print Shop](https://github.com/Adminiumjs/print-shop), the Adminium example
 app for a print works. It lets a customer bring in a design they made somewhere else instead of
 uploading a file: connect the account, pick the design, import it — and then **run the same

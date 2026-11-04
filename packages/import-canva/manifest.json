@@ -12,7 +12,7 @@
   "license": "AGPL-3.0-only",
   "description": {
     "key": "addon.import-canva.line",
-    "fallback": "Bring in a design you already made in Canva, and run the same checks on it as an upload."
+    "fallback": "Retired: download your design from Canva as PDF Print and send the file."
   },
   "categories": [
     "artwork"

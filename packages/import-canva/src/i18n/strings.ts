@@ -51,7 +51,7 @@ export const importCanvaStrings = {
     "addon.import-canva.act.3": "{when} · account authorized",
 
     "addon.import-canva.line":
-      "Bring in a design you already made in Canva, and run the same checks on it as an upload.",
+      "Retired: download your design from Canva as PDF Print and send the file.",
 
     "addon.import-canva.tile.title": "Bring it from Canva",
     "addon.import-canva.tile.body":
@@ -164,7 +164,7 @@ export const importCanvaStrings = {
     "addon.import-canva.act.3": "{when} · Konto bestätigt",
 
     "addon.import-canva.line":
-      "Bringen Sie ein Design mit, das Sie schon in Canva angelegt haben — wir prüfen es genauso wie einen Upload.",
+      "Eingestellt: Laden Sie Ihr Design in Canva als „PDF (Druck)“ herunter und senden Sie die Datei.",
 
     "addon.import-canva.tile.title": "Aus Canva übernehmen",
     "addon.import-canva.tile.body":
@@ -274,7 +274,7 @@ export const importCanvaStrings = {
     "addon.import-canva.act.3": "{when} · compte autorisé",
 
     "addon.import-canva.line":
-      "Reprenez un visuel que vous avez déjà réalisé dans Canva : nous lui faisons passer les mêmes contrôles qu'à un fichier envoyé.",
+      "Retiré : téléchargez votre visuel depuis Canva au format PDF Impression et envoyez le fichier.",
 
     "addon.import-canva.tile.title": "Le reprendre depuis Canva",
     "addon.import-canva.tile.body":
@@ -382,7 +382,7 @@ export const importCanvaStrings = {
     "addon.import-canva.act.3": "{when} · účet potvrzen",
 
     "addon.import-canva.line":
-      "Přineste si návrh, který jste už udělali v Canvě — zkontrolujeme ho stejně jako nahraný soubor.",
+      "Ukončeno: stáhněte si návrh z Canvy jako PDF k tisku a pošlete soubor.",
 
     "addon.import-canva.tile.title": "Převzít z Canvy",
     "addon.import-canva.tile.body":
@@ -486,7 +486,7 @@ export const importCanvaStrings = {
     "addon.import-canva.act.3": "{when} · konto godkendt",
 
     "addon.import-canva.line":
-      "Tag et design med, som du allerede har lavet i Canva — vi tjekker det på samme måde som en upload.",
+      "Udgået: Download dit design fra Canva som PDF-udskrift, og send filen.",
 
     "addon.import-canva.tile.title": "Hent det fra Canva",
     "addon.import-canva.tile.body":
@@ -590,7 +590,7 @@ export const importCanvaStrings = {
     "addon.import-canva.act.3": "{when} · 账号已授权",
 
     "addon.import-canva.line":
-      "把你已经在 Canva 里做好的设计带进来，我们会用与上传文件相同的方式检查它。",
+      "已停用：请在 Canva 中将设计下载为“PDF 打印”格式，然后发送文件。",
 
     "addon.import-canva.tile.title": "从 Canva 带进来",
     "addon.import-canva.tile.body":
@@ -690,7 +690,7 @@ export const importCanvaStrings = {
     "addon.import-canva.act.3": "{when} · 帳號已授權",
 
     "addon.import-canva.line":
-      "把你已經在 Canva 裡做好的設計帶進來，我們會用與上傳檔案相同的方式檢查它。",
+      "已停用：請在 Canva 中將設計下載為「PDF 列印」格式，然後傳送檔案。",
 
     "addon.import-canva.tile.title": "從 Canva 帶進來",
     "addon.import-canva.tile.body":
@@ -790,7 +790,7 @@ export const importCanvaStrings = {
     "addon.import-canva.act.3": "{when} · اعتُمد الحساب",
 
     "addon.import-canva.line":
-      "هات تصميمًا جاهزًا عملته في Canva، ونحن نفحصه بنفس الطريقة التي نفحص بها أي ملف مرفوع.",
+      "متوقفة: نزّل تصميمك من Canva بصيغة PDF للطباعة وأرسل الملف.",
 
     "addon.import-canva.tile.title": "أحضره من Canva",
     "addon.import-canva.tile.body":

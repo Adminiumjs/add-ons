@@ -50,7 +50,7 @@ export const designStudioStrings = {
     "addon.design-studio.act.3": "{when} · editor opened · {ref}",
 
     // Shelf and manage panel
-    "addon.design-studio.line": "A small artwork editor inside your site.",
+    "addon.design-studio.line": "Retired: replaced by the Customiser. A small artwork editor inside your site.",
     "addon.design-studio.desc":
       "Customers pick a starting layout and edit it on a canvas drawn at the finished size, with the bleed and safe area already on it. What comes out is the right size by construction.",
     "addon.design-studio.disconnect":
@@ -230,7 +230,7 @@ export const designStudioStrings = {
     "addon.design-studio.act.2": "{when} · Gestaltung für später gesichert",
     "addon.design-studio.act.3": "{when} · Editor geöffnet · {ref}",
 
-    "addon.design-studio.line": "Ein kleiner Gestaltungs-Editor auf Ihrer Website.",
+    "addon.design-studio.line": "Eingestellt: ersetzt durch den Customiser. Ein kleiner Gestaltungs-Editor auf Ihrer Website.",
     "addon.design-studio.desc":
       "Kundinnen und Kunden wählen ein Startformat und bearbeiten es auf einer Fläche in Endgröße, mit Anschnitt und Sicherheitsabstand darauf. Was herauskommt, hat schon durch die Bauart die richtige Größe.",
     "addon.design-studio.disconnect":
@@ -399,7 +399,7 @@ export const designStudioStrings = {
     "addon.design-studio.act.2": "{when} · création gardée pour plus tard",
     "addon.design-studio.act.3": "{when} · éditeur ouvert · {ref}",
 
-    "addon.design-studio.line": "Un petit éditeur graphique sur votre site.",
+    "addon.design-studio.line": "Retiré : remplacé par le Customiser. Un petit éditeur graphique sur votre site.",
     "addon.design-studio.desc":
       "Le client choisit une mise en page de départ et la modifie sur une zone tracée à la taille finie, avec le fond perdu et la zone de sécurité déjà dessinés. Ce qui en sort est à la bonne taille par construction.",
     "addon.design-studio.disconnect":
@@ -571,7 +571,7 @@ export const designStudioStrings = {
     "addon.design-studio.act.2": "{when} · návrh uložen na později",
     "addon.design-studio.act.3": "{when} · editor otevřen · {ref}",
 
-    "addon.design-studio.line": "Malý editor grafiky přímo na vašem webu.",
+    "addon.design-studio.line": "Ukončeno: nahrazeno doplňkem Customiser. Malý editor grafiky přímo na vašem webu.",
     "addon.design-studio.desc":
       "Zákazník si vybere výchozí předlohu a upraví ji na ploše vykreslené v čisté velikosti, se spadávkou i bezpečnou zónou. To, co z toho vyjde, má správnou velikost už svou stavbou.",
     "addon.design-studio.disconnect":
@@ -738,7 +738,7 @@ export const designStudioStrings = {
     "addon.design-studio.act.2": "{when} · design gemt til senere",
     "addon.design-studio.act.3": "{when} · editor åbnet · {ref}",
 
-    "addon.design-studio.line": "En lille grafikeditor inde på jeres eget site.",
+    "addon.design-studio.line": "Udgået: erstattet af Customiser. En lille grafikeditor inde på jeres eget site.",
     "addon.design-studio.desc":
       "Kunden vælger en startskabelon og retter den på en flade tegnet i færdig størrelse, med beskæring og sikkerhedsmargen på. Det, der kommer ud, har den rigtige størrelse i kraft af sin opbygning.",
     "addon.design-studio.disconnect":
@@ -905,7 +905,7 @@ export const designStudioStrings = {
     "addon.design-studio.act.2": "{when} · 稿件已存待用",
     "addon.design-studio.act.3": "{when} · 打开编辑器 · {ref}",
 
-    "addon.design-studio.line": "站内的小型图稿编辑器。",
+    "addon.design-studio.line": "已停用：已由 Customiser 取代。站内的小型图稿编辑器。",
     "addon.design-studio.desc":
       "顾客选一个起始版式，在按成品尺寸绘制的画布上编辑，出血和安全区已经画好。做出来的稿件，尺寸天生就是对的。",
     "addon.design-studio.disconnect":
@@ -1066,7 +1066,7 @@ export const designStudioStrings = {
     "addon.design-studio.act.2": "{when} · 稿件已存待用",
     "addon.design-studio.act.3": "{when} · 開啟編輯器 · {ref}",
 
-    "addon.design-studio.line": "站內的小型圖稿編輯器。",
+    "addon.design-studio.line": "已停用：已由 Customiser 取代。站內的小型圖稿編輯器。",
     "addon.design-studio.desc":
       "顧客挑一個起始版型，在按成品尺寸繪製的畫布上編輯，出血與安全區已經畫好。做出來的稿件，尺寸天生就是對的。",
     "addon.design-studio.disconnect":
@@ -1227,7 +1227,7 @@ export const designStudioStrings = {
     "addon.design-studio.act.2": "{when} · حُفظ تصميم لوقت لاحق",
     "addon.design-studio.act.3": "{when} · فُتح المحرِّر · {ref}",
 
-    "addon.design-studio.line": "محرِّر تصميم صغير داخل موقعكم.",
+    "addon.design-studio.line": "متوقفة: حلّت محلها أداة Customiser. محرِّر تصميم صغير داخل موقعكم.",
     "addon.design-studio.desc":
       "يختار العميل تخطيطًا للبداية ويعدِّله على مساحة مرسومة بالمقاس النهائي، وعليها هامش القص والمنطقة الآمنة. ما يخرج منها مقاسه صحيح بحكم طريقة بنائه.",
     "addon.design-studio.disconnect":

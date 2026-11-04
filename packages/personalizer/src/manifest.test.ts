@@ -407,3 +407,29 @@ describe('the facts this add-on hands its hosts cover what it declares', () => {
     }
   });
 });
+
+/**
+ * RETIRED. This is its last release: the Customiser makes it now, so the shelf and a shop's
+ * list of installed add-ons say so first, in every language, and the range is
+ * widened so it never stops the app it is attached to from updating.
+ */
+describe('a retired add-on', () => {
+  it('says it is retired, in every locale', () => {
+    expect(manifest.description.fallback.startsWith('Retired: replaced by the Customiser.')).toBe(true);
+    const said: Record<string, string> = {
+      'en-US': 'Retired:',
+      'de-DE': 'Eingestellt:',
+      'fr-FR': 'Retiré :',
+      'cs-CZ': 'Ukončeno:',
+      'da-DK': 'Udgået:',
+      'zh-CN': '已停用：',
+      'zh-TW': '已停用：',
+      'ar-EG': 'متوقفة:',
+    };
+    const bundles = personalizerStrings as Record<string, Record<string, string>>;
+    expect(Object.keys(bundles).sort()).toEqual(Object.keys(said).sort());
+    for (const [locale, word] of Object.entries(said)) {
+      expect(bundles[locale]!['addon.personalizer.line']!.startsWith(word), locale).toBe(true);
+    }
+  });
+});

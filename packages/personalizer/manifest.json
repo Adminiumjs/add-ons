@@ -12,7 +12,7 @@
   "license": "AGPL-3.0-only",
   "description": {
     "key": "addon.personalizer.line",
-    "fallback": "A live picture of what the customer is asking for. You draw the areas a customer may change once; after that they type their own words and watch them appear on the piece, and you get a machine-ready file with the letters already turned into outlines."
+    "fallback": "Retired: replaced by the Customiser. A live picture of what the customer is asking for. You draw the areas a customer may change once; after that they type their own words and watch them appear on the piece, and you get a machine-ready file with the letters already turned into outlines."
   },
   "categories": ["artwork"],
 

@@ -61,7 +61,7 @@ export type LocaleTag = (typeof LOCALE_TAGS)[number];
 export const personalizerStrings = {
   'en-US': {
     // ── the host's chrome: shelf, connect dialog, manage drawer ──────────────
-    'addon.personalizer.line': 'A live picture of what the customer is asking for.',
+    'addon.personalizer.line': 'Retired: replaced by the Customiser. A live picture of what the customer is asking for.',
     'addon.personalizer.what':
       'You draw the areas a customer may change once. After that they type their own words and watch them appear on the piece, at the right size, in the right place.',
     'addon.personalizer.desc':
@@ -271,7 +271,7 @@ export const personalizerStrings = {
   },
 
   'de-DE': {
-    'addon.personalizer.line': 'Ein lebendiges Bild dessen, was die Kundschaft möchte.',
+    'addon.personalizer.line': 'Eingestellt: ersetzt durch den Customiser. Ein lebendiges Bild dessen, was die Kundschaft möchte.',
     'addon.personalizer.what':
       'Sie legen einmal fest, welche Flächen geändert werden dürfen. Danach tippt die Kundschaft ihre eigenen Worte und sieht sie sofort auf dem Stück, in der richtigen Größe, an der richtigen Stelle.',
     'addon.personalizer.desc':
@@ -474,7 +474,7 @@ export const personalizerStrings = {
   },
 
   'fr-FR': {
-    'addon.personalizer.line': 'Une image vivante de ce que le client demande.',
+    'addon.personalizer.line': 'Retiré : remplacé par le Customiser. Une image vivante de ce que le client demande.',
     'addon.personalizer.what':
       'Vous délimitez une fois les zones qu’un client peut changer. Ensuite il tape ses propres mots et les voit apparaître sur la pièce, à la bonne taille, au bon endroit.',
     'addon.personalizer.desc':
@@ -677,7 +677,7 @@ export const personalizerStrings = {
   },
 
   'cs-CZ': {
-    'addon.personalizer.line': 'Živý obrázek toho, co si zákazník přeje.',
+    'addon.personalizer.line': 'Ukončeno: nahrazeno doplňkem Customiser. Živý obrázek toho, co si zákazník přeje.',
     'addon.personalizer.what':
       'Jednou vymezíte plochy, které smí zákazník měnit. Pak si napíše vlastní slova a hned je vidí na kusu, ve správné velikosti a na správném místě.',
     'addon.personalizer.desc':
@@ -880,7 +880,7 @@ export const personalizerStrings = {
   },
 
   'da-DK': {
-    'addon.personalizer.line': 'Et levende billede af det, kunden beder om.',
+    'addon.personalizer.line': 'Udgået: erstattet af Customiser. Et levende billede af det, kunden beder om.',
     'addon.personalizer.what':
       'Du tegner én gang de felter, en kunde må ændre. Derefter skriver kunden sine egne ord og ser dem stå på emnet, i den rigtige størrelse og på det rigtige sted.',
     'addon.personalizer.desc':
@@ -1083,7 +1083,7 @@ export const personalizerStrings = {
   },
 
   'zh-CN': {
-    'addon.personalizer.line': '把顾客想要的样子实时画出来。',
+    'addon.personalizer.line': '已停用：已由 Customiser 取代。把顾客想要的样子实时画出来。',
     'addon.personalizer.what':
       '您只需划定一次顾客可以改动的区域。之后顾客自己输入文字，就能立刻看到它出现在成品上，大小合适、位置正确。',
     'addon.personalizer.desc':
@@ -1276,7 +1276,7 @@ export const personalizerStrings = {
   },
 
   'zh-TW': {
-    'addon.personalizer.line': '把顧客想要的樣子即時畫出來。',
+    'addon.personalizer.line': '已停用：已由 Customiser 取代。把顧客想要的樣子即時畫出來。',
     'addon.personalizer.what':
       '您只需劃定一次顧客可以更動的區域。之後顧客自己輸入文字，就能立刻看到它出現在成品上，大小合適、位置正確。',
     'addon.personalizer.desc':
@@ -1469,7 +1469,7 @@ export const personalizerStrings = {
   },
 
   'ar-EG': {
-    'addon.personalizer.line': 'صورة حيّة لما يطلبه العميل.',
+    'addon.personalizer.line': 'متوقفة: حلّت محلها أداة Customiser. صورة حيّة لما يطلبه العميل.',
     'addon.personalizer.what':
       'ترسم مرة واحدة المساحات التي يُسمح للعميل بتغييرها. بعدها يكتب كلماته بنفسه ويراها تظهر على القطعة، بالحجم الصحيح وفي المكان الصحيح.',
     'addon.personalizer.desc':
