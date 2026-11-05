@@ -36,6 +36,7 @@ import {
   YEARS,
   daySetFor,
   expandSet,
+  weekendNoteKey,
 } from "./daysets.ts";
 import { strings } from "./i18n/strings.ts";
 
@@ -73,6 +74,10 @@ describe("the pack is a pack at all", () => {
     expect(daySetFor("FR", "alsace-moselle")?.days.length).toBe(13);
     expect(daySetFor("FR", "no-such-area")).toBeUndefined();
     expect(daySetFor("XX")).toBeUndefined();
+    // Britain has a regional set and NO national one: "GB" alone must not
+    // quietly answer with England and Wales for a business in Scotland.
+    expect(daySetFor("GB")).toBeUndefined();
+    expect(daySetFor("GB", "england-and-wales")?.days.length).toBe(8);
   });
 });
 
@@ -278,6 +283,107 @@ describe("the anchors: dates a reader can check against a calendar", () => {
     expect(danish.map((day) => day.name).join(" ")).not.toContain("bededag");
   });
 
+  /*
+   * ENGLAND AND WALES, EVERY DAY OF BOTH REVIEWED YEARS. Each date below was
+   * checked by hand against GOV.UK's published list, "UK bank holidays"
+   * (https://www.gov.uk/bank-holidays, division "england-and-wales", read
+   * 2026-11-05), and the names are the titles that list gives, with
+   * "(substitute day)" where it notes one.
+   */
+  it("England and Wales 2026 — Boxing Day on a Saturday moves to Monday the 28th", () => {
+    // GOV.UK 2026: 1 Jan New Year's Day; 3 Apr Good Friday; 6 Apr Easter
+    // Monday; 4 May Early May bank holiday; 25 May Spring bank holiday; 31 Aug
+    // Summer bank holiday; 25 Dec Christmas Day; 28 Dec Boxing Day (substitute day).
+    expect(expandSet(daySetFor("GB", "england-and-wales")!, 2026)).toEqual([
+      { date: "2026-01-01", name: "New Year's Day" },
+      { date: "2026-04-03", name: "Good Friday" },
+      { date: "2026-04-06", name: "Easter Monday" },
+      { date: "2026-05-04", name: "Early May bank holiday" },
+      { date: "2026-05-25", name: "Spring bank holiday" },
+      { date: "2026-08-31", name: "Summer bank holiday" },
+      { date: "2026-12-25", name: "Christmas Day" },
+      { date: "2026-12-28", name: "Boxing Day (substitute day)" },
+    ]);
+  });
+
+  it("England and Wales 2027 — Christmas on a Saturday moves both days", () => {
+    // GOV.UK 2027: 1 Jan New Year's Day; 26 Mar Good Friday; 29 Mar Easter
+    // Monday; 3 May Early May bank holiday; 31 May Spring bank holiday; 30 Aug
+    // Summer bank holiday; 27 Dec Christmas Day (substitute day); 28 Dec Boxing
+    // Day (substitute day). 31 May is the FIFTH Monday of May 2027 and 30 Aug
+    // the fifth of August, which is what `nth: -1` is for.
+    expect(expandSet(daySetFor("GB", "england-and-wales")!, 2027)).toEqual([
+      { date: "2027-01-01", name: "New Year's Day" },
+      { date: "2027-03-26", name: "Good Friday" },
+      { date: "2027-03-29", name: "Easter Monday" },
+      { date: "2027-05-03", name: "Early May bank holiday" },
+      { date: "2027-05-31", name: "Spring bank holiday" },
+      { date: "2027-08-30", name: "Summer bank holiday" },
+      { date: "2027-12-27", name: "Christmas Day (substitute day)" },
+      { date: "2027-12-28", name: "Boxing Day (substitute day)" },
+    ]);
+  });
+
+  it("moves the weekend days the way the statute did in the years it has already done it", () => {
+    /*
+     * NOT SHIPPED YEARS — the pack offers only `YEARS` — but the move is a rule,
+     * and a rule is pinned on every shape it has. The two reviewed years show
+     * two of the four; these past years, from the same GOV.UK list, show the
+     * other two, which are the ones a wrong placing order gets wrong:
+     *
+     *   2021 · Christmas Sat, Boxing Day Sun → 27 Dec and 28 Dec, substitutes.
+     *   2022 · New Year's Day Sat → Mon 3 Jan. Christmas Sun, Boxing Day Mon →
+     *          Boxing Day stays on the 26th and Christmas steps over it to the 27th.
+     *   2023 · New Year's Day Sun → Mon 2 Jan.
+     */
+    const ew = daySetFor("GB", "england-and-wales")!;
+    const of = (year: number) => expandSet(ew, year);
+    expect(of(2021).slice(-2)).toEqual([
+      { date: "2021-12-27", name: "Christmas Day (substitute day)" },
+      { date: "2021-12-28", name: "Boxing Day (substitute day)" },
+    ]);
+    expect(of(2022)[0]).toEqual({ date: "2022-01-03", name: "New Year's Day (substitute day)" });
+    expect(of(2022).slice(-2)).toEqual([
+      { date: "2022-12-26", name: "Boxing Day" },
+      { date: "2022-12-27", name: "Christmas Day (substitute day)" },
+    ]);
+    expect(of(2023)[0]).toEqual({ date: "2023-01-02", name: "New Year's Day (substitute day)" });
+  });
+
+  it("never lands an England and Wales day at the weekend, in any year of a long run", () => {
+    // The point of the move, as a property: every day of the set is a weekday,
+    // and still eight distinct ones, across every weekday Christmas can fall on.
+    const ew = daySetFor("GB", "england-and-wales")!;
+    for (let year = 2020; year <= 2040; year += 1) {
+      const days = expandSet(ew, year);
+      expect(new Set(days.map((day) => day.date)).size, String(year)).toBe(8);
+      for (const day of days) {
+        const weekday = weekdayOf(epochDayOf(day.date)!);
+        expect(weekday === 0 || weekday === 6, `${day.name} ${day.date}`).toBe(false);
+      }
+    }
+  });
+
+  it("leaves every other set's weekend days exactly where they fall", () => {
+    // 4 July 2026 and 26 December 2026 are Saturdays. A move that leaked out of
+    // the one set that asks for it would shift both, and would rename them.
+    expect(dayNamed("US", undefined, 2026, "Independence Day")).toBe("2026-07-04");
+    expect(dayNamed("DE", undefined, 2026, "Zweiter Weihnachtstag")).toBe("2026-12-26");
+    expect(dayNamed("CZ", undefined, 2026, "Druhý svátek vánoční")).toBe("2026-12-26");
+    for (const set of DAY_SETS) {
+      if (set.country === "GB") continue;
+      for (const day of set.days) expect(day.weekend, `${set.country} · ${day.name}`).toBeUndefined();
+    }
+  });
+
+  it("tells the picker which kind of set it is showing", () => {
+    for (const set of DAY_SETS) {
+      expect(weekendNoteKey(set), `${set.country}${set.region ? `/${set.region}` : ""}`).toBe(
+        set.country === "GB" ? "addon.holiday-calendars.pick.substitutes" : "addon.holiday-calendars.pick.noSubstitutes",
+      );
+    }
+  });
+
   it("puts every Easter-derived day on the weekday its name says", () => {
     /*
      * A NAME THAT CONTRADICTS ITS DATE, in four languages. Good Friday is a
@@ -299,6 +405,8 @@ describe("the anchors: dates a reader can check against a calendar", () => {
       ["Lundi de Pâques", 1],
       ["Anden påskedag", 1],
       ["Pfingstmontag", 1],
+      ["Good Friday", 5],
+      ["Easter Monday", 1],
       ["Lundi de Pentecôte", 1],
       ["Anden pinsedag", 1],
       ["Påskedag", 0],
@@ -321,6 +429,6 @@ describe("the anchors: dates a reader can check against a calendar", () => {
     const covered = DAY_SETS.flatMap((set) => expandSet(set, YEARS[0]!)).filter((day) =>
       MUST_BE.some(([name]) => name === day.name),
     );
-    expect(covered.length).toBeGreaterThan(15);
+    expect(covered.length).toBeGreaterThan(17);
   });
 });
