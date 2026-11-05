@@ -1,5 +1,13 @@
 # @adminium/add-on-customiser
 
+## 1.0.19
+
+### Patch Changes
+
+- af4bb56: The Customiser says how far a shop app's own role may go on each of its tables (`appGrants`), so an app's maker or pre-press role makes the proof and the production files without a Customiser role: it reads the shop's set-up, reads a customer's design with its words, logo and photo, adds a proof version and sets its proof file (never the words an order's posting copied), and makes, attaches and replaces a version's files. The settings, the postings and the log of mailed links are given to no app's role. Needs Adminium 0.3.47. The README lists the entries an app's role takes, the set-up page's address, and the set-up page's view a role needs to make files in a starter font.
+- 72a38b5: The panels on a product and on an order line say plainly when the reader's role is short of a right, instead of a blank drawing, "Designs: none yet" or "No design on this line": which of the Customiser's tables the role may not read, that the customer's words, logo and photo are hidden from it, and which Customiser role shows it all or makes the proof and the files. The order-line panel makes no proof or file from a design the role cannot read whole, and says so when making the files again is refused for want of the right to remove the earlier ones. The README lists what an app's role needs for each panel.
+- 2d08c4f: The order-line panel makes the proof and the production files in a starter font nobody uploaded yet, from the font file the package ships for it. A fresh install no longer stops at "The files need the font file of Manrope" before someone pressed "Add the starter fonts" in the set-up. The file is handed out beside the set-up page, so the person making the files needs that page's view (the Customiser designer role holds it).
+
 ## 1.0.18
 
 ## 1.0.17
