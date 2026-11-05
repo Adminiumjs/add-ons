@@ -12,6 +12,7 @@
  * An Adminium before the page-files route answers 404 for every file: the
  * button is then switched off and says it needs a newer Adminium.
  */
+import { STARTER_FONTS } from '../../manifest/fonts.ts';
 
 /** Where Adminium serves the files beside the set-up page's code. */
 export const PAGE_FILES = '/api/v1/add-ons/customiser/pages/customiser/files/';
@@ -58,4 +59,22 @@ export async function starterFile(family: string, get: typeof fetch = fetch): Pr
   if (!answer.ok) throw new StarterFileUnread(answer.status);
   const bytes = await answer.arrayBuffer();
   return new File([bytes], path.slice('fonts/'.length), { type: 'font/woff2' });
+}
+
+/**
+ * A starter family's font, read from beside the set-up page, for a starter
+ * row with no file of its own: the shop's screens make the proof and the
+ * production files in a starter font before anyone pressed "Add the starter
+ * fonts". None for a family this package does not ship, or a file Adminium
+ * does not hand over (an older Adminium, or a reader who may not open the
+ * set-up page): the files then say which font file is missing.
+ */
+export async function starterBytes(family: string, get: typeof fetch = fetch): Promise<Uint8Array | null> {
+  if (!STARTER_FONTS.some((font) => font.family === family)) return null;
+  try {
+    const answer = await get(`${PAGE_FILES}${starterFontPath(family)}`, { credentials: 'same-origin' });
+    return answer.ok ? new Uint8Array(await answer.arrayBuffer()) : null;
+  } catch {
+    return null;
+  }
 }

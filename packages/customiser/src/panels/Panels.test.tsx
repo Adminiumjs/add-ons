@@ -1,6 +1,8 @@
 // @vitest-environment happy-dom
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -168,6 +170,60 @@ describe('the panel on an order line', () => {
     await settle();
     expect(screen.getByRole('alert').textContent).toBe('The files need the font file of Manrope. Upload it in Fonts & finishes, then make them again.');
     expect(world.tables['version_files']).toEqual([]);
+  });
+
+  describe('in a starter font nobody uploaded yet', () => {
+    // The file this package ships for Manrope, as Adminium hands it out beside the set-up page.
+    const SHIPPED = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '../../fonts/Manrope.woff2'));
+    const BESIDE = '/api/v1/add-ons/customiser/pages/customiser/files/fonts/Manrope.woff2';
+    const asked: string[] = [];
+    beforeEach(() => {
+      asked.length = 0;
+      vi.stubGlobal('fetch', async (address: string) => {
+        asked.push(address);
+        return address === BESIDE ? new Response(SHIPPED) : new Response('', { status: 404 });
+      });
+      world.upload = () => ({ id: 'file_01HZY00000000000000000SVG1' });
+    });
+
+    it('makes the laser’s file of the sample coaster from the font file the package ships', async () => {
+      expect(world.tables['fonts']!.find((one) => one['family'] === 'Manrope')).toMatchObject({ starter: true, file: null });
+      render(<Line {...HOST} linked="91" />);
+      fireEvent.click(screen.getByRole('button', { name: 'Make the files' }));
+      await settle();
+      expect(screen.queryByRole('alert')).toBeNull();
+      expect(asked).toContain(BESIDE);
+      const made = world.calls.filter((call) => call.kind === 'create' && call.table === 'version_files').map((call) => call.values as Record<string, unknown>);
+      expect(made.map((one) => one['name'])).toEqual(['design-91-v2-engraved-walnut-coasters.svg']);
+    });
+
+    it('makes the sample business card’s proof and print files from it too', async () => {
+      seedCard();
+      seed('designs', [{ id: 92, app: 'printing', ready_design_id: 53, base_id: IDS.cards, values: JSON.stringify({ format: 1, layout: 'left', sides: 2, parts: { name: { text: 'Nell Fairweather' } } }), state: 'ordered', updated_at: '2026-08-04T09:00:00Z' }]);
+      seed('design_versions', []);
+      render(<Line {...HOST} linked="92" />);
+      fireEvent.click(screen.getByRole('button', { name: 'Make the proof' }));
+      await settle();
+      fireEvent.click(screen.getByRole('button', { name: 'Make the print file' }));
+      await settle();
+      expect(screen.queryByRole('alert')).toBeNull();
+      const made = world.calls.filter((call) => call.kind === 'create' && call.table === 'version_files').map((call) => call.values as Record<string, unknown>);
+      expect(made.map((one) => one['name'])).toEqual(['design-92-v1-front-print.pdf', 'design-92-v1-back-print.pdf']);
+    });
+
+    it('still says which font file is missing where Adminium does not hand the file over, and never asks for a font it does not ship', async () => {
+      vi.stubGlobal('fetch', async (address: string) => {
+        asked.push(address);
+        return new Response('', { status: 403 });
+      });
+      seed('fonts', [...world.tables['fonts']!.map((one) => (one['family'] === 'Manrope' ? { ...one, starter: false } : one))]);
+      render(<Line {...HOST} linked="91" />);
+      fireEvent.click(screen.getByRole('button', { name: 'Make the files' }));
+      await settle();
+      expect(screen.getByRole('alert').textContent).toBe('The files need the font file of Manrope. Upload it in Fonts & finishes, then make them again.');
+      // A shop's own row of that name is not the starter font: its file is never fetched from beside the page.
+      expect(asked).not.toContain(BESIDE);
+    });
   });
 
   it('on a page, makes the proof as an A4 PDF and a print file a side, snapshotting version 1 where no order did (MC-F1)', async () => {

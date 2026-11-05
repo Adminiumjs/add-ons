@@ -27,7 +27,9 @@ import { FontMissing, missingFonts, printPdf, printSize, proofPdf, type PdfAsset
 import { engravedOf, layersOf, pieceSvg } from '../draw/svgfile.ts';
 import { readSvg, type ReadSvg } from '../draw/svgread.ts';
 import { fileBytes, filePicture } from '../pages/shared/stored.ts';
-import type { DataRow } from '../pages/shared/host.ts';
+import { yes } from '../pages/setup/facts.ts';
+import { starterBytes } from '../pages/setup/starter.ts';
+import type { DataRow, DataValue } from '../pages/shared/host.ts';
 
 /** The labels a sheet's empty boxes carry, for what is made: none, since nothing empty is made. */
 const NO_LABELS = { logo: '', photo: '', image: '' };
@@ -100,8 +102,17 @@ export function catalogueFor(rows: CatalogueRows, baseId: string | number): Cata
 export const fileStem = (designId: string | number, version: number): string => `design-${String(designId)}-v${String(version)}`;
 const slug = (text: string): string => text.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'piece';
 
-/** The shop's fonts, read from their files once each and set at each weight asked. */
-export function fontBook(catalogue: Catalogue, read: (file: unknown) => Promise<Uint8Array | null> = fileBytes): { load: (families: Iterable<string>) => Promise<void>; font: (family: string, weight: number) => Font | null } {
+/**
+ * The shop's fonts, read from their files once each and set at each weight
+ * asked. A starter font with no file of its own yet is read from the file
+ * this package ships for it, so a fresh install makes its files with no
+ * set-up first.
+ */
+export function fontBook(
+  catalogue: Catalogue,
+  read: (file: unknown) => Promise<Uint8Array | null> = fileBytes,
+  starter: (family: string) => Promise<Uint8Array | null> = starterBytes,
+): { load: (families: Iterable<string>) => Promise<void>; font: (family: string, weight: number) => Font | null } {
   const bytes = new Map<string, Uint8Array | null>();
   const made = new Map<string, Font | null>();
   return {
@@ -109,7 +120,8 @@ export function fontBook(catalogue: Catalogue, read: (file: unknown) => Promise<
       for (const family of families) {
         if (bytes.has(family)) continue;
         const row = catalogue.fonts.find((one) => one.family === family);
-        bytes.set(family, row === undefined ? null : await read(row.row['file']));
+        const own = row === undefined ? null : await read(row.row['file']);
+        bytes.set(family, own ?? (row !== undefined && yes(row.row['starter'] as DataValue | undefined) ? await starter(family) : null));
       }
     },
     font(family, weight) {
