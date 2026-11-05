@@ -125,14 +125,18 @@ goes to; leave it out for a role that does not set up.
 `read_pii` is needed because the customer's words (`values`), logo and photo
 are personal columns: without it they read as empty and the design is drawn
 without them. `delete` on `version_files` is needed because making the files
-again replaces the version's earlier files.
+again replaces the version's earlier files. A starter font nobody uploaded is
+read from the file this package ships, through the set-up page's files route:
+Adminium 0.3.46 answers it only while the Customiser is attached to the
+dashboard. Where it does not, the panel names the font file it is missing.
 
 **An app's role cannot hold this on Adminium 0.3.46.** A role's `tables`
 gives `read`, `create` and `update` only, never `read_pii` or `delete`. Until
 an app's role can take the Customiser's own role, give each person who makes
-proofs the **Customiser designer** role beside their app role (Studio →
-People), and a person who only looks at the panel the **Customiser reader**
-role. Both roles hold exactly the table above. An add-on's role is never
+proofs the **Customiser designer** role beside their app role (People,
+`/settings/team`), and a person who only looks at the panel the **Customiser reader**
+role. The reader role holds the left-hand column; the designer role holds
+the right-hand one, and sets up the shop's side besides. An add-on's role is never
 screens-only, so a person with a screens-only app role who is also given one
 of these opens the dashboard as well.
 
