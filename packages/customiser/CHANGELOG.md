@@ -1,5 +1,7 @@
 # @adminium/add-on-customiser
 
+## 1.0.17
+
 ## 1.0.16
 
 ### Patch Changes

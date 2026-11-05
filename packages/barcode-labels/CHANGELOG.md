@@ -1,5 +1,7 @@
 # @adminium/add-on-barcode-labels
 
+## 1.0.17
+
 ## 1.0.16
 
 ### Patch Changes
