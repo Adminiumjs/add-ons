@@ -79,7 +79,7 @@ import { fileURLToPath } from 'node:url';
 
 import { assertMinimumReleased, newestAdminium, objectKeyFor, publishObject, r2ConfigFromEnv, sriOf } from './r2.mjs';
 import { ledgerRow, publishedAtOf } from './ledger-row.mjs';
-import { filesFor, xray } from './tarball-shape.mjs';
+import { mappedName as mapped, publishManifest, xray } from './tarball-shape.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PACKAGES = join(ROOT, 'packages');
@@ -94,7 +94,16 @@ if (UNKNOWN.length > 0) {
   throw new Error(`unknown argument(s): ${UNKNOWN.join(' ')} — the only flag is --dry-run`);
 }
 
-const mappedName = (key) => `@${SCOPE}/add-on-${key}`;
+const mappedName = (key) => mapped(key, SCOPE);
+
+/** Opens a JSON file of one package (a sample bundle the manifest names), or undefined. */
+const readerFor = (dir) => (path) => {
+  try {
+    return JSON.parse(readFileSync(join(dir, path), 'utf8'));
+  } catch {
+    return undefined;
+  }
+};
 
 /**
  * Discovered, never listed — the same rule `trademarks.test.ts` uses: a package
@@ -117,24 +126,13 @@ function addOns() {
     .sort((a, b) => (a.name < b.name ? -1 : 1));
 }
 
-/** The publish-time package.json: mapped name, no devDeps, no scripts. */
-function publishManifest({ pkg, manifest }) {
-  const out = structuredClone(pkg);
-  out.name = mappedName(manifest.key);
-  delete out.private;
-  delete out.devDependencies;
-  delete out.scripts;
-  out.files = filesFor(manifest);
-  return out;
-}
-
 /** Stage the publish-time package.json + LICENSE; returns the undo. */
 function stage(addOn) {
   const original = readFileSync(addOn.pkgPath, 'utf8');
   const licensePath = join(addOn.dir, 'LICENSE');
   const hadLicense = existsSync(licensePath);
 
-  writeFileSync(addOn.pkgPath, `${JSON.stringify(publishManifest(addOn), null, 2)}\n`);
+  writeFileSync(addOn.pkgPath, `${JSON.stringify(publishManifest(addOn, { scope: SCOPE, read: readerFor(addOn.dir) }), null, 2)}\n`);
   if (!hadLicense) copyFileSync(ROOT_LICENSE, licensePath);
 
   return () => {
@@ -153,7 +151,7 @@ function packOne(addOn) {
     );
     const [result] = JSON.parse(raw);
     const tarball = join(OUT_DIR, result.filename);
-    xray(`${mappedName(addOn.manifest.key)}@${addOn.pkg.version}`, result.files.map((f) => f.path), addOn);
+    xray(`${mappedName(addOn.manifest.key)}@${addOn.pkg.version}`, result.files.map((f) => f.path), { manifest: addOn.manifest, read: readerFor(addOn.dir) });
     // `npm pack --json` reports the sha512 SRI of the bytes it just wrote.
     // Asserted equal to a hash of the file on disk rather than trusted: the
     // ledger must name the bytes that are uploaded, and the upload reads the file.

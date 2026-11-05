@@ -20,6 +20,7 @@ const PACKAGES = join(new URL('../..', import.meta.url).pathname);
 const manifestOf = (name: string) => JSON.parse(readFileSync(join(PACKAGES, name, 'manifest.json'), 'utf8')) as Record<string, unknown>;
 const inventory = manifestOf('inventory');
 const invoices = manifestOf('invoices');
+const holidays = manifestOf('holiday-calendars');
 
 const points = (manifest: unknown): string[] => declaredEntryPoints(manifest) as string[];
 const checked = (paths: string[], manifest: unknown): string | null => {
@@ -45,9 +46,25 @@ describe('the files a manifest names', () => {
     expect(points(invoices).some((path) => path.startsWith('seeds/'))).toBe(false);
   });
 
-  it('only an add-on that names sample data ships a seeds folder', () => {
-    expect(filesFor(inventory)).toEqual(['dist', 'seeds', 'manifest.json', 'TRADEMARKS.md', 'README.md', 'LICENSE']);
+  it('so are the starting rows of a table, and the files a sample bundle names', () => {
+    expect(points(holidays)).toContain('seeds/holidays.json');
+    const bundle = { assets: { 'logo:shop': { file: 'seeds/pictures/logo.png', sha256: 'a'.repeat(64) } } };
+    const withPictures = { ...inventory, sampleData: { file: 'seeds/inventory.sample.json' } };
+    expect(declaredEntryPoints(withPictures, { read: (path: string) => (path === 'seeds/inventory.sample.json' ? bundle : undefined) })).toContain('seeds/pictures/logo.png');
+    // A panel on another table's record loads its own file.
+    expect(points({ addOn: { panels: [{ client: 'dist/panels/product.js' }] } })).toEqual(['dist/panels/product.js']);
+  });
+
+  it('packs every file the manifest names outside dist, each by its own path, and no folder whole', () => {
+    expect(filesFor(inventory)).toEqual(['dist', 'seeds/inventory.sample.json', 'manifest.json', 'TRADEMARKS.md', 'README.md', 'LICENSE']);
+    // The 1.0.16 release dropped these: starting rows are named by `seeds[].file`, not by sample data.
+    expect(filesFor(holidays)).toEqual(['dist', 'seeds/holidays.json', 'manifest.json', 'TRADEMARKS.md', 'README.md', 'LICENSE']);
     expect(filesFor(invoices)).toEqual(['dist', 'manifest.json', 'TRADEMARKS.md', 'README.md', 'LICENSE']);
+  });
+
+  it('refuses a named path that leaves the package', () => {
+    expect(() => filesFor({ seeds: [{ table: 'x', file: '../secrets.json' }] })).toThrow('outside the package');
+    expect(() => filesFor({ seeds: [{ table: 'x', file: '/etc/passwd' }] })).toThrow('outside the package');
   });
 });
 
@@ -65,10 +82,14 @@ describe('the tarball check', () => {
   it('a tarball missing the file that decides, or the sample its manifest names, is refused', () => {
     expect(checked(whole(inventory).filter((path) => path !== 'dist/server.js'), inventory)).toContain('"dist/server.js"');
     expect(checked(whole(inventory).filter((path) => path !== 'seeds/inventory.sample.json'), inventory)).toContain('"seeds/inventory.sample.json"');
+    // What the 1.0.16 Holiday Calendars tarball was: everything but its starting rows.
+    expect(checked(whole(holidays), holidays)).toBeNull();
+    expect(checked(whole(holidays).filter((path) => path !== 'seeds/holidays.json'), holidays)).toContain('manifest declares "seeds/holidays.json" but the tarball has no such file');
   });
 
-  it('a seeds file the manifest does not name is refused, and so is source, a test or a map', () => {
-    expect(checked([...whole(inventory), 'seeds/notes.json'], inventory)).toContain('ships a seeds file the manifest does not name: seeds/notes.json');
+  it('a file the manifest does not name is refused, and so is source, a test or a map', () => {
+    expect(checked([...whole(inventory), 'seeds/notes.json'], inventory)).toContain('ships a file the manifest does not name: seeds/notes.json');
+    expect(checked([...whole(holidays), 'scripts/holiday-seed.mjs'], holidays)).toContain('ships a file the manifest does not name: scripts/holiday-seed.mjs');
     expect(checked([...whole(invoices), 'seeds/anything.json'], invoices)).toContain('seeds/anything.json');
     expect(checked([...whole(inventory), 'src/index.ts'], inventory)).toContain('ships source: src/index.ts');
     expect(checked([...whole(inventory), 'dist/server.js.map'], inventory)).toContain('ships a sourcemap');

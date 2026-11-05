@@ -28,6 +28,9 @@ import { pathToFileURL } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
+// @ts-expect-error a plain script of the repo, read as the release runs it
+import { declaredEntryPoints, filesFor } from '../../../scripts/tarball-shape.mjs';
+
 /** `packages/host/src/` → the repo's `packages/`. */
 const PACKAGES = join(new URL('../..', import.meta.url).pathname);
 const REPO = join(PACKAGES, '..');
@@ -119,23 +122,25 @@ describe.each(found)('release shape: $name', (addOn) => {
     expect(addOn.pkg['private']).toBeUndefined();
   });
 
-  it('declares the exact files[] allow-list', () => {
+  it('declares the exact files[] allow-list, the one the release packs with', () => {
     // Exact, not a superset: an extra entry is how `src/` creeps back in, and
     // npm SILENTLY DROPS an entry whose file does not exist, so a missing one
-    // is invisible at pack time.
-    // One add-on in, one more entry: sample data or starting rows the manifest
-    // names ship in `seeds/`, and only where a manifest names them.
-    const sample = (addOn.manifest['sampleData'] as { file?: string } | undefined)?.file;
-    const starting = ((addOn.manifest['seeds'] as { file?: string }[] | undefined) ?? []).flatMap((seed) => seed.file ?? []);
-    const named = [...(sample === undefined ? [] : [sample]), ...starting];
-    expect(addOn.pkg['files']).toEqual(named.length === 0 ? FILES_FIELD : ['dist', 'seeds', ...FILES_FIELD.slice(1)]);
-    for (const file of named) {
-      expect(file.startsWith('seeds/')).toBe(true);
+    // is invisible at pack time. The release stages `filesFor(manifest)` over
+    // this field, so the two agree and the package's own pack suite packs
+    // what ships: `dist/`, each file the manifest names outside it (sample
+    // data, the starting rows of a table) by its own path, and the papers.
+    const read = (path: string): unknown => {
+      try {
+        return JSON.parse(readFileSync(join(addOn.dir, path), 'utf8'));
+      } catch {
+        return undefined;
+      }
+    };
+    expect(addOn.pkg['files']).toEqual(filesFor(addOn.manifest, { read }));
+    expect((addOn.pkg['files'] as string[]).slice(0, 1)).toEqual(FILES_FIELD.slice(0, 1));
+    expect((addOn.pkg['files'] as string[]).slice(-4)).toEqual(FILES_FIELD.slice(1));
+    for (const file of (declaredEntryPoints(addOn.manifest, { read }) as string[]).filter((path) => !path.startsWith('dist/'))) {
       expect(existsSync(join(addOn.dir, file)), `${addOn.name} names ${file}`).toBe(true);
-    }
-    if (named.length > 0) {
-      // Nothing else rides along in the folder that ships whole.
-      expect(readdirSync(join(addOn.dir, 'seeds')).sort()).toEqual(named.map((file) => file.slice('seeds/'.length)).sort());
     }
   });
 

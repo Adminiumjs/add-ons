@@ -51,10 +51,13 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { existsSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 import { beforeAll, describe, expect, it } from 'vitest';
+
+// @ts-expect-error a plain script of the repo, read as the release runs it
+import { declaredEntryPoints } from '../../../../scripts/tarball-shape.mjs';
 
 /** What one package needs to supply to run the suite. */
 export interface PackShapeFixtures {
@@ -62,12 +65,23 @@ export interface PackShapeFixtures {
   root: string;
   /** The package's own real build, so `dist/` exists before packing. */
   buildForReal: () => void;
-  /**
-   * Data files the manifest names and the installer reads from the package,
-   * such as a seed's `seeds/<file>.json`. They must ship, and nothing else
-   * beside them may.
-   */
-  dataFiles?: readonly string[];
+}
+
+/**
+ * The files the manifest names outside `dist/`, which the installer reads from
+ * the package (a table's starting rows, sample data): read from the manifest,
+ * never passed in, so a newly named file is held the day it is named.
+ */
+function dataFilesOf(root: string): string[] {
+  const manifest = JSON.parse(readFileSync(join(root, 'manifest.json'), 'utf8')) as unknown;
+  const read = (path: string): unknown => {
+    try {
+      return JSON.parse(readFileSync(join(root, path), 'utf8'));
+    } catch {
+      return undefined;
+    }
+  };
+  return (declaredEntryPoints(manifest, { read }) as string[]).filter((path) => !path.startsWith('dist/'));
 }
 
 /** The five entries every add-on allow-lists, and the only ones. */
@@ -113,8 +127,12 @@ interface PackReport {
  *
  * `--dry-run` writes nothing; `--json` reports the exact member list. The
  * publish script stages a rewritten `package.json` and a copied-in `LICENSE`
- * before packing, so this does the same two things — otherwise it would be
- * asserting the shape of a tarball the release never produces.
+ * before packing. This stages the `LICENSE` the same way; the rewritten
+ * `package.json` it does not need: its `files[]` is the one thing in it that
+ * changes what is packed, and `release-shape.test.ts` holds the package's own
+ * field equal to the release's (`filesFor(manifest)` in
+ * `scripts/tarball-shape.mjs`). Until it did, the two differed, and 1.0.16
+ * shipped Holiday Calendars without the starting rows this suite saw packed.
  */
 function packReport(root: string, repoRoot: string): PackReport {
   const licence = join(root, 'LICENSE');
@@ -140,6 +158,7 @@ export function describePackShape(fixtures: PackShapeFixtures): void {
   let report: PackReport;
   let paths: string[];
   let distFiles: string[];
+  const dataFiles = dataFilesOf(fixtures.root);
 
   describe('pack shape', () => {
     beforeAll(() => {
@@ -180,13 +199,13 @@ export function describePackShape(fixtures: PackShapeFixtures): void {
     });
 
     it('ships every data file its manifest names', () => {
-      for (const file of fixtures.dataFiles ?? []) {
+      for (const file of dataFiles) {
         expect(paths, `${file} is missing from the tarball`).toContain(file);
       }
     });
 
     it('ships NOTHING else — no sources, no tests, no configs', () => {
-      const allowed = new Set<string>([...REQUIRED_ROOT_FILES, ...distFiles, ...(fixtures.dataFiles ?? [])]);
+      const allowed = new Set<string>([...REQUIRED_ROOT_FILES, ...distFiles, ...dataFiles]);
       const extra = paths.filter((p) => !allowed.has(p));
       expect(extra, `unexpected files in the tarball: ${extra.join(', ')}`).toEqual([]);
     });

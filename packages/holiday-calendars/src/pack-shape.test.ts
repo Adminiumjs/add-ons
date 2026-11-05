@@ -12,7 +12,5 @@ import { describePackShape } from "@adminium/add-on-host/testing";
 
 import { buildForReal, ROOT } from "./testing/build.ts";
 
-import manifest from "../manifest.json";
-
-// The starting rows of its `holidays` table: the installer reads them from the package.
-describePackShape({ root: ROOT, buildForReal, dataFiles: manifest.seeds.map((seed) => seed.file) });
+// The starting rows of its `holidays` table ship too: the suite reads them from the manifest.
+describePackShape({ root: ROOT, buildForReal });
