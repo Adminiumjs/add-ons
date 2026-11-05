@@ -17,7 +17,7 @@
     "artwork"
   ],
   "compatibility": {
-    "minAdminiumVersion": "0.3.43",
+    "minAdminiumVersion": "0.3.47",
     "requires": []
   },
   "requiredSchema": {
@@ -700,7 +700,12 @@
               "zh-TW": "清單中的順序"
             }
           }
-        ]
+        ],
+        "appGrants": {
+          "actions": [
+            "read"
+          ]
+        }
       },
       {
         "ref": "base_pieces",
@@ -909,7 +914,12 @@
               "zh-TW": "清單中的順序"
             }
           }
-        ]
+        ],
+        "appGrants": {
+          "actions": [
+            "read"
+          ]
+        }
       },
       {
         "ref": "base_areas",
@@ -1322,7 +1332,12 @@
               "zh-TW": "清單中的順序"
             }
           }
-        ]
+        ],
+        "appGrants": {
+          "actions": [
+            "read"
+          ]
+        }
       },
       {
         "ref": "ready_designs",
@@ -1516,7 +1531,12 @@
               "zh-TW": "清單中的順序"
             }
           }
-        ]
+        ],
+        "appGrants": {
+          "actions": [
+            "read"
+          ]
+        }
       },
       {
         "ref": "ready_parts",
@@ -1945,7 +1965,12 @@
               "zh-TW": "清單中的順序"
             }
           }
-        ]
+        ],
+        "appGrants": {
+          "actions": [
+            "read"
+          ]
+        }
       },
       {
         "ref": "fonts",
@@ -2145,7 +2170,12 @@
               "zh-TW": "提供中"
             }
           }
-        ]
+        ],
+        "appGrants": {
+          "actions": [
+            "read"
+          ]
+        }
       },
       {
         "ref": "palettes",
@@ -2298,7 +2328,12 @@
               "zh-TW": "清單中的順序"
             }
           }
-        ]
+        ],
+        "appGrants": {
+          "actions": [
+            "read"
+          ]
+        }
       },
       {
         "ref": "palette_colours",
@@ -2488,7 +2523,12 @@
               "zh-TW": "清單中的順序"
             }
           }
-        ]
+        ],
+        "appGrants": {
+          "actions": [
+            "read"
+          ]
+        }
       },
       {
         "ref": "features",
@@ -2586,7 +2626,12 @@
               "zh-TW": "提供中"
             }
           }
-        ]
+        ],
+        "appGrants": {
+          "actions": [
+            "read"
+          ]
+        }
       },
       {
         "ref": "designs",
@@ -2924,6 +2969,12 @@
             "column": "state",
             "equals": "ordered"
           }
+        },
+        "appGrants": {
+          "actions": [
+            "read",
+            "read_pii"
+          ]
         }
       },
       {
@@ -3125,7 +3176,24 @@
               "zh-TW": "由過帳產生"
             }
           }
-        ]
+        ],
+        "appGrants": {
+          "actions": [
+            "read",
+            "read_pii",
+            "create",
+            "update"
+          ],
+          "creatable": [
+            "app",
+            "design_id",
+            "version",
+            "values"
+          ],
+          "writable": [
+            "proof_file"
+          ]
+        }
       },
       {
         "ref": "version_files",
@@ -3349,7 +3417,28 @@
               "zh-TW": "製作時間"
             }
           }
-        ]
+        ],
+        "appGrants": {
+          "actions": [
+            "read",
+            "create",
+            "update",
+            "delete"
+          ],
+          "creatable": [
+            "app",
+            "version_id",
+            "kind",
+            "name",
+            "about",
+            "layers",
+            "left_out",
+            "position"
+          ],
+          "writable": [
+            "file"
+          ]
+        }
       },
       {
         "ref": "postings",

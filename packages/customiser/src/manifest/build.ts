@@ -14,6 +14,7 @@ import { readFileSync } from 'node:fs';
 import { entries, LINK_KEY } from './entries.ts';
 import { starterFontRows } from './fonts.ts';
 import { tables } from './tables.ts';
+import { APP_GRANTS } from './app-grants.ts';
 import { CHECKER } from './checker.ts';
 import { LEDGER } from './ledger.ts';
 import { emailTemplates, MAIL_TABLE, mailTable, outbox } from './mail.ts';
@@ -21,7 +22,7 @@ import { DESCRIPTION, PAGE_TITLE, PANEL_TITLE, ROLE_NAMES, type Words } from './
 
 /** The add-on's key, its page ref, and the floor whose words it uses (an add-on's own entries on each app's key, expiry, links into it). */
 export const KEY = 'customiser';
-export const FLOOR = '0.3.43';
+export const FLOOR = '0.3.47';
 /** The package's version, read from its `package.json`: `changeset version` bumps that file and nothing else. */
 export const VERSION: string = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')).version;
 /** The file that answers the design question, as the build writes it (`vite.config.ts` builds it from `src/check.ts`). */
@@ -85,7 +86,11 @@ export function buildManifest(): Record<string, unknown> {
     description: { key: 'addon.customiser.description', fallback: DESCRIPTION['en-US'] },
     categories: ['artwork'],
     compatibility: { minAdminiumVersion: FLOOR, requires: [] },
-    requiredSchema: { prefixed: true, tables: [...tables(), mailTable()] },
+    // Each table an app's role may hold, and how far (`app-grants.ts`); the rest are given to no app's role.
+    requiredSchema: { prefixed: true, tables: [...tables().map((table) => {
+      const grants = APP_GRANTS[String(table['ref'])];
+      return grants === undefined ? table : { ...table, appGrants: grants };
+    }), mailTable()] },
     roles: roles(),
     // The starter fonts, written once at install into an empty fonts table.
     seeds: [{ table: 'fonts', rows: starterFontRows() }],

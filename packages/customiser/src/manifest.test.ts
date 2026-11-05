@@ -107,8 +107,8 @@ describe('the manifest', () => {
     ]);
     expect(manifest.addOn.connect).toEqual({ kind: 'none' });
     expect(manifest.categories).toEqual(['artwork']);
-    // 0.3.43: an add-on's entries held to each app's rows (`appColumn`), rows that expire, and apps binding into it.
-    expect(manifest.compatibility.minAdminiumVersion).toBe('0.3.43');
+    // 0.3.47: what an app's role may hold of each table (`appGrants` with `read_pii`, `delete`, and adds on a ledger's table).
+    expect(manifest.compatibility.minAdminiumVersion).toBe('0.3.47');
     expect(manifest.requiredSchema.prefixed).toBe(true);
     expect(manifest.addOn.settingsTable).toBe('settings');
   });
@@ -410,6 +410,41 @@ describe('the roles', () => {
   it('let the reader read and change nothing, and open the set-up and both panels', () => {
     expect(role('reader').permissions.filter((grant) => !grant.endsWith(':read') && !grant.endsWith(':read_pii') && !grant.endsWith(':view'))).toEqual([]);
     for (const one of roles) expect(one.permissions.filter((grant) => grant.startsWith('page:')).sort(), one.key).toEqual(['page:@customiser-line:view', 'page:@customiser-product:view', 'page:@customiser:view']);
+  });
+});
+
+describe('what an app’s role may hold (appGrants)', () => {
+  type Shaped = { ref: string; columns: { ref: string }[]; appGrants?: { actions: string[]; creatable?: string[]; writable?: string[] } };
+  const all = manifest.requiredSchema.tables as unknown as Shaped[];
+  const grants = (ref: string) => all.find((table) => table.ref === ref)?.appGrants;
+
+  it('lets an app’s role read the shop’s set-up and nothing more of it', () => {
+    for (const table of SHOP_TABLES) expect(grants(table), table).toEqual({ actions: ['read'] });
+  });
+
+  it('lets it read a customer’s design with its personal columns, never change it', () => {
+    expect(grants('designs')).toEqual({ actions: ['read', 'read_pii'] });
+  });
+
+  it('lets it add a version and set its proof, never what the order’s posting copied', () => {
+    expect(grants('design_versions')).toEqual({ actions: ['read', 'read_pii', 'create', 'update'], creatable: ['app', 'design_id', 'version', 'values'], writable: ['proof_file'] });
+    const copied = (manifest.addOn.ledgers as unknown as { writes: Record<string, { insert?: string[] }> }[])[0]!.writes['design_versions']!.insert!;
+    expect(grants('design_versions')!.writable!.filter((column) => copied.includes(column))).toEqual([]);
+  });
+
+  it('lets it make, attach and replace a version’s files', () => {
+    expect(grants('version_files')).toEqual({ actions: ['read', 'create', 'update', 'delete'], creatable: ['app', 'version_id', 'kind', 'name', 'about', 'layers', 'left_out', 'position'], writable: ['file'] });
+  });
+
+  it('gives no app’s role the settings, the postings or the mailed links', () => {
+    for (const table of ['settings', 'postings', 'design_mails']) expect(grants(table), table).toBeUndefined();
+  });
+
+  it('names only columns each table has', () => {
+    for (const table of all) {
+      const columns = new Set(table.columns.map((column) => column.ref));
+      for (const column of [...(table.appGrants?.creatable ?? []), ...(table.appGrants?.writable ?? [])]) expect(columns.has(column), `${table.ref}.${column}`).toBe(true);
+    }
   });
 });
 

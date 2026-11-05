@@ -86,14 +86,30 @@ proofs; the **Customiser reader** reads everything and changes nothing.
 The Customiser draws two panels on an app's records: **on a product**
 (`customiser-product`, on the product's link into `bases`) and **on an order
 line** (`customiser-line`, on the line's link into `designs`). The order-line
-panel is where the shop makes the proof and the production files. Each needs
-the reads and writes below, besides the role's own read of the record's table.
-Where one is missing the panel says which, and makes nothing.
+panel is where the shop makes the proof and the production files. An app
+gives its own roles what they need with `roles[].tables` (up to 24 add-on
+tables a role) and `page:@…:view` grants, besides the role's own read of the
+record's table. Where something is missing the panel says which, and makes
+nothing.
+
+The Customiser says how far an app's role may go on each table
+(`appGrants`, Adminium 0.3.47):
+
+| Table | The most an app's role holds |
+|---|---|
+| `bases`, `base_pieces`, `base_areas`, `ready_designs`, `ready_parts`, `fonts`, `palettes`, `palette_colours`, `features` | read |
+| `designs` | read, read_pii |
+| `design_versions` | read, read_pii; create (`app`, `design_id`, `version`, `values`); update (`proof_file`) |
+| `version_files` | read; create (`app`, `version_id`, `kind`, `name`, `about`, `layers`, `left_out`, `position`); update (`file`); delete |
+| `settings`, `postings`, `design_mails` | nothing |
+
+An entry asking for more is cut to this, and the install check says what was
+cut. `read_pii` is what shows the customer's words (`values`), logo and photo:
+without it they read as empty and the design is drawn without them. `delete`
+on `version_files` is what lets "Make the files again" replace the version's
+earlier files.
 
 ### The product panel
-
-An app's role holds all of it itself (`page:@…:view` of an add-on's panel
-needs Adminium 0.3.44):
 
 ```json
 {
@@ -108,37 +124,50 @@ needs Adminium 0.3.44):
 ```
 
 `table:@products:read` stands for the app's own table the panel is on.
-`page:@customiser:view` is the set-up page the panel's "Open the set-up"
-goes to; leave it out for a role that does not set up.
+`page:@customiser:view` is the set-up page, at `/add-ons/customiser/customiser`,
+that the panel's "Open the set-up" goes to; leave it out for a role that does
+not set up.
 
 ### The order-line panel, the proof and the production files
 
-| What | To see the panel | To make the proof and the files |
-|---|---|---|
-| `bases`, `base_pieces`, `base_areas`, `ready_designs`, `ready_parts`, `fonts`, `palettes`, `palette_colours`, `features` | read | read |
-| `designs` | read, read_pii | read, read_pii |
-| `design_versions` | read, read_pii | read, read_pii, create, update |
-| `version_files` | read | read, create, update, delete |
-| `page:@customiser-line:view` | yes | yes |
-| `page:@customiser:view` | no | yes: the starter fonts' files are handed out beside the set-up page |
+A role that makes the proof and the files:
 
-`read_pii` is needed because the customer's words (`values`), logo and photo
-are personal columns: without it they read as empty and the design is drawn
-without them. `delete` on `version_files` is needed because making the files
-again replaces the version's earlier files. A starter font nobody uploaded is
-read from the file this package ships, through the set-up page's files route:
-Adminium 0.3.46 answers it only while the Customiser is attached to the
-dashboard. Where it does not, the panel names the font file it is missing.
+```json
+{
+  "permissions": ["table:@order_lines:read", "page:@customiser-line:view", "page:@customiser:view"],
+  "tables": [
+    { "addOn": "customiser", "table": "designs", "actions": ["read", "read_pii"] },
+    { "addOn": "customiser", "table": "design_versions", "actions": ["read", "read_pii", "create", "update"] },
+    { "addOn": "customiser", "table": "version_files", "actions": ["read", "create", "update", "delete"] },
+    { "addOn": "customiser", "table": "bases", "actions": ["read"] },
+    { "addOn": "customiser", "table": "base_pieces", "actions": ["read"] },
+    { "addOn": "customiser", "table": "base_areas", "actions": ["read"] },
+    { "addOn": "customiser", "table": "ready_designs", "actions": ["read"] },
+    { "addOn": "customiser", "table": "ready_parts", "actions": ["read"] },
+    { "addOn": "customiser", "table": "fonts", "actions": ["read"] },
+    { "addOn": "customiser", "table": "palettes", "actions": ["read"] },
+    { "addOn": "customiser", "table": "palette_colours", "actions": ["read"] },
+    { "addOn": "customiser", "table": "features", "actions": ["read"] }
+  ]
+}
+```
 
-**An app's role cannot hold this on Adminium 0.3.46.** A role's `tables`
-gives `read`, `create` and `update` only, never `read_pii` or `delete`. Until
-an app's role can take the Customiser's own role, give each person who makes
-proofs the **Customiser designer** role beside their app role (People,
-`/settings/team`), and a person who only looks at the panel the **Customiser reader**
-role. The reader role holds the left-hand column; the designer role holds
-the right-hand one, and sets up the shop's side besides. An add-on's role is never
-screens-only, so a person with a screens-only app role who is also given one
-of these opens the dashboard as well.
+A role that only looks at the panel takes the same entries with `["read",
+"read_pii"]` on `designs` and `design_versions`, `["read"]` on the rest, and no
+`page:@customiser:view`. `table:@order_lines:read` stands for the app's own
+table the panel is on.
+
+**`page:@customiser:view` on a role that makes files, screens-only roles
+too.** A starter font nobody uploaded is read from the file this package
+ships, through the set-up page's files route
+(`/api/v1/add-ons/customiser/pages/customiser/files/…`), which answers only a
+reader who may open that page. Without it the panel names the font file it is
+missing. A screens-only role never sees the page in a menu; the grant only
+lets its panels read the files.
+
+The Customiser's own **designer** and **reader** roles hold the same and more
+(the designer also sets up the shop's side), for a person who works in the
+dashboard rather than in an app's screens.
 
 ## Sample data
 
