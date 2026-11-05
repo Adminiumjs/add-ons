@@ -802,5 +802,101 @@
     "region": null,
     "day": "2027-12-26",
     "name": "Anden juledag"
+  },
+  {
+    "country": "GB",
+    "region": "england-and-wales",
+    "day": "2026-01-01",
+    "name": "New Year's Day"
+  },
+  {
+    "country": "GB",
+    "region": "england-and-wales",
+    "day": "2026-04-03",
+    "name": "Good Friday"
+  },
+  {
+    "country": "GB",
+    "region": "england-and-wales",
+    "day": "2026-04-06",
+    "name": "Easter Monday"
+  },
+  {
+    "country": "GB",
+    "region": "england-and-wales",
+    "day": "2026-05-04",
+    "name": "Early May bank holiday"
+  },
+  {
+    "country": "GB",
+    "region": "england-and-wales",
+    "day": "2026-05-25",
+    "name": "Spring bank holiday"
+  },
+  {
+    "country": "GB",
+    "region": "england-and-wales",
+    "day": "2026-08-31",
+    "name": "Summer bank holiday"
+  },
+  {
+    "country": "GB",
+    "region": "england-and-wales",
+    "day": "2026-12-25",
+    "name": "Christmas Day"
+  },
+  {
+    "country": "GB",
+    "region": "england-and-wales",
+    "day": "2026-12-28",
+    "name": "Boxing Day (substitute day)"
+  },
+  {
+    "country": "GB",
+    "region": "england-and-wales",
+    "day": "2027-01-01",
+    "name": "New Year's Day"
+  },
+  {
+    "country": "GB",
+    "region": "england-and-wales",
+    "day": "2027-03-26",
+    "name": "Good Friday"
+  },
+  {
+    "country": "GB",
+    "region": "england-and-wales",
+    "day": "2027-03-29",
+    "name": "Easter Monday"
+  },
+  {
+    "country": "GB",
+    "region": "england-and-wales",
+    "day": "2027-05-03",
+    "name": "Early May bank holiday"
+  },
+  {
+    "country": "GB",
+    "region": "england-and-wales",
+    "day": "2027-05-31",
+    "name": "Spring bank holiday"
+  },
+  {
+    "country": "GB",
+    "region": "england-and-wales",
+    "day": "2027-08-30",
+    "name": "Summer bank holiday"
+  },
+  {
+    "country": "GB",
+    "region": "england-and-wales",
+    "day": "2027-12-27",
+    "name": "Christmas Day (substitute day)"
+  },
+  {
+    "country": "GB",
+    "region": "england-and-wales",
+    "day": "2027-12-28",
+    "name": "Boxing Day (substitute day)"
   }
 ]

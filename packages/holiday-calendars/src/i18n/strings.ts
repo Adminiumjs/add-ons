@@ -46,7 +46,7 @@
  * it is not. Every `note.*` string says what its set leaves out, and a
  * translation that dropped that clause because it read as an apology would be
  * turning a limit somebody can work around into a false claim. That is the one
- * sentence in each of these six notes that has to survive translation intact.
+ * sentence in each of these seven notes that has to survive translation intact.
  */
 
 export const strings = {
@@ -71,6 +71,7 @@ export const strings = {
     "addon.holiday-calendars.area.fr-alsace-moselle": "France — Alsace-Moselle",
     "addon.holiday-calendars.area.cz": "Czechia",
     "addon.holiday-calendars.area.dk": "Denmark",
+    "addon.holiday-calendars.area.gb-england-and-wales": "United Kingdom — England and Wales",
     "addon.holiday-calendars.area.cn": "China",
     "addon.holiday-calendars.area.tw": "Taiwan",
     "addon.holiday-calendars.area.eg": "Egypt",
@@ -82,6 +83,7 @@ export const strings = {
     "addon.holiday-calendars.note.fr-alsace-moselle": "The eleven national days, and the two more kept in Bas-Rhin, Haut-Rhin and Moselle: Good Friday, and 26 December.",
     "addon.holiday-calendars.note.cz": "The state holidays and the other holidays, thirteen in all, as the act lists them.",
     "addon.holiday-calendars.note.dk": "The ten Danish church holidays. Great Prayer Day is not among them — it stopped being one in 2024. Christmas Eve and New Year's Eve are ordinary working days in law, whatever a workplace does about them.",
+    "addon.holiday-calendars.note.gb-england-and-wales": "The eight bank and public holidays of England and Wales only. Scotland and Northern Ireland keep different days, and none of theirs are here. A day the Crown moves or adds for a single year, as for a jubilee or a coronation, cannot be worked out in advance and is missing until this set is updated.",
 
     // ── where each set came from ──────────────────────────────────────────
     "addon.holiday-calendars.from.us": "Taken from the federal holiday statute, weekday rules and all.",
@@ -90,6 +92,7 @@ export const strings = {
     "addon.holiday-calendars.from.fr-alsace-moselle": "Taken from the labour code, and from the local law that keeps two further days in the three départements.",
     "addon.holiday-calendars.from.cz": "Taken from the Czech act on state holidays and other holidays.",
     "addon.holiday-calendars.from.dk": "Taken from the Danish church holidays, as they stand after the 2024 change.",
+    "addon.holiday-calendars.from.gb-england-and-wales": "Taken from Schedule 1 of the Banking and Financial Dealings Act 1971 and the days the Crown names under it each year, checked against the government's published list for each year.",
 
     // ── the countries this add-on refuses to guess ────────────────────────
     "addon.holiday-calendars.announced.title": "Countries with no set here",
@@ -105,6 +108,7 @@ export const strings = {
     "addon.holiday-calendars.pick.import": "Import this year",
     "addon.holiday-calendars.pick.reviewed": "Last checked {date}.",
     "addon.holiday-calendars.pick.noSubstitutes": "Where a day falls at the weekend nothing extra is added. Whether the business moves the day off is the business's decision, not the state's.",
+    "addon.holiday-calendars.pick.substitutes": "In this set a day that falls at the weekend is shown on the weekday the law moves it to, marked as a substitute day, because that weekday is the bank holiday.",
 
     // ── what is held now ──────────────────────────────────────────────────
     "addon.holiday-calendars.held.title": "Days the business is closed",
@@ -157,6 +161,7 @@ export const strings = {
     "addon.holiday-calendars.area.fr-alsace-moselle": "Frankreich — Elsass-Mosel",
     "addon.holiday-calendars.area.cz": "Tschechien",
     "addon.holiday-calendars.area.dk": "Dänemark",
+    "addon.holiday-calendars.area.gb-england-and-wales": "Vereinigtes Königreich — England und Wales",
     "addon.holiday-calendars.area.cn": "China",
     "addon.holiday-calendars.area.tw": "Taiwan",
     "addon.holiday-calendars.area.eg": "Ägypten",
@@ -167,6 +172,7 @@ export const strings = {
     "addon.holiday-calendars.note.fr-alsace-moselle": "Die elf landesweiten Tage und die zwei weiteren, die im Elsass und im Departement Mosel gelten: Karfreitag und der 26. Dezember.",
     "addon.holiday-calendars.note.cz": "Die staatlichen und die übrigen Feiertage, dreizehn an der Zahl, so wie das Gesetz sie aufzählt.",
     "addon.holiday-calendars.note.dk": "Die zehn dänischen kirchlichen Feiertage. Der große Bettag gehört nicht dazu — er ist seit 2024 keiner mehr. Heiligabend und Silvester sind rechtlich gewöhnliche Arbeitstage, was auch immer ein Betrieb daraus macht.",
+    "addon.holiday-calendars.note.gb-england-and-wales": "Die acht Bank- und Feiertage von England und Wales, und nur dort. Schottland und Nordirland haben andere Tage, und keiner davon steht hier. Einen Tag, den die Krone für ein einzelnes Jahr verlegt oder hinzufügt, etwa zu einem Thronjubiläum oder einer Krönung, kann niemand im Voraus berechnen; er fehlt, bis diese Liste nachgetragen ist.",
 
     "addon.holiday-calendars.from.us": "Aus dem Bundesfeiertagsgesetz übernommen, samt seiner Wochentagsregeln.",
     "addon.holiday-calendars.from.de": "Aus den sechzehn Feiertagsgesetzen der Länder übernommen, zusammengezogen auf die Tage, die in allen gelten.",
@@ -174,6 +180,7 @@ export const strings = {
     "addon.holiday-calendars.from.fr-alsace-moselle": "Aus dem Arbeitsgesetzbuch übernommen und aus dem örtlichen Recht, das in den drei Departements zwei weitere Tage erhält.",
     "addon.holiday-calendars.from.cz": "Aus dem tschechischen Gesetz über die staatlichen und die übrigen Feiertage übernommen.",
     "addon.holiday-calendars.from.dk": "Aus den dänischen kirchlichen Feiertagen übernommen, so wie sie nach der Änderung von 2024 gelten.",
+    "addon.holiday-calendars.from.gb-england-and-wales": "Aus Anhang 1 des Banking and Financial Dealings Act 1971 übernommen und aus den Tagen, die die Krone jedes Jahr danach bestimmt, abgeglichen mit der veröffentlichten Liste der Regierung für jedes Jahr.",
 
     "addon.holiday-calendars.announced.title": "Länder ohne Liste",
     "addon.holiday-calendars.announced.lead": "Diese Länder haben keinen Kalender, den sich jemand im Voraus ausrechnen könnte. Ihre Regierungen geben ihn Jahr für Jahr bekannt. Eine geratene Liste sähe auf der Schichtliste genauso aus wie eine geprüfte, also gibt es keine.",
@@ -187,6 +194,7 @@ export const strings = {
     "addon.holiday-calendars.pick.import": "Dieses Jahr übernehmen",
     "addon.holiday-calendars.pick.reviewed": "Zuletzt geprüft am {date}.",
     "addon.holiday-calendars.pick.noSubstitutes": "Fällt ein Tag auf ein Wochenende, kommt nichts hinzu. Ob der Betrieb den freien Tag verschiebt, entscheidet der Betrieb und nicht der Staat.",
+    "addon.holiday-calendars.pick.substitutes": "In dieser Liste steht ein Tag, der auf ein Wochenende fällt, an dem Werktag, auf den ihn das Gesetz verlegt, als Ersatztag gekennzeichnet — denn dieser Werktag ist der Bankfeiertag.",
 
     "addon.holiday-calendars.held.title": "Tage, an denen der Betrieb zu ist",
     "addon.holiday-calendars.held.none": "Noch nichts. Wählen Sie oben Land und Jahr, sehen Sie sich an, was käme, und übernehmen Sie es.",
@@ -234,6 +242,7 @@ export const strings = {
     "addon.holiday-calendars.area.fr-alsace-moselle": "France — Alsace-Moselle",
     "addon.holiday-calendars.area.cz": "Tchéquie",
     "addon.holiday-calendars.area.dk": "Danemark",
+    "addon.holiday-calendars.area.gb-england-and-wales": "Royaume-Uni — Angleterre et pays de Galles",
     "addon.holiday-calendars.area.cn": "Chine",
     "addon.holiday-calendars.area.tw": "Taïwan",
     "addon.holiday-calendars.area.eg": "Égypte",
@@ -244,6 +253,7 @@ export const strings = {
     "addon.holiday-calendars.note.fr-alsace-moselle": "Les onze jours nationaux, et les deux de plus conservés en Bas-Rhin, Haut-Rhin et Moselle : le Vendredi saint et le 26 décembre.",
     "addon.holiday-calendars.note.cz": "Les fêtes d'État et les autres fêtes, treize en tout, telles que la loi les énumère.",
     "addon.holiday-calendars.note.dk": "Les dix fêtes religieuses danoises. Le grand jour de prière n'en fait pas partie : il a cessé d'en être une en 2024. Le 24 et le 31 décembre sont des jours ouvrables au regard de la loi, quoi qu'en fasse un établissement.",
+    "addon.holiday-calendars.note.gb-england-and-wales": "Les huit jours fériés de l'Angleterre et du pays de Galles, et d'eux seuls. L'Écosse et l'Irlande du Nord ont d'autres jours, et aucun des leurs ne figure ici. Un jour que la Couronne déplace ou ajoute pour une seule année, pour un jubilé ou un couronnement, ne se calcule pas à l'avance et manque jusqu'à la mise à jour de cette liste.",
 
     "addon.holiday-calendars.from.us": "Repris de la loi fédérale sur les jours fériés, règles de jour de semaine comprises.",
     "addon.holiday-calendars.from.de": "Repris des seize lois régionales sur les jours fériés, ramenées aux jours communs à toutes.",
@@ -251,6 +261,7 @@ export const strings = {
     "addon.holiday-calendars.from.fr-alsace-moselle": "Repris du code du travail et du droit local qui conserve deux jours de plus dans les trois départements.",
     "addon.holiday-calendars.from.cz": "Repris de la loi tchèque sur les fêtes d'État et les autres fêtes.",
     "addon.holiday-calendars.from.dk": "Repris des fêtes religieuses danoises, telles qu'elles valent après la modification de 2024.",
+    "addon.holiday-calendars.from.gb-england-and-wales": "Repris de l'annexe 1 du Banking and Financial Dealings Act 1971 et des jours que la Couronne fixe chaque année en vertu de cette loi, vérifiés sur la liste publiée par le gouvernement pour chaque année.",
 
     "addon.holiday-calendars.announced.title": "Pays sans liste ici",
     "addon.holiday-calendars.announced.lead": "Ces pays n'ont pas de calendrier calculable à l'avance. Leurs gouvernements l'annoncent, année après année. Une liste devinée aurait, sur un tableau de service, exactement l'air d'une liste vérifiée : il n'y en a donc aucune.",
@@ -264,6 +275,7 @@ export const strings = {
     "addon.holiday-calendars.pick.import": "Reprendre cette année",
     "addon.holiday-calendars.pick.reviewed": "Dernière vérification le {date}.",
     "addon.holiday-calendars.pick.noSubstitutes": "Quand un jour tombe le week-end, rien n'est ajouté. Décaler le jour chômé, c'est à l'établissement d'en décider, pas à l'État.",
+    "addon.holiday-calendars.pick.substitutes": "Dans cette liste, un jour qui tombe le week-end figure au jour ouvrable où la loi le reporte, marqué comme jour de remplacement, car c'est ce jour-là qui est férié.",
 
     "addon.holiday-calendars.held.title": "Jours de fermeture de l'établissement",
     "addon.holiday-calendars.held.none": "Rien pour l'instant. Choisissez un pays et une année ci-dessus, regardez ce qui arriverait, et reprenez-le.",
@@ -311,6 +323,7 @@ export const strings = {
     "addon.holiday-calendars.area.fr-alsace-moselle": "Francie — Alsasko a Mosela",
     "addon.holiday-calendars.area.cz": "Česko",
     "addon.holiday-calendars.area.dk": "Dánsko",
+    "addon.holiday-calendars.area.gb-england-and-wales": "Spojené království — Anglie a Wales",
     "addon.holiday-calendars.area.cn": "Čína",
     "addon.holiday-calendars.area.tw": "Tchaj-wan",
     "addon.holiday-calendars.area.eg": "Egypt",
@@ -321,6 +334,7 @@ export const strings = {
     "addon.holiday-calendars.note.fr-alsace-moselle": "Jedenáct celostátních dnů a dva další, které zůstávají v departementech Dolní Rýn, Horní Rýn a Mosela: Velký pátek a druhý svátek vánoční.",
     "addon.holiday-calendars.note.cz": "Státní svátky a ostatní svátky, třináct celkem, tak jak je zákon vyjmenovává.",
     "addon.holiday-calendars.note.dk": "Deset dánských církevních svátků. Velký modlitební den mezi ně nepatří — přestal jím být v roce 2024. Štědrý večer a Silvestr jsou podle zákona běžné pracovní dny, ať s nimi podnik naloží jakkoli.",
+    "addon.holiday-calendars.note.gb-england-and-wales": "Osm bankovních a státních svátků Anglie a Walesu, a jen tam. Skotsko a Severní Irsko mají jiné dny a žádný z nich tu není. Den, který koruna na jediný rok posune nebo přidá, třeba kvůli jubileu nebo korunovaci, nejde dopředu spočítat a chybí, dokud se tento seznam nedoplní.",
 
     "addon.holiday-calendars.from.us": "Převzato z federálního zákona o svátcích, včetně jeho pravidel o dnech v týdnu.",
     "addon.holiday-calendars.from.de": "Převzato ze šestnácti zemských zákonů o svátcích, zúženo na dny společné všem.",
@@ -328,6 +342,7 @@ export const strings = {
     "addon.holiday-calendars.from.fr-alsace-moselle": "Převzato ze zákoníku práce a z místního práva, které ve třech departementech zachovává dva dny navíc.",
     "addon.holiday-calendars.from.cz": "Převzato z českého zákona o státních svátcích a ostatních svátcích.",
     "addon.holiday-calendars.from.dk": "Převzato z dánských církevních svátků, tak jak platí po změně z roku 2024.",
+    "addon.holiday-calendars.from.gb-england-and-wales": "Převzato z přílohy 1 zákona Banking and Financial Dealings Act 1971 a ze dnů, které podle něj každý rok určuje koruna, ověřeno podle seznamu, který vláda zveřejňuje na každý rok.",
 
     "addon.holiday-calendars.announced.title": "Země, ke kterým tu seznam není",
     "addon.holiday-calendars.announced.lead": "Tyto země nemají kalendář, který by šlo dopředu spočítat. Jejich vlády ho vyhlašují rok po roce. Uhodnutý seznam by na rozpisu směn vypadal úplně stejně jako ověřený, a tak tu žádný není.",
@@ -341,6 +356,7 @@ export const strings = {
     "addon.holiday-calendars.pick.import": "Převzít tento rok",
     "addon.holiday-calendars.pick.reviewed": "Naposledy ověřeno {date}.",
     "addon.holiday-calendars.pick.noSubstitutes": "Padne-li den na víkend, nic dalšího se nepřidává. Zda podnik volno přesune, rozhoduje podnik, ne stát.",
+    "addon.holiday-calendars.pick.substitutes": "V tomto seznamu je den, který padne na víkend, uveden v pracovní den, na který ho zákon posouvá, a označen jako náhradní den, jelikož právě ten pracovní den je bankovním svátkem.",
 
     "addon.holiday-calendars.held.title": "Dny, kdy má podnik zavřeno",
     "addon.holiday-calendars.held.none": "Zatím nic. Vyberte nahoře zemi a rok, podívejte se, co by přišlo, a převezměte to.",
@@ -388,6 +404,7 @@ export const strings = {
     "addon.holiday-calendars.area.fr-alsace-moselle": "Frankrig — Alsace-Moselle",
     "addon.holiday-calendars.area.cz": "Tjekkiet",
     "addon.holiday-calendars.area.dk": "Danmark",
+    "addon.holiday-calendars.area.gb-england-and-wales": "Storbritannien — England og Wales",
     "addon.holiday-calendars.area.cn": "Kina",
     "addon.holiday-calendars.area.tw": "Taiwan",
     "addon.holiday-calendars.area.eg": "Egypten",
@@ -398,6 +415,7 @@ export const strings = {
     "addon.holiday-calendars.note.fr-alsace-moselle": "De elleve landsdækkende dage og de to yderligere, der er bevaret i Bas-Rhin, Haut-Rhin og Moselle: langfredag og den 26. december.",
     "addon.holiday-calendars.note.cz": "Statshelligdagene og de øvrige helligdage, tretten i alt, sådan som loven remser dem op.",
     "addon.holiday-calendars.note.dk": "De ti danske helligdage. Store bededag er ikke iblandt dem — den holdt op med at være helligdag i 2024. Juleaftensdag og nytårsaftensdag er efter loven almindelige arbejdsdage, uanset hvad en virksomhed gør ved det.",
+    "addon.holiday-calendars.note.gb-england-and-wales": "De otte bank- og helligdage i England og Wales, og kun dér. Skotland og Nordirland har andre dage, og ingen af deres står her. En dag, som kronen flytter eller tilføjer for et enkelt år, som ved et jubilæum eller en kroning, kan ikke regnes ud på forhånd og mangler, indtil denne liste er rettet.",
 
     "addon.holiday-calendars.from.us": "Hentet fra den føderale helligdagslov, ugedagsreglerne med.",
     "addon.holiday-calendars.from.de": "Hentet fra de seksten delstaters helligdagslove, skåret ned til de dage, der gælder i dem alle.",
@@ -405,6 +423,7 @@ export const strings = {
     "addon.holiday-calendars.from.fr-alsace-moselle": "Hentet fra arbejdsloven og fra den lokale ret, der bevarer to dage mere i de tre departementer.",
     "addon.holiday-calendars.from.cz": "Hentet fra den tjekkiske lov om statshelligdage og øvrige helligdage.",
     "addon.holiday-calendars.from.dk": "Hentet fra de danske helligdage, sådan som de ser ud efter ændringen i 2024.",
+    "addon.holiday-calendars.from.gb-england-and-wales": "Hentet fra bilag 1 til Banking and Financial Dealings Act 1971 og fra de dage, kronen fastsætter efter loven hvert år, kontrolleret mod regeringens offentliggjorte liste for hvert år.",
 
     "addon.holiday-calendars.announced.title": "Lande uden liste her",
     "addon.holiday-calendars.announced.lead": "De her lande har ingen kalender, nogen kan regne ud på forhånd. Deres regeringer melder den ud år for år. En gættet liste ville se nøjagtig ud som en kontrolleret, når den først stod på en vagtseddel, så der er ingen.",
@@ -418,6 +437,7 @@ export const strings = {
     "addon.holiday-calendars.pick.import": "Hent dette år ind",
     "addon.holiday-calendars.pick.reviewed": "Sidst kontrolleret den {date}.",
     "addon.holiday-calendars.pick.noSubstitutes": "Falder en dag i en weekend, lægges der ikke noget oveni. Om virksomheden rykker fridagen, er virksomhedens afgørelse og ikke statens.",
+    "addon.holiday-calendars.pick.substitutes": "I denne liste står en dag, der falder i en weekend, på den hverdag, loven flytter den til, markeret som erstatningsdag, fordi det er den hverdag, der er bankhelligdagen.",
 
     "addon.holiday-calendars.held.title": "Dage hvor virksomheden holder lukket",
     "addon.holiday-calendars.held.none": "Ingenting endnu. Vælg land og år ovenfor, se hvad der ville komme, og hent det ind.",
@@ -465,6 +485,7 @@ export const strings = {
     "addon.holiday-calendars.area.fr-alsace-moselle": "法国 — 阿尔萨斯-摩泽尔",
     "addon.holiday-calendars.area.cz": "捷克",
     "addon.holiday-calendars.area.dk": "丹麦",
+    "addon.holiday-calendars.area.gb-england-and-wales": "英国 — 英格兰和威尔士",
     "addon.holiday-calendars.area.cn": "中国",
     "addon.holiday-calendars.area.tw": "台湾",
     "addon.holiday-calendars.area.eg": "埃及",
@@ -475,6 +496,7 @@ export const strings = {
     "addon.holiday-calendars.note.fr-alsace-moselle": "十一个全国性的日子，加上下莱茵、上莱茵和摩泽尔三省保留的另外两天：耶稣受难日和十二月二十六日。",
     "addon.holiday-calendars.note.cz": "国家节日与其他节日，共十三天，按法律列举的次序。",
     "addon.holiday-calendars.note.dk": "丹麦的十个教会假日。大祈祷日不在其中——它从二〇二四年起不再是假日。平安夜和除夕在法律上是普通工作日，无论单位怎么安排。",
+    "addon.holiday-calendars.note.gb-england-and-wales": "仅限英格兰和威尔士的八个银行假日和公共假日。苏格兰和北爱尔兰的假日不同，这里一个也没有。王室为某一年单独调动或增加的日子，例如庆典或加冕，无法事先推算，在这份清单更新之前不会出现。",
 
     "addon.holiday-calendars.from.us": "取自联邦假日法律，连同其中关于星期几的规则。",
     "addon.holiday-calendars.from.de": "取自十六个州的假日法律，收窄为各州共有的日子。",
@@ -482,6 +504,7 @@ export const strings = {
     "addon.holiday-calendars.from.fr-alsace-moselle": "取自劳动法典，以及在那三个省保留另外两天的地方法。",
     "addon.holiday-calendars.from.cz": "取自捷克关于国家节日与其他节日的法律。",
     "addon.holiday-calendars.from.dk": "取自丹麦教会假日，按二〇二四年修改后的情况。",
+    "addon.holiday-calendars.from.gb-england-and-wales": "取自一九七一年《银行和金融交易法》附表一，以及王室每年依该法确定的日子，并逐年与政府公布的清单核对。",
 
     "addon.holiday-calendars.announced.title": "此处没有清单的国家",
     "addon.holiday-calendars.announced.lead": "这些国家的假日无法事先推算。它们的政府一年一年地公布。猜出来的清单一旦排进班表，看起来和核对过的一模一样，所以这里一份也没有。",
@@ -495,6 +518,7 @@ export const strings = {
     "addon.holiday-calendars.pick.import": "取用这一年",
     "addon.holiday-calendars.pick.reviewed": "最近一次核对：{date}。",
     "addon.holiday-calendars.pick.noSubstitutes": "假日碰上周末时，这里不会另外补一天。要不要把休息日挪开，由单位决定，不由国家决定。",
+    "addon.holiday-calendars.pick.substitutes": "在这份清单里，落在周末的假日显示在法律把它挪到的工作日，并标为补假日，因为那个工作日才是银行假日。",
 
     "addon.holiday-calendars.held.title": "单位停业的日子",
     "addon.holiday-calendars.held.none": "还没有。在上面选好国家和年份，看看会来些什么，再取用。",
@@ -542,6 +566,7 @@ export const strings = {
     "addon.holiday-calendars.area.fr-alsace-moselle": "法國 — 亞爾薩斯-摩澤爾",
     "addon.holiday-calendars.area.cz": "捷克",
     "addon.holiday-calendars.area.dk": "丹麥",
+    "addon.holiday-calendars.area.gb-england-and-wales": "英國 — 英格蘭和威爾斯",
     "addon.holiday-calendars.area.cn": "中國",
     "addon.holiday-calendars.area.tw": "臺灣",
     "addon.holiday-calendars.area.eg": "埃及",
@@ -552,6 +577,7 @@ export const strings = {
     "addon.holiday-calendars.note.fr-alsace-moselle": "十一個全國性的日子，加上下萊茵、上萊茵和摩澤爾三省保留的另外兩天：耶穌受難日和十二月二十六日。",
     "addon.holiday-calendars.note.cz": "國定節日與其他節日，共十三天，依法律列舉的次序。",
     "addon.holiday-calendars.note.dk": "丹麥的十個教會假日。大祈禱日不在其中——它從二〇二四年起不再是假日。平安夜和除夕在法律上是普通工作日，無論單位怎麼安排。",
+    "addon.holiday-calendars.note.gb-england-and-wales": "僅限英格蘭和威爾斯的八個銀行假日和公共假日。蘇格蘭和北愛爾蘭的假日不同，這裡一個也沒有。王室為某一年單獨調動或增加的日子，例如慶典或加冕，無法事先推算，在這份清單更新之前不會出現。",
 
     "addon.holiday-calendars.from.us": "取自聯邦假日法律，連同其中關於星期幾的規則。",
     "addon.holiday-calendars.from.de": "取自十六個邦的假日法律，收窄為各邦共有的日子。",
@@ -559,6 +585,7 @@ export const strings = {
     "addon.holiday-calendars.from.fr-alsace-moselle": "取自勞動法典，以及在那三個省保留另外兩天的地方法。",
     "addon.holiday-calendars.from.cz": "取自捷克關於國定節日與其他節日的法律。",
     "addon.holiday-calendars.from.dk": "取自丹麥教會假日，依二〇二四年修改後的情形。",
+    "addon.holiday-calendars.from.gb-england-and-wales": "取自一九七一年《銀行和金融交易法》附表一，以及王室每年依該法確定的日子，並逐年與政府公布的清單核對。",
 
     "addon.holiday-calendars.announced.title": "此處沒有清單的國家",
     "addon.holiday-calendars.announced.lead": "這些國家的假日無法事先推算。它們的政府一年一年地公布。猜出來的清單一旦排進班表，看起來和核對過的一模一樣，所以這裡一份也沒有。",
@@ -572,6 +599,7 @@ export const strings = {
     "addon.holiday-calendars.pick.import": "取用這一年",
     "addon.holiday-calendars.pick.reviewed": "最近一次核對：{date}。",
     "addon.holiday-calendars.pick.noSubstitutes": "假日碰上週末時，這裡不會另外補一天。要不要把休息日挪開，由單位決定，不由國家決定。",
+    "addon.holiday-calendars.pick.substitutes": "在這份清單裡，落在週末的假日顯示在法律把它挪到的工作日，並標為補假日，因為那個工作日才是銀行假日。",
 
     "addon.holiday-calendars.held.title": "單位停業的日子",
     "addon.holiday-calendars.held.none": "還沒有。在上面選好國家和年份，看看會來些什麼，再取用。",
@@ -619,6 +647,7 @@ export const strings = {
     "addon.holiday-calendars.area.fr-alsace-moselle": "فرنسا — الألزاس والموزيل",
     "addon.holiday-calendars.area.cz": "التشيك",
     "addon.holiday-calendars.area.dk": "الدنمارك",
+    "addon.holiday-calendars.area.gb-england-and-wales": "المملكة المتحدة — إنجلترا وويلز",
     "addon.holiday-calendars.area.cn": "الصين",
     "addon.holiday-calendars.area.tw": "تايوان",
     "addon.holiday-calendars.area.eg": "مصر",
@@ -629,6 +658,7 @@ export const strings = {
     "addon.holiday-calendars.note.fr-alsace-moselle": "الأيام الأحد عشر الوطنية، ويومان آخران محفوظان في الراين الأدنى والراين الأعلى والموزيل: الجمعة العظيمة، والسادس والعشرون من ديسمبر.",
     "addon.holiday-calendars.note.cz": "أعياد الدولة والأعياد الأخرى، ثلاثة عشر في المجموع، كما يعددها القانون.",
     "addon.holiday-calendars.note.dk": "أعياد الكنيسة الدنماركية العشرة. ويوم الصلاة الكبير ليس منها — إذ لم يعد عطلة منذ عام ٢٠٢٤. أما ليلة عيد الميلاد وليلة رأس السنة فيومان عاديان في نظر القانون، مهما فعلت المنشأة بهما.",
+    "addon.holiday-calendars.note.gb-england-and-wales": "عطلات البنوك والعطلات العامة الثماني في إنجلترا وويلز وحدهما. لاسكتلندا وأيرلندا الشمالية أيام مختلفة، وليس شيء منها هنا. أما اليوم الذي يُنقل أو يُضاف بأمر التاج لسنة واحدة، كاليوبيل أو التتويج، فلا يمكن حسابه مقدمًا ويغيب إلى أن تُحدَّث هذه القائمة.",
 
     "addon.holiday-calendars.from.us": "مأخوذة من قانون العطلات الاتحادي، بقواعده الخاصة بأيام الأسبوع.",
     "addon.holiday-calendars.from.de": "مأخوذة من قوانين العطلات في الولايات الست عشرة، مختصرةً إلى الأيام المشتركة بينها جميعًا.",
@@ -636,6 +666,7 @@ export const strings = {
     "addon.holiday-calendars.from.fr-alsace-moselle": "مأخوذة من قانون العمل، ومن القانون المحلي الذي يحفظ يومين إضافيين في المحافظات الثلاث.",
     "addon.holiday-calendars.from.cz": "مأخوذة من القانون التشيكي الخاص بأعياد الدولة والأعياد الأخرى.",
     "addon.holiday-calendars.from.dk": "مأخوذة من أعياد الكنيسة الدنماركية، كما صارت بعد تعديل عام ٢٠٢٤.",
+    "addon.holiday-calendars.from.gb-england-and-wales": "مأخوذة من الجدول الأول لقانون المعاملات المصرفية والمالية لعام ١٩٧١، ومن الأيام التي يحددها التاج بموجبه كل عام، ومُراجَعة على القائمة التي تنشرها الحكومة لكل سنة.",
 
     "addon.holiday-calendars.announced.title": "بلدان بلا قائمة هنا",
     "addon.holiday-calendars.announced.lead": "هذه البلدان ليس لها تقويم يستطيع أحد حسابه مقدمًا. حكوماتها تعلنه سنة بعد سنة. والقائمة المُخمَّنة تبدو على جدول المناوبات مثل المُراجَعة تمامًا، فلا توجد هنا قائمة أصلًا.",
@@ -649,6 +680,7 @@ export const strings = {
     "addon.holiday-calendars.pick.import": "خذ هذه السنة",
     "addon.holiday-calendars.pick.reviewed": "آخر مراجعة في {date}.",
     "addon.holiday-calendars.pick.noSubstitutes": "إذا وقع يوم في نهاية الأسبوع فلا يُضاف شيء. وتحريك يوم الراحة قرار المنشأة، لا قرار الدولة.",
+    "addon.holiday-calendars.pick.substitutes": "في هذه القائمة يظهر اليوم الذي يقع في نهاية الأسبوع في يوم العمل الذي ينقله القانون إليه، موسومًا بأنه يوم بديل، لأن يوم العمل ذاك هو عطلة البنوك.",
 
     "addon.holiday-calendars.held.title": "الأيام التي تغلق فيها المنشأة",
     "addon.holiday-calendars.held.none": "لا شيء بعد. اختر بلدًا وسنة بالأعلى، وانظر ما الذي سيأتي، ثم خذه.",

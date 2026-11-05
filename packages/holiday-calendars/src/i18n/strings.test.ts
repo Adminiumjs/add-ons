@@ -15,7 +15,7 @@
  *
  * ── AND ONE CHECK THAT IS THIS ADD-ON'S OWN ─────────────────────────────────
  *
- * Six of these keys are the sentence under a day-set preview saying WHAT THE
+ * Seven of these keys are the sentence under a day-set preview saying WHAT THE
  * SET LEAVES OUT — that the American set is federal only, that ten German
  * states add days it does not carry, that Store Bededag was abolished. Those
  * clauses are the difference between a limit a reader can work around and a

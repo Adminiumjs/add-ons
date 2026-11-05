@@ -61,6 +61,7 @@ import {
   MAINTENANCE,
   YEARS,
   expandSet,
+  weekendNoteKey,
   type DaySet,
 } from "../daysets.ts";
 import { useFormat, useT } from "../i18n/t.ts";
@@ -239,7 +240,8 @@ export function SettingsPanel({ payload }: { payload: SettingsPanelPayload }) {
 
         <Note>{t(set.noteKey)}</Note>
         <Note style={{ marginBlockStart: 5 }}>{t(set.derivation.statedIn)}</Note>
-        <Note style={{ marginBlockStart: 5 }}>{t("addon.holiday-calendars.pick.noSubstitutes")}</Note>
+        {/* Whether a weekend day stays put or moves to the weekday the state names: see `weekendNoteKey`. */}
+        <Note style={{ marginBlockStart: 5 }}>{t(weekendNoteKey(set))}</Note>
 
         <div style={{ marginBlockStart: 12 }}>
           <Button onClick={doImport}>{t("addon.holiday-calendars.pick.import")}</Button>

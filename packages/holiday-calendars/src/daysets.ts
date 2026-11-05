@@ -51,7 +51,16 @@
  * checks it against the statute and takes on reviewing it every year — or they
  * are announced, in which case it goes in the refusal list beside China.
  *
- * ── REGIONS ARE IN THE TYPE EVEN THOUGH FIVE OF THE SIX SETS ARE NATIONAL ───
+ * ONE SECOND REASON, AND ONLY ONE: AN APP IN THE CATALOGUE TRADES THERE. Maker
+ * Shop and Print Shop are both businesses in England, priced in pounds, and
+ * their "Add as a closure" reads this add-on's rows; a pack that spoke only
+ * the locales' countries would show those two apps an empty list. So England
+ * and Wales has a set although no locale here names the United Kingdom. The
+ * reason is as narrow as the first one on purpose — "a shipped app needs it",
+ * not "somebody asked" — and it carries the same price: a statute read, and a
+ * yearly review.
+ *
+ * ── REGIONS ARE IN THE TYPE, AND TWO SETS USE THEM ──────────────────────────
  *
  * Not decoration, and not speculation. Germany's public holidays are set by
  * each of sixteen federal states and only nine are common to all of them;
@@ -70,6 +79,15 @@
  * The German set says in the picker that it is the national nine and that
  * states add their own.
  *
+ * The second regional set is England and Wales, and it is regional for the
+ * same reason Alsace-Moselle is: the United Kingdom has no single list. Bank
+ * holidays are set per jurisdiction by the Banking and Financial Dealings Act
+ * 1971, and Scotland and Northern Ireland have days England and Wales does not
+ * (2 January and St Andrew's Day; St Patrick's Day and 12 July) and lack one
+ * it has. A set labelled "United Kingdom" would be wrong for two of its four
+ * nations, so it is labelled England and Wales, and its note says the others
+ * differ. Scotland and Northern Ireland do not ship: no app here trades there.
+ *
  * ── WHAT A SET DELIBERATELY DOES NOT CARRY: SUBSTITUTE DAYS ─────────────────
  *
  * Where a holiday falls at the weekend, some countries move the day off to the
@@ -86,12 +104,33 @@
  *
  * What would change it: a host that genuinely needs the observed day. The
  * answer then is a per-country substitution rule read off each country's own
- * statute — never one global rule, because there is no global rule — and it
- * would arrive as a new field on `DaySet`, with the same anchor-date suite
- * behind it. It is not "a small addition to the expander".
+ * statute — never one global rule, because there is no global rule — with the
+ * same anchor-date suite behind it. It is not "a small addition to the
+ * expander".
+ *
+ * ── THE ONE SET WHERE THE SUBSTITUTE IS THE DAY THE STATE NAMES ─────────────
+ *
+ * England and Wales is that case, and it is the same rule read the other way
+ * round rather than an exception to it. In America 4 July stays the legal
+ * holiday and 6103(b) adds an observed Friday for federal staff. In England
+ * and Wales the statute itself names the moved day: Schedule 1 of the 1971
+ * Act makes 26 December a bank holiday only "if it be not a Sunday", and makes
+ * 27 December one "in a year in which 25th or 26th December is a Sunday"; the
+ * yearly royal proclamation names the Monday after a weekend New Year's Day
+ * and the other weekday the Christmas pair needs. GOV.UK's published list for
+ * each year carries the moved day and not the weekend one. So a set that named
+ * Boxing Day on Saturday 26 December 2026 would be naming the day the state
+ * does not close on, and leaving out Monday the 28th, which it does.
+ *
+ * So a day may carry `weekend` (see `WeekendMove`), and only the days the
+ * statute and proclamations move carry it — New Year's Day, Christmas Day and
+ * Boxing Day, never Good Friday. It is a field on the DAY and not on the set
+ * because the move is per day and so is the substitute's name. Every set
+ * without it is unchanged, and the picker says which kind of set it is
+ * showing.
  */
 
-import { civilFromDays, daysFromCivil, easterSunday, isoOf, nthWeekdayOf, type Weekday } from "./civil.ts";
+import { civilFromDays, daysFromCivil, easterSunday, isoOf, nthWeekdayOf, weekdayOf, type Weekday } from "./civil.ts";
 import type { StringKey } from "./i18n/strings.ts";
 
 /**
@@ -157,6 +196,35 @@ export interface NamedDay {
   /** In the country's own language, as the state names it. */
   readonly name: string;
   readonly rule: DayRule;
+  /**
+   * Absent for almost every day: a day that falls at the weekend stays there.
+   * Present only where the country's own statute moves the day — see the
+   * header on substitute days.
+   */
+  readonly weekend?: WeekendMove;
+}
+
+/**
+ * Where a day goes when its rule lands it on a Saturday or a Sunday.
+ *
+ * ONE VARIANT, BECAUSE ONE SET NEEDS ONE. `first-weekday-after` is the first
+ * Monday to Friday after the day's own date that no other day of the set holds
+ * that year. Days that do not move are placed first; days that do are placed
+ * in date order. That one sentence gives every case the England and Wales
+ * statute and proclamations give: New Year's Day on a Saturday goes to Monday
+ * the 3rd; Christmas on a Saturday goes to Monday the 27th and Boxing Day on
+ * the Sunday to Tuesday the 28th; Christmas on a Sunday steps over Boxing Day
+ * on the Monday to Tuesday the 27th; Boxing Day alone on a Saturday goes to
+ * Monday the 28th. `daysets.test.ts` pins each of those against the dates
+ * GOV.UK published, not only the two reviewed years.
+ *
+ * A country whose moves differ — the nearest weekday, the Friday before — gets
+ * its own variant then, with a set behind it, as `DayRule` says.
+ */
+export interface WeekendMove {
+  readonly to: "first-weekday-after";
+  /** What the moved day is called, as the state writes it. */
+  readonly name: string;
 }
 
 /**
@@ -186,13 +254,15 @@ export interface DaySet {
   /**
    * The area within the country, or absent for a national set.
    *
-   * NOT ISO 3166-2, and the one set that uses it is why. Alsace-Moselle is
+   * NOT ISO 3166-2, and both sets that use it are why. Alsace-Moselle is
    * three départements (Bas-Rhin, Haut-Rhin and Moselle) that share two extra
    * holidays; there is no single subdivision code for it, so a field typed as
    * "an ISO 3166-2 code" could not have expressed the only regional set this
    * package ships. It is therefore the SET'S OWN stable key for the area —
    * lower case, hyphenated — and an ISO 3166-2 code is a perfectly good value
-   * for it where the area happens to be one subdivision.
+   * for it where the area happens to be one subdivision. England and Wales is
+   * the same case again: two subdivisions (GB-ENG and GB-WLS) under one law,
+   * so its key is `england-and-wales`.
    *
    * It is part of a set's identity: `{ country, region, year }` is what an
    * import is stamped with and what a re-import replaces.
@@ -231,7 +301,7 @@ export interface DaySet {
  * would leave an operator in Cairo assuming the product simply has not got
  * round to Egypt, which is a different and false statement.
  *
- * It is also the honest answer to "why only five countries": the constraint is
+ * It is also the honest answer to "why only these countries": the constraint is
  * not effort, it is what can be known in advance, and saying which countries
  * fall on the other side of that line is more useful than five more sets.
  *
@@ -470,6 +540,68 @@ const DENMARK: DaySet = {
   ],
 };
 
+/**
+ * The eight bank and public holidays of England and Wales.
+ *
+ * WHERE EACH DAY COMES FROM, because they do not all come from one place.
+ * Easter Monday, the last Monday in May, the last Monday in August and Boxing
+ * Day are bank holidays by Schedule 1 of the Banking and Financial Dealings Act
+ * 1971. New Year's Day and the first Monday in May are bank holidays by royal
+ * proclamation under section 1(3) of that Act, made every year since 1974 and
+ * 1978 respectively. Good Friday and Christmas Day are common-law holidays.
+ * GOV.UK publishes the eight together as the year's bank holidays, and that
+ * list is what each reviewed year was checked against.
+ *
+ * THE NAMES ARE GOV.UK'S, which is the state's own wording for them: "Early
+ * May bank holiday", "Spring bank holiday" and "Summer bank holiday", in
+ * sentence case, and "(substitute day)" on a day moved off the weekend.
+ *
+ * WHAT CANNOT BE COMPUTED, said out loud. The Crown may move or add a bank
+ * holiday by proclamation in any year, and has: the May day moved to 8 May for
+ * VE Day in 2020, and extra days were proclaimed for the 2022 jubilee and the
+ * 2023 coronation. No rule foresees one of those, so a year with one is only
+ * right after somebody reads that year's proclamation and changes this set by
+ * hand. The yearly review is when that happens, and the note under the
+ * preview tells the reader to check GOV.UK for such a year.
+ *
+ * Christmas Day on a Saturday (25 December 2027) is still a common-law holiday
+ * on the 25th; GOV.UK lists the Monday after it instead, and so does this set,
+ * because the weekday is what a business closes on. The weekend is the host's
+ * own predicate, as everywhere in this package.
+ */
+const ENGLAND_AND_WALES: DaySet = {
+  country: "GB",
+  region: "england-and-wales",
+  labelKey: "addon.holiday-calendars.area.gb-england-and-wales",
+  noteKey: "addon.holiday-calendars.note.gb-england-and-wales",
+  derivation: {
+    statedIn: "addon.holiday-calendars.from.gb-england-and-wales",
+    reviewedOn: "2026-11-05",
+  },
+  days: [
+    {
+      name: "New Year's Day",
+      rule: { on: "fixed", month: 1, day: 1 },
+      weekend: { to: "first-weekday-after", name: "New Year's Day (substitute day)" },
+    },
+    { name: "Good Friday", rule: { on: "easter", offset: -2 } },
+    { name: "Easter Monday", rule: { on: "easter", offset: 1 } },
+    { name: "Early May bank holiday", rule: { on: "weekday", month: 5, weekday: MON, nth: 1 } },
+    { name: "Spring bank holiday", rule: { on: "weekday", month: 5, weekday: MON, nth: -1 } },
+    { name: "Summer bank holiday", rule: { on: "weekday", month: 8, weekday: MON, nth: -1 } },
+    {
+      name: "Christmas Day",
+      rule: { on: "fixed", month: 12, day: 25 },
+      weekend: { to: "first-weekday-after", name: "Christmas Day (substitute day)" },
+    },
+    {
+      name: "Boxing Day",
+      rule: { on: "fixed", month: 12, day: 26 },
+      weekend: { to: "first-weekday-after", name: "Boxing Day (substitute day)" },
+    },
+  ],
+};
+
 /** Every set this add-on ships, in the order the picker lists them. */
 export const DAY_SETS: readonly DaySet[] = [
   UNITED_STATES,
@@ -478,7 +610,21 @@ export const DAY_SETS: readonly DaySet[] = [
   FRANCE_ALSACE_MOSELLE,
   CZECHIA,
   DENMARK,
+  ENGLAND_AND_WALES,
 ];
+
+/**
+ * The line the picker shows about weekend days, for one set.
+ *
+ * A set either leaves a weekend day where it falls or names the weekday the
+ * state moves it to, and the reader has to be told which, because the two look
+ * the same in a preview of a year where nothing falls at the weekend.
+ */
+export function weekendNoteKey(set: DaySet): StringKey {
+  return set.days.some((day) => day.weekend !== undefined)
+    ? "addon.holiday-calendars.pick.substitutes"
+    : "addon.holiday-calendars.pick.noSubstitutes";
+}
 
 /**
  * The years a set can be asked for.
@@ -534,18 +680,26 @@ export interface ResolvedDay {
   readonly name: string;
 }
 
-function dateOf(rule: DayRule, year: number): string {
+/** The epoch day a rule names in one year, before any weekend move. */
+function epochDayOfRule(rule: DayRule, year: number): number {
   switch (rule.on) {
     case "fixed":
-      return isoOf({ y: year, m: rule.month, d: rule.day });
+      return daysFromCivil(year, rule.month, rule.day);
     case "easter": {
       const easter = easterSunday(year);
-      return isoOf(civilFromDays(daysFromCivil(easter.y, easter.m, easter.d) + rule.offset));
+      return daysFromCivil(easter.y, easter.m, easter.d) + rule.offset;
     }
-    case "weekday":
-      return isoOf(nthWeekdayOf(year, rule.month, rule.weekday, rule.nth));
+    case "weekday": {
+      const day = nthWeekdayOf(year, rule.month, rule.weekday, rule.nth);
+      return daysFromCivil(day.y, day.m, day.d);
+    }
   }
 }
+
+const atWeekend = (epochDay: number): boolean => {
+  const weekday = weekdayOf(epochDay);
+  return weekday === 0 || weekday === 6;
+};
 
 /**
  * A set, resolved onto one year's calendar, sorted by date.
@@ -559,10 +713,30 @@ function dateOf(rule: DayRule, year: number): string {
  * The sort is by ISO string, which for `YYYY-MM-DD` is the same as by date —
  * that is the property the format was designed for, and it is why the read
  * surface trades in ISO strings rather than in epoch days.
+ *
+ * A day carrying `weekend` that lands on a Saturday or a Sunday is placed by
+ * `WeekendMove`'s rule, under its substitute name: the days that stay are
+ * placed first, then the moving ones in date order, each on the first weekday
+ * after its own date that nothing else holds. A set with no `weekend` on any
+ * day comes out exactly as its rules say.
  */
 export function expandSet(set: DaySet, year: number): readonly ResolvedDay[] {
-  return set.days
-    .map((day) => ({ date: dateOf(day.rule, year), name: day.name }))
+  const nominal = set.days.map((day) => ({ day, epoch: epochDayOfRule(day.rule, year) }));
+  const moves = (entry: (typeof nominal)[number]) => entry.day.weekend !== undefined && atWeekend(entry.epoch);
+
+  const placed: { epoch: number; name: string }[] = nominal
+    .filter((entry) => !moves(entry))
+    .map((entry) => ({ epoch: entry.epoch, name: entry.day.name }));
+  const taken = new Set(placed.map((entry) => entry.epoch));
+  for (const entry of nominal.filter(moves).sort((a, b) => a.epoch - b.epoch)) {
+    let epoch = entry.epoch + 1;
+    while (atWeekend(epoch) || taken.has(epoch)) epoch += 1;
+    taken.add(epoch);
+    placed.push({ epoch, name: entry.day.weekend!.name });
+  }
+
+  return placed
+    .map((entry) => ({ date: isoOf(civilFromDays(entry.epoch)), name: entry.name }))
     .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
 }
 
