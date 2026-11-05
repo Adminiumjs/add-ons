@@ -81,6 +81,61 @@ opens again only by its private link, which reads that one design.
 Staff with the **Customiser designer** role set up the shop's side and make
 proofs; the **Customiser reader** reads everything and changes nothing.
 
+## What an app's role needs
+
+The Customiser draws two panels on an app's records: **on a product**
+(`customiser-product`, on the product's link into `bases`) and **on an order
+line** (`customiser-line`, on the line's link into `designs`). The order-line
+panel is where the shop makes the proof and the production files. Each needs
+the reads and writes below, besides the role's own read of the record's table.
+Where one is missing the panel says which, and makes nothing.
+
+### The product panel
+
+An app's role holds all of it itself (`page:@…:view` of an add-on's panel
+needs Adminium 0.3.44):
+
+```json
+{
+  "permissions": ["table:@products:read", "page:@customiser-product:view", "page:@customiser:view"],
+  "tables": [
+    { "addOn": "customiser", "table": "bases", "actions": ["read"] },
+    { "addOn": "customiser", "table": "base_areas", "actions": ["read"] },
+    { "addOn": "customiser", "table": "ready_designs", "actions": ["read"] },
+    { "addOn": "customiser", "table": "features", "actions": ["read"] }
+  ]
+}
+```
+
+`table:@products:read` stands for the app's own table the panel is on.
+`page:@customiser:view` is the set-up page the panel's "Open the set-up"
+goes to; leave it out for a role that does not set up.
+
+### The order-line panel, the proof and the production files
+
+| What | To see the panel | To make the proof and the files |
+|---|---|---|
+| `bases`, `base_pieces`, `base_areas`, `ready_designs`, `ready_parts`, `fonts`, `palettes`, `palette_colours`, `features` | read | read |
+| `designs` | read, read_pii | read, read_pii |
+| `design_versions` | read, read_pii | read, read_pii, create, update |
+| `version_files` | read | read, create, update, delete |
+| `page:@customiser-line:view` | yes | yes |
+| `page:@customiser:view` | no | yes: the starter fonts' files are handed out beside the set-up page |
+
+`read_pii` is needed because the customer's words (`values`), logo and photo
+are personal columns: without it they read as empty and the design is drawn
+without them. `delete` on `version_files` is needed because making the files
+again replaces the version's earlier files.
+
+**An app's role cannot hold this on Adminium 0.3.46.** A role's `tables`
+gives `read`, `create` and `update` only, never `read_pii` or `delete`. Until
+an app's role can take the Customiser's own role, give each person who makes
+proofs the **Customiser designer** role beside their app role (Studio →
+People), and a person who only looks at the panel the **Customiser reader**
+role. Both roles hold exactly the table above. An add-on's role is never
+screens-only, so a person with a screens-only app role who is also given one
+of these opens the dashboard as well.
+
 ## Sample data
 
 Each shop app ships its own sample for the Customiser, taken from
