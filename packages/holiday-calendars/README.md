@@ -42,10 +42,12 @@ set, the date and the name as the state writes it. It starts with every reviewed
 reviewed year (`seeds/holidays.json`, written from `src/daysets.ts` by `npm run seed` and held to it
 by `src/holidays-table.test.ts`). An app's role may read it and nothing more (`appGrants`). The app's
 own `closures` table links to a holiday row (`rules.addOnLink` into `holidays`), and "Add as a
-closure" is the app's action, not this add-on's: the add-on never writes an app's table. Both
+closure" is the app's action, not this add-on's: the add-on never writes an app's table. Both shops
+are businesses in England, so the rows they want are the England and Wales set's (`country` `GB`,
+`region` `england-and-wales`). Both
 ranges are forward claims until those lines reach the apps' `main`. The table needs Adminium 0.3.28.
 
-A seed file holds at most 200 rows. Two reviewed years are 134 rows; a third would be 201, so adding
+A seed file holds at most 200 rows. Two reviewed years are 150 rows; a third would be 225, so adding
 a year means dropping a past one from the seed (the panel and the read surface are not limited). Starting rows are written into an empty table only, so an install that
 already has the table keeps its rows when a later release adds a year.
 
@@ -69,6 +71,10 @@ That is the whole selection rule, and it is a rule rather than a list on purpose
 whose languages we already speak" is defensible in a sentence, and "the twelve countries somebody
 had an afternoon for" is not.
 
+**One second reason, and only one: an app in the catalogue trades there.** Maker Shop and Print Shop
+are businesses in England, priced in pounds, and their "Add as a closure" reads this add-on's rows.
+So England and Wales has a set although no locale here names the United Kingdom.
+
 | Set | Days | What it is |
 |---|---|---|
 | United States | 11 | the federal holidays, weekday rules and all |
@@ -77,6 +83,7 @@ had an afternoon for" is not.
 | France — Alsace-Moselle | 13 | the national eleven, plus the two kept in Bas-Rhin, Haut-Rhin and Moselle |
 | Czechia | 13 | the state holidays and the other holidays |
 | Denmark | 10 | the church holidays, after the 2024 change |
+| United Kingdom — England and Wales | 8 | the bank and public holidays of England and Wales only; Scotland and Northern Ireland keep different days |
 
 Years: **2026 and 2027**. The list is short because every year in it is a year somebody has checked.
 The expander would happily produce 2085; the honest number is the number that has been read through,
@@ -97,7 +104,7 @@ So the picker **names them, with the reason**, where somebody is choosing:
 | Egypt | Islamic dates follow the moon and are settled by sighting, and several national days are moved to the nearest Thursday by decree each year |
 
 Silently omitting them would leave an operator in Cairo assuming Egypt had not been got round to
-yet, which is a different and false statement. It is also the honest answer to "why only five
+yet, which is a different and false statement. It is also the honest answer to "why only these
 countries": the constraint is not effort, it is what can be known in advance.
 
 A set for one of these could ship as a set of **announced years** — a literal list of dates for the
@@ -118,8 +125,30 @@ substitute would be this package inventing a day the statute does not name.
 
 *What would change it:* a host that genuinely needs the observed day. The answer then is a
 per-country substitution rule read off each country's own statute — never one global rule, because
-there is no global rule — arriving as a new field on `DaySet`, with the same anchor-date suite behind
-it. It is not "a small addition to the expander".
+there is no global rule — with the same anchor-date suite behind it. It is not "a small addition to
+the expander".
+
+**England and Wales is the one set where the substitute IS the day the state names**, and that is the
+same rule read the other way round. Schedule 1 of the Banking and Financial Dealings Act 1971 makes 26
+December a bank holiday only "if it be not a Sunday" and makes 27 December one in a year in which the
+25th or 26th is a Sunday; the yearly royal proclamation names the Monday after a weekend New Year's Day
+and the other weekday the Christmas pair needs; and GOV.UK's list for each year carries the moved day,
+not the weekend one. So in that set, and only there, New Year's Day, Christmas Day and Boxing Day carry
+`weekend: { to: "first-weekday-after", … }`: a day that lands on a Saturday or Sunday goes to the first
+weekday after it that no other day of the set holds, as "Boxing Day (substitute day)". Boxing Day 2026
+(a Saturday) is Monday 28 December; Christmas 2027 (a Saturday) is Monday the 27th and Boxing Day
+Tuesday the 28th. The picker says, for each set, which kind it is. Christmas Day on a Saturday is still
+a common-law holiday on the 25th; the set lists the weekday, as GOV.UK does, because that is what a
+business closes on.
+
+**A bank holiday moved or added by proclamation for one year** — the May day moved for VE Day in 2020,
+the 2022 jubilee, the 2023 coronation — follows no rule and cannot be computed. A year with one is only
+right after somebody reads that year's proclamation and changes the set by hand at the yearly review,
+and the set's note tells the reader so.
+
+**Scotland and Northern Ireland.** Each has days England and Wales does not (2 January and St Andrew's
+Day; St Patrick's Day and 12 July) and lacks one it has. No app here trades there, so neither ships, and
+there is no "United Kingdom" set that would be wrong for two of its four nations.
 
 **German state holidays.** Ten of the sixteen states add days on top of the national nine, several of
 them varying from one municipality to the next (Bavaria's Mariä Himmelfahrt is observed in some and

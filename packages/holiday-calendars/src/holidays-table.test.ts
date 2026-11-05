@@ -112,7 +112,7 @@ describe("the holidays table", () => {
     expect(SEED).toEqual(holidayRows());
     const expected = DAY_SETS.reduce((sum, set) => sum + YEARS.reduce((n, year) => n + expandSet(set, year).length, 0), 0);
     expect(SEED).toHaveLength(expected);
-    // The installer refuses a seed file of more than 200 rows (two years are 134; three would be 201).
+    // The installer refuses a seed file of more than 200 rows (two years are 150; three would be 225).
     expect(SEED.length).toBeLessThanOrEqual(200);
   });
 
@@ -122,6 +122,23 @@ describe("the holidays table", () => {
     const alsace = rows.filter((row) => row.region === "alsace-moselle");
     expect(alsace.length).toBeGreaterThan(rows.filter((row) => row.country === "FR" && row.region === null).length / 2);
     for (const row of rows) expect(row.day).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it("gives a shop in England the days it closes on, under the area's own key", () => {
+    // Maker Shop and Print Shop are businesses in England: this is the row
+    // their "Add as a closure" offers for Boxing Day 2026, which falls on a
+    // Saturday and is a bank holiday on the Monday.
+    const rows = holidayRows();
+    const ew = rows.filter((row) => row.country === "GB");
+    expect(ew).toHaveLength(8 * YEARS.length);
+    for (const row of ew) expect(row.region).toBe("england-and-wales");
+    expect(rows).toContainEqual({
+      country: "GB",
+      region: "england-and-wales",
+      day: "2026-12-28",
+      name: "Boxing Day (substitute day)",
+    });
+    expect(ew.map((row) => row.day)).not.toContain("2026-12-26");
   });
 
   it("gives an app's role a read of every column, and never a write", () => {
