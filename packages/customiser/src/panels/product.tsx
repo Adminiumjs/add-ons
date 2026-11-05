@@ -10,12 +10,13 @@ import type { ReactNode } from 'react';
 
 import { wordsFor } from '../pages/shared/messages.ts';
 import { PANEL, SETUP, SHARED } from '../pages/strings/index.ts';
-import { Card, EmptyState, Grid, KeyValueList, Link, Stack, StatusPill, useRecord, useRecords, type AddOnTranslate } from '../pages/shared/host.ts';
+import { Alert, Card, EmptyState, Grid, KeyValueList, Link, Stack, StatusPill, useAccess, useRecord, useRecords, type AddOnTranslate } from '../pages/shared/host.ts';
 import { pageAt } from '../pages/shared/paths.ts';
 import { PieceStillBox, plainSheet, storedOutline } from '../pages/shared/Piece3d.tsx';
 import { Drawing } from '../pages/setup/Drawing.tsx';
 import { boxOf, guidesOf, isPublished, kindOf, mm, num, sizeOf, takesOf, text, wordsRulesOf, yes } from '../pages/setup/facts.ts';
 import { kindName } from '../pages/setup/NewBase.tsx';
+import { isForbidden, PRODUCT_READS, unreadTables } from './rights.ts';
 
 const t = wordsFor(SHARED, SETUP, PANEL);
 
@@ -27,17 +28,26 @@ export interface PanelProps {
 }
 
 export function ProductPanel({ t, linked }: { t: AddOnTranslate } & PanelProps): ReactNode {
+  const access = useAccess();
   const base = useRecord('bases', linked);
   const on = linked !== null;
   const areas = useRecords('base_areas', { filter: [{ column: 'base_id', op: 'eq', value: linked }], sort: [{ column: 'position', direction: 'asc' }], pageSize: 199, enabled: on });
   const designs = useRecords('ready_designs', { filter: [{ column: 'base_id', op: 'eq', value: linked }], sort: [{ column: 'position', direction: 'asc' }], pageSize: 199, enabled: on });
   const features = useRecords('features', { pageSize: 199, enabled: on });
   const open = <Link to={linked === null ? pageAt() : `${pageAt()}/${linked}`}>{t('panel.open', 'Open the set-up')}</Link>;
+  const readerHint = t('panel.rights.rolesProduct', 'The Customiser reader role shows it all.');
+  // A role that may not read the bases is told so, never that the product is not set up.
+  if (on && ((access.ready && !access.canRead('bases')) || isForbidden(base.error?.code))) {
+    return <EmptyState title={t('panel.rights.noBase', 'You can’t see how this product is set up')} body={`${t('panel.rights.noBaseBody', 'Your role does not let you read the Customiser’s bases.')} ${readerHint}`} />;
+  }
   if (!on || (!base.loading && base.row === null)) {
     return <EmptyState title={t('panel.product.none', 'Not set up for customising')} body={t('panel.product.noneBody', 'Link this product to a base in the Customiser, then set up its areas, fonts and prices.')} actions={open} />;
   }
   const row = base.row;
   if (row === null) return <EmptyState title={t('panel.loading', 'Loading')} />;
+  // What this reader's role leaves out: shown as hidden, never as "none yet".
+  const unread = new Set(unreadTables(access, PRODUCT_READS));
+  const hiddenValue = t('panel.rights.hiddenValue', 'hidden from you');
   const kind = kindOf(row);
   const size = sizeOf(row);
   const published = isPublished(row);
@@ -74,12 +84,20 @@ export function ProductPanel({ t, linked }: { t: AddOnTranslate } & PanelProps):
           flat
         )}
         <Stack gap="md">
+          {unread.size === 0 ? null : (
+            <Alert
+              tone="warn"
+              role="status"
+              title={t('panel.rights.setupTitle', 'Part of this set-up is hidden from you')}
+              body={`${t('panel.rights.tables', 'Your role can’t read {tables} in the Customiser, so this is shown without them.', { tables: [...unread].join(', ') })} ${readerHint}`}
+            />
+          )}
           <KeyValueList
             items={[
               { label: t('panel.base', 'Base'), value: baseLine, mono: true },
-              { label: t('panel.areas', 'Areas'), value: areaLine === '' ? t('panel.noneYet', 'none yet') : areaLine, mono: true },
-              { label: t('panel.designs', 'Designs'), value: designs.rows.length === 0 ? t('panel.noneYet', 'none yet') : designs.rows.map((design) => text(design['name'])).join(' · '), mono: true },
-              { label: t('panel.priced', 'Priced'), value: priced.size === 0 ? t('panel.nothingExtra', 'nothing extra') : features.rows.filter((feature) => priced.has(text(feature['id']))).map((feature) => text(feature['name'])).join(' · '), mono: true },
+              { label: t('panel.areas', 'Areas'), value: unread.has('base_areas') ? hiddenValue : areaLine === '' ? t('panel.noneYet', 'none yet') : areaLine, mono: true },
+              { label: t('panel.designs', 'Designs'), value: unread.has('ready_designs') ? hiddenValue : designs.rows.length === 0 ? t('panel.noneYet', 'none yet') : designs.rows.map((design) => text(design['name'])).join(' · '), mono: true },
+              { label: t('panel.priced', 'Priced'), value: unread.has('base_areas') || unread.has('features') ? hiddenValue : priced.size === 0 ? t('panel.nothingExtra', 'nothing extra') : features.rows.filter((feature) => priced.has(text(feature['id']))).map((feature) => text(feature['name'])).join(' · '), mono: true },
               { label: t('panel.status', 'Status'), value: published ? t('panel.published', 'Published') : t('panel.notOffered', 'Not offered yet'), mono: true },
             ]}
           />

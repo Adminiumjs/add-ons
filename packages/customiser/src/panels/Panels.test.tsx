@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { resetWorld, seed, world } from '../pages/testing/host.tsx';
+import { Refused, resetWorld, seed, world } from '../pages/testing/host.tsx';
 import { IDS, seedCard, seedShop } from '../pages/testing/rows.ts';
 
 const { default: Product } = await import('./product.tsx');
@@ -43,6 +43,25 @@ describe('the panel on a product', () => {
     render(<Product {...HOST} linked={null} />);
     expect(screen.getByText('Not set up for customising')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Open the set-up' }).getAttribute('href')).toBe('/add-ons/customiser/customiser');
+  });
+});
+
+describe('the panel on a product, for a role short of a right', () => {
+  it('shows what the role may not read as hidden, never as none yet, and names the role that shows it', () => {
+    // As the walks' shop owner: the bases, and nothing else of the Customiser's.
+    for (const table of ['base_areas', 'ready_designs', 'features']) world.closed.add(table);
+    render(<Product {...HOST} linked={String(IDS.coasters)} />);
+    expect(screen.getByRole('status').textContent).toContain('Part of this set-up is hidden from you');
+    expect(screen.getByRole('status').textContent).toContain('Your role can’t read base_areas, ready_designs, features in the Customiser, so this is shown without them. The Customiser reader role shows it all.');
+    expect(items()).toMatchObject({ Areas: 'hidden from you', Designs: 'hidden from you', Priced: 'hidden from you' });
+    expect(screen.queryByText('none yet')).toBeNull();
+  });
+
+  it('says a role that may not read the bases cannot see the set-up, never that the product is not set up', () => {
+    world.closed.add('bases');
+    render(<Product {...HOST} linked={String(IDS.coasters)} />);
+    expect(screen.getByText('You can’t see how this product is set up')).toBeTruthy();
+    expect(screen.queryByText('Not set up for customising')).toBeNull();
   });
 });
 
@@ -170,6 +189,68 @@ describe('the panel on an order line', () => {
     await settle();
     expect(screen.getByRole('alert').textContent).toBe('The files need the font file of Manrope. Upload it in Fonts & finishes, then make them again.');
     expect(world.tables['version_files']).toEqual([]);
+  });
+
+  describe('for a role short of a right', () => {
+    const SHOP = ['ready_designs', 'ready_parts', 'palettes', 'palette_colours', 'fonts', 'base_areas', 'base_pieces'];
+
+    it('as the walks’ shop owner: says the customer’s words and the set-up are hidden, and makes nothing from the part it reads', async () => {
+      withFont();
+      for (const table of SHOP) world.closed.add(table);
+      world.masked = { designs: ['values', 'logo_file', 'photo_file', 'email'], design_versions: ['values'] };
+      world.cannot = new Set(['create:version_files', 'update:version_files']);
+      render(<Line {...HOST} linked="91" />);
+      const said = screen.getByRole('status').textContent ?? '';
+      expect(said).toContain('Part of this design is hidden from you');
+      expect(said).toContain('Your role can’t read the customer’s words, logo and photo, so the design is drawn without them.');
+      expect(said).toContain('Your role can’t read base_pieces, base_areas, ready_designs, ready_parts, fonts, palettes, palette_colours in the Customiser');
+      expect(said).toContain('The Customiser reader role shows it all; the Customiser designer role also makes the proof and the files.');
+      expect(screen.getByText('The proof and the files are made only from the whole design, which your role can’t read.')).toBeTruthy();
+      const proof = screen.getByRole('button', { name: 'Make the proof' }) as HTMLButtonElement;
+      const files = screen.getByRole('button', { name: 'Make the files' }) as HTMLButtonElement;
+      expect([proof.disabled, files.disabled]).toEqual([true, true]);
+      fireEvent.click(proof);
+      fireEvent.click(files);
+      await settle();
+      expect(world.calls.filter((call) => call.kind === 'create' || call.kind === 'upload')).toEqual([]);
+    });
+
+    it('as a reader: draws the whole design and says making needs the designer role', () => {
+      world.cannot = new Set(['create:design_versions', 'update:design_versions', 'create:version_files', 'update:version_files']);
+      render(<Line {...HOST} linked="91" />);
+      expect(screen.queryByRole('status')).toBeNull();
+      expect(screen.getByRole('img', { name: 'Ring, as it will be made' }).querySelector('tspan')?.textContent).toBe('The Hartleys');
+      expect(screen.getByText('Making the proof and the files needs the Customiser designer role.')).toBeTruthy();
+      expect((screen.getByRole('button', { name: 'Make the proof' }) as HTMLButtonElement).disabled).toBe(true);
+    });
+
+    it('says a role that may not read the designs cannot see the design, never that the line has none', () => {
+      world.closed.add('designs');
+      render(<Line {...HOST} linked="91" />);
+      expect(screen.getByText('You can’t see this design')).toBeTruthy();
+      expect(screen.queryByText('No design on this line')).toBeNull();
+    });
+
+    it('says a role that may not read the bases cannot draw it, rather than loading for ever', () => {
+      world.closed.add('bases');
+      render(<Line {...HOST} linked="91" />);
+      expect(screen.getByText('Part of this design is hidden from you')).toBeTruthy();
+      expect(screen.queryByText('Loading')).toBeNull();
+    });
+
+    it('says making the files again needs the right to remove the version’s files', async () => {
+      withFont();
+      world.upload = () => ({ id: 'file_01HZY00000000000000000SVG1' });
+      seed('version_files', [{ id: 300, app: 'maker', version_id: 95, kind: 'machine', name: 'old.svg', about: '', layers: null, left_out: null, file: 'file_01HZY00000000000000000OLD1', position: 1 }]);
+      world.before = (kind) => {
+        if (kind === 'remove') throw new Refused('FORBIDDEN', 'You may not delete rows of this table.');
+      };
+      render(<Line {...HOST} linked="91" />);
+      fireEvent.click(screen.getByRole('button', { name: 'Make the files again' }));
+      await settle();
+      expect(screen.getByRole('alert').textContent).toBe('Making the files again replaces the version’s files, and your role may not remove them. That needs the Customiser designer role.');
+      expect(world.calls.filter((call) => call.kind === 'create' && call.table === 'version_files')).toEqual([]);
+    });
   });
 
   describe('in a starter font nobody uploaded yet', () => {

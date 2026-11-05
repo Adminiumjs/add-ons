@@ -26,7 +26,7 @@ import { Drawing } from '../browser/ui/Drawing.tsx';
 import type { Upload } from '../browser/ui/pictures.ts';
 import { sidesMade } from '../draw/flat.ts';
 import { FontMissing } from '../draw/pdf.ts';
-import { asDataError, Button, Card, EmptyState, Figure, KeyValueList, lucideByName, Stack, StatusPill, useLocaleTag, useRecord, useRecords, useUploader, useWrite, type AddOnTranslate, type DataRow, type DataValue } from '../pages/shared/host.ts';
+import { Alert, asDataError, Button, Card, EmptyState, Figure, KeyValueList, lucideByName, Stack, StatusPill, useAccess, useLocaleTag, useRecord, useRecords, useUploader, useWrite, type AddOnTranslate, type DataRow, type DataValue } from '../pages/shared/host.ts';
 import { wordsFor } from '../pages/shared/messages.ts';
 import { refusal } from '../pages/shared/refusal.ts';
 import { fileAddress, fileIdOf } from '../pages/shared/stored.ts';
@@ -36,6 +36,7 @@ import { PANEL, SETUP, SHARED } from '../pages/strings/index.ts';
 import { catalogueFor, fileStem, fontBook, makeLaserFiles, pieceSheetFor, makePageProof, makePieceProof, makePrintFiles, picturesOf, sheetsFor, valuesOf, type Made, type MakeWords } from './make.ts';
 import { makePrintedFile, PrintedRefused, reliefOfFace } from './printed.ts';
 import type { PanelProps } from './product.tsx';
+import { hiddenColumns, isForbidden, LINE_READS, mayMake, unreadTables } from './rights.ts';
 import { KitViews, PieceViews, PrintedViews } from './views.tsx';
 
 const t = wordsFor(SHARED, SETUP, PANEL);
@@ -116,6 +117,16 @@ function printedProblem(t: AddOnTranslate, problem: PrintedRefused['problem']): 
   }
 }
 
+/** What a reader short of a right is told to ask for: the Customiser's own roles, by the names Studio shows them under. */
+export function rolesHint(t: AddOnTranslate): string {
+  return t('panel.rights.roles', 'The Customiser reader role shows it all; the Customiser designer role also makes the proof and the files.');
+}
+
+/** The Customiser's tables a reader may not read, in a line: "fonts, palettes". */
+export function unreadLine(t: AddOnTranslate, tables: readonly string[]): string {
+  return t('panel.rights.tables', 'Your role can’t read {tables} in the Customiser, so this is shown without them.', { tables: tables.join(', ') });
+}
+
 /** The words the files and the proof say, in the reader's language. */
 function makeWords(t: AddOnTranslate, design: string, version: number, spec: string): MakeWords {
   return {
@@ -129,6 +140,7 @@ function makeWords(t: AddOnTranslate, design: string, version: number, spec: str
 
 export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): ReactNode {
   const locale = useLocaleTag();
+  const access = useAccess();
   const toast = useToast();
   const design = useRecord('designs', linked);
   const row = design.row;
@@ -154,9 +166,22 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
   const [busy, setBusy] = useState<'proof' | 'files' | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
 
+  // A role that may not read the designs at all is told so, never that the line has none.
+  if (linked !== null && ((access.ready && !access.canRead('designs')) || isForbidden(design.error?.code))) {
+    return <EmptyState title={t('panel.rights.noDesign', 'You can’t see this design')} body={`${t('panel.rights.noDesignBody', 'Your role does not let you read the Customiser’s designs.')} ${rolesHint(t)}`} />;
+  }
   if (linked === null || (!design.loading && row === null)) return <EmptyState title={t('panel.line.none', 'No design on this line')} body={t('panel.line.noneBody', 'A line carries a design when the shopper ordered one they made.')} />;
+  // A base the role may not read: nothing can be drawn, and the panel says why rather than loading for ever.
+  if (row !== null && base.row === null && ((access.ready && !access.canRead('bases')) || isForbidden(base.error?.code))) {
+    return <EmptyState title={t('panel.rights.partTitle', 'Part of this design is hidden from you')} body={`${unreadLine(t, unreadTables(access, LINE_READS).length > 0 ? unreadTables(access, LINE_READS) : ['bases'])} ${rolesHint(t)}`} />;
+  }
   if (row === null || base.row === null) return <EmptyState title={t('panel.loading', 'Loading')} />;
 
+  // What this reader's role leaves out: tables it may not read, and the customer's personal columns.
+  const unread = unreadTables(access, LINE_READS);
+  const hidden = [...new Set([...hiddenColumns(row), ...hiddenColumns(latest)])].filter((column) => column === 'values' || column === 'logo_file' || column === 'photo_file');
+  const whole = unread.length === 0 && hidden.length === 0;
+  const makes = whole && mayMake(access, latest !== undefined);
   const kind = kindOf(base.row);
   const page = kind === 'page';
   const printed = kind === 'printed';
@@ -193,13 +218,14 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
   };
 
   const fail = (caught: unknown): void => {
-    if (caught instanceof PrintedRefused) setProblem(printedProblem(t, caught.problem));
+    if (caught instanceof RemoveRefused) setProblem(t('panel.rights.again', 'Making the files again replaces the version’s files, and your role may not remove them. That needs the Customiser designer role.'));
+    else if (caught instanceof PrintedRefused) setProblem(printedProblem(t, caught.problem));
     else if (caught instanceof FontMissing) setProblem(t('panel.make.noFont', 'The files need the font file of {families}. Upload it in Fonts & finishes, then make them again.', { families: caught.families.join(', ') }));
     else setProblem(refusal(t, asDataError(caught)).message);
   };
 
   const makeProof = async (): Promise<void> => {
-    if (catalogue === null || proofUpload === null) return;
+    if (catalogue === null || proofUpload === null || !makes) return;
     setBusy('proof');
     setProblem(null);
     try {
@@ -234,7 +260,7 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
   };
 
   const makeFiles = async (): Promise<void> => {
-    if (catalogue === null || fileUpload === null) return;
+    if (catalogue === null || fileUpload === null || !makes) return;
     setBusy('files');
     setProblem(null);
     try {
@@ -250,7 +276,13 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
         : page
           ? await makePrintFiles(sheets, { font: book.font, pictures: held.pdf }, stem, words, book.font(catalogue.fonts[0]?.family ?? '', 400)) : await makeLaserFiles(catalogue, sheets[0]!, book.font, held.svg, stem, words, undefined, pieceSheetFor(catalogue, data, (column) => held.pdf[column] !== undefined));
       // Making them again replaces what the version had.
-      for (const old of files.rows) await fileWrite.remove(old['id'] as string | number);
+      for (const old of files.rows) {
+        try {
+          await fileWrite.remove(old['id'] as string | number);
+        } catch (refused) {
+          throw isForbidden(asDataError(refused).code) ? new RemoveRefused() : refused;
+        }
+      }
       for (const [position, one] of made.entries()) {
         const leftOut = one.leftOut.map((column) => ({ column, kind: held.pdf[column]?.kind ?? 'png' }));
         const { row: saved } = await fileWrite.create({ app: row['app'] as DataValue, version_id: version['id'] as DataValue, kind: one.kind, name: one.name, about: one.about, layers: one.layers === null ? null : JSON.stringify(one.layers), left_out: leftOut.length === 0 ? null : JSON.stringify(leftOut), position: position + 1 });
@@ -288,6 +320,14 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
       actions={<StatusPill status={proofed ? 'proof' : 'none'} tone={proofed ? 'info' : 'neutral'}>{proofed ? t('panel.line.proof', 'Proof {n}', { n: String(latest!['version']) }) : t('panel.line.noProof', 'No proof yet')}</StatusPill>}
     >
       <Stack gap="md">
+        {whole ? null : (
+          <Alert
+            tone="warn"
+            role="status"
+            title={t('panel.rights.partTitle', 'Part of this design is hidden from you')}
+            body={[...(hidden.length > 0 ? [t('panel.rights.personal', 'Your role can’t read the customer’s words, logo and photo, so the design is drawn without them.')] : []), ...(unread.length > 0 ? [unreadLine(t, unread)] : []), rolesHint(t)].join(' ')}
+          />
+        )}
         {catalogue === null ? null : (
           <SharedContext.Provider value={shared}>
             {kind === 'kit' ? (
@@ -325,14 +365,15 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
           </p>
         ) : null}
         <div className="flex flex-wrap gap-2">
-          <Button variant="primary" iconLeft={<ImageIcon />} disabled={busy !== null || proofUpload === null} onClick={() => void makeProof()}>
+          <Button variant="primary" iconLeft={<ImageIcon />} disabled={busy !== null || proofUpload === null || !makes} onClick={() => void makeProof()}>
             {busy === 'proof' ? t('panel.make.making', 'Making the file…') : t('panel.make.proof', 'Make the proof')}
           </Button>
-          <Button variant="secondary" iconLeft={<FileDown />} disabled={busy !== null || fileUpload === null} onClick={() => void makeFiles()}>
+          <Button variant="secondary" iconLeft={<FileDown />} disabled={busy !== null || fileUpload === null || !makes} onClick={() => void makeFiles()}>
             {busy === 'files' ? t('panel.make.making', 'Making the file…') : page ? t('panel.make.print', 'Make the print file') : files.rows.length > 0 ? t('panel.make.again', 'Make the files again') : t('panel.make.files', 'Make the files')}
           </Button>
         </div>
         {proofUpload === null || fileUpload === null ? <p className="m-0 text-[12.5px] text-fg-muted">{t('panel.make.newer', 'Making files here needs a newer Adminium.')}</p> : null}
+        {proofUpload !== null && fileUpload !== null && !makes ? <p className="m-0 text-[12.5px] text-fg-muted">{whole ? t('panel.rights.make', 'Making the proof and the files needs the Customiser designer role.') : t('panel.rights.makeWhole', 'The proof and the files are made only from the whole design, which your role can’t read.')}</p> : null}
         {problem === null ? null : (
           <p role="alert" className="m-0 text-[12.5px] text-danger">
             {problem}
@@ -440,6 +481,9 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
     </Card>
   );
 }
+
+/** The version's earlier files could not be removed: the reader's role may not delete them. */
+class RemoveRefused extends Error {}
 
 /** A version in the list: the newest as it is, an older one greyed (a proof it replaced). */
 function Version({ newest, children }: { newest: boolean; children: ReactNode }): ReactNode {

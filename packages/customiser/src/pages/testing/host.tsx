@@ -65,6 +65,8 @@ export const world = {
   /** Columns a reader may not read, by table; a table listed under `closed` may not be read at all. */
   unreadable: {} as Record<string, string[]>,
   closed: new Set<string>(),
+  /** Personal columns the reader may not see, by table: read back empty and named in the row's `_masked`, as Adminium masks them. */
+  masked: {} as Record<string, string[]>,
   /** What the reader may not do: `create:items`, `update:counts`, `move:receipts:posting`. */
   cannot: new Set<string>(),
   has: {} as Record<string, boolean>,
@@ -122,6 +124,7 @@ export function resetWorld(): void {
   world.tables = {};
   world.unreadable = {};
   world.closed = new Set();
+  world.masked = {};
   world.cannot = new Set();
   world.has = {};
   world.calls = [];
@@ -203,12 +206,17 @@ function listed(table: string, options: ListOptions = {}): { rows: Row[]; hasMor
   }
   const size = options.pageSize ?? 50;
   const start = ((options.page ?? 1) - 1) * size;
-  const page = rows.slice(start, start + size).map((row) => Object.fromEntries(Object.entries(row).filter(([column]) => !hidden.includes(column) && (options.columns === undefined || options.columns.includes(column)))) as Row);
+  const page = rows.slice(start, start + size).map((row) => masked(table, Object.fromEntries(Object.entries(row).filter(([column]) => !hidden.includes(column) && (options.columns === undefined || options.columns.includes(column)))) as Row));
   return { rows: page, hasMore: rows.length > start + size };
 }
 
 const find = (table: string, key: string | number): Row | undefined => (world.tables[table] ?? []).find((row) => loose(row['id']) === loose(key));
-const shown = (table: string, row: Row): Row => Object.fromEntries(Object.entries(row).filter(([column]) => !(world.unreadable[table] ?? []).includes(column))) as Row;
+/** A row with its personal columns masked, as a reader without the right to see them is handed it. */
+const masked = (table: string, row: Row): Row => {
+  const hidden = (world.masked[table] ?? []).filter((column) => column in row);
+  return hidden.length === 0 ? row : ({ ...row, ...Object.fromEntries(hidden.map((column) => [column, null])), _masked: hidden } as unknown as Row);
+};
+const shown = (table: string, row: Row): Row => masked(table, Object.fromEntries(Object.entries(row).filter(([column]) => !(world.unreadable[table] ?? []).includes(column))) as Row);
 const asRefusal = (caught: unknown): Refusal => (caught instanceof Refused ? { code: caught.code, message: caught.message, ...(caught.details === undefined ? {} : { details: caught.details }) } : { code: 'CLIENT_ERROR', message: String(caught) });
 
 function insert(table: string, values: Values): Row {
@@ -229,6 +237,7 @@ function useRecords(table: string, options: ListOptions = {}) {
 
 function useRecord(table: string, key: string | number | null) {
   useWorld();
+  if (key !== null && world.closed.has(table)) return { row: null, loading: false, error: { code: 'TABLE_FORBIDDEN', message: 'You may not read this table.' }, refetch: () => undefined };
   const row = key === null ? undefined : find(table, key);
   return { row: row === undefined ? null : shown(table, row), loading: false, error: null, refetch: () => undefined };
 }
