@@ -90,6 +90,23 @@ succeed.
 
 A live demo that posted to a real carrier on every visitor click would be a defect, not a feature.
 
+**It prices in the shop's currency.** The demo carrier quotes in the currency the host names: the
+order's `value.currency` at dispatch, the basket's `total.currency` at checkout. A shop selling in
+pounds is quoted in pounds; only a host that names no currency sees the sample's US dollars.
+
+**With the demo switched off and no account connected, nothing answers, and the screens say so.**
+The dispatch flow and the return label show "Your DHL account is not connected" in place of "Get
+rates", and the checkout draws no rates at all, so the shop's own delivery stays. The demo carrier
+is never used behind a switch that says it is off. While the demo is on, the dispatch flow says
+before quoting that nothing reaches DHL until the account is connected.
+
+**The parcel's weight is the shop's, where the shop keeps one.** A host that weighs its parcels
+passes `OutboundOrder.parcelWeightGrams` (goods and packing); the flow starts from it as it is and
+says it is the order's own weight, so the figure beside the order and the figure sent to the carrier
+are one number. Without it the flow works the weight out from the lines as before. The contents line
+names each line by its own quantity ("2 × Stoneware mug, 1 × Engraved walnut coasters"); past three
+lines, the third says how many more follow.
+
 ### `src/carrier.ts` — the real one, for self-hosting
 
 Targets DHL's published Express API through an HTTP client the host injects and binds to the single

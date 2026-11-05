@@ -322,16 +322,12 @@ describe("every simulated result is labelled as one", () => {
    * "Calls go to the carrier with the account details you entered. Switch this
    * back on to stop that."
    *
-   * No call is ever made. `runtime.test.ts` proves it in the exact state the
-   * note describes: with the switch off and no connected transport injected —
-   * which is EVERY demo build, because only a self-hosting shop injects one —
-   * `usingDemo()` is still true, the seeded stand-in still answers, and the
-   * chip stays on the screen. So the sentence a shop read in the connect dialog
-   * and in the settings panel contradicted both the transport underneath it and
-   * the panel three rows below it.
-   *
-   * The note says what the switch would mean in a real shop AND what this build
-   * does, and this is the guard that keeps the second half there.
+   * [Changed 2026-11-05.] With the switch off and no account connected the
+   * demo no longer answers (`runtime.test.ts`, "quotes and books nothing"):
+   * the screens say the DHL account is not connected. So the note now says
+   * what the switch-off state does, and must NOT say the stand-in still
+   * answers: a note that named the demo there would be the old fallback
+   * described back to a shop that has switched it off.
    *
    * ── WHY A WORD PER LOCALE ─────────────────────────────────────────────────
    *
@@ -354,15 +350,11 @@ describe("every simulated result is labelled as one", () => {
     "ar-EG": "العرض التوضيحي",
   };
 
-  it("says the demo is still answering in the note shown when the switch is OFF", () => {
+  it("never says the demo still answers in the note shown when the switch is OFF", () => {
     expect(Object.keys(DEMO_WORD).sort()).toEqual(Object.keys(strings).sort());
     for (const [locale, bundle] of Object.entries(strings)) {
       const note = bundle["addon.shipping-dhl.set.demoOff"]!;
-      expect(
-        note,
-        `${locale}'s switch-off note promises live calls with no word for the stand-in ` +
-          "that is in fact still answering",
-      ).toContain(DEMO_WORD[locale]!);
+      expect(note, `${locale}'s switch-off note names the stand-in, which no longer answers with the switch off`).not.toContain(DEMO_WORD[locale]!);
     }
   });
 });

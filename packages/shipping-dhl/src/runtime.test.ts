@@ -12,12 +12,15 @@ import { beforeEach, describe, expect, it } from "vitest";
 import type { ShippingCarrier } from "@adminium/add-on-host/contracts";
 import {
   carrier,
+  CarrierNotConnected,
+  carrierState,
   findShipment,
   isDemo,
   labels,
   rememberRoute,
   resetRuntime,
   setHostClock,
+  setHostCurrency,
   shopClock,
 } from "./runtime.ts";
 import { PINNED_NOW } from "./clock.ts";
@@ -86,34 +89,53 @@ describe("the runtime seam", () => {
     expect(labels()).toBeNull();
   });
 
-  it("falls back to the demo when the switch is off and nothing was injected", () => {
+  /**
+   * NO ACCOUNT AND NO DEMO: NOTHING ANSWERS, AND THAT IS SAID.
+   *
+   * This used to fall back to the demo carrier "rather than a screen that
+   * throws". On a real shop that read as DHL quoting and booking for a shop
+   * that had switched the demo off and connected no account: the walk of a
+   * real install found "Get rates" answering from the stand-in with nothing to
+   * say no DHL account was behind it. Now the state is its own, the screens
+   * draw "Your DHL account is not connected", and the transport is never asked.
+   */
+  it("quotes and books nothing when the switch is off and no account is connected", () => {
     applySettings({ ...DEFAULT_SETTINGS, demo_transport: false });
-    // Better a labelled demo than a screen that throws: an add-on with no
-    // transport wired has nothing to say, and saying it in the demo's voice at
-    // least keeps the "no real shipment" chip on the screen.
-    expect(carrier().key).toBe("shipping-dhl");
-    expect(isDemo()).toBe(true);
+    expect(carrierState()).toBe("not-connected");
+    expect(() => carrier()).toThrow(CarrierNotConnected);
+    expect(isDemo()).toBe(false);
+    // Nothing of the demo's is handed out in this state either: no label bytes, no booking to find.
+    expect(labels()).toBeNull();
+    expect(findShipment("SAMPLE-1")).toBeUndefined();
+  });
+
+  it("names each state: the demo, a connected account, or none", () => {
+    expect(carrierState()).toBe("demo");
+    useConnectedCarrier(tripwire);
+    expect(carrierState()).toBe("demo");
+    applySettings({ ...DEFAULT_SETTINGS, demo_transport: false });
+    expect(carrierState()).toBe("connected");
   });
 
   /**
-   * AND EVERYTHING ELSE THAT TALKS TO THE DEMO AGREES THAT IT IS IN USE.
-   *
-   * THE DEFECT: `carrier()` fell back to the demo whenever nothing was
-   * injected, but `rememberRoute`, `labels` and `findShipment` asked a narrower
-   * question — "is the switch ON?" — and answered "no" in exactly that state.
-   * The route was therefore thrown away, the demo carrier fell back to the
-   * address it was CONSTRUCTED with, and its tracking scans named a town from
-   * `seed.ts` instead of the shop the host had just passed. On the maker
-   * studio's screen that read "Picked up from the shop · Marlow", which is the
-   * other host's town, for a parcel that left Saltburn.
-   *
-   * A switch a shop owner can see, in the connect dialog and in the settings
-   * panel, that silently changes WHOSE TOWN a scan names is the kind of thing a
-   * demo is judged on. It is one predicate now, and this is the case that says
-   * so with the switch in the position that broke it.
+   * THE SHOP'S CURRENCY. The demo carrier priced every shop in US dollars, this
+   * repo's own sample currency: a shop selling in pounds was quoted "$5.78".
+   * It prices in the currency the host names now, and the first quote after a
+   * host names one is already in it.
    */
-  it("still uses the shop's own origin when the demo switch is off", async () => {
-    applySettings({ ...DEFAULT_SETTINGS, demo_transport: false });
+  it("quotes in the shop's currency once the host names it, and keeps the sample's until then", async () => {
+    const before = await carrier().quote(parcel, DEMO_ORIGIN, TO);
+    expect(new Set(before.map((rate) => rate.currency))).toEqual(new Set(["USD"]));
+    setHostCurrency("gbp");
+    const after = await carrier().quote(parcel, DEMO_ORIGIN, TO);
+    expect(new Set(after.map((rate) => rate.currency))).toEqual(new Set(["GBP"]));
+    // A payload that names none, or something that is not a currency code, changes nothing.
+    setHostCurrency(undefined);
+    setHostCurrency("pounds");
+    expect(new Set((await carrier().quote(parcel, DEMO_ORIGIN, TO)).map((rate) => rate.currency))).toEqual(new Set(["GBP"]));
+  });
+
+  it("uses the shop's own origin for the scans while the demo answers", async () => {
     const FROM = { ...DEMO_ORIGIN, name: "The shop the host passed", city: "Saltburn" };
 
     const impl = carrier();
@@ -126,9 +148,6 @@ describe("the runtime seam", () => {
     expect(places).toContain("Saltburn");
     expect(places).toContain("Saltburn depot");
     expect(places.join(" · ")).not.toContain(DEMO_ORIGIN.city);
-
-    // The two that had the same split: a booking made in this state is one the
-    // add-on can still find, and its label is one it can still hand over.
     expect(findShipment("SAMPLE-1")?.tracking).toBe(shipment.tracking);
     expect(labels()).not.toBeNull();
   });

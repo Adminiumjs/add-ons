@@ -594,6 +594,9 @@
     "addon.personalizer.zoomOut": "c4139457eb27a4b7"
   },
   "shipping-dhl": {
+    "addon.shipping-dhl.account.demoNotice": "b426b78157a16c22",
+    "addon.shipping-dhl.account.notConnectedBody": "b861048b459c27a2",
+    "addon.shipping-dhl.account.notConnectedTitle": "de08b029eda5015d",
     "addon.shipping-dhl.act.1": "b094900fef5b6808",
     "addon.shipping-dhl.act.2": "a3d3f6fa4b6a6dc9",
     "addon.shipping-dhl.act.3": "99317993b0c4ed17",
@@ -649,6 +652,8 @@
     "addon.shipping-dhl.parcel.weight": "ce14e9b12a0dfb1d",
     "addon.shipping-dhl.parcel.weightAssumed": "dd6dcd2c8d8ac266",
     "addon.shipping-dhl.parcel.weightFrom": "6f237e28814dcc10",
+    "addon.shipping-dhl.parcel.weightFromMany": "2509d52b694bffaf",
+    "addon.shipping-dhl.parcel.weightShop": "f6f156cb9d3b4f2a",
     "addon.shipping-dhl.perm.labels": "0f7482f5b88c4da9",
     "addon.shipping-dhl.perm.rates": "998c2a9121a95b9d",
     "addon.shipping-dhl.perm.shipments": "a6db1f8b2d799b98",
@@ -676,7 +681,7 @@
     "addon.shipping-dhl.set.cutoffLabel": "96da6a3492ce6131",
     "addon.shipping-dhl.set.cutoffNote": "3197c1d9d887e79f",
     "addon.shipping-dhl.set.demo": "806ef66a36cf780f",
-    "addon.shipping-dhl.set.demoOff": "b367c6de2e9f2d2c",
+    "addon.shipping-dhl.set.demoOff": "c6e2e64535679552",
     "addon.shipping-dhl.set.demoOn": "0fa3659ff9470468",
     "addon.shipping-dhl.set.returns": "cd4fc9ac98b186e3",
     "addon.shipping-dhl.set.returnsName": "92cc6e6dbcd863d6",
