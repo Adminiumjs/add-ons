@@ -18,6 +18,11 @@ second, disagreeing copy of a screen the app is built around.
 |---|---|---|
 | `settings.add-on.panel` | admin | the picker, the preview, the import, the days held now, a day of the business's own, the countries with no set, and who keeps the data current |
 
+**Where the panel is drawn.** Only a host that mounts `settings.add-on.panel` draws the picker
+Adminium's own dashboard does not mount add-on slot fills yet, and
+neither Maker Shop nor Print Shop mounts this one, so there the closed days (`days`) are edited as
+the raw JSON setting Adminium generates for a `json` setting.
+
 One slot, and that is the whole of what it draws. **The work is the data.** What this add-on
 contributes is a list of days; the days themselves are drawn by the host, on the host's own screens,
 through the read surface below. An add-on that also drew a calendar would be a second, disagreeing
@@ -45,7 +50,8 @@ own `closures` table links to a holiday row (`rules.addOnLink` into `holidays`),
 closure" is the app's action, not this add-on's: the add-on never writes an app's table. Both shops
 are businesses in England, so the rows they want are the England and Wales set's (`country` `GB`,
 `region` `england-and-wales`). Both
-ranges are forward claims until those lines reach the apps' `main`. The table needs Adminium 0.3.28.
+apps' manifests are on that line (0.2.0) and suggest this add-on; an app's 0.3.0 would be refused
+until its range here is widened. The table needs Adminium 0.3.28.
 
 A seed file holds at most 200 rows. Two reviewed years are 150 rows; a third would be 225, so adding
 a year means dropping a past one from the seed (the panel and the read surface are not limited). Starting rows are written into an empty table only, so an install that
