@@ -1,5 +1,7 @@
 # @adminium/add-on-payments-stripe
 
+## 1.0.21
+
 ## 1.0.20
 
 ### Patch Changes

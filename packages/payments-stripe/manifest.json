@@ -3,7 +3,7 @@
   "manifestVersion": 1,
   "key": "payments-stripe",
   "name": "Card payments",
-  "version": "1.0.20",
+  "version": "1.0.21",
   "publisher": {
     "id": "adminium",
     "name": "Adminium",
