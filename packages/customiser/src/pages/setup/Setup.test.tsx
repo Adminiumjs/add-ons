@@ -302,8 +302,8 @@ describe('step 6, opened by the customer’s editor (BC-D7)', () => {
     await settle();
     expect(screen.getByText('Previewing — nothing goes in a real basket.')).toBeTruthy();
     fireEvent.click(document.querySelector('.cz-save')!);
-    await settle();
-    expect(screen.getByText('Previewing — saving is switched off here.')).toBeTruthy();
+    // The save does its own work before it says so: waited for, not one tick (a loaded machine misses that).
+    expect(await screen.findByText('Previewing — saving is switched off here.')).toBeTruthy();
     expect(writes('create', 'designs')).toEqual([]);
     fireEvent.click(screen.getByRole('button', { name: 'Back to set-up' }));
     expect(screen.getByRole('button', { name: "Open the shopper's screen" })).toBeTruthy();

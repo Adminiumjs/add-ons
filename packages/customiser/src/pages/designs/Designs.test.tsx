@@ -401,8 +401,8 @@ describe('previewing a design as a customer, in the customer’s own editor (MC-
     expect(screen.getByRole('heading', { level: 1, name: 'Harbour, new' })).toBeTruthy();
     fireEvent.change(document.querySelector('#cz-f-name')!, { target: { value: 'Nell Fairweather' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save and come back' }));
-    await settle();
-    expect(screen.getByText('You’re previewing as a customer — nothing is saved.')).toBeTruthy();
+    // The save does its own work before it says so: waited for, not one tick (a loaded machine misses that).
+    expect(await screen.findByText('You’re previewing as a customer — nothing is saved.')).toBeTruthy();
     expect(writes('create', 'designs')).toEqual([]);
     fireEvent.click(screen.getByRole('button', { name: 'Back to the design editor' }));
     expect(screen.getByRole('complementary', { name: 'The design' })).toBeTruthy();
