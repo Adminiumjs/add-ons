@@ -16,12 +16,13 @@
   },
   "categories": ["payments"],
   "compatibility": {
-    "minAdminiumVersion": "0.3.33",
+    "minAdminiumVersion": "0.3.49",
     "requires": ["outbound-http"]
   },
   "capabilities": ["outbound-http"],
   "addOn": {
     "attaches": [{ "app": "*" }],
+    "scope": "server",
     "provides": [{ "contract": "payment-provider", "version": 1, "server": "dist/server.js" }],
     "connect": { "kind": "api-key" },
     "network": {
