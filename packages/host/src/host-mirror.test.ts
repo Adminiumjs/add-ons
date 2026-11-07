@@ -42,7 +42,7 @@
  * work on the add-on — so the suite reports what it looked for and skips.
  */
 
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -600,13 +600,133 @@ describe.each(present)('the still-text rule is the same file in $name', (host) =
  *
  * The path differs (`slot-content.ts` here, `slotContent.ts` there) because each
  * repo names files the way the rest of that repo does. The BYTES do not.
+ *
+ * The print works still carries it (its dispatch screen asks it whether the
+ * carrier's fill drew). The maker studio no longer does, and is named in
+ * `NOT_CARRIED` below with the reason, which is checked rather than trusted.
  */
 const SLOT_CONTENT = 'src/add-ons/slotContent.ts';
 const MIRROR_SLOT_CONTENT = join(MIRROR_SRC, 'slot-content.ts');
 
+/**
+ * ── A HOST THAT NO LONGER CARRIES ONE OF THESE FILES, NAMED ─────────────────
+ *
+ * The byte-for-byte blocks assume every host carries every shared file. Since
+ * both shops were rebuilt for their 0.2 line that is no longer true: the rebuild
+ * retired the old screens with the old `AddOnSlot`, its render suite and the
+ * per-host behaviour list. A host that does not carry a file cannot drift from
+ * it, but a check that just skipped would also skip the day the file came back
+ * as an old copy. So each such host is named here, with the reason, and the
+ * blocks below hold the name to account in both directions:
+ *
+ *   - the file must still be ABSENT there, or the entry is stale and goes red,
+ *     telling you to delete it so the copy is held like every other;
+ *   - if it is present anyway, it is still compared byte for byte, so a drifted
+ *     copy fails on its first differing character, not on a stale entry;
+ *   - and where the reason is a claim about the host's code, the claim is
+ *     checked (`stillTrue`), so the exemption cannot outlive its reason.
+ */
+interface NotCarried {
+  why: string;
+  /** A failure message when the reason no longer holds for this host, or `null`. */
+  stillTrue?: (host: Host) => string | null;
+}
+
+/**
+ * Every non-test source and stylesheet a host builds from, minus the vendored
+ * tree (a vendored file's prose says nothing about the host), comments removed.
+ */
+function hostOwnCode(host: Host): string {
+  const walk = (at: string): string[] =>
+    !existsSync(at)
+      ? []
+      : readdirSync(at, { withFileTypes: true }).flatMap((entry) => {
+          if (entry.name === 'vendor' || entry.name === 'node_modules') return [];
+          const full = join(at, entry.name);
+          if (entry.isDirectory()) return walk(full);
+          return /\.(ts|tsx|css)$/.test(entry.name) && !/\.test\./.test(entry.name) ? [full] : [];
+        });
+  return walk(join(host.root, 'src'))
+    .map((file) => code(file))
+    .join('\n');
+}
+
+const NOT_CARRIED: Readonly<Record<string, Readonly<Record<string, NotCarried>>>> = {
+  [SLOT_CONTENT]: {
+    'maker-shop': {
+      why:
+        'the studio mounts one slot, order.dispatch.actions, whose empty state is silent: it ' +
+        'draws the fills and nothing of its own after them, so there is no host content a fill ' +
+        'that drew nothing could hide, and nothing for this rule to decide',
+      // What the rule replaced was a stylesheet asking `:empty`. A host that
+      // does not carry the rule must not be asking that question either.
+      stillTrue: (host) =>
+        /:empty\b/.test(hostOwnCode(host))
+          ? `${host.name} asks \`:empty\` in its own code but carries no ${SLOT_CONTENT}: vendor ` +
+            'slot-content.ts as src/add-ons/slotContent.ts and delete this entry'
+          : null,
+    },
+  },
+  'src/testing/host-behaviours.ts': {
+    'print-shop': {
+      why:
+        'the 0.2 rebuild retired the list together with src/testing/hostBehaviours.test.ts, ' +
+        'the only thing that read it',
+      stillTrue: (host) =>
+        existsSync(join(host.root, 'src', 'testing', 'hostBehaviours.test.ts'))
+          ? `${host.name} has a hostBehaviours.test.ts again but no list for it to read`
+          : null,
+    },
+    'maker-shop': {
+      why:
+        'the 0.2 rebuild retired the list together with src/testing/hostBehaviours.test.ts, ' +
+        'the only thing that read it',
+      stillTrue: (host) =>
+        existsSync(join(host.root, 'src', 'testing', 'hostBehaviours.test.ts'))
+          ? `${host.name} has a hostBehaviours.test.ts again but no list for it to read`
+          : null,
+    },
+  },
+};
+
+const notCarried = (file: string, host: Host): NotCarried | undefined =>
+  NOT_CARRIED[file]?.[host.name];
+
+describe('the hosts named as not carrying a shared file', () => {
+  it('are hosts this guard knows, for files it compares', () => {
+    const known = new Set(HOSTS.map((host) => host.name));
+    const files = new Set([SLOT_CONTENT, 'src/testing/host-behaviours.ts']);
+    for (const [file, hosts] of Object.entries(NOT_CARRIED)) {
+      expect(files.has(file), `${file} is not a file this guard compares`).toBe(true);
+      for (const name of Object.keys(hosts)) expect(known.has(name), name).toBe(true);
+    }
+  });
+});
+
+/**
+ * The check every exempted host gets instead of "the file is there": it is NOT
+ * there, and the reason it need not be still holds.
+ */
+function itIsStillNotCarried(file: string, host: Host): void {
+  const entry = notCarried(file, host);
+  if (entry === undefined) return;
+  it(`is still not carried, because ${entry.why}`, () => {
+    expect(
+      existsSync(join(host.root, file)),
+      `${host.name} carries ${file} again: delete its NOT_CARRIED entry so the copy is held byte for byte`,
+    ).toBe(false);
+    expect(entry.stillTrue?.(host) ?? null).toBeNull();
+  });
+}
+
 describe.each(present)('the drew-anything rule is the same file in $name', (host) => {
-  it('is byte for byte the copy in this package', () => {
-    const theirs = join(host.root, 'src', 'add-ons', 'slotContent.ts');
+  itIsStillNotCarried(SLOT_CONTENT, host);
+
+  const theirs = join(host.root, 'src', 'add-ons', 'slotContent.ts');
+  // Skipped only for a named host that really has no copy: a copy that came
+  // back is compared whatever the entry says.
+  const exempt = notCarried(SLOT_CONTENT, host) !== undefined && !existsSync(theirs);
+  it.skipIf(exempt)('is byte for byte the copy in this package', () => {
     expect(
       existsSync(theirs),
       `${host.name} carries no ${SLOT_CONTENT}, so its slots are back to asking ` +
@@ -674,13 +794,21 @@ describe.each(present)('the tiering table is the same table in $name', (host) =>
  * all three copies are the same file — a host holding an older list is a host
  * that is not being asked for the newest behaviour, which is the exact thing it
  * exists to prevent, restored.
+ *
+ * NEITHER SHOP CARRIES IT TODAY. Both 0.2 rebuilds retired it together with the
+ * `hostBehaviours.test.ts` that read it, so both are named in `NOT_CARRIED`
+ * above, and this block now proves the list is still absent there rather than
+ * comparing it. A host that brings the list back is compared byte for byte.
  */
 const BEHAVIOURS = 'src/testing/host-behaviours.ts';
 const MIRROR_BEHAVIOURS = join(MIRROR_SRC, 'testing', 'host-behaviours.ts');
 
 describe.each(present)('the host behaviour list is the same file in $name', (host) => {
-  it('is byte for byte the copy in this package', () => {
-    const theirs = join(host.root, 'src', 'testing', 'host-behaviours.ts');
+  itIsStillNotCarried(BEHAVIOURS, host);
+
+  const theirs = join(host.root, 'src', 'testing', 'host-behaviours.ts');
+  const exempt = notCarried(BEHAVIOURS, host) !== undefined && !existsSync(theirs);
+  it.skipIf(exempt)('is byte for byte the copy in this package', () => {
     expect(
       existsSync(theirs),
       `${host.name} carries no ${BEHAVIOURS}, so nothing asks it for the behaviours the ` +
