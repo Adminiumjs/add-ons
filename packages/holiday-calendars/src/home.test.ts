@@ -12,6 +12,7 @@ describe("the set the picker starts on (Holiday Calendars G3)", () => {
     expect(key(startingSet([], { zone: "Europe/London", language: "en-US" }))).toBe("GB|england-and-wales");
     expect(key(startingSet([], { zone: "Europe/Copenhagen" }))).toBe("DK|");
     expect(key(startingSet([], { zone: "America/Indiana/Indianapolis" }))).toBe("US|");
+    expect(key(startingSet([], { zone: "America/Louisville", language: "en-GB" }))).toBe("US|");
   });
 
   it("starts a country of more than one set on its national one", () => {

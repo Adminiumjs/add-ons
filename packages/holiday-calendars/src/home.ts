@@ -53,6 +53,11 @@ const ZONES: Readonly<Record<string, string>> = {
   "America/Detroit": "US",
   "America/Menominee": "US",
   "Pacific/Honolulu": "US",
+  // Older names some browsers still report.
+  "America/Indianapolis": "US",
+  "America/Fort_Wayne": "US",
+  "America/Louisville": "US",
+  "Europe/Belfast": "GB",
 };
 /** The United States' zones named by state as well as city. */
 const US_ZONE_PREFIXES = ["America/Indiana/", "America/Kentucky/", "America/North_Dakota/"];
