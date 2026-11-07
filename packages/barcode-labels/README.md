@@ -79,6 +79,13 @@ sheets of 24).
 The sheet is drawn in the base-14 fonts' ASCII, as every sheet here is, so an item name with an
 accent is refused `LATIN_ONLY`, naming the letters, rather than printed with holes in it.
 
+### Piece and parcel labels in Maker Shop 0.2 — the same way as the till
+
+Maker Shop 0.1 mounted `record.actions`. Its 0.2 line mounts no add-on slot for this add-on and
+reaches the label sheet the way Point of Sale does: its manifest declares two `label-sheet`
+documents, one over `order_lines` (a label a piece, `count` from the line's `pieces`) and one over
+`orders` (the parcel), and the app asks Adminium to draw them while this add-on is attached.
+
 ---
 
 ## The two symbologies
@@ -295,7 +302,8 @@ closes is the most useful kind to have written down.
    `maker-shop` now declare the id in their own `HOSTED_SLOTS` and mount it, and this add-on is the
    fill. That makes it the first fill of `record.actions` anywhere — the slot was bought unfilled —
    and, because there are **two** hosts rather than one, the first evidence that the id names a
-   SURFACE rather than an app.
+   SURFACE rather than an app. (Maker Shop's 0.2 line no longer mounts it: it draws its labels as
+   documents, above.)
 
 2. **The published validator predates the slot, and it is a release behind in two steps rather than
    one.** `record.actions` was added to the registry in the Adminium monorepo on 2026-08-28 and that
