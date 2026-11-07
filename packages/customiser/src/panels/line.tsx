@@ -25,6 +25,7 @@ import { SharedContext, sharedFor } from '../browser/ui/context.tsx';
 import { Drawing } from '../browser/ui/Drawing.tsx';
 import type { Upload } from '../browser/ui/pictures.ts';
 import { sidesMade } from '../draw/flat.ts';
+import { layoutsOf } from '../rules/design.ts';
 import { FontMissing } from '../draw/pdf.ts';
 import { Alert, asDataError, Button, Card, EmptyState, Figure, KeyValueList, lucideByName, Stack, StatusPill, useAccess, useLocaleTag, useRecord, useRecords, useUploader, useWrite, type AddOnTranslate, type DataRow, type DataValue } from '../pages/shared/host.ts';
 import { wordsFor } from '../pages/shared/messages.ts';
@@ -156,6 +157,8 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
   const colours = useRecords('palette_colours', { ...all, enabled: row !== null });
   const fonts = useRecords('fonts', { ...all, enabled: row !== null });
   const features = useRecords('features', { ...all, enabled: row !== null });
+  // The shop's starting line for a one-colour logo the customer left as it was; a role that may not read the settings is given the column's own default.
+  const settings = useRecords('settings', { pageSize: 1, enabled: row !== null && access.ready && access.canRead('settings') });
   const versions = useRecords('design_versions', { filter: [{ column: 'design_id', op: 'eq', value: linked }], sort: [{ column: 'version', direction: 'desc' }], pageSize: 50, enabled: linked !== null });
   const latest = versions.rows[0];
   const files = useRecords('version_files', { ...by('version_id', latest === undefined ? null : (latest['id'] as string | number), latest !== undefined), pageSize: 199 });
@@ -190,7 +193,9 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
   const values = valuesOf(latest?.['values'] ?? row['values']) ?? { parts: {} };
   const versionNo = latest === undefined ? 1 : Number(latest['version']);
   const chosen = (jsonOf(row['values'])['parts'] ?? {}) as Record<string, unknown>;
-  const named: DataRow[] = readyId === null ? [...areas.rows] : parts.rows.filter((part) => part['locked'] !== true && part['kind'] !== 'shape');
+  // The parts of the layout the design is in: a design of two layouts names each of its parts once.
+  const layout = values.layout ?? layoutsOf(ready.row)[0] ?? null;
+  const named: DataRow[] = readyId === null ? [...areas.rows] : parts.rows.filter((part) => part['locked'] !== true && part['kind'] !== 'shape' && (layout === null || text(part['layout']) === '' || text(part['layout']) === layout));
   const finishName = (code: string): string => text(colours.rows.find((one) => text(one['code']) === code)?.['name']) || code;
   const proofOf = (version: DataRow | undefined): boolean => version !== undefined && text(version['proof_file']) !== '';
   const rows: CatalogueRows = { bases: [base.row], pieces: [...pieces.rows], areas: [...areas.rows], ready: ready.row === null ? [] : [ready.row], parts: [...parts.rows], fonts: [...fonts.rows], palettes: [...palettes.rows], colours: [...colours.rows], features: [...features.rows] };
@@ -242,7 +247,7 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
         blob = await makePageProof(sheets, { font: book.font, pictures: held.pdf }, words, labelFont);
         name = `${stem}-proof.pdf`;
       } else {
-        blob = await makePieceProof(sheets[0]!, row);
+        blob = await makePieceProof(sheets[0]!, row, Number(settings.rows[0]?.['one_colour_threshold'] ?? 50) || 50);
         name = `${stem}-proof.png`;
       }
       if (blob === null) {

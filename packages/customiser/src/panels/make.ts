@@ -18,6 +18,7 @@
  */
 import type { CatalogueRows, DesignData } from '../browser/api.ts';
 import { readCatalogue, type Catalogue } from '../browser/catalogue.ts';
+import { oneColourCanvas } from '../browser/files.ts';
 import { readValues, type DesignValues } from '../rules/index.ts';
 import { sheetPng, type Painted } from '../draw/canvas.ts';
 import { flatSheet, sheetsOf, type FlatOn, type FlatSheet } from '../draw/flat.ts';
@@ -183,14 +184,51 @@ export async function makePageProof(sheets: readonly FlatSheet[], assets: PdfAss
   return new Blob([bytes as BlobPart], { type: 'application/pdf' });
 }
 
-/** A piece's proof: the piece as it will be made, painted at 1440 pixels across with a margin. */
-export async function makePieceProof(sheet: FlatSheet, design: DataRow): Promise<Blob | null> {
+/** A one-colour picture of a sheet: its own key, the file it is made from, and the line and the ink it is made at. */
+export interface LaserPicture {
+  key: string;
+  column: string;
+  threshold: number;
+  ink: string;
+}
+
+/**
+ * The sheet with each one-colour picture painted from a picture of its own,
+ * the customer's file as the laser makes it: at the line they set, or the
+ * shop's starting line where they set none. Every other item is as it was.
+ */
+export function laserSheet(sheet: FlatSheet, startThreshold: number): { sheet: FlatSheet; laser: LaserPicture[] } {
+  const laser: LaserPicture[] = [];
+  const items = sheet.items.map((item) => {
+    if (item.kind !== 'picture' || !item.oneColour) return item;
+    const key = `one-colour:${item.key}`;
+    laser.push({ key, column: item.column, threshold: item.threshold ?? startThreshold, ink: item.colour });
+    return { ...item, column: key };
+  });
+  return { sheet: { ...sheet, items }, laser };
+}
+
+/**
+ * A piece's proof: the piece as it will be made, painted at 1440 pixels
+ * across with a margin. A logo set to one colour is shown as the laser cuts
+ * it, never as uploaded: the customer approves what is made.
+ */
+export async function makePieceProof(sheet: FlatSheet, design: DataRow, startThreshold = 50): Promise<Blob | null> {
   const painted: Record<string, Painted> = {};
   for (const column of FILE_COLUMNS) {
     const picture = await filePicture(design[column]);
     if (picture !== null) painted[column] = picture;
   }
-  return await sheetPng(sheet, 1440, painted, 40);
+  const made = laserSheet(sheet, startThreshold);
+  for (const one of made.laser) {
+    const source = painted[one.column];
+    if (source === undefined) continue;
+    const canvas = oneColourCanvas(source.image, source.width, source.height, one.threshold, one.ink);
+    // A page that cannot draw the laser's picture cannot paint the proof either: nothing is made in full colour instead.
+    if (canvas === null) return null;
+    painted[one.key] = { image: canvas, width: source.width, height: source.height };
+  }
+  return await sheetPng(made.sheet, 1440, painted, 40);
 }
 
 const mmSize = (w: number, h: number): string => `${String(Math.round(w * 10) / 10)} × ${String(Math.round(h * 10) / 10)} mm`;

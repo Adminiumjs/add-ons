@@ -329,6 +329,19 @@ describe('the panel on an order line', () => {
     expect(screen.getByText('It goes to press once the proof is approved.')).toBeTruthy();
   });
 
+  it('names each part of the layout the design is in once, never a part of its other layout', () => {
+    seedCard();
+    const names = (): string[] => [...document.querySelectorAll('dl > div > dt')].map((term) => term.textContent!);
+    for (const [layout, shown] of [['top', ['Name']], ['left', ['Logo', 'Name']], [null, ['Logo', 'Name']]] as const) {
+      seed('designs', [{ id: 92, app: 'printing', ready_design_id: 53, base_id: IDS.cards, values: JSON.stringify({ format: 1, ...(layout === null ? {} : { layout }), sides: 2, parts: { name: { text: 'Nell Fairweather' } } }), state: 'ordered', updated_at: '2026-08-04T09:00:00Z' }]);
+      seed('design_versions', []);
+      render(<Line {...HOST} linked="92" />);
+      // A design that names no layout is in the design's first.
+      expect(names().filter((name) => name === 'Logo' || name === 'Name'), String(layout)).toEqual(shown);
+      cleanup();
+    }
+  });
+
   it('names a plain piece’s areas, says a part left plain, and a line with no design', () => {
     seed('designs', [{ id: 92, app: 'maker', ready_design_id: null, base_id: IDS.coasters, values: JSON.stringify({ format: 1, parts: { words: { text: 'Sam' } } }), state: 'draft', updated_at: '2026-08-06T10:00:00Z' }]);
     seed('design_versions', []);

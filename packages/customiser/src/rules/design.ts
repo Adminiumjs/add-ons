@@ -195,7 +195,7 @@ function fromArea(row: Row): Part {
 }
 
 /** The design's layouts, by key, in the shop's order. */
-function layoutsOf(ready: Row | null): string[] {
+export function layoutsOf(ready: Row | null): string[] {
   const raw = ready === null ? null : ready['layouts'];
   const value = typeof raw === 'string' ? (() => { try { return JSON.parse(raw) as unknown; } catch { return null; } })() : raw;
   return Array.isArray(value) ? value.map((one) => (typeof one === 'object' && one !== null ? str((one as Record<string, unknown>)['key']) : null)).filter((key): key is string => key !== null) : [];

@@ -223,6 +223,17 @@ export async function readPicture(blob: Blob, kind: string): Promise<Picture> {
   }
 }
 
+/** The laser's pixels (red, green, blue, alpha): every pixel darker than the line in the engraving's colour, the rest left clear. */
+export function oneColourPixels(light: Lightness, threshold: number, ink: string): Uint8ClampedArray {
+  const [r, g, b] = [1, 3, 5].map((at) => parseInt(ink.slice(at, at + 2), 16)) as [number, number, number];
+  const out = new Uint8ClampedArray(light.width * light.height * 4);
+  for (let i = 0; i < light.data.length; i += 1) {
+    if (!isDark(light.data[i]!, threshold)) continue;
+    out.set([r, g, b, 255], i * 4);
+  }
+  return out;
+}
+
 /**
  * The picture as the laser makes it: every pixel darker than the line in the
  * engraving's colour, the rest left as the material. A picture's address of
@@ -231,12 +242,8 @@ export async function readPicture(blob: Blob, kind: string): Promise<Picture> {
 export async function oneColourPicture(light: Lightness, threshold: number, ink: string): Promise<string | null> {
   const drawn = canvasOf(light.width, light.height);
   if (drawn === null || typeof URL.createObjectURL !== 'function') return null;
-  const [r, g, b] = [1, 3, 5].map((at) => parseInt(ink.slice(at, at + 2), 16)) as [number, number, number];
   const pixels = drawn.context.createImageData(light.width, light.height);
-  for (let i = 0; i < light.data.length; i += 1) {
-    if (!isDark(light.data[i]!, threshold)) continue;
-    pixels.data.set([r, g, b, 255], i * 4);
-  }
+  pixels.data.set(oneColourPixels(light, threshold, ink));
   drawn.context.putImageData(pixels, 0, 0);
   return new Promise((resolve) => {
     try {
@@ -245,4 +252,28 @@ export async function oneColourPicture(light: Lightness, threshold: number, ink:
       resolve(null);
     }
   });
+}
+
+/**
+ * A picture already drawn in the page, as the laser makes it, on a canvas of
+ * its own to paint onto a proof: measured at the size the shopper's editor
+ * measures it, so the proof shows what they saw. Null where the page cannot
+ * draw one.
+ */
+export function oneColourCanvas(image: CanvasImageSource, width: number, height: number, threshold: number, ink: string): HTMLCanvasElement | null {
+  if (!(width > 0) || !(height > 0)) return null;
+  const scale = MEASURE_SIDE / Math.max(width, height);
+  const [cw, ch] = [Math.max(1, Math.round(width * scale)), Math.max(1, Math.round(height * scale))];
+  const drawn = canvasOf(cw, ch);
+  if (drawn === null) return null;
+  try {
+    drawn.context.drawImage(image, 0, 0, cw, ch);
+    const light = lightnessOf(drawn.context.getImageData(0, 0, cw, ch).data, cw, ch);
+    const pixels = drawn.context.createImageData(cw, ch);
+    pixels.data.set(oneColourPixels(light, threshold, ink));
+    drawn.context.putImageData(pixels, 0, 0);
+    return drawn.canvas;
+  } catch {
+    return null;
+  }
 }
