@@ -5,61 +5,50 @@
  * its own family, with its licence, read "Open licence": a licence, never a
  * price) and the shop's own uploads (WOFF2, up to 2 MB, checked by its first
  * bytes before Adminium reads it again). The starter fonts' files ship in this
- * package: while any starter row has none, "Add the starter fonts" fetches
- * them from beside this page and uploads each into its row (`starter.ts`).
+ * package: while any starter row has none, the set-up adds them, fetched
+ * from beside this page and uploaded each into its row (`starter.ts`), for
+ * a reader who may change the fonts; "Add the starter fonts" is the same
+ * by hand.
  * A switch offers a font on this base;
  * an area or a part offers some of the base's. Finishes are the app's own
  * palette of finishes, each switched on for this base the same way.
  */
-import { useEffect, useId, useState, type ChangeEvent, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ChangeEvent, type ReactNode } from 'react';
 
-import { Alert, asDataError, Button, Card, FileInput, Figure, Grid, Input, Stack, Switch, Tag, useUploader, useWrite, type AddOnTranslate, type DataRow } from '../shared/host.ts';
+import { Alert, asDataError, Button, Card, FileInput, Figure, Grid, Input, Stack, Switch, Tag, useAccess, useUploader, useWrite, type AddOnTranslate, type DataRow } from '../shared/host.ts';
 import { refusal } from '../shared/refusal.ts';
 import { useToast } from '../shared/toast.ts';
 import type { SetupData } from './data.ts';
 import { codeFor, familyFromFile, FONT_BYTES, fontUse, isWoff2, kindOf, mm, num, offeredOf, text, toggled, yes, type Offered } from './facts.ts';
 import { filesRoute, starterFile, StarterFileUnread, type FilesRoute } from './starter.ts';
 
-export function FontsStep({ t, base, data }: { t: AddOnTranslate; base: DataRow; data: SetupData }): ReactNode {
-  const bases = useWrite('bases');
-  const toast = useToast();
-  const offered = offeredOf(base);
-  const id = base['id'] as string | number;
-  const offer = (next: Offered): void => void bases.update(id, { offered: JSON.stringify(next) }).catch((caught: unknown) => toast(refusal(t, asDataError(caught)).message, 'error'));
-  const kind = kindOf(base);
-  return (
-    <Grid columns={2} gap="lg">
-      <Fonts t={t} base={base} data={data} offered={offered} offer={offer} />
-      {kind === 'page' ? (
-        <Card title={t('setup.finishes.title', 'Finishes offered')}>
-          <p className="m-0 text-[12.5px] leading-relaxed text-fg-muted">{t('setup.finishes.page', 'A printed page takes its colours from the design. The colours a customer can pick are set on each design.')}</p>
-        </Card>
-      ) : kind === 'printed' ? (
-        <Card title={t('setup.finishes.title', 'Finishes offered')}>
-          <p className="m-0 text-[12.5px] leading-relaxed text-fg-muted">{t('setup.finishes.printed', 'A printed piece takes its colour from the filament. The colours a shopper can pick are set on the design.')}</p>
-        </Card>
-      ) : (
-        <Finishes t={t} base={base} data={data} offered={offered} offer={offer} />
-      )}
-    </Grid>
-  );
+/** The starter fonts still without their file, and the adding of the files the package carries. */
+export interface StarterFonts {
+  missing: readonly DataRow[];
+  route: FilesRoute;
+  adding: boolean;
+  error: string | null;
+  add: (said: boolean) => Promise<void>;
 }
 
-function Fonts({ t, base, data, offered, offer }: { t: AddOnTranslate; base: DataRow; data: SetupData; offered: Offered; offer: (next: Offered) => void }): ReactNode {
+/**
+ * The starter fonts' files, added once by whoever opens the set-up and may
+ * change the fonts: a starter row with no file is a font the shopper's editor
+ * cannot load. Read on the set-up page itself, whichever step is open, so the
+ * files are in before a shopper ever sees the fonts; "Add the starter fonts"
+ * stays for a role that may not, or an add that failed.
+ */
+export function useStarterFonts(t: AddOnTranslate, fonts: readonly DataRow[]): StarterFonts {
   const upload = useUploader('fonts', 'file');
-  const fonts = useWrite('fonts');
+  const access = useAccess();
   const toast = useToast();
-  const licence = useId();
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const used = fontUse(data.parts);
-  const count = data.fonts.filter((font) => offered.fonts.includes(text(font['family']))).length;
   // The starter fonts still without their file, which the package carries.
-  const missing = data.fonts.filter((font) => yes(font['starter']) && text(font['file']) === '');
+  const missing = fonts.filter((font) => yes(font['starter']) && text(font['file']) === '');
   const first = missing[0] === undefined ? null : text(missing[0]['family']);
   const [route, setRoute] = useState<FilesRoute>('checking');
   const [adding, setAdding] = useState(false);
-  const [starterError, setStarterError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const tried = useRef(false);
   useEffect(() => {
     if (first === null || route !== 'checking') return;
     let live = true;
@@ -70,7 +59,7 @@ function Fonts({ t, base, data, offered, offer }: { t: AddOnTranslate; base: Dat
       live = false;
     };
   }, [first, route]);
-  const addStarter = async (): Promise<void> => {
+  const add = async (said: boolean): Promise<void> => {
     if (upload === null) return;
     setAdding(true);
     const failed: string[] = [];
@@ -88,10 +77,55 @@ function Fonts({ t, base, data, offered, offer }: { t: AddOnTranslate; base: Dat
     }
     setAdding(false);
     if (failed.length === 0) {
-      setStarterError(null);
-      toast(t('setup.fonts.starterAdded', 'Starter fonts added. Shoppers see each one once you switch it on.'));
-    } else setStarterError(t('setup.fonts.starterFailed', '{fonts}: not added. {why}', { fonts: failed.join(', '), why }));
+      setError(null);
+      if (said) toast(t('setup.fonts.starterAdded', 'Starter fonts added. Shoppers see each one once you switch it on.'));
+    } else setError(t('setup.fonts.starterFailed', '{fonts}: not added. {why}', { fonts: failed.join(', '), why }));
   };
+  const mayAdd = upload !== null && route === 'ready' && access.ready && access.canUpdate('fonts');
+  useEffect(() => {
+    if (!mayAdd || first === null || tried.current) return;
+    tried.current = true;
+    void add(false);
+    // `add` reads this draw's rows: the effect runs once, when adding first becomes possible.
+  }, [mayAdd, first]);
+  return { missing, route, adding, error, add };
+}
+
+export function FontsStep({ t, base, data, starter }: { t: AddOnTranslate; base: DataRow; data: SetupData; starter: StarterFonts }): ReactNode {
+  const bases = useWrite('bases');
+  const toast = useToast();
+  const offered = offeredOf(base);
+  const id = base['id'] as string | number;
+  const offer = (next: Offered): void => void bases.update(id, { offered: JSON.stringify(next) }).catch((caught: unknown) => toast(refusal(t, asDataError(caught)).message, 'error'));
+  const kind = kindOf(base);
+  return (
+    <Grid columns={2} gap="lg">
+      <Fonts t={t} base={base} data={data} offered={offered} offer={offer} starter={starter} />
+      {kind === 'page' ? (
+        <Card title={t('setup.finishes.title', 'Finishes offered')}>
+          <p className="m-0 text-[12.5px] leading-relaxed text-fg-muted">{t('setup.finishes.page', 'A printed page takes its colours from the design. The colours a customer can pick are set on each design.')}</p>
+        </Card>
+      ) : kind === 'printed' ? (
+        <Card title={t('setup.finishes.title', 'Finishes offered')}>
+          <p className="m-0 text-[12.5px] leading-relaxed text-fg-muted">{t('setup.finishes.printed', 'A printed piece takes its colour from the filament. The colours a shopper can pick are set on the design.')}</p>
+        </Card>
+      ) : (
+        <Finishes t={t} base={base} data={data} offered={offered} offer={offer} />
+      )}
+    </Grid>
+  );
+}
+
+function Fonts({ t, base, data, offered, offer, starter }: { t: AddOnTranslate; base: DataRow; data: SetupData; offered: Offered; offer: (next: Offered) => void; starter: StarterFonts }): ReactNode {
+  const { missing, route, adding } = starter;
+  const upload = useUploader('fonts', 'file');
+  const fonts = useWrite('fonts');
+  const toast = useToast();
+  const licence = useId();
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const used = fontUse(data.parts);
+  const count = data.fonts.filter((font) => offered.fonts.includes(text(font['family']))).length;
   const pick = async (event: ChangeEvent<HTMLInputElement>): Promise<void> => {
     const file = event.target.files?.[0];
     event.target.value = '';
@@ -158,9 +192,9 @@ function Fonts({ t, base, data, offered, offer }: { t: AddOnTranslate; base: Dat
           <Stack gap="sm">
             <p className="m-0 text-[12.5px] leading-relaxed text-fg-muted">{t('setup.fonts.starterNone', 'The open-licence starter fonts have no files yet. Add them once, and every base can offer them.')}</p>
             {route === 'old' && upload !== null ? <Alert tone="warn" title={t('setup.fonts.starterOld', 'Adding the starter fonts needs a newer Adminium.')} body={t('setup.upload.noneBody', 'Ask whoever runs Adminium to update it. Everything else on this page works now.')} /> : null}
-            {starterError === null ? null : <Alert tone="danger" role="alert" title={starterError} />}
+            {starter.error === null ? null : <Alert tone="danger" role="alert" title={starter.error} />}
             <div>
-              <Button variant="secondary" loading={adding} disabled={upload === null || route !== 'ready' || adding} onClick={() => void addStarter()}>
+              <Button variant="secondary" loading={adding} disabled={upload === null || route !== 'ready' || adding} onClick={() => void starter.add(true)}>
                 {t('setup.fonts.starterAdd', 'Add the starter fonts')}
               </Button>
             </div>

@@ -18,7 +18,7 @@ import { pageAt } from '../shared/paths.ts';
 import { AreasStep } from './AreasStep.tsx';
 import { BaseStep } from './BaseStep.tsx';
 import { useSetupData } from './data.ts';
-import { FontsStep } from './FontsStep.tsx';
+import { FontsStep, useStarterFonts } from './FontsStep.tsx';
 import { LaterStep } from './LaterStep.tsx';
 import { PreviewStep } from './PreviewStep.tsx';
 import { isPublished, isStep, offeredOf, STEPS, stepDone, text, type PublishFacts, type Step } from './facts.ts';
@@ -67,6 +67,7 @@ export function SetupPage({ t }: { t: AddOnTranslate }): ReactNode {
   const base = (wanted === null ? bases.rows[0] : bases.rows.find((row) => String(row['id']) === wanted)) ?? null;
   const step: Step = isStep(search['step']) ? search['step'] : 'base';
   const data = useSetupData(base);
+  const starter = useStarterFonts(t, data.fonts);
   const go = (to: Step, id: string | number | null = base === null ? null : (base['id'] as string | number)): void => {
     if (id === null) return;
     void navigate({ to: `${pageAt()}/${String(id)}`, search: to === 'base' ? {} : { step: to } });
@@ -130,7 +131,7 @@ export function SetupPage({ t }: { t: AddOnTranslate }): ReactNode {
           {step === 'base' ? <BaseStep t={t} base={base} bases={bases.rows} settings={data.settings} areas={data.areas} /> : null}
           {step === 'areas' ? <AreasStep t={t} base={base} data={data} /> : null}
           {step === 'designs' ? <DesignsStep t={t} base={base} data={data} /> : null}
-          {step === 'fonts' ? <FontsStep t={t} base={base} data={data} /> : null}
+          {step === 'fonts' ? <FontsStep t={t} base={base} data={data} starter={starter} /> : null}
           {step === 'prices' ? <PricesStep t={t} base={base} data={data} /> : null}
           {step === 'preview' ? <PreviewStep t={t} base={base} data={data} /> : null}
           {step === 'publish' ? <PublishStep t={t} base={base} facts={facts} go={go} /> : null}

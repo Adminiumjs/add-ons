@@ -427,13 +427,10 @@ describe('the starter fonts’ files', () => {
     vi.unstubAllGlobals();
   });
 
-  it('fetches each from beside the page and uploads it into its own row, on an Adminium that serves them', async () => {
+  it('adds each by itself, fetched from beside the page into its own row, once the set-up opens on an Adminium that serves them', async () => {
     const fetched = serve(() => 200);
-    at(IDS.coasters, 'fonts');
+    at(IDS.coasters);
     render(<Customiser />);
-    await settle();
-    expect(screen.getByText('The open-licence starter fonts have no files yet. Add them once, and every base can offer them.')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Add the starter fonts' }));
     await settle();
     expect(fetched).toHaveBeenCalledWith(`${PAGE_FILES}fonts/Manrope.woff2`, { credentials: 'same-origin' });
     expect(writes('upload', 'fonts').map((call) => [call.key, (call.values as { name: string }).name])).toEqual([
@@ -444,16 +441,28 @@ describe('the starter fonts’ files', () => {
     // Each starter row took its file; no font row was made.
     for (const id of [71, 72, 73]) expect(row('fonts', id)['file']).toMatch(/^file-/);
     expect(writes('create', 'fonts')).toEqual([]);
+    // Added on the way in, on the base's first step: nothing to say.
+    expect(world.toasts.map((toast) => toast.title)).not.toContain('Starter fonts added. Shoppers see each one once you switch it on.');
+  });
+
+  it('leaves them to the button for a role that may not change the fonts', async () => {
+    serve(() => 200);
+    world.cannot.add('update:fonts');
+    at(IDS.coasters, 'fonts');
+    render(<Customiser />);
+    await settle();
+    expect(writes('upload', 'fonts')).toEqual([]);
+    expect(screen.getByText('The open-licence starter fonts have no files yet. Add them once, and every base can offer them.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Add the starter fonts' }));
+    await settle();
+    expect(writes('upload', 'fonts').map((call) => call.key)).toEqual(['72', '71', '73']);
     expect(world.toasts.at(-1)?.title).toBe('Starter fonts added. Shoppers see each one once you switch it on.');
-    expect(screen.queryByRole('button', { name: 'Add the starter fonts' })).toBeNull();
   });
 
   it('names a font Adminium did not hand over, and adds the others', async () => {
     serve((path) => (path === 'fonts/Oswald.woff2' ? 404 : 200));
     at(IDS.coasters, 'fonts');
     render(<Customiser />);
-    await settle();
-    fireEvent.click(screen.getByRole('button', { name: 'Add the starter fonts' }));
     await settle();
     expect(writes('upload', 'fonts').map((call) => call.key)).toEqual(['72', '71']);
     expect(screen.getByText('Oswald: not added. Adminium did not hand over the file.')).toBeTruthy();
