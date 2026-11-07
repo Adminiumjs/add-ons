@@ -14,6 +14,13 @@
  *   scrolls up and down under it; a mouse turns both ways.
  * - The wheel zooms.
  *
+ * A flat piece lies face-up, so its tilt leans its top away and the view
+ * looks down on it from 90° less the tilt. A GLB stands upright (glTF's own
+ * way, its top up the y axis), so its tilt is how far above it the view
+ * looks from: the stage turns it the other way (`upright`), and so that a
+ * drag, a button or a key still moves the near side the same way, the tilt
+ * they ask for is turned round with it.
+ *
  * Kept apart from three.js so the shop's 2D screens carry it at no cost and a
  * test holds every rule without a canvas.
  */
@@ -21,7 +28,7 @@
 export type ModelKind = 'piece' | 'kit' | 'printed';
 
 export interface View {
-  /** The tilt, in degrees: the top of the piece leans away as it grows. */
+  /** The tilt, in degrees: the top of a flat piece leans away as it grows; an upright model is seen from further above. */
   rx: number;
   /** The turn, in degrees: the piece's right side comes forward as it shrinks. */
   ry: number;
@@ -43,10 +50,23 @@ export const START: Readonly<Record<ModelKind, { rx: number; ry: number }>> = {
 
 export const startView = (kind: ModelKind): View => ({ ...START[kind], zoom: 1 });
 
+/**
+ * Whether the stage shows a model standing upright: a GLB, whose top is up
+ * the y axis. A flat piece and a model to print (an STL or a 3MF, its top up
+ * the z axis as slicers keep it) lie face-up.
+ */
+export const isUpright = (model: unknown): boolean => {
+  const one = model as { kind?: unknown; file?: unknown } | null;
+  return typeof one === 'object' && one !== null && one.kind === 'model' && one.file === 'glb';
+};
+
+/** Which way a tilt asked for turns the view: the other way round for an upright model. */
+const tiltSign = (upright: boolean): number => (upright ? -1 : 1);
+
 const clamp = (value: number, low: number, high: number): number => Math.max(low, Math.min(high, value));
 
-/** The view turned by `dx` degrees and tilted by `dy`. */
-export const turned = (view: View, dx: number, dy: number): View => ({ ...view, ry: view.ry + dx, rx: clamp(view.rx + dy, -TILT_MAX, TILT_MAX) });
+/** The view turned by `dx` degrees and tilted by `dy` (as a flat piece takes it; turned round for an upright model). */
+export const turned = (view: View, dx: number, dy: number, upright = false): View => ({ ...view, ry: view.ry + dx, rx: clamp(view.rx + dy * tiltSign(upright), -TILT_MAX, TILT_MAX) });
 
 /** The view zoomed by a factor, kept to two decimals and within its bounds. */
 export const zoomed = (view: View, factor: number): View => ({ ...view, zoom: clamp(Math.round(view.zoom * factor * 100) / 100, ZOOM_MIN, ZOOM_MAX) });
@@ -85,9 +105,9 @@ export function keyCommand(key: string, flat: boolean): Command | null {
   return null;
 }
 
-/** A command applied to the view of a base of this kind. */
-export function apply(view: View, command: Command, kind: ModelKind): View {
-  if (command.kind === 'turn') return turned(view, command.dx, command.dy);
+/** A command applied to the view of a base of this kind (an upright model's tilt turned round). */
+export function apply(view: View, command: Command, kind: ModelKind, upright = false): View {
+  if (command.kind === 'turn') return turned(view, command.dx, command.dy, upright);
   if (command.kind === 'zoom') return zoomed(view, command.factor);
   return startView(kind);
 }
@@ -137,7 +157,8 @@ export class Gestures {
     }
   }
 
-  move(id: number, x: number, y: number, view: View, flat: boolean): Moved {
+  move(id: number, x: number, y: number, view: View, flat: boolean, upright = false): Moved {
+    const sign = tiltSign(upright);
     const pointer = this.pointers.get(id);
     if (pointer === undefined) return {};
     this.pointers.set(id, { ...pointer, x, y });
@@ -150,7 +171,7 @@ export class Gestures {
         return {};
       }
       const zoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, (this.pinch.view.zoom * distance) / this.pinch.distance));
-      const rx = flat ? this.pinch.view.rx : Math.max(-TILT_MAX, Math.min(TILT_MAX, this.pinch.view.rx - (middleY - this.pinch.middleY) * 0.4));
+      const rx = flat ? this.pinch.view.rx : Math.max(-TILT_MAX, Math.min(TILT_MAX, this.pinch.view.rx - (middleY - this.pinch.middleY) * 0.4 * sign));
       return { view: { ...view, zoom, rx } };
     }
     const drag = this.drag;
@@ -163,7 +184,7 @@ export class Gestures {
       capture = true;
     }
     const ry = drag.view.ry + dx * 0.5;
-    const rx = pointer.touch ? drag.view.rx : Math.max(-TILT_MAX, Math.min(TILT_MAX, drag.view.rx - dy * 0.4));
+    const rx = pointer.touch ? drag.view.rx : Math.max(-TILT_MAX, Math.min(TILT_MAX, drag.view.rx - dy * 0.4 * sign));
     return { view: { ...view, rx, ry }, capture };
   }
 

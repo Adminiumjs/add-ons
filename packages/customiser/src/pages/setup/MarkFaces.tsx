@@ -38,7 +38,7 @@ import { hasWebGL } from '../../three/load.ts';
 import { ModelView } from '../../three/PieceView.tsx';
 import type { Stage3d } from '../../three/stage3d.ts';
 import { useModelBytes, useShopModel } from '../../three/useModel.ts';
-import { Gestures, startView, type View } from '../../three/view.ts';
+import { Gestures, isUpright, startView, type View } from '../../three/view.ts';
 import { Alert, asDataError, Button, Card, Figure, Input, lucideByName, SegmentedControl, Select, Stack, useWrite, type AddOnTranslate, type DataRow } from '../shared/host.ts';
 import { storedModel } from '../shared/ShopModel3d.tsx';
 import { refusal } from '../shared/refusal.ts';
@@ -171,7 +171,7 @@ export function MarkFaces({ t, base, pieces, areas }: { t: AddOnTranslate; base:
   };
   const down = (event: PointerEvent<HTMLDivElement>): void => gestures.current.down(event.pointerId, event.clientX, event.clientY, event.pointerType === 'touch', shown);
   const move = (event: PointerEvent<HTMLDivElement>): void => {
-    const moved = gestures.current.move(event.pointerId, event.clientX, event.clientY, shown, false);
+    const moved = gestures.current.move(event.pointerId, event.clientX, event.clientY, shown, false, isUpright(model));
     if (moved.view !== undefined) {
       if (moved.capture === true) event.currentTarget.setPointerCapture?.(event.pointerId);
       setTurned(moved.view);

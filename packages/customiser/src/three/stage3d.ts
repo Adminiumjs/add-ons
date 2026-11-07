@@ -278,13 +278,20 @@ export class Stage3d {
 
   /**
    * The piece turned as the comp's stage turns it: tilt (`rotateX`) after
-   * turn (`rotateY`), the top leaning away as the tilt grows. A screen's y
-   * runs down and three.js's up, so the tilt's sign flips.
+   * turn (`rotateY`). A flat piece (and a model to print, its top up the z
+   * axis) faces the camera untilted, so its top leans away as the tilt grows
+   * and the view looks down on it (a screen's y runs down and three.js's up,
+   * so the tilt's sign flips). A GLB stands upright, its top up the y axis:
+   * it is tilted the other way, its top toward the camera, so it is seen
+   * from above by the tilt and never from below. (`isUpright` in `view.ts`
+   * says the same for the turns; it is not imported, so the editor and this
+   * file share no chunk.)
    */
   private place(): void {
     const group = this.built?.group ?? this.shop?.group;
     if (group === undefined) return;
-    group.rotation.set(MathUtils.degToRad(-this.view.rx), MathUtils.degToRad(this.view.ry), 0, 'XYZ');
+    const upright = this.shop !== null && this.shopModel?.file === 'glb';
+    group.rotation.set(MathUtils.degToRad(upright ? this.view.rx : -this.view.rx), MathUtils.degToRad(this.view.ry), 0, 'XYZ');
     group.scale.setScalar(this.view.zoom);
   }
 }

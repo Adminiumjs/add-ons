@@ -27,7 +27,7 @@ import { hasWebGL, reducedMotion, type ReliefLook } from '../../three/load.ts';
 import { ModelView } from '../../three/PieceView.tsx';
 import type { Stage3d, StageModel } from '../../three/stage3d.ts';
 import { usePieceModel, type OutlineSource } from '../../three/usePiece.ts';
-import { apply, Gestures, keyCommand, startView, TURNS, wheelFactor, zoomed, zoomLabel, ZOOM_IN, ZOOM_OUT, type TurnName, type View } from '../../three/view.ts';
+import { apply, Gestures, isUpright, keyCommand, startView, TURNS, wheelFactor, zoomed, zoomLabel, ZOOM_IN, ZOOM_OUT, type TurnName, type View } from '../../three/view.ts';
 import type { CustomiserApi, DesignData } from '../api.ts';
 import type { Catalogue } from '../catalogue.ts';
 import { useShared } from './context.tsx';
@@ -124,6 +124,7 @@ export function PieceStage(props: PieceStageProps): ReactNode {
   const outline = useMemo(() => outlineOf(props.api, catalogue), [props.api, catalogue]);
   const pieceModel = usePieceModel(shownFlat || props.model !== undefined ? null : sheet, catalogue.base.thickness, outline, painted, props.relief);
   const model = props.model !== undefined ? props.model : pieceModel;
+  const upright = isUpright(model);
 
   // The wheel zooms the piece, not the page: a listener that may stop the page scrolling.
   useEffect(() => {
@@ -146,7 +147,7 @@ export function PieceStage(props: PieceStageProps): ReactNode {
     gestures.current.down(event.pointerId, event.clientX, event.clientY, event.pointerType === 'touch', viewNow.current);
   };
   const move = (event: PointerEvent<HTMLDivElement>): void => {
-    const moved = gestures.current.move(event.pointerId, event.clientX, event.clientY, viewNow.current, shownFlat);
+    const moved = gestures.current.move(event.pointerId, event.clientX, event.clientY, viewNow.current, shownFlat, upright);
     if (moved.capture === true) {
       try {
         event.currentTarget.setPointerCapture(event.pointerId);
@@ -180,7 +181,7 @@ export function PieceStage(props: PieceStageProps): ReactNode {
     const command = keyCommand(event.key, shownFlat);
     if (command === null) return;
     event.preventDefault();
-    setView((now) => apply(now, command, kind));
+    setView((now) => apply(now, command, kind, upright));
   };
   const fail = useCallback(() => setNo3d(true), []);
 
@@ -245,7 +246,7 @@ export function PieceStage(props: PieceStageProps): ReactNode {
                 const Icon = ICONS[turn.name];
                 const name = turnName(t, turn.name);
                 return (
-                  <button key={turn.name} type="button" className="cz-tool-button" aria-label={name} title={name} onClick={() => setView((now) => apply(now, { kind: 'turn', dx: turn.dx, dy: turn.dy }, kind))}>
+                  <button key={turn.name} type="button" className="cz-tool-button" aria-label={name} title={name} onClick={() => setView((now) => apply(now, { kind: 'turn', dx: turn.dx, dy: turn.dy }, kind, upright))}>
                     <Icon aria-hidden="true" />
                   </button>
                 );

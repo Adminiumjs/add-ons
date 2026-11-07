@@ -220,8 +220,8 @@ describe('step 1 for a kit (BC-D2.kit)', () => {
 
 describe('Mark faces (BC-D2.markfaces, BC-F8)', () => {
   const stageOf = (): HTMLElement => screen.getByRole('img', { name: 'The Little Bookshop, with its marked faces' });
-  // The sign stands in front of the wall: from the comp's marking angle (tilted 8°) it shows a little above the middle.
-  const click = async (x = 200, y = 182): Promise<void> => {
+  // The sign stands in front of the wall: seen from 8° above (the comp's marking angle) it shows a little below the middle.
+  const click = async (x = 200, y = 218): Promise<void> => {
     const stage = stageOf();
     await act(async () => {
       fireEvent.pointerDown(stage, { pointerId: 1, clientX: x, clientY: y, pointerType: 'mouse' });

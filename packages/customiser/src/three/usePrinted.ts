@@ -8,6 +8,10 @@
  * Nothing here is shared with the stage's own file (it reads no geometry),
  * so the editor's file and the stage's stay apart.
  *
+ * The whole model is shown in the plastic chosen (the item is printed in
+ * one), not in the colour its GLB was exported in; a base with no colour
+ * to choose keeps the GLB's own.
+ *
  * The preview stands the words up from slices of their outline's picture,
  * not from the solid the 3MF holds: the solid needs the model to print,
  * which is the shop's own file and never sent to a visitor.
@@ -16,7 +20,7 @@ import { useMemo } from 'react';
 
 import type { Catalogue } from '../browser/catalogue.ts';
 import type { DesignData } from '../browser/api.ts';
-import { flatSheet, type FlatLabels } from '../draw/flat.ts';
+import { flatSheet, plasticOf, type FlatLabels } from '../draw/flat.ts';
 import type { MarkedFace } from './faces.ts';
 import { readRelief } from './faceStore.ts';
 import { reliefCanvas, type ReliefLook } from './load.ts';
@@ -67,5 +71,6 @@ export function usePrintedModel(catalogue: Catalogue, design: DesignData | null,
       return { code: face.code, plane, canvas: reliefCanvas(sheet, painted), width: on.width, height: on.height, relief: { mode: look.mode, depth: look.depth * scale, depthMm: look.depth, colour: sheet.face.colour } };
     });
   }, [catalogue, designKey, painted, fontsIn, options.empty]); // eslint-disable-line react-hooks/exhaustive-deps
-  return useShopModel(source, decals);
+  const colour = useMemo(() => (design === null ? undefined : plasticOf(catalogue, design)?.hex), [catalogue, designKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  return useShopModel(source, decals, undefined, colour);
 }

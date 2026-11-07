@@ -10,7 +10,7 @@
  *   reader too, and every buffer it made is let go of.
  * - A design is laid on a marked face where the face is, facing out of it.
  */
-import { Group, Mesh, MeshStandardMaterial, SphereGeometry, Vector3, type BufferGeometry, type Material, type Object3D, type Texture } from 'three';
+import { Color, Group, Mesh, MeshStandardMaterial, Texture, SphereGeometry, Vector3, type BufferGeometry, type Material, type Object3D } from 'three';
 import { describe, expect, it } from 'vitest';
 
 import { glbOf, SIGN, stlOf, WALL } from '../testing/glb.ts';
@@ -19,6 +19,7 @@ import { facesOf, facesValue } from './faceStore.ts';
 import { boxModel, readModel, trianglesOf, type ShopModel } from './shopModel.ts';
 import { isGlb, isStl, isSvg, modelKindOf } from './sniff.ts';
 import { Stage3d, type RendererLike } from './stage3d.ts';
+import { apply, Gestures, isUpright, startView, turned, type View } from './view.ts';
 
 function standIn(): RendererLike & { disposed: boolean } {
   return {
@@ -303,5 +304,85 @@ describe('the stage, with a shop’s model', () => {
     const t = trianglesOf(root, root.children[0] as Mesh);
     const found = faceAt(t, 8, '0', sizeOfModel(t));
     expect(found.flat === true ? middleOf(found.plane)[2] : null).toBeCloseTo(105, 6);
+  });
+});
+
+describe('a shop’s model, as the stage first shows it', () => {
+  /** The stage's turned group, and where a direction of the model's own points once it is turned (the camera looks down −z). */
+  const turnedOf = (stage: Stage3d) => {
+    const group = stage.scene.children.find((one) => one.type === 'Group')!;
+    group.updateMatrixWorld(true);
+    return (x: number, y: number, z: number): Vector3 => new Vector3(x, y, z).transformDirection(group.matrixWorld);
+  };
+  const deg = (radians: number): number => (radians * 180) / Math.PI;
+
+  it('sees a GLB, which stands up the y axis, from above at each kind’s start: never from below', async () => {
+    for (const kind of ['printed', 'kit'] as const) {
+      const stage = new Stage3d(standIn(), async () => boxModel(80, 120, 60));
+      stage.resize(400, 400);
+      await stage.setModel(shop());
+      stage.setView(startView(kind));
+      const top = turnedOf(stage)(0, 1, 0);
+      // The model's top leans toward the camera, by the start's tilt: the view looks down on it.
+      expect(top.z).toBeGreaterThan(0);
+      expect(deg(Math.asin(top.z))).toBeCloseTo(startView(kind).rx, 6);
+      expect(top.y).toBeGreaterThan(0);
+    }
+  });
+
+  it('still looks down on a model to print, which lies up the z axis, as on a flat piece', async () => {
+    const stage = new Stage3d(standIn(), async () => boxModel(80, 60, 120));
+    stage.resize(400, 400);
+    await stage.setModel(shop({ file: 'stl' }));
+    stage.setView(startView('printed'));
+    const top = turnedOf(stage)(0, 0, 1);
+    // Faces the camera, its far edge raised: seen from 90° less the tilt above (turned by the start's turn first).
+    const rad = Math.PI / 180;
+    expect(top.z).toBeCloseTo(Math.cos(30 * rad) * Math.cos(18 * rad), 6);
+    expect(top.y).toBeGreaterThan(0);
+  });
+
+  it('turns the near side the same way for every model: a drag down, the down button and the down arrow tip it down', async () => {
+    expect(isUpright(shop())).toBe(true);
+    expect(isUpright(shop({ file: 'stl' }))).toBe(false);
+    expect(isUpright({ width: 10 })).toBe(false);
+    for (const file of ['glb', 'stl'] as const) {
+      const upright = file === 'glb';
+      const stage = new Stage3d(standIn(), async () => boxModel(80, 120, 60));
+      stage.resize(400, 400);
+      await stage.setModel(shop({ file }));
+      const start: View = startView('printed');
+      stage.setView(start);
+      // The side of the model that faces the camera untilted (+z), before and after.
+      const near = (): Vector3 => turnedOf(stage)(0, 0, 1);
+      const before = near().y;
+      const gestures = new Gestures();
+      gestures.down(1, 100, 100, false, start);
+      const dragged = gestures.move(1, 100, 130, start, false, upright).view!;
+      stage.setView(dragged);
+      expect(near().y).toBeLessThan(before);
+      stage.setView(apply(start, { kind: 'turn', dx: 0, dy: -12 }, 'printed', upright));
+      expect(near().y).toBeLessThan(before);
+      stage.setView(turned(start, 0, 12, upright));
+      expect(near().y).toBeGreaterThan(before);
+    }
+  });
+
+  it('shows the whole model in the plastic chosen, its colour picture set aside, and the file’s own colour again without one', async () => {
+    const root = boxModel(80, 120, 60);
+    const material = (root.children[0] as Mesh).material as MeshStandardMaterial;
+    const picture = new Texture();
+    material.map = picture;
+    const own = material.color.clone();
+    const stage = new Stage3d(standIn(), async () => root);
+    stage.resize(300, 300);
+    await stage.setModel(shop({ colour: '#e0a030' }));
+    expect(material.color.equals(new Color('#e0a030'))).toBe(true);
+    expect(material.map).toBeNull();
+    await stage.setModel(shop({ colour: '#2050c0' }));
+    expect(material.color.equals(new Color('#2050c0'))).toBe(true);
+    await stage.setModel(shop());
+    expect(material.color.equals(own)).toBe(true);
+    expect(material.map).toBe(picture);
   });
 });

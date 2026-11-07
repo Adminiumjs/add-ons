@@ -19,7 +19,7 @@
  * No React and no DOM: the shop's side and the customer's side both read it.
  */
 import { PT_MM, SCALE_MAX, sizeInMm, type PlacedPart } from '../rules/index.ts';
-import { areaMode, hexOf, liveParts, paletteOf, readyOf, valueOf, type Catalogue, type EditPart, type Palette } from '../browser/catalogue.ts';
+import { areaMode, hexOf, liveParts, paletteOf, readyOf, valueOf, type Catalogue, type Colour, type EditPart, type Palette } from '../browser/catalogue.ts';
 import { boxOfPlaced, paintOf, placedOn } from '../browser/placed.ts';
 import type { DesignData } from '../browser/api.ts';
 import type { Box } from './parts.ts';
@@ -151,6 +151,19 @@ export function placeLines(lines: readonly string[], box: Box, sizeMm: number, a
   return { anchor, lines: lines.map((text, index) => ({ text, x, y: top + sizeMm * BASELINE + index * step })) };
 }
 
+/** The plastic a printed item's colour part chose (else its first choice); none where the base has no colour part. */
+export function plasticOf(catalogue: Catalogue, design: DesignData): Colour | null {
+  const ready = readyOf(catalogue, design.ready_design_id);
+  return plasticIn(catalogue, design, liveParts(catalogue, ready, design.values));
+}
+
+function plasticIn(catalogue: Catalogue, design: DesignData, all: ReturnType<typeof liveParts>): Colour | null {
+  const colourPart = all.find((part) => part.kind === 'colour');
+  if (colourPart === undefined) return null;
+  const chosenColour = valueOf(design.values, colourPart).choice ?? colourPart.start?.choice;
+  return Object.values(catalogue.shared).flat().find((one) => one.code === chosenColour) ?? null;
+}
+
 /** The design laid out flat on one side. */
 export function flatSheet(catalogue: Catalogue, design: DesignData, options: FlatOptions): FlatSheet {
   const side = options.side ?? 'front';
@@ -163,9 +176,7 @@ export function flatSheet(catalogue: Catalogue, design: DesignData, options: Fla
   const all = liveParts(catalogue, ready, design.values);
   const material = materialColours(base.material);
   // A printed item takes the colour its colour part chose.
-  const colourPart = all.find((part) => part.kind === 'colour');
-  const chosenColour = colourPart === undefined ? undefined : (valueOf(design.values, colourPart).choice ?? colourPart.start?.choice);
-  const plastic = colourPart === undefined ? null : (Object.values(catalogue.shared).flat().find((one) => one.code === chosenColour) ?? null);
+  const plastic = plasticIn(catalogue, design, all);
   const on = options.on;
   const face: FlatFace = {
     kind: page ? 'page' : 'piece',

@@ -17,7 +17,7 @@ import { hasWebGL } from '../../three/load.ts';
 import { ModelView } from '../../three/PieceView.tsx';
 import type { ModelKind } from '../../three/sniff.ts';
 import { useShopModel, type ModelSource } from '../../three/useModel.ts';
-import { apply, Gestures, startView, type View } from '../../three/view.ts';
+import { apply, Gestures, isUpright, startView, type View } from '../../three/view.ts';
 import { lucideByName, type AddOnTranslate } from './host.ts';
 import { TurnButtons } from './Piece3d.tsx';
 import { fileBytes, fileIdOf } from './stored.ts';
@@ -60,8 +60,9 @@ export function ModelTurntable({ t, source, fileName, label, meta, fallback, kin
   now.current = view;
   const { model, unreadable } = useShopModel(failed ? null : source, NO_DECALS);
   const fail = useCallback(() => setFailed(true), []);
+  const upright = isUpright(model);
   const move = (event: PointerEvent<HTMLDivElement>): void => {
-    const moved = gestures.current.move(event.pointerId, event.clientX, event.clientY, now.current, false);
+    const moved = gestures.current.move(event.pointerId, event.clientX, event.clientY, now.current, false, upright);
     if (moved.capture === true) {
       try {
         event.currentTarget.setPointerCapture(event.pointerId);
@@ -97,7 +98,7 @@ export function ModelTurntable({ t, source, fileName, label, meta, fallback, kin
           {t('setup.model.badge', 'Your uploaded model · drag to turn')}
         </span>
       </div>
-      <TurnButtons t={t} onTurn={(dx, dy) => setView((at) => apply(at, { kind: 'turn', dx, dy }, kind))} meta={meta} />
+      <TurnButtons t={t} onTurn={(dx, dy) => setView((at) => apply(at, { kind: 'turn', dx, dy }, kind, upright))} meta={meta} />
     </div>
   );
 }

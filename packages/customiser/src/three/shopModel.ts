@@ -18,7 +18,7 @@
  * Every buffer, material and picture it makes or reads is listed in `Built`
  * and let go of with it.
  */
-import { BoxGeometry, Box3, BufferAttribute, BufferGeometry, CanvasTexture, DoubleSide, Group, LineBasicMaterial, LineLoop, Matrix4, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, SRGBColorSpace, Texture, Vector3, type Material } from 'three';
+import { BoxGeometry, Box3, BufferAttribute, BufferGeometry, CanvasTexture, Color, DoubleSide, Group, LineBasicMaterial, LineLoop, Matrix4, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, SRGBColorSpace, Texture, Vector3, type Material } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 import { middleOf, spanOf, type FacePlane, type Triangles, type Vec } from './faces.ts';
@@ -61,7 +61,11 @@ export interface ShopModel {
   bytes: ArrayBuffer;
   decals: readonly Decal[];
   marks?: Marks;
-  /** An STL's colour (it carries none), `#rrggbb`. */
+  /**
+   * The colour the whole model is shown in, `#rrggbb`: a printed item's
+   * plastic, over whatever colour (and colour picture) its file has. None:
+   * the file's own.
+   */
   colour?: string;
 }
 
@@ -110,6 +114,8 @@ export interface BuiltModel {
   textures: Texture[];
   /** What the decals and the outlines hold, made again each time they change. */
   dressing: { geometries: BufferGeometry[]; materials: Material[]; textures: Texture[] };
+  /** Each coloured material's own colour and colour picture, to put back when the model is no longer painted. */
+  own: Map<Material, { color: Color; map: Texture | null }>;
 }
 
 const isMesh = (one: Object3D): one is Mesh => (one as Mesh).isMesh === true;
@@ -144,7 +150,26 @@ export function buildModel(key: string, root: Object3D): BuiltModel {
   holder.add(root, decals, marks);
   const group = new Group();
   group.add(holder);
-  return { key, group, root, decals, marks, size: [size.x, size.y, size.z], geometries: [...geometries], materials: [...materials], textures: [...textures], dressing: { geometries: [], materials: [], textures: [] } };
+  const own = new Map<Material, { color: Color; map: Texture | null }>();
+  for (const material of materials) {
+    const coloured = material as Material & { color?: unknown; map?: Texture | null };
+    if (coloured.color instanceof Color) own.set(material, { color: coloured.color.clone(), map: coloured.map ?? null });
+  }
+  return { key, group, root, decals, marks, size: [size.x, size.y, size.z], geometries: [...geometries], materials: [...materials], textures: [...textures], dressing: { geometries: [], materials: [], textures: [] }, own };
+}
+
+/** The model's own materials in one colour (its colour pictures set aside), or back to the file's own. */
+export function paint(built: BuiltModel, colour: string | undefined): void {
+  for (const [material, was] of built.own) {
+    const coloured = material as Material & { color: Color; map?: Texture | null };
+    const map = colour === undefined ? was.map : null;
+    if (colour === undefined) coloured.color.copy(was.color);
+    else coloured.color.set(colour);
+    if ('map' in coloured && coloured.map !== map) {
+      coloured.map = map;
+      material.needsUpdate = true;
+    }
+  }
 }
 
 /** The decals' and the outlines' buffers let go of, and the groups emptied. */
@@ -172,6 +197,7 @@ const liftOf = (built: BuiltModel): number => Math.max(...built.size) * 0.002;
 /** The design on the marked faces, and the outlines while marking: made again from scratch, the old ones let go of. */
 export function dress(built: BuiltModel, model: ShopModel): void {
   undress(built);
+  paint(built, model.colour);
   const lift = liftOf(built);
   for (const decal of model.decals) {
     if (decal.canvas === null) continue;
