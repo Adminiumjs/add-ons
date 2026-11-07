@@ -254,6 +254,18 @@ interface HostApp {
    * action. Read from the app's manifest, which is where that link is declared.
    */
   linksInto?: readonly string[];
+  /**
+   * THE ADD-ON KEYS THIS APP'S MANIFEST NAMES AS DRAWING ONE OF ITS DOCUMENTS
+   * (`documents[].addOn`), the FOURTH way an add-on is used in an app. The app
+   * declares the document (a label sheet over its `order_lines`, a receipt over
+   * its `orders`) and asks Adminium to draw it; Adminium has it drawn by that
+   * add-on while the add-on is attached to the app and switched on. No slot is
+   * involved at either end, so by slots alone this is indistinguishable from an
+   * empty claim. Read from the app's manifest, which is where it is declared.
+   */
+  documentsBy?: readonly string[];
+  /** The add-on keys this app's manifest REQUIRES (`addOns.requires[].key`). */
+  requires?: readonly string[];
 }
 
 /**
@@ -498,6 +510,8 @@ function hostApps(): HostApp[] {
       requiredSchema?: {
         tables?: { ref: string; columns?: { rules?: { addOnLink?: { addOn?: string } } }[] }[];
       };
+      documents?: { addOn?: string }[];
+      addOns?: { requires?: { key?: string }[] };
     };
     if (doc.kind !== 'app' || typeof doc.key !== 'string') continue;
     out.push({
@@ -513,6 +527,10 @@ function hostApps(): HostApp[] {
             (table.columns ?? []).flatMap((column) => column.rules?.addOnLink?.addOn ?? []),
           ),
         ),
+      ].sort(),
+      requires: (doc.addOns?.requires ?? []).flatMap((entry) => (typeof entry.key === 'string' ? [entry.key] : [])).sort(),
+      documentsBy: [
+        ...new Set((doc.documents ?? []).flatMap((entry) => (typeof entry.addOn === 'string' ? [entry.addOn] : []))),
       ].sort(),
     });
   }
@@ -833,16 +851,65 @@ function awaitingHostLine(pkg: string, app: string, version: string | null): boo
   return entry !== undefined && version !== null && satisfiesSemverRange(version, `<${entry.line}`);
 }
 
+/**
+ * ── A RETIRED ADD-ON KEPT IN AN APP'S RANGE SO THE APP CAN STILL UPDATE ─────
+ *
+ * The Live Personalizer was retired into the Customiser, which Maker Shop
+ * requires from 0.2.0 on, and 0.2 mounts none of the personalizer's surfaces.
+ * Its `maker` range still takes 0.2 ON PURPOSE: while an add-on is attached,
+ * Adminium refuses an app update to a version outside that add-on's range, so
+ * a shop with the personalizer attached on 0.1 could never update to 0.2 if the
+ * range said `^0.1.0`, and narrowing it in a later release does not help that
+ * shop either (Adminium refuses an add-on update whose range would leave an app
+ * it is attached to). The README says so in its first line: update the app,
+ * then detach and remove it.
+ *
+ * So the claim on 0.2 is "you may keep it attached while you move", not "it
+ * works here", and the gate names it rather than counting it as a surface. The
+ * excuse is CHECKED, not trusted: it holds only on the named line or later,
+ * only while the app requires the named successor, and only while the add-on's
+ * README opens by saying it is retired. An entry that no longer excuses a real
+ * claim fails its own case below.
+ */
+const KEPT_FOR_THE_UPDATE: readonly { pkg: string; app: string; line: string; successor: string }[] = [
+  { pkg: 'personalizer', app: 'maker', line: '0.2.0', successor: 'customiser' },
+];
+
+function saysRetired(pkg: string): boolean {
+  const readme = join(PACKAGES, pkg, 'README.md');
+  return existsSync(readme) && /^> \*\*Retired: replaced by the /m.test(readFileSync(readme, 'utf8'));
+}
+
+function keptForTheUpdate(
+  pkg: string,
+  host: HostApp,
+  kept: readonly { pkg: string; app: string; line: string; successor: string }[],
+): boolean {
+  const entry = kept.find((row) => row.pkg === pkg && row.app === host.key);
+  return (
+    entry !== undefined &&
+    host.version != null &&
+    satisfiesSemverRange(host.version, `>=${entry.line}`) &&
+    (host.requires ?? []).includes(entry.successor) &&
+    saysRetired(pkg)
+  );
+}
+
 function emptyAttachClaims(
   docs: readonly { pkg: string; manifest: unknown }[],
   hosts: readonly HostApp[],
+  kept: readonly { pkg: string; app: string; line: string; successor: string }[] = KEPT_FOR_THE_UPDATE,
 ): string[] {
   const byKey = new Map(hosts.map((host) => [host.key, host]));
   const out: string[] = [];
   for (const { pkg, manifest } of docs) {
     const doc = manifest as {
       key?: string;
-      addOn?: { attaches?: { app?: string; range?: string; table?: string }[]; slots?: { slot: string }[] };
+      addOn?: {
+        attaches?: { app?: string; range?: string; table?: string }[];
+        slots?: { slot: string }[];
+        provides?: { contract?: string }[];
+      };
     };
     /*
      * The add-on's OWN key, not its package directory name. They agree for every
@@ -851,6 +918,7 @@ function emptyAttachClaims(
      */
     const key = doc.key ?? pkg;
     const fills = (doc.addOn?.slots ?? []).map((fill) => fill.slot);
+    const drawsDocuments = (doc.addOn?.provides ?? []).some((entry) => entry.contract === 'document-render');
     for (const target of doc.addOn?.attaches ?? []) {
       if (target.app === '*') continue;
       const host = byKey.get(target.app ?? '');
@@ -919,6 +987,16 @@ function emptyAttachClaims(
       if (host.readsDataFrom.includes(key)) continue;
       // The third way: the app's own rows link to the add-on's (see `HostApp.linksInto`).
       if ((host.linksInto ?? []).includes(key)) continue;
+      /*
+       * The fourth way: the app's manifest names this add-on as the one that
+       * draws one of its documents, and the add-on really draws documents (it
+       * provides `document-render`). Both halves are needed: an app naming an
+       * add-on that draws nothing, or an add-on that draws documents for some
+       * OTHER app, is still an empty claim here.
+       */
+      if (drawsDocuments && (host.documentsBy ?? []).includes(key)) continue;
+      // A retired add-on the app has replaced, kept in range for the update (see above).
+      if (keptForTheUpdate(pkg, host, kept)) continue;
       const shared = fills.filter((slot) => hosted.includes(slot));
       out.push(
         `${pkg} attaches to "${target.app}" (${host.name}), which mounts ` +
@@ -1147,6 +1225,89 @@ describe.skipIf(HOSTS.length === 0)('an attach claim resolves to a surface someb
       },
     };
     expect(emptyAttachClaims([pack], [pretend])).toHaveLength(reports);
+  });
+
+  /**
+   * THE DOCUMENT CLAUSE, PROVED from every side against one add-on that fills
+   * only its own settings form: excused only when the app names it for a
+   * document AND it provides `document-render`. Naming without drawing, drawing
+   * without being named, and being named by a different add-on's key all stay
+   * empty claims.
+   */
+  it.each([
+    { name: 'names it and it draws documents', documentsBy: ['fixture-labels'], provides: true, reports: 0 },
+    { name: 'names it but it draws none', documentsBy: ['fixture-labels'], provides: false, reports: 1 },
+    { name: 'names no document by it', documentsBy: [], provides: true, reports: 1 },
+    { name: 'names another add-on', documentsBy: ['some-other-add-on'], provides: true, reports: 1 },
+  ])('an add-on whose documents an app $name', ({ documentsBy, provides, reports }) => {
+    const pretend: HostApp = {
+      name: 'a made-up host',
+      key: 'fixture-app',
+      tables: [],
+      hostedSlots: ['order.dispatch.panel', 'settings.add-on.panel'],
+      readsDataFrom: [],
+      documentsBy,
+    };
+    const labels = {
+      pkg: 'fixture-labels',
+      manifest: {
+        key: 'fixture-labels',
+        addOn: {
+          attaches: [{ app: 'fixture-app', range: '^1.0.0' }],
+          slots: [{ slot: 'settings.add-on.panel' }],
+          provides: provides ? [{ contract: 'document-render', version: 1 }] : [],
+        },
+      },
+    };
+    expect(emptyAttachClaims([labels], [pretend])).toHaveLength(reports);
+  });
+
+  /**
+   * And the reader found something in the real tree, for the reason the data
+   * reader's guard below gives: `[]` is what "names no document" looks like,
+   * and a parse that stopped matching would read the same way.
+   */
+  it('reads at least one real app that names an add-on for a document', () => {
+    const named = HOSTS.filter((host) => (host.documentsBy ?? []).length > 0);
+    expect(
+      named.map((host) => host.name),
+      'no checked-out app manifest names an add-on in `documents[].addOn`',
+    ).not.toEqual([]);
+  });
+
+  /**
+   * THE RETIREMENT EXCUSE, PROVED: every entry still excuses a claim the gate
+   * would otherwise report (so a stale entry goes red), and against the real
+   * personalizer manifest the excuse needs all three of its conditions.
+   */
+  it.each(KEPT_FOR_THE_UPDATE)('$pkg on $app is still a claim only its retirement excuses', ({ pkg, app }) => {
+    const host = HOSTS.find((entry) => entry.key === app);
+    if (host === undefined) return;
+    const doc = manifests().filter((entry) => entry.pkg === pkg);
+    expect(doc, pkg).toHaveLength(1);
+    expect(emptyAttachClaims(doc, [host], []).some((line) => line.includes(`"${app}"`))).toBe(true);
+    expect(emptyAttachClaims(doc, [host])).toEqual([]);
+  });
+
+  it.each([
+    { name: 'on the line, requiring the successor', version: '0.2.0', requires: ['customiser'], reports: 0 },
+    { name: 'below the line', version: '0.1.9', requires: ['customiser'], reports: 1 },
+    { name: 'not requiring the successor', version: '0.2.0', requires: [], reports: 1 },
+  ])('excuses the retired personalizer on maker only $name', ({ version, requires, reports }) => {
+    const maker: HostApp = {
+      name: 'maker-shop',
+      key: 'maker',
+      version,
+      tables: [],
+      hostedSlots: ['order.dispatch.actions'],
+      readsDataFrom: [],
+      requires,
+    };
+    const personalizer = manifests().filter((doc) => doc.pkg === 'personalizer');
+    expect(personalizer).toHaveLength(1);
+    expect(emptyAttachClaims(personalizer, [maker])).toHaveLength(reports);
+    // And never for an add-on that is not named, however retired the app's state.
+    expect(emptyAttachClaims(personalizer, [maker], [])).toHaveLength(1);
   });
 
   it.each([
