@@ -6,10 +6,12 @@
  * an app's role needs" lists, and with it, through the data and files routes
  * as itself: reads a customer's design with its words in clear, adds a proof
  * version, uploads the proof and sets it on the version, makes a production
- * file and attaches it, and removes it to make it again. The same role asks
- * for the Customiser's settings too, which the Customiser gives no app's role:
- * that entry is cut at install and its read refused. A counter role that
- * holds only the designs' read sees the words masked and may make nothing.
+ * file and attaches it, and removes it to make it again. An owner role that
+ * takes the README's set-up grants reads the settings and every table the
+ * set-up page reads, and adds, changes and removes there what the page does;
+ * its ask to change the settings, and to read the postings, is cut at
+ * install. A counter role that holds only the designs' read sees the words
+ * masked and may make nothing.
  *
  * Run by `vitest.config.mjs` beside it, inside a built Adminium checkout
  * (`ADMINIUM_ENGINE`) with this repository built (`ADMINIUM_ADD_ONS_REPO`).
@@ -71,8 +73,20 @@ function printShop(): Doc {
           { addOn: CUSTOMISER, table: 'design_versions', actions: ['read', 'read_pii', 'create', 'update'] },
           { addOn: CUSTOMISER, table: 'version_files', actions: ['read', 'create', 'update', 'delete'] },
           ...READS.map((table) => ({ addOn: CUSTOMISER, table, actions: ['read'] })),
-          // Asked for, never given: the Customiser offers its settings to no app's role.
-          { addOn: CUSTOMISER, table: 'settings', actions: ['read'] },
+        ],
+      },
+      {
+        key: 'owner',
+        name: 'Owner',
+        screensOnly: true,
+        permissions: ['app:@:staff', 'table:@order_lines:read', 'page:@customiser:view'],
+        tables: [
+          // Asked to change the settings too: the Customiser offers an app's role their read alone.
+          { addOn: CUSTOMISER, table: 'settings', actions: ['read', 'update'] },
+          { addOn: CUSTOMISER, table: 'bases', actions: ['read', 'create', 'update'] },
+          ...READS.filter((table) => table !== 'bases').map((table) => ({ addOn: CUSTOMISER, table, actions: ['read', 'create', 'update', 'delete'] })),
+          // A ledger's receipts: never an app's.
+          { addOn: CUSTOMISER, table: 'postings', actions: ['read'] },
         ],
       },
       { key: 'counter', name: 'Counter', screensOnly: true, permissions: ['app:@:staff', 'table:@order_lines:read'], tables: [{ addOn: CUSTOMISER, table: 'designs', actions: ['read'] }] },
@@ -91,7 +105,7 @@ describe.each(legs.LEGS as [string, boolean][])("a print shop's own pre-press ro
   const cookies = new Map<string, string>();
   let at = 0;
 
-  const signIn = async (role: 'prepress' | 'counter'): Promise<string> => {
+  const signIn = async (role: 'prepress' | 'counter' | 'owner'): Promise<string> => {
     const member = await meta.usersRepo(h.meta).create({ email: `${role}@print.dev`, name: role, passwordHash: await auth.adminPasswordHash() });
     await meta.rolesRepo(h.meta).assignToUser(member.id, (await meta.rolesRepo(h.meta).findBySlug(`printing-${role}`))!.id);
     at += 1;
@@ -121,10 +135,11 @@ describe.each(legs.LEGS as [string, boolean][])("a print shop's own pre-press ro
     await h.rows(`INSERT INTO customiser_designs (id, app, code, ${q('values')}, created_at, updated_at) VALUES (1, 'printing', 'AAAABBBBCCCCDDD1', '{"format":1,"parts":{"name":{"text":"Marta Kovac"}}}', '${AT}', '${AT}')`);
     await h.rows(`INSERT INTO printing_order_lines (id, lettering, design_id) VALUES (1, 'Marta Kovac', 1)`);
     const model = engine.parseDatabaseModel((await meta.snapshotsRepo(h.meta).latest(h.connectionId))!.schema);
-    for (const ref of ['designs', 'design_versions', 'version_files', 'settings']) id[ref] = model.tables.find((table: { name: string }) => table.name === `customiser_${ref}`)!.id;
+    for (const ref of ['designs', 'design_versions', 'version_files', 'settings', ...READS]) id[ref] = model.tables.find((table: { name: string }) => table.name === `customiser_${ref}`)!.id;
     served = await lane.servePublic(h, null, { ADMINIUM_DATA_DIR: h.dataDir });
     cookies.set('prepress', await signIn('prepress'));
     cookies.set('counter', await signIn('counter'));
+    cookies.set('owner', await signIn('owner'));
   });
   afterAll(async () => {
     if (!runs) return;
@@ -136,9 +151,10 @@ describe.each(legs.LEGS as [string, boolean][])("a print shop's own pre-press ro
     expect(built).toBeNull();
   });
 
-  it.skipIf(!runs)('cuts the settings entry at install, as one the Customiser offers no app', () => {
+  it.skipIf(!runs)("cuts at install what the Customiser offers no app's role: a change to the settings, a read of the postings", () => {
     const said = JSON.stringify(installReply);
-    expect(said).toContain('not-offered');
+    expect(said).toContain('ledger-table');
+    expect(said).toContain('ceiling');
   });
 
   it.skipIf(!runs)("reads the customer's words in clear; the counter reads them masked", async () => {
@@ -179,8 +195,39 @@ describe.each(legs.LEGS as [string, boolean][])("a print shop's own pre-press ro
     expect(await h.rows('SELECT id FROM customiser_version_files')).toEqual([]);
   });
 
-  it.skipIf(!runs)('is refused the settings, which the Customiser gives no app’s role', async () => {
+  it.skipIf(!runs)('refuses the settings to a role whose app asked none of them', async () => {
     expect((await data('prepress', 'GET', `${id['settings']!}/1`)).statusCode).toBe(403);
+  });
+
+  it.skipIf(!runs)('lets the owner read the settings and every table the set-up page reads, and change no setting', async () => {
+    const settings = await data('owner', 'GET', id['settings']!);
+    expect(settings.statusCode, settings.body).toBe(200);
+    for (const table of READS) {
+      const read = await data('owner', 'GET', id[table]!);
+      expect(read.statusCode, `${table}: ${read.body as string}`).toBe(200);
+    }
+    const row = String(((await h.rows('SELECT id FROM customiser_settings')) as Doc[])[0]?.['id'] ?? '1');
+    expect((await data('owner', 'PATCH', `${id['settings']!}/${row}`, { values: { min_dpi: 200 } })).statusCode).toBe(403);
+  });
+
+  it.skipIf(!runs)('lets the owner set up a base as the set-up page does: add and change it, add, change and remove its parts, never remove the base', async () => {
+    const base = await data('owner', 'POST', id['bases']!, { values: { app: 'printing', name: 'Card', kind: 'page', width_mm: 85, height_mm: 55, state: 'draft', position: 1 } });
+    expect(base.statusCode, base.body).toBeLessThan(300);
+    const baseId = String((base.json() as { data: { id: unknown } }).data.id);
+    const renamed = await data('owner', 'PATCH', `${id['bases']!}/${baseId}`, { values: { name: 'Business card', state: 'published' } });
+    expect(renamed.statusCode, renamed.body).toBe(200);
+    // The app a row belongs to is the set-up page's to give a new row, never to change.
+    expect((await data('owner', 'PATCH', `${id['bases']!}/${baseId}`, { values: { app: 'maker' } })).statusCode).toBe(403);
+    const area = await data('owner', 'POST', id['base_areas']!, { values: { app: 'printing', base_id: Number(baseId), code: 'name', name: 'Name', side: 'front', shape: 'rect', x_mm: 5, y_mm: 5, w_mm: 40, h_mm: 8, takes: 'words', required: false, position: 1 } });
+    expect(area.statusCode, area.body).toBeLessThan(300);
+    const areaId = String((area.json() as { data: { id: unknown } }).data.id);
+    expect((await data('owner', 'PATCH', `${id['base_areas']!}/${areaId}`, { values: { w_mm: 50 } })).statusCode).toBe(200);
+    const feature = await data('owner', 'POST', id['features']!, { values: { app: 'printing', code: 'foil', name: 'Foil', active: true } });
+    expect(feature.statusCode, feature.body).toBeLessThan(300);
+    const featureId = String((feature.json() as { data: { id: unknown } }).data.id);
+    expect((await data('owner', 'DELETE', `${id['features']!}/${featureId}`)).statusCode).toBeLessThan(300);
+    expect((await data('owner', 'DELETE', `${id['base_areas']!}/${areaId}`)).statusCode).toBeLessThan(300);
+    expect((await data('owner', 'DELETE', `${id['bases']!}/${baseId}`)).statusCode).toBe(403);
   });
 
   it.skipIf(!runs)('the counter, holding only the designs’ read, may make nothing', async () => {

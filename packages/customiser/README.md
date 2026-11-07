@@ -97,11 +97,17 @@ The Customiser says how far an app's role may go on each table
 
 | Table | The most an app's role holds |
 |---|---|
-| `bases`, `base_pieces`, `base_areas`, `ready_designs`, `ready_parts`, `fonts`, `palettes`, `palette_colours`, `features` | read |
+| `bases` | read; create (every column); update (every column but `app`) |
+| `base_pieces`, `base_areas`, `ready_designs`, `ready_parts`, `fonts`, `palettes`, `palette_colours`, `features` | read; create (every column); update (every column but `app`); delete |
+| `settings` | read |
 | `designs` | read, read_pii |
 | `design_versions` | read, read_pii; create (`app`, `design_id`, `version`, `values`); update (`proof_file`) |
 | `version_files` | read; create (`app`, `version_id`, `kind`, `name`, `about`, `layers`, `left_out`, `position`); update (`file`); delete |
-| `settings`, `postings`, `design_mails` | nothing |
+| `postings`, `design_mails` | nothing |
+
+The writes on the shop's tables are the set-up page's (add-ons 1.0.21): a role
+an app gives the set-up changes there what the Customiser's own designer
+does. The panels only read them.
 
 An entry asking for more is cut to this, and the install check says what was
 cut. `read_pii` is what shows the customer's words (`values`), logo and photo:
@@ -164,6 +170,35 @@ ships, through the set-up page's files route
 reader who may open that page. Without it the panel names the font file it is
 missing. A screens-only role never sees the page in a menu; the grant only
 lets its panels read the files.
+
+### The set-up page
+
+A role that sets up the shop's side (a shop's owner) opens
+`/add-ons/customiser/customiser` and reads and writes what that page does:
+
+```json
+{
+  "permissions": ["page:@customiser:view"],
+  "tables": [
+    { "addOn": "customiser", "table": "settings", "actions": ["read"] },
+    { "addOn": "customiser", "table": "bases", "actions": ["read", "create", "update"] },
+    { "addOn": "customiser", "table": "base_pieces", "actions": ["read", "create", "update", "delete"] },
+    { "addOn": "customiser", "table": "base_areas", "actions": ["read", "create", "update", "delete"] },
+    { "addOn": "customiser", "table": "ready_designs", "actions": ["read", "create", "update", "delete"] },
+    { "addOn": "customiser", "table": "ready_parts", "actions": ["read", "create", "update", "delete"] },
+    { "addOn": "customiser", "table": "fonts", "actions": ["read", "create", "update", "delete"] },
+    { "addOn": "customiser", "table": "palettes", "actions": ["read", "create", "update", "delete"] },
+    { "addOn": "customiser", "table": "palette_colours", "actions": ["read", "create", "update", "delete"] },
+    { "addOn": "customiser", "table": "features", "actions": ["read", "create", "update", "delete"] }
+  ]
+}
+```
+
+That is ten of a role's 24 add-on tables; a role that also makes proofs adds
+`designs`, `design_versions` and `version_files` (thirteen). The first time
+such a role opens the set-up, the page adds the starter fonts' files into
+their rows, so a shopper's editor can load them; a role that may not change
+the fonts sees "Add the starter fonts" instead.
 
 The Customiser's own **designer** and **reader** roles hold the same and more
 (the designer also sets up the shop's side), for a person who works in the

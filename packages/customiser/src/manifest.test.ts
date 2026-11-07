@@ -413,13 +413,26 @@ describe('the roles', () => {
   });
 });
 
+describe('what a link to a row is named by (keyField)', () => {
+  it('names a design version by its number, never by the app it is for', () => {
+    expect((manifest.requiredSchema.tables as unknown as { ref: string; keyField?: string }[]).find((table) => table.ref === 'design_versions')?.keyField).toBe('version');
+  });
+});
+
 describe('what an app’s role may hold (appGrants)', () => {
   type Shaped = { ref: string; columns: { ref: string }[]; appGrants?: { actions: string[]; creatable?: string[]; writable?: string[] } };
   const all = manifest.requiredSchema.tables as unknown as Shaped[];
   const grants = (ref: string) => all.find((table) => table.ref === ref)?.appGrants;
 
-  it('lets an app’s role read the shop’s set-up and nothing more of it', () => {
-    for (const table of SHOP_TABLES) expect(grants(table), table).toEqual({ actions: ['read'] });
+  it('lets an app’s role do to the shop’s set-up what the set-up page does: add, change and remove, never a base removed', () => {
+    for (const table of SHOP_TABLES) {
+      const columns = all.find((one) => one.ref === table)!.columns.map((column) => column.ref).filter((column) => column !== 'id');
+      expect(grants(table), table).toEqual({ actions: table === 'bases' ? ['read', 'create', 'update'] : ['read', 'create', 'update', 'delete'], creatable: columns, writable: columns.filter((column) => column !== 'app') });
+    }
+  });
+
+  it('lets it read the settings the set-up page starts from, never change them', () => {
+    expect(grants('settings')).toEqual({ actions: ['read'] });
   });
 
   it('lets it read a customer’s design with its personal columns, never change it', () => {
@@ -436,8 +449,8 @@ describe('what an app’s role may hold (appGrants)', () => {
     expect(grants('version_files')).toEqual({ actions: ['read', 'create', 'update', 'delete'], creatable: ['app', 'version_id', 'kind', 'name', 'about', 'layers', 'left_out', 'position'], writable: ['file'] });
   });
 
-  it('gives no app’s role the settings, the postings or the mailed links', () => {
-    for (const table of ['settings', 'postings', 'design_mails']) expect(grants(table), table).toBeUndefined();
+  it('gives no app’s role the postings or the mailed links', () => {
+    for (const table of ['postings', 'design_mails']) expect(grants(table), table).toBeUndefined();
   });
 
   it('names only columns each table has', () => {

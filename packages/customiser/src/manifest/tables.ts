@@ -385,6 +385,8 @@ export function tables(): Table[] {
     {
       // The snapshot an order line makes, and the proof the shop sends of it: numbered, never changed by the customer.
       ref: 'design_versions',
+      // A link to a version (a file's, an app's) names it by its number, never by the first text column (the app).
+      keyField: 'version',
       unique: [['design_id', 'version']],
       ...both(w('Design version', 'Designversion', 'Version de la création', 'Designversion', 'Verze návrhu', 'نسخة التصميم', '设计版本', '設計版本'), w('Design versions', 'Designversionen', 'Versions des créations', 'Designversioner', 'Verze návrhů', 'نسخ التصميم', '设计版本', '設計版本')),
       columns: [
