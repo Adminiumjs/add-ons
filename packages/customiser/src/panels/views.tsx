@@ -36,11 +36,13 @@ export interface PieceViewsProps {
   label: string;
   /** The design drawn flat. */
   flat: ReactNode;
+  /** The shop's starting line for a one-colour picture the customer left as it was. */
+  startThreshold?: number;
 }
 
-export function PieceViews({ t, catalogue, design, pictures, label, flat }: PieceViewsProps): ReactNode {
+export function PieceViews({ t, catalogue, design, pictures, label, flat, startThreshold = 50 }: PieceViewsProps): ReactNode {
   const [shown, setShown] = useState<'3d' | 'flat'>('3d');
-  const painted = usePaintedPictures(catalogue, design, pictures, 50);
+  const painted = usePaintedPictures(catalogue, design, pictures, startThreshold);
   if (!hasWebGL())
     return (
       <div className="rounded-xl border border-border bg-surface-3 p-3" data-design-sides="">
@@ -78,11 +80,11 @@ export function PieceViews({ t, catalogue, design, pictures, label, flat }: Piec
  * words outlined. Without a model, or a device that cannot draw 3D, there
  * is no "3D".
  */
-export function KitViews({ t, catalogue, design, pictures, label }: Omit<PieceViewsProps, 'flat'>): ReactNode {
+export function KitViews({ t, catalogue, design, pictures, label, startThreshold = 50 }: Omit<PieceViewsProps, 'flat'>): ReactNode {
   const source = storedModel(catalogue.base.row['model_file'], 'glb');
   const webgl = source !== null && hasWebGL();
   const [picked, setShown] = useState<'3d' | 'flat' | 'pieces'>(webgl ? '3d' : 'flat');
-  const painted = usePaintedPictures(catalogue, design, pictures, 50);
+  const painted = usePaintedPictures(catalogue, design, pictures, startThreshold);
   const pieces = kitPieces(catalogue);
   const outlines = Object.fromEntries(pieces.flatMap((piece) => {
     const address = fileAddress(piece.file);
@@ -131,9 +133,9 @@ export function KitViews({ t, catalogue, design, pictures, label }: Omit<PieceVi
  * "Flat" is the drawing the proof is made from. A device that cannot draw 3D,
  * or a preview model it cannot read, shows it flat with no switch.
  */
-export function PrintedViews({ t, catalogue, design, pictures, label, flat }: PieceViewsProps): ReactNode {
+export function PrintedViews({ t, catalogue, design, pictures, label, flat, startThreshold = 50 }: PieceViewsProps): ReactNode {
   const [shown, setShown] = useState<'3d' | 'flat'>('3d');
-  const painted = usePaintedPictures(catalogue, design, pictures, 50);
+  const painted = usePaintedPictures(catalogue, design, pictures, startThreshold);
   const webgl = hasWebGL();
   const source = webgl && previewFaces(catalogue).length > 0 ? storedModel(catalogue.base.row['model_file'], 'glb') : null;
   const options = { empty: 'hide' as const, labels: { logo: '', photo: '' }, pictures: painted, holds: (column: string) => pictures[column] !== undefined };

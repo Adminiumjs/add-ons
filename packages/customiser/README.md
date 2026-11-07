@@ -181,6 +181,7 @@ A role that sets up the shop's side (a shop's owner) opens
   "permissions": ["page:@customiser:view"],
   "tables": [
     { "addOn": "customiser", "table": "settings", "actions": ["read"] },
+    { "addOn": "customiser", "table": "designs", "actions": ["read"] },
     { "addOn": "customiser", "table": "bases", "actions": ["read", "create", "update"] },
     { "addOn": "customiser", "table": "base_pieces", "actions": ["read", "create", "update", "delete"] },
     { "addOn": "customiser", "table": "base_areas", "actions": ["read", "create", "update", "delete"] },
@@ -194,8 +195,10 @@ A role that sets up the shop's side (a shop's owner) opens
 }
 ```
 
-That is ten of a role's 24 add-on tables; a role that also makes proofs adds
-`designs`, `design_versions` and `version_files` (thirteen). The first time
+The read of `designs` is what lets the page remove a ready-made design: it
+first asks whether a customer's design came from it. That is eleven of a
+role's 24 add-on tables; a role that also makes proofs takes `designs` with
+`read_pii` and adds `design_versions` and `version_files` (thirteen). The first time
 such a role opens the set-up, the page adds the starter fonts' files into
 their rows, so a shopper's editor can load them; a role that may not change
 the fonts sees "Add the starter fonts" instead.

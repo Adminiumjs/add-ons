@@ -18,7 +18,7 @@
  */
 import type { CatalogueRows, DesignData } from '../browser/api.ts';
 import { readCatalogue, type Catalogue } from '../browser/catalogue.ts';
-import { oneColourCanvas } from '../browser/files.ts';
+import { oneColourCanvas, type Lightness } from '../browser/files.ts';
 import { readValues, type DesignValues } from '../rules/index.ts';
 import { sheetPng, type Painted } from '../draw/canvas.ts';
 import { flatSheet, sheetsOf, type FlatOn, type FlatSheet } from '../draw/flat.ts';
@@ -211,9 +211,12 @@ export function laserSheet(sheet: FlatSheet, startThreshold: number): { sheet: F
 /**
  * A piece's proof: the piece as it will be made, painted at 1440 pixels
  * across with a margin. A logo set to one colour is shown as the laser cuts
- * it, never as uploaded: the customer approves what is made.
+ * it, never as uploaded: the customer approves what is made. It is made from
+ * the picture's lightness as the shopper's editor reads it (`lights`), so the
+ * proof shows what they saw; a picture whose lightness could not be read is
+ * painted as the editor then draws it, as uploaded.
  */
-export async function makePieceProof(sheet: FlatSheet, design: DataRow, startThreshold = 50): Promise<Blob | null> {
+export async function makePieceProof(sheet: FlatSheet, design: DataRow, startThreshold = 50, lights: Readonly<Record<string, Lightness>> = {}): Promise<Blob | null> {
   const painted: Record<string, Painted> = {};
   for (const column of FILE_COLUMNS) {
     const picture = await filePicture(design[column]);
@@ -223,10 +226,15 @@ export async function makePieceProof(sheet: FlatSheet, design: DataRow, startThr
   for (const one of made.laser) {
     const source = painted[one.column];
     if (source === undefined) continue;
-    const canvas = oneColourCanvas(source.image, source.width, source.height, one.threshold, one.ink);
+    const light = lights[one.column];
+    if (light === undefined) {
+      painted[one.key] = source;
+      continue;
+    }
+    const canvas = oneColourCanvas(light, one.threshold, one.ink);
     // A page that cannot draw the laser's picture cannot paint the proof either: nothing is made in full colour instead.
     if (canvas === null) return null;
-    painted[one.key] = { image: canvas, width: source.width, height: source.height };
+    painted[one.key] = { image: canvas, width: source.width > 0 ? source.width : light.width, height: source.height > 0 ? source.height : light.height };
   }
   return await sheetPng(made.sheet, 1440, painted, 40);
 }

@@ -18,11 +18,12 @@
  * proof is waiting, approved or asked to change is the app's own record of
  * the proof it sent; the panel never changes the design itself.
  */
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 import type { CatalogueRows, DesignData } from '../browser/api.ts';
 import { SharedContext, sharedFor } from '../browser/ui/context.tsx';
 import { Drawing } from '../browser/ui/Drawing.tsx';
+import { headOf, readPicture, sniff, type Lightness } from '../browser/files.ts';
 import type { Upload } from '../browser/ui/pictures.ts';
 import { sidesMade } from '../draw/flat.ts';
 import { layoutsOf } from '../rules/design.ts';
@@ -139,6 +140,42 @@ function makeWords(t: AddOnTranslate, design: string, version: number, spec: str
   };
 }
 
+/**
+ * Each customer picture's lightness, read as the shopper's editor reads it
+ * (`readPicture`): what the one-colour view on this panel and the proof are
+ * made from, so both show what the shopper saw. A picture that cannot be read
+ * is left out, and drawn as uploaded, as the editor draws it.
+ */
+function usePictureLights(addresses: Readonly<Record<string, string>>): Readonly<Record<string, Lightness>> {
+  const [lights, setLights] = useState<Readonly<Record<string, Lightness>>>({});
+  const key = JSON.stringify(addresses);
+  useEffect(() => {
+    let live = true;
+    void (async () => {
+      const out: Record<string, Lightness> = {};
+      for (const [column, address] of Object.entries(addresses)) {
+        try {
+          const answer = await fetch(address, { credentials: 'same-origin' });
+          if (!answer.ok) continue;
+          const blob = await answer.blob();
+          const kind = sniff(await headOf(blob));
+          if (kind !== 'png' && kind !== 'jpeg' && kind !== 'svg') continue;
+          const read = await readPicture(blob, kind);
+          if (read.light !== undefined) out[column] = read.light;
+        } catch {
+          // Not read: drawn as uploaded.
+        }
+      }
+      if (live) setLights(out);
+    })();
+    return () => {
+      live = false;
+    };
+    // The addresses, by value: the row is read again on every draw.
+  }, [key]);
+  return lights;
+}
+
 export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): ReactNode {
   const locale = useLocaleTag();
   const access = useAccess();
@@ -167,6 +204,13 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
   const proofUpload = useUploader('design_versions', 'proof_file');
   const fileUpload = useUploader('version_files', 'file');
   const [busy, setBusy] = useState<'proof' | 'files' | null>(null);
+  const addresses: Record<string, string> = {};
+  for (const column of ['logo_file', 'photo_file']) {
+    const address = row === null ? null : fileAddress(row[column]);
+    if (address !== null) addresses[column] = address;
+  }
+  const lights = usePictureLights(addresses);
+  const startThreshold = Number(settings.rows[0]?.['one_colour_threshold'] ?? 50) || 50;
   const [problem, setProblem] = useState<string | null>(null);
 
   // A role that may not read the designs at all is told so, never that the line has none.
@@ -193,9 +237,10 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
   const values = valuesOf(latest?.['values'] ?? row['values']) ?? { parts: {} };
   const versionNo = latest === undefined ? 1 : Number(latest['version']);
   const chosen = (jsonOf(row['values'])['parts'] ?? {}) as Record<string, unknown>;
-  // The parts of the layout the design is in: a design of two layouts names each of its parts once.
+  // The parts the design is made with, as the rules read them: its layout's (a design of two layouts names each part once), and the back only when it is printed both sides.
   const layout = values.layout ?? layoutsOf(ready.row)[0] ?? null;
-  const named: DataRow[] = readyId === null ? [...areas.rows] : parts.rows.filter((part) => part['locked'] !== true && part['kind'] !== 'shape' && (layout === null || text(part['layout']) === '' || text(part['layout']) === layout));
+  const bothSides = (values.sides ?? 1) >= 2;
+  const named: DataRow[] = readyId === null ? [...areas.rows] : parts.rows.filter((part) => part['locked'] !== true && part['kind'] !== 'shape' && (text(part['side']) !== 'back' || bothSides) && (layout === null || text(part['layout']) === '' || text(part['layout']) === layout));
   const finishName = (code: string): string => text(colours.rows.find((one) => text(one['code']) === code)?.['name']) || code;
   const proofOf = (version: DataRow | undefined): boolean => version !== undefined && text(version['proof_file']) !== '';
   const rows: CatalogueRows = { bases: [base.row], pieces: [...pieces.rows], areas: [...areas.rows], ready: ready.row === null ? [] : [ready.row], parts: [...parts.rows], fonts: [...fonts.rows], palettes: [...palettes.rows], colours: [...colours.rows], features: [...features.rows] };
@@ -206,7 +251,8 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
   const pictures: Record<string, Upload> = {};
   for (const column of ['logo_file', 'photo_file']) {
     const id = fileIdOf(row[column]);
-    if (id !== null) pictures[column] = { id, name: '', size: 0, kind: '', url: fileAddress(row[column])!, fresh: false };
+    const light = lights[column];
+    if (id !== null) pictures[column] = { id, name: '', size: 0, kind: '', url: fileAddress(row[column])!, fresh: false, ...(light === undefined ? {} : { light }) };
   }
   const hasLogo = pictures['logo_file'] !== undefined;
   const shared = sharedFor(locale, page ? 'print' : 'maker', '');
@@ -247,7 +293,7 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
         blob = await makePageProof(sheets, { font: book.font, pictures: held.pdf }, words, labelFont);
         name = `${stem}-proof.pdf`;
       } else {
-        blob = await makePieceProof(sheets[0]!, row, Number(settings.rows[0]?.['one_colour_threshold'] ?? 50) || 50);
+        blob = await makePieceProof(sheets[0]!, row, startThreshold, lights);
         name = `${stem}-proof.png`;
       }
       if (blob === null) {
@@ -336,18 +382,18 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
         {catalogue === null ? null : (
           <SharedContext.Provider value={shared}>
             {kind === 'kit' ? (
-              <KitViews t={t} catalogue={catalogue} design={data} pictures={pictures} label={t('panel.line.drawn', '{design}, as it will be made', { design: designName })} />
+              <KitViews t={t} catalogue={catalogue} design={data} pictures={pictures} startThreshold={startThreshold} label={t('panel.line.drawn', '{design}, as it will be made', { design: designName })} />
             ) : printed ? (
-              <PrintedViews t={t} catalogue={catalogue} design={data} pictures={pictures} label={t('panel.line.drawn', '{design}, as it will be made', { design: designName })} flat={<Drawing catalogue={catalogue} design={data} empty="hide" pictures={pictures} className="w-full" label={t('panel.line.drawn', '{design}, as it will be made', { design: designName })} />} />
+              <PrintedViews t={t} catalogue={catalogue} design={data} pictures={pictures} startThreshold={startThreshold} label={t('panel.line.drawn', '{design}, as it will be made', { design: designName })} flat={<Drawing catalogue={catalogue} design={data} empty="hide" pictures={pictures} startThreshold={startThreshold} className="w-full" label={t('panel.line.drawn', '{design}, as it will be made', { design: designName })} />} />
             ) : kind === 'piece' ? (
-              <PieceViews t={t} catalogue={catalogue} design={data} pictures={pictures} label={t('panel.line.drawn', '{design}, as it will be made', { design: designName })} flat={<Drawing catalogue={catalogue} design={data} empty="hide" pictures={pictures} className="w-full" label={t('panel.line.drawn', '{design}, as it will be made', { design: designName })} />} />
+              <PieceViews t={t} catalogue={catalogue} design={data} pictures={pictures} startThreshold={startThreshold} label={t('panel.line.drawn', '{design}, as it will be made', { design: designName })} flat={<Drawing catalogue={catalogue} design={data} empty="hide" pictures={pictures} startThreshold={startThreshold} className="w-full" label={t('panel.line.drawn', '{design}, as it will be made', { design: designName })} />} />
             ) : (
             <div className="flex flex-wrap gap-3" data-design-sides="">
               {sides.map((side) => (
                 <div key={side} className="flex min-w-0 flex-1 flex-col gap-1.5">
                   {page ? <span className="text-[11.5px] font-extrabold text-fg-subtle">{words.side(side)}</span> : null}
                   <div className="rounded-xl border border-border bg-surface-3 p-3">
-                    <Drawing catalogue={catalogue} design={data} side={side} empty="hide" pictures={pictures} className="w-full" label={t('panel.line.drawn', '{design}, as it will be made', { design: designName }) + (page ? ` · ${words.side(side)}` : '')} />
+                    <Drawing catalogue={catalogue} design={data} side={side} empty="hide" pictures={pictures} startThreshold={startThreshold} className="w-full" label={t('panel.line.drawn', '{design}, as it will be made', { design: designName }) + (page ? ` · ${words.side(side)}` : '')} />
                   </div>
                 </div>
               ))}

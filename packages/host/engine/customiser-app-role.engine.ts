@@ -83,6 +83,8 @@ function printShop(): Doc {
         tables: [
           // Asked to change the settings too: the Customiser offers an app's role their read alone.
           { addOn: CUSTOMISER, table: 'settings', actions: ['read', 'update'] },
+          // Read before a ready-made design is removed: whether a customer's design came from it.
+          { addOn: CUSTOMISER, table: 'designs', actions: ['read'] },
           { addOn: CUSTOMISER, table: 'bases', actions: ['read', 'create', 'update'] },
           ...READS.filter((table) => table !== 'bases').map((table) => ({ addOn: CUSTOMISER, table, actions: ['read', 'create', 'update', 'delete'] })),
           // A ledger's receipts: never an app's.
@@ -227,6 +229,13 @@ describe.each(legs.LEGS as [string, boolean][])("a print shop's own pre-press ro
     const featureId = String((feature.json() as { data: { id: unknown } }).data.id);
     expect((await data('owner', 'DELETE', `${id['features']!}/${featureId}`)).statusCode).toBeLessThan(300);
     expect((await data('owner', 'DELETE', `${id['base_areas']!}/${areaId}`)).statusCode).toBeLessThan(300);
+    // A ready-made design is removed as the set-up page removes it: no customer's design came from it, then the row.
+    const ready = await data('owner', 'POST', id['ready_designs']!, { values: { app: 'printing', base_id: Number(baseId), name: 'Harbour', state: 'draft', position: 1 } });
+    expect(ready.statusCode, ready.body).toBeLessThan(300);
+    const readyId = String((ready.json() as { data: { id: unknown } }).data.id);
+    const from = await data('owner', 'GET', `${id['designs']!}?where=${encodeURIComponent(JSON.stringify({ column: 'ready_design_id', op: 'eq', value: Number(readyId) }))}`);
+    expect(from.statusCode, from.body).toBe(200);
+    expect((await data('owner', 'DELETE', `${id['ready_designs']!}/${readyId}`)).statusCode).toBeLessThan(300);
     expect((await data('owner', 'DELETE', `${id['bases']!}/${baseId}`)).statusCode).toBe(403);
   });
 

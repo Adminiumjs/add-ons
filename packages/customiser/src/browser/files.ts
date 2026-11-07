@@ -255,21 +255,15 @@ export async function oneColourPicture(light: Lightness, threshold: number, ink:
 }
 
 /**
- * A picture already drawn in the page, as the laser makes it, on a canvas of
- * its own to paint onto a proof: measured at the size the shopper's editor
- * measures it, so the proof shows what they saw. Null where the page cannot
- * draw one.
+ * A picture as the laser makes it, from its lightness as the shopper's editor
+ * measured it (`readPicture`), on a canvas of its own to paint onto a proof:
+ * the same pixels the shopper saw. Null where the page cannot draw one.
  */
-export function oneColourCanvas(image: CanvasImageSource, width: number, height: number, threshold: number, ink: string): HTMLCanvasElement | null {
-  if (!(width > 0) || !(height > 0)) return null;
-  const scale = MEASURE_SIDE / Math.max(width, height);
-  const [cw, ch] = [Math.max(1, Math.round(width * scale)), Math.max(1, Math.round(height * scale))];
-  const drawn = canvasOf(cw, ch);
+export function oneColourCanvas(light: Lightness, threshold: number, ink: string): HTMLCanvasElement | null {
+  const drawn = canvasOf(light.width, light.height);
   if (drawn === null) return null;
   try {
-    drawn.context.drawImage(image, 0, 0, cw, ch);
-    const light = lightnessOf(drawn.context.getImageData(0, 0, cw, ch).data, cw, ch);
-    const pixels = drawn.context.createImageData(cw, ch);
+    const pixels = drawn.context.createImageData(light.width, light.height);
     pixels.data.set(oneColourPixels(light, threshold, ink));
     drawn.context.putImageData(pixels, 0, 0);
     return drawn.canvas;
