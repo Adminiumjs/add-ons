@@ -64,6 +64,7 @@ import {
   weekendNoteKey,
   type DaySet,
 } from "../daysets.ts";
+import { homeOf, startingSet, type Home } from "../home.ts";
 import { useFormat, useT } from "../i18n/t.ts";
 import {
   Button,
@@ -96,13 +97,18 @@ type Outcome =
   | { readonly kind: "done"; readonly added: number; readonly replaced: number }
   | { readonly kind: "badOwnDay"; readonly why: "date" | "name" | "long" | "duplicate" };
 
-export function SettingsPanel({ payload }: { payload: SettingsPanelPayload }) {
+/**
+ * `home` is where the browser is (`home.ts`); a test passes its own, so what
+ * it renders does not hang on the machine it runs on.
+ */
+export function SettingsPanel({ payload, home }: { payload: SettingsPanelPayload; home?: Home }) {
   const t = useT();
   const format = useFormat();
 
   const held = readStored(payload.settings);
 
-  const [choice, setChoice] = useState<string>(valueOf(DAY_SETS[0]!));
+  // The shop's own country first, never the top of the list (`home.ts`).
+  const [choice, setChoice] = useState<string>(() => valueOf(startingSet(held, home ?? homeOf())));
   const [year, setYear] = useState<number>(YEARS[0]!);
   const [outcome, setOutcome] = useState<Outcome>({ kind: "none" });
   const [ownDate, setOwnDate] = useState("");

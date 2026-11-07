@@ -18,10 +18,16 @@ second, disagreeing copy of a screen the app is built around.
 |---|---|---|
 | `settings.add-on.panel` | admin | the picker, the preview, the import, the days held now, a day of the business's own, the countries with no set, and who keeps the data current |
 
-**Where the panel is drawn.** Only a host that mounts `settings.add-on.panel` draws the picker.
-Adminium's own dashboard does not mount add-on slot fills yet, and neither Maker Shop nor Print Shop
-mounts this one, so there the closed days (`days`) are edited as the raw JSON setting Adminium
-generates for a `json` setting.
+**Where the panel is drawn.** Adminium's dashboard draws it on the add-on's settings
+(`/add-on-settings/holiday-calendars`, Adminium 0.3.47 and newer), for whoever manages add-ons or
+holds `addOn:holiday-calendars:settings`; a host app that mounts `settings.add-on.panel` draws it
+too. An older Adminium shows the closed days (`days`) as the raw JSON setting it generates for a
+`json` setting.
+
+**Where the picker starts.** On the shop's own country: the set it already took (the newest year),
+else the country of the browser's time zone (`Europe/London` is England and Wales), else the region
+of the browser's language, else the first set. Adminium hands the panel nothing about where the shop
+is, so this is the best it can tell (`src/home.ts`).
 
 One slot, and that is the whole of what it draws. **The work is the data.** What this add-on
 contributes is a list of days; the days themselves are drawn by the host, on the host's own screens,

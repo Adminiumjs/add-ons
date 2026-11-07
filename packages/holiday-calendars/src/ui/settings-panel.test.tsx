@@ -60,8 +60,9 @@ function payloadWith(settings?: Record<string, unknown>): SettingsPanelPayload {
   };
 }
 
+/** Rendered as from a browser that says nothing of where it is: the picker starts on the first set (`home.test.ts` holds the rest). */
 const renderPanel = (settings?: Record<string, unknown>) =>
-  renderToStaticMarkup(<SettingsPanel payload={payloadWith(settings)} />);
+  renderToStaticMarkup(<SettingsPanel payload={payloadWith(settings)} home={{ zone: "UTC", language: "en" }} />);
 
 /**
  * A string as it appears IN MARKUP, which is not always as it appears in the
