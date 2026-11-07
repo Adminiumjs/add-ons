@@ -5,11 +5,15 @@
  * Language segment, the search field and the gallery/list segment. The
  * counts are the reply's, unfiltered — the comp's badges never respond to
  * the search box (1423).
+ *
+ * On a server with workspaces, in All in one menu, the host's Workspace
+ * filter sits after the tray (the engine's Library lists draw it there too).
  */
 import { Files, FolderTree, Languages, LayoutGrid, LayoutTemplate, List } from 'lucide-react';
-import { SearchInput, SegmentedControl, TabsList, TabsTrigger } from '@adminium/ui';
+import { SearchInput, SegmentedControl, TabsList, TabsTrigger, cn } from '@adminium/ui';
 
 import { t } from '../messages.js';
+import { WorkspaceFilter } from '../shownIn.js';
 import type { InvoiceCounts, InvoiceDocumentKind } from '../api.js';
 import type { ManagerGroupBy, ManagerLayout } from './useManagerPrefs.js';
 
@@ -22,6 +26,8 @@ export interface ToolbarProps {
   onSearchChange: (value: string) => void;
   layout: ManagerLayout;
   onLayoutChange: (layout: ManagerLayout) => void;
+  /** The Workspace filter (All in one menu, with workspaces on the server); null draws none. */
+  workspaceFilter?: { value: string; onChange: (next: string) => void } | null | undefined;
 }
 
 /** `Search {templates|invoices}…` (comp 210, `tabPlural` 1466). */
@@ -29,7 +35,7 @@ export function searchPlaceholder(tab: InvoiceDocumentKind): string {
   return tab === 'template' ? t('manager.search.templates', 'Search templates…') : t('manager.search.invoices', 'Search invoices…');
 }
 
-export function Toolbar({ tab, counts, groupBy, onGroupByChange, search, onSearchChange, layout, onLayoutChange }: ToolbarProps) {
+export function Toolbar({ tab, counts, groupBy, onGroupByChange, search, onSearchChange, layout, onLayoutChange, workspaceFilter = null }: ToolbarProps) {
   return (
     <div data-testid="invoices-toolbar" className="mb-5 flex flex-wrap items-center gap-3">
       <TabsList aria-label={t('manager.tabs.label', 'Kind')}>
@@ -42,7 +48,12 @@ export function Toolbar({ tab, counts, groupBy, onGroupByChange, search, onSearc
           {t('manager.tabs.invoices', 'Invoices')}
         </TabsTrigger>
       </TabsList>
-      <div className="ms-auto flex items-center gap-2">
+      {workspaceFilter === null ? null : (
+        <div className="ms-auto">
+          <WorkspaceFilter value={workspaceFilter.value} onChange={workspaceFilter.onChange} />
+        </div>
+      )}
+      <div className={cn('flex items-center gap-2', workspaceFilter === null && 'ms-auto')}>
         <span id="invoices-group-by-label" className="text-[11px] font-bold uppercase tracking-[.05em] text-fg-subtle">
           {t('manager.group.label', 'Group')}
         </span>

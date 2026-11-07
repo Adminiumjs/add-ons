@@ -15,11 +15,13 @@
 import { api } from '@adminium/add-on-contracts/runtime/app';
 import type { InvoiceBody, InvoiceDocumentKind, InvoiceStatus, InvoiceTopic } from './model/envelope.js';
 import type { InvoiceLang } from './model/languages.js';
+import type { ShownIn } from './shownIn.js';
 
 const BASE = '/api/v1/invoices';
 
 export type { InvoiceBody, InvoiceDocumentKind, InvoiceStatus, InvoiceTopic } from './model/envelope.js';
 export type { InvoiceLang } from './model/languages.js';
+export type { ShownIn } from './shownIn.js';
 
 /**
  * What the manager's card and row read without decoding the body: written
@@ -56,6 +58,8 @@ export interface InvoiceSummary {
   createdAt: number;
   updatedAt: number;
   summary: InvoiceSummaryFacts;
+  /** Where it is listed. Absent in a reply cached from before, which reads as every workspace. */
+  shownIn?: ShownIn | undefined;
 }
 
 export interface InvoiceCounts {
@@ -96,6 +100,8 @@ export interface InvoiceStarterCard {
 
 export interface InvoiceListParams {
   kind?: InvoiceDocumentKind | undefined;
+  /** Only those listed in this workspace (it only narrows; the badges count the same cut). */
+  workspaceId?: string | undefined;
 }
 
 export interface InvoiceCreateBody {
@@ -115,11 +121,14 @@ export interface InvoicePutBody {
 
 export interface InvoicePatchBody {
   name?: string | undefined;
+  /** Where it is listed. */
+  shownIn?: ShownIn | undefined;
 }
 
 function listPath(params: InvoiceListParams): string {
   const query = new URLSearchParams();
   if (params.kind !== undefined) query.set('kind', params.kind);
+  if (params.workspaceId !== undefined) query.set('workspaceId', params.workspaceId);
   const qs = query.toString();
   return qs === '' ? BASE : `${BASE}?${qs}`;
 }

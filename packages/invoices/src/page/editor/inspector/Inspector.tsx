@@ -77,6 +77,8 @@ export interface InspectorProps {
   paymentsSettled?: PanelProps['paymentsSettled'];
   currencyHeldIn?: PanelProps['currencyHeldIn'];
   onPaymentsChanged?: (() => void) | undefined;
+  /** "Shown in" for the Branding panel; absent on a server with no workspaces. */
+  shownIn?: ReactNode;
 }
 
 /** The comp's `insMeta` per fixed section (1565) → its panel (732-1033). */
@@ -146,8 +148,8 @@ function fallbackHeader(): SectionHeader {
   return { icon: 'mouse-pointer-click', title: t('inspector.fallback.title', 'Edit'), hint: '' };
 }
 
-export function Inspector({ section, draft, edits, totals, onSelect, onOpenAdd, onImageRejected, variant = 'aside', kind, documentId, payments, paymentsSettled, currencyHeldIn, onPaymentsChanged }: InspectorProps) {
-  const props: PanelProps = { draft, edits, totals, onSelect, onOpenAdd, onImageRejected, kind, documentId, payments, paymentsSettled, currencyHeldIn, onPaymentsChanged };
+export function Inspector({ section, draft, edits, totals, onSelect, onOpenAdd, onImageRejected, variant = 'aside', kind, documentId, payments, paymentsSettled, currencyHeldIn, onPaymentsChanged, shownIn }: InspectorProps) {
+  const props: PanelProps = { draft, edits, totals, onSelect, onOpenAdd, onImageRejected, kind, documentId, payments, paymentsSettled, currencyHeldIn, onPaymentsChanged, shownIn };
 
   let header: SectionHeader;
   let panel: ReactNode;

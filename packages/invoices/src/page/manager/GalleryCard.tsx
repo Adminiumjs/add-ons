@@ -4,13 +4,15 @@
  * mini sheet, name + meta, the lang chip and the status pill, and the action
  * row — Edit · Duplicate · Rename · Delete — sliding in on hover AND on
  * focus-within so a keyboard reaches every one (invisible at rest, so the
- * comp's picture is unchanged).
+ * comp's picture is unchanged). On a server with workspaces, where the
+ * document is listed follows as chips under the name row.
  */
 import { Copy, Pencil, TextCursorInput, Trash2 } from 'lucide-react';
 import type { KeyboardEvent, ReactNode } from 'react';
 import { cn } from '@adminium/ui';
 
 import { t } from '../messages.js';
+import { ShownInChips } from '../shownIn.js';
 import type { InvoiceSummary } from '../api.js';
 import { InvoiceMiniPreview } from './MiniPreview.js';
 import { DocumentStatusPill, LangPill } from './Pills.js';
@@ -37,6 +39,8 @@ export interface DocumentCardProps {
   doc: InvoiceSummary;
   actions: DocumentActions;
   rename: RenameState | null;
+  /** Draw where it is listed (the server has workspaces). */
+  shownIn?: boolean | undefined;
 }
 
 /** The comp's rename input (257): accent border, surface-2 fill; Enter commits, Escape cancels, blur commits. */
@@ -110,7 +114,7 @@ export const ACTION_ROW_REVEAL =
   'pointer-events-none transition-transform duration-[180ms] ease-[cubic-bezier(.2,.7,.3,1)] ' +
   'group-hover:pointer-events-auto group-hover:translate-y-0 group-focus-within:pointer-events-auto group-focus-within:translate-y-0';
 
-export function GalleryCard({ doc, actions, rename }: DocumentCardProps) {
+export function GalleryCard({ doc, actions, rename, shownIn = false }: DocumentCardProps) {
   const renaming = rename !== null && rename.id === doc.id;
   const open = () => actions.onOpen(doc);
 
@@ -142,6 +146,7 @@ export function GalleryCard({ doc, actions, rename }: DocumentCardProps) {
           <LangPill lang={doc.lang} />
           <DocumentStatusPill status={doc.status} />
         </div>
+        {shownIn ? <ShownInChips shownIn={doc.shownIn} className="mt-2.5" /> : null}
         <div data-testid="invoices-card-actions" className={cn('flex gap-[5px]', ACTION_ROW_REVEAL)}>
           <button
             type="button"

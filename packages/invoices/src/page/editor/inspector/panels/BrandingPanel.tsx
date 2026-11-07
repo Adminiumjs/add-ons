@@ -4,6 +4,10 @@
  * twelve-mark grid, the logo upload with its Remove, the note that an upload
  * replaces the mark, and the pointer to the title section for the accent
  * colour.
+ *
+ * On a server with workspaces, "Shown in" comes last: where this document is
+ * listed (the engine's report layouts draw the same control on their first
+ * panel). It is saved as it changes, apart from the document's own Save.
  */
 import { Palette, Upload } from 'lucide-react';
 import { cn } from '@adminium/ui';
@@ -11,11 +15,11 @@ import { cn } from '@adminium/ui';
 import { t } from '../../../messages.js';
 import { invoiceIcon } from '../../../icons.js';
 import { LOGO_MARKS } from '../../../model/envelope.js';
-import { DASHED, FOCUS, FileLabel, Hint, Note, PanelLabel, TextField } from '../parts.js';
+import { DASHED, Divider, FOCUS, FileLabel, Hint, Note, PanelLabel, TextField } from '../parts.js';
 import type { PanelProps } from '../panelProps.js';
 import { uploadFromInput } from '../upload.js';
 
-export function BrandingPanel({ draft, edits, onImageRejected }: PanelProps) {
+export function BrandingPanel({ draft, edits, onImageRejected, shownIn }: PanelProps) {
   const body = draft.body;
   return (
     <div className="flex flex-col gap-4">
@@ -80,6 +84,12 @@ export function BrandingPanel({ draft, edits, onImageRejected }: PanelProps) {
         {t('inspector.branding.accentHintBefore', 'Change the accent colour under the')} <b>{t('inspector.branding.accentHintBold', 'title')}</b>{' '}
         {t('inspector.branding.accentHintAfter', 'section.')}
       </Hint>
+      {shownIn === undefined || shownIn === null ? null : (
+        <>
+          <Divider />
+          {shownIn}
+        </>
+      )}
     </div>
   );
 }

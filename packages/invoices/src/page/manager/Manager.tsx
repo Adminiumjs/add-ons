@@ -15,6 +15,12 @@
  * own confirm. Duplicate lands the copy after its source and stays on the
  * manager (comp 1384); the success toast with Undo is the house pattern,
  * added on top of the comp.
+ *
+ * "SHOWN IN" is the host's: on a server with workspaces the list is cut to
+ * the tab's workspace (One at a time, with its chip under the title) or to
+ * the toolbar's Workspace filter (All in one menu). The cut goes to the
+ * server as `?workspaceId=` (it only narrows, and the badges count the same
+ * cut) and is made again here, which "Other databases" needs.
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
@@ -25,6 +31,7 @@ import { Alert, Button, EmptyState, Spinner, Tabs, TabsContent } from '@adminium
 import { PageActions, PageSurface, formatSince, useAppToasts, useLocaleTag } from '@adminium/add-on-contracts/runtime/app';
 
 import { documentPath } from '../routes.js';
+import { CurrentWorkspaceChip, useShownInList } from '../shownIn.js';
 import { t } from '../messages.js';
 import { invoicesApi, type InvoiceDetail, type InvoiceDocumentKind, type InvoiceSummary } from '../api.js';
 import { invalidateInvoices, invoicesQuery } from '../queries.js';
@@ -78,8 +85,11 @@ export function InvoiceManager({ initialTab = 'template' }: InvoiceManagerProps)
   const [confirm, setConfirm] = useState<InvoiceSummary | null>(null);
   const [newOpen, setNewOpen] = useState(false);
 
-  const list = useQuery(invoicesQuery({ kind: tab }));
-  const items = useMemo(() => list.data?.items ?? [], [list.data]);
+  // Where the list is cut to: the tab's workspace (One at a time) or the Workspace filter (All in one menu).
+  const shown = useShownInList();
+  const list = useQuery(invoicesQuery({ kind: tab, ...(shown.workspaceId === undefined ? {} : { workspaceId: shown.workspaceId }) }));
+  const { keeps } = shown;
+  const items = useMemo(() => (list.data?.items ?? []).filter((doc) => keeps(doc.shownIn)), [list.data, keeps]);
   const counts = list.data?.counts ?? { template: 0, invoice: 0 };
   const now = useMemo(() => Date.now(), [list.dataUpdatedAt]);
 
@@ -182,6 +192,9 @@ export function InvoiceManager({ initialTab = 'template' }: InvoiceManagerProps)
       </PageActions>
 
       <PageSurface width="full" testId="invoices-manager">
+        <div className="mx-auto max-w-wide">
+          <CurrentWorkspaceChip />
+        </div>
         <Tabs variant="pill" value={tab} onValueChange={(value) => setTab(value === 'invoice' ? 'invoice' : 'template')} className="mx-auto max-w-wide">
           <Toolbar
             tab={tab}
@@ -192,6 +205,7 @@ export function InvoiceManager({ initialTab = 'template' }: InvoiceManagerProps)
             onSearchChange={setSearch}
             layout={prefs.layout}
             onLayoutChange={(layout) => updatePrefs({ layout })}
+            workspaceFilter={shown.filter}
           />
 
           <TabsContent value={tab}>
@@ -232,19 +246,26 @@ export function InvoiceManager({ initialTab = 'template' }: InvoiceManagerProps)
                     {group.header === null ? null : <GroupHeader glyph={group.header.glyph} label={group.header.label} sub={group.header.sub} />}
                     <div className="grid grid-cols-[repeat(auto-fill,minmax(248px,1fr))] gap-4">
                       {group.items.map((doc) => (
-                        <GalleryCard key={doc.id} doc={doc} actions={actions} rename={renameState} />
+                        <GalleryCard key={doc.id} doc={doc} actions={actions} rename={renameState} shownIn={shown.showColumn} />
                       ))}
                     </div>
                   </section>
                 ))}
               </div>
             ) : (
-              <ListTable label={tabLabel}>
+              <ListTable label={tabLabel} shownIn={shown.showColumn}>
                 {groups.map((group) => (
                   <div key={group.key} role="rowgroup" data-testid="invoices-group" aria-label={group.header?.label}>
-                    {group.header === null ? null : <ListGroupRow glyph={group.header.glyph} label={group.header.label} sub={group.header.sub} />}
+                    {group.header === null ? null : <ListGroupRow glyph={group.header.glyph} label={group.header.label} sub={group.header.sub} columns={shown.showColumn ? 5 : 4} />}
                     {group.items.map((doc) => (
-                      <ListRow key={doc.id} doc={doc} actions={actions} rename={renameState} updated={formatSince(doc.updatedAt, localeTag, now)} />
+                      <ListRow
+                        key={doc.id}
+                        doc={doc}
+                        actions={actions}
+                        rename={renameState}
+                        updated={formatSince(doc.updatedAt, localeTag, now)}
+                        shownIn={shown.showColumn}
+                      />
                     ))}
                   </div>
                 ))}

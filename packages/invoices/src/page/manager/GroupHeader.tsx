@@ -34,11 +34,11 @@ export function GroupHeader({ glyph, label, sub }: GroupHeaderProps) {
 }
 
 /** The list's band between two runs of rows (comp 290-294); one cell spanning the table. */
-export function ListGroupRow({ glyph, label, sub }: GroupHeaderProps) {
+export function ListGroupRow({ glyph, label, sub, columns = 4 }: GroupHeaderProps & { columns?: number | undefined }) {
   const Glyph = invoiceIcon(glyph);
   return (
     <div role="row" data-testid="invoices-group-header" className="border-b border-border bg-surface-2">
-      <div role="cell" aria-colspan={4} className="flex items-center gap-[9px] px-[18px] py-[9px]">
+      <div role="cell" aria-colspan={columns} className="flex items-center gap-[9px] px-[18px] py-[9px]">
         <Glyph className="size-3.5 shrink-0 text-accent" aria-hidden="true" />
         <h2 className="text-[12px] font-extrabold text-fg">{label}</h2>
         <span data-testid="invoices-group-sub" className="text-[11px] text-fg-subtle">

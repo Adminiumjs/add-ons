@@ -4,6 +4,8 @@
  * (each panel IS a section) — so the twenty-nine panels share one signature
  * and the switch in `Inspector.tsx` stays a switch.
  */
+import type { ReactNode } from 'react';
+
 import type { InvoiceDocumentKind } from '../../api.js';
 import type { SectionKey } from '../../model/blocks.js';
 import type { EditorDraft } from '../../model/doc.js';
@@ -30,4 +32,6 @@ export interface PanelProps {
   currencyHeldIn?: string | null | undefined;
   /** A payment or refund changed the invoice (its balance, its status): the editor reads it again. */
   onPaymentsChanged?: (() => void) | undefined;
+  /** "Shown in", drawn last on the Branding panel; absent on a server with no workspaces. */
+  shownIn?: ReactNode;
 }

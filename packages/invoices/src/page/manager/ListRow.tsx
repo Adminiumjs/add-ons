@@ -5,19 +5,23 @@
  * between runs of rows, and rows that open on click. The language chip sits
  * beside the name (this comp has no Lang column). The grid keeps the comp's
  * column recipe; the roles make it a table for assistive tech without giving
- * up the grid.
+ * up the grid. On a server with workspaces a "Shown in" column comes
+ * before Updated, as the engine's Library lists draw it.
  */
 import { Copy, TextCursorInput, Trash2 } from 'lucide-react';
 import type { MouseEvent, ReactNode } from 'react';
 import { cn } from '@adminium/ui';
 
 import { t } from '../messages.js';
+import { ShownInChips, ShownInHeader } from '../shownIn.js';
 import { invoiceIcon } from '../icons.js';
 import { RenameInput, type DocumentCardProps } from './GalleryCard.js';
 import { DocumentStatusPill, LangPill } from './Pills.js';
 import { rowIcon, rowSub } from './model.js';
 
 const GRID = 'grid grid-cols-[minmax(0,1fr)_130px_120px_128px] gap-3 px-[18px]';
+/** With workspaces on the server: a "Shown in" track before Updated. */
+const GRID_SHOWN_IN = 'grid grid-cols-[minmax(0,1fr)_130px_minmax(130px,1fr)_120px_128px] gap-3 px-[18px]';
 
 /** The 30 px square action of a row (comp 315-317): surface fill, not surface-2. */
 function RowAction({ label, onClick, children, testId }: { label: string; onClick: () => void; children: ReactNode; testId?: string | undefined }) {
@@ -38,11 +42,12 @@ function RowAction({ label, onClick, children, testId }: { label: string; onClic
   );
 }
 
-export function ListHeader() {
+export function ListHeader({ shownIn = false }: { shownIn?: boolean | undefined }) {
   return (
-    <div role="row" className={cn(GRID, 'border-b border-border bg-surface-2 py-[11px] text-[10.5px] font-bold uppercase tracking-[.05em] text-fg-subtle')}>
+    <div role="row" className={cn(shownIn ? GRID_SHOWN_IN : GRID, 'border-b border-border bg-surface-2 py-[11px] text-[10.5px] font-bold uppercase tracking-[.05em] text-fg-subtle')}>
       <span role="columnheader">{t('list.name', 'Name')}</span>
       <span role="columnheader">{t('list.status', 'Status')}</span>
+      {shownIn ? <ShownInHeader /> : null}
       <span role="columnheader">{t('list.updated', 'Updated')}</span>
       <span role="columnheader" className="text-end">
         {t('list.actions', 'Actions')}
@@ -56,7 +61,7 @@ export interface ListRowProps extends DocumentCardProps {
   updated: string | null;
 }
 
-export function ListRow({ doc, actions, rename, updated }: ListRowProps) {
+export function ListRow({ doc, actions, rename, updated, shownIn = false }: ListRowProps) {
   const Glyph = invoiceIcon(rowIcon(doc.summary));
   const renaming = rename !== null && rename.id === doc.id;
   const open = () => actions.onOpen(doc);
@@ -72,7 +77,7 @@ export function ListRow({ doc, actions, rename, updated }: ListRowProps) {
       data-testid="invoices-row"
       data-id={doc.id}
       onClick={onRowClick}
-      className={cn(GRID, 'group cursor-pointer items-center border-b border-border py-[13px] transition-colors hover:bg-surface-2')}
+      className={cn(shownIn ? GRID_SHOWN_IN : GRID, 'group cursor-pointer items-center border-b border-border py-[13px] transition-colors hover:bg-surface-2')}
     >
       <div role="cell" className="flex min-w-0 items-center gap-3" style={{ '--adm-invoice-accent': doc.summary.accent }}>
         <div className="flex size-[38px] shrink-0 items-center justify-center rounded-[10px] bg-[color-mix(in_srgb,var(--adm-invoice-accent)_12%,transparent)] text-[var(--adm-invoice-accent)] dark:bg-[color-mix(in_srgb,var(--adm-invoice-accent)_20%,transparent)]">
@@ -99,6 +104,11 @@ export function ListRow({ doc, actions, rename, updated }: ListRowProps) {
       <span role="cell">
         <DocumentStatusPill status={doc.status} />
       </span>
+      {shownIn ? (
+        <span role="cell" data-testid="invoices-row-shown-in" className="min-w-0">
+          <ShownInChips shownIn={doc.shownIn} />
+        </span>
+      ) : null}
       <span role="cell" className="text-[12px] text-fg-muted">
         {updated ?? '—'}
       </span>
@@ -118,10 +128,10 @@ export function ListRow({ doc, actions, rename, updated }: ListRowProps) {
 }
 
 /** The surrounding card + the one column header (comp 284-288); group bands and rows go inside. */
-export function ListTable({ label, children }: { label: string; children: ReactNode }) {
+export function ListTable({ label, children, shownIn = false }: { label: string; children: ReactNode; shownIn?: boolean | undefined }) {
   return (
     <div role="table" aria-label={label} data-testid="invoices-list" className="overflow-hidden rounded-[15px] border border-border bg-surface shadow-card">
-      <ListHeader />
+      <ListHeader shownIn={shownIn} />
       {children}
     </div>
   );

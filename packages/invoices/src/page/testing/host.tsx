@@ -78,6 +78,7 @@ afterEach(() => {
   cleanup();
   lastToasts.length = 0;
   emitToasts([]);
+  setShownInScope(NO_WORKSPACES);
 });
 
 
@@ -284,6 +285,175 @@ const NeutralIcon = ({ className }: { className?: string }) => (
   <span aria-hidden="true" className={className} />
 );
 
+/*
+ * "SHOWN IN", as much of the host's as the page can observe.
+ *
+ * The host draws it from the session's workspaces; a test says which ones with
+ * `setShownInScope` (reset after every test to a server with none, where the
+ * host draws nothing). The cuts follow the engine's own `listCut`,
+ * `pickerWhere` and `shownWhere`, because what the page sends as
+ * `?workspaceId=` and which rows it keeps is exactly what a test asserts. The
+ * parts are plain: they carry the engine's test ids and the words a test reads.
+ */
+interface ShownIn {
+  mode: 'all' | 'chosen';
+  workspaceIds: string[];
+}
+
+export interface TestShownInScope {
+  workspaces: { id: string; name: string; initials: string; position: number }[];
+  active: boolean;
+  otherDatabases: boolean;
+  view: 'one' | 'all';
+  currentWorkspaceId: string | null;
+}
+
+export const OTHER_DATABASES = '~other';
+
+export const NO_WORKSPACES: TestShownInScope = { workspaces: [], active: false, otherDatabases: false, view: 'one', currentWorkspaceId: null };
+
+let shownInScope: TestShownInScope = NO_WORKSPACES;
+const scopeListeners = new Set<() => void>();
+
+/** The workspaces the page's host says this person sees, and the tab's. */
+export function setShownInScope(next: TestShownInScope): void {
+  shownInScope = next;
+  for (const listener of scopeListeners) listener();
+}
+
+function useShownInScope(): TestShownInScope {
+  return React.useSyncExternalStore(
+    (listener) => {
+      scopeListeners.add(listener);
+      return () => scopeListeners.delete(listener);
+    },
+    () => shownInScope,
+  );
+}
+
+function shownWhere(shownIn: ShownIn | undefined, where: string | null): boolean {
+  if (where === null || shownIn === undefined || shownIn.mode === 'all') return true;
+  if (where === OTHER_DATABASES) return false;
+  return shownIn.workspaceIds.includes(where);
+}
+
+function useShownInList() {
+  const scope = useShownInScope();
+  const [picked, setPicked] = React.useState('');
+  const where = !scope.active ? null : scope.view === 'one' ? scope.currentWorkspaceId : picked === '' ? null : picked;
+  const keeps = React.useCallback((shownIn: ShownIn | undefined) => shownWhere(shownIn, where), [where]);
+  return {
+    scope,
+    workspaceId: where === null || where === OTHER_DATABASES ? undefined : where,
+    keeps,
+    showColumn: scope.active,
+    filter: scope.active && scope.view === 'all' ? { value: picked, onChange: setPicked } : null,
+  };
+}
+
+function useShownInPicker() {
+  const scope = useShownInScope();
+  const where = scope.active ? scope.currentWorkspaceId : null;
+  const keeps = React.useCallback((shownIn: ShownIn | undefined) => shownWhere(shownIn, where), [where]);
+  return { scope, workspaceId: where === null || where === OTHER_DATABASES ? undefined : where, keeps };
+}
+
+function ShownInChips({ shownIn }: { shownIn: ShownIn | undefined }) {
+  const scope = useShownInScope();
+  if (shownIn === undefined || shownIn.mode === 'all') return <span data-testid="shown-in-all">All workspaces</span>;
+  if (shownIn.workspaceIds.length === 0) return <span data-testid="shown-in-none">No workspace</span>;
+  return (
+    <span data-testid="shown-in-chips">
+      {scope.workspaces
+        .filter((workspace) => shownIn.workspaceIds.includes(workspace.id))
+        .map((workspace) => (
+          <span key={workspace.id} data-testid="workspace-chip">
+            {workspace.name}
+          </span>
+        ))}
+    </span>
+  );
+}
+
+function ShownInHeader() {
+  return <span role="columnheader">Shown in</span>;
+}
+
+function WorkspaceFilter({ value, onChange }: { value: string; onChange: (next: string) => void }) {
+  const scope = useShownInScope();
+  return (
+    <label data-testid="workspace-filter">
+      Workspace
+      <select value={value} onChange={(event) => onChange(event.target.value)}>
+        <option value="">All workspaces</option>
+        {scope.workspaces.map((workspace) => (
+          <option key={workspace.id} value={workspace.id}>
+            {workspace.name}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function CurrentWorkspaceChip() {
+  const scope = useShownInScope();
+  if (!scope.active || scope.view !== 'one' || scope.currentWorkspaceId === null) return null;
+  const current = scope.workspaces.find((workspace) => workspace.id === scope.currentWorkspaceId);
+  return <div data-testid="current-workspace-chip">{current?.name ?? 'Other databases'}</div>;
+}
+
+function HiddenHereNote({ shownIn }: { shownIn: ShownIn }) {
+  return (
+    <div data-testid="shown-in-hidden-note">
+      Not listed here.
+      <ShownInChips shownIn={shownIn} />
+    </div>
+  );
+}
+
+function ShownInControl({ value, onChange }: { value: ShownIn; onChange: (next: ShownIn) => void }) {
+  const scope = useShownInScope();
+  return (
+    <div data-testid="shown-in-control" data-mode={value.mode}>
+      <button type="button" data-testid="shown-in-mode-all" onClick={() => onChange({ mode: 'all', workspaceIds: [] })}>
+        All workspaces
+      </button>
+      {scope.workspaces.map((workspace) => (
+        <label key={workspace.id}>
+          <input
+            type="checkbox"
+            data-testid="shown-in-workspace"
+            data-workspace-id={workspace.id}
+            checked={value.mode === 'chosen' && value.workspaceIds.includes(workspace.id)}
+            onChange={(event) => {
+              const without = value.workspaceIds.filter((id) => id !== workspace.id);
+              onChange({ mode: 'chosen', workspaceIds: event.target.checked ? [...without, workspace.id].sort() : without });
+            }}
+          />
+          {workspace.name}
+        </label>
+      ))}
+    </div>
+  );
+}
+
+/** The host's field: the control, each change written at once through `save`. */
+function ShownInField({ value, save }: { value: ShownIn | undefined; save: (next: ShownIn) => Promise<unknown> }) {
+  const scope = useShownInScope();
+  const [shown, setShown] = React.useState<ShownIn>(value ?? { mode: 'all', workspaceIds: [] });
+  if (!scope.active) return null;
+  return (
+    <ShownInControl
+      value={shown}
+      onChange={(next) => {
+        setShown(next);
+        void save(next).catch(() => setShown(shown));
+      }}
+    />
+  );
+}
+
 installAddOnRuntime({
   react: React as unknown as Readonly<Record<string, unknown>>,
   jsx: { jsx, jsxs, Fragment },
@@ -300,8 +470,15 @@ installAddOnRuntime({
     i18n: { tagForLocale },
     app: {
       ApiError: TestApiError,
+      CurrentWorkspaceChip,
+      HiddenHereNote,
       PageActions,
       PageSurface,
+      ShownInChips,
+      ShownInControl,
+      ShownInField,
+      ShownInHeader,
+      WorkspaceFilter,
       api,
       /*
        * The host's own ladder, unit by unit — not a minutes-only shortcut.
@@ -355,6 +532,9 @@ installAddOnRuntime({
         },
       }),
       useLocaleTag: () => 'en-US',
+      useShownInList,
+      useShownInPicker,
+      useShownInScope,
       /*
        * A REAL key listener, not a no-op.
        *

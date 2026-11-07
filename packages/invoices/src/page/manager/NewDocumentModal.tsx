@@ -5,7 +5,8 @@
  * a miniature sheet in its own accent. On the invoices tab a *Your
  * templates* section follows: an invoice can begin as a copy of one of the
  * workspace's templates, which `POST /:id/from-template` makes server-side,
- * recording the origin.
+ * recording the origin. Only the templates listed in the tab's workspace
+ * are offered there ("Shown in"; it only narrows).
  *
  * Picking creates the row at once and hands the reply up — the manager opens
  * the editor on it. There is no name step: the starter's name is the name
@@ -18,6 +19,7 @@ import { Modal, ModalBody, ModalHeader, Spinner, cn } from '@adminium/ui';
 
 import { t } from '../messages.js';
 import { useAppToasts } from '@adminium/add-on-contracts/runtime/app';
+import { useShownInPicker } from '../shownIn.js';
 import { invoicesApi, type InvoiceDetail, type InvoiceDocumentKind, type InvoiceStarterCard } from '../api.js';
 import { invoiceIcon } from '../icons.js';
 import { invoiceStartersQuery, invoicesQuery } from '../queries.js';
@@ -73,8 +75,12 @@ function StarterTile({ starter, disabled, onPick }: { starter: InvoiceStarterCar
 export function NewDocumentModal({ kind, onClose, onCreated }: NewDocumentModalProps) {
   const toasts = useAppToasts();
   const starters = useQuery(invoiceStartersQuery());
-  // An invoice may start from one of the workspace's templates.
-  const templates = useQuery({ ...invoicesQuery({ kind: 'template' }), enabled: kind === 'invoice' });
+  // An invoice may start from one of the templates listed in the tab's workspace (it only narrows).
+  const picker = useShownInPicker();
+  const templates = useQuery({
+    ...invoicesQuery({ kind: 'template', ...(picker.workspaceId === undefined ? {} : { workspaceId: picker.workspaceId }) }),
+    enabled: kind === 'invoice',
+  });
   const [picking, setPicking] = useState<string | null>(null);
 
   const fail = (error: unknown) => {
@@ -98,7 +104,7 @@ export function NewDocumentModal({ kind, onClose, onCreated }: NewDocumentModalP
   const busy = create.isPending || fromTemplate.isPending;
 
   const title = kind === 'template' ? t('new.template', 'New template') : t('new.invoice', 'New invoice');
-  const yourTemplates = templates.data?.items ?? [];
+  const yourTemplates = (templates.data?.items ?? []).filter((doc) => picker.keeps(doc.shownIn));
 
   return (
     <Modal

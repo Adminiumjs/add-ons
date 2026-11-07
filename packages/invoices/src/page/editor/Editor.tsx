@@ -21,6 +21,11 @@
  * ladder, the QR block, the recurring banner, the multi-currency rows, the
  * tax breakdown and the inspector's Items panel). `Ctrl/⌘+S` saves, inside a
  * field too (`mod+s` is on the shortcut manager's typing allowlist).
+ *
+ * "SHOWN IN" (a server with workspaces) is not part of the draft: it is where
+ * the document is listed, not what it says, so the host's field saves each
+ * change on its own (`PATCH { shownIn }`). When the document is not listed in
+ * the tab's workspace, the host's note says so and where it is listed.
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useBlocker, useNavigate } from '@tanstack/react-router';
@@ -29,8 +34,9 @@ import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ApiError, PageActions, PageSurface, useAppToasts, useShortcut } from '@adminium/add-on-contracts/runtime/app';
 
 import { documentPath, managerPath } from '../routes.js';
+import { HiddenHereNote, ShownInField, useShownInPicker, type ShownIn } from '../shownIn.js';
 import { t } from '../messages.js';
-import { invoicesApi, type InvoiceDetail } from '../api.js';
+import { invoicesApi, type InvoiceDetail, type InvoiceSummary } from '../api.js';
 import { DeleteModal } from '../manager/DeleteModal.js';
 import { customKeyOf, type OptionalSection, type SectionKey } from '../model/blocks.js';
 import type { CustomSectionType } from '../model/envelope.js';
@@ -243,6 +249,20 @@ export function Editor({ detail }: EditorProps) {
   const shownName = name.trim() === '' ? detail.name : name;
   const number = draft.body.number.trim();
 
+  // "Shown in": saved apart from the draft; the PATCH reply is a summary, so only its `shownIn` is taken.
+  const picker = useShownInPicker();
+  const saveShownIn = (next: ShownIn) =>
+    invoicesApi.patch(detail.id, { shownIn: next }).then((reply: InvoiceSummary) => {
+      queryClient.setQueryData<InvoiceDetail>([...INVOICES_KEY, 'detail', detail.id], (held) => (held === undefined ? held : { ...held, shownIn: reply.shownIn }));
+      return invalidateInvoices(queryClient);
+    });
+  const shownIn = picker.scope.active ? (
+    <div data-testid="invoices-shown-in">
+      <ShownInField value={detail.shownIn} save={saveShownIn} />
+      {detail.shownIn === undefined || picker.keeps(detail.shownIn) ? null : <HiddenHereNote shownIn={detail.shownIn} />}
+    </div>
+  ) : undefined;
+
   const inspectorProps = {
     section,
     draft,
@@ -257,6 +277,7 @@ export function Editor({ detail }: EditorProps) {
     paymentsSettled,
     currencyHeldIn: state.currencyHeldIn,
     onPaymentsChanged,
+    shownIn,
   };
 
   return (
