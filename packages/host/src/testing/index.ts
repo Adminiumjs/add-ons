@@ -23,10 +23,6 @@ export {
   type ShippingCarrierFixtures,
 } from './shipping-carrier.ts';
 export {
-  HOST_BEHAVIOURS,
-  type HostBehaviour,
-} from './host-behaviours.ts';
-export {
   describeNumerals,
   latinNumbersIn,
   type NumeralFixtures,

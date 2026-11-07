@@ -667,26 +667,6 @@ const NOT_CARRIED: Readonly<Record<string, Readonly<Record<string, NotCarried>>>
           : null,
     },
   },
-  'src/testing/host-behaviours.ts': {
-    'print-shop': {
-      why:
-        'the 0.2 rebuild retired the list together with src/testing/hostBehaviours.test.ts, ' +
-        'the only thing that read it',
-      stillTrue: (host) =>
-        existsSync(join(host.root, 'src', 'testing', 'hostBehaviours.test.ts'))
-          ? `${host.name} has a hostBehaviours.test.ts again but no list for it to read`
-          : null,
-    },
-    'maker-shop': {
-      why:
-        'the 0.2 rebuild retired the list together with src/testing/hostBehaviours.test.ts, ' +
-        'the only thing that read it',
-      stillTrue: (host) =>
-        existsSync(join(host.root, 'src', 'testing', 'hostBehaviours.test.ts'))
-          ? `${host.name} has a hostBehaviours.test.ts again but no list for it to read`
-          : null,
-    },
-  },
 };
 
 const notCarried = (file: string, host: Host): NotCarried | undefined =>
@@ -695,7 +675,7 @@ const notCarried = (file: string, host: Host): NotCarried | undefined =>
 describe('the hosts named as not carrying a shared file', () => {
   it('are hosts this guard knows, for files it compares', () => {
     const known = new Set(HOSTS.map((host) => host.name));
-    const files = new Set([SLOT_CONTENT, 'src/testing/host-behaviours.ts']);
+    const files = new Set([SLOT_CONTENT]);
     for (const [file, hosts] of Object.entries(NOT_CARRIED)) {
       expect(files.has(file), `${file} is not a file this guard compares`).toBe(true);
       for (const name of Object.keys(hosts)) expect(known.has(name), name).toBe(true);
@@ -786,47 +766,3 @@ describe.each(present)('the tiering table is the same table in $name', (host) =>
   });
 });
 
-/**
- * ── AND THE LIST OF WHAT A HOST MUST DO, SAME RULE ──────────────────────────
- *
- * `testing/host-behaviours.ts` is the answer to the drift this repo keeps
- * producing: a defect found in one shop and fixed in one shop. It only works if
- * all three copies are the same file — a host holding an older list is a host
- * that is not being asked for the newest behaviour, which is the exact thing it
- * exists to prevent, restored.
- *
- * NEITHER SHOP CARRIES IT TODAY. Both 0.2 rebuilds retired it together with the
- * `hostBehaviours.test.ts` that read it, so both are named in `NOT_CARRIED`
- * above, and this block now proves the list is still absent there rather than
- * comparing it. A host that brings the list back is compared byte for byte.
- */
-const BEHAVIOURS = 'src/testing/host-behaviours.ts';
-const MIRROR_BEHAVIOURS = join(MIRROR_SRC, 'testing', 'host-behaviours.ts');
-
-describe.each(present)('the host behaviour list is the same file in $name', (host) => {
-  itIsStillNotCarried(BEHAVIOURS, host);
-
-  const theirs = join(host.root, 'src', 'testing', 'host-behaviours.ts');
-  const exempt = notCarried(BEHAVIOURS, host) !== undefined && !existsSync(theirs);
-  it.skipIf(exempt)('is byte for byte the copy in this package', () => {
-    expect(
-      existsSync(theirs),
-      `${host.name} carries no ${BEHAVIOURS}, so nothing asks it for the behaviours the ` +
-        'other host has already been taught.',
-    ).toBe(true);
-
-    const mine = readFileSync(MIRROR_BEHAVIOURS, 'utf8');
-    const yours = readFileSync(theirs, 'utf8');
-    if (mine !== yours) {
-      const at = [...mine].findIndex((ch, i) => ch !== yours[i]);
-      expect(
-        `${host.name} ${BEHAVIOURS} differs at character ${at}: ` +
-          `…${yours.slice(Math.max(0, at - 60), at + 60)}…`,
-      ).toBe(
-        `${host.name} ${BEHAVIOURS} differs at character ${at}: ` +
-          `…${mine.slice(Math.max(0, at - 60), at + 60)}…`,
-      );
-    }
-    expect(yours).toEqual(mine);
-  });
-});
