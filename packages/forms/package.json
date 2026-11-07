@@ -31,6 +31,6 @@
     "@adminium/add-on-contracts": "npm:@adminiumjs/add-on-contracts@0.3.43",
     "@adminium/add-on-host": "*",
     "@adminium/public-client": "npm:@adminiumjs/public-client@0.3.43",
-    "@adminiumjs/manifest": "0.3.47"
+    "@adminiumjs/manifest": "0.3.49"
   }
 }
