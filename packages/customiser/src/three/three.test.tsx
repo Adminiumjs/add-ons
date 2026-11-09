@@ -16,7 +16,7 @@ import { forgetWebGL, hasWebGL } from './load.ts';
 import { ModelView } from './PieceView.tsx';
 import { bodyGeometry, buildPiece, pieceSolids, shapesOf, topGeometry, type PieceModel } from './piece.ts';
 import { inside, roundedRing, signedArea, solidsOf } from './rings.ts';
-import { makeStage, releaseStills, Stage3d, still, type RendererLike } from './stage3d.ts';
+import { makeStage, releaseStills, Stage3d, still, STILL_WAIT, type RendererLike } from './stage3d.ts';
 import { apply, Gestures, keyCommand, startView, START, turned, wheelFactor, zoomed, zoomLabel, ZOOM_IN, ZOOM_OUT, type View } from './view.ts';
 
 afterEach(cleanup);
@@ -241,6 +241,32 @@ describe('the stills a gallery of cards is drawn with', () => {
       expect(read).toEqual(['3', '6', '9']);
     } finally {
       URL.createObjectURL = created;
+      releaseStills();
+    }
+  });
+  it('gives up on a card whose model never comes, and draws the cards after it', async () => {
+    const canvas = document.createElement('canvas');
+    canvas.toBlob = (done: BlobCallback) => setTimeout(() => done(new Blob(['still'])), 0);
+    const renderer: RendererLike = { domElement: canvas, setPixelRatio: () => {}, setSize: () => {}, render: () => {}, dispose: () => {} };
+    const setModel = Stage3d.prototype.setModel;
+    let calls = 0;
+    // The first card's model file is read for ever.
+    Stage3d.prototype.setModel = function (this: Stage3d, model) {
+      calls += 1;
+      return calls === 1 ? new Promise<void>(() => undefined) : setModel.call(this, model);
+    };
+    const created = URL.createObjectURL;
+    URL.createObjectURL = (() => 'blob:still') as typeof URL.createObjectURL;
+    STILL_WAIT.ms = 20;
+    try {
+      releaseStills();
+      const view = startView('piece');
+      const cards = await Promise.all([3, 6, 9].map((thickness) => still(model({ outline: null, thickness }), view, 200, 150, () => renderer)));
+      expect(cards).toEqual([null, 'blob:still', 'blob:still']);
+    } finally {
+      Stage3d.prototype.setModel = setModel;
+      URL.createObjectURL = created;
+      STILL_WAIT.ms = 15_000;
       releaseStills();
     }
   });

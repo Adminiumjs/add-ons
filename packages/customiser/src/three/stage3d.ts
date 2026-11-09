@@ -323,27 +323,50 @@ export function makeStage(make: MakeRenderer = webglRenderer, canvas?: HTMLCanva
 let stillStage: Stage3d | null = null;
 /** The still being drawn now: the next waits for it, since every still is drawn on the one stage. */
 let drawing: Promise<unknown> = Promise.resolve();
+/** The most one still is waited for: a model file that never comes back must not hold every card after it (a test shortens it). */
+export const STILL_WAIT = { ms: 15_000 };
 
 /**
  * A still of a piece as a picture (a `blob:` address this page holds), drawn
  * by one stage kept for every still so a gallery of cards uses one graphics
  * context; none where it cannot be drawn. The stills are drawn one after
  * another, each read back before the next model is put on the stage: drawn
- * together, every card of a gallery showed the last design.
+ * together, every card of a gallery showed the last design. One not drawn in
+ * `STILL_WAIT` gives none (its card keeps its flat drawing), and its stage is
+ * let go of, so whatever it still does later draws on no other card.
  */
 export function still(model: StageModel, view: View, width: number, height: number, make: MakeRenderer = stillRenderer): Promise<string | null> {
-  const next = drawing.then(() => drawStill(model, view, width, height, make));
+  const next = drawing.then(
+    () =>
+      new Promise<string | null>((resolve) => {
+        let stage: Stage3d;
+        try {
+          stage = stillStage ??= new Stage3d(make());
+        } catch {
+          resolve(null);
+          return;
+        }
+        const late = setTimeout(() => {
+          if (stillStage === stage) stillStage = null;
+          stage.dispose();
+          resolve(null);
+        }, STILL_WAIT.ms);
+        void drawStill(stage, model, view, width, height).then((drawn) => {
+          clearTimeout(late);
+          resolve(drawn);
+        });
+      }),
+  );
   drawing = next;
   return next;
 }
 
-async function drawStill(model: StageModel, view: View, width: number, height: number, make: MakeRenderer): Promise<string | null> {
+async function drawStill(stage: Stage3d, model: StageModel, view: View, width: number, height: number): Promise<string | null> {
   try {
-    stillStage ??= new Stage3d(make());
-    stillStage.resize(width, height);
-    await stillStage.setModel(model);
-    stillStage.setView(view);
-    const canvas = stillStage.renderer.domElement;
+    stage.resize(width, height);
+    await stage.setModel(model);
+    stage.setView(view);
+    const canvas = stage.renderer.domElement;
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
     return blob === null ? null : URL.createObjectURL(blob);
   } catch {

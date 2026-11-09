@@ -158,13 +158,43 @@ function makeWords(t: AddOnTranslate, design: string, version: number, spec: str
   };
 }
 
+/** The most a picture's read is waited for before the panel opens without it (a test shortens it). */
+export const PICTURE_WAIT = { ms: 8000 };
+
+/** What a read gives when it is not back in time: nothing. */
+const inTime = <T,>(work: Promise<T>, ms: number): Promise<T | undefined> =>
+  new Promise((resolve) => {
+    const late = setTimeout(() => resolve(undefined), ms);
+    work.then(
+      (value) => {
+        clearTimeout(late);
+        resolve(value);
+      },
+      () => {
+        clearTimeout(late);
+        resolve(undefined);
+      },
+    );
+  });
+
+/** One picture's lightness, from its stored file; none where it is not a picture this browser reads. */
+async function lightOf(address: string): Promise<Lightness | undefined> {
+  const answer = await fetch(address, { credentials: 'same-origin' });
+  if (!answer.ok) return undefined;
+  const blob = await answer.blob();
+  const kind = sniff(await headOf(blob));
+  if (kind !== 'png' && kind !== 'jpeg' && kind !== 'svg') return undefined;
+  return (await readPicture(blob, kind)).light;
+}
+
 /**
  * Each customer picture's lightness, read as the shopper's editor reads it
  * (`readPicture`): what the one-colour view on this panel and the proof are
- * made from, so both show what the shopper saw. A picture that cannot be read
- * is left out, and drawn as uploaded, as the editor draws it. `loaded` says
- * the pictures named now have all been read (or found unreadable): until
- * then a one-colour logo would be drawn in full colour.
+ * made from, so both show what the shopper saw. `loaded` says the pictures
+ * named now have all been read, found unreadable, or waited for as long as
+ * `PICTURE_WAIT` allows: until then a one-colour logo would be drawn in full
+ * colour. A picture left without its lightness is drawn as uploaded, and
+ * the panel says so beside it.
  */
 function usePictureLights(addresses: Readonly<Record<string, string>>): { lights: Readonly<Record<string, Lightness>>; loaded: boolean } {
   const key = JSON.stringify(addresses);
@@ -173,19 +203,12 @@ function usePictureLights(addresses: Readonly<Record<string, string>>): { lights
     let live = true;
     void (async () => {
       const out: Record<string, Lightness> = {};
-      for (const [column, address] of Object.entries(addresses)) {
-        try {
-          const answer = await fetch(address, { credentials: 'same-origin' });
-          if (!answer.ok) continue;
-          const blob = await answer.blob();
-          const kind = sniff(await headOf(blob));
-          if (kind !== 'png' && kind !== 'jpeg' && kind !== 'svg') continue;
-          const picture = await readPicture(blob, kind);
-          if (picture.light !== undefined) out[column] = picture.light;
-        } catch {
-          // Not read: drawn as uploaded.
-        }
-      }
+      await Promise.all(
+        Object.entries(addresses).map(async ([column, address]) => {
+          const light = await inTime(lightOf(address), PICTURE_WAIT.ms);
+          if (light !== undefined) out[column] = light;
+        }),
+      );
       if (live) setRead({ key, lights: out });
     })();
     return () => {
@@ -193,7 +216,26 @@ function usePictureLights(addresses: Readonly<Record<string, string>>): { lights
     };
     // The addresses, by value: the row is read again on every draw.
   }, [key]);
-  return { lights: read.key === key ? read.lights : {}, loaded: read.key === key };
+  // No picture to read: nothing to wait for.
+  return { lights: read.key === key ? read.lights : {}, loaded: read.key === key || key === '{}' };
+}
+
+/** Whether a part of a design holds words or a picture the shopper gave it. */
+const holdsChoice = (value: unknown): boolean => {
+  if (typeof value !== 'object' || value === null) return false;
+  const chosen = value as Record<string, unknown>;
+  return (typeof chosen['text'] === 'string' && chosen['text'].trim() !== '') || (typeof chosen['file'] === 'string' && chosen['file'] !== '');
+};
+
+/**
+ * Whether the sheets leave out everything the shopper chose: words or a
+ * picture chosen (in the form's parts, or placed in the full editor), and
+ * not one of them drawn. A proof of that is a blank piece, never what the
+ * customer is to approve.
+ */
+export function missesEveryChoice(values: { parts: Readonly<Record<string, unknown>>; placed?: readonly unknown[] | undefined }, sheets: readonly FlatSheet[]): boolean {
+  const chose = Object.values(values.parts).some(holdsChoice) || (values.placed ?? []).some(holdsChoice);
+  return chose && !sheets.some((sheet) => sheet.items.some((item) => item.kind === 'text' || item.kind === 'picture'));
 }
 
 /**
@@ -202,22 +244,13 @@ function usePictureLights(addresses: Readonly<Record<string, string>>): { lights
  * started on (one they moved keeps their own). A page is printed in colour,
  * so it never has one.
  */
-/**
- * Whether the sheets leave out everything the shopper chose: words or a
- * picture chosen, and not one of them drawn. A proof of that is a blank
- * piece, never what the customer is to approve.
- */
-export function missesEveryChoice(values: { parts: Readonly<Record<string, unknown>> }, sheets: readonly FlatSheet[]): boolean {
-  const chose = Object.values(values.parts).some((value) => {
-    if (typeof value !== 'object' || value === null) return false;
-    const chosen = value as Record<string, unknown>;
-    return (typeof chosen['text'] === 'string' && chosen['text'].trim() !== '') || (typeof chosen['file'] === 'string' && chosen['file'] !== '');
-  });
-  return chose && !sheets.some((sheet) => sheet.items.some((item) => item.kind === 'text' || item.kind === 'picture'));
-}
-
 export function startsOnShopLine(sheets: readonly FlatSheet[]): boolean {
   return sheets.some((sheet) => sheet.items.some((item) => item.kind === 'picture' && item.oneColour && item.threshold === undefined));
+}
+
+/** The pictures set to one colour whose lightness was not read: drawn as uploaded, in full colour. */
+export function oneColourUnread(sheets: readonly FlatSheet[], lights: Readonly<Record<string, Lightness>>): string[] {
+  return [...new Set(sheets.flatMap((sheet) => sheet.items.flatMap((item) => (item.kind === 'picture' && item.oneColour && lights[item.column] === undefined ? [item.column] : []))))];
 }
 
 export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): ReactNode {
@@ -249,13 +282,16 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
   const proofUpload = useUploader('design_versions', 'proof_file');
   const fileUpload = useUploader('version_files', 'file');
   const [busy, setBusy] = useState<'proof' | 'files' | null>(null);
+  // A page is printed in colour: its pictures' lightness is never used, so never waited for.
+  const pageBase = base.row !== null && kindOf(base.row) === 'page';
   const addresses: Record<string, string> = {};
   for (const column of ['logo_file', 'photo_file']) {
-    const address = row === null ? null : fileAddress(row[column]);
+    const address = row === null || pageBase ? null : fileAddress(row[column]);
     if (address !== null) addresses[column] = address;
   }
   const { lights, loaded: lightsRead } = usePictureLights(addresses);
-  const settingsUnread = access.ready && (!settingsRead || isForbidden(settings.error?.code));
+  // The shop's line is unknown where the settings may not be read, the read failed, or the install has no settings row.
+  const settingsUnread = access.ready && (!settingsRead || settings.error !== null || (!settings.loading && settings.rows.length === 0));
   const startThreshold = Number(settings.rows[0]?.['one_colour_threshold'] ?? 50) || 50;
   const [problem, setProblem] = useState<string | null>(null);
 
@@ -279,7 +315,7 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
    */
   const settled =
     access.ready &&
-    lightsRead &&
+    (pageBase || lightsRead) &&
     !design.loading &&
     !base.loading &&
     !(readyId !== null && (ready.loading || parts.loading)) &&
@@ -345,14 +381,15 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
     setBusy('proof');
     setProblem(null);
     try {
-      const version = await versionNow();
-      const stem = fileStem(row['id'] as string | number, Number(version['version']));
       const held = await picturesOf(row);
       const sheets = sheetsFor(catalogue, data, (column) => held.pdf[column] !== undefined || pictures[column] !== undefined);
+      // Checked before anything is saved: a blank proof leaves no version behind either.
       if (missesEveryChoice(values, sheets)) {
         setProblem(t('panel.make.blank', 'The shopper’s words and pictures are not on the proof, so it was not made. Reload the page and make it again.'));
         return;
       }
+      const version = await versionNow();
+      const stem = fileStem(row['id'] as string | number, Number(version['version']));
       let blob: Blob | null;
       let name: string;
       if (page) {
@@ -434,7 +471,10 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
   const printedHow = printed && catalogue !== null && firstFace !== undefined ? reliefOfFace(catalogue, firstFace) : null;
   const proofed = proofOf(latest);
   // A role that may not read the settings makes a one-colour logo at the column's own line, which may not be the shop's: said, never silent.
-  const lineUnknown = settled && settingsUnread && !page && catalogue !== null && startsOnShopLine(sheetsFor(catalogue, data, (column) => pictures[column] !== undefined));
+  const drawnSheets = settled && !page && catalogue !== null ? sheetsFor(catalogue, data, (column) => pictures[column] !== undefined) : [];
+  const lineUnknown = settingsUnread && startsOnShopLine(drawnSheets);
+  // A one-colour picture whose lightness was not read in time is drawn as uploaded: said, never a silent full-colour proof.
+  const fullColour = oneColourUnread(drawnSheets, lights).length > 0;
   return (
     <Card
       title={t('panel.title', 'Customising')}
@@ -450,6 +490,7 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
             body={[...(hidden.length > 0 ? [t('panel.rights.personal', 'Your role can’t read the customer’s words, logo and photo, so the design is drawn without them.')] : []), ...(unread.length > 0 ? [unreadLine(t, unread)] : []), rolesHint(t)].join(' ')}
           />
         )}
+        {fullColour ? <Alert tone="warn" role="status" title={t('panel.make.unreadTitle', 'The logo is drawn in full colour')} body={t('panel.make.unread', 'Its lightness couldn’t be read in this browser, so the one-colour logo is drawn, and its proof made, as uploaded, not as the laser cuts it. Reload the page to read it again.')} /> : null}
         {lineUnknown ? <Alert tone="warn" role="status" title={t('panel.rights.lineTitle', 'The shop’s one-colour line is hidden from you')} body={t('panel.rights.line', 'Your role can’t read the Customiser’s settings, so the one-colour logo is drawn, and its proof made, at the 50% line. The shopper saw the shop’s own line, which may differ. Ask for the settings’ read.')} /> : null}
         {catalogue === null ? null : (
           <SharedContext.Provider value={shared}>
