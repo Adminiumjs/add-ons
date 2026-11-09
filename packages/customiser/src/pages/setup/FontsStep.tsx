@@ -49,6 +49,14 @@ export function useStarterFonts(t: AddOnTranslate, fonts: readonly DataRow[], on
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const tried = useRef(false);
+  // A page that is gone adds no more: its next visit adds what is still missing.
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
   useEffect(() => {
     if (first === null || route !== 'checking') return;
     let live = true;
@@ -66,6 +74,7 @@ export function useStarterFonts(t: AddOnTranslate, fonts: readonly DataRow[], on
     const failed: string[] = [];
     let why = '';
     for (const font of missing) {
+      if (!alive.current) return;
       const family = text(font['family']);
       try {
         const file = await starterFile(family);
