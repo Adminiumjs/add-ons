@@ -26,7 +26,7 @@ import { PrintedFields, PrintedPreview } from './PrintedBase.tsx';
 import { kindName } from './NewBase.tsx';
 
 /** A number field that saves its column when it is left with a new value. */
-export function SavedNumber<Clear extends boolean = false>({ label, value, unit, onSave, decimals = 1, clearable }: { label: string; value: number | null; unit?: string; onSave: (value: Clear extends true ? number | null : number) => void; decimals?: number; clearable?: Clear }): ReactNode {
+export function SavedNumber<Clear extends boolean = false>({ label, value, unit, onSave, decimals = 1, clearable, hint, disabled }: { label: string; value: number | null; unit?: string; onSave: (value: Clear extends true ? number | null : number) => void; decimals?: number; clearable?: Clear; hint?: string; disabled?: boolean }): ReactNode {
   const shown = value === null ? '' : String(value);
   const [draft, setDraft] = useState<string | null>(null);
   return (
@@ -35,6 +35,8 @@ export function SavedNumber<Clear extends boolean = false>({ label, value, unit,
       value={draft ?? shown}
       decimals={decimals}
       {...(unit === undefined ? {} : { unit })}
+      {...(hint === undefined ? {} : { hint })}
+      {...(disabled === true ? { disabled: true } : {})}
       onChange={setDraft}
       onBlur={() => {
         // A field that may be empty is emptied by clearing it: the column goes back to none.

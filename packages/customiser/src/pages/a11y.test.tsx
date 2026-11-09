@@ -245,7 +245,8 @@ const STATES: State[] = [
     },
     draw: () => <Line connectionId="c1" table="t" row="r" linked="91" />,
     after: async () => {
-      // The fonts have no files: making the files is refused, and says so.
+      // Once the design and its logo are read, the panel makes files. The fonts have no files: making them is refused, and says so.
+      for (let i = 0; i < 4; i += 1) await settle();
       fireEvent.click(screen.getByRole('button', { name: /Make the files again|إعادة إنشاء الملفات/ }));
       for (let i = 0; i < 4; i += 1) await settle();
       must('[role="alert"]');

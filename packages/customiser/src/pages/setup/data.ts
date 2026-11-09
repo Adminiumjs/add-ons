@@ -23,11 +23,16 @@ export interface SetupData {
 
 const PAGE = 199;
 
-/** The rows of one base's set-up; nothing is read until a base is chosen. */
-export function useSetupData(base: DataRow | null): SetupData {
+/**
+ * The rows of one base's set-up; nothing is read until a base is chosen.
+ * While `hold` is set (the starter fonts' files going in, one save each),
+ * nothing is read again: the rows read last stay drawn, and each list is
+ * read once when the hold ends, not once for every save.
+ */
+export function useSetupData(base: DataRow | null, hold = false): SetupData {
   const id = base === null ? null : (base['id'] as string | number);
   const app = text(base?.['app']);
-  const on = id !== null;
+  const on = id !== null && !hold;
   const areas = useRecords('base_areas', { filter: [{ column: 'base_id', op: 'eq', value: id }], sort: [{ column: 'position', direction: 'asc' }], pageSize: PAGE, enabled: on });
   const designs = useRecords('ready_designs', { filter: [{ column: 'base_id', op: 'eq', value: id }], sort: [{ column: 'position', direction: 'asc' }], pageSize: PAGE, enabled: on });
   const parts = useRecords('ready_parts', { filter: app === '' ? [] : [{ column: 'app', op: 'eq', value: app }], columns: ['id', 'ready_design_id', 'rules'], pageSize: PAGE, enabled: on });

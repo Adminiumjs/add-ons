@@ -7,11 +7,13 @@
  * as itself: reads a customer's design with its words in clear, adds a proof
  * version, uploads the proof and sets it on the version, makes a production
  * file and attaches it, and removes it to make it again. An owner role that
- * takes the README's set-up grants reads the settings and every table the
- * set-up page reads, and adds, changes and removes there what the page does;
- * its ask to change the settings, and to read the postings, is cut at
- * install. A counter role that holds only the designs' read sees the words
- * masked and may make nothing.
+ * takes the README's set-up grants (`ownSetUp`) reads and changes the
+ * settings and adds, changes and removes on the set-up tables what the page
+ * does, on its own app's rows alone: another app's base, font or new row is
+ * refused, and the starter fonts (no app's) are read and changed, never
+ * removed. Its ask to change a customer's design, and to read the postings,
+ * is cut at install. A counter role that holds only the designs' read sees
+ * the words masked and may make nothing.
  *
  * Run by `vitest.config.mjs` beside it, inside a built Adminium checkout
  * (`ADMINIUM_ENGINE`) with this repository built (`ADMINIUM_ADD_ONS_REPO`).
@@ -29,6 +31,10 @@ const lane = await import(`${ENGINE}/apps/server/test/public-lane.helpers.ts`);
 const kit = await import(`${ENGINE}/apps/server/test/add-ons/harness.ts`);
 const meta = await import(`${ENGINE}/packages/meta/dist/index.js`);
 const engine = await import(`${ENGINE}/packages/engine/dist/index.js`);
+
+// The README's set-up grants, as the Customiser writes them out for an app.
+const grantsFile = new URL('../../customiser/src/manifest/app-grants.ts', import.meta.url).pathname;
+const { ownSetUp, SET_UP_TABLES } = (await import(grantsFile)) as { ownSetUp: (app: string, table: string) => Doc; SET_UP_TABLES: readonly string[] };
 
 const CUSTOMISER = 'customiser';
 const built = kit.builtAddOn(CUSTOMISER) as { version: string; manifest: Doc; files: Record<string, string> } | null;
@@ -81,12 +87,11 @@ function printShop(): Doc {
         screensOnly: true,
         permissions: ['app:@:staff', 'table:@order_lines:read', 'page:@customiser:view'],
         tables: [
-          // Asked to change the settings too: the Customiser offers an app's role their read alone.
-          { addOn: CUSTOMISER, table: 'settings', actions: ['read', 'update'] },
-          // Read before a ready-made design is removed: whether a customer's design came from it.
-          { addOn: CUSTOMISER, table: 'designs', actions: ['read'] },
-          { addOn: CUSTOMISER, table: 'bases', actions: ['read', 'create', 'update'] },
-          ...READS.filter((table) => table !== 'bases').map((table) => ({ addOn: CUSTOMISER, table, actions: ['read', 'create', 'update', 'delete'] })),
+          { addOn: CUSTOMISER, table: 'settings', actions: ['read', 'update'], limit: { writable: ['length_unit', 'default_bleed_mm', 'default_safe_mm', 'one_colour_threshold', 'smallest_line_mm', 'min_dpi'] } },
+          // Read before a ready-made design is removed (whether a customer's design came from it); asked to change one too, which the Customiser offers no app's role.
+          { addOn: CUSTOMISER, table: 'designs', actions: ['read', 'update'] },
+          // The set-up tables, its own app's rows alone.
+          ...SET_UP_TABLES.map((table) => ownSetUp('printing', table)),
           // A ledger's receipts: never an app's.
           { addOn: CUSTOMISER, table: 'postings', actions: ['read'] },
         ],
@@ -153,7 +158,7 @@ describe.each(legs.LEGS as [string, boolean][])("a print shop's own pre-press ro
     expect(built).toBeNull();
   });
 
-  it.skipIf(!runs)("cuts at install what the Customiser offers no app's role: a change to the settings, a read of the postings", () => {
+  it.skipIf(!runs)("cuts at install what the Customiser offers no app's role: a change to a customer's design, a read of the postings", () => {
     const said = JSON.stringify(installReply);
     expect(said).toContain('ledger-table');
     expect(said).toContain('ceiling');
@@ -201,7 +206,7 @@ describe.each(legs.LEGS as [string, boolean][])("a print shop's own pre-press ro
     expect((await data('prepress', 'GET', `${id['settings']!}/1`)).statusCode).toBe(403);
   });
 
-  it.skipIf(!runs)('lets the owner read the settings and every table the set-up page reads, and change no setting', async () => {
+  it.skipIf(!runs)('lets the owner read every table the set-up page reads, and keep the settings', async () => {
     const settings = await data('owner', 'GET', id['settings']!);
     expect(settings.statusCode, settings.body).toBe(200);
     for (const table of READS) {
@@ -209,7 +214,49 @@ describe.each(legs.LEGS as [string, boolean][])("a print shop's own pre-press ro
       expect(read.statusCode, `${table}: ${read.body as string}`).toBe(200);
     }
     const row = String(((await h.rows('SELECT id FROM customiser_settings')) as Doc[])[0]?.['id'] ?? '1');
-    expect((await data('owner', 'PATCH', `${id['settings']!}/${row}`, { values: { min_dpi: 200 } })).statusCode).toBe(403);
+    const changed = await data('owner', 'PATCH', `${id['settings']!}/${row}`, { values: { one_colour_threshold: 62 } });
+    expect(changed.statusCode, changed.body).toBe(200);
+    expect(Number(((await h.rows('SELECT one_colour_threshold FROM customiser_settings')) as Doc[])[0]!['one_colour_threshold'])).toBe(62);
+    // The pre-press role, whose app asked no settings, changes none.
+    expect((await data('prepress', 'PATCH', `${id['settings']!}/${row}`, { values: { one_colour_threshold: 40 } })).statusCode).toBe(403);
+  });
+
+  it.skipIf(!runs)("keeps the owner to its own app's set-up: another app's base and font are neither seen, changed nor removed, and no row is made for it", async () => {
+    await h.rows(`INSERT INTO customiser_bases (id, app, name, kind, width_mm, height_mm, state, position) VALUES (900, 'maker', 'Walnut coaster', 'piece', 95, 95, 'draft', 1)`);
+    await h.rows(`INSERT INTO customiser_fonts (id, app, family, name, licence, starter, active) VALUES (900, 'maker', 'Maker Script', 'Maker Script', 'The shop’s own licence', FALSE, TRUE)`);
+    const bases = await data('owner', 'GET', id['bases']!);
+    expect(bases.statusCode, bases.body).toBe(200);
+    expect(bases.body).not.toContain('Walnut coaster');
+    // Print's owner changing a Maker base, removing a Maker font: refused, and nothing changed.
+    const renamed = await data('owner', 'PATCH', `${id['bases']!}/900`, { values: { name: 'Taken' } });
+    expect([403, 404], renamed.body).toContain(renamed.statusCode);
+    expect(((await h.rows('SELECT name FROM customiser_bases WHERE id = 900')) as Doc[])[0]!['name']).toBe('Walnut coaster');
+    const removed = await data('owner', 'DELETE', `${id['fonts']!}/900`);
+    expect([403, 404], removed.body).toContain(removed.statusCode);
+    expect(await h.rows('SELECT id FROM customiser_fonts WHERE id = 900')).toHaveLength(1);
+    // A row tagged with Maker, made by Print's owner: refused.
+    const made = await data('owner', 'POST', id['bases']!, { values: { app: 'maker', name: 'Slate sign', kind: 'piece', width_mm: 200, height_mm: 120, state: 'draft', position: 2 } });
+    expect(made.statusCode, made.body).toBe(403);
+    const madeFont = await data('owner', 'POST', id['fonts']!, { values: { app: 'maker', family: 'Other', name: 'Other', licence: 'own', starter: false, active: true } });
+    expect(madeFont.statusCode, madeFont.body).toBe(403);
+    expect(await h.rows(`SELECT id FROM customiser_bases WHERE name = 'Slate sign'`)).toEqual([]);
+  });
+
+  it.skipIf(!runs)('lets the owner read and change the starter fonts, which are no app’s, and remove none of them', async () => {
+    const starters = (await h.rows('SELECT id, app FROM customiser_fonts WHERE starter = TRUE')) as Doc[];
+    expect(starters.length).toBeGreaterThan(0);
+    expect(starters.every((one) => one['app'] === null)).toBe(true);
+    const listed = await data('owner', 'GET', id['fonts']!);
+    expect(listed.statusCode, listed.body).toBe(200);
+    expect(listed.body).not.toContain('Maker Script');
+    const ids = ((listed.json() as { data: Doc[] }).data ?? []).map((one) => String(one['id']));
+    for (const one of starters) expect(ids).toContain(String(one['id']));
+    const first = String(starters[0]!['id']);
+    const switched = await data('owner', 'PATCH', `${id['fonts']!}/${first}`, { values: { active: false } });
+    expect(switched.statusCode, switched.body).toBe(200);
+    const gone = await data('owner', 'DELETE', `${id['fonts']!}/${first}`);
+    expect([403, 404], gone.body).toContain(gone.statusCode);
+    expect(await h.rows(`SELECT id FROM customiser_fonts WHERE id = ${first}`)).toHaveLength(1);
   });
 
   it.skipIf(!runs)('lets the owner set up a base as the set-up page does: add and change it, add, change and remove its parts, never remove the base', async () => {

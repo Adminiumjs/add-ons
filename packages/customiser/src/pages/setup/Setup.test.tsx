@@ -174,6 +174,33 @@ describe('step 1, a flat page and the kinds that come with 3D', () => {
     expect(writes('update', 'bases').at(-1)).toMatchObject({ values: { sides: 1 } });
   });
 
+  it('keeps the shop’s one-colour line, and the other settings, in its settings, saved when a field is left', () => {
+    at(IDS.coasters);
+    render(<Customiser />);
+    fireEvent.click(screen.getByRole('button', { name: 'Shop settings' }));
+    const line = screen.getByLabelText('One-colour line') as HTMLInputElement;
+    expect(line.value).toBe('50');
+    fireEvent.change(line, { target: { value: '62' } });
+    fireEvent.blur(line);
+    expect(writes('update', 'settings').at(-1)).toMatchObject({ key: '1', values: { one_colour_threshold: 62 } });
+    expect(row('settings', 1)['one_colour_threshold']).toBe(62);
+    fireEvent.change(screen.getByLabelText('Sizes shown in'), { target: { value: 'in' } });
+    expect(writes('update', 'settings').at(-1)).toMatchObject({ values: { length_unit: 'in' } });
+    const dpi = screen.getByLabelText('Sharpness a picture needs at its printed size');
+    fireEvent.change(dpi, { target: { value: '200' } });
+    fireEvent.blur(dpi);
+    expect(row('settings', 1)['min_dpi']).toBe(200);
+  });
+
+  it('shows the settings to a role that may read and not change them, and says so', () => {
+    world.cannot.add('update:settings');
+    at(IDS.coasters);
+    render(<Customiser />);
+    fireEvent.click(screen.getByRole('button', { name: 'Shop settings' }));
+    expect(screen.getByText('Your role may read these settings, not change them.')).toBeTruthy();
+    expect((screen.getByLabelText('One-colour line') as HTMLInputElement).disabled).toBe(true);
+  });
+
   it('clears a base’s rounded corners back to none when the field is emptied, and keeps a figure field that may not be empty', () => {
     for (const base of [IDS.cards, IDS.coasters]) {
       seed('bases', world.tables['bases']!.map((one) => (one['id'] === base ? { ...one, corner_mm: 2 } : one)));
@@ -466,6 +493,22 @@ describe('the starter fonts’ files', () => {
     expect(writes('create', 'fonts')).toEqual([]);
     // Added on the way in, on the base's first step: nothing to say.
     expect(world.toasts.map((toast) => toast.title)).not.toContain('Starter fonts added. Shoppers see each one once you switch it on.');
+  });
+
+  it('reads the set-up again once when they are in, not once for every font', async () => {
+    serve(() => 200);
+    at(IDS.coasters);
+    render(<Customiser />);
+    // The page's first reads, before the fonts go in.
+    const first = world.reads.length;
+    expect(first).toBeGreaterThan(0);
+    await settle();
+    await settle();
+    expect(writes('upload', 'fonts')).toHaveLength(3);
+    const after = world.reads.slice(first);
+    // Each list at most once more, whatever the number of fonts.
+    expect(after.length).toBeGreaterThan(0);
+    expect(after.length, after.join(' ')).toBe(new Set(after).size);
   });
 
   it('leaves them to the button for a role that may not change the fonts', async () => {

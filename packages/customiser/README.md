@@ -99,7 +99,7 @@ The Customiser says how far an app's role may go on each table
 |---|---|
 | `bases` | read; create (every column); update (every column but `app`) |
 | `base_pieces`, `base_areas`, `ready_designs`, `ready_parts`, `fonts`, `palettes`, `palette_colours`, `features` | read; create (every column); update (every column but `app`); delete |
-| `settings` | read |
+| `settings` | read; update (every column) |
 | `designs` | read, read_pii |
 | `design_versions` | read, read_pii; create (`app`, `design_id`, `version`, `values`); update (`proof_file`) |
 | `version_files` | read; create (`app`, `version_id`, `kind`, `name`, `about`, `layers`, `left_out`, `position`); update (`file`); delete |
@@ -107,7 +107,15 @@ The Customiser says how far an app's role may go on each table
 
 The writes on the shop's tables are the set-up page's (add-ons 1.0.21): a role
 an app gives the set-up changes there what the Customiser's own designer
-does. The panels only read them.
+does. The panels only read them. The settings are changed from the set-up
+page's **Shop settings** (add-ons 1.0.23): the one-colour line a shopper's
+editor starts on, a new page's bleed and safe line, the thinnest line and the
+sharpness a picture needs. They are the install's, one row every app on it
+shares.
+
+`appGrants` says how far a role may go on a table, never on which rows. Each
+row of the shop's tables names the app it belongs to (`app`); an app keeps
+its roles to its own rows itself (see "The set-up page").
 
 An entry asking for more is cut to this, and the install check says what was
 cut. `read_pii` is what shows the customer's words (`values`), logo and photo:
@@ -145,6 +153,7 @@ A role that makes the proof and the files:
     { "addOn": "customiser", "table": "designs", "actions": ["read", "read_pii"] },
     { "addOn": "customiser", "table": "design_versions", "actions": ["read", "read_pii", "create", "update"] },
     { "addOn": "customiser", "table": "version_files", "actions": ["read", "create", "update", "delete"] },
+    { "addOn": "customiser", "table": "settings", "actions": ["read"] },
     { "addOn": "customiser", "table": "bases", "actions": ["read"] },
     { "addOn": "customiser", "table": "base_pieces", "actions": ["read"] },
     { "addOn": "customiser", "table": "base_areas", "actions": ["read"] },
@@ -163,6 +172,13 @@ A role that only looks at the panel takes the same entries with `["read",
 `page:@customiser:view`. `table:@order_lines:read` stands for the app's own
 table the panel is on.
 
+**`settings: read` on a role that makes a piece's proof.** A logo the shopper
+made one colour and left at the line it started on is drawn at the shop's own
+one-colour line, which is in the settings. A role that may not read them is
+told on the panel that its proof uses the 50% line, which may not be what the
+shopper saw. A page (a print shop's card) is printed in colour and never uses
+the line.
+
 **`page:@customiser:view` on a role that makes files, screens-only roles
 too.** A starter font nobody uploaded is read from the file this package
 ships, through the set-up page's files route
@@ -174,26 +190,69 @@ lets its panels read the files.
 ### The set-up page
 
 A role that sets up the shop's side (a shop's owner) opens
-`/add-ons/customiser/customiser` and reads and writes what that page does:
+`/add-ons/customiser/customiser` and reads and writes what that page does,
+and only its own app's rows of it. For an app whose key is `maker` (Print
+Shop writes `printing` wherever `maker` stands):
 
 ```json
 {
   "permissions": ["page:@customiser:view"],
   "tables": [
-    { "addOn": "customiser", "table": "settings", "actions": ["read"] },
+    { "addOn": "customiser", "table": "settings", "actions": ["read", "update"],
+      "limit": { "writable": ["length_unit", "default_bleed_mm", "default_safe_mm", "one_colour_threshold", "smallest_line_mm", "min_dpi"] } },
     { "addOn": "customiser", "table": "designs", "actions": ["read"] },
-    { "addOn": "customiser", "table": "bases", "actions": ["read", "create", "update"] },
-    { "addOn": "customiser", "table": "base_pieces", "actions": ["read", "create", "update", "delete"] },
-    { "addOn": "customiser", "table": "base_areas", "actions": ["read", "create", "update", "delete"] },
-    { "addOn": "customiser", "table": "ready_designs", "actions": ["read", "create", "update", "delete"] },
-    { "addOn": "customiser", "table": "ready_parts", "actions": ["read", "create", "update", "delete"] },
-    { "addOn": "customiser", "table": "fonts", "actions": ["read", "create", "update", "delete"] },
-    { "addOn": "customiser", "table": "palettes", "actions": ["read", "create", "update", "delete"] },
-    { "addOn": "customiser", "table": "palette_colours", "actions": ["read", "create", "update", "delete"] },
-    { "addOn": "customiser", "table": "features", "actions": ["read", "create", "update", "delete"] }
+    { "addOn": "customiser", "table": "bases", "actions": ["read", "create", "update"],
+      "limit": {
+        "creatable": ["app", "name", "kind", "width_mm", "…every column of the table"],
+        "creatableValues": { "app": ["maker"] },
+        "writable": ["name", "kind", "width_mm", "…every column but app"],
+        "rows": {
+          "read": { "reach": "all", "while": { "column": "app", "in": ["maker"] } },
+          "update": { "reach": "all", "while": { "column": "app", "in": ["maker"] } }
+        }
+      } },
+    { "addOn": "customiser", "table": "base_pieces", "actions": ["read", "create", "update", "delete"],
+      "limit": {
+        "creatable": ["app", "…every column of the table"],
+        "creatableValues": { "app": ["maker"] },
+        "writable": ["…every column but app"],
+        "rows": {
+          "read": { "reach": "all", "while": { "column": "app", "in": ["maker"] } },
+          "update": { "reach": "all", "while": { "column": "app", "in": ["maker"] } },
+          "delete": { "reach": "all", "while": { "column": "app", "in": ["maker"] } }
+        }
+      } },
+    { "addOn": "customiser", "table": "fonts", "actions": ["read", "create", "update", "delete"],
+      "limit": {
+        "creatable": ["app", "…every column of the table"],
+        "creatableValues": { "app": ["maker"] },
+        "writable": ["…every column but app"],
+        "rows": {
+          "read": [{ "reach": "all", "while": { "column": "app", "in": ["maker"] } }, { "reach": "all", "while": { "column": "starter", "in": [true] } }],
+          "update": [{ "reach": "all", "while": { "column": "app", "in": ["maker"] } }, { "reach": "all", "while": { "column": "starter", "in": [true] } }],
+          "delete": { "reach": "all", "while": { "column": "app", "in": ["maker"] } }
+        }
+      } }
   ]
 }
 ```
+
+`base_areas`, `ready_designs`, `ready_parts`, `palettes`, `palette_colours`
+and `features` take the entry `base_pieces` takes. Each table's `creatable`
+and `writable` are its columns in the table above ("What an app's role
+needs"), listed in full: `appGrants` in `manifest.json` holds them, and
+`ownSetUp(app, table)` in `src/manifest/app-grants.ts` writes each entry out.
+
+- **Its own rows.** A new row is tagged with the app's own key, and the role
+  reads, changes and removes only rows tagged with it. With Maker Shop and
+  Print Shop on one install, neither owner sees or changes the other's
+  bases, designs, fonts or finishes, nor makes a row for the other.
+- **The starter fonts.** They are the install's and no app's (their `app`
+  is empty, which a value limit cannot name), so the fonts' reach adds
+  `starter`: every owner reads them, and its set-up adds their files, but
+  none removes one.
+- **The settings** are one row for the whole install: either owner keeps the
+  one-colour line.
 
 The read of `designs` is what lets the page remove a ready-made design: it
 first asks whether a customer's design came from it. That is eleven of a
@@ -205,7 +264,7 @@ the fonts sees "Add the starter fonts" instead.
 
 The Customiser's own **designer** and **reader** roles hold the same and more
 (the designer also sets up the shop's side), for a person who works in the
-dashboard rather than in an app's screens.
+dashboard rather than in an app's screens. They reach every app's rows.
 
 ## Sample data
 

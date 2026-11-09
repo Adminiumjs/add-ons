@@ -25,6 +25,7 @@ import { isPublished, isStep, offeredOf, STEPS, stepDone, text, type PublishFact
 import { NewBase } from './NewBase.tsx';
 import { PricesStep } from './PricesStep.tsx';
 import { PublishStep } from './PublishStep.tsx';
+import { ShopSettings } from './ShopSettings.tsx';
 import { DesignsStep } from '../designs/DesignsStep.tsx';
 
 /** The base an address opens: `customiser/<id>`, or none. */
@@ -62,27 +63,39 @@ export function SetupPage({ t }: { t: AddOnTranslate }): ReactNode {
   const search = useSearch({ strict: false });
   const navigate = useNavigate();
   const [adding, setAdding] = useState(false);
-  const bases = useRecords('bases', { sort: [{ column: 'position', direction: 'asc' }, { column: 'id', direction: 'asc' }], pageSize: 199 });
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  // While the starter fonts' files go in, the set-up's lists wait, and are read once after.
+  const [holding, setHolding] = useState(false);
+  // The install's settings, read here as well as with a base's set-up: the page opens them before any base is chosen.
+  const settings = useRecords('settings', { pageSize: 1, enabled: !holding });
+  const bases = useRecords('bases', { sort: [{ column: 'position', direction: 'asc' }, { column: 'id', direction: 'asc' }], pageSize: 199, enabled: !holding });
   const wanted = baseIdOf(_splat ?? '');
   const base = (wanted === null ? bases.rows[0] : bases.rows.find((row) => String(row['id']) === wanted)) ?? null;
   const step: Step = isStep(search['step']) ? search['step'] : 'base';
-  const data = useSetupData(base);
-  const starter = useStarterFonts(t, data.fonts);
+  const data = useSetupData(base, holding);
+  const starter = useStarterFonts(t, data.fonts, setHolding);
   const go = (to: Step, id: string | number | null = base === null ? null : (base['id'] as string | number)): void => {
     if (id === null) return;
     void navigate({ to: `${pageAt()}/${String(id)}`, search: to === 'base' ? {} : { step: to } });
   };
   const title = t('setup.title', 'Customising set-up');
   const newBase = (
-    <Button variant="secondary" onClick={() => setAdding(true)}>
-      {t('setup.newBase', 'New base')}
-    </Button>
+    <>
+      <Button variant="ghost" onClick={() => setSettingsOpen(true)}>
+        {t('setup.settings.title', 'Shop settings')}
+      </Button>
+      <Button variant="secondary" onClick={() => setAdding(true)}>
+        {t('setup.newBase', 'New base')}
+      </Button>
+    </>
   );
+  const shopSettings = <ShopSettings t={t} open={settingsOpen} onClose={() => setSettingsOpen(false)} settings={settings.rows[0] ?? null} error={settings.error} />;
   if (!bases.loading && bases.error === null && bases.rows.length === 0) {
     return (
       <PageFrame t={t} title={title} actions={newBase}>
         <LaterStep t={t} onAdd={() => setAdding(true)} />
         <NewBase t={t} open={adding} onClose={() => setAdding(false)} onMade={(id) => go('base', id)} />
+        {shopSettings}
       </PageFrame>
     );
   }
@@ -148,6 +161,7 @@ export function SetupPage({ t }: { t: AddOnTranslate }): ReactNode {
         </Stack>
       )}
       <NewBase t={t} open={adding} onClose={() => setAdding(false)} onMade={(id) => go('base', id)} />
+      {shopSettings}
     </PageFrame>
   );
 }

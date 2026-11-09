@@ -67,6 +67,12 @@ export const world = {
   closed: new Set<string>(),
   /** Tables whose reads have not come back yet: a list or a row of one is still loading, with nothing in it. */
   pending: new Set<string>(),
+  /**
+   * Every list read, by table, as Adminium's cache makes them: a list is read
+   * when it is first drawn and again after anything is written, while it is
+   * switched on. A list switched off keeps the rows it last read.
+   */
+  reads: [] as string[],
   /** Personal columns the reader may not see, by table: read back empty and named in the row's `_masked`, as Adminium masks them. */
   masked: {} as Record<string, string[]>,
   /** What the reader may not do: `create:items`, `update:counts`, `move:receipts:posting`. */
@@ -127,6 +133,8 @@ export function resetWorld(): void {
   world.unreadable = {};
   world.closed = new Set();
   world.pending = new Set();
+  world.reads = [];
+  lastRead.clear();
   world.masked = {};
   world.cannot = new Set();
   world.has = {};
@@ -234,12 +242,23 @@ function insert(table: string, values: Values): Row {
   return row;
 }
 
+/** What each list last read, by its table and question, and when: what it shows while it is switched off. */
+const lastRead = new Map<string, { at: number; rows: Row[]; hasMore: boolean }>();
+
 function useRecords(table: string, options: ListOptions = {}) {
-  useWorld();
-  if (options.enabled === false) return { rows: [], hasMore: false, loading: false, error: null, refetch: () => undefined };
+  const at = useWorld();
+  const { enabled, ...question } = options;
+  const key = `${table}|${JSON.stringify(question)}`;
+  if (enabled === false) {
+    const held = lastRead.get(key);
+    return { rows: held?.rows ?? [], hasMore: held?.hasMore ?? false, loading: false, error: null, refetch: () => undefined };
+  }
+  if (lastRead.get(key)?.at !== at && !world.pending.has(table)) world.reads.push(table);
   if (world.pending.has(table)) return { rows: [], hasMore: false, loading: true, error: null, refetch: () => undefined };
   try {
-    return { ...listed(table, options), loading: false, error: null, refetch: () => undefined };
+    const answer = listed(table, options);
+    lastRead.set(key, { at, ...answer });
+    return { ...answer, loading: false, error: null, refetch: () => undefined };
   } catch (caught) {
     return { rows: [], hasMore: false, loading: false, error: asRefusal(caught), refetch: () => undefined };
   }

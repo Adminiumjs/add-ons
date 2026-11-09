@@ -207,7 +207,16 @@
         ],
         "appGrants": {
           "actions": [
-            "read"
+            "read",
+            "update"
+          ],
+          "writable": [
+            "length_unit",
+            "default_bleed_mm",
+            "default_safe_mm",
+            "one_colour_threshold",
+            "smallest_line_mm",
+            "min_dpi"
           ]
         }
       },

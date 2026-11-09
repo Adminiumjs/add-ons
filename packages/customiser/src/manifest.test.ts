@@ -10,7 +10,7 @@
  * that a design nobody ordered is let go; and that every word a person reads
  * is there in all eight languages.
  */
-import { validateManifest } from '@adminiumjs/manifest';
+import { addOnRoleTableHold, roleAddOnTableSchema, validateManifest } from '@adminiumjs/manifest';
 import { describe, expect, it } from 'vitest';
 
 import manifest from '../manifest.json' with { type: 'json' };
@@ -18,6 +18,7 @@ import manifest from '../manifest.json' with { type: 'json' };
 import { TARGET, written } from '../scripts/manifest.mjs';
 import { readFileSync } from 'node:fs';
 import { DESIGN_BY_CODE, DESIGN_CHANGEABLE, DESIGN_OPENED, DESIGN_UPLOADS, DESIGN_WRITABLE, LINK_KEY } from './manifest/entries.ts';
+import { ownSetUp, SET_UP_TABLES } from './manifest/app-grants.ts';
 import { CUSTOMER_TABLES, SHOP_TABLES } from './manifest/build.ts';
 import { DESCRIPTION, LOCALES } from './manifest/words.ts';
 import { OUTPUT } from '../vite.config.ts';
@@ -431,8 +432,40 @@ describe('what an app’s role may hold (appGrants)', () => {
     }
   });
 
-  it('lets it read the settings the set-up page starts from, never change them', () => {
-    expect(grants('settings')).toEqual({ actions: ['read'] });
+  it('lets it read the settings the set-up page starts from, and change each of them from its Shop settings', () => {
+    const columns = all.find((one) => one.ref === 'settings')!.columns.map((column) => column.ref).filter((column) => column !== 'id');
+    expect(grants('settings')).toEqual({ actions: ['read', 'update'], writable: columns });
+  });
+
+  describe('an owner kept to its own app’s set-up rows (ownSetUp)', () => {
+    it('is written for every table the set-up page writes', () => {
+      expect([...SET_UP_TABLES].sort()).toEqual([...SHOP_TABLES].sort());
+    });
+
+    it.each(['maker', 'printing'])('is a grant an app may write and the Customiser lets it hold whole, for %s', (app) => {
+      for (const table of SET_UP_TABLES) {
+        const entry = ownSetUp(app, table);
+        expect(roleAddOnTableSchema.safeParse(entry).success, table).toBe(true);
+        const hold = addOnRoleTableHold(roleAddOnTableSchema.parse(entry), manifest as unknown as Parameters<typeof addOnRoleTableHold>[1]);
+        // Nothing of it is cut at install, and its rows go with it: the grant is written as asked.
+        expect(hold.skipped, table).toBeUndefined();
+        expect([...hold.actions].sort(), table).toEqual([...entry.actions].sort());
+        expect(hold.narrowed, table).toBeUndefined();
+        expect(hold.limit?.rows, table).toEqual(entry.limit.rows);
+        expect(hold.limit?.creatableValues, table).toEqual({ app: [app] });
+      }
+    });
+
+    it('tags a new row with its own app, and reaches only rows tagged with it; a starter font is read and changed, never removed', () => {
+      const bases = ownSetUp('maker', 'bases');
+      expect(bases.limit.creatableValues).toEqual({ app: ['maker'] });
+      expect(bases.limit.rows).toEqual({ read: { reach: 'all', while: { column: 'app', in: ['maker'] } }, update: { reach: 'all', while: { column: 'app', in: ['maker'] } } });
+      const fonts = ownSetUp('printing', 'fonts');
+      const mine = { reach: 'all', while: { column: 'app', in: ['printing'] } };
+      const starter = { reach: 'all', while: { column: 'starter', in: [true] } };
+      expect(fonts.limit.rows).toEqual({ read: [mine, starter], update: [mine, starter], delete: mine });
+      expect(fonts.limit.writable).not.toContain('app');
+    });
   });
 
   it('lets it read a customer’s design with its personal columns, never change it', () => {

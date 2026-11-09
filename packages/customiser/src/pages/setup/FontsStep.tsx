@@ -38,7 +38,7 @@ export interface StarterFonts {
  * files are in before a shopper ever sees the fonts; "Add the starter fonts"
  * stays for a role that may not, or an add that failed.
  */
-export function useStarterFonts(t: AddOnTranslate, fonts: readonly DataRow[]): StarterFonts {
+export function useStarterFonts(t: AddOnTranslate, fonts: readonly DataRow[], onAdding?: (adding: boolean) => void): StarterFonts {
   const upload = useUploader('fonts', 'file');
   const access = useAccess();
   const toast = useToast();
@@ -62,6 +62,7 @@ export function useStarterFonts(t: AddOnTranslate, fonts: readonly DataRow[]): S
   const add = async (said: boolean): Promise<void> => {
     if (upload === null) return;
     setAdding(true);
+    onAdding?.(true);
     const failed: string[] = [];
     let why = '';
     for (const font of missing) {
@@ -76,6 +77,7 @@ export function useStarterFonts(t: AddOnTranslate, fonts: readonly DataRow[]): S
       }
     }
     setAdding(false);
+    onAdding?.(false);
     if (failed.length === 0) {
       setError(null);
       if (said) toast(t('setup.fonts.starterAdded', 'Starter fonts added. Shoppers see each one once you switch it on.'));

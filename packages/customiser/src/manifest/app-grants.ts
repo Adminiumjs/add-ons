@@ -6,7 +6,10 @@
  * and makes a proof and the production files without a Customiser role of
  * its own. This says how far that hold may go, table by table:
  *
- * - the settings are read: the set-up page starts from them;
+ * - the settings are read (the set-up page and the panels start from them)
+ *   and changed, column by column, from the set-up page's Shop settings: the
+ *   shop's owner keeps its own one-colour line. They are the install's, one
+ *   row every app on it shares;
  * - the shop's set-up is what the set-up page reads and writes: a role an
  *   app gives the set-up (a shop's owner) adds, changes and removes the
  *   rows the page does, every column but the app a row belongs to; a base
@@ -25,6 +28,16 @@
  *
  * `manifest.test.ts` holds each list to the table's columns; the README's
  * "What an app's role needs" lists the same, as an app writes it.
+ *
+ * WHOSE ROWS. This says what an app's role may hold of a table, never which
+ * rows: Adminium's ceiling has no rows. With two shop apps on one install,
+ * each app keeps its owner to its own set-up rows itself, by the `app`
+ * column (`ownSetUp` below, which the README's "The set-up page" example
+ * writes out): a new row only tagged with its own app, and a read, a change
+ * and a removal only of its own app's rows. The starter fonts are nobody's
+ * app (`app` empty, which a value limit cannot name): an owner reads and
+ * changes them by `starter`, so its set-up still adds their files, and never
+ * removes one.
  */
 export interface AppGrants {
   actions: readonly ('read' | 'read_pii' | 'create' | 'update' | 'delete')[];
@@ -37,7 +50,7 @@ const ADD_CHANGE = ['read', 'create', 'update'] as const;
 const ADD_CHANGE_REMOVE = ['read', 'create', 'update', 'delete'] as const;
 
 export const APP_GRANTS: Readonly<Record<string, AppGrants>> = {
-  settings: { actions: ['read'] },
+  settings: { actions: ['read', 'update'], writable: ['length_unit', 'default_bleed_mm', 'default_safe_mm', 'one_colour_threshold', 'smallest_line_mm', 'min_dpi'] },
   bases: { actions: ADD_CHANGE, creatable: ['app', 'name', 'kind', 'width_mm', 'height_mm', 'depth_mm', 'corner_mm', 'bleed_mm', 'safe_mm', 'sides', 'back_feature_id', 'material', 'thickness_mm', 'outline_file', 'model_file', 'print_file', 'faces', 'offered', 'state', 'position'], writable: ['name', 'kind', 'width_mm', 'height_mm', 'depth_mm', 'corner_mm', 'bleed_mm', 'safe_mm', 'sides', 'back_feature_id', 'material', 'thickness_mm', 'outline_file', 'model_file', 'print_file', 'faces', 'offered', 'state', 'position'] },
   base_pieces: { actions: ADD_CHANGE_REMOVE, creatable: ['app', 'base_id', 'code', 'name', 'width_mm', 'height_mm', 'layers', 'left_out', 'file', 'position'], writable: ['base_id', 'code', 'name', 'width_mm', 'height_mm', 'layers', 'left_out', 'file', 'position'] },
   base_areas: { actions: ADD_CHANGE_REMOVE, creatable: ['app', 'base_id', 'code', 'name', 'side', 'piece_id', 'face', 'shape', 'x_mm', 'y_mm', 'w_mm', 'h_mm', 'takes', 'required', 'rules', 'feature_id', 'position'], writable: ['base_id', 'code', 'name', 'side', 'piece_id', 'face', 'shape', 'x_mm', 'y_mm', 'w_mm', 'h_mm', 'takes', 'required', 'rules', 'feature_id', 'position'] },
@@ -51,3 +64,35 @@ export const APP_GRANTS: Readonly<Record<string, AppGrants>> = {
   design_versions: { actions: ['read', 'read_pii', 'create', 'update'], creatable: ['app', 'design_id', 'version', 'values'], writable: ['proof_file'] },
   version_files: { actions: ['read', 'create', 'update', 'delete'], creatable: ['app', 'version_id', 'kind', 'name', 'about', 'layers', 'left_out', 'position'], writable: ['file'] },
 };
+
+/** The tables the set-up page adds to, changes and removes from, each row tagged with the app it belongs to. */
+export const SET_UP_TABLES = ['bases', 'base_pieces', 'base_areas', 'ready_designs', 'ready_parts', 'fonts', 'palettes', 'palette_colours', 'features'] as const;
+
+/** Rows whose `app` is this app's, now. */
+const ownRows = (app: string) => ({ reach: 'all', while: { column: 'app', in: [app] } }) as const;
+/** The starter fonts: the install's, no app's. */
+const starterRows = { reach: 'all', while: { column: 'starter', in: [true] } } as const;
+
+/**
+ * An app owner's grant on one set-up table, kept to that app's own rows, as
+ * an app's `roles[].tables` entry writes it: the actions and columns
+ * `APP_GRANTS` allows; a new row only tagged with `app`; a read, a change
+ * and a removal only of rows tagged with it (and, on the fonts, a read and a
+ * change of the starter fonts too). A base is never removed.
+ */
+export function ownSetUp(app: string, table: (typeof SET_UP_TABLES)[number]) {
+  const grants = APP_GRANTS[table]!;
+  const own = ownRows(app);
+  const mine = table === 'fonts' ? [own, starterRows] : own;
+  return {
+    addOn: 'customiser',
+    table,
+    actions: [...grants.actions],
+    limit: {
+      creatable: [...grants.creatable!],
+      creatableValues: { app: [app] },
+      writable: [...grants.writable!],
+      rows: { read: mine, update: mine, ...(grants.actions.includes('delete') ? { delete: own } : {}) },
+    },
+  };
+}
