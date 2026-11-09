@@ -11,8 +11,9 @@
  * settings and adds, changes and removes on the set-up tables what the page
  * does, on its own app's rows alone: another app's base, font or new row is
  * refused, and the starter fonts (no app's) are read and changed, never
- * removed. Its ask to change a customer's design, and to read the postings,
- * is cut at install. A counter role that holds only the designs' read sees
+ * removed. Its ask to change a customer's design, to remove the settings
+ * and to read the postings is cut at install. Pre-press reads only its own
+ * app's customers' designs, versions and files. A counter role that holds only the designs' read sees
  * the words masked and may make nothing.
  *
  * Run by `vitest.config.mjs` beside it, inside a built Adminium checkout
@@ -34,7 +35,7 @@ const engine = await import(`${ENGINE}/packages/engine/dist/index.js`);
 
 // The README's set-up grants, as the Customiser writes them out for an app.
 const grantsFile = new URL('../../customiser/src/manifest/app-grants.ts', import.meta.url).pathname;
-const { ownSetUp, SET_UP_TABLES } = (await import(grantsFile)) as { ownSetUp: (app: string, table: string) => Doc; SET_UP_TABLES: readonly string[] };
+const { ownDesigns, ownPanel, ownSettings, ownSetUp, SET_UP_TABLES } = (await import(grantsFile)) as { ownDesigns: (app: string, pii: boolean) => Doc; ownPanel: (app: string) => Doc[]; ownSettings: () => Doc; ownSetUp: (app: string, table: string) => Doc; SET_UP_TABLES: readonly string[] };
 
 const CUSTOMISER = 'customiser';
 const built = kit.builtAddOn(CUSTOMISER) as { version: string; manifest: Doc; files: Record<string, string> } | null;
@@ -74,12 +75,8 @@ function printShop(): Doc {
         name: 'Pre-press',
         screensOnly: true,
         permissions: ['app:@:staff', 'table:@order_lines:read', 'page:@customiser-line:view', 'page:@customiser:view'],
-        tables: [
-          { addOn: CUSTOMISER, table: 'designs', actions: ['read', 'read_pii'] },
-          { addOn: CUSTOMISER, table: 'design_versions', actions: ['read', 'read_pii', 'create', 'update'] },
-          { addOn: CUSTOMISER, table: 'version_files', actions: ['read', 'create', 'update', 'delete'] },
-          ...READS.map((table) => ({ addOn: CUSTOMISER, table, actions: ['read'] })),
-        ],
+        // The README's proof-maker grants, its own app's customers alone, without the settings (this app asks none for it).
+        tables: ownPanel('printing').filter((entry) => entry['table'] !== 'settings'),
       },
       {
         key: 'owner',
@@ -87,9 +84,10 @@ function printShop(): Doc {
         screensOnly: true,
         permissions: ['app:@:staff', 'table:@order_lines:read', 'page:@customiser:view'],
         tables: [
-          { addOn: CUSTOMISER, table: 'settings', actions: ['read', 'update'], limit: { writable: ['length_unit', 'default_bleed_mm', 'default_safe_mm', 'one_colour_threshold', 'smallest_line_mm', 'min_dpi'] } },
+          // Asked to remove the settings too, which the Customiser offers no app's role.
+          { ...ownSettings(), actions: ['read', 'update', 'delete'] },
           // Read before a ready-made design is removed (whether a customer's design came from it); asked to change one too, which the Customiser offers no app's role.
-          { addOn: CUSTOMISER, table: 'designs', actions: ['read', 'update'] },
+          { ...ownDesigns('printing', false), actions: ['read', 'update'] },
           // The set-up tables, its own app's rows alone.
           ...SET_UP_TABLES.map((table) => ownSetUp('printing', table)),
           // A ledger's receipts: never an app's.
@@ -158,10 +156,13 @@ describe.each(legs.LEGS as [string, boolean][])("a print shop's own pre-press ro
     expect(built).toBeNull();
   });
 
-  it.skipIf(!runs)("cuts at install what the Customiser offers no app's role: a change to a customer's design, a read of the postings", () => {
+  it.skipIf(!runs)("cuts at install what the Customiser offers no app's role: a change to a customer's design, a removal of the settings, a read of the postings", () => {
     const said = JSON.stringify(installReply);
     expect(said).toContain('ledger-table');
     expect(said).toContain('ceiling');
+    // The owner's settings are changed, never removed.
+    const settings = (installReply['roles'] as { tables: Doc[] }).tables.find((one) => one['role'] === 'owner' && one['table'] === 'settings')!;
+    expect(settings['actions']).toEqual(['read', 'update']);
   });
 
   it.skipIf(!runs)("reads the customer's words in clear; the counter reads them masked", async () => {
@@ -284,6 +285,41 @@ describe.each(legs.LEGS as [string, boolean][])("a print shop's own pre-press ro
     expect(from.statusCode, from.body).toBe(200);
     expect((await data('owner', 'DELETE', `${id['ready_designs']!}/${readyId}`)).statusCode).toBeLessThan(300);
     expect((await data('owner', 'DELETE', `${id['bases']!}/${baseId}`)).statusCode).toBe(403);
+  });
+
+  it.skipIf(!runs)('lets no owner make a font a starter, take one out of the set, or add one as a starter', async () => {
+    const own = await data('owner', 'POST', id['fonts']!, { values: { app: 'printing', family: 'Harbour Script', name: 'Harbour Script', licence: 'own', starter: false, active: true } });
+    expect(own.statusCode, own.body).toBeLessThan(300);
+    const ownId = String((own.json() as { data: { id: unknown } }).data.id);
+    // Its own font made a starter, so the other app's owner would reach it: refused.
+    expect((await data('owner', 'PATCH', `${id['fonts']!}/${ownId}`, { values: { starter: true } })).statusCode).toBe(403);
+    const starter = String(((await h.rows('SELECT id FROM customiser_fonts WHERE starter = TRUE')) as Doc[])[0]!['id']);
+    // A starter taken out of the set, so nobody's owner reaches it: refused.
+    expect((await data('owner', 'PATCH', `${id['fonts']!}/${starter}`, { values: { starter: false } })).statusCode).toBe(403);
+    // A new font added as a starter: refused.
+    const made = await data('owner', 'POST', id['fonts']!, { values: { app: 'printing', family: 'Sneaky', name: 'Sneaky', licence: 'own', starter: true, active: true } });
+    expect(made.statusCode, made.body).toBe(403);
+    const rows = (await h.rows(`SELECT id, starter FROM customiser_fonts WHERE id IN (${ownId}, ${starter})`)) as Doc[];
+    expect(rows.map((one) => [String(one['id']), Boolean(Number(one['starter']) || one['starter'] === true)]).sort()).toEqual([[ownId, false], [starter, true]].sort());
+  });
+
+  it.skipIf(!runs)("keeps pre-press to its own app's customers: another app's design, version and file are not found to it", async () => {
+    await h.rows(`INSERT INTO customiser_designs (id, app, code, ${dialect === 'mysql' ? '`values`' : '"values"'}, created_at, updated_at) VALUES (2, 'maker', 'AAAABBBBCCCCDDD2', '{"format":1,"parts":{"words":{"text":"Maker Secret"}}}', '${AT}', '${AT}')`);
+    await h.rows(`INSERT INTO customiser_design_versions (id, app, design_id, version, made_at) VALUES (50, 'maker', 2, 1, '${AT}')`);
+    await h.rows(`INSERT INTO customiser_version_files (id, app, version_id, kind, name, position, made_at) VALUES (60, 'maker', 50, 'machine', 'design-2-v1.svg', 1, '${AT}')`);
+    const design = await data('prepress', 'GET', `${id['designs']!}/2`);
+    expect(design.statusCode, design.body).toBe(404);
+    const listed = await data('prepress', 'GET', id['designs']!);
+    expect(listed.statusCode, listed.body).toBe(200);
+    expect(listed.body).not.toContain('Maker Secret');
+    expect((await data('prepress', 'GET', `${id['design_versions']!}/50`)).statusCode).toBe(404);
+    expect((await data('prepress', 'PATCH', `${id['design_versions']!}/50`, { values: { proof_file: null } })).statusCode).toBe(404);
+    expect((await data('prepress', 'DELETE', `${id['version_files']!}/60`)).statusCode).toBe(404);
+    expect(await h.rows('SELECT id FROM customiser_version_files WHERE id = 60')).toHaveLength(1);
+    // A version tagged with the other app: refused.
+    expect((await data('prepress', 'POST', id['design_versions']!, { values: { app: 'maker', design_id: 1, version: 9 } })).statusCode).toBe(403);
+    // Its own customer's design still reads in clear.
+    expect((await data('prepress', 'GET', `${id['designs']!}/1`)).body).toContain('Marta Kovac');
   });
 
   it.skipIf(!runs)('the counter, holding only the designs’ read, may make nothing', async () => {

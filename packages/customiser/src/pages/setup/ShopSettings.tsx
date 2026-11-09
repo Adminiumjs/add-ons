@@ -1,13 +1,14 @@
 /**
  * THE SHOP'S CUSTOMISER SETTINGS: what every base and design starts from.
  *
- * One row for the install (`settings`): the unit sizes are shown in, a new
+ * One row for the install (`settings`), whichever shop apps it runs: a new
  * page's bleed and safe line, where light becomes dark when a shopper makes
  * their logo one colour (the line the shopper's editor starts on, and the
  * proof is made at), the thinnest line the machine keeps, and how sharp a
  * picture must be. Each figure is saved when its field is left, as the
  * set-up's other figures are. A role that may read them and not change them
- * sees them, and is told so.
+ * sees them, and is told so. The unit sizes are shown in is not offered:
+ * nothing reads it yet.
  *
  * Adminium's own settings screen for an add-on draws the settings a manifest
  * declares, and the Customiser keeps its settings in a table of its own, so
@@ -15,11 +16,11 @@
  */
 import type { ReactNode } from 'react';
 
-import { asDataError, Dialog, DialogBody, DialogHeader, Select, Stack, useAccess, useWrite, type AddOnTranslate, type DataError, type DataRow } from '../shared/host.ts';
+import { asDataError, Dialog, DialogBody, DialogHeader, Stack, useAccess, useWrite, type AddOnTranslate, type DataError, type DataRow } from '../shared/host.ts';
 import { refusal } from '../shared/refusal.ts';
 import { useToast } from '../shared/toast.ts';
 import { SavedNumber } from './BaseStep.tsx';
-import { num, text } from './facts.ts';
+import { num } from './facts.ts';
 
 export function ShopSettings({ t, open, onClose, settings, error = null }: { t: AddOnTranslate; open: boolean; onClose: () => void; settings: DataRow | null; error?: DataError | null }): ReactNode {
   const access = useAccess();
@@ -45,18 +46,9 @@ export function ShopSettings({ t, open, onClose, settings, error = null }: { t: 
           <p className="m-0 text-[12.5px] text-fg-muted">{t('setup.settings.none', 'The Customiser’s settings are not on this install yet. Install it again to add them.')}</p>
         ) : (
           <Stack gap="md">
+            <p className="m-0 text-[12.5px] text-fg-muted">{t('setup.settings.shared', 'These settings cover every shop app on this Adminium.')}</p>
             {may ? null : <p className="m-0 text-[12.5px] text-fg-muted">{t('setup.settings.readOnly', 'Your role may read these settings, not change them.')}</p>}
             {figure('one_colour_threshold', t('setup.settings.threshold', 'One-colour line'), '%', 0, t('setup.settings.thresholdHint', 'Where light becomes dark when a shopper makes their logo one colour. Their editor starts here, and a proof is made at the line they leave it on.'))}
-            <Select
-              label={t('setup.settings.unit', 'Sizes shown in')}
-              value={text(settings['length_unit']) || 'mm'}
-              disabled={!may}
-              onChange={(event) => save({ length_unit: event.target.value })}
-              options={[
-                { value: 'mm', label: t('setup.settings.mm', 'Millimetres') },
-                { value: 'in', label: t('setup.settings.in', 'Inches') },
-              ]}
-            />
             {figure('default_bleed_mm', t('setup.settings.bleed', 'Bleed on a new page'), 'mm', 2)}
             {figure('default_safe_mm', t('setup.settings.safe', 'Safe line on a new page'), 'mm', 2)}
             {figure('smallest_line_mm', t('setup.settings.line', 'Thinnest line the machine keeps'), 'mm', 2)}

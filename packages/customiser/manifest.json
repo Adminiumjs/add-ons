@@ -211,7 +211,6 @@
             "update"
           ],
           "writable": [
-            "length_unit",
             "default_bleed_mm",
             "default_safe_mm",
             "one_colour_threshold",
@@ -2387,7 +2386,6 @@
             "style",
             "weights",
             "licence",
-            "starter",
             "smallest_mm",
             "file",
             "active"

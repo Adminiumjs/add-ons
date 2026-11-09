@@ -18,7 +18,7 @@ import manifest from '../manifest.json' with { type: 'json' };
 import { TARGET, written } from '../scripts/manifest.mjs';
 import { readFileSync } from 'node:fs';
 import { DESIGN_BY_CODE, DESIGN_CHANGEABLE, DESIGN_OPENED, DESIGN_UPLOADS, DESIGN_WRITABLE, LINK_KEY } from './manifest/entries.ts';
-import { ownSetUp, SET_UP_TABLES } from './manifest/app-grants.ts';
+import { ownDesigns, ownPanel, ownSettings, ownSetUp, SET_UP_TABLES } from './manifest/app-grants.ts';
 import { CUSTOMER_TABLES, SHOP_TABLES } from './manifest/build.ts';
 import { DESCRIPTION, LOCALES } from './manifest/words.ts';
 import { OUTPUT } from '../vite.config.ts';
@@ -428,12 +428,13 @@ describe('what an app’s role may hold (appGrants)', () => {
   it('lets an app’s role do to the shop’s set-up what the set-up page does: add, change and remove, never a base removed', () => {
     for (const table of SHOP_TABLES) {
       const columns = all.find((one) => one.ref === table)!.columns.map((column) => column.ref).filter((column) => column !== 'id');
-      expect(grants(table), table).toEqual({ actions: table === 'bases' ? ['read', 'create', 'update'] : ['read', 'create', 'update', 'delete'], creatable: columns, writable: columns.filter((column) => column !== 'app') });
+      // The app a row belongs to is given once, never changed; whether a font is a starter is the install's, never an app's to change.
+      expect(grants(table), table).toEqual({ actions: table === 'bases' ? ['read', 'create', 'update'] : ['read', 'create', 'update', 'delete'], creatable: columns, writable: columns.filter((column) => column !== 'app' && !(table === 'fonts' && column === 'starter')) });
     }
   });
 
-  it('lets it read the settings the set-up page starts from, and change each of them from its Shop settings', () => {
-    const columns = all.find((one) => one.ref === 'settings')!.columns.map((column) => column.ref).filter((column) => column !== 'id');
+  it('lets it read the settings the set-up page starts from, and change from its Shop settings each one something reads', () => {
+    const columns = all.find((one) => one.ref === 'settings')!.columns.map((column) => column.ref).filter((column) => column !== 'id' && column !== 'length_unit');
     expect(grants('settings')).toEqual({ actions: ['read', 'update'], writable: columns });
   });
 
@@ -443,16 +444,16 @@ describe('what an app’s role may hold (appGrants)', () => {
     });
 
     it.each(['maker', 'printing'])('is a grant an app may write and the Customiser lets it hold whole, for %s', (app) => {
-      for (const table of SET_UP_TABLES) {
-        const entry = ownSetUp(app, table);
+      for (const entry of [...SET_UP_TABLES.map((table) => ownSetUp(app, table)), ...ownPanel(app), ownDesigns(app, false), ownSettings()] as { table: string; actions: string[]; limit?: { rows?: unknown; creatableValues?: Record<string, unknown> } }[]) {
+        const table = entry.table;
         expect(roleAddOnTableSchema.safeParse(entry).success, table).toBe(true);
         const hold = addOnRoleTableHold(roleAddOnTableSchema.parse(entry), manifest as unknown as Parameters<typeof addOnRoleTableHold>[1]);
         // Nothing of it is cut at install, and its rows go with it: the grant is written as asked.
         expect(hold.skipped, table).toBeUndefined();
         expect([...hold.actions].sort(), table).toEqual([...entry.actions].sort());
         expect(hold.narrowed, table).toBeUndefined();
-        expect(hold.limit?.rows, table).toEqual(entry.limit.rows);
-        expect(hold.limit?.creatableValues, table).toEqual({ app: [app] });
+        expect(hold.limit?.rows, table).toEqual(entry.limit?.rows);
+        expect(hold.limit?.creatableValues, table).toEqual(entry.limit?.creatableValues);
       }
     });
 
@@ -465,6 +466,20 @@ describe('what an app’s role may hold (appGrants)', () => {
       const starter = { reach: 'all', while: { column: 'starter', in: [true] } };
       expect(fonts.limit.rows).toEqual({ read: [mine, starter], update: [mine, starter], delete: mine });
       expect(fonts.limit.writable).not.toContain('app');
+      // A font an app adds is never a starter, and no app makes one a starter or takes it from the set.
+      expect(fonts.limit.creatableValues).toEqual({ app: ['printing'], starter: [false] });
+      expect(fonts.limit.writable).not.toContain('starter');
+    });
+
+    it('keeps a proof-maker to its own app’s customers: their designs, versions and files', () => {
+      const panel = ownPanel('maker');
+      const own = { reach: 'all', while: { column: 'app', in: ['maker'] } };
+      const of = (table: string) => panel.find((entry) => entry.table === table) as { actions: string[]; limit?: { rows?: unknown; creatableValues?: unknown } };
+      expect(of('designs')).toEqual({ addOn: 'customiser', table: 'designs', actions: ['read', 'read_pii'], limit: { rows: { read: own } } });
+      expect(of('design_versions').limit).toMatchObject({ creatableValues: { app: ['maker'] }, writable: ['proof_file'], rows: { read: own, update: own } });
+      expect(of('version_files').limit).toMatchObject({ creatableValues: { app: ['maker'] }, writable: ['file'], rows: { read: own, update: own, delete: own } });
+      expect(of('settings').actions).toEqual(['read']);
+      expect(panel.map((entry) => entry.table).sort()).toEqual(['designs', 'design_versions', 'version_files', 'settings', ...SET_UP_TABLES].sort());
     });
   });
 

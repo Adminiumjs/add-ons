@@ -88,6 +88,32 @@ describe('the set-up page', () => {
   });
 });
 
+describe('a new base, for the app the reader may make one for', () => {
+  it('as Print’s owner, who reads none of Maker’s tables: makes it for the print shop, with no choice to make', async () => {
+    world.closed.add('maker:options');
+    at(IDS.cards);
+    render(<Customiser />);
+    fireEvent.click(screen.getByRole('button', { name: 'New base' }));
+    const dialog = screen.getByRole('dialog');
+    await settle();
+    expect(within(dialog).queryByLabelText('For')).toBeNull();
+    fireEvent.change(within(dialog).getByLabelText('Name'), { target: { value: 'Letterpress cards' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Make it' }));
+    await settle();
+    expect(writes('create', 'bases')[0]?.values).toMatchObject({ name: 'Letterpress cards', app: 'printing' });
+  });
+
+  it('offers both shops to a reader of both, the maker shop first', async () => {
+    at(IDS.cards);
+    render(<Customiser />);
+    fireEvent.click(screen.getByRole('button', { name: 'New base' }));
+    await settle();
+    const choice = within(screen.getByRole('dialog')).getByLabelText('For') as HTMLSelectElement;
+    expect([...choice.options].map((option) => option.value)).toEqual(['maker', 'printing']);
+    expect(choice.value).toBe('maker');
+  });
+});
+
 describe('step 1, a flat piece', () => {
   it('shows its outline, material and thickness, and the piece drawn flat at its size', () => {
     at(IDS.coasters);
@@ -184,8 +210,9 @@ describe('step 1, a flat page and the kinds that come with 3D', () => {
     fireEvent.blur(line);
     expect(writes('update', 'settings').at(-1)).toMatchObject({ key: '1', values: { one_colour_threshold: 62 } });
     expect(row('settings', 1)['one_colour_threshold']).toBe(62);
-    fireEvent.change(screen.getByLabelText('Sizes shown in'), { target: { value: 'in' } });
-    expect(writes('update', 'settings').at(-1)).toMatchObject({ values: { length_unit: 'in' } });
+    // One row for every shop app on the install, and said so; no unit to choose, which nothing reads yet.
+    expect(screen.getByText('These settings cover every shop app on this Adminium.')).toBeTruthy();
+    expect(screen.queryByLabelText('Sizes shown in')).toBeNull();
     const dpi = screen.getByLabelText('Sharpness a picture needs at its printed size');
     fireEvent.change(dpi, { target: { value: '200' } });
     fireEvent.blur(dpi);

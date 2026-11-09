@@ -98,8 +98,9 @@ The Customiser says how far an app's role may go on each table
 | Table | The most an app's role holds |
 |---|---|
 | `bases` | read; create (every column); update (every column but `app`) |
-| `base_pieces`, `base_areas`, `ready_designs`, `ready_parts`, `fonts`, `palettes`, `palette_colours`, `features` | read; create (every column); update (every column but `app`); delete |
-| `settings` | read; update (every column) |
+| `base_pieces`, `base_areas`, `ready_designs`, `ready_parts`, `palettes`, `palette_colours`, `features` | read; create (every column); update (every column but `app`); delete |
+| `fonts` | read; create (every column); update (every column but `app` and `starter`); delete |
+| `settings` | read; update (every column but `length_unit`, which nothing reads yet) |
 | `designs` | read, read_pii |
 | `design_versions` | read, read_pii; create (`app`, `design_id`, `version`, `values`); update (`proof_file`) |
 | `version_files` | read; create (`app`, `version_id`, `kind`, `name`, `about`, `layers`, `left_out`, `position`); update (`file`); delete |
@@ -110,12 +111,13 @@ an app gives the set-up changes there what the Customiser's own designer
 does. The panels only read them. The settings are changed from the set-up
 page's **Shop settings** (add-ons 1.0.23): the one-colour line a shopper's
 editor starts on, a new page's bleed and safe line, the thinnest line and the
-sharpness a picture needs. They are the install's, one row every app on it
-shares.
+sharpness a picture needs. They are the install's: one row that covers every
+shop app on it, and the dialog says so.
 
-`appGrants` says how far a role may go on a table, never on which rows. Each
-row of the shop's tables names the app it belongs to (`app`); an app keeps
-its roles to its own rows itself (see "The set-up page").
+`appGrants` says how far a role may go on a table, never on which rows. Every
+row but the settings names the app it belongs to (`app`), a customer's design
+and its versions and files among them; an app keeps its roles to its own
+rows itself, with a row limit on `app` (the examples below).
 
 An entry asking for more is cut to this, and the install check says what was
 cut. `read_pii` is what shows the customer's words (`values`), logo and photo:
@@ -146,13 +148,27 @@ not set up.
 
 A role that makes the proof and the files:
 
+For an app whose key is `maker` (Print Shop writes `printing` wherever `maker`
+stands), `OWN` standing for `{ "reach": "all", "while": { "column": "app", "in": ["maker"] } }`:
+
 ```json
 {
   "permissions": ["table:@order_lines:read", "page:@customiser-line:view", "page:@customiser:view"],
   "tables": [
-    { "addOn": "customiser", "table": "designs", "actions": ["read", "read_pii"] },
-    { "addOn": "customiser", "table": "design_versions", "actions": ["read", "read_pii", "create", "update"] },
-    { "addOn": "customiser", "table": "version_files", "actions": ["read", "create", "update", "delete"] },
+    { "addOn": "customiser", "table": "designs", "actions": ["read", "read_pii"],
+      "limit": { "rows": { "read": OWN } } },
+    { "addOn": "customiser", "table": "design_versions", "actions": ["read", "read_pii", "create", "update"],
+      "limit": {
+        "creatable": ["app", "design_id", "version", "values"], "creatableValues": { "app": ["maker"] },
+        "writable": ["proof_file"],
+        "rows": { "read": OWN, "update": OWN }
+      } },
+    { "addOn": "customiser", "table": "version_files", "actions": ["read", "create", "update", "delete"],
+      "limit": {
+        "creatable": ["app", "version_id", "kind", "name", "about", "layers", "left_out", "position"], "creatableValues": { "app": ["maker"] },
+        "writable": ["file"],
+        "rows": { "read": OWN, "update": OWN, "delete": OWN }
+      } },
     { "addOn": "customiser", "table": "settings", "actions": ["read"] },
     { "addOn": "customiser", "table": "bases", "actions": ["read"] },
     { "addOn": "customiser", "table": "base_pieces", "actions": ["read"] },
@@ -167,9 +183,16 @@ A role that makes the proof and the files:
 }
 ```
 
+`ownPanel(app)` in `src/manifest/app-grants.ts` writes these entries out.
+**The row limits are what keep one app's customers from the other's staff**:
+without them, Print Shop's pre-press reads a Maker Shop customer's words and
+logo on an install that runs both. With them, another app's design, version
+or file is "not found" to the role. The set-up tables hold no personal data
+and are read whole.
+
 A role that only looks at the panel takes the same entries with `["read",
-"read_pii"]` on `designs` and `design_versions`, `["read"]` on the rest, and no
-`page:@customiser:view`. `table:@order_lines:read` stands for the app's own
+"read_pii"]` on `designs` and `design_versions` (each with `rows: { read: OWN }`),
+`["read"]` on the rest, and no `page:@customiser:view`. `table:@order_lines:read` stands for the app's own
 table the panel is on.
 
 **`settings: read` on a role that makes a piece's proof.** A logo the shopper
@@ -199,8 +222,9 @@ Shop writes `printing` wherever `maker` stands):
   "permissions": ["page:@customiser:view"],
   "tables": [
     { "addOn": "customiser", "table": "settings", "actions": ["read", "update"],
-      "limit": { "writable": ["length_unit", "default_bleed_mm", "default_safe_mm", "one_colour_threshold", "smallest_line_mm", "min_dpi"] } },
-    { "addOn": "customiser", "table": "designs", "actions": ["read"] },
+      "limit": { "writable": ["default_bleed_mm", "default_safe_mm", "one_colour_threshold", "smallest_line_mm", "min_dpi"] } },
+    { "addOn": "customiser", "table": "designs", "actions": ["read"],
+      "limit": { "rows": { "read": { "reach": "all", "while": { "column": "app", "in": ["maker"] } } } } },
     { "addOn": "customiser", "table": "bases", "actions": ["read", "create", "update"],
       "limit": {
         "creatable": ["app", "name", "kind", "width_mm", "…every column of the table"],
@@ -225,8 +249,8 @@ Shop writes `printing` wherever `maker` stands):
     { "addOn": "customiser", "table": "fonts", "actions": ["read", "create", "update", "delete"],
       "limit": {
         "creatable": ["app", "…every column of the table"],
-        "creatableValues": { "app": ["maker"] },
-        "writable": ["…every column but app"],
+        "creatableValues": { "app": ["maker"], "starter": [false] },
+        "writable": ["…every column but app and starter"],
         "rows": {
           "read": [{ "reach": "all", "while": { "column": "app", "in": ["maker"] } }, { "reach": "all", "while": { "column": "starter", "in": [true] } }],
           "update": [{ "reach": "all", "while": { "column": "app", "in": ["maker"] } }, { "reach": "all", "while": { "column": "starter", "in": [true] } }],
@@ -241,18 +265,26 @@ Shop writes `printing` wherever `maker` stands):
 and `features` take the entry `base_pieces` takes. Each table's `creatable`
 and `writable` are its columns in the table above ("What an app's role
 needs"), listed in full: `appGrants` in `manifest.json` holds them, and
-`ownSetUp(app, table)` in `src/manifest/app-grants.ts` writes each entry out.
+`ownSetUp(app, table)`, `ownSettings()` and `ownDesigns(app, false)` in
+`src/manifest/app-grants.ts` write each entry out.
 
 - **Its own rows.** A new row is tagged with the app's own key, and the role
   reads, changes and removes only rows tagged with it. With Maker Shop and
   Print Shop on one install, neither owner sees or changes the other's
   bases, designs, fonts or finishes, nor makes a row for the other.
 - **The starter fonts.** They are the install's and no app's (their `app`
-  is empty, which a value limit cannot name), so the fonts' reach adds
-  `starter`: every owner reads them, and its set-up adds their files, but
-  none removes one.
+  is empty, which a value limit cannot name), so the fonts' read and change
+  reach adds `starter`: every owner reads them, and its set-up adds their
+  files, but none removes one. `starter` itself is no app's to change, and a
+  font an app adds is never a starter (`creatableValues`), so no owner makes
+  its own font reachable by the other, nor takes a starter out of reach.
+  Adminium's limits give one `writable` list a grant, not one a reach: on a
+  starter font an owner may change what it may change on its own fonts
+  (its name, its file, whether it is offered), never `app` or `starter`.
 - **The settings** are one row for the whole install: either owner keeps the
-  one-colour line.
+  one-colour line, for every shop app on it.
+- **A customer's design** is read only of the app's own customers (`designs`
+  with `rows.read`), as on the panel.
 
 The read of `designs` is what lets the page remove a ready-made design: it
 first asks whether a customer's design came from it. That is eleven of a
