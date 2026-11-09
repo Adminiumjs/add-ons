@@ -26,7 +26,7 @@ import { PrintedFields, PrintedPreview } from './PrintedBase.tsx';
 import { kindName } from './NewBase.tsx';
 
 /** A number field that saves its column when it is left with a new value. */
-export function SavedNumber({ label, value, unit, onSave, decimals = 1 }: { label: string; value: number | null; unit?: string; onSave: (value: number) => void; decimals?: number }): ReactNode {
+export function SavedNumber<Clear extends boolean = false>({ label, value, unit, onSave, decimals = 1, clearable }: { label: string; value: number | null; unit?: string; onSave: (value: Clear extends true ? number | null : number) => void; decimals?: number; clearable?: Clear }): ReactNode {
   const shown = value === null ? '' : String(value);
   const [draft, setDraft] = useState<string | null>(null);
   return (
@@ -37,7 +37,9 @@ export function SavedNumber({ label, value, unit, onSave, decimals = 1 }: { labe
       {...(unit === undefined ? {} : { unit })}
       onChange={setDraft}
       onBlur={() => {
-        if (draft !== null && draft !== shown && draft.trim() !== '' && Number.isFinite(Number(draft))) onSave(Number(draft));
+        // A field that may be empty is emptied by clearing it: the column goes back to none.
+        if (draft !== null && clearable === true && draft.trim() === '' && shown !== '') (onSave as (value: number | null) => void)(null);
+        else if (draft !== null && draft !== shown && draft.trim() !== '' && Number.isFinite(Number(draft))) onSave(Number(draft));
         setDraft(null);
       }}
     />
@@ -95,7 +97,7 @@ function PageFields({ t, base, settings, save }: { t: AddOnTranslate; base: Data
           <SavedNumber label={t('setup.page.height', 'Trim height')} unit="mm" value={guides.height} onSave={(value) => save({ height_mm: value })} />
           <SavedNumber label={t('setup.page.bleed', 'Bleed')} unit="mm" value={guides.bleed} onSave={(value) => save({ bleed_mm: value })} />
           <SavedNumber label={t('setup.page.safe', 'Safe line')} unit="mm" value={guides.safe} onSave={(value) => save({ safe_mm: value })} />
-          <SavedNumber label={t('setup.page.corner', 'Rounded corners')} unit="mm" value={guides.corner} onSave={(value) => save({ corner_mm: value })} />
+          <SavedNumber label={t('setup.page.corner', 'Rounded corners')} unit="mm" value={num(base['corner_mm'])} clearable onSave={(value) => save({ corner_mm: value })} />
         </Grid>
         <SegmentedControl
           aria-label={t('setup.page.sides', 'Sides')}
@@ -216,7 +218,7 @@ function Material({ t, base, bases, save }: { t: AddOnTranslate; base: DataRow; 
           <SavedNumber label={t('setup.material.thickness', 'Thickness')} unit="mm" value={thickness} onSave={(value) => save({ thickness_mm: value })} />
           <SavedNumber label={t('setup.piece.width', 'Width')} unit="mm" value={num(base['width_mm'])} onSave={(value) => save({ width_mm: value })} />
           <SavedNumber label={t('setup.piece.height', 'Height')} unit="mm" value={num(base['height_mm'])} onSave={(value) => save({ height_mm: value })} />
-          <SavedNumber label={t('setup.page.corner', 'Rounded corners')} unit="mm" value={num(base['corner_mm'])} onSave={(value) => save({ corner_mm: value })} />
+          <SavedNumber label={t('setup.page.corner', 'Rounded corners')} unit="mm" value={num(base['corner_mm'])} clearable onSave={(value) => save({ corner_mm: value })} />
         </Grid>
       </Stack>
     </Card>

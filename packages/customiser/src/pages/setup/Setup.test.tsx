@@ -174,6 +174,29 @@ describe('step 1, a flat page and the kinds that come with 3D', () => {
     expect(writes('update', 'bases').at(-1)).toMatchObject({ values: { sides: 1 } });
   });
 
+  it('clears a base’s rounded corners back to none when the field is emptied, and keeps a figure field that may not be empty', () => {
+    for (const base of [IDS.cards, IDS.coasters]) {
+      seed('bases', world.tables['bases']!.map((one) => (one['id'] === base ? { ...one, corner_mm: 2 } : one)));
+      at(base);
+      render(<Customiser />);
+      const corner = screen.getByLabelText('Rounded corners') as HTMLInputElement;
+      expect(corner.value).toBe('2');
+      fireEvent.change(corner, { target: { value: '' } });
+      fireEvent.blur(corner);
+      expect(writes('update', 'bases').at(-1), String(base)).toMatchObject({ key: String(base), values: { corner_mm: null } });
+      expect(row('bases', base)['corner_mm']).toBeNull();
+      expect(corner.value).toBe('');
+      cleanup();
+    }
+    world.calls.length = 0;
+    at(IDS.cards);
+    render(<Customiser />);
+    const width = screen.getByLabelText('Trim width');
+    fireEvent.change(width, { target: { value: '' } });
+    fireEvent.blur(width);
+    expect(writes('update', 'bases')).toEqual([]);
+  });
+
   it('sets a kit up from its pieces and its model, not an outline (the kit’s own tests: Kit.test.tsx)', () => {
     at(IDS.nook);
     render(<Customiser />);
