@@ -16,7 +16,7 @@ import { forgetWebGL, hasWebGL } from './load.ts';
 import { ModelView } from './PieceView.tsx';
 import { bodyGeometry, buildPiece, pieceSolids, shapesOf, topGeometry, type PieceModel } from './piece.ts';
 import { inside, roundedRing, signedArea, solidsOf } from './rings.ts';
-import { makeStage, Stage3d, type RendererLike } from './stage3d.ts';
+import { makeStage, releaseStills, Stage3d, still, type RendererLike } from './stage3d.ts';
 import { apply, Gestures, keyCommand, startView, START, turned, wheelFactor, zoomed, zoomLabel, ZOOM_IN, ZOOM_OUT, type View } from './view.ts';
 
 afterEach(cleanup);
@@ -206,6 +206,43 @@ describe('the stage', () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
     expect(failed).toBe(true);
+  });
+});
+
+describe('the stills a gallery of cards is drawn with', () => {
+  it('draws each card’s own design, one after another on the one stage, never the last one on every card', async () => {
+    // A canvas that reads back the piece on the stage when it is asked: here, by its thickness.
+    const canvas = document.createElement('canvas');
+    let scene: Stage3d['scene'] | null = null;
+    canvas.toBlob = (done: BlobCallback) => {
+      // The piece's own depth, as its meshes are built (before the stage turns it).
+      let depth = 0;
+      scene!.traverse((one) => {
+        if (!(one instanceof Mesh)) return;
+        depth = Math.max(depth, sizeOf(one.geometry as BufferGeometry).z);
+      });
+      setTimeout(() => done(new Blob([String(Math.round(depth))])), 0);
+    };
+    const renderer: RendererLike = { domElement: canvas, setPixelRatio: () => {}, setSize: () => {}, render: (drawn) => (scene = drawn), dispose: () => {} };
+    const read: string[] = [];
+    const created = URL.createObjectURL;
+    URL.createObjectURL = ((blob: Blob) => {
+      read.push('pending');
+      const at = read.length - 1;
+      void blob.text().then((text) => (read[at] = text));
+      return `blob:still/${String(at)}`;
+    }) as typeof URL.createObjectURL;
+    try {
+      releaseStills();
+      const view = startView('piece');
+      const cards = await Promise.all([3, 6, 9].map((thickness) => still(model({ outline: null, thickness }), view, 200, 150, () => renderer)));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(cards).toEqual(['blob:still/0', 'blob:still/1', 'blob:still/2']);
+      expect(read).toEqual(['3', '6', '9']);
+    } finally {
+      URL.createObjectURL = created;
+      releaseStills();
+    }
   });
 });
 

@@ -321,13 +321,23 @@ export function makeStage(make: MakeRenderer = webglRenderer, canvas?: HTMLCanva
 }
 
 let stillStage: Stage3d | null = null;
+/** The still being drawn now: the next waits for it, since every still is drawn on the one stage. */
+let drawing: Promise<unknown> = Promise.resolve();
 
 /**
  * A still of a piece as a picture (a `blob:` address this page holds), drawn
  * by one stage kept for every still so a gallery of cards uses one graphics
- * context; none where it cannot be drawn.
+ * context; none where it cannot be drawn. The stills are drawn one after
+ * another, each read back before the next model is put on the stage: drawn
+ * together, every card of a gallery showed the last design.
  */
-export async function still(model: StageModel, view: View, width: number, height: number, make: MakeRenderer = stillRenderer): Promise<string | null> {
+export function still(model: StageModel, view: View, width: number, height: number, make: MakeRenderer = stillRenderer): Promise<string | null> {
+  const next = drawing.then(() => drawStill(model, view, width, height, make));
+  drawing = next;
+  return next;
+}
+
+async function drawStill(model: StageModel, view: View, width: number, height: number, make: MakeRenderer): Promise<string | null> {
   try {
     stillStage ??= new Stage3d(make());
     stillStage.resize(width, height);
