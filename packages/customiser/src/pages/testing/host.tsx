@@ -65,6 +65,8 @@ export const world = {
   /** Columns a reader may not read, by table; a table listed under `closed` may not be read at all. */
   unreadable: {} as Record<string, string[]>,
   closed: new Set<string>(),
+  /** Tables whose reads have not come back yet: a list or a row of one is still loading, with nothing in it. */
+  pending: new Set<string>(),
   /** Personal columns the reader may not see, by table: read back empty and named in the row's `_masked`, as Adminium masks them. */
   masked: {} as Record<string, string[]>,
   /** What the reader may not do: `create:items`, `update:counts`, `move:receipts:posting`. */
@@ -124,6 +126,7 @@ export function resetWorld(): void {
   world.tables = {};
   world.unreadable = {};
   world.closed = new Set();
+  world.pending = new Set();
   world.masked = {};
   world.cannot = new Set();
   world.has = {};
@@ -148,6 +151,12 @@ export function resetWorld(): void {
   world.upload = null;
   world.uploads = true;
   world.currency = null;
+  changed();
+}
+
+/** Tables whose reads come back now (and every list that reads them is told). */
+export function loaded(...tables: readonly string[]): void {
+  for (const table of tables) world.pending.delete(table);
   changed();
 }
 
@@ -228,6 +237,7 @@ function insert(table: string, values: Values): Row {
 function useRecords(table: string, options: ListOptions = {}) {
   useWorld();
   if (options.enabled === false) return { rows: [], hasMore: false, loading: false, error: null, refetch: () => undefined };
+  if (world.pending.has(table)) return { rows: [], hasMore: false, loading: true, error: null, refetch: () => undefined };
   try {
     return { ...listed(table, options), loading: false, error: null, refetch: () => undefined };
   } catch (caught) {
@@ -238,6 +248,7 @@ function useRecords(table: string, options: ListOptions = {}) {
 function useRecord(table: string, key: string | number | null) {
   useWorld();
   if (key !== null && world.closed.has(table)) return { row: null, loading: false, error: { code: 'TABLE_FORBIDDEN', message: 'You may not read this table.' }, refetch: () => undefined };
+  if (key !== null && world.pending.has(table)) return { row: null, loading: true, error: null, refetch: () => undefined };
   const row = key === null ? undefined : find(table, key);
   return { row: row === undefined ? null : shown(table, row), loading: false, error: null, refetch: () => undefined };
 }

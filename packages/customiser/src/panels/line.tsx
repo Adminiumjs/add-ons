@@ -25,7 +25,7 @@ import { SharedContext, sharedFor } from '../browser/ui/context.tsx';
 import { Drawing } from '../browser/ui/Drawing.tsx';
 import { headOf, readPicture, sniff, type Lightness } from '../browser/files.ts';
 import type { Upload } from '../browser/ui/pictures.ts';
-import { sidesMade } from '../draw/flat.ts';
+import { sidesMade, type FlatSheet } from '../draw/flat.ts';
 import { layoutsOf } from '../rules/design.ts';
 import { FontMissing } from '../draw/pdf.ts';
 import { Alert, asDataError, Button, Card, EmptyState, Figure, KeyValueList, lucideByName, Stack, StatusPill, useAccess, useLocaleTag, useRecord, useRecords, useUploader, useWrite, type AddOnTranslate, type DataRow, type DataValue } from '../pages/shared/host.ts';
@@ -144,11 +144,13 @@ function makeWords(t: AddOnTranslate, design: string, version: number, spec: str
  * Each customer picture's lightness, read as the shopper's editor reads it
  * (`readPicture`): what the one-colour view on this panel and the proof are
  * made from, so both show what the shopper saw. A picture that cannot be read
- * is left out, and drawn as uploaded, as the editor draws it.
+ * is left out, and drawn as uploaded, as the editor draws it. `loaded` says
+ * the pictures named now have all been read (or found unreadable): until
+ * then a one-colour logo would be drawn in full colour.
  */
-function usePictureLights(addresses: Readonly<Record<string, string>>): Readonly<Record<string, Lightness>> {
-  const [lights, setLights] = useState<Readonly<Record<string, Lightness>>>({});
+function usePictureLights(addresses: Readonly<Record<string, string>>): { lights: Readonly<Record<string, Lightness>>; loaded: boolean } {
   const key = JSON.stringify(addresses);
+  const [read, setRead] = useState<{ key: string | null; lights: Readonly<Record<string, Lightness>> }>({ key: null, lights: {} });
   useEffect(() => {
     let live = true;
     void (async () => {
@@ -160,20 +162,44 @@ function usePictureLights(addresses: Readonly<Record<string, string>>): Readonly
           const blob = await answer.blob();
           const kind = sniff(await headOf(blob));
           if (kind !== 'png' && kind !== 'jpeg' && kind !== 'svg') continue;
-          const read = await readPicture(blob, kind);
-          if (read.light !== undefined) out[column] = read.light;
+          const picture = await readPicture(blob, kind);
+          if (picture.light !== undefined) out[column] = picture.light;
         } catch {
           // Not read: drawn as uploaded.
         }
       }
-      if (live) setLights(out);
+      if (live) setRead({ key, lights: out });
     })();
     return () => {
       live = false;
     };
     // The addresses, by value: the row is read again on every draw.
   }, [key]);
-  return lights;
+  return { lights: read.key === key ? read.lights : {}, loaded: read.key === key };
+}
+
+/**
+ * Whether a one-colour picture of the design is drawn from the shop's own
+ * line: a picture set to one colour that the shopper left at the line it
+ * started on (one they moved keeps their own). A page is printed in colour,
+ * so it never has one.
+ */
+/**
+ * Whether the sheets leave out everything the shopper chose: words or a
+ * picture chosen, and not one of them drawn. A proof of that is a blank
+ * piece, never what the customer is to approve.
+ */
+export function missesEveryChoice(values: { parts: Readonly<Record<string, unknown>> }, sheets: readonly FlatSheet[]): boolean {
+  const chose = Object.values(values.parts).some((value) => {
+    if (typeof value !== 'object' || value === null) return false;
+    const chosen = value as Record<string, unknown>;
+    return (typeof chosen['text'] === 'string' && chosen['text'].trim() !== '') || (typeof chosen['file'] === 'string' && chosen['file'] !== '');
+  });
+  return chose && !sheets.some((sheet) => sheet.items.some((item) => item.kind === 'text' || item.kind === 'picture'));
+}
+
+export function startsOnShopLine(sheets: readonly FlatSheet[]): boolean {
+  return sheets.some((sheet) => sheet.items.some((item) => item.kind === 'picture' && item.oneColour && item.threshold === undefined));
 }
 
 export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): ReactNode {
@@ -194,8 +220,9 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
   const colours = useRecords('palette_colours', { ...all, enabled: row !== null });
   const fonts = useRecords('fonts', { ...all, enabled: row !== null });
   const features = useRecords('features', { ...all, enabled: row !== null });
-  // The shop's starting line for a one-colour logo the customer left as it was; a role that may not read the settings is given the column's own default.
-  const settings = useRecords('settings', { pageSize: 1, enabled: row !== null && access.ready && access.canRead('settings') });
+  // The shop's starting line for a one-colour logo the customer left as it was. A role that may not read the settings is told the proof uses the column's own default.
+  const settingsRead = access.ready && access.canRead('settings');
+  const settings = useRecords('settings', { pageSize: 1, enabled: row !== null && settingsRead });
   const versions = useRecords('design_versions', { filter: [{ column: 'design_id', op: 'eq', value: linked }], sort: [{ column: 'version', direction: 'desc' }], pageSize: 50, enabled: linked !== null });
   const latest = versions.rows[0];
   const files = useRecords('version_files', { ...by('version_id', latest === undefined ? null : (latest['id'] as string | number), latest !== undefined), pageSize: 199 });
@@ -209,7 +236,8 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
     const address = row === null ? null : fileAddress(row[column]);
     if (address !== null) addresses[column] = address;
   }
-  const lights = usePictureLights(addresses);
+  const { lights, loaded: lightsRead } = usePictureLights(addresses);
+  const settingsUnread = access.ready && (!settingsRead || isForbidden(settings.error?.code));
   const startThreshold = Number(settings.rows[0]?.['one_colour_threshold'] ?? 50) || 50;
   const [problem, setProblem] = useState<string | null>(null);
 
@@ -223,6 +251,22 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
     return <EmptyState title={t('panel.rights.partTitle', 'Part of this design is hidden from you')} body={`${unreadLine(t, unreadTables(access, LINE_READS).length > 0 ? unreadTables(access, LINE_READS) : ['bases'])} ${rolesHint(t)}`} />;
   }
   if (row === null || base.row === null) return <EmptyState title={t('panel.loading', 'Loading')} />;
+
+  /*
+   * Everything a proof or a file is drawn from has come back: the design's
+   * parts, areas and pieces, the fonts and finishes, the versions and their
+   * files, the shop's one-colour line, and each picture's lightness. Until
+   * then nothing is made: a proof made sooner draws an empty piece, or a
+   * one-colour logo in full colour, and the customer is sent that.
+   */
+  const settled =
+    access.ready &&
+    lightsRead &&
+    !design.loading &&
+    !base.loading &&
+    !(readyId !== null && (ready.loading || parts.loading)) &&
+    ![areas, pieces, palettes, colours, fonts, features, versions, files].some((one) => one.loading) &&
+    !(settingsRead && settings.loading);
 
   // What this reader's role leaves out: tables it may not read, and the customer's personal columns.
   const unread = unreadTables(access, LINE_READS);
@@ -276,7 +320,7 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
   };
 
   const makeProof = async (): Promise<void> => {
-    if (catalogue === null || proofUpload === null || !makes) return;
+    if (catalogue === null || proofUpload === null || !makes || !settled) return;
     setBusy('proof');
     setProblem(null);
     try {
@@ -284,6 +328,10 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
       const stem = fileStem(row['id'] as string | number, Number(version['version']));
       const held = await picturesOf(row);
       const sheets = sheetsFor(catalogue, data, (column) => held.pdf[column] !== undefined || pictures[column] !== undefined);
+      if (missesEveryChoice(values, sheets)) {
+        setProblem(t('panel.make.blank', 'The shopper’s words and pictures are not on the proof, so it was not made. Reload the page and make it again.'));
+        return;
+      }
       let blob: Blob | null;
       let name: string;
       if (page) {
@@ -311,7 +359,7 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
   };
 
   const makeFiles = async (): Promise<void> => {
-    if (catalogue === null || fileUpload === null || !makes) return;
+    if (catalogue === null || fileUpload === null || !makes || !settled) return;
     setBusy('files');
     setProblem(null);
     try {
@@ -364,6 +412,8 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
   const firstFace = catalogue?.base.faces[0];
   const printedHow = printed && catalogue !== null && firstFace !== undefined ? reliefOfFace(catalogue, firstFace) : null;
   const proofed = proofOf(latest);
+  // A role that may not read the settings makes a one-colour logo at the column's own line, which may not be the shop's: said, never silent.
+  const lineUnknown = settled && settingsUnread && !page && catalogue !== null && startsOnShopLine(sheetsFor(catalogue, data, (column) => pictures[column] !== undefined));
   return (
     <Card
       title={t('panel.title', 'Customising')}
@@ -379,6 +429,7 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
             body={[...(hidden.length > 0 ? [t('panel.rights.personal', 'Your role can’t read the customer’s words, logo and photo, so the design is drawn without them.')] : []), ...(unread.length > 0 ? [unreadLine(t, unread)] : []), rolesHint(t)].join(' ')}
           />
         )}
+        {lineUnknown ? <Alert tone="warn" role="status" title={t('panel.rights.lineTitle', 'The shop’s one-colour line is hidden from you')} body={t('panel.rights.line', 'Your role can’t read the Customiser’s settings, so the one-colour logo is drawn, and its proof made, at the 50% line. The shopper saw the shop’s own line, which may differ. Ask for the settings’ read.')} /> : null}
         {catalogue === null ? null : (
           <SharedContext.Provider value={shared}>
             {kind === 'kit' ? (
@@ -416,13 +467,18 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
           </p>
         ) : null}
         <div className="flex flex-wrap gap-2">
-          <Button variant="primary" iconLeft={<ImageIcon />} disabled={busy !== null || proofUpload === null || !makes} onClick={() => void makeProof()}>
+          <Button variant="primary" iconLeft={<ImageIcon />} disabled={busy !== null || proofUpload === null || !makes || !settled} onClick={() => void makeProof()}>
             {busy === 'proof' ? t('panel.make.making', 'Making the file…') : t('panel.make.proof', 'Make the proof')}
           </Button>
-          <Button variant="secondary" iconLeft={<FileDown />} disabled={busy !== null || fileUpload === null || !makes} onClick={() => void makeFiles()}>
+          <Button variant="secondary" iconLeft={<FileDown />} disabled={busy !== null || fileUpload === null || !makes || !settled} onClick={() => void makeFiles()}>
             {busy === 'files' ? t('panel.make.making', 'Making the file…') : page ? t('panel.make.print', 'Make the print file') : files.rows.length > 0 ? t('panel.make.again', 'Make the files again') : t('panel.make.files', 'Make the files')}
           </Button>
         </div>
+        {makes && !settled ? (
+          <p role="status" className="m-0 text-[12.5px] text-fg-muted">
+            {t('panel.make.loading', 'Loading the design…')}
+          </p>
+        ) : null}
         {proofUpload === null || fileUpload === null ? <p className="m-0 text-[12.5px] text-fg-muted">{t('panel.make.newer', 'Making files here needs a newer Adminium.')}</p> : null}
         {proofUpload !== null && fileUpload !== null && !makes ? <p className="m-0 text-[12.5px] text-fg-muted">{whole ? t('panel.rights.make', 'Making the proof and the files needs the Customiser designer role.') : t('panel.rights.makeWhole', 'The proof and the files are made only from the whole design, which your role can’t read.')}</p> : null}
         {problem === null ? null : (
