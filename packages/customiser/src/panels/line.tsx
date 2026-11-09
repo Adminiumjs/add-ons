@@ -66,7 +66,7 @@ export function choiceLine(t: AddOnTranslate, value: unknown, unit: 'mm' | 'pt',
   const chosen = value as Record<string, unknown>;
   const out: string[] = [];
   if (typeof chosen['text'] === 'string' && chosen['text'] !== '') out.push(t('panel.line.words', '“{words}”', { words: chosen['text'] }));
-  if (typeof chosen['file'] === 'string' && chosen['file'] !== '') out.push(t('panel.line.logo', 'their own logo'));
+  if (typeof chosen['file'] === 'string' && chosen['file'] !== '') out.push(chosen['file'] === 'photo_file' ? t('panel.line.photo', 'their own photo') : t('panel.line.logo', 'their own logo'));
   if (typeof chosen['choice'] === 'string') out.push(chosen['choice']);
   if (typeof chosen['colour'] === 'string') out.push(chosen['colour']);
   if (out.length === 0) return t('panel.line.plain', 'left plain');
@@ -74,6 +74,24 @@ export function choiceLine(t: AddOnTranslate, value: unknown, unit: 'mm' | 'pt',
   if (typeof chosen['size'] === 'number') out.push(`${mm(chosen['size'])} ${unit}`);
   if (typeof chosen['finish'] === 'string') out.push(finishName(chosen['finish']));
   return out.join(' · ');
+}
+
+/**
+ * What a design made in the full editor holds, part by part: its words and
+ * its pictures as the shopper placed them (`values.placed`), each under the
+ * name it carries. Its form's parts are empty then, so they are never listed
+ * as left plain. Shapes are the design's own, not a choice.
+ */
+export function placedLines(t: AddOnTranslate, placed: unknown, unit: 'mm' | 'pt', finishName: (code: string) => string): { label: string; value: string }[] {
+  if (!Array.isArray(placed)) return [];
+  return placed.flatMap((raw) => {
+    if (typeof raw !== 'object' || raw === null) return [];
+    const part = raw as Record<string, unknown>;
+    const name = typeof part['name'] === 'string' && part['name'] !== '' ? part['name'] : null;
+    if (part['kind'] === 'text' && typeof part['text'] === 'string' && part['text'].trim() !== '') return [{ label: name ?? t('panel.line.placedWords', 'Words'), value: choiceLine(t, { text: part['text'], font: part['font'], size: part['size'] }, unit, finishName) }];
+    if (part['kind'] === 'image' && typeof part['file'] === 'string' && part['file'] !== '') return [{ label: name ?? (part['file'] === 'photo_file' ? t('panel.line.placedPhoto', 'Photo') : t('panel.line.placedLogo', 'Logo')), value: choiceLine(t, { file: part['file'] }, unit, finishName) }];
+    return [];
+  });
 }
 
 const all = { pageSize: 199 } as const;
@@ -281,6 +299,9 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
   const values = valuesOf(latest?.['values'] ?? row['values']) ?? { parts: {} };
   const versionNo = latest === undefined ? 1 : Number(latest['version']);
   const chosen = (jsonOf(row['values'])['parts'] ?? {}) as Record<string, unknown>;
+  // A design the shopper took into the full editor holds its own parts: those are listed, never the form's empty ones.
+  const placed = jsonOf(row['values'])['placed'];
+  const ownParts = Array.isArray(placed) && placed.length > 0;
   // The parts the design is made with, as the rules read them: its layout's (a design of two layouts names each part once), and the back only when it is printed both sides.
   const layout = values.layout ?? layoutsOf(ready.row)[0] ?? null;
   const bothSides = (values.sides ?? 1) >= 2;
@@ -455,7 +476,7 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
         <KeyValueList
           items={[
             { label: t('panel.line.design', 'Design'), value: designName, mono: true },
-            ...named.map((part) => ({ label: text(part['name']), value: choiceLine(t, chosen[text(part['code'])], unit, finishName), mono: true })),
+            ...(ownParts ? placedLines(t, placed, unit, finishName).map((line) => ({ ...line, mono: true })) : named.map((part) => ({ label: text(part['name']), value: choiceLine(t, chosen[text(part['code'])], unit, finishName), mono: true }))),
             { label: t('panel.line.state', 'State'), value: row['state'] === 'ordered' ? t('panel.line.ordered', 'Ordered') : t('panel.line.saved', 'Saved'), mono: true },
             { label: t('panel.line.savedAs', 'Saved as'), value: t('panel.line.savedAt', 'designs / {id} · {at}', { id: String(row['id']), at: moment(row['updated_at'], locale) }), mono: true },
           ]}

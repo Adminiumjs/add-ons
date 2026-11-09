@@ -355,6 +355,23 @@ describe('the panel on an order line', () => {
     }
   });
 
+  it('lists what a design taken into the full editor holds, its words and its photo, never its form’s parts as left plain', () => {
+    seedCard();
+    const placed = [
+      { id: 'name', side: 'front', kind: 'text', name: 'Name', x: 6, y: 30, w: 75, h: 6, text: 'Wren Walker', font: 'Manrope', size: 13 },
+      { id: 's1', side: 'back', kind: 'rect', name: 'Box', x: 0, y: 0, w: 10, h: 10, colour: 'accent' },
+      { id: 'photo', side: 'back', kind: 'image', name: 'Photo', x: 0, y: 0, w: 85, h: 55, file: 'photo_file', fit: 'fill' },
+      { id: 'i1', side: 'front', kind: 'image', x: 50, y: 5, w: 20, h: 20, file: 'logo_file', fit: 'inside' },
+    ];
+    seed('designs', [{ id: 92, app: 'printing', ready_design_id: 53, base_id: IDS.cards, values: JSON.stringify({ format: 1, sides: 2, parts: {}, placed }), logo_file: 'file_01HZY00000000000000000GGG1', photo_file: 'file_01HZY00000000000000000PHT1', state: 'ordered', updated_at: '2026-08-04T09:00:00Z' }]);
+    seed('design_versions', []);
+    render(<Line {...HOST} linked="92" />);
+    const listed = items();
+    expect(listed).toMatchObject({ Design: 'Harbour', Name: '“Wren Walker” · Manrope · 13 pt', Photo: 'their own photo', Logo: 'their own logo' });
+    expect(Object.values(listed)).not.toContain('left plain');
+    expect(Object.keys(listed)).not.toContain('Box');
+  });
+
   it('names a plain piece’s areas, says a part left plain, and a line with no design', () => {
     seed('designs', [{ id: 92, app: 'maker', ready_design_id: null, base_id: IDS.coasters, values: JSON.stringify({ format: 1, parts: { words: { text: 'Sam' } } }), state: 'draft', updated_at: '2026-08-06T10:00:00Z' }]);
     seed('design_versions', []);
