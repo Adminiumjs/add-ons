@@ -89,7 +89,7 @@ export function placedLines(t: AddOnTranslate, placed: unknown, unit: 'mm' | 'pt
     const part = raw as Record<string, unknown>;
     const name = typeof part['name'] === 'string' && part['name'] !== '' ? part['name'] : null;
     if (part['kind'] === 'text' && typeof part['text'] === 'string' && part['text'].trim() !== '') return [{ label: name ?? t('panel.line.placedWords', 'Words'), value: choiceLine(t, { text: part['text'], font: part['font'], size: part['size'] }, unit, finishName) }];
-    if (part['kind'] === 'image' && typeof part['file'] === 'string' && part['file'] !== '') return [{ label: name ?? (part['file'] === 'photo_file' ? t('panel.line.placedPhoto', 'Photo') : t('panel.line.placedLogo', 'Logo')), value: choiceLine(t, { file: part['file'] }, unit, finishName) }];
+    if (part['kind'] === 'image' && typeof part['file'] === 'string' && part['file'] !== '') return [{ label: name ?? t('panel.line.placedPicture', 'Picture'), value: choiceLine(t, { file: part['file'] }, unit, finishName) }];
     return [];
   });
 }

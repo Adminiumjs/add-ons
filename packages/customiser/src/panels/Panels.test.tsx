@@ -367,7 +367,7 @@ describe('the panel on an order line', () => {
     seed('design_versions', []);
     render(<Line {...HOST} linked="92" />);
     const listed = items();
-    expect(listed).toMatchObject({ Design: 'Harbour', Name: '“Wren Walker” · Manrope · 13 pt', Photo: 'their own photo', Logo: 'their own logo' });
+    expect(listed).toMatchObject({ Design: 'Harbour', Name: '“Wren Walker” · Manrope · 13 pt', Photo: 'their own photo', Picture: 'their own logo' });
     expect(Object.values(listed)).not.toContain('left plain');
     expect(Object.keys(listed)).not.toContain('Box');
   });
