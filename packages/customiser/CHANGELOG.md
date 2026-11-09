@@ -1,5 +1,17 @@
 # @adminium/add-on-customiser
 
+## 1.0.23
+
+### Patch Changes
+
+- cdcf39f: Customiser set-up: emptying a base's "Rounded corners" field takes the corners back to none, instead of keeping the old figure with no word said.
+- 3ef1f4f: Customiser: the order-line panel lists what a design taken into the full editor holds (its words, its logo, its photo, each under its own name) instead of every part of its form as "left plain"; a photo is named as the shopper's photo, not their logo.
+- 1e54c39: Customiser: on the shop's "Choose a design" page, each card of a piece, a kit or a printed item shows its own ready-made design in 3D again, instead of every card showing the last one (the cards' stills are now drawn one after another on their shared stage).
+- 7600f65: Customiser: the order-line panel waits for a picture's lightness only so long, and never on a printed page; a one-colour logo whose lightness was not read is said to be drawn in full colour, and a missing or unreadable settings row is said to leave the shop's one-colour line unknown. A blank proof is refused before any version is saved, a design taken into the full editor included. On "Choose a design", a card whose 3D model never comes keeps its flat drawing and no longer holds up the cards after it.
+- bcf09db: Customiser: the order-line panel's "Make the proof" and files buttons stay off, with "Loading the design…", until the design, its versions and files, the shop's parts, fonts and finishes, its one-colour line and each picture's lightness are in; a proof that would leave out every word and picture the shopper chose is refused instead of saved. A role that may not read the Customiser's settings is told its one-colour logo is drawn at the 50% line, not the shop's own.
+- b1762d8: Customiser: the set-up page has **Shop settings**, where the shop keeps its one-colour line (where light becomes dark when a shopper makes their logo one colour), a new page's bleed and safe line, the thinnest line and the sharpness a picture needs; Adminium's own add-on settings screen draws only settings a manifest declares, and the Customiser keeps its own in a table. The settings are one row for the whole install, covering every shop app on it, and the dialog says so; an app's role may now change them (`appGrants`), every one but the unit sizes are shown in, which nothing reads yet. The README's grants keep each app's roles to the app's own rows by its `app` column: a shop's owner sees, changes and removes only its own app's set-up and makes rows only for it, reads and fills the starter fonts but never removes one, and no app's role makes a font a starter or takes one out of the set (`starter` is no longer an app's to change). The proof-maker's grants read the settings, so its proof uses the shop's own line, and read only the app's own customers' designs, versions and files: on an install running Maker Shop and Print Shop, neither app's staff read the other's customers' words or logos. "New base" offers only the shop apps the reader's role works for, so an app's owner is never offered the other's.
+- b1762d8: Customiser set-up: while the starter fonts' files are added on the first visit, the page's lists wait and are read once when every file is in, instead of all of them again after each font.
+
 ## 1.0.22
 
 ### Patch Changes
