@@ -388,7 +388,7 @@ export const panel: Readonly<Record<string, string>> = {
   "panel.proof.title": "Korrekturabzug von {design} · Version {n}",
   "panel.proofs.byShop": "Vom Shop erstellt.",
   "panel.proofs.made": "Korrekturabzug erstellt",
-  "panel.proofs.none": "Noch kein Korrekturabzug gesendet.",
+  "panel.proofs.noneMade": "Der Customiser hat noch keinen Korrekturabzug dieses Designs erstellt.",
   "panel.proofs.notMade": "Kein Korrekturabzug erstellt",
   "panel.proofs.open": "Korrekturabzug öffnen",
   "panel.proofs.ordered": "Festgehalten, als die Bestellung aufgegeben wurde.",

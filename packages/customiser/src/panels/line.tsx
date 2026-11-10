@@ -577,7 +577,7 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
           <h3 id="customiser-proofs" className="m-0 text-[12.5px] font-extrabold">
             {t('panel.proofs.title', 'Proofs')}
           </h3>
-          {versions.rows.length === 0 ? <p className="m-0 text-[12.5px] text-fg-muted">{t('panel.proofs.none', 'No proof sent yet.')}</p> : null}
+          {versions.rows.length === 0 ? <p className="m-0 text-[12.5px] text-fg-muted">{t('panel.proofs.noneMade', 'The Customiser has made no proof of this design yet.')}</p> : null}
           <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
             {versions.rows.map((version, index) => {
               const address = fileAddress(version['proof_file']);

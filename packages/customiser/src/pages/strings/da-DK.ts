@@ -388,7 +388,7 @@ export const panel: Readonly<Record<string, string>> = {
   "panel.proof.title": "Korrektur af {design} · version {n}",
   "panel.proofs.byShop": "Lavet af butikken.",
   "panel.proofs.made": "Korrektur lavet",
-  "panel.proofs.none": "Ingen korrektur sendt endnu.",
+  "panel.proofs.noneMade": "Customiser har endnu ikke lavet en korrektur af dette design.",
   "panel.proofs.notMade": "Ingen korrektur lavet",
   "panel.proofs.open": "Åbn korrekturen",
   "panel.proofs.ordered": "Gemt, da ordren blev afgivet.",

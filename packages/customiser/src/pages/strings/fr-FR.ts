@@ -388,7 +388,7 @@ export const panel: Readonly<Record<string, string>> = {
   "panel.proof.title": "Épreuve de {design} · version {n}",
   "panel.proofs.byShop": "Faite par la boutique.",
   "panel.proofs.made": "Épreuve faite",
-  "panel.proofs.none": "Aucune épreuve envoyée pour l’instant.",
+  "panel.proofs.noneMade": "Le Customiser n’a encore fait aucune épreuve de ce design.",
   "panel.proofs.notMade": "Aucune épreuve faite",
   "panel.proofs.open": "Ouvrir l’épreuve",
   "panel.proofs.ordered": "Figée au moment de la commande.",

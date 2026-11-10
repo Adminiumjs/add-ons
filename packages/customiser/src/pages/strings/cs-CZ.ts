@@ -388,7 +388,7 @@ export const panel: Readonly<Record<string, string>> = {
   "panel.proof.title": "Náhled návrhu {design} · verze {n}",
   "panel.proofs.byShop": "Vytvořil obchod.",
   "panel.proofs.made": "Náhled vytvořen",
-  "panel.proofs.none": "Zatím nebyl odeslán žádný náhled.",
+  "panel.proofs.noneMade": "Customiser zatím nevytvořil žádný náhled tohoto návrhu.",
   "panel.proofs.notMade": "Náhled nevytvořen",
   "panel.proofs.open": "Otevřít náhled",
   "panel.proofs.ordered": "Zachyceno při zadání objednávky.",

@@ -464,7 +464,9 @@ describe('the panel on an order line', () => {
     // What the Customiser made, never a claim on what the shop sent from its own app.
     expect(screen.getByText('No proof made')).toBeTruthy();
     expect(screen.queryByText('No proof yet')).toBeNull();
-    expect(screen.getByText('No proof sent yet.')).toBeTruthy();
+    // What the Customiser made: the app may have sent a proof of its own (Maker's BR-2290).
+    expect(screen.getByText('The Customiser has made no proof of this design yet.')).toBeTruthy();
+    expect(screen.queryByText('No proof sent yet.')).toBeNull();
     cleanup();
     render(<Line {...HOST} linked={null} />);
     expect(screen.getByText('No design on this line')).toBeTruthy();

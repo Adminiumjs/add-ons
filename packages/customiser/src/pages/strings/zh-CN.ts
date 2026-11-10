@@ -388,7 +388,7 @@ export const panel: Readonly<Record<string, string>> = {
   "panel.proof.title": "{design} 的校样 · 第 {n} 版",
   "panel.proofs.byShop": "由店铺生成。",
   "panel.proofs.made": "校样已生成",
-  "panel.proofs.none": "尚未发送校样。",
+  "panel.proofs.noneMade": "Customiser 尚未为此设计生成校样。",
   "panel.proofs.notMade": "未生成校样",
   "panel.proofs.open": "打开校样",
   "panel.proofs.ordered": "下单时保存的快照。",

@@ -388,7 +388,7 @@ export const panel: Readonly<Record<string, string>> = {
   "panel.proof.title": "بروفة {design} · النسخة {n}",
   "panel.proofs.byShop": "أنشأها المتجر.",
   "panel.proofs.made": "أُنشئت البروفة",
-  "panel.proofs.none": "لم تُرسل أي بروفة بعد.",
+  "panel.proofs.noneMade": "لم تُنشئ أداة Customiser أي بروفة لهذا التصميم بعد.",
   "panel.proofs.notMade": "لم تُنشأ بروفة",
   "panel.proofs.open": "فتح البروفة",
   "panel.proofs.ordered": "حُفظت عند تقديم الطلب.",

@@ -589,7 +589,7 @@ export const panel: Readonly<Record<string, string>> = {
   "panel.proof.title": "Proof of {design} · version {n}",
   "panel.proofs.byShop": "Made by the shop.",
   "panel.proofs.made": "Proof made",
-  "panel.proofs.none": "No proof sent yet.",
+  "panel.proofs.noneMade": "The Customiser has made no proof of this design yet.",
   "panel.proofs.notMade": "No proof made",
   "panel.proofs.open": "Open the proof",
   "panel.proofs.ordered": "Snapshotted when the order was placed.",
