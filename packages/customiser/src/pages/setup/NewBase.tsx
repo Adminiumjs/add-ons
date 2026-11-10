@@ -48,9 +48,17 @@ export function kindName(t: AddOnTranslate, kind: Kind): string {
   }
 }
 
+/**
+ * The kind a new base starts on for an app: what that app's bases are. A
+ * print shop prints flat pages; a maker shop makes pieces (and kits and
+ * printed items, picked by hand).
+ */
+export const startingKind = (app: App): Kind => (app === 'printing' ? 'page' : 'piece');
+
 export function NewBase({ t, open, onClose, onMade }: { t: AddOnTranslate; open: boolean; onClose: () => void; onMade: (id: string | number) => void }): ReactNode {
   const [name, setName] = useState('');
-  const [kind, setKind] = useState<Kind>('piece');
+  // The kind the owner picked; until they pick one, the app's own (once it is known which app).
+  const [picked, setKind] = useState<Kind | null>(null);
   const [chosen, setApp] = useState<App>('maker');
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -86,6 +94,7 @@ export function NewBase({ t, open, onClose, onMade }: { t: AddOnTranslate; open:
     try {
       const offered = apps ?? (asking.current === null ? APPS : await asking.current);
       const app = offered.includes(chosen) ? chosen : offered[0]!;
+      const kind = picked ?? startingKind(app);
       const [settings, fonts, palettes] = await Promise.all([read.list('settings', { pageSize: 1 }), read.list('fonts', { filter: [{ column: 'starter', op: 'eq', value: true }, { column: 'active', op: 'eq', value: true }], pageSize: 199 }), read.list('palettes', { filter: [{ column: 'app', op: 'eq', value: app }, { column: 'kind', op: 'eq', value: 'finishes' }], pageSize: 20 })]);
       const own = palettes.rows.find((row) => row['ready_design_id'] === null || row['ready_design_id'] === undefined);
       const finishes = own === undefined || kind === 'page' ? [] : (await read.list('palette_colours', { filter: [{ column: 'palette_id', op: 'eq', value: own['id'] as string | number }], pageSize: 50 })).rows.map((row) => text(row['code']));
@@ -103,6 +112,7 @@ export function NewBase({ t, open, onClose, onMade }: { t: AddOnTranslate; open:
       });
       toast(t('setup.new.made', '“{name}” is ready to set up.', { name: name.trim() }));
       setName('');
+      setKind(null);
       setError(null);
       onClose();
       onMade(row['id'] as string | number);
@@ -112,13 +122,15 @@ export function NewBase({ t, open, onClose, onMade }: { t: AddOnTranslate; open:
       setSaving(false);
     }
   };
+  // None is marked until the apps this reader may make a base for are known: a print shop never sees "A flat piece" picked first.
+  const shownKind = picked ?? (apps === null ? undefined : startingKind(apps.includes(chosen) ? chosen : apps[0]!));
   return (
     <Dialog open={open} onOpenChange={(next) => (next ? undefined : onClose())} size="md">
       <DialogHeader title={t('setup.newBase', 'New base')} subtitle={t('setup.new.sub', 'What a customer makes their own.')} closeLabel={t('setup.close', 'Close')} />
       <DialogBody>
         <Stack gap="md">
           <Input label={t('setup.new.name', 'Name')} value={name} onChange={(event) => setName(event.target.value)} error={error ?? undefined} maxLength={120} />
-          <RadioGroup value={kind} onValueChange={(value) => setKind(value as Kind)} aria-label={t('setup.new.kind', 'Kind of base')}>
+          <RadioGroup value={shownKind ?? ''} onValueChange={(value) => setKind(value as Kind)} aria-label={t('setup.new.kind', 'Kind of base')}>
             {(['page', 'piece', 'kit', 'printed'] as const).map((one) => (
               <RadioCard key={one} value={one} title={kindName(t, one)} disabled={!SET_UP_NOW.includes(one)} {...(SET_UP_NOW.includes(one) ? {} : { description: t('setup.new.later', 'Comes with the 3D preview.') })} />
             ))}

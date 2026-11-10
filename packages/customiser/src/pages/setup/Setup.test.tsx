@@ -97,10 +97,28 @@ describe('a new base, for the app the reader may make one for', () => {
     const dialog = screen.getByRole('dialog');
     await settle();
     expect(within(dialog).queryByLabelText('For')).toBeNull();
+    // A print shop's bases are flat pages: that is the kind marked, never "A flat piece".
+    expect(within(dialog).getByRole('radio', { name: /A flat page/ }).getAttribute('aria-checked')).toBe('true');
+    expect(within(dialog).getByRole('radio', { name: /A flat piece/ }).getAttribute('aria-checked')).toBe('false');
     fireEvent.change(within(dialog).getByLabelText('Name'), { target: { value: 'Letterpress cards' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Make it' }));
     await settle();
-    expect(writes('create', 'bases')[0]?.values).toMatchObject({ name: 'Letterpress cards', app: 'printing' });
+    expect(writes('create', 'bases')[0]?.values).toMatchObject({ name: 'Letterpress cards', app: 'printing', kind: 'page', width_mm: 85, height_mm: 55 });
+  });
+
+  it('marks the kind of the shop chosen until the owner picks one, and keeps the one they picked', async () => {
+    at(IDS.cards);
+    render(<Customiser />);
+    fireEvent.click(screen.getByRole('button', { name: 'New base' }));
+    await settle();
+    const dialog = within(screen.getByRole('dialog'));
+    const checked = (): string[] => dialog.getAllByRole('radio').filter((one) => one.getAttribute('aria-checked') === 'true').map((one) => one.textContent ?? '');
+    expect(checked()).toEqual(['A flat piece']);
+    fireEvent.change(dialog.getByLabelText('For'), { target: { value: 'printing' } });
+    expect(checked()).toEqual(['A flat page']);
+    fireEvent.click(dialog.getByRole('radio', { name: /A kit of pieces/ }));
+    fireEvent.change(dialog.getByLabelText('For'), { target: { value: 'maker' } });
+    expect(checked()).toEqual(['A kit of pieces']);
   });
 
   it('offers both shops to a reader of both, the maker shop first', async () => {
