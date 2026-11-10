@@ -331,7 +331,6 @@ export const panel: Readonly<Record<string, string>> = {
   "panel.line.files": "Les fichiers pour la machine s’affichent ici une fois faits.",
   "panel.line.foot": "lecture seule · fait à partir de la création enregistrée du client",
   "panel.line.logo": "son propre logo",
-  "panel.line.noProof": "Pas encore d’épreuve",
   "panel.line.none": "Aucune création sur cette ligne",
   "panel.line.noneBody": "Une ligne porte une création quand le client en a commandé une qu’il a faite.",
   "panel.line.ordered": "Commandée",

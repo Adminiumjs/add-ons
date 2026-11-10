@@ -331,7 +331,6 @@ export const panel: Readonly<Record<string, string>> = {
   "panel.line.files": "Die Dateien für die Maschine erscheinen hier, sobald sie erstellt sind.",
   "panel.line.foot": "schreibgeschützt · aus dem gespeicherten Design des Kunden",
   "panel.line.logo": "ihr eigenes Logo",
-  "panel.line.noProof": "Noch kein Korrekturabzug",
   "panel.line.none": "Kein Design auf dieser Position",
   "panel.line.noneBody": "Eine Position trägt ein Design, wenn der Kunde ein selbst gestaltetes bestellt hat.",
   "panel.line.ordered": "Bestellt",

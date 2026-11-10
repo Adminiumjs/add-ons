@@ -473,6 +473,8 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
 
   const firstFace = catalogue?.base.faces[0];
   const printedHow = printed && catalogue !== null && firstFace !== undefined ? reliefOfFace(catalogue, firstFace) : null;
+  // What the Customiser made, never what the shop sent: a shop may send its own file as a line's proof, in its own app,
+  // which this panel does not read. So it says "No proof made" (here), never that the customer has no proof yet.
   const proofed = proofOf(latest);
   // A role that may not read the settings makes a one-colour logo at the column's own line, which may not be the shop's: said, never silent.
   const drawnSheets = settled && !page && catalogue !== null ? sheetsFor(catalogue, data, (column) => pictures[column] !== undefined) : [];
@@ -483,7 +485,7 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
     <Card
       title={t('panel.title', 'Customising')}
       description={t('panel.line.sub', 'read-only')}
-      actions={<StatusPill status={proofed ? 'proof' : 'none'} tone={proofed ? 'info' : 'neutral'}>{proofed ? t('panel.line.proof', 'Proof {n}', { n: String(latest!['version']) }) : t('panel.line.noProof', 'No proof yet')}</StatusPill>}
+      actions={<StatusPill status={proofed ? 'proof' : 'none'} tone={proofed ? 'info' : 'neutral'}>{proofed ? t('panel.line.proof', 'Proof {n}', { n: String(latest!['version']) }) : t('panel.proofs.notMade', 'No proof made')}</StatusPill>}
     >
       <Stack gap="md">
         {whole ? null : (

@@ -331,7 +331,6 @@ export const panel: Readonly<Record<string, string>> = {
   "panel.line.files": "Filerne til maskinen vises her, når de er lavet.",
   "panel.line.foot": "skrivebeskyttet · lavet ud fra kundens gemte design",
   "panel.line.logo": "deres eget logo",
-  "panel.line.noProof": "Ingen korrektur endnu",
   "panel.line.none": "Intet design på denne linje",
   "panel.line.noneBody": "En linje har et design, når kunden har bestilt et, de selv har lavet.",
   "panel.line.ordered": "Bestilt",

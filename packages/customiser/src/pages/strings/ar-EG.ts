@@ -331,7 +331,6 @@ export const panel: Readonly<Record<string, string>> = {
   "panel.line.files": "تظهر ملفات الآلة هنا بعد إعدادها.",
   "panel.line.foot": "للقراءة فقط · مصنوع من تصميم المتسوق المحفوظ",
   "panel.line.logo": "شعاره الخاص",
-  "panel.line.noProof": "لا توجد بروفة بعد",
   "panel.line.none": "لا يوجد تصميم في هذا البند",
   "panel.line.noneBody": "يحمل البند تصميمًا عندما يطلب المتسوق تصميمًا صنعه.",
   "panel.line.ordered": "تم طلبه",

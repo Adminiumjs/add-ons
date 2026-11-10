@@ -331,7 +331,6 @@ export const panel: Readonly<Record<string, string>> = {
   "panel.line.files": "Soubory ke stroji se tu objeví, jakmile budou hotové.",
   "panel.line.foot": "jen ke čtení · vytvořeno z uloženého návrhu zákazníka",
   "panel.line.logo": "vlastní logo",
-  "panel.line.noProof": "Zatím žádný náhled",
   "panel.line.none": "Na tomto řádku není návrh",
   "panel.line.noneBody": "Řádek nese návrh, když zákazník objednal svůj vlastní.",
   "panel.line.ordered": "Objednáno",

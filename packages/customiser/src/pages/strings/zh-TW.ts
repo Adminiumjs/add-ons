@@ -331,7 +331,6 @@ export const panel: Readonly<Record<string, string>> = {
   "panel.line.files": "機器用的檔案產生後會列在這裡。",
   "panel.line.foot": "唯讀 · 依據顧客儲存的設計產生",
   "panel.line.logo": "顧客自己的標誌",
-  "panel.line.noProof": "尚無校樣",
   "panel.line.none": "此列沒有設計",
   "panel.line.noneBody": "顧客訂購了自己做的設計時，這一列才會帶有設計。",
   "panel.line.ordered": "已下單",

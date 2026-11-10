@@ -108,6 +108,15 @@ describe('the panel on an order line', () => {
     expect(screen.getByRole('button', { name: 'Make the files' })).toBeTruthy();
   });
 
+  it('says no proof is made where the Customiser made none, never that the customer has no proof: a shop may send its own file', () => {
+    // A sample order whose proofs the shop sent from its own app: the versions hold no proof file of the Customiser's.
+    seed('design_versions', world.tables['design_versions']!.map((one) => ({ ...one, proof_file: null })));
+    render(<Line {...HOST} linked="91" />);
+    expect(screen.queryByText('No proof yet')).toBeNull();
+    expect(screen.getAllByText('No proof made').length).toBeGreaterThanOrEqual(2);
+    expect(screen.queryByText('Proof 2')).toBeNull();
+  });
+
   it('lists the versions newest first, an older proof marked replaced, each proof to open (BC-E3.proofs)', () => {
     render(<Line {...HOST} linked="91" />);
     const proofs = within(screen.getByRole('region', { name: 'Proofs' }));
@@ -404,7 +413,9 @@ describe('the panel on an order line', () => {
     seed('design_versions', []);
     render(<Line {...HOST} linked="92" />);
     expect(items()).toMatchObject({ Design: 'The plain piece', 'Your logo': 'left plain', 'Your words': '“Sam”', State: 'Saved' });
-    expect(screen.getByText('No proof yet')).toBeTruthy();
+    // What the Customiser made, never a claim on what the shop sent from its own app.
+    expect(screen.getByText('No proof made')).toBeTruthy();
+    expect(screen.queryByText('No proof yet')).toBeNull();
     expect(screen.getByText('No proof sent yet.')).toBeTruthy();
     cleanup();
     render(<Line {...HOST} linked={null} />);

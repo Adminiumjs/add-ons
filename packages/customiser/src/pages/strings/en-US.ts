@@ -532,7 +532,6 @@ export const panel: Readonly<Record<string, string>> = {
   "panel.line.files": "The files for the machine are listed here once they are made.",
   "panel.line.foot": "read-only · made from the shopper's saved design",
   "panel.line.logo": "their own logo",
-  "panel.line.noProof": "No proof yet",
   "panel.line.none": "No design on this line",
   "panel.line.noneBody": "A line carries a design when the shopper ordered one they made.",
   "panel.line.ordered": "Ordered",
