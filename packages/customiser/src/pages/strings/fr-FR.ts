@@ -274,7 +274,7 @@ export const setup: Readonly<Record<string, string>> = {
   "setup.settings.none": "Les paramètres du Customiser ne sont pas encore sur cette installation. Réinstallez-le pour les ajouter.",
   "setup.settings.readOnly": "Votre rôle peut lire ces paramètres, pas les modifier.",
   "setup.settings.safe": "Marge de sécurité d’une nouvelle page",
-  "setup.settings.shared": "Ces paramètres valent pour chaque application de boutique de cet Adminium.",
+  "setup.settings.shared": "Ces paramètres valent pour chaque application de boutique qui utilise cette installation du Customiser.",
   "setup.settings.sub": "Ce dont part chaque base et chaque design.",
   "setup.settings.threshold": "Seuil monochrome",
   "setup.settings.thresholdHint": "Le seuil entre clair et foncé quand un client passe son logo en une couleur. Son éditeur part d’ici, et le BAT est créé au seuil où il le laisse.",

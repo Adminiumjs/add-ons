@@ -274,7 +274,7 @@ export const setup: Readonly<Record<string, string>> = {
   "setup.settings.none": "The Customiser’s settings are not on this install yet. Install it again to add them.",
   "setup.settings.readOnly": "Your role may read these settings, not change them.",
   "setup.settings.safe": "Safe line on a new page",
-  "setup.settings.shared": "These settings cover every shop app on this Adminium.",
+  "setup.settings.shared": "These settings cover every shop app that uses this install of the Customiser.",
   "setup.settings.sub": "What every base and design starts from.",
   "setup.settings.threshold": "One-colour line",
   "setup.settings.thresholdHint": "Where light becomes dark when a shopper makes their logo one colour. Their editor starts here, and a proof is made at the line they leave it on.",

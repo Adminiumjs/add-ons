@@ -274,7 +274,7 @@ export const setup: Readonly<Record<string, string>> = {
   "setup.settings.none": "Die Einstellungen des Customisers sind in dieser Installation noch nicht vorhanden. Installieren Sie ihn erneut, um sie hinzuzufügen.",
   "setup.settings.readOnly": "Ihre Rolle darf diese Einstellungen lesen, aber nicht ändern.",
   "setup.settings.safe": "Sicherheitsabstand einer neuen Seite",
-  "setup.settings.shared": "Diese Einstellungen gelten für jede Shop-App in diesem Adminium.",
+  "setup.settings.shared": "Diese Einstellungen gelten für jede Shop-App, die diese Installation des Customisers nutzt.",
   "setup.settings.sub": "Wovon jede Basis und jedes Design ausgeht.",
   "setup.settings.threshold": "Einfarbgrenze",
   "setup.settings.thresholdHint": "Ab wann Hell zu Dunkel wird, wenn jemand im Shop sein Logo einfarbig macht. Der Editor beginnt hier, und der Korrekturabzug wird an der Grenze erstellt, die die Person stehen lässt.",

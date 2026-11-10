@@ -46,7 +46,7 @@ export function ShopSettings({ t, open, onClose, settings, error = null }: { t: 
           <p className="m-0 text-[12.5px] text-fg-muted">{t('setup.settings.none', 'The Customiser’s settings are not on this install yet. Install it again to add them.')}</p>
         ) : (
           <Stack gap="md">
-            <p className="m-0 text-[12.5px] text-fg-muted">{t('setup.settings.shared', 'These settings cover every shop app on this Adminium.')}</p>
+            <p className="m-0 text-[12.5px] text-fg-muted">{t('setup.settings.shared', 'These settings cover every shop app that uses this install of the Customiser.')}</p>
             {may ? null : <p className="m-0 text-[12.5px] text-fg-muted">{t('setup.settings.readOnly', 'Your role may read these settings, not change them.')}</p>}
             {figure('one_colour_threshold', t('setup.settings.threshold', 'One-colour line'), '%', 0, t('setup.settings.thresholdHint', 'Where light becomes dark when a shopper makes their logo one colour. Their editor starts here, and a proof is made at the line they leave it on.'))}
             {figure('default_bleed_mm', t('setup.settings.bleed', 'Bleed on a new page'), 'mm', 2)}

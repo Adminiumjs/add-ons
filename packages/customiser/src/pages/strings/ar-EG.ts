@@ -274,7 +274,7 @@ export const setup: Readonly<Record<string, string>> = {
   "setup.settings.none": "إعدادات Customiser غير موجودة في هذا التثبيت بعد. ثبّته مرة أخرى لإضافتها.",
   "setup.settings.readOnly": "يستطيع دورك قراءة هذه الإعدادات، لا تغييرها.",
   "setup.settings.safe": "خط الأمان لصفحة جديدة",
-  "setup.settings.shared": "تسري هذه الإعدادات على كل تطبيقات المتاجر في Adminium هذا.",
+  "setup.settings.shared": "تسري هذه الإعدادات على كل تطبيقات المتاجر التي تستخدم هذا التثبيت من Customiser.",
   "setup.settings.sub": "ما تبدأ منه كل قاعدة وكل تصميم.",
   "setup.settings.threshold": "حدّ اللون الواحد",
   "setup.settings.thresholdHint": "حيث يصبح الفاتح داكنًا عندما يجعل العميل شعاره بلون واحد. يبدأ محرره من هنا، وتُصنع البروفة عند الحدّ الذي يتركه عليه.",

@@ -274,7 +274,7 @@ export const setup: Readonly<Record<string, string>> = {
   "setup.settings.none": "此安裝中還沒有 Customiser 的設定。請重新安裝以加入它們。",
   "setup.settings.readOnly": "你的角色可以檢視這些設定，但不能變更。",
   "setup.settings.safe": "新頁面的安全線",
-  "setup.settings.shared": "這些設定適用於此 Adminium 上的每個商店應用程式。",
+  "setup.settings.shared": "這些設定適用於使用此 Customiser 安裝的每個商店應用程式。",
   "setup.settings.sub": "每個底板和每個設計的起點。",
   "setup.settings.threshold": "單色分界",
   "setup.settings.thresholdHint": "顧客把標誌改成單色時明暗的分界。顧客的編輯器從這裡開始，校樣依顧客最後留下的分界產生。",

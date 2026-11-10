@@ -274,7 +274,7 @@ export const setup: Readonly<Record<string, string>> = {
   "setup.settings.none": "Nastavení Customiseru v této instalaci zatím nejsou. Nainstalujte ho znovu, aby se přidala.",
   "setup.settings.readOnly": "Vaše role smí tato nastavení číst, ne měnit.",
   "setup.settings.safe": "Bezpečný okraj nové stránky",
-  "setup.settings.shared": "Tato nastavení se týkají každé aplikace obchodu v tomto Adminiu.",
+  "setup.settings.shared": "Tato nastavení se týkají každé aplikace obchodu, která používá tuto instalaci Customiseru.",
   "setup.settings.sub": "Z čeho vychází každý základ a každý návrh.",
   "setup.settings.threshold": "Jednobarevná hranice",
   "setup.settings.thresholdHint": "Kde se světlá mění v tmavou, když zákazník převede své logo na jednu barvu. Jeho editor začíná tady a náhled se vytvoří na hranici, kterou mu nechá.",

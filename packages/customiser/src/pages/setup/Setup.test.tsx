@@ -229,8 +229,9 @@ describe('step 1, a flat page and the kinds that come with 3D', () => {
     fireEvent.blur(line);
     expect(writes('update', 'settings').at(-1)).toMatchObject({ key: '1', values: { one_colour_threshold: 62 } });
     expect(row('settings', 1)['one_colour_threshold']).toBe(62);
-    // One row for every shop app on the install, and said so; no unit to choose, which nothing reads yet.
-    expect(screen.getByText('These settings cover every shop app on this Adminium.')).toBeTruthy();
+    // One row for every shop app on this install of the Customiser, and said so (an app on another database has its own); no unit to choose, which nothing reads yet.
+    expect(screen.getByText('These settings cover every shop app that uses this install of the Customiser.')).toBeTruthy();
+    expect(screen.queryByText(/on this Adminium/)).toBeNull();
     expect(screen.queryByLabelText('Sizes shown in')).toBeNull();
     const dpi = screen.getByLabelText('Sharpness a picture needs at its printed size');
     fireEvent.change(dpi, { target: { value: '200' } });

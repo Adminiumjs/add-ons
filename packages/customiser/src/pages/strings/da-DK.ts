@@ -274,7 +274,7 @@ export const setup: Readonly<Record<string, string>> = {
   "setup.settings.none": "Customiserens indstillinger findes ikke på denne installation endnu. Installér den igen for at tilføje dem.",
   "setup.settings.readOnly": "Din rolle må læse disse indstillinger, men ikke ændre dem.",
   "setup.settings.safe": "Sikkerhedsmargen på en ny side",
-  "setup.settings.shared": "Disse indstillinger gælder for alle butiksapps i denne Adminium.",
+  "setup.settings.shared": "Disse indstillinger gælder for alle butiksapps, der bruger denne installation af Customiseren.",
   "setup.settings.sub": "Det, hver grundform og hvert design tager udgangspunkt i.",
   "setup.settings.threshold": "Énfarvegrænse",
   "setup.settings.thresholdHint": "Hvor lyst bliver mørkt, når en kunde gør sit logo énfarvet. Editoren starter her, og korrekturen laves ved den grænse, kunden lader den stå på.",
