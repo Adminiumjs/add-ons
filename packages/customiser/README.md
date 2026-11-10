@@ -8,6 +8,24 @@ It serves the two shop apps, Maker Shop and Print Shop, which require it. One
 install may run both on one Customiser: every row says which app it is for,
 and each app's visitors see only that app's.
 
+Two apps on two databases each have a Customiser of their own. Adminium
+installs it with each app, in that app's database, and nothing crosses
+between the two copies: their bases, designs, fonts, settings and customers'
+designs are each their own. The dashboard's menu lists the set-up page once
+for each copy you can open, with its database's name beside it, and each row
+opens its own copy. The first copy's page is at
+`/add-ons/customiser/customiser`, a later one's at
+`/add-ons/customiser~<slug>/customiser`, where `<slug>` is the short name
+Adminium made from its database's name (Adminium 0.3.53).
+
+## What it needs
+
+- Adminium **0.3.47** or later: how far an app's role may go on each table
+  (`appGrants`, below) needs it.
+- The two shop apps ask for more: Maker Shop and Print Shop 0.2.4 need
+  Adminium **0.3.53**, which also opens the set-up page of each copy when two
+  apps are on two databases.
+
 ## What it keeps
 
 - **Bases**: what gets customised. A flat page (a business card, a flyer, at
@@ -70,6 +88,92 @@ after the `#`; an app that names no such page sends the message without a
 button. The link changes the design while it is a draft, and deletes it
 (its logo and photo with it); once ordered it only reads it. The mail never
 keeps a design: one nobody ordered still goes 90 days after its last change.
+
+## The customer's editor
+
+Adminium serves no add-on code to a shop's visitors. The editor a customer
+designs in ships in the app's own customer bundle and runs on the app's own
+React (React 19). The package's `./browser` entry is that editor, and
+`./browser/editor.css` its stylesheet. Maker Shop and Print Shop import a
+vendored copy of both (below, `vendor/customiser/index.js` and `editor.css`);
+from the package they read:
+
+```tsx
+import { CustomiserEditor, customiserApi } from '@adminiumjs/add-on-customiser/browser';
+import '@adminiumjs/add-on-customiser/browser/editor.css';
+
+const api = customiserApi({
+  shop: client, // the app's public client, of its customer key
+  link: () => createPublicClient({ baseUrl, publishableKey: keys['customiser-link'] })!,
+  baseUrl,
+});
+
+<CustomiserEditor api={api} base={product.base_id} product={{ name: product.name, price: '£34.00' }}
+  onAddToBasket={(design) => addLine(design.code, design.used)} />
+```
+
+- **`CustomiserEditor`**: choose a design, fill it in, check it, save it and
+  come back to it, add it to the basket.
+- **`YourDesigns`**: the designs this browser holds, and those an order names.
+- **`WaysIn`**: a print shop's three ways in, for its product page.
+- **`customiserApi`**: the calls the editor makes, through the clients the app
+  hands in. The editor never makes a client of its own. `link` makes a new
+  client of the add-on's link key for each saved design, since a client holds
+  one session at a time.
+- **`openSavedLink`, `readDesigns`, `heldDesign`, `hasSavedDesigns`,
+  `designRefusal`**: for the app's own routes (the e-mailed link's page, the
+  order lookup, a design's session, the header's "Your designs", a refused
+  order). The editor keeps nothing in the browser's storage: the app keeps
+  the sessions it is handed.
+
+The stylesheet holds the editor's classes, each starting `cz-`. It takes the app's colours and type from the CSS variables the
+app sets (`--accent`, `--surface`, `--fg` and the rest). The 3D stage is a
+third file, `stage3d.js`, which the editor fetches from beside `index.js`
+only when a piece is shown in 3D.
+
+### What it reaches
+
+The editor reaches Adminium through the Customiser's public entries, and
+nothing else:
+
+- **Through the app's customer key.** Every entry with no `key` of its own
+  rides the customer key of each app the Customiser is attached to. Most are
+  held to the app by `appColumn: "app"`: through Print Shop's key they read
+  only Print Shop's rows, and a design saved through it is Print Shop's
+  whatever the browser sends. The shop's catalogue is read this way (its
+  published bases, their pieces and areas, its published ready-made designs
+  and their parts, palettes, colours and features), with the fonts on offer
+  and three of the settings (the sharpness a picture needs, the thinnest line,
+  the one-colour line). A new design is saved this way too, behind the human
+  check, and the reply hands back the design's code and its own link, once.
+  An ordered design is read by its code, with the session the app's order
+  lookup holds.
+- **Through the design's own link** (the key `customiser-link`). It reads one
+  design and changes or deletes it while it is a draft, and reaches no other
+  row. The page that saved the design holds the link's session already; the
+  e-mailed link opens it from any device.
+
+### How an app vendors it
+
+An app copies the editor's three files (`index.js`, `stage3d.js`,
+`editor.css`) into its own repository, from the release its attach range asks
+for. A shop then runs the editor it was built with: updating the add-on does
+not change it until the app vendors the new one.
+
+Maker Shop and Print Shop do it with `npm run sync:customiser`
+(`scripts/sync-customiser.mjs`), into `vendor/customiser/`:
+
+- `--tarball <file.tgz> --ledger <RELEASES.json>` takes the files from the
+  released package, after its bytes are held to the integrity this
+  repository's release ledger wrote for that version. A tarball the ledger
+  does not name, or whose bytes differ, is refused and nothing is written.
+- `<dir>` takes them from a built checkout's `packages/customiser/dist/browser`.
+- `--check` writes nothing, and fails when the vendored files are not the
+  ones the source gives.
+
+Beside the files it writes `app-grants.json` (each table's `appGrants`, from
+this package's `manifest.json`, which the app's tests hold its roles to) and
+`SOURCE.json` (the version the files came from, and each file's hash).
 
 ## Who sees what
 
