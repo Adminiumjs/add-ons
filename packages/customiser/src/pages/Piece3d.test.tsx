@@ -165,7 +165,7 @@ describe('the order line’s kit: 3D, Flat or Pieces (BC-E1, BC-D9)', () => {
     await settle();
     const views = screen.getByRole('radiogroup', { name: 'How to show the design' });
     expect([...views.querySelectorAll('[role="radio"]')].map((one) => one.textContent)).toEqual(['3D', 'Flat', 'Pieces']);
-    expect(screen.getByRole('img', { name: 'The plain piece, as it will be made' }).querySelector('img')?.getAttribute('src')).toMatch(/^blob:still\//);
+    expect(screen.getByRole('img', { name: 'The plain kit, as it will be made' }).querySelector('img')?.getAttribute('src')).toMatch(/^blob:still\//);
     fireEvent.click(screen.getByRole('radio', { name: 'Flat' }));
     await settle();
     const tags = (): (string | null)[] => [...document.querySelectorAll('[data-kit-pieces] text.cz-piece-tag')].map((one) => one.textContent);
@@ -214,7 +214,7 @@ describe('the order line’s 3D-printed item, 3D or flat (BC-E1, BC-D9)', () => 
       ['Flat', 'false'],
     ]);
     expect(asked.some((one) => one.includes('PV/content'))).toBe(true);
-    expect(screen.getByRole('img', { name: 'The plain piece, as it will be made' }).querySelector('img')?.getAttribute('src')).toMatch(/^blob:still\//);
+    expect(screen.getByRole('img', { name: 'The plain item, as it will be made' }).querySelector('img')?.getAttribute('src')).toMatch(/^blob:still\//);
     fireEvent.click(screen.getByRole('radio', { name: 'Flat' }));
     await settle();
     expect(document.querySelector('[data-design-sides] img[src^="blob:still"]')).toBeNull();
@@ -225,7 +225,7 @@ describe('the order line’s 3D-printed item, 3D or flat (BC-E1, BC-D9)', () => 
     seedKeyring(false);
     render(<Line {...HOST} linked="93" />);
     await settle();
-    expect(screen.getByRole('img', { name: 'The plain piece, as it will be made' }).querySelector('img')?.getAttribute('src')).toMatch(/^blob:still\//);
+    expect(screen.getByRole('img', { name: 'The plain item, as it will be made' }).querySelector('img')?.getAttribute('src')).toMatch(/^blob:still\//);
     expect(screen.getByRole('radiogroup', { name: 'How to show the design' })).toBeTruthy();
     cleanup();
     device.webgl = false;

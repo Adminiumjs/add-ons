@@ -354,7 +354,10 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
   const rows: CatalogueRows = { bases: [base.row], pieces: [...pieces.rows], areas: [...areas.rows], ready: ready.row === null ? [] : [ready.row], parts: [...parts.rows], fonts: [...fonts.rows], palettes: [...palettes.rows], colours: [...colours.rows], features: [...features.rows] };
   const catalogue = catalogueFor(rows, baseKey!);
   const data: DesignData = { base_id: baseKey!, ready_design_id: readyId, values };
-  const designName = ready.row === null ? t('panel.line.plainPiece', 'The plain piece') : text(ready.row['name']);
+  // A design on no ready-made one is named by what it is made on, as the new base dialog names the kinds.
+  const blankName = (): string =>
+    page ? t('panel.line.plainPage', 'The blank page') : kind === 'kit' ? t('panel.line.plainKit', 'The plain kit') : printed ? t('panel.line.plainItem', 'The plain item') : t('panel.line.plainPiece', 'The plain piece');
+  const designName = ready.row === null ? blankName() : text(ready.row['name']);
   // The customer's own files, drawn from the dashboard's own copy.
   const pictures: Record<string, Upload> = {};
   for (const column of ['logo_file', 'photo_file']) {

@@ -482,4 +482,14 @@ describe('the panel on an order line', () => {
     render(<Line {...HOST} linked={null} />);
     expect(screen.getByText('No design on this line')).toBeTruthy();
   });
+
+  it('names a design on no ready-made one by its base’s kind: a blank card is a page, not a piece', () => {
+    seed('design_versions', []);
+    for (const [base, app, name] of [[IDS.cards, 'printing', 'The blank page'], [IDS.nook, 'maker', 'The plain kit'], [IDS.coasters, 'maker', 'The plain piece']] as const) {
+      cleanup();
+      seed('designs', [{ id: 93, app, ready_design_id: null, base_id: base, values: JSON.stringify({ format: 1, parts: {} }), state: 'draft', updated_at: '2026-08-06T10:00:00Z' }]);
+      render(<Line {...HOST} linked="93" />);
+      expect(items()['Design'], name).toBe(name);
+    }
+  });
 });
