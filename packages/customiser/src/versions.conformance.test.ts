@@ -52,7 +52,7 @@ const OTHER = JSON.stringify({ format: 1, parts: { name: { text: 'Hazel Quill' }
 /**
  * The two shops whose orders post into the ledger: Maker's order lines from
  * its orders, Print's jobs from its orders. Each order is one save, every
- * line of it in one plan.
+ * line of it in one answer.
  */
 const SHOPS = [
   { app: 'maker', lineTable: 'maker_order_lines', source: { table: 'maker_orders', row: '23' } },
@@ -63,11 +63,11 @@ const twoDesigns = (shop: (typeof SHOPS)[number]) =>
 const twoOnOne = (shop: (typeof SHOPS)[number]) =>
   input([line('l_1', 3, shop.lineTable), line('l_2', 3, shop.lineTable)], { design: [design('draft', VALUES, 3, shop.app)], versions: [] }, { source: shop.source });
 
-/** What Adminium refuses in a plan's labels: one given twice, or one longer than 64 characters. */
-function labelIssues(plan: { rows: readonly { op: string; label?: string }[] }): string[] {
+/** What Adminium refuses in an answer's labels: one given twice, or one longer than 64 characters. */
+function labelIssues(answer: { rows: readonly { op: string; label?: string }[] }): string[] {
   const seen = new Set<string>();
   const issues: string[] = [];
-  for (const row of plan.rows) {
+  for (const row of answer.rows) {
     if (row.op !== 'insert' || row.label === undefined) continue;
     if (seen.has(row.label)) issues.push(`the label "${row.label}" is given twice`);
     if (row.label.length < 1 || row.label.length > 64) issues.push(`the label "${row.label}" is not 1 to 64 characters`);
@@ -136,32 +136,32 @@ describe('what the shared suite does not compare', () => {
     expect(provider.rows(CASES.at(-1)!.input).rows).toEqual([]);
   });
 
-  describe('gives every row it adds a label of its own, as Adminium asks of a plan', () => {
+  describe('gives every row it adds a label of its own, as Adminium asks of an answer', () => {
     it.each(SHOPS)('two designs in one $app order: two versions, two labels', (shop) => {
-      const plan = provider.rows(twoDesigns(shop));
-      const labels = plan.rows.flatMap((row) => (row.op === 'insert' ? [row.label] : []));
+      const answer = provider.rows(twoDesigns(shop));
+      const labels = answer.rows.flatMap((row) => (row.op === 'insert' ? [row.label] : []));
       expect(labels).toEqual(['design-3-v1', 'design-5-v1']);
-      expect(labelIssues(plan)).toEqual([]);
+      expect(labelIssues(answer)).toEqual([]);
     });
 
     it.each(SHOPS)('two items of one design in one $app order: one version, one label', (shop) => {
-      const plan = provider.rows(twoOnOne(shop));
-      expect(plan.rows.filter((row) => row.op === 'insert')).toHaveLength(1);
-      expect(labelIssues(plan)).toEqual([]);
+      const answer = provider.rows(twoOnOne(shop));
+      expect(answer.rows.filter((row) => row.op === 'insert')).toHaveLength(1);
+      expect(labelIssues(answer)).toEqual([]);
     });
 
     it('an order of a new design beside a changed ordered one, each at its own next version', () => {
       const changed = design('ordered', OTHER, 5);
-      const plan = provider.rows(input([line('l_1', 3), line('l_2', 5), line('l_3', 3)], { design: [design('draft', VALUES, 3), changed], versions: [{ id: 9, design_id: 5, version: 1, values: VALUES }] }));
-      expect(plan.rows.flatMap((row) => (row.op === 'insert' ? [row.label] : []))).toEqual(['design-3-v1', 'design-5-v2']);
-      expect(labelIssues(plan)).toEqual([]);
+      const answer = provider.rows(input([line('l_1', 3), line('l_2', 5), line('l_3', 3)], { design: [design('draft', VALUES, 3), changed], versions: [{ id: 9, design_id: 5, version: 1, values: VALUES }] }));
+      expect(answer.rows.flatMap((row) => (row.op === 'insert' ? [row.label] : []))).toEqual(['design-3-v1', 'design-5-v2']);
+      expect(labelIssues(answer)).toEqual([]);
     });
 
     it('a design key too long for a label still gets a label of its own', () => {
       const long = (n: number) => `${'a'.repeat(60)}-${String(n)}`;
-      const plan = provider.rows(input([line('l_1', long(1)), line('l_2', long(2))], { design: [{ ...design('draft'), id: long(1) }, { ...design('draft', OTHER), id: long(2) }], versions: [] }));
-      expect(plan.rows.filter((row) => row.op === 'insert')).toHaveLength(2);
-      expect(labelIssues(plan)).toEqual([]);
+      const answer = provider.rows(input([line('l_1', long(1)), line('l_2', long(2))], { design: [{ ...design('draft'), id: long(1) }, { ...design('draft', OTHER), id: long(2) }], versions: [] }));
+      expect(answer.rows.filter((row) => row.op === 'insert')).toHaveLength(2);
+      expect(labelIssues(answer)).toEqual([]);
     });
   });
 

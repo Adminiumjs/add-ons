@@ -1,10 +1,10 @@
 /**
- * ONE ORDER, SEVERAL CUSTOMISED ITEMS: THE CUSTOMISER'S PLAN PASSES ADMINIUM'S
- * WRITE CHECK.
+ * ONE ORDER, SEVERAL CUSTOMISED ITEMS: THE CUSTOMISER'S ANSWER PASSES
+ * ADMINIUM'S WRITE CHECK.
  *
- * An order is one save, and every line of it that names a design is one plan
- * of the Customiser's `designs` ledger. Adminium refuses a plan that gives one
- * label to two rows, so two new designs in one order, each at its version 1,
+ * An order is one save, and every line of it that names a design is in one
+ * answer of the Customiser's `designs` ledger. Adminium refuses an answer that
+ * gives one label to two rows, so two new designs in one order, each at its version 1,
  * must not both be labelled "v1". Here, on a real Adminium with the built
  * Customiser vouched for as a sandbox vouches for it, in the two shapes the
  * shops post in (a print shop's jobs, a maker shop's order lines), a guest of
