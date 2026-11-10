@@ -4694,6 +4694,7 @@
       ],
       "select": [
         "id",
+        "app",
         "base_id",
         "name",
         "tags",

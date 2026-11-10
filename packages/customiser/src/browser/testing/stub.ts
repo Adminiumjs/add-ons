@@ -3,15 +3,16 @@
  *
  * The editor's tests and its dev page run it against this: the samples of
  * both shops (`src/testing/samples.ts`), served for one app at a time as the
- * add-on's entries serve them (published bases and ready-made designs only,
- * each app's rows only), and a designs table held in memory, with an own
- * link per design and the codes an order names. It records every call, so a
+ * add-on's public entries in manifest.json serve them (each app's own rows,
+ * through each entry's filters, with only the columns it selects), and a
+ * designs table held in memory, with an own link per design and the codes an
+ * order names. It records every call, so a
  * test can say what the editor asked for.
  *
  * It is not Adminium: what a real server answers is proved by the walk on a
  * real engine.
  */
-import { sampleTables, type Tables } from '../../testing/samples.ts';
+import { sampleTables, served, type Tables } from '../../testing/samples.ts';
 import { designFromRow, type CatalogueRows, type CustomiserApi, type DesignData, type HeldSession, type Row, type SavedDesign } from '../api.ts';
 
 export interface StubCall {
@@ -37,8 +38,6 @@ export interface Stub {
   ids: { coasters: number; nook: number; keyring: number; board: number; cards: number; flyers: number; ring: number; twoLines: number; harbour: number; photo: number };
 }
 
-const byApp = (rows: readonly Row[] | undefined, app: string): Row[] => (rows ?? []).filter((one) => one['app'] === app || one['app'] === null || one['app'] === undefined);
-
 let codes = 0;
 const code = (prefix: string): string => `${prefix}${String(++codes).padStart(16 - prefix.length, '0')}`;
 
@@ -63,9 +62,16 @@ export function stubApi(app: 'maker' | 'printing', options: { fonts?: Row[]; set
   const api: CustomiserApi = {
     async catalogue(base) {
       calls.push({ call: 'catalogue', args: [base] });
-      const bases = byApp(tables['bases'], app).filter((one) => one['state'] === 'published' && String(one['id']) === String(base));
-      const ready = byApp(tables['ready_designs'], app).filter((one) => one['state'] === 'published' && String(one['base_id']) === String(base));
-      const fonts = options.fonts ?? [
+      // Every table as the add-on's public entries serve it to this shop's visitor: its rows, its filters, its columns.
+      const read = (table: string): Row[] => served(table, tables[table] ?? [], app);
+      const bases = read('bases').filter((one) => String(one['id']) === String(base));
+      // With the preview picture's address a test gave the row, as `api.ts` adds it from the picture.
+      const pictured = (one: Row): Row => {
+        const url = (tables['ready_designs'] ?? []).find((row) => row['id'] === one['id'])?.['preview_url'];
+        return url === undefined ? one : { ...one, preview_url: url };
+      };
+      const ready = read('ready_designs').filter((one) => String(one['base_id']) === String(base)).map(pictured);
+      const fonts = served('fonts', options.fonts ?? [
         { id: 1, family: 'Cormorant Garamond', name: 'Cormorant Garamond', file: null },
         { id: 2, family: 'Manrope', name: 'Manrope', file: null },
         { id: 3, family: 'Caveat', name: 'Caveat', file: null },
@@ -74,18 +80,18 @@ export function stubApi(app: 'maker' | 'printing', options: { fonts?: Row[]; set
         { id: 6, family: 'Archivo', name: 'Archivo', file: null },
         { id: 7, family: 'Libre Baskerville', name: 'Libre Baskerville', file: null },
         { id: 8, family: 'DM Serif Display', name: 'DM Serif Display', file: null },
-      ];
+      ], app);
       const rows: CatalogueRows = {
         bases,
-        pieces: byApp(tables['base_pieces'], app).filter((one) => String(one['base_id']) === String(base)),
-        areas: byApp(tables['base_areas'], app).filter((one) => String(one['base_id']) === String(base)),
+        pieces: read('base_pieces').filter((one) => String(one['base_id']) === String(base)),
+        areas: read('base_areas').filter((one) => String(one['base_id']) === String(base)),
         ready,
-        parts: byApp(tables['ready_parts'], app).filter((one) => ready.some((r) => r['id'] === one['ready_design_id'])),
+        parts: read('ready_parts').filter((one) => ready.some((r) => r['id'] === one['ready_design_id'])),
         fonts,
-        palettes: byApp(tables['palettes'], app),
-        colours: byApp(tables['palette_colours'], app),
-        features: byApp(tables['features'], app),
-        settings: options.settings ?? [],
+        palettes: read('palettes'),
+        colours: read('palette_colours'),
+        features: read('features'),
+        settings: served('settings', options.settings ?? [], app),
       };
       return structuredClone(rows);
     },

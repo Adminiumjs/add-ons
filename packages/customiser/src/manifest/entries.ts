@@ -60,7 +60,7 @@ export function entries(): Entry[] {
     read('bases', ['id', 'app', 'name', 'kind', 'width_mm', 'height_mm', 'depth_mm', 'corner_mm', 'bleed_mm', 'safe_mm', 'sides', 'back_feature_id', 'material', 'thickness_mm', 'outline_file', 'model_file', 'faces', 'offered', 'position'], { filters: published, assets: ['outline_file', 'model_file'] }),
     read('base_pieces', ['id', 'base_id', 'code', 'name', 'width_mm', 'height_mm', 'layers', 'file', 'position'], { assets: ['file'] }),
     read('base_areas', ['id', 'base_id', 'code', 'name', 'side', 'piece_id', 'face', 'shape', 'x_mm', 'y_mm', 'w_mm', 'h_mm', 'takes', 'required', 'rules', 'feature_id', 'position']),
-    read('ready_designs', ['id', 'base_id', 'name', 'tags', 'layouts', 'preview_file', 'position'], { filters: published, pictures: ['preview_file'] }),
+    read('ready_designs', ['id', 'app', 'base_id', 'name', 'tags', 'layouts', 'preview_file', 'position'], { filters: published, pictures: ['preview_file'] }),
     read('ready_parts', ['id', 'ready_design_id', 'code', 'name', 'kind', 'locked', 'required', 'side', 'layout', 'area_id', 'piece_id', 'x_mm', 'y_mm', 'w_mm', 'h_mm', 'rules', 'value', 'feature_id', 'position']),
     /*
      * FONTS ARE READ BY EVERY VISITOR OF EVERY APP ON THE INSTALL. The starter
