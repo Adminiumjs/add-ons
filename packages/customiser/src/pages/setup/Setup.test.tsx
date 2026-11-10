@@ -401,6 +401,42 @@ describe('step 4, fonts and finishes', () => {
     expect(JSON.parse((writes('update', 'bases').at(-1)!.values as Record<string, string>)['offered']!)).toMatchObject({ finishes: ['engraved'] });
   });
 
+  it('draws each sample in its own font: every font with a file is loaded into the page, once, from the dashboard’s files', async () => {
+    for (const font of world.tables['fonts']!) font['file'] = font['id'] === 73 ? null : `file_01JX${'0'.repeat(20)}${String(font['id'])}`;
+    const made: { family: string; source: string }[] = [];
+    const added: string[] = [];
+    class Face {
+      readonly family: string;
+      constructor(family: string, source: string) {
+        this.family = family;
+        made.push({ family, source });
+      }
+      load(): Promise<Face> {
+        return Promise.resolve(this);
+      }
+    }
+    vi.stubGlobal('FontFace', Face);
+    const had = Object.getOwnPropertyDescriptor(document, 'fonts');
+    Object.defineProperty(document, 'fonts', { configurable: true, value: { add: (face: Face) => added.push(face.family) } });
+    try {
+      at(IDS.coasters, 'fonts');
+      render(<Customiser />);
+      await settle();
+      // Oswald has no file yet: nothing to load, and its sample stays in the fallback until it has one.
+      const byFamily = <T extends { family: string }>(list: T[]): T[] => [...list].sort((a, b) => a.family.localeCompare(b.family));
+      expect(byFamily(made)).toEqual([
+        { family: 'Caveat', source: 'url("/api/v1/files/file_01JX0000000000000000000072/content") format("woff2")' },
+        { family: 'Manrope', source: 'url("/api/v1/files/file_01JX0000000000000000000071/content") format("woff2")' },
+      ]);
+      expect([...added].sort()).toEqual(['Caveat', 'Manrope']);
+      expect(screen.getByRole('img', { name: 'Engraved walnut coasters, in Caveat' }).querySelector('text')!.getAttribute('font-family')).toBe('Caveat');
+    } finally {
+      vi.unstubAllGlobals();
+      if (had === undefined) delete (document as { fonts?: unknown }).fonts;
+      else Object.defineProperty(document, 'fonts', had);
+    }
+  });
+
   it('carries the licence line by the upload, and refuses a renamed file before sending it', async () => {
     at(IDS.coasters, 'fonts');
     render(<Customiser />);

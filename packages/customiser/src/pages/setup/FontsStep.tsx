@@ -17,6 +17,7 @@ import { useEffect, useId, useRef, useState, type ChangeEvent, type ReactNode } 
 
 import { Alert, asDataError, Button, Card, FileInput, Figure, Grid, Input, Stack, Switch, Tag, useAccess, useUploader, useWrite, type AddOnTranslate, type DataRow } from '../shared/host.ts';
 import { refusal } from '../shared/refusal.ts';
+import { loadFamilies } from '../shared/stored.ts';
 import { useToast } from '../shared/toast.ts';
 import type { SetupData } from './data.ts';
 import { codeFor, familyFromFile, FONT_BYTES, fontUse, isWoff2, kindOf, mm, num, offeredOf, text, toggled, yes, type Offered } from './facts.ts';
@@ -137,6 +138,14 @@ function Fonts({ t, base, data, offered, offer, starter }: { t: AddOnTranslate; 
   const [busy, setBusy] = useState(false);
   const used = fontUse(data.parts);
   const count = data.fonts.filter((font) => offered.fonts.includes(text(font['family']))).length;
+  // Each sample is drawn in its own font: the font's stored file, loaded into the page as the designs' pictures load it.
+  // Keyed by what the rows hold, so a starter file added on this visit is loaded once it is in.
+  const faces = data.fonts.map((font) => `${text(font['family'])}\u0000${text(font['file'])}`).join('\u0001');
+  useEffect(() => {
+    const rows = data.fonts.map((font) => ({ family: text(font['family']), file: font['file'] }));
+    void loadFamilies(rows, new Set(rows.map((row) => row.family)));
+    // `faces` is what the rows hold; the rows' array is new on every read.
+  }, [faces]);
   const pick = async (event: ChangeEvent<HTMLInputElement>): Promise<void> => {
     const file = event.target.files?.[0];
     event.target.value = '';
