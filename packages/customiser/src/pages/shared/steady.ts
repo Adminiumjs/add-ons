@@ -7,8 +7,10 @@
  * of them are what the screen draws from and never changes itself: the
  * shop's bases, designs, fonts, colours. Those are read here once for each
  * question, then held: the list is switched off once it has answered, so a
- * write elsewhere on the page does not read it again, and Adminium keeps
- * the answer it had. A question that changes (another base) is read anew.
+ * write elsewhere on the page does not read it again. The rows it answered
+ * are kept here, not left to the host: a list switched off "reads nothing",
+ * and a shop app's own screens hand it back empty (only Adminium's dashboard
+ * keeps the last answer). A question that changes (another base) is read anew.
  */
 import { useEffect, useState } from 'react';
 
@@ -31,8 +33,8 @@ export function useSteadyRecords(table: string, options: Options): Steady {
   const wanted = enabled !== false;
   const key = `${table}\u0000${JSON.stringify(question)}`;
   const [seen, setSeen] = useState<string | null>(null);
-  const [held, setHeld] = useState<string | null>(null);
-  const steady = held === key;
+  const [held, setHeld] = useState<{ key: string; rows: Steady['rows']; hasMore: boolean } | null>(null);
+  const steady = held !== null && held.key === key;
   const result = useRecords(table, { ...question, enabled: wanted && !steady });
   const loading = wanted && !steady && result.loading;
   const answered = wanted && !steady && seen === key && !result.loading && result.error === null;
@@ -40,9 +42,10 @@ export function useSteadyRecords(table: string, options: Options): Steady {
     if (loading) setSeen(key);
   }, [loading, key]);
   useEffect(() => {
-    if (answered) setHeld(key);
-  }, [answered, key]);
-  return steady ? { ...result, loading: false } : result;
+    if (answered) setHeld({ key, rows: result.rows, hasMore: result.hasMore });
+  }, [answered, key, result.rows, result.hasMore]);
+  // Held: the rows it answered, whatever the switched-off list hands back.
+  return steady ? { ...result, rows: held.rows, hasMore: held.hasMore, loading: false } : result;
 }
 
 /** One row by its key, read once and held: `useSteadyRecords` on the key, shaped as a row. */

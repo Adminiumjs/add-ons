@@ -56,6 +56,17 @@ describe('useSteadyRecords', () => {
     expect(result.current.rows.map((row) => row['family'])).toEqual(['Caveat']);
   });
 
+  it('keeps a held question\'s rows where the host hands a switched-off list back empty (a shop app\'s screens)', () => {
+    world.offEmpty = true;
+    world.pending.add('fonts');
+    const { result } = renderHook(() => useSteadyRecords('fonts', of('maker')));
+    act(() => loaded('fonts'));
+    touch();
+    expect(readsOfFonts()).toBe(1);
+    expect(result.current.loading).toBe(false);
+    expect(result.current.rows.map((row) => row['family'])).toEqual(['Manrope']);
+  });
+
   it('passes a refusal on and holds nothing until a read is answered', () => {
     world.closed.add('fonts');
     const { result } = renderHook(() => useSteadyRecords('fonts', of('maker')));

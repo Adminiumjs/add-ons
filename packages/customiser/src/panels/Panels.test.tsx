@@ -364,6 +364,17 @@ describe('the panel on an order line', () => {
     await settle();
   };
 
+  it('draws the design once its set-up is held, on a host that hands a switched-off list back empty (a shop app’s screens)', async () => {
+    world.offEmpty = true;
+    seedCard();
+    withFont();
+    seed('designs', [{ id: 92, app: 'printing', ready_design_id: 53, base_id: IDS.cards, values: JSON.stringify({ format: 1, layout: 'left', sides: 2, parts: { name: { text: 'Nell Fairweather' } } }), state: 'ordered', updated_at: '2026-08-04T09:00:00Z' }]);
+    seed('design_versions', []);
+    await openHeld('92');
+    expect(screen.queryByText('Loading')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Make the proof' })).toBeTruthy();
+  });
+
   it('makes the files with the fonts and the shop’s line as they are now, a font’s file added in another tab since the panel opened', async () => {
     seedCard();
     seed('designs', [{ id: 92, app: 'printing', ready_design_id: 53, base_id: IDS.cards, values: JSON.stringify({ format: 1, layout: 'left', sides: 2, parts: { name: { text: 'Nell Fairweather' } } }), state: 'ordered', updated_at: '2026-08-04T09:00:00Z' }]);

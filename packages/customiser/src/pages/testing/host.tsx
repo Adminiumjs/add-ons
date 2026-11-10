@@ -73,6 +73,8 @@ export const world = {
    * switched on. A list switched off keeps the rows it last read.
    */
   reads: [] as string[],
+  /** A list switched off hands back no rows, as a shop app's own screens do (Adminium's dashboard keeps the last answer). */
+  offEmpty: false,
   /** Personal columns the reader may not see, by table: read back empty and named in the row's `_masked`, as Adminium masks them. */
   masked: {} as Record<string, string[]>,
   /** What the reader may not do: `create:items`, `update:counts`, `move:receipts:posting`. */
@@ -134,6 +136,7 @@ export function resetWorld(): void {
   world.closed = new Set();
   world.pending = new Set();
   world.reads = [];
+  world.offEmpty = false;
   lastRead.clear();
   world.masked = {};
   world.cannot = new Set();
@@ -250,6 +253,7 @@ function useRecords(table: string, options: ListOptions = {}) {
   const { enabled, ...question } = options;
   const key = `${table}|${JSON.stringify(question)}`;
   if (enabled === false) {
+    if (world.offEmpty) return { rows: [], hasMore: false, loading: false, error: null, refetch: () => undefined };
     const held = lastRead.get(key);
     return { rows: held?.rows ?? [], hasMore: held?.hasMore ?? false, loading: false, error: null, refetch: () => undefined };
   }
