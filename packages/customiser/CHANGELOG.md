@@ -1,5 +1,17 @@
 # @adminium/add-on-customiser
 
+## 1.0.24
+
+### Patch Changes
+
+- 31c7123: Customiser: the full editor offers the base's offered fonts alone, and new words start in the base's first offered font. A words layer already set in a font the base no longer offers keeps it, listed beside the offered ones. A base that names no fonts, or none still switched on, offers the starter fonts and its own shop's, never a font another app on the install uploaded, and a design set in another app's font is refused when ordered.
+- 33e8ee3: Customiser: the "New base" dialog marks the kind of the shop it is for: a flat page for a print shop, a flat piece for a maker shop, until the owner picks another.
+- 8e48326: Customiser: the order-line panel says what the Customiser made, not what the shop sent: its badge reads "No proof made" instead of "No proof yet", and a design with no version yet reads "The Customiser has made no proof of this design yet." instead of "No proof sent yet.". A shop may send its own file as a proof from its own app, which the panel does not read.
+- a5defcd: Customiser: the order-line panel reads the shop's set-up (bases, ready-made designs, fonts, colours, features, settings) once, and after making a proof or the files reads again only the design's versions and their files, not all fourteen of its tables. Each "Make the proof" and "Make the files" reads the fonts and the shop's one-colour line as they are then, so a font file or a line changed in another tab since the panel opened is used.
+- 3160371: Customiser: the set-up's Fonts step draws each font's sample in that font, loading every font that has a file into the page. A font whose file is replaced is loaded again, one that failed to load is tried again, and the shop's fonts are loaded under the Customiser's own names, so a shop's Manrope never stands in for the dashboard's.
+- c2d48fd: Customiser: the order-line panel calls a picture added in the full editor "their own picture", never "their own logo": the full editor keeps any picture in the first picture column it has room in, which says nothing of whether it is a logo or a photo. The privacy line now covers any picture the shopper gave: "The shopper's pictures are private to them and the shop."
+- 56e216e: Customiser: an order with two or more customised items is taken. Each new design version an order makes is labelled by its design as well as its number, so two new designs in one order no longer both ask for the label "v1", which Adminium refused ("We couldn't take the order as it is").
+
 ## 1.0.23
 
 ### Patch Changes

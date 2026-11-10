@@ -1,5 +1,7 @@
 # @adminium/add-on-offers
 
+## 1.0.24
+
 ## 1.0.23
 
 ## 1.0.22
