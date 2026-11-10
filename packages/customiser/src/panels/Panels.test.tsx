@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { Refused, resetWorld, seed, world } from '../pages/testing/host.tsx';
+import { loaded, Refused, resetWorld, seed, world } from '../pages/testing/host.tsx';
 import { IDS, seedCard, seedShop } from '../pages/testing/rows.ts';
 
 const { default: Product } = await import('./product.tsx');
@@ -351,16 +351,42 @@ describe('the panel on an order line', () => {
     expect(screen.getByText('It goes to press once the proof is approved.')).toBeTruthy();
   });
 
+  /** The panel opened as Adminium answers: each read after a while, a base's areas and pieces once the base is known. */
+  const openHeld = async (linked: string): Promise<void> => {
+    const later = ['base_areas', 'base_pieces'];
+    const first = ['ready_designs', 'bases', 'ready_parts', 'palettes', 'palette_colours', 'fonts', 'features', 'settings'];
+    for (const table of [...first, ...later]) world.pending.add(table);
+    render(<Line {...HOST} linked={linked} />);
+    await settle();
+    act(() => loaded(...first));
+    await settle();
+    act(() => loaded(...later));
+    await settle();
+  };
+
+  it('makes the files with the fonts and the shop’s line as they are now, a font’s file added in another tab since the panel opened', async () => {
+    seedCard();
+    seed('designs', [{ id: 92, app: 'printing', ready_design_id: 53, base_id: IDS.cards, values: JSON.stringify({ format: 1, layout: 'left', sides: 2, parts: { name: { text: 'Nell Fairweather' } } }), state: 'ordered', updated_at: '2026-08-04T09:00:00Z' }]);
+    seed('design_versions', []);
+    await openHeld('92');
+    // Another tab adds Manrope's file: the panel's own lists are held, and do not see it.
+    withFont();
+    world.calls.length = 0;
+    fireEvent.click(screen.getByRole('button', { name: 'Make the print file' }));
+    await settle();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(world.calls.filter((call) => call.kind === 'create' && call.table === 'version_files')).toHaveLength(2);
+    expect(world.calls.filter((call) => call.kind === 'list').map((call) => call.table).sort()).toEqual(['fonts', 'settings']);
+  });
+
   it('reads again after a save only what the save changed: the versions and their files, never the shop’s set-up', async () => {
     seedCard();
     withFont();
     seed('designs', [{ id: 92, app: 'printing', ready_design_id: 53, base_id: IDS.cards, values: JSON.stringify({ format: 1, layout: 'left', sides: 2, parts: { name: { text: 'Nell Fairweather' } } }), state: 'ordered', updated_at: '2026-08-04T09:00:00Z' }]);
     seed('design_versions', []);
-    render(<Line {...HOST} linked="92" />);
-    await settle();
-    const first = [...world.reads];
+    await openHeld('92');
     // The first draw reads each table once.
-    expect(first.filter((table) => table === 'fonts')).toHaveLength(1);
+    expect(world.reads.filter((table) => table === 'fonts')).toHaveLength(1);
     world.reads.length = 0;
     fireEvent.click(screen.getByRole('button', { name: 'Make the proof' }));
     await settle();

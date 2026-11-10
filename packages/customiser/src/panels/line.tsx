@@ -28,7 +28,7 @@ import type { Upload } from '../browser/ui/pictures.ts';
 import { sidesMade, type FlatSheet } from '../draw/flat.ts';
 import { layoutsOf } from '../rules/design.ts';
 import { FontMissing } from '../draw/pdf.ts';
-import { Alert, asDataError, Button, Card, EmptyState, Figure, KeyValueList, lucideByName, Stack, StatusPill, useAccess, useLocaleTag, useRecord, useRecords, useUploader, useWrite, type AddOnTranslate, type DataRow, type DataValue } from '../pages/shared/host.ts';
+import { Alert, asDataError, Button, Card, EmptyState, Figure, KeyValueList, lucideByName, Stack, StatusPill, useAccess, useLocaleTag, useRead, useRecord, useRecords, useUploader, useWrite, type AddOnTranslate, type DataRow, type DataValue } from '../pages/shared/host.ts';
 import { wordsFor } from '../pages/shared/messages.ts';
 import { refusal } from '../pages/shared/refusal.ts';
 import { fileAddress, fileIdOf } from '../pages/shared/stored.ts';
@@ -283,6 +283,7 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
   const versions = useRecords('design_versions', { filter: [{ column: 'design_id', op: 'eq', value: linked }], sort: [{ column: 'version', direction: 'desc' }], pageSize: 50, enabled: linked !== null });
   const latest = versions.rows[0];
   const files = useRecords('version_files', { ...by('version_id', latest === undefined ? null : (latest['id'] as string | number), latest !== undefined), pageSize: 199 });
+  const read = useRead();
   const versionWrite = useWrite('design_versions');
   const fileWrite = useWrite('version_files');
   const proofUpload = useUploader('design_versions', 'proof_file');
@@ -376,6 +377,20 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
     return made;
   };
 
+  /**
+   * The fonts and the shop's one-colour line as they are now, read once a
+   * make: the panel holds what it read when it opened, and another tab may
+   * have added a font's file or moved the line since. A read that fails
+   * leaves what the panel holds.
+   */
+  const now = async (): Promise<{ catalogue: NonNullable<typeof catalogue>; startThreshold: number }> => {
+    const [fontRows, settingRows] = await Promise.all([
+      read.list('fonts', all).then((answer) => answer.rows, () => fonts.rows),
+      settingsRead ? read.list('settings', { pageSize: 1 }).then((answer) => answer.rows, () => settings.rows) : Promise.resolve(settings.rows),
+    ]);
+    return { catalogue: catalogueFor({ ...rows, fonts: [...fontRows] }, baseKey!) ?? catalogue!, startThreshold: Number(settingRows[0]?.['one_colour_threshold'] ?? 50) || 50 };
+  };
+
   const fail = (caught: unknown): void => {
     if (caught instanceof RemoveRefused) setProblem(t('panel.rights.again', 'Making the files again replaces the version’s files, and your role may not remove them. That needs the Customiser designer role.'));
     else if (caught instanceof PrintedRefused) setProblem(printedProblem(t, caught.problem));
@@ -388,6 +403,7 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
     setBusy('proof');
     setProblem(null);
     try {
+      const { catalogue, startThreshold } = await now();
       const held = await picturesOf(row);
       const sheets = sheetsFor(catalogue, data, (column) => held.pdf[column] !== undefined || pictures[column] !== undefined);
       // Checked before anything is saved: a blank proof leaves no version behind either.
@@ -428,6 +444,7 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
     setBusy('files');
     setProblem(null);
     try {
+      const { catalogue } = await now();
       const version = await versionNow();
       const stem = fileStem(row['id'] as string | number, Number(version['version']));
       const held = await picturesOf(row);
