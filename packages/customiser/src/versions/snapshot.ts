@@ -47,6 +47,20 @@ function sameJson(a: PostingScalar | null | undefined, b: PostingScalar | null |
   return stable(read(a)) === stable(read(b));
 }
 
+/**
+ * The label of a new version row. Adminium refuses a plan that gives one label
+ * twice, and one order may order several designs, each at its own version 1:
+ * so the label names the design as well as the version. A save makes at most
+ * one new version of a design (a second line of it sees what the first
+ * planned), so design and version are unique within one plan. A key too long
+ * for a label (64 characters) falls back to the row's place in the plan,
+ * unique as well.
+ */
+function labelOf(key: string, version: number, at: number): string {
+  const named = `design-${key}-v${String(version)}`;
+  return named.length <= 64 ? named : `row-${String(at)}-v${String(version)}`;
+}
+
 export function rows(input: PostingInput): PostingOutput {
   const out: PlannedRow[] = [];
   const refusals: NonNullable<PostingOutput['refusals']> = [];
@@ -70,7 +84,7 @@ export function rows(input: PostingInput): PostingOutput {
     const values = design['values'] ?? null;
     if (newest === null || !sameJson(newest.values, values)) {
       const version = (newest?.version ?? 0) + 1;
-      out.push({ op: 'insert', table: 'design_versions', line: line.line, label: `v${String(version)}`, values: { app: design['app'] ?? null, design_id: design['id'] ?? key, version, values, note: null } });
+      out.push({ op: 'insert', table: 'design_versions', line: line.line, label: labelOf(key, version, out.length), values: { app: design['app'] ?? null, design_id: design['id'] ?? key, version, values, note: null } });
       planned.set(key, { version, values });
     }
     if (design['state'] !== 'ordered' && !out.some((row) => row.op === 'update' && String(row.key['id']) === key)) {
