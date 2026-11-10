@@ -458,6 +458,43 @@ describe('step 4, fonts and finishes', () => {
     }
   });
 
+  it('tries a font whose file failed to load again when the Fonts step is opened again', async () => {
+    for (const font of world.tables['fonts']!) font['file'] = `file_01JX${'0'.repeat(20)}${String(font['id'])}`;
+    const added: string[] = [];
+    // Caveat's file does not come through on the first visit.
+    let failing = true;
+    class Face {
+      readonly family: string;
+      constructor(family: string) {
+        this.family = family;
+      }
+      load(): Promise<Face> {
+        return failing && this.family === 'cz-Caveat' ? Promise.reject(new Error('network')) : Promise.resolve(this);
+      }
+    }
+    vi.stubGlobal('FontFace', Face);
+    const had = Object.getOwnPropertyDescriptor(document, 'fonts');
+    Object.defineProperty(document, 'fonts', { configurable: true, value: { add: (face: Face) => added.push(face.family), delete: () => true } });
+    forgetLoadedFamilies();
+    try {
+      at(IDS.coasters, 'fonts');
+      const first = render(<Customiser />);
+      await settle();
+      expect(added).not.toContain('cz-Caveat');
+      added.length = 0;
+      first.unmount();
+      failing = false;
+      render(<Customiser />);
+      await settle();
+      // Only Caveat is asked for again: the others are in the page already.
+      expect(added).toEqual(['cz-Caveat']);
+    } finally {
+      vi.unstubAllGlobals();
+      if (had === undefined) delete (document as { fonts?: unknown }).fonts;
+      else Object.defineProperty(document, 'fonts', had);
+    }
+  });
+
   it('carries the licence line by the upload, and refuses a renamed file before sending it', async () => {
     at(IDS.coasters, 'fonts');
     render(<Customiser />);
