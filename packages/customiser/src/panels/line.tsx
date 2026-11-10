@@ -80,7 +80,9 @@ export function choiceLine(t: AddOnTranslate, value: unknown, unit: 'mm' | 'pt',
  * What a design made in the full editor holds, part by part: its words and
  * its pictures as the shopper placed them (`values.placed`), each under the
  * name it carries. Its form's parts are empty then, so they are never listed
- * as left plain. Shapes are the design's own, not a choice.
+ * as left plain. Shapes are the design's own, not a choice. A picture is
+ * "their own picture": the shopper added it, and nothing says whether it is
+ * a logo or a photo.
  */
 export function placedLines(t: AddOnTranslate, placed: unknown, unit: 'mm' | 'pt', finishName: (code: string) => string): { label: string; value: string }[] {
   if (!Array.isArray(placed)) return [];
@@ -89,7 +91,8 @@ export function placedLines(t: AddOnTranslate, placed: unknown, unit: 'mm' | 'pt
     const part = raw as Record<string, unknown>;
     const name = typeof part['name'] === 'string' && part['name'] !== '' ? part['name'] : null;
     if (part['kind'] === 'text' && typeof part['text'] === 'string' && part['text'].trim() !== '') return [{ label: name ?? t('panel.line.placedWords', 'Words'), value: choiceLine(t, { text: part['text'], font: part['font'], size: part['size'] }, unit, finishName) }];
-    if (part['kind'] === 'image' && typeof part['file'] === 'string' && part['file'] !== '') return [{ label: name ?? t('panel.line.placedPicture', 'Picture'), value: choiceLine(t, { file: part['file'] }, unit, finishName) }];
+    // The full editor keeps any picture in the first picture column it has room in, so the column says nothing of what it is: a logo, a photo, a drawing.
+    if (part['kind'] === 'image' && typeof part['file'] === 'string' && part['file'] !== '') return [{ label: name ?? t('panel.line.placedPicture', 'Picture'), value: t('panel.line.picture', 'their own picture') }];
     return [];
   });
 }
@@ -355,7 +358,8 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
     const light = lights[column];
     if (id !== null) pictures[column] = { id, name: '', size: 0, kind: '', url: fileAddress(row[column])!, fresh: false, ...(light === undefined ? {} : { light }) };
   }
-  const hasLogo = pictures['logo_file'] !== undefined;
+  // Any picture the shopper gave, logo or photo, is theirs alone.
+  const hasPicture = Object.keys(pictures).length > 0;
   const shared = sharedFor(locale, page ? 'print' : 'maker', '');
   const sides = catalogue === null ? [] : sidesMade(catalogue, data);
   const size = `${mm(Number(base.row['width_mm']))} × ${mm(Number(base.row['height_mm']))} mm`;
@@ -522,10 +526,10 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
             { label: t('panel.line.savedAs', 'Saved as'), value: t('panel.line.savedAt', 'designs / {id} · {at}', { id: String(row['id']), at: moment(row['updated_at'], locale) }), mono: true },
           ]}
         />
-        {hasLogo ? (
+        {hasPicture ? (
           <p className="m-0 flex items-center gap-2 text-[12px] text-fg-subtle">
             <LockKeyhole />
-            {t('panel.line.private', 'The shopper’s logo is private to them and the shop.')}
+            {t('panel.line.privatePictures', 'The shopper’s pictures are private to them and the shop.')}
           </p>
         ) : null}
         <div className="flex flex-wrap gap-2">

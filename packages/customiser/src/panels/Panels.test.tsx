@@ -367,9 +367,36 @@ describe('the panel on an order line', () => {
     seed('design_versions', []);
     render(<Line {...HOST} linked="92" />);
     const listed = items();
-    expect(listed).toMatchObject({ Design: 'Harbour', Name: '“Wren Walker” · Manrope · 13 pt', Photo: 'their own photo', Picture: 'their own logo' });
+    // The full editor keeps any picture in the first picture column it has room in: what it is (logo, photo) is the shopper's, so it is named neither.
+    expect(listed).toMatchObject({ Design: 'Harbour', Name: '“Wren Walker” · Manrope · 13 pt', Photo: 'their own picture', Picture: 'their own picture' });
     expect(Object.values(listed)).not.toContain('left plain');
+    expect(Object.values(listed)).not.toContain('their own logo');
     expect(Object.keys(listed)).not.toContain('Box');
+    expect(screen.getByText('The shopper’s pictures are private to them and the shop.')).toBeTruthy();
+  });
+
+  it('calls a photo added in the full editor a picture, never a logo, and keeps it private', () => {
+    seedCard();
+    // A photo the shopper uploaded with "Add an image": named by its file, kept in the first picture column it has room in.
+    const placed = [{ id: 'i1', side: 'back', kind: 'image', name: 'rewalk-bindery-photo.jpg', x: 0, y: 0, w: 40, h: 27, file: 'logo_file', fit: 'inside' }];
+    seed('designs', [{ id: 92, app: 'printing', ready_design_id: 53, base_id: IDS.cards, values: JSON.stringify({ format: 1, sides: 2, parts: {}, placed }), logo_file: 'file_01HZY00000000000000000GGG1', state: 'ordered', updated_at: '2026-08-04T09:00:00Z' }]);
+    seed('design_versions', []);
+    render(<Line {...HOST} linked="92" />);
+    expect(items()['rewalk-bindery-photo.jpg']).toBe('their own picture');
+    expect(screen.queryByText(/logo/i)).toBeNull();
+    expect(screen.getByText('The shopper’s pictures are private to them and the shop.')).toBeTruthy();
+  });
+
+  it('keeps a form’s photo private too, and says nothing of privacy on a design with no picture', () => {
+    seedCard();
+    seed('designs', [{ id: 92, app: 'printing', ready_design_id: 53, base_id: IDS.cards, values: JSON.stringify({ format: 1, parts: { name: { text: 'Nell' } } }), photo_file: 'file_01HZY00000000000000000PHT1', state: 'ordered', updated_at: '2026-08-04T09:00:00Z' }]);
+    seed('design_versions', []);
+    render(<Line {...HOST} linked="92" />);
+    expect(screen.getByText('The shopper’s pictures are private to them and the shop.')).toBeTruthy();
+    cleanup();
+    seed('designs', [{ id: 92, app: 'printing', ready_design_id: 53, base_id: IDS.cards, values: JSON.stringify({ format: 1, parts: { name: { text: 'Nell' } } }), state: 'ordered', updated_at: '2026-08-04T09:00:00Z' }]);
+    render(<Line {...HOST} linked="92" />);
+    expect(screen.queryByText('The shopper’s pictures are private to them and the shop.')).toBeNull();
   });
 
   it('names a plain piece’s areas, says a part left plain, and a line with no design', () => {
