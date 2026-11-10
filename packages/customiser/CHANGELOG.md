@@ -1,5 +1,16 @@
 # @adminium/add-on-customiser
 
+## 1.0.26
+
+### Patch Changes
+
+- 70350d7: Customiser: two corrections to the 1.0.24 notes. After making a proof or the files, the order-line panel reads again the design itself as well as its versions and their files, not only the versions and files. And in the set-up's Fonts step, a font whose file failed to load is tried again the next time the Fonts step is opened, or when the font's file changes, not on its own while the step stays open.
+- ab00bb1: Customiser: the order-line panel names a design that starts from no ready-made design by what it is made on: "The blank page" for a page (a business card), "The plain piece", "The plain kit" or "The plain item" for the others, where it said "The plain piece" for all of them.
+- f971bef: Customiser: the order-line panel reads the shop's set-up once also when the dashboard already has it, as it has for a second panel opened or one opened again. Until now such a panel read the fonts, palettes, colours, features and settings again after every save.
+- 296ce12: Customiser: a shopper can order a ready-made design again. Since 1.0.24 the shop's editor said "This design can't be made as it is" for every ready-made design and refused Add to basket, because the shop's visitors were not served which shop a ready-made design belongs to. They are now, as they already are for a base and a font. Updating the add-on is all a shop needs to do.
+- 40bfe05: Customiser: the set-up's Shop settings say they cover every shop app that uses this install of the Customiser, no longer every shop app on the Adminium. Two shop apps on one database share the settings; a shop app on another database has its own Customiser and its own settings.
+- 4210b65: Customiser: words a shopper set in the full editor in one of the shop's own fonts keep that font after the shop switches it off. The editor no longer refuses the design for it, as the server never did, and lists the font for those words only: new words still pick only the fonts the shop has on.
+
 ## 1.0.25
 
 ### Patch Changes
