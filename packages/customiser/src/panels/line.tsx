@@ -32,6 +32,7 @@ import { Alert, asDataError, Button, Card, EmptyState, Figure, KeyValueList, luc
 import { wordsFor } from '../pages/shared/messages.ts';
 import { refusal } from '../pages/shared/refusal.ts';
 import { fileAddress, fileIdOf } from '../pages/shared/stored.ts';
+import { useSteadyRecord, useSteadyRecords } from '../pages/shared/steady.ts';
 import { useToast } from '../pages/shared/toast.ts';
 import { jsonOf, kindOf, mm, text } from '../pages/setup/facts.ts';
 import { PANEL, SETUP, SHARED } from '../pages/strings/index.ts';
@@ -260,23 +261,25 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
   const locale = useLocaleTag();
   const access = useAccess();
   const toast = useToast();
+  // Read again after each save: the design, its versions and their files, which the panel's saves change.
   const design = useRecord('designs', linked);
   const row = design.row;
   const readyId = row === null ? null : (row['ready_design_id'] as string | number | null);
   const baseId = row === null ? null : (row['base_id'] as string | number | null);
-  const ready = useRecord('ready_designs', readyId ?? null);
-  const base = useRecord('bases', baseId ?? (ready.row === null ? null : (ready.row['base_id'] as string | number)));
+  // Read once: the shop's set-up the design is drawn from, which no save of this panel changes.
+  const ready = useSteadyRecord('ready_designs', readyId ?? null);
+  const base = useSteadyRecord('bases', baseId ?? (ready.row === null ? null : (ready.row['base_id'] as string | number)));
   const baseKey = base.row === null ? null : (base.row['id'] as string | number);
-  const parts = useRecords('ready_parts', by('ready_design_id', readyId, readyId !== null));
-  const areas = useRecords('base_areas', by('base_id', baseKey, baseKey !== null));
-  const pieces = useRecords('base_pieces', by('base_id', baseKey, baseKey !== null));
-  const palettes = useRecords('palettes', { ...all, enabled: row !== null });
-  const colours = useRecords('palette_colours', { ...all, enabled: row !== null });
-  const fonts = useRecords('fonts', { ...all, enabled: row !== null });
-  const features = useRecords('features', { ...all, enabled: row !== null });
+  const parts = useSteadyRecords('ready_parts', by('ready_design_id', readyId, readyId !== null));
+  const areas = useSteadyRecords('base_areas', by('base_id', baseKey, baseKey !== null));
+  const pieces = useSteadyRecords('base_pieces', by('base_id', baseKey, baseKey !== null));
+  const palettes = useSteadyRecords('palettes', { ...all, enabled: row !== null });
+  const colours = useSteadyRecords('palette_colours', { ...all, enabled: row !== null });
+  const fonts = useSteadyRecords('fonts', { ...all, enabled: row !== null });
+  const features = useSteadyRecords('features', { ...all, enabled: row !== null });
   // The shop's starting line for a one-colour logo the customer left as it was. A role that may not read the settings is told the proof uses the column's own default.
   const settingsRead = access.ready && access.canRead('settings');
-  const settings = useRecords('settings', { pageSize: 1, enabled: row !== null && settingsRead });
+  const settings = useSteadyRecords('settings', { pageSize: 1, enabled: row !== null && settingsRead });
   const versions = useRecords('design_versions', { filter: [{ column: 'design_id', op: 'eq', value: linked }], sort: [{ column: 'version', direction: 'desc' }], pageSize: 50, enabled: linked !== null });
   const latest = versions.rows[0];
   const files = useRecords('version_files', { ...by('version_id', latest === undefined ? null : (latest['id'] as string | number), latest !== undefined), pageSize: 199 });
@@ -411,8 +414,8 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
         return;
       }
       await proofUpload.upload(version['id'] as string | number, blob, { name });
+      // Adminium reads the versions again after the save: no second read here.
       toast(page ? t('panel.make.proofMade', 'The proof is made. The send-a-proof sheet attaches it.') : t('panel.make.proofPicture', 'The proof picture is made from the saved design. The send-a-proof sheet attaches it.'));
-      versions.refetch?.();
     } catch (caught) {
       fail(caught);
     } finally {
@@ -450,7 +453,6 @@ export function LinePanel({ t, linked }: { t: AddOnTranslate } & PanelProps): Re
         await fileUpload.upload(saved['id'] as string | number, one.blob, { name: one.name });
       }
       toast(page ? t('panel.make.printMade', 'The print files are made, one per side.') : t('panel.make.filesMade', 'The files for the machine are made.'));
-      files.refetch?.();
     } catch (caught) {
       fail(caught);
     } finally {

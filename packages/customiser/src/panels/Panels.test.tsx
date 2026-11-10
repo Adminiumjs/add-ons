@@ -351,6 +351,28 @@ describe('the panel on an order line', () => {
     expect(screen.getByText('It goes to press once the proof is approved.')).toBeTruthy();
   });
 
+  it('reads again after a save only what the save changed: the versions and their files, never the shop’s set-up', async () => {
+    seedCard();
+    withFont();
+    seed('designs', [{ id: 92, app: 'printing', ready_design_id: 53, base_id: IDS.cards, values: JSON.stringify({ format: 1, layout: 'left', sides: 2, parts: { name: { text: 'Nell Fairweather' } } }), state: 'ordered', updated_at: '2026-08-04T09:00:00Z' }]);
+    seed('design_versions', []);
+    render(<Line {...HOST} linked="92" />);
+    await settle();
+    const first = [...world.reads];
+    // The first draw reads each table once.
+    expect(first.filter((table) => table === 'fonts')).toHaveLength(1);
+    world.reads.length = 0;
+    fireEvent.click(screen.getByRole('button', { name: 'Make the proof' }));
+    await settle();
+    fireEvent.click(screen.getByRole('button', { name: 'Make the print file' }));
+    await settle();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(world.calls.filter((call) => call.kind === 'upload')).toHaveLength(3);
+    // Each save is read back in the design's versions and files alone: the set-up it is drawn from is held.
+    expect([...new Set(world.reads)].sort()).toEqual(['design_versions', 'version_files']);
+    expect(world.reads.length).toBeLessThanOrEqual(2 * world.calls.filter((call) => call.kind === 'create' || call.kind === 'upload' || call.kind === 'remove').length);
+  });
+
   it('names each part of the layout the design is in once, never a part of its other layout', () => {
     seedCard();
     const names = (): string[] => [...document.querySelectorAll('dl > div > dt')].map((term) => term.textContent!);
