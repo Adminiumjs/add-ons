@@ -75,6 +75,12 @@ export const world = {
   reads: [] as string[],
   /** A list switched off hands back no rows, as a shop app's own screens do (Adminium's dashboard keeps the last answer). */
   offEmpty: false,
+  /**
+   * A question a list answered before is answered again at once from the
+   * cache, its rows and not loading, while its fresh read is still out, as
+   * Adminium's dashboard answers a second panel or one opened again.
+   */
+  cached: false,
   /** Personal columns the reader may not see, by table: read back empty and named in the row's `_masked`, as Adminium masks them. */
   masked: {} as Record<string, string[]>,
   /** What the reader may not do: `create:items`, `update:counts`, `move:receipts:posting`. */
@@ -137,6 +143,7 @@ export function resetWorld(): void {
   world.pending = new Set();
   world.reads = [];
   world.offEmpty = false;
+  world.cached = false;
   lastRead.clear();
   world.masked = {};
   world.cannot = new Set();
@@ -258,7 +265,11 @@ function useRecords(table: string, options: ListOptions = {}) {
     return { rows: held?.rows ?? [], hasMore: held?.hasMore ?? false, loading: false, error: null, refetch: () => undefined };
   }
   if (lastRead.get(key)?.at !== at && !world.pending.has(table)) world.reads.push(table);
-  if (world.pending.has(table)) return { rows: [], hasMore: false, loading: true, error: null, refetch: () => undefined };
+  if (world.pending.has(table)) {
+    const cached = world.cached ? lastRead.get(key) : undefined;
+    if (cached !== undefined) return { rows: cached.rows, hasMore: cached.hasMore, loading: false, error: null, refetch: () => undefined };
+    return { rows: [], hasMore: false, loading: true, error: null, refetch: () => undefined };
+  }
   try {
     const answer = listed(table, options);
     lastRead.set(key, { at, ...answer });

@@ -1,8 +1,9 @@
 // @vitest-environment happy-dom
 /**
- * A LIST READ ONCE: held only once its own question was seen loading and
- * then answered; an answer shown at once (the last question's rows, while a
- * new one loads) is never held, and a refusal is passed on.
+ * A LIST READ ONCE: its first question held once answered, even at once from
+ * the dashboard's cache; a later question held only once it was seen loading
+ * and then answered (an answer shown at once may be the last question's rows,
+ * while the new one loads), and a refusal is passed on.
  */
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -44,6 +45,34 @@ describe('useSteadyRecords', () => {
     expect(result.current.rows.map((row) => row['family'])).toEqual(['Manrope']);
   });
 
+  it('holds a first question the dashboard answers at once from its cache: a panel opened again reads it no more', () => {
+    world.cached = true;
+    world.pending.add('fonts');
+    const first = renderHook(() => useSteadyRecords('fonts', of('maker')));
+    act(() => loaded('fonts'));
+    first.unmount();
+    // Opened again: its fresh read is out, and the cache answers at once, not loading.
+    world.pending.add('fonts');
+    const { result } = renderHook(() => useSteadyRecords('fonts', of('maker')));
+    expect(result.current.loading).toBe(false);
+    expect(result.current.rows.map((row) => row['family'])).toEqual(['Manrope']);
+    act(() => loaded('fonts'));
+    readsOfFonts();
+    touch();
+    touch();
+    expect(readsOfFonts()).toBe(0);
+    expect(result.current.rows.map((row) => row['family'])).toEqual(['Manrope']);
+  });
+
+  it('holds a first question switched on later, answered at once', () => {
+    const { result, rerender } = renderHook(({ on }) => useSteadyRecords('fonts', { ...of('maker'), enabled: on }), { initialProps: { on: false } });
+    rerender({ on: true });
+    expect(result.current.rows.map((row) => row['family'])).toEqual(['Manrope']);
+    readsOfFonts();
+    touch();
+    expect(readsOfFonts()).toBe(0);
+  });
+
   it('never holds a new question answered without a load: it may be the last question’s rows', () => {
     world.pending.add('fonts');
     const { result, rerender } = renderHook(({ app }) => useSteadyRecords('fonts', of(app)), { initialProps: { app: 'maker' } });
@@ -76,6 +105,12 @@ describe('useSteadyRecords', () => {
       seed('fonts', ROWS);
     });
     expect(result.current.error).toBeNull();
+    expect(result.current.rows.map((row) => row['family'])).toEqual(['Manrope']);
+    // Answered now: held, so a later write reads it no more.
+    readsOfFonts();
+    touch();
+    touch();
+    expect(readsOfFonts()).toBe(0);
     expect(result.current.rows.map((row) => row['family'])).toEqual(['Manrope']);
   });
 });
