@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Refused, resetWorld, seed, world, type Call } from '../testing/host.tsx';
 import { IDS, seedShop } from '../testing/rows.ts';
+import { forgetLoadedFamilies } from '../shared/stored.ts';
 import { PAGE_FILES } from './starter.ts';
 
 const { default: Customiser } = await import('../customiser/index.tsx');
@@ -435,19 +436,21 @@ describe('step 4, fonts and finishes', () => {
     }
     vi.stubGlobal('FontFace', Face);
     const had = Object.getOwnPropertyDescriptor(document, 'fonts');
-    Object.defineProperty(document, 'fonts', { configurable: true, value: { add: (face: Face) => added.push(face.family) } });
+    Object.defineProperty(document, 'fonts', { configurable: true, value: { add: (face: Face) => added.push(face.family), delete: () => true } });
+    forgetLoadedFamilies();
     try {
       at(IDS.coasters, 'fonts');
       render(<Customiser />);
       await settle();
       // Oswald has no file yet: nothing to load, and its sample stays in the fallback until it has one.
       const byFamily = <T extends { family: string }>(list: T[]): T[] => [...list].sort((a, b) => a.family.localeCompare(b.family));
+      // Each under the Customiser's own name: the dashboard's Manrope stays the dashboard's.
       expect(byFamily(made)).toEqual([
-        { family: 'Caveat', source: 'url("/api/v1/files/file_01JX0000000000000000000072/content") format("woff2")' },
-        { family: 'Manrope', source: 'url("/api/v1/files/file_01JX0000000000000000000071/content") format("woff2")' },
+        { family: 'cz-Caveat', source: 'url("/api/v1/files/file_01JX0000000000000000000072/content") format("woff2")' },
+        { family: 'cz-Manrope', source: 'url("/api/v1/files/file_01JX0000000000000000000071/content") format("woff2")' },
       ]);
-      expect([...added].sort()).toEqual(['Caveat', 'Manrope']);
-      expect(screen.getByRole('img', { name: 'Engraved walnut coasters, in Caveat' }).querySelector('text')!.getAttribute('font-family')).toBe('Caveat');
+      expect([...added].sort()).toEqual(['cz-Caveat', 'cz-Manrope']);
+      expect(screen.getByRole('img', { name: 'Engraved walnut coasters, in Caveat' }).querySelector('text')!.getAttribute('font-family')).toBe('"cz-Caveat", cursive');
     } finally {
       vi.unstubAllGlobals();
       if (had === undefined) delete (document as { fonts?: unknown }).fonts;

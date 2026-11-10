@@ -17,7 +17,8 @@ import { useEffect, useId, useRef, useState, type ChangeEvent, type ReactNode } 
 
 import { Alert, asDataError, Button, Card, FileInput, Figure, Grid, Input, Stack, Switch, Tag, useAccess, useUploader, useWrite, type AddOnTranslate, type DataRow } from '../shared/host.ts';
 import { refusal } from '../shared/refusal.ts';
-import { loadFamilies } from '../shared/stored.ts';
+import { cssFamily } from '../../browser/ui/fonts.ts';
+import { loadFamilies, shopFamily } from '../shared/stored.ts';
 import { useToast } from '../shared/toast.ts';
 import type { SetupData } from './data.ts';
 import { codeFor, familyFromFile, FONT_BYTES, fontUse, isWoff2, kindOf, mm, num, offeredOf, text, toggled, yes, type Offered } from './facts.ts';
@@ -186,7 +187,7 @@ function Fonts({ t, base, data, offered, offer, starter }: { t: AddOnTranslate; 
               <li key={String(font['id'])} className="flex items-center gap-3 border-b border-border py-2.5">
                 <span className="flex min-w-0 flex-1 flex-col gap-1">
                   <svg viewBox="0 0 320 30" width="100%" height="30" role="img" aria-label={t('setup.fonts.sampleAlt', '{name}, in {family}', { name: text(base['name']), family })}>
-                    <text x="0" y="24" fontFamily={family} fontSize="22" fill="var(--fg)">
+                    <text x="0" y="24" fontFamily={cssFamily(shopFamily(family))} fontSize="22" fill="var(--fg)">
                       {text(base['name'])}
                     </text>
                   </svg>

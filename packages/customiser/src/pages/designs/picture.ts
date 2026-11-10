@@ -16,7 +16,7 @@ import { freshValues, readCatalogue, readyOf } from '../../browser/catalogue.ts'
 import { sheetPng } from '../../draw/canvas.ts';
 import { flatSheet, type FlatSheet } from '../../draw/flat.ts';
 import { listAll, useRead, useUploader, type DataRow, type DataValue } from '../shared/host.ts';
-import { loadFamilies } from '../shared/stored.ts';
+import { loadFamilies, shopFamily } from '../shared/stored.ts';
 
 /** The longest side of the picture, in pixels: sharp on a gallery card twice its size on screen. */
 export const PREVIEW_PIXELS = 800;
@@ -66,7 +66,8 @@ export function usePreviewPicture(paint: Painter = canvasPainter): (base: DataRo
       if (sheet === null) return 'skipped';
       const families = new Set(sheet.items.flatMap((item) => (item.kind === 'text' ? [item.font] : [])));
       await loadFamilies(rows.fonts.map((row) => ({ family: String(row['family'] ?? ''), file: row['file'] })), families);
-      const png = await paint(sheet);
+      // Painted in the shop's files, loaded under the Customiser's own names: never the dashboard's face of a family.
+      const png = await paint({ ...sheet, items: sheet.items.map((item) => (item.kind === 'text' ? { ...item, font: shopFamily(item.font) } : item)) });
       if (png === null) return 'skipped';
       await uploader.upload(readyId, png, { name: `preview-${String(readyId)}.png` });
       return 'made';

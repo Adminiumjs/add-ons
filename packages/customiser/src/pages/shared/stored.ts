@@ -49,25 +49,49 @@ export async function filePicture(value: unknown): Promise<(Painted & { url: str
   });
 }
 
-const asked = new Set<string>();
+/**
+ * The name a shop's font is loaded under in the dashboard: its family behind
+ * the Customiser's own prefix. The dashboard is set in fonts of its own (one
+ * of them is Manrope, a starter font too), and a shop's file loaded under the
+ * real name would compete with the dashboard's face for every word on the
+ * page. What draws in a shop's font names it by this.
+ */
+export const shopFamily = (family: string): string => `cz-${family}`;
 
-/** The shop's font files for these families loaded into the page, once each, so words are set and painted in them. */
+/** Each family's face in the page, by the stored file it was loaded from. */
+const loaded = new Map<string, { file: string; face: FontFace | null }>();
+
+/**
+ * The shop's font files for these families loaded into the page, under
+ * `shopFamily`, so words are set and painted in them. Each file once: a
+ * family whose file was replaced is loaded again from the new one (the old
+ * face taken out), and one that failed is tried again on the next call.
+ */
 export async function loadFamilies(fonts: readonly { family: string; file: unknown }[], families: ReadonlySet<string>): Promise<void> {
   if (typeof FontFace === 'undefined' || typeof document === 'undefined' || !('fonts' in document)) return;
   for (const font of fonts) {
-    if (!families.has(font.family) || asked.has(font.family)) continue;
+    if (!families.has(font.family)) continue;
+    const file = fileIdOf(font.file);
     const address = fileAddress(font.file);
-    if (address === null) continue;
-    asked.add(font.family);
+    if (file === null || address === null || loaded.get(font.family)?.file === file) continue;
+    const before = loaded.get(font.family)?.face ?? null;
+    loaded.set(font.family, { file, face: null });
     try {
-      const face = new FontFace(font.family, `url(${JSON.stringify(address)}) format("woff2")`);
-      document.fonts.add(await face.load());
+      const face = await new FontFace(shopFamily(font.family), `url(${JSON.stringify(address)}) format("woff2")`).load();
+      if (before !== null) document.fonts.delete(before);
+      document.fonts.add(face);
+      loaded.set(font.family, { file, face });
     } catch {
-      // A font that does not load is painted in its fallback; the files say so when they are made.
+      // A font that does not load is painted in its fallback, and asked for again next time; the files say so when they are made.
+      if (loaded.get(font.family)?.file === file) loaded.set(font.family, { file: '', face: before });
     }
   }
 }
 
+/** Forget every face loaded: for tests, which load into one page after another. */
+export function forgetLoadedFamilies(): void {
+  loaded.clear();
+}
 
 const facts = new Map<string, Promise<{ name: string | null; size: number | null }>>();
 

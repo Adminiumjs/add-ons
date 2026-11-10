@@ -38,6 +38,8 @@ describe('the preview picture', () => {
     expect(painted[0]!.face).toMatchObject({ kind: 'page', width: 85, height: 55, colour: '#f4efe6' });
     const name = painted[0]!.items.find((one) => one.code === 'name');
     expect(name).toMatchObject({ kind: 'text', lines: [{ text: 'Your name' }], colour: '#1f2a36' });
+    // In the shop's own file, loaded under the Customiser's name: never the dashboard's Manrope.
+    expect(name).toMatchObject({ font: 'cz-Manrope' });
     // An empty logo box carries no words of the screen's language.
     expect(painted[0]!.items.find((one) => one.code === 'logo')).toMatchObject({ kind: 'slot', label: '' });
     const upload = world.calls.find((call) => call.kind === 'upload');
