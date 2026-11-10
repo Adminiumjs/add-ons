@@ -24,5 +24,7 @@ export const CHECKER = {
     { id: 'areas', table: 'base_areas', by: { column: 'base_id', from: 'base.id' } },
     { id: 'palettes', table: 'palettes', by: { column: 'ready_design_id', from: 'ready.id' } },
     { id: 'features', table: 'features', by: { column: 'app', from: 'design.app' } },
+    // The design's own app's fonts: a design in the full editor never takes another app's upload.
+    { id: 'fonts', table: 'fonts', by: { column: 'app', from: 'design.app' } },
   ],
 } as const;

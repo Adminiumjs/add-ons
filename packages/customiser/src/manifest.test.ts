@@ -144,7 +144,7 @@ describe('the design question', () => {
     ]);
   });
 
-  it('reads, keyed from the design, the ready-made design and its parts, the base and its areas, the palettes and the app’s features', () => {
+  it('reads, keyed from the design, the ready-made design and its parts, the base and its areas, the palettes, the app’s features and the app’s fonts', () => {
     expect(addOn.checker.design).toBe('designs');
     expect(addOn.checker.reads.map((read) => `${read.id}: ${read.table}.${read.by.column} = ${read.by.from}`)).toEqual([
       'ready: ready_designs.id = design.ready_design_id',
@@ -153,6 +153,7 @@ describe('the design question', () => {
       'areas: base_areas.base_id = base.id',
       'palettes: palettes.ready_design_id = ready.id',
       'features: features.app = design.app',
+      'fonts: fonts.app = design.app',
     ]);
     // Each read starts from the design or an earlier read, on a column the table has.
     const seen = new Set(['design']);

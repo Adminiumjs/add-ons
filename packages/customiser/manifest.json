@@ -4608,6 +4608,7 @@
       ],
       "select": [
         "id",
+        "app",
         "name",
         "kind",
         "width_mm",
@@ -4747,6 +4748,7 @@
       ],
       "select": [
         "id",
+        "app",
         "family",
         "name",
         "style",
@@ -5326,6 +5328,14 @@
         {
           "id": "features",
           "table": "features",
+          "by": {
+            "column": "app",
+            "from": "design.app"
+          }
+        },
+        {
+          "id": "fonts",
+          "table": "fonts",
           "by": {
             "column": "app",
             "from": "design.app"

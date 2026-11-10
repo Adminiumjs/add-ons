@@ -22,6 +22,7 @@ export function factsOf(line: CheckLine, settings: CheckInput['settings']): Desi
     areas: rows('areas'),
     palettes: rows('palettes'),
     features: rows('features'),
+    fonts: rows('fonts'),
     files: line.files,
     settings,
   };

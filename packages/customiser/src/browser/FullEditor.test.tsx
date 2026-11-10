@@ -99,6 +99,20 @@ describe('starting from blank', () => {
     expect((panel().getByRole('combobox', { name: 'Font' }) as HTMLSelectElement).value).toBe('Cormorant Garamond');
   });
 
+  it('never offers another app’s font: a base naming none, or none still active, offers the starter fonts and its own app’s', async () => {
+    const fonts = [
+      { id: 1, app: null, starter: true, family: 'Cormorant Garamond', name: 'Cormorant Garamond', file: null },
+      { id: 20, app: 'maker', starter: false, family: 'Maker Hand', name: 'Maker Hand', file: null },
+      { id: 21, app: 'printing', starter: false, family: 'Marlow Serif', name: 'Marlow Serif', file: null },
+    ];
+    // Business cards names Manrope, Archivo, Libre Baskerville and DM Serif Display: none of them active here.
+    const { view } = cards(stubApi('printing', { fonts }), { start: 'blank' });
+    await view;
+    tool('Add words');
+    const options = (): string[] => within(panel().getByRole('combobox', { name: 'Font' })).getAllByRole('option').map((one) => one.textContent!);
+    expect(options()).toEqual(['Cormorant Garamond', 'Marlow Serif']);
+  });
+
   it('moves the part selected by the arrow keys, half a millimetre (Shift: five), aligns it to the page, and Delete removes it', async () => {
     const stub = stubApi('printing');
     const { view, onDesignChange } = cards(stub, { start: 'blank' });

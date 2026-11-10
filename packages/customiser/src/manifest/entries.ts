@@ -57,7 +57,7 @@ const read = (table: string, select: readonly string[], extra: Entry = {}): Entr
 
 export function entries(): Entry[] {
   return [
-    read('bases', ['id', 'name', 'kind', 'width_mm', 'height_mm', 'depth_mm', 'corner_mm', 'bleed_mm', 'safe_mm', 'sides', 'back_feature_id', 'material', 'thickness_mm', 'outline_file', 'model_file', 'faces', 'offered', 'position'], { filters: published, assets: ['outline_file', 'model_file'] }),
+    read('bases', ['id', 'app', 'name', 'kind', 'width_mm', 'height_mm', 'depth_mm', 'corner_mm', 'bleed_mm', 'safe_mm', 'sides', 'back_feature_id', 'material', 'thickness_mm', 'outline_file', 'model_file', 'faces', 'offered', 'position'], { filters: published, assets: ['outline_file', 'model_file'] }),
     read('base_pieces', ['id', 'base_id', 'code', 'name', 'width_mm', 'height_mm', 'layers', 'file', 'position'], { assets: ['file'] }),
     read('base_areas', ['id', 'base_id', 'code', 'name', 'side', 'piece_id', 'face', 'shape', 'x_mm', 'y_mm', 'w_mm', 'h_mm', 'takes', 'required', 'rules', 'feature_id', 'position']),
     read('ready_designs', ['id', 'base_id', 'name', 'tags', 'layouts', 'preview_file', 'position'], { filters: published, pictures: ['preview_file'] }),
@@ -68,9 +68,11 @@ export function entries(): Entry[] {
      * to its app would hide it from both shops. A font is a typeface and its
      * licence, nothing personal and nothing a shop keeps from another; a part
      * offers the fonts its rules name, so another shop's upload is never
-     * offered by this shop's designs.
+     * offered by this shop's designs. Each font says whose it is (`app`, empty
+     * for a starter font), as each base does: the full editor offers the
+     * starter fonts and its own app's, never another app's.
      */
-    { table: 'fonts', methods: ['GET'], select: ['id', 'family', 'name', 'style', 'weights', 'licence', 'starter', 'smallest_mm', 'file'], filters: [{ column: 'active', op: 'eq', value: true }], assets: ['file'] },
+    { table: 'fonts', methods: ['GET'], select: ['id', 'app', 'family', 'name', 'style', 'weights', 'licence', 'starter', 'smallest_mm', 'file'], filters: [{ column: 'active', op: 'eq', value: true }], assets: ['file'] },
     read('palettes', ['id', 'ready_design_id', 'kind', 'code', 'name', 'position']),
     read('palette_colours', ['id', 'palette_id', 'code', 'role', 'name', 'hex', 'position']),
     read('features', ['id', 'code', 'name'], { filters: [{ column: 'active', op: 'eq', value: true }] }),

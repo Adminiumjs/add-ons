@@ -276,16 +276,22 @@ export function readCatalogue(rows: CatalogueRows, baseId: string | number, only
   return { base, rows, ready, plain, fonts, shared, finishes, features };
 }
 
+/** This app's own fonts: those its shop uploaded (the font's `app` is the base's), never another app's on the install. */
+const ownFonts = (catalogue: Catalogue): Font[] => (catalogue.base.app === null ? [] : catalogue.fonts.filter((font) => str(font.row['app']) === catalogue.base.app));
+
 /**
  * The fonts the base offers, in the order the shop listed them: what the full
- * editor gives new words and lists for them. A base that names none (or none
- * the shop still has) offers every font, as before a shop chose.
+ * editor gives new words and lists for them. Only the starter fonts and this
+ * app's own are ever offered: a base that names none (or none the shop still
+ * has) offers those, never a font another app on the install uploaded.
  */
 export function offeredFonts(catalogue: Catalogue): Font[] {
+  const own = new Set(ownFonts(catalogue));
+  const mine = catalogue.fonts.filter((font) => own.has(font) || yes(font.row['starter']) || str(font.row['app']) === null);
   const offered = json(catalogue.base.row['offered']);
   const families = isObject(offered) && Array.isArray(offered['fonts']) ? offered['fonts'].filter((one): one is string => typeof one === 'string') : [];
-  const fonts = families.flatMap((family) => catalogue.fonts.filter((font) => font.family === family));
-  return fonts.length > 0 ? fonts : catalogue.fonts;
+  const fonts = families.flatMap((family) => mine.filter((font) => font.family === family));
+  return fonts.length > 0 ? fonts : mine;
 }
 
 /** The ready-made design a design starts from, or none for the plain base. */
@@ -351,6 +357,7 @@ export function factsFor(catalogue: Catalogue, design: DesignData, files: readon
     palettes: catalogue.rows.palettes,
     features: catalogue.rows.features,
     colours: catalogue.rows.colours,
+    fonts: ownFonts(catalogue).map((font) => font.row),
     files,
     settings: catalogue.rows.settings?.[0] ?? {},
     ...(measure === undefined ? {} : { measure }),

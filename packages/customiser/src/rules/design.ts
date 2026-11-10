@@ -24,6 +24,7 @@
  */
 import { contrast, READABLE } from './colour.ts';
 import { inOrder, num, sameKey, str, yes, type Row } from './read.ts';
+import { STARTER_FAMILIES } from './starter.ts';
 import {
   choiceRules,
   DESIGN_FORMAT,
@@ -88,6 +89,12 @@ export interface DesignFacts {
   files: readonly FileFact[];
   settings: Row;
   measure?: Measure;
+  /**
+   * The fonts of the design's own app (its `app`), where they were read. A
+   * design set in the full editor may use these and the starter fonts, never
+   * a font another app on the install uploaded. Not read: not checked.
+   */
+  fonts?: readonly Row[];
 }
 
 export interface Refusal {
@@ -518,6 +525,9 @@ function checkPlaced(context: Context, placed: readonly PlacedPart[], base: Row)
     if (part.colour !== undefined && !HEX.test(part.colour) && !roles.includes(part.colour)) refuse(context, 'colour-not-allowed', part.id);
     if (part.kind === 'text') {
       if (charCount(part.text) > TEXT_MAX || lineCount(part.text) > PLACED_LINES_MAX) refuse(context, 'too-long', part.id);
+      // Another app's upload is never this shop's to offer; a font the shop no longer offers stays (the editor offers the base's).
+      const own = context.facts.fonts;
+      if (part.font !== undefined && own !== undefined && !STARTER_FAMILIES.includes(part.font) && !own.some((font) => font['family'] === part.font)) refuse(context, 'font-not-allowed', part.id);
       if (part.size !== undefined && (part.size < PLACED_SIZE_MIN || part.size > PLACED_SIZE_MAX)) refuse(context, 'size-out-of-range', part.id);
     } else if (part.kind === 'image') {
       const file = part.file === undefined ? undefined : context.facts.files.find((one) => one.column === part.file);

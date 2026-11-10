@@ -13,6 +13,8 @@ import { describe, expect, it } from 'vitest';
 
 import { charCount, charLimit, checkDesign, contrast, lineCount, readValues, REASONS, sizeAllowed, sizeThatFits, type DesignAnswer, type FileFact } from './rules/index.ts';
 import { textRules } from './rules/shapes.ts';
+import { STARTER_FAMILIES } from './rules/starter.ts';
+import { STARTER_FONTS } from './manifest/fonts.ts';
 import { browserFacts, sampleDesign, sampleTables, type Tables } from './testing/samples.ts';
 import type { Row } from './sample/bundle.ts';
 
@@ -389,6 +391,21 @@ describe('a design made in the full editor: its own parts, on a page', () => {
     const answer = ask(blank([picture()]), [logo({ px: [96, 64] })]);
     expect(reasons(answer)).toEqual([]);
     expect(answer.advice).toEqual([{ part: 'i1', kind: 'blurry', px: [96, 64], dpi: 122, boxMm: [20, 20], needs: 150 }]);
+  });
+
+  it('never takes another app’s font: the starter fonts and its own app’s stand, offered by the base or not', () => {
+    const fonts = [{ id: 30, app: 'printing', family: 'Marlow Serif', starter: false, active: false }];
+    const set = (font: string) => ask(blank([words({ font })]), [], tables, { fonts });
+    expect(reasons(set('Maker Hand'))).toEqual(['name font-not-allowed']);
+    // Its own upload, though switched off since; a starter font the base does not offer.
+    expect(reasons(set('Marlow Serif'))).toEqual([]);
+    expect(reasons(set('JetBrains Mono'))).toEqual([]);
+    // Fonts not read: not checked.
+    expect(reasons(ask(blank([words({ font: 'Maker Hand' })])))).toEqual([]);
+  });
+
+  it('knows the starter fonts by the names the install writes', () => {
+    expect([...STARTER_FAMILIES]).toEqual(STARTER_FONTS.map((font) => font.family));
   });
 
   it('gives up the form: a value for a form part beside placed parts is refused, the design’s colours are its palette’s', () => {
