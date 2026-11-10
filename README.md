@@ -3,15 +3,27 @@
 One repository, one shared host contract, and every add-on written against it.
 
 ```
-packages/host/            the ONE mirror of the host seam + the contracts
-packages/design-studio/   Design Studio   — artwork-source@1, connects to nothing
-packages/shipping-dhl/    DHL Shipping    — shipping-carrier@1, api-key
-packages/import-canva/    Canva Import    — artwork-source@1, oauth2
-packages/personalizer/    Live Personalizer — product-personalizer@1, connects to nothing
-packages/holiday-calendars/ Holiday Calendars — no contract, no egress, connects to nothing
-packages/barcode-labels/  Barcode Labels  — no contract, no egress, connects to nothing
-scripts/sync-to-host.sh   vendor the client halves into a host app checkout
+packages/host/              the ONE mirror of the host seam + the contracts
+packages/host-kit/          the AddOnHost seam and its guards, for a host app to adopt (never published)
+packages/barcode-labels/    Barcode Labels: document-render@1, connects to nothing
+packages/customiser/        Customiser: design-check@1, posting-rows@1, connects to nothing
+packages/forms/             Forms & surveys: no contract, connects to nothing
+packages/holiday-calendars/ Holiday Calendars: no contract, no egress, connects to nothing
+packages/inventory/         Inventory: posting-rows@1, connects to nothing
+packages/invoices/          Invoices & Receipts: document-render@1, connects to nothing
+packages/offers/            Offers & gift cards: posting-rows@1, price-adjust@1, document-render@1, connects to nothing
+packages/payments-paypal/   Wallet payments: payment-provider@1, api-key, one per server
+packages/payments-stripe/   Card payments: payment-provider@1, api-key, one per server
+packages/shipping-dhl/      DHL Shipping: shipping-carrier@1, api-key
+packages/design-studio/     Design Studio: retired, artwork-source@1, connects to nothing
+packages/import-canva/      Canva Import: retired, artwork-source@1, oauth2
+packages/personalizer/      Live Personalizer: retired, product-personalizer@1, connects to nothing
+scripts/sync-to-host.sh     vendor the client halves into a host app checkout
 ```
+
+Three are retired. The Customiser replaces Design Studio and Live Personalizer, and a design made
+in Canva comes into Print Shop as its PDF Print file. They are still released, so a shop with one
+attached can update its app; then it detaches and removes it. Each one's README says so at the top.
 
 ## One test runner, one version
 
