@@ -1,7 +1,7 @@
 /**
- * THE CUSTOMISER'S `appGrants`, PROVED ON A REAL ADMINIUM.
+ * THE CUSTOMISER'S `appGrants` AND ITS ORDER POSTING, PROVED ON A REAL ADMINIUM.
  *
- * Runs `customiser-app-role.engine.ts` inside a built Adminium checkout's own
+ * Runs every `*.engine.ts` beside it inside a built Adminium checkout's own
  * server test set-up, where its test harness lives. Nothing here is part of
  * `npm test`; run it by hand, from the engine's server folder:
  *
@@ -20,7 +20,7 @@ export default {
   cacheDir: `${process.env.TMPDIR ?? '/tmp'}/adminium-add-ons-engine-vitest`,
   test: {
     root: `${engine}/apps/server`,
-    include: [`${here}customiser-app-role.engine.ts`],
+    include: [`${here}*.engine.ts`],
     setupFiles: [`${engine}/apps/server/test/no-adminium-dev.setup.ts`],
     globals: true,
     hookTimeout: 240_000,
