@@ -66,8 +66,11 @@ describe('starting from blank', () => {
     const { view, onDesignChange } = cards(stub, { start: 'blank' });
     await view;
     tool('Add words');
-    expect(placed(onDesignChange)).toEqual([{ id: 't1', side: 'front', kind: 'text', name: 'Text', x: 20, y: 25.5, w: 45, h: 3.97, text: 'Your words here', font: 'Cormorant Garamond', size: 9, weight: 700, align: 'start', colour: 'ink' }]);
+    // New words start in the base's first offered font.
+    expect(placed(onDesignChange)).toEqual([{ id: 't1', side: 'front', kind: 'text', name: 'Text', x: 20, y: 25.5, w: 45, h: 3.97, text: 'Your words here', font: 'Manrope', size: 9, weight: 700, align: 'start', colour: 'ink' }]);
     fireEvent.change(panel().getByRole('textbox', { name: 'Words' }), { target: { value: 'Nell Fairweather\nHead baker' } });
+    fireEvent.change(panel().getByRole('combobox', { name: 'Font' }), { target: { value: 'Archivo' } });
+    expect(placed(onDesignChange)[0]).toMatchObject({ font: 'Archivo' });
     fireEvent.change(panel().getByRole('combobox', { name: 'Font' }), { target: { value: 'Manrope' } });
     fireEvent.change(panel().getByRole('spinbutton', { name: 'Size in points' }), { target: { value: '12' } });
     fireEvent.change(panel().getByRole('combobox', { name: 'Weight' }), { target: { value: '400' } });
@@ -75,6 +78,25 @@ describe('starting from blank', () => {
     fireEvent.click(panel().getByRole('radio', { name: '#1c59e0' }));
     expect(placed(onDesignChange)[0]).toMatchObject({ text: 'Nell Fairweather\nHead baker', font: 'Manrope', size: 12, weight: 400, align: 'center', colour: '#1c59e0', h: 10.58 });
     expect(panel().getByRole('button', { name: 'Text — Nell Fairweather' })).toBeTruthy();
+  });
+
+  it('offers the base’s fonts alone: new words start in its first, and a layer keeps the font it has when the base no longer offers it', async () => {
+    const stub = stubApi('printing');
+    const offered = ['Manrope', 'Archivo', 'Libre Baskerville', 'DM Serif Display'];
+    const kept: PlacedPart = { id: 'name', side: 'front', kind: 'text', name: 'Name', x: 6, y: 30, w: 75, h: 6, text: 'Wren Walker', font: 'Cormorant Garamond', size: 13 };
+    const { view, onDesignChange } = cards(stub, { start: 'blank' });
+    await view;
+    tool('Add words');
+    expect(placed(onDesignChange)[0]).toMatchObject({ font: 'Manrope' });
+    const options = (): string[] => within(panel().getByRole('combobox', { name: 'Font' })).getAllByRole('option').map((one) => one.textContent!);
+    expect(options()).toEqual(offered);
+    cleanup();
+    // A design made before the shop narrowed its fonts: its words keep their font, offered beside the base's.
+    const saved = await stub.api.create({ base_id: stub.ids.cards, ready_design_id: null, values: { parts: {}, placed: [kept] } }, null);
+    await drawn(<CustomiserEditor api={stub.api} base={stub.ids.cards} product={{ name: 'Business cards' }} design={saved} onAddToBasket={() => {}} />);
+    fireEvent.click(panel().getByRole('button', { name: 'Name — Wren Walker' }));
+    expect(options()).toEqual([...offered, 'Cormorant Garamond']);
+    expect((panel().getByRole('combobox', { name: 'Font' }) as HTMLSelectElement).value).toBe('Cormorant Garamond');
   });
 
   it('moves the part selected by the arrow keys, half a millimetre (Shift: five), aligns it to the page, and Delete removes it', async () => {

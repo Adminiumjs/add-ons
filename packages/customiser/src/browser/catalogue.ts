@@ -276,6 +276,18 @@ export function readCatalogue(rows: CatalogueRows, baseId: string | number, only
   return { base, rows, ready, plain, fonts, shared, finishes, features };
 }
 
+/**
+ * The fonts the base offers, in the order the shop listed them: what the full
+ * editor gives new words and lists for them. A base that names none (or none
+ * the shop still has) offers every font, as before a shop chose.
+ */
+export function offeredFonts(catalogue: Catalogue): Font[] {
+  const offered = json(catalogue.base.row['offered']);
+  const families = isObject(offered) && Array.isArray(offered['fonts']) ? offered['fonts'].filter((one): one is string => typeof one === 'string') : [];
+  const fonts = families.flatMap((family) => catalogue.fonts.filter((font) => font.family === family));
+  return fonts.length > 0 ? fonts : catalogue.fonts;
+}
+
 /** The ready-made design a design starts from, or none for the plain base. */
 export const readyOf = (catalogue: Catalogue, id: string | number | null): Ready | null => (id === null ? null : (catalogue.ready.find((one) => sameKey(one.id, id)) ?? null));
 

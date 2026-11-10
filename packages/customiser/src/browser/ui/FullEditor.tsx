@@ -26,7 +26,7 @@ import type { DesignAnswer, DesignValues, PlacedKind, PlacedPart } from '../../r
 import { FILE_COLUMNS } from '../api.ts';
 import { movedBox, nudgedBox, resizedBox, type FaceFacts } from '../../draw/boxes.ts';
 import { pointOnFace, Scene, viewOfFace, type Face } from '../../draw/Scene.tsx';
-import type { Catalogue, Palette } from '../catalogue.ts';
+import { offeredFonts, type Catalogue, type Palette } from '../catalogue.ts';
 import { boxOfPlaced, drawnOfPlaced, newImage, newPart, paintOf, placedOn, PLAIN, SWATCHES, textHeight, WEIGHTS } from '../placed.ts';
 import { useShared } from './context.tsx';
 import { fileMeta, TransferBar } from './fieldKit.tsx';
@@ -87,7 +87,9 @@ export function FullEditor(props: FullEditorProps) {
   const face: FaceFacts = { kind: 'page', width: base.width, height: base.height, bleed: base.bleed, safe: base.safe ?? 0, sides: two ? 2 : 1 };
   const shown = placedOn(values, side);
   const chosen = shown.find((one) => one.id === selected) ?? null;
-  const fonts = catalogue.fonts.length > 0 ? catalogue.fonts.map((one) => ({ family: one.family, name: one.name })) : [{ family: 'Manrope', name: 'Manrope' }];
+  // The base's offered fonts: new words start in the first, and a words layer may pick among them (and keep the font it has).
+  const offered = offeredFonts(catalogue);
+  const fonts = offered.length > 0 ? offered.map((one) => ({ family: one.family, name: one.name })) : [{ family: 'Manrope', name: 'Manrope' }];
 
   const set = (next: PlacedPart[], gesture?: string): void => props.change({ ...values, placed: next }, gesture);
   const patch = (id: string, change: Partial<PlacedPart>, gesture?: string): void => set((values.placed ?? []).map((one) => (one.id === id ? { ...one, ...change } : one)), gesture);
@@ -409,6 +411,18 @@ interface InspectorProps extends FullEditorProps {
   measure: ReturnType<typeof browserMeasure>;
 }
 
+/**
+ * The fonts a words layer may pick: the base's offered ones, and the font the
+ * layer already has when the base no longer offers it (a design made before
+ * the shop narrowed its fonts keeps its words as they are, until changed).
+ */
+export function fontsFor(part: PlacedPart, offered: readonly { family: string; name: string }[], catalogue: Catalogue): { family: string; name: string }[] {
+  const own = part.font;
+  if (own === undefined || own === '' || offered.some((one) => one.family === own)) return [...offered];
+  const known = catalogue.fonts.find((one) => one.family === own);
+  return [...offered, { family: own, name: known?.name ?? own }];
+}
+
 /** The panel: the part selected, then the layers. */
 function Inspector(props: InspectorProps) {
   const { part, shown, palette, catalogue, patch } = props;
@@ -502,7 +516,7 @@ function Inspector(props: InspectorProps) {
                 <label className="cz-ed-field">
                   <span className="cz-tool-label">{t('editor.fields.font', 'Font')}</span>
                   <select className="cz-select" value={part.font ?? ''} onChange={(event) => patch(part.id, { font: event.target.value })}>
-                    {props.fonts.map((one) => (
+                    {fontsFor(part, props.fonts, catalogue).map((one) => (
                       <option key={one.family} value={one.family}>
                         {one.name}
                       </option>
