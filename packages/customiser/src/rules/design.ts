@@ -525,7 +525,7 @@ function checkPlaced(context: Context, placed: readonly PlacedPart[], base: Row)
     if (part.colour !== undefined && !HEX.test(part.colour) && !roles.includes(part.colour)) refuse(context, 'colour-not-allowed', part.id);
     if (part.kind === 'text') {
       if (charCount(part.text) > TEXT_MAX || lineCount(part.text) > PLACED_LINES_MAX) refuse(context, 'too-long', part.id);
-      // Another app's upload is never this shop's to offer; a font the shop no longer offers stays (the editor offers the base's).
+      // Another app's upload is never this shop's to offer; its own stays, offered or not, switched on or off (the editor offers only the base's that are on).
       const own = context.facts.fonts;
       if (part.font !== undefined && own !== undefined && !STARTER_FAMILIES.includes(part.font) && !own.some((font) => font['family'] === part.font)) refuse(context, 'font-not-allowed', part.id);
       if (part.size !== undefined && (part.size < PLACED_SIZE_MIN || part.size > PLACED_SIZE_MAX)) refuse(context, 'size-out-of-range', part.id);

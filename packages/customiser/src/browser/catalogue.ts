@@ -345,6 +345,21 @@ export function areaMode(values: DesignValues, part: EditPart): 'words' | 'logo'
   return value.mode ?? (value.file !== undefined ? 'logo' : 'words');
 }
 
+/**
+ * The fonts a design set in the full editor is checked with: this app's own,
+ * and each font a words layer already holds that this page is not served. A
+ * visitor is served only the fonts the shop has switched on; one switched off
+ * since a layer took it is kept, as the server keeps it (it reads the app's
+ * fonts whatever their state), so the editor never refuses it. It is never
+ * offered to a new layer. Another app's font, served or not, the server
+ * still refuses.
+ */
+function fontsChecked(catalogue: Catalogue, design: DesignData): Row[] {
+  const served = new Set(catalogue.fonts.map((font) => font.family));
+  const kept = new Set((design.values.placed ?? []).flatMap((part) => (part.kind === 'text' && part.font !== undefined && part.font !== '' && !served.has(part.font) ? [part.font] : [])));
+  return [...ownFonts(catalogue).map((font) => font.row), ...[...kept].map((family) => ({ family }))];
+}
+
 /** The facts the rules are asked about this design: the same the server reads, with the browser's own measure. */
 export function factsFor(catalogue: Catalogue, design: DesignData, files: readonly FileFact[], measure?: Measure) {
   const ready = readyOf(catalogue, design.ready_design_id);
@@ -357,7 +372,7 @@ export function factsFor(catalogue: Catalogue, design: DesignData, files: readon
     palettes: catalogue.rows.palettes,
     features: catalogue.rows.features,
     colours: catalogue.rows.colours,
-    fonts: ownFonts(catalogue).map((font) => font.row),
+    fonts: fontsChecked(catalogue, design),
     files,
     settings: catalogue.rows.settings?.[0] ?? {},
     ...(measure === undefined ? {} : { measure }),
