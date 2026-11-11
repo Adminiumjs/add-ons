@@ -95,6 +95,18 @@ export interface DesignFacts {
    * a font another app on the install uploaded. Not read: not checked.
    */
   fonts?: readonly Row[];
+  /**
+   * The rows are those a shop's visitor is served, as the customer's editor
+   * reads them, not the full rows the server reads. Adminium never widens a
+   * public entry a shop already uses when the add-on is updated, so a shop
+   * installed on an earlier version may not be served a base's or a
+   * ready-made design's `app`. There an `app` a row does not carry is not
+   * known, not another app's: the editor compares it only where both sides
+   * carry one, and the server, which always has both, still refuses a
+   * mismatch when the order is placed. Left out: the full rows, compared in
+   * full.
+   */
+  served?: boolean;
 }
 
 export interface Refusal {
@@ -250,11 +262,14 @@ export function checkDesign(facts: DesignFacts): DesignAnswer {
    * shop does not know.
    */
   const named = (column: string) => design[column] !== null && design[column] !== undefined && design[column] !== '';
+  const blank = (value: unknown) => value === null || value === undefined || value === '';
+  // On served rows an `app` either side lacks is not known, so only two that are both there are compared.
+  const sameApp = (row: Row) => (facts.served === true && (blank(row['app']) || blank(design['app'])) ? true : sameKey(row['app'], design['app']));
   if (base === null || !named('base_id') || !sameKey(base['id'], design['base_id'])) return only('design-unknown');
-  if (!sameKey(base['app'], design['app'])) return only('design-unknown');
+  if (!sameApp(base)) return only('design-unknown');
   if (named('ready_design_id')) {
     if (ready === null || !sameKey(ready['id'], design['ready_design_id'])) return only('design-unknown');
-    if (!sameKey(ready['app'], design['app']) || !sameKey(ready['base_id'], base['id'])) return only('design-unknown');
+    if (!sameApp(ready) || !sameKey(ready['base_id'], base['id'])) return only('design-unknown');
   } else if (ready !== null) return only('design-unknown');
 
   const context: Context = {

@@ -375,6 +375,8 @@ export function factsFor(catalogue: Catalogue, design: DesignData, files: readon
     fonts: fontsChecked(catalogue, design),
     files,
     settings: catalogue.rows.settings?.[0] ?? {},
+    // The rows a visitor is served: a column the shop's public entry predates is not there to compare.
+    served: true,
     ...(measure === undefined ? {} : { measure }),
   };
 }

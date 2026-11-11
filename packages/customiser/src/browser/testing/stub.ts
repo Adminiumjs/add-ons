@@ -41,7 +41,14 @@ export interface Stub {
 let codes = 0;
 const code = (prefix: string): string => `${prefix}${String(++codes).padStart(16 - prefix.length, '0')}`;
 
-export function stubApi(app: 'maker' | 'printing', options: { fonts?: Row[]; settings?: Row[] } = {}): Stub {
+/** What a test may change in what the shop is served: its fonts and settings, and the columns of a table its entry does not serve (one an earlier version opened). */
+export interface StubOptions {
+  fonts?: Row[];
+  settings?: Row[];
+  notServed?: Readonly<Record<string, readonly string[]>>;
+}
+
+export function stubApi(app: 'maker' | 'printing', options: StubOptions = {}): Stub {
   const tables = sampleTables();
   const calls: StubCall[] = [];
   const designs = new Map<string, Row & { email: string | null; link: string }>();
@@ -63,7 +70,7 @@ export function stubApi(app: 'maker' | 'printing', options: { fonts?: Row[]; set
     async catalogue(base) {
       calls.push({ call: 'catalogue', args: [base] });
       // Every table as the add-on's public entries serve it to this shop's visitor: its rows, its filters, its columns.
-      const read = (table: string): Row[] => served(table, tables[table] ?? [], app);
+      const read = (table: string): Row[] => served(table, tables[table] ?? [], app, options.notServed?.[table]);
       const bases = read('bases').filter((one) => String(one['id']) === String(base));
       // With the preview picture's address a test gave the row, as `api.ts` adds it from the picture.
       const pictured = (one: Row): Row => {

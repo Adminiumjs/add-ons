@@ -126,8 +126,10 @@ type PublicEntry = { table: string; key?: string; level?: string; methods: strin
  * to one, the rows its filters let through (a column left unwritten reads as
  * its default), and only the columns it selects. What the customer's editor
  * checks a design with is this, never the full rows the server reads.
+ * `without` names columns the entry does not serve on a shop whose entry an
+ * earlier version opened: Adminium never widens it on an update.
  */
-export function served(table: string, rows: readonly Row[], app: string): Row[] {
+export function served(table: string, rows: readonly Row[], app: string, without: readonly string[] = []): Row[] {
   const entry = (manifest.publicAccess as PublicEntry[]).find((one) => one.table === table && one.key === undefined && one.level === undefined && one.methods.includes('GET'));
   if (entry === undefined) throw new Error(`no public read of ${table}`);
   const columns = columnsOf.get(table) ?? [];
@@ -135,7 +137,7 @@ export function served(table: string, rows: readonly Row[], app: string): Row[] 
   return rows
     .filter((row) => entry.appColumn === undefined || row[entry.appColumn] === app)
     .filter((row) => (entry.filters ?? []).every((filter) => filter.op === 'eq' && String(valueOf(row, filter.column)) === String(filter.value)))
-    .map((row) => Object.fromEntries(entry.select.filter((ref) => ref in row).map((ref) => [ref, row[ref]])));
+    .map((row) => Object.fromEntries(entry.select.filter((ref) => ref in row && !without.includes(ref)).map((ref) => [ref, row[ref]])));
 }
 
 /** The settings row an install writes, from the manifest's defaults. */

@@ -12,26 +12,30 @@
  */
 import { describe, expect, it } from 'vitest';
 
+import { check } from '../question/answer.ts';
 import { checkDesign, readValues } from '../rules/index.ts';
 import { SAMPLE_APPS } from '../sample/bundle.ts';
-import { browserFacts } from '../testing/samples.ts';
-import type { DesignData, Row } from './api.ts';
+import { browserFacts, checkInput, checkLine } from '../testing/samples.ts';
+import type { CatalogueRows, DesignData, Row } from './api.ts';
 import { answerFor, offeredFonts, readCatalogue } from './catalogue.ts';
 import { fontsFor } from './ui/FullEditor.tsx';
-import { stubApi } from './testing/stub.ts';
+import { stubApi, type StubOptions } from './testing/stub.ts';
 
 /** The editor's answer, from the rows the public entries serve, and the server's, from the full rows. */
-async function bothAnswers(app: 'maker' | 'printing', design: Row) {
-  const stub = stubApi(app);
+async function bothAnswers(app: 'maker' | 'printing', design: Row, options: StubOptions = {}, change: (rows: CatalogueRows) => CatalogueRows = (rows) => rows) {
+  const stub = stubApi(app, options);
   const read = readValues(design['values']);
   if (!read.ok) throw new Error('the sample design does not read');
   const data: DesignData = { base_id: design['base_id'] as number, ready_design_id: (design['ready_design_id'] ?? null) as number | null, values: read.values };
-  const catalogue = readCatalogue(await stub.api.catalogue(data.base_id), data.base_id);
+  const rows = change(await stub.api.catalogue(data.base_id));
+  const catalogue = readCatalogue(rows, data.base_id);
   if (catalogue === null) throw new Error('the base is not served');
   const browser = answerFor(catalogue, data, []);
   const server = checkDesign(browserFacts({ format: 1, app, ...data }, stub.tables));
-  return { browser, server };
+  return { browser, server, rows };
 }
+
+const readyMade = (app: string): Row => stubApi('maker').tables['designs']!.find((one) => one['app'] === app && one['ready_design_id'] !== null)!;
 
 const reasons = (answer: { refusals: readonly { reason: string }[] }) => answer.refusals.map((one) => one.reason);
 
@@ -53,6 +57,48 @@ describe.each(SAMPLE_APPS)('the %s shop’s editor, on the rows its visitors are
       const { browser, server } = await bothAnswers(app, { base_id: base['id'], ready_design_id: null, values: { parts: {} } });
       expect(reasons(browser), String(base['name'])).not.toContain('design-unknown');
       expect(reasons(browser), String(base['name'])).toEqual(reasons(server));
+    }
+  });
+});
+
+/*
+ * Adminium never widens a public entry a shop already uses when the add-on is
+ * updated, so what a shop's visitor is served depends on the version that
+ * first opened each entry: a ready-made design's `app` is served only where
+ * 1.0.26 or later opened it, a base's only where 1.0.24 or later did.
+ */
+const HISTORIES: [string, StubOptions['notServed']][] = [
+  ['both the bases and the ready-made designs serve their app', {}],
+  ['only the bases serve their app', { ready_designs: ['app'] }],
+  ['neither serves its app', { bases: ['app'], ready_designs: ['app'] }],
+];
+
+describe.each(SAMPLE_APPS)('the %s shop’s editor, whatever columns its public entries were opened with', (app) => {
+  it.each(HISTORIES)('takes a ready-made design where %s', async (_, notServed) => {
+    const { browser, server, rows } = await bothAnswers(app, readyMade(app), { notServed });
+    // The projection holds: a column the entry was not opened with is not there.
+    expect(rows.ready.length).toBeGreaterThan(0);
+    expect(rows.ready.every((one) => 'app' in one)).toBe(!notServed?.['ready_designs']);
+    expect(rows.bases.every((one) => 'app' in one)).toBe(!notServed?.['bases']);
+    expect(reasons(browser)).not.toContain('design-unknown');
+    expect(reasons(browser)).toEqual(reasons(server));
+    expect(browser.used).toEqual(server.used);
+  });
+
+  it('still refuses a ready-made design both rows say is another app’s', async () => {
+    const other = app === 'maker' ? 'printing' : 'maker';
+    const { browser } = await bothAnswers(app, readyMade(app), {}, (rows) => ({ ...rows, ready: rows.ready.map((one) => ({ ...one, app: other })) }));
+    expect(reasons(browser)).toEqual(['design-unknown']);
+  });
+
+  it('is checked in full when the order is placed: the server refuses a ready-made design of another app, or of none', () => {
+    const other = app === 'maker' ? 'printing' : 'maker';
+    const design = readyMade(app);
+    for (const stored of [other, null]) {
+      const tables = stubApi(app).tables;
+      tables['ready_designs'] = tables['ready_designs']!.map((one) => (one['id'] === design['ready_design_id'] ? { ...one, app: stored } : one));
+      const [line] = check(checkInput([checkLine('one', design, tables)])).lines;
+      expect(line!.refusals.map((one) => one.reason), String(stored)).toEqual(['design-unknown']);
     }
   });
 });
