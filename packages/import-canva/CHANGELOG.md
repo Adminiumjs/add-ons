@@ -1,5 +1,7 @@
 # @adminium/add-on-import-canva
 
+## 1.0.27
+
 ## 1.0.26
 
 ## 1.0.25
