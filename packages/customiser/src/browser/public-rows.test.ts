@@ -142,3 +142,47 @@ describe('a words layer in a font the shop switched off since', () => {
     expect(browser).toEqual(server);
   });
 });
+
+/*
+ * The bases and the fonts began serving their `app` together; a shop whose
+ * entries an earlier version opened is served neither, and its editor cannot
+ * tell whose an uploaded font is.
+ */
+describe.each([
+  ['the bases and the fonts serve their app', {}, true],
+  ['neither serves its app', { bases: ['app'], fonts: ['app'] }, false],
+] as const)('a words layer in an uploaded font, where %s', (_, notServed, known) => {
+  const words = (font: string) => ({ id: 'name', side: 'front', kind: 'text', x: 6, y: 8, w: 40, h: 4, name: 'Name', text: 'Nell Fairweather', font, size: 9, weight: 700, align: 'start', colour: 'ink' });
+  const fonts: Row[] = [
+    { id: 2, app: null, family: 'Manrope', name: 'Manrope', starter: true, active: true, file: null },
+    { id: 30, app: 'printing', family: 'Marlow Hand', name: 'Marlow Hand', starter: false, active: true, file: null },
+    { id: 31, app: 'maker', family: 'Maker Hand', name: 'Maker Hand', starter: false, active: true, file: null },
+  ];
+
+  async function asked(font: string) {
+    const stub = stubApi('printing', { fonts, notServed });
+    const base = stub.ids.cards;
+    const data: DesignData = { base_id: base, ready_design_id: null, values: { parts: {}, placed: [words(font)] } as DesignData['values'] };
+    const rows = await stub.api.catalogue(base);
+    const catalogue = readCatalogue(rows, base)!;
+    const browser = answerFor(catalogue, data, []);
+    const server = checkDesign(browserFacts({ format: 1, app: 'printing', ...data }, stub.tables, [], { fonts: fonts.filter((one) => one['app'] === 'printing') }));
+    return { browser: reasons(browser), server: reasons(server), catalogue, rows, data };
+  }
+
+  it('the shop’s own font is taken, as the server takes it, and listed for that layer', async () => {
+    const { browser, server, catalogue, rows, data } = await asked('Marlow Hand');
+    // The projection holds: the fonts and the base carry `app` only where it is served.
+    expect(rows.fonts.every((one) => 'app' in one)).toBe(known);
+    expect(rows.bases.every((one) => 'app' in one)).toBe(known);
+    expect(server).toEqual([]);
+    expect(browser).toEqual(server);
+    expect(fontsFor(data.values.placed![0]!, offeredFonts(catalogue), catalogue).map((one) => one.family)).toContain('Marlow Hand');
+  });
+
+  it('another app’s font: the server refuses it at order, and so does the editor where it can tell', async () => {
+    const { browser, server } = await asked('Maker Hand');
+    expect(server).toEqual(['font-not-allowed']);
+    expect(browser).toEqual(known ? ['font-not-allowed'] : []);
+  });
+});

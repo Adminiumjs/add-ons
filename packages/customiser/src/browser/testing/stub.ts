@@ -87,7 +87,7 @@ export function stubApi(app: 'maker' | 'printing', options: StubOptions = {}): S
         { id: 6, family: 'Archivo', name: 'Archivo', file: null },
         { id: 7, family: 'Libre Baskerville', name: 'Libre Baskerville', file: null },
         { id: 8, family: 'DM Serif Display', name: 'DM Serif Display', file: null },
-      ], app);
+      ], app, options.notServed?.['fonts']);
       const rows: CatalogueRows = {
         bases,
         pieces: read('base_pieces').filter((one) => String(one['base_id']) === String(base)),

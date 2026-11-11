@@ -276,8 +276,19 @@ export function readCatalogue(rows: CatalogueRows, baseId: string | number, only
   return { base, rows, ready, plain, fonts, shared, finishes, features };
 }
 
-/** This app's own fonts: those its shop uploaded (the font's `app` is the base's), never another app's on the install. */
-const ownFonts = (catalogue: Catalogue): Font[] => (catalogue.base.app === null ? [] : catalogue.fonts.filter((font) => str(font.row['app']) === catalogue.base.app));
+/**
+ * This app's own fonts: those its shop uploaded (the font's `app` is the
+ * base's), never another app's on the install. Adminium never widens a public
+ * entry a shop already uses when the add-on is updated, so a shop whose
+ * entries an earlier version opened is served no `app` for its bases or its
+ * fonts. Where either is not served, whose a font is cannot be told here, and
+ * every font served is taken as the shop's: the server, which reads the full
+ * rows, still refuses another app's font when the order is placed.
+ */
+const ownFonts = (catalogue: Catalogue): Font[] => {
+  const app = catalogue.base.app;
+  return catalogue.fonts.filter((font) => app === null || !('app' in font.row) || str(font.row['app']) === app);
+};
 
 /**
  * The fonts the base offers, in the order the shop listed them: what the full
