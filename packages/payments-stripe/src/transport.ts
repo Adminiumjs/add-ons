@@ -102,6 +102,11 @@ const DISPUTE_STATUSES: Readonly<Record<string, DisputeOutcome['status']>> = {
 export interface StripeProviderOptions {
   /** The clock (epoch ms), for `expires_at` and the signature window. Defaults to the system clock. */
   now?: () => number;
+  /**
+   * Takes a secret key (sk_…) as well as a restricted one: for a proof against
+   * a Stripe sandbox alone. The engine never sets it; Studio takes rk_ keys only.
+   */
+  acceptSecretKey?: boolean;
 }
 
 function isError(value: unknown): value is ProviderError {
@@ -192,22 +197,26 @@ const REFUND_STATUSES: Readonly<Record<string, RefundStatus>> = {
   canceled: 'cancelled',
 };
 
-/** Builds the provider for one operation. */
-export function createStripeProvider(context: PaymentProviderContext, options: StripeProviderOptions = {}): PaymentProvider {
-  const now = options.now ?? (() => Date.now());
+/**
+ * Calls to the Stripe API for one operation: the saved key (a restricted key
+ * only), Stripe's refusals as data with every key-shaped string taken out,
+ * and the mode checked on every answer. Shared by the payment half and the
+ * card reader half (`terminal.ts`), so both hold the key to the same rules.
+ */
+export function stripeClient(context: PaymentProviderContext, options: StripeProviderOptions = {}) {
   const live = context.mode === 'live';
 
   /** The saved key, or the refusal that stops the call before it is made. */
   function key(): string | ProviderError {
     const value = context.credentials['secret_key'] ?? '';
     if (value === '') return providerError('CREDENTIALS_REFUSED', `No restricted key is saved for ${context.mode} payments.`);
-    if (/^sk_/.test(value)) {
+    if (/^sk_/.test(value) && options.acceptSecretKey !== true) {
       return providerError(
         'CREDENTIALS_REFUSED',
         'This is a secret key (sk_…). Adminium takes a restricted key (rk_…) only, so a key that leaks opens as little of the account as it can.',
       );
     }
-    const match = RESTRICTED_KEY.exec(value);
+    const match = options.acceptSecretKey === true ? (/^(?:sk|rk)_(test|live)_[A-Za-z0-9]{10,}$/.exec(value) ?? RESTRICTED_KEY.exec(value)) : RESTRICTED_KEY.exec(value);
     if (match === null) return providerError('CREDENTIALS_REFUSED', 'That is not a restricted key: it starts with rk_test_ or rk_live_.');
     if ((match[1] === 'live') !== live) {
       return providerError('MODE_MISMATCH', `This is a ${match[1]} key, and it was saved for ${context.mode} payments.`);
@@ -237,7 +246,7 @@ export function createStripeProvider(context: PaymentProviderContext, options: S
 
   /** One call, answered as Stripe answered it: the status and the body (null when it is not JSON). */
   async function call(
-    method: 'GET' | 'POST',
+    method: 'GET' | 'POST' | 'DELETE',
     path: string,
     form?: { readonly [field: string]: FormValue },
     idempotencyKey?: string,
@@ -268,7 +277,7 @@ export function createStripeProvider(context: PaymentProviderContext, options: S
   }
 
   async function request(
-    method: 'GET' | 'POST',
+    method: 'GET' | 'POST' | 'DELETE',
     path: string,
     form?: { readonly [field: string]: FormValue },
     idempotencyKey?: string,
@@ -283,6 +292,15 @@ export function createStripeProvider(context: PaymentProviderContext, options: S
     }
     return body;
   }
+  return { key, refusal, call, request };
+}
+
+/** Builds the provider for one operation. */
+export function createStripeProvider(context: PaymentProviderContext, options: StripeProviderOptions = {}): PaymentProvider {
+  const now = options.now ?? (() => Date.now());
+  const live = context.mode === 'live';
+
+  const { refusal, call, request } = stripeClient(context, options);
 
   // ─── Reading Stripe's objects ─────────────────────────────────────────────
 

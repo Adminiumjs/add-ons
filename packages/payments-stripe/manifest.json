@@ -23,7 +23,10 @@
   "addOn": {
     "attaches": [{ "app": "*" }],
     "scope": "server",
-    "provides": [{ "contract": "payment-provider", "version": 1, "server": "dist/server.js" }],
+    "provides": [
+      { "contract": "payment-provider", "version": 1, "server": "dist/server.js" },
+      { "contract": "card-terminal", "version": 1, "server": "dist/server.js" }
+    ],
     "connect": { "kind": "api-key" },
     "network": { "allow": ["api.stripe.com", "checkout.stripe.com"] },
     "publicSettings": []

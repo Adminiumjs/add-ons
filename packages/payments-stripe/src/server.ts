@@ -10,6 +10,9 @@
 
 export { createPaymentProvider, createStripeProvider, STRIPE_ADD_ON_KEY, type StripeProviderOptions } from './transport.ts';
 
+/** The card reader half (`card-terminal@1`): Stripe Terminal readers at the counter, with the same key. */
+export { createCardTerminal, createStripeTerminal } from './terminal.ts';
+
 /** The events the admin ticks on the Stripe webhook endpoint (`PAYMENT_WEBHOOK_EVENTS_EXPORT`). */
 export { LISTENED_EVENTS as webhookEvents } from './wire.ts';
 
