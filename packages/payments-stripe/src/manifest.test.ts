@@ -20,8 +20,11 @@ describe('the Card payments manifest', () => {
     expect(result.ok ? [] : result.issues.map((issue) => `${issue.path} ${issue.message}`)).toEqual([]);
   });
 
-  it('provides payment-provider@1 once, from the file the build writes', () => {
-    expect(manifest.addOn.provides).toEqual([{ contract: 'payment-provider', version: 1, server: OUTPUT.server }]);
+  it('provides payment-provider@1 and card-terminal@1, each once, from the file the build writes', () => {
+    expect(manifest.addOn.provides).toEqual([
+      { contract: 'payment-provider', version: 1, server: OUTPUT.server },
+      { contract: 'card-terminal', version: 1, server: OUTPUT.server },
+    ]);
   });
 
   it('may reach the Stripe API and send a customer to the Stripe page, and nothing else', () => {

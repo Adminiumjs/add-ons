@@ -295,9 +295,14 @@ export function stripeClient(context: PaymentProviderContext, options: StripePro
   return { key, refusal, call, request };
 }
 
+/** The clock: the injected one, or the real one. The only place this add-on reads the real clock. */
+export function clockOf(options: StripeProviderOptions): () => number {
+  return options.now ?? (() => Date.now());
+}
+
 /** Builds the provider for one operation. */
 export function createStripeProvider(context: PaymentProviderContext, options: StripeProviderOptions = {}): PaymentProvider {
-  const now = options.now ?? (() => Date.now());
+  const now = clockOf(options);
   const live = context.mode === 'live';
 
   const { refusal, call, request } = stripeClient(context, options);

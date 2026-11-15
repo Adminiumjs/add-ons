@@ -37,7 +37,7 @@ import {
 } from '@adminium/add-on-host/contracts';
 
 import { stripeDecimal, stripeMinor } from './currency.ts';
-import { createStripeProvider, stripeClient, type StripeProviderOptions } from './transport.ts';
+import { clockOf, createStripeProvider, stripeClient, type StripeProviderOptions } from './transport.ts';
 
 type Json = Record<string, unknown>;
 
@@ -63,7 +63,7 @@ const PAIRING_MS = 10 * 60_000;
 
 /** Builds the card reader half for one operation. */
 export function createStripeTerminal(context: PaymentProviderContext, options: StripeProviderOptions = {}): CardTerminal {
-  const now = options.now ?? (() => Date.now());
+  const now = clockOf(options);
   const { request, call, refusal } = stripeClient(context, options);
   const payments = createStripeProvider(context, options);
 
@@ -209,7 +209,7 @@ export function createStripeTerminal(context: PaymentProviderContext, options: S
         'POST',
         `/v1/terminal/readers/${encodeURIComponent(input.readerId)}/process_payment_intent`,
         { payment_intent: pi, ...(input.tipping ? {} : { 'process_config[skip_tipping]': true }) },
-        `${input.idempotencyKey}:process`,
+        `${input.idempotencyKey}:reader`,
       );
       if (isError(handed)) {
         // The reader refused it (busy, offline): nothing is on it, so the intent is cancelled at once.

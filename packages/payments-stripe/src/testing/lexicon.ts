@@ -24,7 +24,14 @@ export const SUBSTRING_BANNED = ['pricing', 'plan', 'tier', 'billing', 'upgrade'
  * reader sees, and it is matched with its underscore, so the bare word still
  * fails anywhere else.
  */
-export const ALLOWED_IDENTIFIERS: readonly string[] = ['adaptive_pricing'];
+export const ALLOWED_IDENTIFIERS: readonly string[] = [
+  'adaptive_pricing',
+  /** Stripe Terminal's call that hands a payment to a reader, and its options (the tip screen skipped). */
+  'process_payment_intent',
+  'process_config',
+  /** A reader action's status while the customer is at the reader. */
+  'in_progress',
+];
 
 /**
  * THE ONLY CARVE-OUT: exact whole words, each with its reason. A word here is
@@ -51,6 +58,8 @@ export const ALLOWED_TOKENS: readonly string[] = [
   'promotion',
   /** PromptPay, a Thai way to pay that Stripe offers: a method name. */
   'promptpay',
+  /** The contract's field for the bank's approval code on a card taken at a reader. */
+  'approvalcode',
 ];
 
 const ALLOWED = new Set(ALLOWED_TOKENS.map((word) => word.toLowerCase()));
