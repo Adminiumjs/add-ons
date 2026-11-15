@@ -121,3 +121,25 @@ export {
   sameAmount,
   subtractAmounts,
 } from './payment-money.ts';
+
+export {
+  CARD_TERMINAL_CONTRACT,
+  CARD_TERMINAL_FACTORY,
+  CARD_TERMINAL_VERSION,
+  READER_CHARGE_STATUSES,
+} from './card-terminal.ts';
+export type {
+  CardTerminal,
+  CreateCardTerminal,
+  PairingFinished,
+  PairingStarted,
+  Reader,
+  ReaderChargeInput,
+  ReaderChargeState,
+  ReaderChargeStatus,
+  ReaderList,
+  ReaderLocation,
+  ReaderLocations,
+  ReaderUnpaired,
+  TerminalEvents,
+} from './card-terminal.ts';

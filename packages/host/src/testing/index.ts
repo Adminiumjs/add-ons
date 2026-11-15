@@ -100,3 +100,5 @@ export {
 } from './payment-provider.ts';
 export { PAYMENT_ANSWER_SCHEMAS, providerErrorSchema, type PaymentCall } from './payment-schemas.ts';
 export { createDemoPaymentBackend, createDemoPaymentProvider, DEMO_SIGNATURE_HEADER } from './payment-demo.ts';
+export { cardTerminalConformance, type CardTerminalConformanceDriver, type CardTerminalConformanceOptions } from './card-terminal.ts';
+export { CARD_TERMINAL_ANSWER_SCHEMAS, type CardTerminalCall } from './card-terminal-schemas.ts';
