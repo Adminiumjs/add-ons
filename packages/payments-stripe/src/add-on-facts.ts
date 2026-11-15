@@ -38,4 +38,5 @@ export const COMPANY_MARKS: readonly { mark: string; owner: string }[] = [
   { mark: 'Visa', owner: 'Visa Inc.' },
   { mark: 'Mastercard', owner: 'Mastercard International Incorporated' },
   { mark: 'American Express', owner: 'American Express Company' },
+  { mark: 'Interac', owner: 'Interac Corp.' },
 ];

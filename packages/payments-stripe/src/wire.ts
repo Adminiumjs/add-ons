@@ -91,7 +91,7 @@ export const WEBHOOK_SECRET = /^whsec_[A-Za-z0-9+/=]{10,}$/;
  * Where an access sits on the Stripe dashboard form for a restricted key: the
  * Core list, Connect, or a group of its own (whose heading is the access name).
  */
-export type PermissionGroup = 'Core' | 'Connect' | 'Checkout Sessions' | 'Webhook Endpoints, Event Destinations';
+export type PermissionGroup = 'Core' | 'Connect' | 'Checkout Sessions' | 'Webhook Endpoints, Event Destinations' | 'Terminal';
 
 /**
  * THE PERMISSIONS A KEY NEEDS, each with a call that proves it without

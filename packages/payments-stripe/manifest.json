@@ -16,7 +16,7 @@
   },
   "categories": ["payments"],
   "compatibility": {
-    "minAdminiumVersion": "0.3.49",
+    "minAdminiumVersion": "0.3.60",
     "requires": ["outbound-http"]
   },
   "capabilities": ["outbound-http"],

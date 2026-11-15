@@ -49,6 +49,10 @@ export const KEY_APP_PERMISSIONS: readonly KeyAppPermission[] = [
   { permission: 'payment_method_configurations_read', name: 'Payment Method Configurations: read', group: 'Core', purpose: 'See which ways to pay you switched on.' },
   { permission: 'connected_account_read', name: ACCOUNT_PERMISSION.name, group: ACCOUNT_PERMISSION.group, purpose: 'Show which Stripe account the key belongs to.' },
   { permission: 'webhook_read', name: 'Webhook Endpoints, Event Destinations: read', group: 'Webhook Endpoints, Event Destinations', purpose: 'Check your live webhook.', optional: true },
+  // Card readers at the counter: needed only once a reader is paired.
+  { permission: 'payment_intent_write', name: 'Payment Intents: write', group: 'Core', purpose: 'Put an amount on a card reader, and take it off again.', optional: true },
+  { permission: 'terminal_reader_write', name: 'Terminal Readers: write', group: 'Terminal', purpose: 'Pair a card reader, and send it a payment.', optional: true },
+  { permission: 'terminal_location_read', name: 'Terminal Locations: read', group: 'Terminal', purpose: 'List the places your card readers are at.', optional: true },
 ];
 
 /** The id the shipped template carries: never valid to upload, so an unstamped template is refused here first. */

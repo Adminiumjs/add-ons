@@ -65,8 +65,9 @@ including the ones that name no company.
 | Offers & gift cards | `packages/offers` | `OFF` | *(none)* | — |
 | Forms & surveys | `packages/forms` | `FRM` | *(none)* | — |
 | Customiser | `packages/customiser` | `CZ` | *(none)* | — |
-| Card payments | `packages/payments-stripe` | `CP` | **Stripe**, **Link**; ways to pay it names: **PayPal**, **Apple Pay**, **Google Pay**, **Klarna**; card schemes: **Visa**, **Mastercard**, **American Express** | Stripe, Inc.; PayPal, Inc.; Apple Inc.; Google LLC; Klarna Bank AB; Visa Inc.; Mastercard International Incorporated; American Express Company |
+| Card payments | `packages/payments-stripe` | `CP` | **Stripe**, **Link**; ways to pay it names: **PayPal**, **Apple Pay**, **Google Pay**, **Klarna**; card schemes: **Visa**, **Mastercard**, **American Express**, **Interac** | Stripe, Inc.; PayPal, Inc.; Apple Inc.; Google LLC; Klarna Bank AB; Visa Inc.; Mastercard International Incorporated; American Express Company; Interac Corp. |
 | Wallet payments | `packages/payments-paypal` | `WP` | **PayPal** | PayPal, Inc. |
+| Card readers | `packages/payments-square` | `CR` | **Square**, **Square Terminal**; a card scheme it names: **Interac** | Block, Inc.; Interac Corp. |
 
 Adminium and the Adminium name are marks of the Adminium project. Every add-on
 here is published by the project itself (`publisher.id: adminium`), which in v1
@@ -848,3 +849,53 @@ Adminium's:
 - REST API reference: <https://developer.paypal.com/api/rest/>
 
 This repository ships no credentials, and no test calls a live PayPal account.
+
+---
+
+# Card readers — Square, Square Terminal and Interac
+
+**Square** and **Square Terminal** are trademarks of Block, Inc. They are
+referenced **nominatively only**: to say which service this add-on connects to
+and which reader it puts the amount on.
+
+**Interac** is a trademark of Interac Corp. It is named only to say that an
+Interac payment (Canada) is refunded on the Terminal with the card and cannot
+be refunded online, which a member of staff needs to know before promising a
+refund.
+
+## Not affiliated
+
+Adminium, this add-on and every app that uses it are not affiliated with,
+sponsored by, endorsed by, certified by or in partnership with Block, Inc. or
+Interac Corp. No approval of any kind has been sought or given. The add-on has
+no screens of its own: it is set up on Adminium's Studio → Payments screens,
+which name the company only to say what the add-on connects to.
+
+Adminium takes no part in a payment. Each shop connects its own Square account
+with its own access token; the card is read by the shop's own Square Terminal
+and the money goes from the customer to that account, under the Square terms.
+
+## How the words are used
+
+The add-on is named for what it does, "Card readers", and its card and listing
+say "Connects to Square". It says "the Square Terminal" and "the Square
+Dashboard" rather than a possessive form, the same rule as the Card payments
+add-on. A card's brand is shown as Square reports it, in plain text, so a
+member of staff can match a receipt.
+
+## No logo, no brand colour
+
+The add-on is represented by a monogram tile in `--fg-muted` on `--surface-3`.
+No Square logo, no Square Terminal artwork, no brand colour and no brand
+typeface appears in its code, its README, its documentation or its listing.
+
+## The vendor's own terms
+
+A shop that connects a real account is bound by the Square terms, not by
+Adminium's:
+
+- Square legal: <https://squareup.com/legal>
+- Terminal API reference: <https://developer.squareup.com/reference/square/terminal-api>
+
+This repository ships no credentials. The add-on's sandbox tests run against
+Square's sandbox and its documented test devices, never against a live account.

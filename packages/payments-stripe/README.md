@@ -12,7 +12,7 @@ pays on the Stripe page, so no card number ever reaches your server.
 ## What it needs
 
 - A Stripe account in one of the countries Stripe serves sellers in.
-- Adminium 0.3.49 or newer, on an address your customers can reach. It is
+- Adminium 0.3.60 or newer, on an address your customers can reach. It is
   installed once for the whole server: every database on it takes payments into
   the same Stripe account.
 - A **restricted key** (`rk_test_…` / `rk_live_…`), never a secret key. Make it
@@ -34,6 +34,9 @@ pays on the Stripe page, so no card number ever reaches your server.
   | Payment Method Configurations: read | show the ways to pay you switched on |
   | Accounts: read | show which Stripe account the key belongs to |
   | Webhook Endpoints, Event Destinations: read (optional) | check your live webhook |
+  | Payment Intents: write (card readers only) | put an amount on a card reader, and take it off again |
+  | Terminal Readers: write (card readers only) | pair a card reader, and send it a payment |
+  | Terminal Locations: read (card readers only) | list the places your card readers are at |
 
 - A **webhook endpoint** per mode in the Stripe dashboard, pointing at the
   address Studio shows, and its signing secret (`whsec_…`).
@@ -115,6 +118,29 @@ Save and check the live key, add the live webhook, then switch Card payments
 to live in Studio. Until the first live event arrives, Studio says the live
 webhook is not proven yet and checks for payments more often. Test links stop
 working when you go live.
+
+## Card readers
+
+The same key runs Stripe smart readers at your counter (the BBPOS WisePOS E
+and the Stripe Reader S700 among them), in the countries where Stripe offers
+them; no other add-on is needed. The reader is driven from the server: the till
+asks Adminium, Adminium asks Stripe. Give the key the three "card readers only"
+permissions above.
+
+1. In the Stripe dashboard, add a **location** for your shop under Terminal.
+2. In **Studio → Payments → Card readers**, choose **Pair a reader**, pick Card
+   payments, name it ("Front counter") and choose Next.
+3. On the reader, open the settings and generate a pairing code; type it into
+   Studio and choose Done.
+4. Each till picks its reader in its own settings.
+
+In test mode, pair a simulated reader instead: Stripe accepts the pairing code
+`simulated-wpe`. The till then waits for a card that the Stripe test tools
+present.
+
+A tip is asked on the reader when the till allows one. An **Interac** payment
+(Canada) is refunded on the reader with the card, so it is refused online:
+give it back in cash or store credit.
 
 ## What it does not do
 

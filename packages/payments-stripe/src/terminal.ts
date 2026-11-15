@@ -154,7 +154,7 @@ export function createStripeTerminal(context: PaymentProviderContext, options: S
       // The card reader half needs Terminal: a key without it is told so by name.
       const probe = await call('GET', '/v1/terminal/readers?limit=1');
       if (isError(probe)) return probe;
-      const missing = probe.status === 403 ? [...checked.missing, 'Terminal Readers: write', 'Terminal Locations: write'] : checked.missing;
+      const missing = probe.status === 403 ? [...checked.missing, 'Payment Intents: write', 'Terminal Readers: write', 'Terminal Locations: read'] : checked.missing;
       return { ...checked, missing };
     },
     async listLocations() {
