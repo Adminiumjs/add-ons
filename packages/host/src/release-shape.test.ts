@@ -95,6 +95,8 @@ describe('release shape: discovery', () => {
       'payments-stripe',
       // The second payment provider, and the first server half that imports Node's own modules (webhook certificates).
       'payments-paypal',
+      // The first that provides `card-terminal@1` alone: card readers at the counter, asked by the server, no pay page.
+      'payments-square',
       'personalizer',
       'shipping-dhl',
     ].sort());

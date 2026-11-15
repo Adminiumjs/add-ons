@@ -68,6 +68,7 @@ export type {
 } from './shipping-carrier.ts';
 export {
   CHECKOUT_STATUSES,
+  DISPUTE_STATUSES,
   PAYMENT_EVENT_KINDS,
   PAYMENT_MODES,
   PAYMENT_PROVIDER_CONTRACT,
@@ -98,6 +99,8 @@ export type {
   PaymentCredentials,
   PaymentEvent,
   PaymentEventKind,
+  PaymentDispute,
+  DisputeStatus,
   PaymentHttpClient,
   PaymentHttpResponse,
   PaymentMethodInfo,

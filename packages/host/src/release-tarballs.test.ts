@@ -96,7 +96,7 @@ function packAsReleased(addOn: AddOn): Map<string, number> {
 }
 
 describe('release tarballs: discovery', () => {
-  it('packs all thirteen add-ons, and refuses to pass over none', () => {
+  it('packs all fourteen add-ons, and refuses to pass over none', () => {
     expect(found.map((addOn) => addOn.name)).toEqual([
       'barcode-labels',
       'customiser',
@@ -108,6 +108,7 @@ describe('release tarballs: discovery', () => {
       'invoices',
       'offers',
       'payments-paypal',
+      'payments-square',
       'payments-stripe',
       'personalizer',
       'shipping-dhl',

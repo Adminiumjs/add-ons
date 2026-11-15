@@ -8,6 +8,7 @@ import { z } from 'zod';
 
 import {
   CHECKOUT_STATUSES,
+  DISPUTE_STATUSES,
   PAYMENT_EVENT_KINDS,
   PROVIDER_ERROR_CODES,
   REFUND_STATUSES,
@@ -108,6 +109,15 @@ export const paymentEventSchema = z
     refundRef: z.string().min(1).max(255).nullable(),
     livemode: z.boolean(),
     occurredAt: z.number().int().nonnegative(),
+    dispute: z
+      .object({
+        status: z.enum(DISPUTE_STATUSES),
+        amount: decimalAmountSchema.nullable(),
+        currency: currencyCodeSchema.nullable(),
+        openedAt: z.number().int().nonnegative().nullable().optional(),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 
