@@ -13,7 +13,8 @@ packages/inventory/         Inventory: posting-rows@1, connects to nothing
 packages/invoices/          Invoices & Receipts: document-render@1, connects to nothing
 packages/offers/            Offers & gift cards: posting-rows@1, price-adjust@1, document-render@1, connects to nothing
 packages/payments-paypal/   Wallet payments: payment-provider@1, api-key, one per server
-packages/payments-stripe/   Card payments: payment-provider@1, api-key, one per server
+packages/payments-stripe/   Card payments: payment-provider@1, card-terminal@1, api-key, one per server
+packages/payments-square/   Card readers: card-terminal@1, api-key, one per server
 packages/shipping-dhl/      DHL Shipping: shipping-carrier@1, api-key
 packages/design-studio/     Design Studio: retired, artwork-source@1, connects to nothing
 packages/import-canva/      Canva Import: retired, artwork-source@1, oauth2

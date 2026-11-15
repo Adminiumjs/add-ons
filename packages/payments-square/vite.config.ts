@@ -4,10 +4,12 @@ import { defineConfig } from 'vitest/config';
  * ONE BUILT FILE: the server half (`card-terminal@1`), self-contained ES for
  * the engine's `import()`, with no sourcemap.
  *
- * Private until it has its manifest, words and listing: for now it proves
- * its transport against Square's sandbox, nothing more.
+ * `manifest.json` names `dist/server.js` as the `card-terminal@1` half, and
+ * nothing else: this add-on has no screens of its own.
  */
 export const OUTPUT = { server: 'dist/server.js' } as const;
+
+export const BUILT_FILES: readonly string[] = [OUTPUT.server];
 
 export default defineConfig({
   build: {

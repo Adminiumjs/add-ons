@@ -1,0 +1,47 @@
+{
+  "kind": "add-on",
+  "manifestVersion": 1,
+  "key": "payments-square",
+  "name": "Card readers",
+  "version": "1.0.27",
+  "publisher": {
+    "id": "adminium",
+    "name": "Adminium",
+    "url": "https://adminium.dev"
+  },
+  "license": "AGPL-3.0-only",
+  "description": {
+    "key": "addon.payments-square.line",
+    "fallback": "Connects to Square. The till puts the amount on a Square Terminal at your counter, the customer taps or inserts a card, and the payment is recorded here."
+  },
+  "categories": ["payments"],
+  "compatibility": {
+    "minAdminiumVersion": "0.3.60",
+    "requires": ["outbound-http"]
+  },
+  "capabilities": ["outbound-http"],
+  "addOn": {
+    "attaches": [{ "app": "*" }],
+    "scope": "server",
+    "provides": [{ "contract": "card-terminal", "version": 1, "server": "dist/server.js" }],
+    "connect": { "kind": "api-key" },
+    "network": { "allow": ["connect.squareupsandbox.com", "connect.squareup.com"] },
+    "publicSettings": []
+  },
+  "settings": [
+    {
+      "key": "access_token",
+      "type": "string",
+      "secret": true,
+      "required": true,
+      "label": {
+        "key": "addon.payments-square.setting.accessToken",
+        "fallback": "Access token"
+      },
+      "help": {
+        "key": "addon.payments-square.setting.accessTokenHelp",
+        "fallback": "From your application in the Square Developer Console: the sandbox token for test payments, the production token for live ones. It opens the whole Square account."
+      }
+    }
+  ]
+}

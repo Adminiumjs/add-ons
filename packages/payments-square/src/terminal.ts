@@ -105,6 +105,34 @@ const CANCEL_WORDS: Readonly<Record<string, string>> = {
   TIMED_OUT: 'Nobody took the payment on the reader in time.',
 };
 
+/**
+ * How a dispute stands, as the engine's contract carries it
+ * (`PaymentEvent.dispute`). Declared here with the same shape, as the Card
+ * payments add-on does, because the contract mirror this builds against
+ * predates the field.
+ */
+interface DisputeOutcome {
+  readonly status: 'open' | 'won' | 'lost' | 'closed';
+  readonly amount: string | null;
+  readonly currency: string | null;
+  readonly openedAt?: number | null;
+}
+
+/** Square's dispute states, read for the seller: an inquiry closed with no chargeback is closed; an accepted one is lost. */
+const DISPUTE_STATES: Readonly<Record<string, DisputeOutcome['status']>> = {
+  WON: 'won',
+  LOST: 'lost',
+  ACCEPTED: 'lost',
+  INQUIRY_CLOSED: 'closed',
+};
+
+/**
+ * The currencies of the countries where Square sells Square Terminal (the US,
+ * Canada, the UK, Ireland, France, Spain, Australia and Japan). A Terminal
+ * takes its seller's own currency; any other is refused before Square is asked.
+ */
+export const SQUARE_CURRENCIES: ReadonlySet<string> = new Set(['USD', 'CAD', 'GBP', 'EUR', 'AUD', 'JPY']);
+
 /** A pairing code lasts as long as Square says (`pair_by`); this is the fallback. */
 const PAIRING_MS = 5 * 60_000;
 /** How far back the first event read looks. */
@@ -180,6 +208,7 @@ export function createSquareTerminal(context: PaymentProviderContext, options: S
   }
 
   function toMinor(amount: string, currency: string): MinorAmount | ProviderError {
+    if (!SQUARE_CURRENCIES.has(currency)) return providerError('CURRENCY_UNSUPPORTED', `A Square Terminal takes no payments in ${currency}.`);
     const exponent = isoExponent(currency);
     if (exponent === null) return providerError('CURRENCY_UNSUPPORTED', `${currency} is not a currency Square takes.`);
     const minor = decimalToMinor(amount, exponent);
@@ -203,7 +232,8 @@ export function createSquareTerminal(context: PaymentProviderContext, options: S
 
   /** What a Terminal reads as, from the Devices API, by the id a checkout names. Null when Square does not say. */
   async function deviceOf(deviceId: string): Promise<Json | null> {
-    const answer = await request('GET', `/v2/devices/${encodeURIComponent(`device:${deviceId}`)}`);
+    // The Devices API names a Terminal `device:<serial>`, the colon as it is.
+    const answer = await request('GET', `/v2/devices/device:${encodeURIComponent(deviceId)}`);
     return isError(answer) ? null : asObject(answer['device']);
   }
 
@@ -403,7 +433,7 @@ export function createSquareTerminal(context: PaymentProviderContext, options: S
       }
       const since = typeof held.since === 'number' ? held.since : now() - FIRST_LOOK_MS;
       let newest = typeof held.newest === 'number' ? held.newest : since;
-      const events: PaymentEvent[] = [];
+      const events: (PaymentEvent & { readonly dispute?: DisputeOutcome })[] = [];
       const livemode = context.mode === 'live';
       const refundsCursor = typeof held.refunds === 'string' ? held.refunds : null;
       const disputesCursor = typeof held.disputes === 'string' ? held.disputes : null;
@@ -431,7 +461,9 @@ export function createSquareTerminal(context: PaymentProviderContext, options: S
           const at = epoch(dispute['updated_at']) ?? epoch(dispute['created_at']) ?? 0;
           if (id === null || at < since) continue;
           newest = Math.max(newest, at);
-          events.push({ ok: true, eventId: `dispute:${id}:${text(dispute['state']) ?? ''}`, type: 'dispute.updated', kind: 'dispute', checkoutRef: null, paymentRef: text(asObject(dispute['disputed_payment'])?.['payment_id']), refundRef: null, livemode, occurredAt: at });
+          const disputed = money(dispute['amount_money']);
+          const outcome: DisputeOutcome = { status: DISPUTE_STATES[text(dispute['state']) ?? ''] ?? 'open', amount: disputed?.amount ?? null, currency: disputed?.currency ?? null, openedAt: epoch(dispute['created_at']) };
+          events.push({ ok: true, eventId: `dispute:${id}:${text(dispute['state']) ?? ''}`, type: 'dispute.updated', kind: 'dispute', checkoutRef: null, paymentRef: text(asObject(dispute['disputed_payment'])?.['payment_id']), refundRef: null, livemode, occurredAt: at, dispute: outcome });
         }
         nextDisputes = text(body['cursor']);
       }
