@@ -99,7 +99,7 @@ describe('the guide in the README', () => {
   });
 
   it('lists exactly the access the key app asks for, by the names the Stripe dashboard uses', () => {
-    const rows = [...readme.matchAll(/^\s*\| ([^|]+?)(?: \(optional\))? \| [^|]+ \|$/gmu)].map((match) => match[1]!).filter((name) => name !== 'Permission' && !/^-+$/.test(name));
+    const rows = [...readme.matchAll(/^\s*\| ([^|]+?)(?: \((?:optional|card readers only)\))? \| [^|]+ \|$/gmu)].map((match) => match[1]!).filter((name) => name !== 'Permission' && !/^-+$/.test(name));
     expect(rows.sort()).toEqual(KEY_APP_PERMISSIONS.map((one) => one.name).sort());
   });
 });

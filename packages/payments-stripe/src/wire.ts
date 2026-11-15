@@ -42,6 +42,8 @@ export const STRIPE_PATHS = {
   charges: '/v1/charges',
   disputes: '/v1/disputes',
   webhookEndpoints: '/v1/webhook_endpoints',
+  terminalReaders: '/v1/terminal/readers',
+  terminalLocations: '/v1/terminal/locations',
 } as const;
 
 /**
@@ -137,6 +139,10 @@ export const PERMISSION_PROBES: readonly {
     path: `${STRIPE_PATHS.webhookEndpoints}?limit=1`,
     optional: true,
   },
+  // Card readers alone: optional, never asked of a shop that takes no card at the counter.
+  { name: 'Payment Intents: write', group: 'Core', method: 'POST', path: STRIPE_PATHS.paymentIntents, optional: true },
+  { name: 'Terminal Readers: write', group: 'Terminal', method: 'POST', path: STRIPE_PATHS.terminalReaders, optional: true },
+  { name: 'Terminal Locations: read', group: 'Terminal', method: 'GET', path: `${STRIPE_PATHS.terminalLocations}?limit=1`, optional: true },
 ];
 
 /**

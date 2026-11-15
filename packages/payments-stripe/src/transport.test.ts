@@ -252,8 +252,8 @@ describe('the permission check', () => {
     const stripe = createFakeStripe();
     await provider(stripe.http).checkCredentials();
     const posts = stripe.requests.filter((one) => one.method === 'POST');
-    expect(posts.map((one) => one.path).sort()).toEqual(['/v1/charges', '/v1/checkout/sessions']);
-    expect(posts.map((one) => one.params)).toEqual([{}, {}]);
+    expect(posts.map((one) => one.path).sort()).toEqual(['/v1/charges', '/v1/checkout/sessions', '/v1/payment_intents', '/v1/terminal/readers']);
+    expect(posts.map((one) => one.params)).toEqual([{}, {}, {}, {}]);
     expect(stripe.events()).toEqual([]);
   });
 
@@ -289,7 +289,15 @@ describe('the permission check', () => {
       'Payment Disputes: read',
       'Payment Method Configurations: read',
       'Webhook Endpoints, Event Destinations: read',
+      'Payment Intents: write',
+      'Terminal Readers: write',
+      'Terminal Locations: read',
     ]);
+  });
+
+  it('never counts a card reader permission as missing for payments: a shop with no reader does not give it', async () => {
+    const stripe = createFakeStripe({ missing: ['Payment Intents: write', 'Terminal Readers: write', 'Terminal Locations: read'] });
+    expect(await provider(stripe.http).checkCredentials()).toMatchObject({ ok: true, missing: [] });
   });
 });
 

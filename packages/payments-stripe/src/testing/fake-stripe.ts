@@ -261,6 +261,10 @@ export function createFakeStripe(options: FakeStripeOptions = {}): FakeStripe {
     if (method === 'GET' && path === '/v1/payment_intents') return denied('Payment Intents: read') ?? list([]);
     if (method === 'GET' && path === '/v1/disputes') return denied('Payment Disputes: read') ?? list([]);
     if (method === 'GET' && path === '/v1/webhook_endpoints') return denied('Webhook Endpoints, Event Destinations: read') ?? list([]);
+    // Card readers: a write with no parameter is refused for its parameter once the permission allows it.
+    if (method === 'POST' && path === '/v1/payment_intents' && Object.keys(params).length === 0) return denied('Payment Intents: write') ?? refusal(400, 'invalid_request_error', 'Missing required param: amount.', { code: 'parameter_missing', param: 'amount' });
+    if (method === 'POST' && path === '/v1/terminal/readers' && Object.keys(params).length === 0) return denied('Terminal Readers: write') ?? refusal(400, 'invalid_request_error', 'Missing required param: registration_code.', { code: 'parameter_missing', param: 'registration_code' });
+    if (method === 'GET' && path === '/v1/terminal/locations') return denied('Terminal Locations: read') ?? list([]);
     if (method === 'GET' && path === '/v1/payment_method_configurations') {
       const block = denied('Payment Method Configurations: read');
       if (block !== null) return block;
