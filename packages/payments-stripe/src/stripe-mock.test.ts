@@ -20,7 +20,7 @@ import { describe, expect, it } from 'vitest';
 import type { PaymentHttpClient } from '@adminium/add-on-host/contracts';
 
 import { createStripeProvider } from './transport.ts';
-import { LISTENED_EVENTS } from './wire.ts';
+import { LISTENED_EVENTS, PERMISSION_PROBES } from './wire.ts';
 
 const MOCK = process.env['STRIPE_MOCK_URL'];
 
@@ -153,7 +153,12 @@ describe.skipIf(MOCK === undefined)(`the Stripe wire, against ${STRIPE_MOCK_IMAG
 
   it('sent nothing Stripe refused as malformed', () => {
     expect(seen.length).toBeGreaterThan(15);
-    const refused = seen.filter((one) => one.status === 400 || one.error?.includes('validation') === true);
+    // The key check's write probes are POSTs with no parameter at all, on purpose: Stripe answers the permission
+    // first and only then refuses the missing parameter, so a 400 for a missing parameter is the probe passing.
+    const probes = new Set(PERMISSION_PROBES.filter((probe) => probe.method === 'POST').map((probe) => probe.path));
+    const probing = (one: Seen) =>
+      one.method === 'POST' && probes.has(one.path) && (one.body ?? '') === '' && /is required/.test(one.error ?? '');
+    const refused = seen.filter((one) => (one.status === 400 || one.error?.includes('validation') === true) && !probing(one));
     expect(refused).toEqual([]);
   });
 });
