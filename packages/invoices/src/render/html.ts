@@ -301,7 +301,8 @@ function block(entry: Block): string {
             (entry.payOnline === undefined
               ? ''
               : `<span class="line pay-online">${own(entry.payOnline.line)}</span>` +
-                (entry.payOnline.qr === null ? '' : `<img class="pay-qr" alt="" src="${escapeHtml(entry.payOnline.qr.png)}">`)) +
+                (entry.payOnline.qr === null ? '' : `<img class="pay-qr" alt="" src="${escapeHtml(entry.payOnline.qr.png)}">`) +
+                (entry.payOnline.until === undefined ? '' : `<span class="line pay-until">${own(entry.payOnline.until)}</span>`)) +
             '</div>') +
         (entry.footText === ''
           ? ''

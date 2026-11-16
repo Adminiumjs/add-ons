@@ -93,6 +93,8 @@ export interface LayoutWords {
   readonly referenceLine: string;
   /** An invoice's pay link, under how to pay: `{url}` is printed as it is. */
   readonly payOnlineLine: string;
+  /** Under the pay link and its code: the day the link stops opening, `{date}` with its weekday. */
+  readonly payUntilLine: string;
   readonly referenceInvoiceNumber: string;
   readonly howItGetsPaid: string;
   readonly thankYou: string;
@@ -225,6 +227,7 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     howToPay: 'How to pay',
     referenceLine: 'Reference: {number}',
     payOnlineLine: 'Or pay online: {url}',
+    payUntilLine: 'Works until {date}',
     referenceInvoiceNumber: 'Reference: the invoice number',
     howItGetsPaid: 'How it gets paid',
     thankYou: 'Thank you',
@@ -338,6 +341,7 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     howToPay: 'So bezahlen Sie',
     referenceLine: 'Verwendungszweck: {number}',
     payOnlineLine: 'Oder online bezahlen: {url}',
+    payUntilLine: 'Gültig bis {date}',
     referenceInvoiceNumber: 'Verwendungszweck: die Rechnungsnummer',
     howItGetsPaid: 'Zahlungsaufteilung',
     thankYou: 'Vielen Dank',
@@ -451,6 +455,7 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     howToPay: 'Comment régler',
     referenceLine: 'Référence : {number}',
     payOnlineLine: 'Ou payez en ligne : {url}',
+    payUntilLine: 'Valable jusqu’au {date}',
     referenceInvoiceNumber: 'Référence : le numéro de facture',
     howItGetsPaid: 'Échéancier',
     thankYou: 'Merci',
@@ -564,6 +569,7 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     howToPay: 'Jak zaplatit',
     referenceLine: 'Označení platby: {number}',
     payOnlineLine: 'Nebo zaplaťte online: {url}',
+    payUntilLine: 'Platí do: {date}',
     referenceInvoiceNumber: 'Označení platby: číslo faktury',
     howItGetsPaid: 'Rozložení plateb',
     thankYou: 'Děkujeme',
@@ -677,6 +683,7 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     howToPay: 'Sådan betaler du',
     referenceLine: 'Reference: {number}',
     payOnlineLine: 'Eller betal online: {url}',
+    payUntilLine: 'Virker til og med {date}',
     referenceInvoiceNumber: 'Reference: fakturanummeret',
     howItGetsPaid: 'Betalingsopdeling',
     thankYou: 'Tak',
@@ -790,6 +797,7 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     howToPay: '付款方法',
     referenceLine: '付款备注：{number}',
     payOnlineLine: '或在线付款：{url}',
+    payUntilLine: '有效期至 {date}',
     referenceInvoiceNumber: '付款备注：发票编号',
     howItGetsPaid: '付款安排',
     thankYou: '谢谢',
@@ -903,6 +911,7 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     howToPay: '付款方法',
     referenceLine: '付款備註：{number}',
     payOnlineLine: '或線上付款：{url}',
+    payUntilLine: '有效期限至 {date}',
     referenceInvoiceNumber: '付款備註：發票編號',
     howItGetsPaid: '付款安排',
     thankYou: '謝謝',
@@ -1016,6 +1025,7 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     howToPay: 'طريقة الدفع',
     referenceLine: 'المرجع: {number}',
     payOnlineLine: 'أو ادفع عبر الإنترنت: {url}',
+    payUntilLine: 'صالح حتى {date}',
     referenceInvoiceNumber: 'المرجع: رقم الفاتورة',
     howItGetsPaid: 'مراحل الدفع',
     thankYou: 'شكراً لك',

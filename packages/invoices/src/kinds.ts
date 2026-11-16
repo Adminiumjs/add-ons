@@ -1501,6 +1501,40 @@ const PAY_QR: OutlineSlot = {
   default: 'pay-link',
 };
 
+/**
+ * The day the printed pay link stops opening, given by Adminium beside the
+ * link (from 0.3.61): the link's own expiry, so a copy drawn again later says
+ * the same day. An earlier Adminium puts the link's text here instead, and
+ * only a `YYYY-MM-DD` day is printed.
+ */
+const PAY_UNTIL: OutlineSlot = {
+  id: 'payUntil',
+  label: {
+    'en-US': 'Pay link works until',
+    'de-DE': 'Zahlungslink gültig bis',
+    'fr-FR': 'Lien de paiement valable jusqu’au',
+    'cs-CZ': 'Platební odkaz platí do',
+    'da-DK': 'Betalingslink virker til og med',
+    'zh-CN': '付款链接有效期至',
+    'zh-TW': '付款連結有效期限',
+    'ar-EG': 'رابط الدفع صالح حتى',
+  },
+  help: {
+    'en-US': 'The last day the pay link opens, given by Adminium with the link. Printed under it as “Works until” and the day.',
+    'de-DE': 'Der letzte Tag, an dem sich der Zahlungslink öffnet, von Adminium mit dem Link geliefert. Steht darunter als „Gültig bis“ mit dem Tag.',
+    'fr-FR': 'Le dernier jour où le lien de paiement s’ouvre, donné par Adminium avec le lien. Imprimé dessous : « Valable jusqu’au » et le jour.',
+    'cs-CZ': 'Poslední den, kdy se platební odkaz otevře, dodaný Adminiem spolu s odkazem. Tiskne se pod ním jako „Platí do“ a den.',
+    'da-DK': 'Den sidste dag, betalingslinket åbner, leveret af Adminium sammen med linket. Trykkes under det som „Virker til og med“ og dagen.',
+    'zh-CN': '付款链接可打开的最后一天，由 Adminium 随链接提供。以“有效期至”加日期打印在链接下方。',
+    'zh-TW': '付款連結可開啟的最後一天，由 Adminium 隨連結提供。以「有效期限至」加日期印在連結下方。',
+    'ar-EG': 'آخر يوم يُفتح فيه رابط الدفع، يقدّمه Adminium مع الرابط. يُطبع تحته «صالح حتى» مع اليوم.',
+  },
+  type: 'date',
+  required: false,
+  // Filled by Adminium with the day that same link stops opening, only beside a link.
+  default: 'pay-link',
+};
+
 const OPENING_BALANCE: OutlineSlot = {
   id: 'openingBalance',
   label: {
@@ -2523,6 +2557,7 @@ const OUTLINES: Readonly<Record<string, DocumentOutline>> = {
       INVOICE_REFERENCE,
       PAY_URL,
       PAY_QR,
+      PAY_UNTIL,
     ],
   },
   /*

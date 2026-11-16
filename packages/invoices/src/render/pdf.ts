@@ -374,8 +374,10 @@ function drawFoot(entry: Extract<Block, { kind: 'foot' }>, m: Metrics, cursor: C
     ...(online === undefined ? [] : wrap(online.line.replace(online.url, `\n${online.url}`), leftWidth, { sizePt: m.body }).filter((text) => text.trim() !== '').map((text) => ({ text, strong: false }))),
   ];
   const qrSize = online?.qr == null ? 0 : m.narrow ? 64 : 72;
+  // The day the link stops opening, under the code (or under the link when there is no code).
+  const untilLines = online?.until === undefined ? [] : wrap(online.until, leftWidth, { sizePt: m.body });
   const footLines = entry.footText === '' ? [] : wrap(entry.footText, rightWidth, { sizePt: m.body });
-  const payHeight = payLines.length === 0 ? 0 : m.small + 5 + payLines.length * m.leading + (qrSize > 0 ? qrSize + 6 : 0);
+  const payHeight = payLines.length === 0 ? 0 : m.small + 5 + payLines.length * m.leading + (qrSize > 0 ? qrSize + 6 : 0) + (untilLines.length === 0 ? 0 : (qrSize > 0 ? 4 : 0) + untilLines.length * m.leading);
   const footHeight = footLines.length === 0 ? 0 : m.small + 5 + footLines.length * m.leading;
   const height = (m.narrow || !both ? payHeight + footHeight + (both ? 10 : 0) : Math.max(payHeight, footHeight)) + pad * 2;
 
@@ -393,6 +395,13 @@ function drawFoot(entry: Extract<Block, { kind: 'foot' }>, m: Metrics, cursor: C
     if (online?.qr != null && qrSize > 0) {
       cursor.ops.push(...qrModules(m, m.marginX + pad, y + 6, qrSize, online.qr.modules));
       y += qrSize + 6;
+    }
+    if (untilLines.length > 0) {
+      if (qrSize > 0) y += 4;
+      for (const line of untilLines) {
+        cursor.ops.push(...text(m.frame, m.marginX + pad, y + m.body, line, { sizePt: m.body, color: MID }));
+        y += m.leading;
+      }
     }
   }
   let footY = m.narrow || !both ? (payLines.length > 0 ? y + 10 : y) : cursor.y + pad;

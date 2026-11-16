@@ -130,9 +130,10 @@ export interface FootBlock {
   /**
    * An unpaid invoice's pay link, under how to pay, and its code to scan when
    * the host made one. Absent otherwise — so a document without one draws to
-   * the bytes it always did.
+   * the bytes it always did. `until` is the line under them saying the day the
+   * link stops opening, with its weekday; absent when the host gave no day.
    */
-  readonly payOnline?: { readonly line: string; readonly url: string; readonly qr: PayQr | null };
+  readonly payOnline?: { readonly line: string; readonly url: string; readonly qr: PayQr | null; readonly until?: string };
   readonly footLabel: string;
   readonly footText: string;
 }
@@ -890,7 +891,13 @@ function footBlock(input: LayoutInput, isVoid: boolean, voidDay: string): FootBl
   const owed = facts.balance === null || isPositive(facts.balance);
   const payOnline =
     kind === 'invoice' && !isVoid && owed && input.extras.payUrl !== ''
-      ? { line: fill(words.payOnlineLine, { url: input.extras.payUrl }), url: input.extras.payUrl, qr: input.extras.payQr }
+      ? {
+          line: fill(words.payOnlineLine, { url: input.extras.payUrl }),
+          url: input.extras.payUrl,
+          qr: input.extras.payQr,
+          // The link's own expiry, so a copy drawn again later says the same day.
+          ...(input.extras.payUntil === '' ? {} : { until: fill(words.payUntilLine, { date: formats.weekday(input.extras.payUntil) }) }),
+        }
       : null;
   if (payOnline !== null && payLabel === '') payLabel = words.howToPay;
 

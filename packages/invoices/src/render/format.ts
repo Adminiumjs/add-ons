@@ -75,6 +75,8 @@ export interface Formats {
   money(decimal: string): string;
   /** `YYYY-MM-DD` → the printed day; anything else as it came. */
   day(value: string): string;
+  /** `YYYY-MM-DD` → the printed day with its weekday ("Friday, Nov 20, 2026"); anything else as it came. */
+  weekday(value: string): string;
   /** A quantity (decimal text) → the printed figure. */
   quantity(decimal: string): string;
   /** A percentage (`20`, `8.875`) → the printed rate. */
@@ -135,6 +137,14 @@ export function formatsFor(locale: string, currency: string, options: { latin: b
     days = new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
   }
 
+  const weekdayOptions: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' };
+  let weekdays: Intl.DateTimeFormat;
+  try {
+    weekdays = new Intl.DateTimeFormat(locale, weekdayOptions);
+  } catch {
+    weekdays = new Intl.DateTimeFormat('en-US', weekdayOptions);
+  }
+
   /*
    * The time of day is the only thing on a document that depends on a zone,
    * and the zone is the business's (the subject's own `now`), never the
@@ -149,18 +159,20 @@ export function formatsFor(locale: string, currency: string, options: { latin: b
     moments = new Intl.DateTimeFormat('en-US', { ...momentOptions, timeZone: 'UTC' });
   }
 
-  const day = (value: string): string => {
+  // A day the calendar does not have — month 13, 30 February — is printed
+  // as the app stored it: never a thrown error that loses the whole
+  // document, and never the day the date arithmetic rolls it over to.
+  const calendarDay = (value: string, writer: Intl.DateTimeFormat): string => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
-    // A day the calendar does not have — month 13, 30 February — is printed
-    // as the app stored it: never a thrown error that loses the whole
-    // document, and never the day the date arithmetic rolls it over to.
     const at = new Date(`${value}T00:00:00.000Z`);
-    return Number.isNaN(at.getTime()) || at.toISOString().slice(0, 10) !== value ? value : days.format(at);
+    return Number.isNaN(at.getTime()) || at.toISOString().slice(0, 10) !== value ? value : writer.format(at);
   };
+  const day = (value: string): string => calendarDay(value, days);
 
   return {
     money,
     day,
+    weekday: (value) => calendarDay(value, weekdays),
     quantity: (decimal) => (/^-?\d+(\.\d+)?$/.test(decimal) ? quantity.format(decimal) : decimal),
     percent: (value) => percent.format(value / 100),
     moment: (value) => {

@@ -243,6 +243,12 @@ export interface BoundExtras {
   /** The same link as a code to scan, made by the host; `null` when it gave none (a link too long for one). */
   readonly payQr: PayQr | null;
   /**
+   * The day that same link stops opening, as the host gives it beside the
+   * link: `YYYY-MM-DD`, or `''` when it gave none (an older host gives the
+   * link's text here, which is no day).
+   */
+  readonly payUntil: string;
+  /**
    * The day and the names of each MAPPED line, by the line's position in
    * `body.items` — empty when the lines are the authored template's own. They
    * ride here rather than on `LineItem` for the reason above.
@@ -272,6 +278,15 @@ export function payQrOf(value: unknown): PayQr | null {
   if (!modules.every((row) => typeof row === 'string' && row.length === size && /^[01]+$/.test(row))) return null;
   if (typeof png !== 'string' || !/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(png)) return null;
   return { modules: modules as string[], png };
+}
+
+/** The day a pay link stops opening: a real `YYYY-MM-DD` day only; anything else is no day. */
+export function payUntilOf(value: unknown): string {
+  if (typeof value !== 'string') return '';
+  const day = value.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return '';
+  const at = new Date(`${day}T00:00:00.000Z`);
+  return Number.isNaN(at.getTime()) || at.toISOString().slice(0, 10) !== day ? '' : day;
 }
 
 /** What a line carries besides its figures: the day it is for, and the names printed under it. */
@@ -740,6 +755,7 @@ export function documentFrom(
       customerEmail: textOf(subject.fields.customerEmail),
       payUrl: payUrlOf(subject.fields.payUrl),
       payQr: payQrOf(subject.fields.payQr),
+      payUntil: payUntilOf(subject.fields.payUntil),
       // Only lines that came from the subject: an authored template's own
       // lines have no day and no names to line up with.
       lines: items.length > 0 ? rows.map(lineFactsOf) : [],

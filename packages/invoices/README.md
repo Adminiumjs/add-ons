@@ -28,8 +28,10 @@ app builds its own tables on (`addOn.shapes` in `manifest.json`):
   the balance), and for a card on the shop's own terminal its `approval_code`
   and `card_last4`; `method` gains `online`. The invoice's email and its
   reminders carry a pay button (`{{pay_url}}`), and the printed invoice its pay
-  link and a code to scan while something is owed. An app moves from `@1` to
-  `@2` in its own update; `@1` does not change;
+  link and a code to scan while something is owed, with the day the link stops
+  opening under them ("Works until Friday, Nov 20, 2026"; Adminium 0.3.61 or
+  later gives the day, an earlier one prints no such line). An app moves from
+  `@1` to `@2` in its own update; `@1` does not change;
 - `invoices/quote@1` — a document (sent, accepted, declined, withdrawn) and its
   lines.
 

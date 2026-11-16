@@ -89,6 +89,7 @@ function drawnText(document: Document): string {
         break;
       case 'foot':
         parts.push(block.payLabel, block.footLabel, block.footText, ...block.payLines.map((line) => line.text));
+        if (block.payOnline !== undefined) parts.push(block.payOnline.line, block.payOnline.until ?? '');
         break;
       case 'signature':
         parts.push(block.text);

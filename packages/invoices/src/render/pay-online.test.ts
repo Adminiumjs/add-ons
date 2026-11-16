@@ -9,8 +9,12 @@
 import { isDocumentError, type DocumentSubject, type RenderedDocument } from '@adminium/add-on-host/contracts';
 import { describe, expect, it } from 'vitest';
 
+import { describe as outlineOf, kinds } from '../kinds.ts';
+import { undrawnCharacters } from '../pdf/helvetica.ts';
+import { formatsFor } from './format.ts';
+import { fill, wordsFor } from './words.ts';
 import provider from '../server.ts';
-import { payQrOf, payUrlOf } from '../subject.ts';
+import { payQrOf, payUntilOf, payUrlOf } from '../subject.ts';
 
 const URL_TO_PAY = 'https://pay.crumbandco.test/pay/AAAAAAAAAAAAAAAAAAAAAA';
 const SIZE = 21;
@@ -40,8 +44,9 @@ const LATIN1 = new TextDecoder('latin1');
 async function draw(subject: DocumentSubject, paper: 'a4' | 'receipt-80mm' = 'a4'): Promise<{ html: string; pdf: string }> {
   const outcome = await provider.render({ kind: 'invoice', subject, formats: ['html', 'pdf'], paper, settings: {} });
   if (isDocumentError(outcome)) throw new Error(`${outcome.code}: ${outcome.detail ?? ""}`);
-  const of = (format: string) => (outcome as readonly RenderedDocument[]).find((drawn) => drawn.format === format)!.bytes;
-  return { html: UTF8.decode(of('html')), pdf: LATIN1.decode(of('pdf')) };
+  const of = (format: string) => (outcome as readonly RenderedDocument[]).find((drawn) => drawn.format === format)?.bytes;
+  const pdf = of('pdf');
+  return { html: UTF8.decode(of('html')!), pdf: pdf === undefined ? '' : LATIN1.decode(pdf) };
 }
 
 describe('an invoice’s pay link', () => {
@@ -93,5 +98,99 @@ describe('an invoice’s pay link', () => {
     expect(payQrOf({ ...QR, modules: MODULES.map((row) => row.replace('0', '2')) })).toBeNull();
     expect(payQrOf({ ...QR, png: 'data:image/svg+xml;base64,PHN2Zz4=' })).toBeNull();
     expect(payQrOf('a code')).toBeNull();
+  });
+});
+
+/** A Friday: the day the host says the link stops opening, on the venue's clock. */
+const UNTIL = '2026-11-20';
+
+describe('the day a printed pay link stops opening', () => {
+  it('is a slot of the invoice, beside the link and its code, filled by Adminium', () => {
+    const slots = outlineOf('invoice').slots;
+    const ids = slots.map((slot) => slot.id);
+    expect(ids.slice(ids.indexOf('payUrl'), ids.indexOf('payUrl') + 3)).toEqual(['payUrl', 'payQr', 'payUntil']);
+    const slot = slots.find((entry) => entry.id === 'payUntil')!;
+    expect(slot).toMatchObject({ type: 'date', required: false, default: 'pay-link' });
+    for (const locale of ['en-US', 'de-DE', 'fr-FR', 'cs-CZ', 'da-DK', 'zh-CN', 'zh-TW', 'ar-EG'] as const) {
+      expect(slot.label[locale], locale).toMatch(/\S/);
+      expect(slot.help?.[locale], locale).toMatch(/\S/);
+    }
+    // Only a kind that already prints a pay link asks for its day.
+    const asking = kinds().filter((kind) => outlineOf(kind.id).slots.some((entry) => entry.default === 'pay-link')).map((kind) => kind.id);
+    expect(asking).toEqual(['invoice']);
+  });
+
+  it('prints "Works until" and the day with its weekday under the code, in HTML and in the PDF', async () => {
+    const { html } = await draw(invoice({ payUntil: UNTIL }));
+    expect(html).toContain('<span class="line pay-until"><bdi>Works until Friday, Nov 20, 2026</bdi></span>');
+    expect(html.indexOf('class="pay-qr"')).toBeLessThan(html.indexOf('Works until'));
+    for (const paper of ['a4', 'receipt-80mm'] as const) {
+      const { pdf } = await draw(invoice({ payUntil: UNTIL }), paper);
+      expect(pdf, paper).toContain('(Works until Friday, Nov 20, 2026)');
+    }
+  });
+
+  it('prints it under the link when the host made no code', async () => {
+    const { html, pdf } = await draw(invoice({ payUntil: UNTIL, payQr: null }));
+    expect(html.indexOf(`Or pay online: ${URL_TO_PAY}`)).toBeLessThan(html.indexOf('Works until Friday, Nov 20, 2026'));
+    expect(pdf).toContain('(Works until Friday, Nov 20, 2026)');
+  });
+
+  it('prints it in the invoice’s language: German', async () => {
+    const { html, pdf } = await draw({ ...invoice({ payUntil: UNTIL }), locale: 'de-DE' });
+    expect(html).toContain('<bdi>Gültig bis Freitag, 20. Nov. 2026</bdi>');
+    expect(pdf).toContain('(G\xfcltig bis Freitag, 20. Nov. 2026)');
+  });
+
+  it('prints it in the invoice’s language: Arabic, right to left', async () => {
+    const { html, pdf } = await draw({ ...invoice({ payUntil: UNTIL }), locale: 'ar-EG' });
+    expect(html).toContain('dir="rtl"');
+    expect(html).toContain('<bdi>صالح حتى الجمعة، ٢٠ نوفمبر ٢٠٢٦</bdi>');
+    // No PDF in Arabic script: the print copy is the document.
+    expect(pdf).toBe('');
+  });
+
+  it('never costs a Latin-script invoice its PDF, whatever the day and month', () => {
+    // Every weekday and every month name, in each language the PDF draws.
+    const days = Array.from({ length: 12 }, (_, month) => Array.from({ length: 7 }, (_, offset) => `2026-${String(month + 1).padStart(2, '0')}-${String(offset + 1).padStart(2, '0')}`)).flat();
+    for (const locale of ['en-US', 'de-DE', 'fr-FR', 'cs-CZ', 'da-DK']) {
+      const formats = formatsFor(locale, 'EUR', { latin: true, cents: true });
+      const printed = days.map((day) => fill(wordsFor(locale).payUntilLine, { date: formats.weekday(day) }));
+      expect(undrawnCharacters(printed.join('\n')), locale).toEqual([]);
+      expect(new Set(printed).size, locale).toBe(days.length);
+    }
+  });
+
+  it('prints the day it is given, whenever and wherever the copy is drawn again', async () => {
+    const later = { iso: '2026-10-28T23:30:00.000Z', timezone: 'Pacific/Kiritimati' };
+    const { html } = await draw({ ...invoice({ payUntil: UNTIL }), now: later });
+    expect(html).toContain('Works until Friday, Nov 20, 2026');
+  });
+
+  it('prints nothing for a value that is not a day — an older Adminium puts the link there', async () => {
+    for (const value of [URL_TO_PAY, '2026-11-20T10:00:00.000Z', '2026-02-30', '20/11/2026', '', 20_261_120, null]) {
+      const { html, pdf } = await draw(invoice({ payUntil: value }));
+      expect(html, String(value)).toContain(`Or pay online: ${URL_TO_PAY}`);
+      expect(html, String(value)).not.toContain('Works until');
+      expect(html, String(value)).not.toContain('pay-until');
+      expect(pdf, String(value)).not.toContain('Works until');
+    }
+    expect(payUntilOf(UNTIL)).toBe(UNTIL);
+    expect(payUntilOf(` ${UNTIL} `)).toBe(UNTIL);
+  });
+
+  it('prints nothing without a link to go with it', async () => {
+    for (const fields of [{ payUrl: undefined, payQr: undefined }, { payUrl: 'http://pay.crumbandco.test/pay/x' }, { paid: 12_000, balance: 0 }, { status: 'void', voidedOn: '2026-10-20' }]) {
+      const { html, pdf } = await draw(invoice({ payUntil: UNTIL, ...fields }));
+      expect(html, JSON.stringify(fields)).not.toContain('Works until');
+      expect(pdf, JSON.stringify(fields)).not.toContain('Works until');
+    }
+  });
+
+  it('leaves a page with a link and no day exactly as it was', async () => {
+    const before = await draw(invoice());
+    const after = await draw(invoice({ payUntil: undefined }));
+    expect(after).toEqual(before);
+    expect(before.html).not.toContain('pay-until');
   });
 });
