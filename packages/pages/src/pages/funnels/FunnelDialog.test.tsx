@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 /**
- * "NEW FUNNEL" AND "EDIT FUNNEL" (comp 2b; D-M6-6, D-M6-7).
+ * "NEW FUNNEL" AND "EDIT FUNNEL" (comp 2b).
  */
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -83,7 +83,7 @@ describe('a new funnel', () => {
   });
 });
 
-describe('at most eight steps (D-M6-7)', () => {
+describe('at most eight steps', () => {
   const eight = Array.from({ length: 8 }, (_, i) => ({ kind: 'page' as const, key: String(100 + i) }));
 
   it('switches "Add a step" off at eight, and says why', async () => {
@@ -110,7 +110,7 @@ describe('at most eight steps (D-M6-7)', () => {
   });
 });
 
-describe('editing a funnel (D-M6-6)', () => {
+describe('editing a funnel', () => {
   it('opens with the funnel as it is: its name, its steps and its rule picked', async () => {
     await draw(funnelRowOf(FUNNEL as never));
     expect(screen.getByRole('heading', { name: 'Edit funnel' })).toBeTruthy();

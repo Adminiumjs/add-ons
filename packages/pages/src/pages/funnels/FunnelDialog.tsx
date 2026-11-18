@@ -1,5 +1,5 @@
 /**
- * "NEW FUNNEL" AND "EDIT FUNNEL" (comp 2b; D-M6-6, D-M6-7).
+ * "NEW FUNNEL" AND "EDIT FUNNEL" (comp 2b).
  *
  * A name, the steps in order (live pages of this add-on and live forms of the
  * forms add-ons, at most eight), and the rule that follows, picked by hand.

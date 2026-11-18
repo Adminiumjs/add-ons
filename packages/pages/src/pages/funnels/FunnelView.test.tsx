@@ -181,7 +181,7 @@ describe('the funnel’s menu (2i)', () => {
   });
 });
 
-describe('a reader (D-M6-8)', () => {
+describe('a reader', () => {
   it('sees the funnel, its counts and its rule, and no control that changes it', async () => {
     reader();
     seed('funnels', [{ ...FUNNEL, rule_id: null }] as never);
