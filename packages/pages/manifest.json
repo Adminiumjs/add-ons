@@ -1,0 +1,389 @@
+{
+  "kind": "add-on",
+  "manifestVersion": 1,
+  "key": "pages",
+  "name": "Landing pages",
+  "version": "1.0.30",
+  "publisher": {
+    "id": "adminium",
+    "name": "Adminium",
+    "url": "https://adminium.dev"
+  },
+  "license": "AGPL-3.0-only",
+  "description": {
+    "key": "addon.pages.description",
+    "fallback": "Pages for offers and events, each at its own address, with one of your forms on it if you like. Adminium draws every page for your visitors, and funnels show how many views each step gets."
+  },
+  "categories": [
+    "marketing"
+  ],
+  "compatibility": {
+    "minAdminiumVersion": "0.3.65",
+    "requires": []
+  },
+  "capabilities": [],
+  "requiredSchema": {
+    "prefixed": true,
+    "tables": [
+      {
+        "ref": "pages",
+        "states": {
+          "column": "state",
+          "initial": "draft",
+          "moves": {
+            "draft": [
+              "live"
+            ],
+            "live": [
+              "off"
+            ],
+            "off": [
+              "live"
+            ]
+          },
+          "noDelete": {
+            "when": [
+              "live"
+            ]
+          }
+        },
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "name",
+            "type": "text",
+            "maxLength": 200,
+            "label": {
+              "en-US": "Name",
+              "de-DE": "Name",
+              "fr-FR": "Nom",
+              "da-DK": "Navn",
+              "cs-CZ": "Název",
+              "ar-EG": "الاسم",
+              "zh-CN": "名称",
+              "zh-TW": "名稱"
+            }
+          },
+          {
+            "ref": "slug",
+            "type": "text",
+            "maxLength": 80,
+            "unique": true,
+            "label": {
+              "en-US": "Address",
+              "de-DE": "Adresse",
+              "fr-FR": "Adresse",
+              "da-DK": "Adresse",
+              "cs-CZ": "Adresa",
+              "ar-EG": "العنوان",
+              "zh-CN": "地址",
+              "zh-TW": "網址"
+            }
+          },
+          {
+            "ref": "state",
+            "type": "enum",
+            "enum": [
+              "draft",
+              "live",
+              "off"
+            ],
+            "default": "draft",
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "draft": {
+                    "en-US": "Draft",
+                    "de-DE": "Entwurf",
+                    "fr-FR": "Brouillon",
+                    "da-DK": "Kladde",
+                    "cs-CZ": "Koncept",
+                    "ar-EG": "مسودة",
+                    "zh-CN": "草稿",
+                    "zh-TW": "草稿"
+                  },
+                  "live": {
+                    "en-US": "Live",
+                    "de-DE": "Online",
+                    "fr-FR": "En ligne",
+                    "da-DK": "Online",
+                    "cs-CZ": "Zveřejněná",
+                    "ar-EG": "منشورة",
+                    "zh-CN": "已上线",
+                    "zh-TW": "已上線"
+                  },
+                  "off": {
+                    "en-US": "Off",
+                    "de-DE": "Aus",
+                    "fr-FR": "Désactivée",
+                    "da-DK": "Slået fra",
+                    "cs-CZ": "Vypnutá",
+                    "ar-EG": "متوقفة",
+                    "zh-CN": "已停用",
+                    "zh-TW": "已停用"
+                  }
+                }
+              }
+            },
+            "label": {
+              "en-US": "Status",
+              "de-DE": "Status",
+              "fr-FR": "Statut",
+              "da-DK": "Status",
+              "cs-CZ": "Stav",
+              "ar-EG": "الحالة",
+              "zh-CN": "状态",
+              "zh-TW": "狀態"
+            }
+          },
+          {
+            "ref": "language",
+            "type": "text",
+            "maxLength": 10,
+            "label": {
+              "en-US": "Language",
+              "de-DE": "Sprache",
+              "fr-FR": "Langue",
+              "da-DK": "Sprog",
+              "cs-CZ": "Jazyk",
+              "ar-EG": "اللغة",
+              "zh-CN": "语言",
+              "zh-TW": "語言"
+            }
+          },
+          {
+            "ref": "draft",
+            "type": "json",
+            "label": {
+              "en-US": "Draft",
+              "de-DE": "Entwurf",
+              "fr-FR": "Brouillon",
+              "da-DK": "Kladde",
+              "cs-CZ": "Koncept",
+              "ar-EG": "المسودة",
+              "zh-CN": "草稿",
+              "zh-TW": "草稿"
+            }
+          },
+          {
+            "ref": "published",
+            "type": "json",
+            "nullable": true,
+            "label": {
+              "en-US": "Published version",
+              "de-DE": "Veröffentlichte Fassung",
+              "fr-FR": "Version publiée",
+              "da-DK": "Offentliggjort version",
+              "cs-CZ": "Zveřejněná verze",
+              "ar-EG": "النسخة المنشورة",
+              "zh-CN": "已发布版本",
+              "zh-TW": "已發布版本"
+            }
+          },
+          {
+            "ref": "published_at",
+            "type": "timestamptz",
+            "nullable": true,
+            "label": {
+              "en-US": "Published on",
+              "de-DE": "Veröffentlicht am",
+              "fr-FR": "Publié le",
+              "da-DK": "Offentliggjort",
+              "cs-CZ": "Zveřejněno",
+              "ar-EG": "تاريخ النشر",
+              "zh-CN": "发布时间",
+              "zh-TW": "發布時間"
+            }
+          },
+          {
+            "ref": "updated_at",
+            "type": "timestamptz",
+            "role": "updated_at",
+            "label": {
+              "en-US": "Updated",
+              "de-DE": "Geändert",
+              "fr-FR": "Modifié",
+              "da-DK": "Ændret",
+              "cs-CZ": "Upraveno",
+              "ar-EG": "آخر تعديل",
+              "zh-CN": "更新时间",
+              "zh-TW": "更新時間"
+            }
+          },
+          {
+            "ref": "created_by_id",
+            "type": "text",
+            "maxLength": 36,
+            "nullable": true,
+            "rules": {
+              "stamp": {
+                "set": "user-id",
+                "on": "create"
+              }
+            },
+            "label": {
+              "en-US": "Made by",
+              "de-DE": "Erstellt von",
+              "fr-FR": "Créé par",
+              "da-DK": "Oprettet af",
+              "cs-CZ": "Vytvořil",
+              "ar-EG": "أنشأه",
+              "zh-CN": "创建人",
+              "zh-TW": "建立者"
+            }
+          }
+        ]
+      },
+      {
+        "ref": "funnels",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "name",
+            "type": "text",
+            "maxLength": 200,
+            "label": {
+              "en-US": "Name",
+              "de-DE": "Name",
+              "fr-FR": "Nom",
+              "da-DK": "Navn",
+              "cs-CZ": "Název",
+              "ar-EG": "الاسم",
+              "zh-CN": "名称",
+              "zh-TW": "名稱"
+            }
+          },
+          {
+            "ref": "steps",
+            "type": "json",
+            "label": {
+              "en-US": "Steps",
+              "de-DE": "Schritte",
+              "fr-FR": "Étapes",
+              "da-DK": "Trin",
+              "cs-CZ": "Kroky",
+              "ar-EG": "الخطوات",
+              "zh-CN": "步骤",
+              "zh-TW": "步驟"
+            }
+          },
+          {
+            "ref": "rule_id",
+            "type": "text",
+            "maxLength": 64,
+            "nullable": true,
+            "label": {
+              "en-US": "Linked rule",
+              "de-DE": "Verknüpfte Regel",
+              "fr-FR": "Règle liée",
+              "da-DK": "Tilknyttet regel",
+              "cs-CZ": "Propojené pravidlo",
+              "ar-EG": "القاعدة المرتبطة",
+              "zh-CN": "关联规则",
+              "zh-TW": "關聯規則"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "roles": [
+    {
+      "key": "editor",
+      "name": "Landing pages editor",
+      "names": {
+        "en-US": "Landing pages editor",
+        "de-DE": "Landingpages bearbeiten",
+        "fr-FR": "Édition des pages d’atterrissage",
+        "da-DK": "Redaktør af landingssider",
+        "cs-CZ": "Editor vstupních stránek",
+        "ar-EG": "محرر صفحات الهبوط",
+        "zh-CN": "落地页编辑者",
+        "zh-TW": "到達頁面編輯者"
+      },
+      "permissions": [
+        "table:@pages:read",
+        "table:@pages:create",
+        "table:@pages:update",
+        "table:@pages:delete",
+        "table:@funnels:read",
+        "table:@funnels:create",
+        "table:@funnels:update",
+        "table:@funnels:delete",
+        "page:@pages:view"
+      ]
+    },
+    {
+      "key": "reader",
+      "name": "Landing pages reader",
+      "names": {
+        "en-US": "Landing pages reader",
+        "de-DE": "Landingpages lesen",
+        "fr-FR": "Lecture des pages d’atterrissage",
+        "da-DK": "Læser af landingssider",
+        "cs-CZ": "Čtenář vstupních stránek",
+        "ar-EG": "قارئ صفحات الهبوط",
+        "zh-CN": "落地页查看者",
+        "zh-TW": "到達頁面檢視者"
+      },
+      "permissions": [
+        "table:@pages:read",
+        "table:@funnels:read",
+        "page:@pages:view"
+      ]
+    }
+  ],
+  "sampleData": {
+    "file": "seeds/pages.sample.json"
+  },
+  "addOn": {
+    "attaches": [
+      {
+        "app": "*",
+        "range": "*"
+      }
+    ],
+    "connect": {
+      "kind": "none"
+    },
+    "hostApi": 2,
+    "landing": {
+      "pages": "pages",
+      "funnels": "funnels"
+    },
+    "pages": [
+      {
+        "ref": "pages",
+        "title": {
+          "key": "addon.pages.page.pages",
+          "fallback": "Landing pages"
+        },
+        "titles": {
+          "en-US": "Landing pages",
+          "de-DE": "Landingpages",
+          "fr-FR": "Pages d’atterrissage",
+          "da-DK": "Landingssider",
+          "cs-CZ": "Vstupní stránky",
+          "ar-EG": "صفحات الهبوط",
+          "zh-CN": "落地页",
+          "zh-TW": "到達頁面"
+        },
+        "icon": "panels-top-left",
+        "client": "dist/pages/pages.js",
+        "nav": {
+          "group": "library",
+          "order": 23
+        },
+        "detail": true
+      }
+    ]
+  }
+}

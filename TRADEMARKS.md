@@ -65,6 +65,7 @@ including the ones that name no company.
 | Offers & gift cards | `packages/offers` | `OFF` | *(none)* | — |
 | Forms & surveys | `packages/forms` | `FRM` | *(none)* | — |
 | Live chat | `packages/live-chat` | `LC` | *(none)* | — |
+| Landing pages | `packages/pages` | `LPG` | *(none)* | — |
 | Customiser | `packages/customiser` | `CZ` | *(none)* | — |
 | Card payments | `packages/payments-stripe` | `CP` | **Stripe**, **Link**; ways to pay it names: **PayPal**, **Apple Pay**, **Google Pay**, **Klarna**; card schemes: **Visa**, **Mastercard**, **American Express**, **Interac** | Stripe, Inc.; PayPal, Inc.; Apple Inc.; Google LLC; Klarna Bank AB; Visa Inc.; Mastercard International Incorporated; American Express Company; Interac Corp. |
 | Wallet payments | `packages/payments-paypal` | `WP` | **PayPal** | PayPal, Inc. |
@@ -685,6 +686,47 @@ half of this section, and it is empty. The package's `sources.test.ts` checks
 that list, that the manifest declares no connection, and that no source file
 names an address; `dist.test.ts` reads every built byte for the words that may
 not ship.
+
+---
+
+# Landing pages — references no third-party trademarks
+
+## Why an add-on of landing pages references no mark
+
+"Landing page", "funnel" and "view" are ordinary words for a business putting
+an offer or an event on a page of its own and seeing how many people looked at
+it. **Every page, funnel and count here is the operator's own**, kept in their
+own database and drawn for visitors by their own Adminium. Nothing is hosted
+on, sent through or measured by anybody's page or analytics service.
+
+What this section is about is the marks the PACKAGE ITSELF could have named, in
+its code, its manifest and its sample, and did not:
+
+- **No page or site builder.** A page is drawn by the operator's own Adminium
+  on the operator's own address or a host they map to it; the add-on names no
+  builder product and imports no one's page.
+- **No analytics service.** Views are counted by Adminium itself, as numbers of
+  views, never people; the add-on names no analytics product and loads no
+  tracking code.
+- **No AI service.** Milo's drafts use whatever AI service the operator set up
+  in their own Adminium. A screen shows that service's name as Adminium gives
+  it; the package never writes one.
+- **No company in the sample.** The sample pages describe a showroom open day
+  and a spring offer of a business that is not named.
+
+## Affiliation
+
+The add-on is not affiliated with, endorsed by or sponsored by any company,
+because it deals with none: it connects to nothing, holds no credential, names
+no service and reaches no address.
+
+## How the claim is kept true
+
+`COMPANY_MARKS` in `packages/pages/src/add-on-facts.ts` is the executable half
+of this section, and it is empty. The package's `sources.test.ts` checks that
+list, that the manifest declares no connection, and that no source file names
+an address; `dist.test.ts` reads every built byte for the words that may not
+ship.
 
 ---
 
