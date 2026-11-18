@@ -7,7 +7,7 @@
  * shows which of the chat's languages it is written in, and which still
  * need a version.
  *
- * Every answer is public text (D39): anyone chatting may be shown it, and
+ * Every answer is public text: anyone chatting may be shown it, and
  * the dialog says so. Delete happens at once, with Undo on the toast.
  */
 import { useState, type ReactNode } from 'react';

@@ -194,7 +194,7 @@ export function automaticBlocked(answers: number, draft: Draft, usable: boolean 
 }
 
 /**
- * The window's first line, as a visitor reads it (Q-M):
+ * The window's first line, as a visitor reads it:
  * - A: automatic answers really run (switched on, a limit, a usable service);
  * - B: they do not, and Milo drafting is on: staff may use the AI service;
  * - C: neither: a person answers.

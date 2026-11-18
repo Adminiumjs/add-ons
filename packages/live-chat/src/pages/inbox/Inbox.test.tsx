@@ -318,6 +318,14 @@ describe('at narrower widths (comp 2-mid, 2-phone)', () => {
     expect(within(document.querySelector('[data-part="sheet"]') as HTMLElement).getByRole('complementary', { name: 'Visitor details' })).toBeTruthy();
   });
 
+  it('keeps room for the dashboard’s Milo bubble beside the composer once the side rail is not beside it', async () => {
+    await draw({ width: 1024 });
+    expect(screen.getByRole('textbox', { name: 'Write a message…' }).closest('[data-sticky-footer]')).not.toBeNull();
+    cleanup();
+    await draw({ width: 1440 });
+    expect(screen.getByRole('textbox', { name: 'Write a message…' }).closest('[data-sticky-footer]')).toBeNull();
+  });
+
   it('below 700, shows the thread first, and Back goes to the inbox', async () => {
     await draw({ width: 390 });
     expect(screen.queryByRole('heading', { name: 'Chat', level: 2 })).toBeNull();

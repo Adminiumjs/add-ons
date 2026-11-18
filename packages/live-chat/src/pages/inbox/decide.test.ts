@@ -10,7 +10,7 @@ import { latestByConversation, shown, systemLine, waitedOf, waitingSince } from 
 const t = (_key: string, fallback: string, args?: Record<string, unknown>): string => format(fallback, args);
 const left = (reason: MailReason | null, ready = reason === null) => ({ presence: 'left' as const, mail: { ready, reason, used: 0, max: 3 } });
 
-describe('the line under the composer (CR9)', () => {
+describe('the line under the composer once the visitor left', () => {
   it('is nothing while the visitor is on the page, or before Adminium said', () => {
     expect(mailLine(t, null, 'Marta Kovac', 'marta@example.com')).toBeNull();
     expect(mailLine(t, { presence: 'on-page', mail: { ready: true, reason: null, used: 0, max: 3 } }, 'Marta Kovac', 'marta@example.com')).toBeNull();

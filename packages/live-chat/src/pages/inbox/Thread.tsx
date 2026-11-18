@@ -312,7 +312,9 @@ export function Thread({ t, conversation, answers, people, me, mayAnswer, miloOn
         )}
       </div>
       {mayAnswer ? (
-        <div className="flex flex-col gap-2.5 border-t border-border bg-surface px-5 pb-4 pt-3">
+        // Narrower than the side rail's width, the dashboard's Milo bubble sits over the composer's end: the host keeps
+        // room for it beside a bar that says it is a footer.
+        <div data-sticky-footer={layout === 'wide' ? undefined : ''} className="flex flex-col gap-2.5 border-t border-border bg-surface px-5 pb-4 pt-3">
           {automatic ? (
             <p className="m-0 flex items-center gap-2 text-[12.5px] text-fg-muted">
               <span className="inline-flex text-info">
