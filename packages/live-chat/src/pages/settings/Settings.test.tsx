@@ -259,8 +259,9 @@ describe('putting the chat on a website', () => {
   it('takes the business, the languages and the time zone from the status read', async () => {
     await draw({ status: { data: { ...REACHABLE.data, businessName: 'Hartwell & Co', languages: ['en-US', 'cs-CZ'], timeZone: 'Europe/Prague' } } });
     expect(within(card('Opening hours')).getByText('Europe/Prague')).toBeTruthy();
-    expect(screen.getByLabelText('Welcome line, Czech')).toBeTruthy();
-    expect(screen.queryByLabelText('Welcome line, German')).toBeNull();
+    // The language variations count the chat's two languages, not the four of the default status.
+    expect(within(card('Welcome line')).getByText('0 of 2')).toBeTruthy();
+    expect(screen.queryByText('0 of 4')).toBeNull();
     expect(screen.getByText('Shown under “Hartwell & Co” at the top of the chat.')).toBeTruthy();
   });
 
@@ -273,7 +274,7 @@ describe('putting the chat on a website', () => {
     });
     expect(screen.queryByText(/x\/embed\.js/)).toBeNull();
     expect(screen.queryAllByRole('alert')).toEqual([]);
-    expect(screen.getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent)).toEqual(['Opening hours', 'Welcome line', 'Automatic answers', 'Answers']);
+    expect(screen.getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent)).toEqual(['Opening hours', 'Welcome line', 'Automatic answers', 'Answers', 'Try a question']);
     expect(screen.getByRole('button', { name: 'Save changes' })).toBeTruthy();
   });
 
