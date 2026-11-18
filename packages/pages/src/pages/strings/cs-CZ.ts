@@ -134,7 +134,4 @@ export const funnels: Readonly<Record<string, string>> = {
   "funnels.wentOn": "pokračovalo"
 };
 
-export const editor: Readonly<Record<string, string>> = {
-  "editor.soon": "Editor tu zatím není",
-  "editor.title": "Stránka"
-};
+export { editor } from './editor/cs-CZ.ts';

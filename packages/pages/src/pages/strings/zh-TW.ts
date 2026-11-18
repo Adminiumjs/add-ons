@@ -134,7 +134,4 @@ export const funnels: Readonly<Record<string, string>> = {
   "funnels.wentOn": "繼續"
 };
 
-export const editor: Readonly<Record<string, string>> = {
-  "editor.soon": "編輯器尚未就緒",
-  "editor.title": "頁面"
-};
+export { editor } from './editor/zh-TW.ts';

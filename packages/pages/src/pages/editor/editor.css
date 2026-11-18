@@ -1,0 +1,616 @@
+/*
+ * THE EDITOR'S OWN LOOK, beside the kit's parts: the canvas's frame, the
+ * selection and the chips drawn on a section, the inspector's column and the
+ * outline's rows. Plain CSS on the house tokens, logical properties only, every
+ * rule under `[data-lpe]` and keyed by `data-lpe-*` attributes, so nothing here
+ * reaches outside the editor. `styles.ts` puts it on the page once, beside the
+ * landing renderer's own `landing.css`.
+ */
+
+[data-lpe] {
+  display: flex;
+  flex-direction: column;
+  min-block-size: 0;
+  color: var(--fg);
+}
+
+[data-lpe-body] {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-block-size: 0;
+}
+
+@media (min-width: 768px) {
+  [data-lpe-body] {
+    flex-direction: row;
+    align-items: stretch;
+  }
+}
+
+[data-lpe-main] {
+  flex: 1;
+  min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-block: 4px 48px;
+}
+
+[data-lpe-aside] {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  [data-lpe-aside] {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    flex: 0 0 288px;
+    inline-size: 288px;
+    margin-inline-start: 20px;
+    padding: 18px 16px 40px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+    align-self: flex-start;
+    position: sticky;
+    inset-block-start: 72px;
+    max-block-size: calc(100vh - 96px);
+    overflow-y: auto;
+  }
+  [data-lpe-phone-only] {
+    display: none !important;
+  }
+}
+
+[data-lpe-bar] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+[data-lpe-line] {
+  flex: 1;
+  min-inline-size: 200px;
+  font-size: 12px;
+  color: var(--fg-subtle);
+}
+
+/* ── The canvas ──────────────────────────────────────────────────────── */
+
+[data-lpe-frame-wrap] {
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+
+[data-lpe-frame-wrap][data-lpe-width="phone"] {
+  padding: 16px 8px;
+}
+
+/* The page is drawn light, as a stranger sees it, whatever the console's theme. */
+[data-lpe-frame] {
+  color-scheme: light;
+  --bg: #f6f6f8;
+  --surface: #ffffff;
+  --surface-2: #fafafa;
+  --surface-3: #f1f1f4;
+  --border: #ececef;
+  --border-strong: #e2e2e8;
+  --fg: #191920;
+  --fg-muted: #4a4a54;
+  --fg-subtle: #5a5a65;
+  --accent: var(--accent-light);
+  --accent-fg: #ffffff;
+  --accent-soft: color-mix(in srgb, var(--accent) 10%, transparent);
+  --accent-hover: color-mix(in srgb, var(--accent) 82%, #000);
+  inline-size: 100%;
+  max-inline-size: 880px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+[data-lpe-frame][data-lpe-width="phone"] {
+  inline-size: 390px;
+  max-inline-size: 100%;
+  border: 8px solid #191920;
+  border-radius: 28px;
+}
+
+[data-lpe] .lp-block {
+  cursor: pointer;
+}
+
+[data-lpe] .lp-block:hover {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+/* The section's own "Edit" button sits at the end of its foot, so the chips at its head stay readable. */
+[data-lpe] .lp-edit {
+  inset-block-start: auto;
+  inset-block-end: 8px;
+}
+
+[data-lpe-preview] .lp-edit {
+  display: none;
+}
+
+[data-lpe-preview] .lp-block {
+  cursor: default;
+}
+
+[data-lpe-preview] .lp-block:hover {
+  box-shadow: none;
+}
+
+/* "Milo · check" on a section Milo wrote: its words are set by the editor's rule for that section. */
+[data-lpe-frame] .lp-block::after {
+  position: absolute;
+  inset-block-start: 6px;
+  inset-inline-end: 8px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  block-size: 22px;
+  padding-inline: 8px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-radius: 20px;
+  background: var(--surface);
+  color: var(--accent);
+  box-shadow: var(--shadow);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* Where a new section goes, while the picker is open: a dashed line at the foot of the section before it. */
+[data-lpe-frame] .lp-block::before {
+  position: absolute;
+  inset-inline: 16px;
+  inset-block-end: 0;
+  z-index: 2;
+  padding-block-start: 4px;
+  border-block-start: 2px dashed var(--accent);
+  color: var(--accent);
+  font-size: 11.5px;
+  font-weight: 700;
+  text-align: center;
+  pointer-events: none;
+}
+
+/* A section with nothing written in it yet, and a picture or a form not chosen yet. */
+[data-lpe-placeholder] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  inline-size: 100%;
+  block-size: 100%;
+  min-block-size: 64px;
+  padding: 18px;
+  border: 1px dashed #c9c9d4;
+  border-radius: 10px;
+  color: var(--fg-subtle);
+  font-size: 13px;
+  text-align: center;
+}
+
+[data-lpe-form] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 28px 18px;
+  text-align: center;
+}
+
+[data-lpe-form] strong {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+[data-lpe-form] span {
+  color: var(--fg-muted);
+  font-size: 13.5px;
+}
+
+[data-lpe-empty] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-block-size: 420px;
+  padding: 40px 24px;
+  text-align: center;
+}
+
+/* ── The inspector ───────────────────────────────────────────────────── */
+
+[data-lpe-micro] {
+  padding-block: 4px 2px;
+  padding-inline: 2px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--fg-subtle);
+}
+
+[data-lpe-rows] {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+[data-lpe-row] {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-block-size: 38px;
+  padding-inline: 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--fg);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+[data-lpe-row][data-lpe-on] {
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+[data-lpe-row] > button[data-lpe-pick] {
+  flex: 1;
+  min-inline-size: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-block-size: 36px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+[data-lpe-row] > button[data-lpe-pick] > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-lpe-row] svg {
+  flex: 0 0 auto;
+  inline-size: 15px;
+  block-size: 15px;
+}
+
+[data-lpe-locked] {
+  color: var(--fg-muted);
+  background: var(--surface-2);
+}
+
+[data-lpe-move] {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 32px;
+  block-size: 32px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+[data-lpe-move][aria-disabled="true"] {
+  opacity: 0.4;
+  cursor: default;
+}
+
+[data-lpe-sheet] [data-lpe-move] {
+  inline-size: 44px;
+  block-size: 44px;
+}
+
+[data-lpe-add] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-block-size: 40px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+[data-lpe-add]:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+[data-lpe-head] {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+[data-lpe-head] > span:last-child {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+[data-lpe-head] b {
+  font-size: 14px;
+}
+
+[data-lpe-head] small {
+  font-size: 11.5px;
+  color: var(--fg-subtle);
+}
+
+[data-lpe-fields] {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+[data-lpe-group] {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+
+[data-lpe-address] {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--fg-muted);
+  overflow-wrap: anywhere;
+}
+
+[data-lpe-address][data-lpe-draft] {
+  color: var(--fg-subtle);
+}
+
+[data-lpe-address] > bdi {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+[data-lpe-note] {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--fg-muted);
+}
+
+[data-lpe-alert] {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--danger);
+}
+
+[data-lpe-thumb] {
+  display: block;
+  inline-size: 100%;
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  object-fit: cover;
+  background: var(--surface-3);
+}
+
+[data-lpe-thumb][data-lpe-share] {
+  aspect-ratio: 1200 / 630;
+}
+
+[data-lpe-busy] {
+  cursor: wait;
+}
+
+/* ── The picker and the Files chooser ────────────────────────────────── */
+
+[data-lpe-cards] {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
+}
+
+[data-lpe-card] {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--fg);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+[data-lpe-card]:hover {
+  border-color: var(--accent);
+}
+
+[data-lpe-card] > span:first-child {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 28px;
+  block-size: 28px;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+[data-lpe-card] > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+[data-lpe-card] b {
+  font-size: 12.5px;
+  font-weight: 800;
+}
+
+[data-lpe-card] small {
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--fg-muted);
+}
+
+[data-lpe-card] img {
+  inline-size: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+[data-lpe-files] {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+[data-lpe-files] [data-lpe-card] {
+  flex-direction: column;
+}
+
+[data-lpe-files] [data-lpe-card] > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-inline-size: 100%;
+  font-size: 12px;
+}
+
+/* ── The publish panel ───────────────────────────────────────────────── */
+
+[data-lpe-pop] {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  inline-size: min(400px, calc(100vw - 32px));
+}
+
+[data-lpe-tile] {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 34px;
+  block-size: 34px;
+  border-radius: 10px;
+}
+
+[data-lpe-tile="pos"] {
+  background: var(--pos-soft);
+  color: var(--pos);
+}
+
+[data-lpe-tile="muted"] {
+  background: var(--surface-3);
+  color: var(--fg-muted);
+}
+
+[data-lpe-tile="accent"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+[data-lpe-tile="warn"] {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+[data-lpe-confirm] {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
+  border-radius: 10px;
+  background: var(--danger-soft);
+}
+
+[data-lpe-confirm]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* "Show this page": a switch 40 × 24, its knob at the end while on. */
+[data-lpe-switch] {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  inline-size: 40px;
+  block-size: 24px;
+  padding: 3px;
+  border: 0;
+  border-radius: 20px;
+  background: var(--border-strong);
+  cursor: pointer;
+}
+
+[data-lpe-switch]::before {
+  content: "";
+  inline-size: 18px;
+  block-size: 18px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: var(--shadow);
+}
+
+[data-lpe-switch][aria-checked="true"] {
+  justify-content: flex-end;
+  background: var(--accent);
+}
+
+[data-lpe-switch]:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+[data-lpe-switch]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
