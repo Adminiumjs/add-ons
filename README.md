@@ -8,6 +8,7 @@ packages/host-kit/          the AddOnHost seam and its guards, for a host app to
 packages/barcode-labels/    Barcode Labels: document-render@1, connects to nothing
 packages/customiser/        Customiser: design-check@1, posting-rows@1, connects to nothing
 packages/forms/             Forms & surveys: no contract, connects to nothing
+packages/live-chat/         Live chat: no contract, connects to nothing
 packages/holiday-calendars/ Holiday Calendars: no contract, no egress, connects to nothing
 packages/inventory/         Inventory: posting-rows@1, connects to nothing
 packages/invoices/          Invoices & Receipts: document-render@1, connects to nothing

@@ -1,0 +1,1190 @@
+{
+  "kind": "add-on",
+  "manifestVersion": 1,
+  "key": "live-chat",
+  "name": "Live chat",
+  "version": "1.0.29",
+  "publisher": {
+    "id": "adminium",
+    "name": "Adminium",
+    "url": "https://adminium.dev"
+  },
+  "license": "AGPL-3.0-only",
+  "description": {
+    "key": "addon.live-chat.description",
+    "fallback": "A chat window on your website. Your team answers in Adminium, with automatic answers you write if you want them."
+  },
+  "categories": [
+    "marketing"
+  ],
+  "compatibility": {
+    "minAdminiumVersion": "0.3.64",
+    "requires": []
+  },
+  "capabilities": [],
+  "requiredSchema": {
+    "prefixed": true,
+    "tables": [
+      {
+        "ref": "conversations",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "started_at",
+            "type": "timestamptz",
+            "label": {
+              "en-US": "Started",
+              "de-DE": "Begonnen",
+              "fr-FR": "Commencée",
+              "da-DK": "Startet",
+              "cs-CZ": "Zahájeno",
+              "ar-EG": "وقت البدء",
+              "zh-CN": "开始时间",
+              "zh-TW": "開始時間"
+            }
+          },
+          {
+            "ref": "last_message_at",
+            "type": "timestamptz",
+            "label": {
+              "en-US": "Last message",
+              "de-DE": "Letzte Nachricht",
+              "fr-FR": "Dernier message",
+              "da-DK": "Seneste besked",
+              "cs-CZ": "Poslední zpráva",
+              "ar-EG": "آخر رسالة",
+              "zh-CN": "最后一条消息",
+              "zh-TW": "最後一則訊息"
+            }
+          },
+          {
+            "ref": "state",
+            "type": "enum",
+            "enum": [
+              "bot",
+              "waiting",
+              "open",
+              "closed"
+            ],
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "bot": {
+                    "en-US": "Automatic answers",
+                    "de-DE": "Automatische Antworten",
+                    "fr-FR": "Réponses automatiques",
+                    "da-DK": "Automatiske svar",
+                    "cs-CZ": "Automatické odpovědi",
+                    "ar-EG": "إجابات تلقائية",
+                    "zh-CN": "自动回答",
+                    "zh-TW": "自動回答"
+                  },
+                  "waiting": {
+                    "en-US": "Waiting for a person",
+                    "de-DE": "Wartet auf eine Person",
+                    "fr-FR": "En attente d’une personne",
+                    "da-DK": "Venter på en person",
+                    "cs-CZ": "Čeká na člověka",
+                    "ar-EG": "بانتظار شخص",
+                    "zh-CN": "等待人工回复",
+                    "zh-TW": "等待真人回覆"
+                  },
+                  "open": {
+                    "en-US": "Being answered",
+                    "de-DE": "Wird beantwortet",
+                    "fr-FR": "En cours de réponse",
+                    "da-DK": "Besvares",
+                    "cs-CZ": "Odpovídá se",
+                    "ar-EG": "قيد الرد",
+                    "zh-CN": "正在回复",
+                    "zh-TW": "回覆中"
+                  },
+                  "closed": {
+                    "en-US": "Closed",
+                    "de-DE": "Geschlossen",
+                    "fr-FR": "Fermée",
+                    "da-DK": "Lukket",
+                    "cs-CZ": "Uzavřeno",
+                    "ar-EG": "مغلقة",
+                    "zh-CN": "已关闭",
+                    "zh-TW": "已關閉"
+                  }
+                }
+              }
+            },
+            "label": {
+              "en-US": "State",
+              "de-DE": "Status",
+              "fr-FR": "État",
+              "da-DK": "Status",
+              "cs-CZ": "Stav",
+              "ar-EG": "الحالة",
+              "zh-CN": "状态",
+              "zh-TW": "狀態"
+            }
+          },
+          {
+            "ref": "language",
+            "type": "text",
+            "maxLength": 10,
+            "label": {
+              "en-US": "Language",
+              "de-DE": "Sprache",
+              "fr-FR": "Langue",
+              "da-DK": "Sprog",
+              "cs-CZ": "Jazyk",
+              "ar-EG": "اللغة",
+              "zh-CN": "语言",
+              "zh-TW": "語言"
+            }
+          },
+          {
+            "ref": "name",
+            "type": "text",
+            "maxLength": 200,
+            "nullable": true,
+            "rules": {
+              "personal": true
+            },
+            "label": {
+              "en-US": "Name",
+              "de-DE": "Name",
+              "fr-FR": "Nom",
+              "da-DK": "Navn",
+              "cs-CZ": "Jméno",
+              "ar-EG": "الاسم",
+              "zh-CN": "姓名",
+              "zh-TW": "姓名"
+            }
+          },
+          {
+            "ref": "email",
+            "type": "text",
+            "maxLength": 320,
+            "nullable": true,
+            "rules": {
+              "personal": true
+            },
+            "label": {
+              "en-US": "E-mail",
+              "de-DE": "E-Mail",
+              "fr-FR": "E-mail",
+              "da-DK": "E-mail",
+              "cs-CZ": "E-mail",
+              "ar-EG": "البريد الإلكتروني",
+              "zh-CN": "电子邮件",
+              "zh-TW": "電子郵件"
+            }
+          },
+          {
+            "ref": "came_from",
+            "type": "text",
+            "nullable": true,
+            "rules": {
+              "personal": true
+            },
+            "label": {
+              "en-US": "Came from",
+              "de-DE": "Kam von",
+              "fr-FR": "Venu de",
+              "da-DK": "Kom fra",
+              "cs-CZ": "Přišel z",
+              "ar-EG": "جاء من",
+              "zh-CN": "来自页面",
+              "zh-TW": "來自頁面"
+            }
+          },
+          {
+            "ref": "outside_hours",
+            "type": "bool",
+            "default": false,
+            "label": {
+              "en-US": "Outside hours",
+              "de-DE": "Außerhalb der Öffnungszeiten",
+              "fr-FR": "En dehors des horaires",
+              "da-DK": "Uden for åbningstid",
+              "cs-CZ": "Mimo otevírací dobu",
+              "ar-EG": "خارج ساعات العمل",
+              "zh-CN": "非营业时间",
+              "zh-TW": "非營業時間"
+            }
+          },
+          {
+            "ref": "taken_by",
+            "type": "text",
+            "maxLength": 64,
+            "nullable": true,
+            "label": {
+              "en-US": "Answered by",
+              "de-DE": "Beantwortet von",
+              "fr-FR": "Répondu par",
+              "da-DK": "Besvaret af",
+              "cs-CZ": "Odpovídá",
+              "ar-EG": "يرد عليها",
+              "zh-CN": "回复人",
+              "zh-TW": "回覆人"
+            }
+          },
+          {
+            "ref": "taken_at",
+            "type": "timestamptz",
+            "nullable": true,
+            "label": {
+              "en-US": "Taken over",
+              "de-DE": "Übernommen",
+              "fr-FR": "Prise en charge",
+              "da-DK": "Overtaget",
+              "cs-CZ": "Převzato",
+              "ar-EG": "وقت التولي",
+              "zh-CN": "接手时间",
+              "zh-TW": "接手時間"
+            }
+          },
+          {
+            "ref": "last_visitor_at",
+            "type": "timestamptz",
+            "nullable": true,
+            "label": {
+              "en-US": "Visitor last seen",
+              "de-DE": "Besucher zuletzt gesehen",
+              "fr-FR": "Visiteur vu pour la dernière fois",
+              "da-DK": "Besøgende sidst set",
+              "cs-CZ": "Návštěvník naposledy viděn",
+              "ar-EG": "آخر ظهور للزائر",
+              "zh-CN": "访客最后在线",
+              "zh-TW": "訪客最後上線"
+            }
+          },
+          {
+            "ref": "last_staff_at",
+            "type": "timestamptz",
+            "nullable": true,
+            "label": {
+              "en-US": "Last staff reply",
+              "de-DE": "Letzte Antwort des Teams",
+              "fr-FR": "Dernière réponse de l’équipe",
+              "da-DK": "Seneste svar fra teamet",
+              "cs-CZ": "Poslední odpověď týmu",
+              "ar-EG": "آخر رد من الفريق",
+              "zh-CN": "员工最后回复",
+              "zh-TW": "員工最後回覆"
+            }
+          },
+          {
+            "ref": "closed_at",
+            "type": "timestamptz",
+            "nullable": true,
+            "label": {
+              "en-US": "Closed at",
+              "de-DE": "Geschlossen am",
+              "fr-FR": "Fermée le",
+              "da-DK": "Lukket",
+              "cs-CZ": "Uzavřeno v",
+              "ar-EG": "وقت الإغلاق",
+              "zh-CN": "关闭时间",
+              "zh-TW": "關閉時間"
+            }
+          },
+          {
+            "ref": "became_table",
+            "type": "text",
+            "maxLength": 64,
+            "nullable": true,
+            "label": {
+              "en-US": "Became a row of",
+              "de-DE": "Wurde zu einer Zeile in",
+              "fr-FR": "Devenue une ligne de",
+              "da-DK": "Blev en række i",
+              "cs-CZ": "Stalo se řádkem v",
+              "ar-EG": "أصبحت صفًا في",
+              "zh-CN": "已转为此表的行",
+              "zh-TW": "已轉為此表的列"
+            }
+          },
+          {
+            "ref": "became_key",
+            "type": "text",
+            "maxLength": 200,
+            "nullable": true,
+            "label": {
+              "en-US": "Row",
+              "de-DE": "Zeile",
+              "fr-FR": "Ligne",
+              "da-DK": "Række",
+              "cs-CZ": "Řádek",
+              "ar-EG": "الصف",
+              "zh-CN": "行",
+              "zh-TW": "列"
+            }
+          },
+          {
+            "ref": "automatic_count",
+            "type": "int",
+            "default": 0,
+            "label": {
+              "en-US": "Automatic answers",
+              "de-DE": "Automatische Antworten",
+              "fr-FR": "Réponses automatiques",
+              "da-DK": "Automatiske svar",
+              "cs-CZ": "Automatické odpovědi",
+              "ar-EG": "إجابات تلقائية",
+              "zh-CN": "自动回答",
+              "zh-TW": "自動回答"
+            }
+          }
+        ]
+      },
+      {
+        "ref": "messages",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "bigint",
+            "role": "pk"
+          },
+          {
+            "ref": "conversation_id",
+            "type": "fk",
+            "references": "conversations",
+            "label": {
+              "en-US": "Conversation",
+              "de-DE": "Unterhaltung",
+              "fr-FR": "Conversation",
+              "da-DK": "Samtale",
+              "cs-CZ": "Konverzace",
+              "ar-EG": "المحادثة",
+              "zh-CN": "会话",
+              "zh-TW": "對話"
+            }
+          },
+          {
+            "ref": "kind",
+            "type": "enum",
+            "enum": [
+              "visitor",
+              "staff",
+              "automatic",
+              "system"
+            ],
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "visitor": {
+                    "en-US": "Visitor",
+                    "de-DE": "Besucher",
+                    "fr-FR": "Visiteur",
+                    "da-DK": "Besøgende",
+                    "cs-CZ": "Návštěvník",
+                    "ar-EG": "الزائر",
+                    "zh-CN": "访客",
+                    "zh-TW": "訪客"
+                  },
+                  "staff": {
+                    "en-US": "Staff",
+                    "de-DE": "Team",
+                    "fr-FR": "Équipe",
+                    "da-DK": "Team",
+                    "cs-CZ": "Tým",
+                    "ar-EG": "الفريق",
+                    "zh-CN": "员工",
+                    "zh-TW": "員工"
+                  },
+                  "automatic": {
+                    "en-US": "Automatic answer",
+                    "de-DE": "Automatische Antwort",
+                    "fr-FR": "Réponse automatique",
+                    "da-DK": "Automatisk svar",
+                    "cs-CZ": "Automatická odpověď",
+                    "ar-EG": "إجابة تلقائية",
+                    "zh-CN": "自动回答",
+                    "zh-TW": "自動回答"
+                  },
+                  "system": {
+                    "en-US": "Line",
+                    "de-DE": "Hinweis",
+                    "fr-FR": "Ligne",
+                    "da-DK": "Linje",
+                    "cs-CZ": "Řádek",
+                    "ar-EG": "سطر",
+                    "zh-CN": "提示",
+                    "zh-TW": "提示"
+                  }
+                }
+              }
+            },
+            "label": {
+              "en-US": "From",
+              "de-DE": "Von",
+              "fr-FR": "De",
+              "da-DK": "Fra",
+              "cs-CZ": "Od",
+              "ar-EG": "من",
+              "zh-CN": "来自",
+              "zh-TW": "來自"
+            }
+          },
+          {
+            "ref": "body",
+            "type": "text",
+            "rules": {
+              "personal": true
+            },
+            "label": {
+              "en-US": "Message",
+              "de-DE": "Nachricht",
+              "fr-FR": "Message",
+              "da-DK": "Besked",
+              "cs-CZ": "Zpráva",
+              "ar-EG": "الرسالة",
+              "zh-CN": "消息",
+              "zh-TW": "訊息"
+            }
+          },
+          {
+            "ref": "event",
+            "type": "text",
+            "maxLength": 30,
+            "nullable": true,
+            "label": {
+              "en-US": "What happened",
+              "de-DE": "Was geschah",
+              "fr-FR": "Ce qui s’est passé",
+              "da-DK": "Hvad der skete",
+              "cs-CZ": "Co se stalo",
+              "ar-EG": "ما حدث",
+              "zh-CN": "事件",
+              "zh-TW": "事件"
+            }
+          },
+          {
+            "ref": "answer_ref",
+            "type": "text",
+            "maxLength": 64,
+            "nullable": true,
+            "label": {
+              "en-US": "Answer",
+              "de-DE": "Antwort",
+              "fr-FR": "Réponse",
+              "da-DK": "Svar",
+              "cs-CZ": "Odpověď",
+              "ar-EG": "الإجابة",
+              "zh-CN": "回答",
+              "zh-TW": "回答"
+            }
+          },
+          {
+            "ref": "author_id",
+            "type": "text",
+            "maxLength": 64,
+            "nullable": true,
+            "label": {
+              "en-US": "Written by",
+              "de-DE": "Geschrieben von",
+              "fr-FR": "Écrit par",
+              "da-DK": "Skrevet af",
+              "cs-CZ": "Napsal",
+              "ar-EG": "كتبها",
+              "zh-CN": "撰写人",
+              "zh-TW": "撰寫人"
+            }
+          },
+          {
+            "ref": "drafted",
+            "type": "bool",
+            "default": false,
+            "label": {
+              "en-US": "Drafted by Milo",
+              "de-DE": "Von Milo entworfen",
+              "fr-FR": "Rédigé par Milo",
+              "da-DK": "Udkast fra Milo",
+              "cs-CZ": "Návrh od Mila",
+              "ar-EG": "صاغها Milo",
+              "zh-CN": "由 Milo 起草",
+              "zh-TW": "由 Milo 起草"
+            }
+          },
+          {
+            "ref": "sent_at",
+            "type": "timestamptz",
+            "label": {
+              "en-US": "Sent",
+              "de-DE": "Gesendet",
+              "fr-FR": "Envoyé",
+              "da-DK": "Sendt",
+              "cs-CZ": "Odesláno",
+              "ar-EG": "وقت الإرسال",
+              "zh-CN": "发送时间",
+              "zh-TW": "傳送時間"
+            }
+          },
+          {
+            "ref": "mailed_at",
+            "type": "timestamptz",
+            "nullable": true,
+            "label": {
+              "en-US": "Mailed",
+              "de-DE": "Per E-Mail gesendet",
+              "fr-FR": "Envoyé par e-mail",
+              "da-DK": "Sendt på e-mail",
+              "cs-CZ": "Odesláno e-mailem",
+              "ar-EG": "أُرسلت بالبريد",
+              "zh-CN": "邮件发送时间",
+              "zh-TW": "郵件寄送時間"
+            }
+          }
+        ]
+      },
+      {
+        "ref": "answers",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "ref",
+            "type": "text",
+            "maxLength": 64,
+            "unique": true,
+            "label": {
+              "en-US": "Reference",
+              "de-DE": "Kennung",
+              "fr-FR": "Référence",
+              "da-DK": "Reference",
+              "cs-CZ": "Označení",
+              "ar-EG": "المرجع",
+              "zh-CN": "标识",
+              "zh-TW": "識別碼"
+            }
+          },
+          {
+            "ref": "versions",
+            "type": "json",
+            "label": {
+              "en-US": "Answer text",
+              "de-DE": "Antworttext",
+              "fr-FR": "Texte de la réponse",
+              "da-DK": "Svartekst",
+              "cs-CZ": "Text odpovědi",
+              "ar-EG": "نص الإجابة",
+              "zh-CN": "回答内容",
+              "zh-TW": "回答內容"
+            }
+          },
+          {
+            "ref": "active",
+            "type": "bool",
+            "default": true,
+            "label": {
+              "en-US": "In use",
+              "de-DE": "Aktiv",
+              "fr-FR": "Active",
+              "da-DK": "Aktiv",
+              "cs-CZ": "Používá se",
+              "ar-EG": "مستخدمة",
+              "zh-CN": "启用",
+              "zh-TW": "啟用"
+            }
+          },
+          {
+            "ref": "position",
+            "type": "int",
+            "default": 0,
+            "label": {
+              "en-US": "Order",
+              "de-DE": "Reihenfolge",
+              "fr-FR": "Ordre",
+              "da-DK": "Rækkefølge",
+              "cs-CZ": "Pořadí",
+              "ar-EG": "الترتيب",
+              "zh-CN": "顺序",
+              "zh-TW": "順序"
+            }
+          }
+        ]
+      },
+      {
+        "ref": "choices",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "conversation_id",
+            "type": "fk",
+            "references": "conversations",
+            "label": {
+              "en-US": "Conversation",
+              "de-DE": "Unterhaltung",
+              "fr-FR": "Conversation",
+              "da-DK": "Samtale",
+              "cs-CZ": "Konverzace",
+              "ar-EG": "المحادثة",
+              "zh-CN": "会话",
+              "zh-TW": "對話"
+            }
+          },
+          {
+            "ref": "message_id",
+            "type": "bigint",
+            "label": {
+              "en-US": "Visitor message",
+              "de-DE": "Besuchernachricht",
+              "fr-FR": "Message du visiteur",
+              "da-DK": "Besøgendes besked",
+              "cs-CZ": "Zpráva návštěvníka",
+              "ar-EG": "رسالة الزائر",
+              "zh-CN": "访客消息",
+              "zh-TW": "訪客訊息"
+            }
+          },
+          {
+            "ref": "answer_ref",
+            "type": "text",
+            "maxLength": 64,
+            "nullable": true,
+            "label": {
+              "en-US": "Answer picked",
+              "de-DE": "Gewählte Antwort",
+              "fr-FR": "Réponse choisie",
+              "da-DK": "Valgt svar",
+              "cs-CZ": "Vybraná odpověď",
+              "ar-EG": "الإجابة المختارة",
+              "zh-CN": "选中的回答",
+              "zh-TW": "選中的回答"
+            }
+          },
+          {
+            "ref": "outcome",
+            "type": "enum",
+            "enum": [
+              "answered",
+              "hand-over",
+              "error",
+              "budget",
+              "cap",
+              "off"
+            ],
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "answered": {
+                    "en-US": "Answered",
+                    "de-DE": "Beantwortet",
+                    "fr-FR": "Répondu",
+                    "da-DK": "Besvaret",
+                    "cs-CZ": "Zodpovězeno",
+                    "ar-EG": "تمت الإجابة",
+                    "zh-CN": "已回答",
+                    "zh-TW": "已回答"
+                  },
+                  "hand-over": {
+                    "en-US": "Handed to a person",
+                    "de-DE": "An eine Person übergeben",
+                    "fr-FR": "Confiée à une personne",
+                    "da-DK": "Givet videre til en person",
+                    "cs-CZ": "Předáno člověku",
+                    "ar-EG": "سُلّمت إلى شخص",
+                    "zh-CN": "转交人工",
+                    "zh-TW": "轉交真人"
+                  },
+                  "error": {
+                    "en-US": "Error",
+                    "de-DE": "Fehler",
+                    "fr-FR": "Erreur",
+                    "da-DK": "Fejl",
+                    "cs-CZ": "Chyba",
+                    "ar-EG": "خطأ",
+                    "zh-CN": "出错",
+                    "zh-TW": "出錯"
+                  },
+                  "budget": {
+                    "en-US": "Daily limit reached",
+                    "de-DE": "Tageslimit erreicht",
+                    "fr-FR": "Limite du jour atteinte",
+                    "da-DK": "Dagsgrænse nået",
+                    "cs-CZ": "Denní limit dosažen",
+                    "ar-EG": "تم بلوغ الحد اليومي",
+                    "zh-CN": "已达每日上限",
+                    "zh-TW": "已達每日上限"
+                  },
+                  "cap": {
+                    "en-US": "Chat limit reached",
+                    "de-DE": "Chat-Grenze erreicht",
+                    "fr-FR": "Limite de la conversation atteinte",
+                    "da-DK": "Chatgrænse nået",
+                    "cs-CZ": "Limit chatu dosažen",
+                    "ar-EG": "تم بلوغ حد المحادثة",
+                    "zh-CN": "已达会话上限",
+                    "zh-TW": "已達對話上限"
+                  },
+                  "off": {
+                    "en-US": "Switched off",
+                    "de-DE": "Ausgeschaltet",
+                    "fr-FR": "Désactivées",
+                    "da-DK": "Slået fra",
+                    "cs-CZ": "Vypnuto",
+                    "ar-EG": "متوقفة",
+                    "zh-CN": "已停用",
+                    "zh-TW": "已停用"
+                  }
+                }
+              }
+            },
+            "label": {
+              "en-US": "Outcome",
+              "de-DE": "Ergebnis",
+              "fr-FR": "Résultat",
+              "da-DK": "Resultat",
+              "cs-CZ": "Výsledek",
+              "ar-EG": "النتيجة",
+              "zh-CN": "结果",
+              "zh-TW": "結果"
+            }
+          },
+          {
+            "ref": "model",
+            "type": "text",
+            "maxLength": 100,
+            "nullable": true,
+            "label": {
+              "en-US": "Model",
+              "de-DE": "Modell",
+              "fr-FR": "Modèle",
+              "da-DK": "Model",
+              "cs-CZ": "Model",
+              "ar-EG": "النموذج",
+              "zh-CN": "模型",
+              "zh-TW": "模型"
+            }
+          },
+          {
+            "ref": "tokens_in",
+            "type": "int",
+            "default": 0,
+            "label": {
+              "en-US": "Tokens in",
+              "de-DE": "Tokens hinein",
+              "fr-FR": "Jetons en entrée",
+              "da-DK": "Tokens ind",
+              "cs-CZ": "Tokeny na vstupu",
+              "ar-EG": "الرموز الواردة",
+              "zh-CN": "输入令牌",
+              "zh-TW": "輸入權杖"
+            }
+          },
+          {
+            "ref": "tokens_out",
+            "type": "int",
+            "default": 0,
+            "label": {
+              "en-US": "Tokens out",
+              "de-DE": "Tokens heraus",
+              "fr-FR": "Jetons en sortie",
+              "da-DK": "Tokens ud",
+              "cs-CZ": "Tokeny na výstupu",
+              "ar-EG": "الرموز الصادرة",
+              "zh-CN": "输出令牌",
+              "zh-TW": "輸出權杖"
+            }
+          },
+          {
+            "ref": "at",
+            "type": "timestamptz",
+            "label": {
+              "en-US": "When",
+              "de-DE": "Wann",
+              "fr-FR": "Quand",
+              "da-DK": "Hvornår",
+              "cs-CZ": "Kdy",
+              "ar-EG": "الوقت",
+              "zh-CN": "时间",
+              "zh-TW": "時間"
+            }
+          }
+        ]
+      },
+      {
+        "ref": "settings",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "hours",
+            "type": "json",
+            "nullable": true,
+            "label": {
+              "en-US": "Opening hours",
+              "de-DE": "Öffnungszeiten",
+              "fr-FR": "Horaires d’ouverture",
+              "da-DK": "Åbningstider",
+              "cs-CZ": "Otevírací doba",
+              "ar-EG": "ساعات العمل",
+              "zh-CN": "营业时间",
+              "zh-TW": "營業時間"
+            }
+          },
+          {
+            "ref": "time_zone",
+            "type": "text",
+            "maxLength": 64,
+            "nullable": true,
+            "label": {
+              "en-US": "Time zone",
+              "de-DE": "Zeitzone",
+              "fr-FR": "Fuseau horaire",
+              "da-DK": "Tidszone",
+              "cs-CZ": "Časové pásmo",
+              "ar-EG": "المنطقة الزمنية",
+              "zh-CN": "时区",
+              "zh-TW": "時區"
+            }
+          },
+          {
+            "ref": "closed_until",
+            "type": "date",
+            "nullable": true,
+            "label": {
+              "en-US": "Closed until",
+              "de-DE": "Geschlossen bis",
+              "fr-FR": "Fermé jusqu’au",
+              "da-DK": "Lukket indtil",
+              "cs-CZ": "Zavřeno do",
+              "ar-EG": "مغلق حتى",
+              "zh-CN": "停业至",
+              "zh-TW": "停業至"
+            }
+          },
+          {
+            "ref": "welcome",
+            "type": "json",
+            "nullable": true,
+            "label": {
+              "en-US": "Welcome line",
+              "de-DE": "Begrüßungszeile",
+              "fr-FR": "Phrase d’accueil",
+              "da-DK": "Velkomstlinje",
+              "cs-CZ": "Uvítací řádek",
+              "ar-EG": "سطر الترحيب",
+              "zh-CN": "欢迎语",
+              "zh-TW": "歡迎語"
+            }
+          },
+          {
+            "ref": "outside_words",
+            "type": "json",
+            "nullable": true,
+            "label": {
+              "en-US": "Outside hours",
+              "de-DE": "Außerhalb der Öffnungszeiten",
+              "fr-FR": "En dehors des horaires",
+              "da-DK": "Uden for åbningstid",
+              "cs-CZ": "Mimo otevírací dobu",
+              "ar-EG": "خارج ساعات العمل",
+              "zh-CN": "非营业时间",
+              "zh-TW": "非營業時間"
+            }
+          },
+          {
+            "ref": "automatic",
+            "type": "bool",
+            "default": false,
+            "label": {
+              "en-US": "Automatic answers",
+              "de-DE": "Automatische Antworten",
+              "fr-FR": "Réponses automatiques",
+              "da-DK": "Automatiske svar",
+              "cs-CZ": "Automatické odpovědi",
+              "ar-EG": "إجابات تلقائية",
+              "zh-CN": "自动回答",
+              "zh-TW": "自動回答"
+            }
+          },
+          {
+            "ref": "daily_tokens",
+            "type": "int",
+            "default": 0,
+            "label": {
+              "en-US": "Daily limit",
+              "de-DE": "Tageslimit",
+              "fr-FR": "Limite quotidienne",
+              "da-DK": "Dagsgrænse",
+              "cs-CZ": "Denní limit",
+              "ar-EG": "الحد اليومي",
+              "zh-CN": "每日上限",
+              "zh-TW": "每日上限"
+            }
+          },
+          {
+            "ref": "milo_drafts",
+            "type": "bool",
+            "default": false,
+            "label": {
+              "en-US": "Milo drafts replies",
+              "de-DE": "Milo entwirft Antworten",
+              "fr-FR": "Milo rédige des réponses",
+              "da-DK": "Milo skriver udkast til svar",
+              "cs-CZ": "Milo navrhuje odpovědi",
+              "ar-EG": "Milo يصوغ الردود",
+              "zh-CN": "Milo 起草回复",
+              "zh-TW": "Milo 起草回覆"
+            }
+          },
+          {
+            "ref": "tell",
+            "type": "json",
+            "nullable": true,
+            "label": {
+              "en-US": "Who is told",
+              "de-DE": "Wer benachrichtigt wird",
+              "fr-FR": "Qui est prévenu",
+              "da-DK": "Hvem får besked",
+              "cs-CZ": "Kdo dostane zprávu",
+              "ar-EG": "من يُبلَّغ",
+              "zh-CN": "通知谁",
+              "zh-TW": "通知誰"
+            }
+          },
+          {
+            "ref": "transcripts_months",
+            "type": "int",
+            "nullable": true,
+            "default": 12,
+            "rules": {
+              "options": {
+                "values": [
+                  {
+                    "value": "3",
+                    "label": {
+                      "en-US": "3 months",
+                      "de-DE": "3 Monate",
+                      "fr-FR": "3 mois",
+                      "da-DK": "3 måneder",
+                      "cs-CZ": "3 měsíce",
+                      "ar-EG": "3 أشهر",
+                      "zh-CN": "3 个月",
+                      "zh-TW": "3 個月"
+                    }
+                  },
+                  {
+                    "value": "6",
+                    "label": {
+                      "en-US": "6 months",
+                      "de-DE": "6 Monate",
+                      "fr-FR": "6 mois",
+                      "da-DK": "6 måneder",
+                      "cs-CZ": "6 měsíců",
+                      "ar-EG": "6 أشهر",
+                      "zh-CN": "6 个月",
+                      "zh-TW": "6 個月"
+                    }
+                  },
+                  {
+                    "value": "12",
+                    "label": {
+                      "en-US": "12 months",
+                      "de-DE": "12 Monate",
+                      "fr-FR": "12 mois",
+                      "da-DK": "12 måneder",
+                      "cs-CZ": "12 měsíců",
+                      "ar-EG": "12 شهرًا",
+                      "zh-CN": "12 个月",
+                      "zh-TW": "12 個月"
+                    }
+                  },
+                  {
+                    "value": "24",
+                    "label": {
+                      "en-US": "24 months",
+                      "de-DE": "24 Monate",
+                      "fr-FR": "24 mois",
+                      "da-DK": "24 måneder",
+                      "cs-CZ": "24 měsíců",
+                      "ar-EG": "24 شهرًا",
+                      "zh-CN": "24 个月",
+                      "zh-TW": "24 個月"
+                    }
+                  }
+                ]
+              }
+            },
+            "label": {
+              "en-US": "Keep conversations for",
+              "de-DE": "Unterhaltungen aufbewahren für",
+              "fr-FR": "Conserver les conversations",
+              "da-DK": "Gem samtaler i",
+              "cs-CZ": "Uchovávat konverzace",
+              "ar-EG": "الاحتفاظ بالمحادثات لمدة",
+              "zh-CN": "会话保留时长",
+              "zh-TW": "對話保留時長"
+            }
+          },
+          {
+            "ref": "theme",
+            "type": "enum",
+            "default": "light",
+            "enum": [
+              "light",
+              "dark",
+              "visitor"
+            ],
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "light": {
+                    "en-US": "Light",
+                    "de-DE": "Hell",
+                    "fr-FR": "Clair",
+                    "da-DK": "Lys",
+                    "cs-CZ": "Světlý",
+                    "ar-EG": "فاتح",
+                    "zh-CN": "浅色",
+                    "zh-TW": "淺色"
+                  },
+                  "dark": {
+                    "en-US": "Dark",
+                    "de-DE": "Dunkel",
+                    "fr-FR": "Sombre",
+                    "da-DK": "Mørk",
+                    "cs-CZ": "Tmavý",
+                    "ar-EG": "داكن",
+                    "zh-CN": "深色",
+                    "zh-TW": "深色"
+                  },
+                  "visitor": {
+                    "en-US": "As the visitor’s device is set",
+                    "de-DE": "Wie das Gerät des Besuchers",
+                    "fr-FR": "Comme l’appareil du visiteur",
+                    "da-DK": "Som den besøgendes enhed",
+                    "cs-CZ": "Podle zařízení návštěvníka",
+                    "ar-EG": "حسب جهاز الزائر",
+                    "zh-CN": "跟随访客设备",
+                    "zh-TW": "跟隨訪客裝置"
+                  }
+                }
+              }
+            },
+            "label": {
+              "en-US": "Look of the chat window",
+              "de-DE": "Aussehen des Chatfensters",
+              "fr-FR": "Apparence de la fenêtre de discussion",
+              "da-DK": "Chatvinduets udseende",
+              "cs-CZ": "Vzhled okna chatu",
+              "ar-EG": "مظهر نافذة المحادثة",
+              "zh-CN": "聊天窗口外观",
+              "zh-TW": "聊天視窗外觀"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "roles": [
+    {
+      "key": "agent",
+      "name": "Chat agent",
+      "names": {
+        "en-US": "Chat agent",
+        "de-DE": "Chat-Mitarbeiter",
+        "fr-FR": "Agent de discussion",
+        "da-DK": "Chatmedarbejder",
+        "cs-CZ": "Operátor chatu",
+        "ar-EG": "موظف المحادثة",
+        "zh-CN": "聊天客服",
+        "zh-TW": "聊天客服"
+      },
+      "permissions": [
+        "table:@conversations:read",
+        "table:@conversations:read_pii",
+        "table:@conversations:update",
+        "table:@messages:read",
+        "table:@messages:read_pii",
+        "table:@choices:read",
+        "table:@answers:read",
+        "table:@answers:create",
+        "table:@answers:update",
+        "table:@answers:delete",
+        "table:@settings:read",
+        "page:@live-chat:view"
+      ]
+    },
+    {
+      "key": "settings-manager",
+      "name": "Chat settings manager",
+      "names": {
+        "en-US": "Chat settings manager",
+        "de-DE": "Chat-Einstellungen verwalten",
+        "fr-FR": "Gestion des réglages de discussion",
+        "da-DK": "Ansvarlig for chatindstillinger",
+        "cs-CZ": "Správce nastavení chatu",
+        "ar-EG": "مدير إعدادات المحادثة",
+        "zh-CN": "聊天设置管理员",
+        "zh-TW": "聊天設定管理員"
+      },
+      "permissions": [
+        "table:@settings:read",
+        "table:@settings:update",
+        "table:@answers:read",
+        "page:@live-chat:view"
+      ]
+    }
+  ],
+  "sampleData": {
+    "file": "seeds/live-chat.sample.json"
+  },
+  "addOn": {
+    "attaches": [
+      {
+        "app": "*",
+        "range": "*"
+      }
+    ],
+    "connect": {
+      "kind": "none"
+    },
+    "hostApi": 2,
+    "settingsTable": "settings",
+    "chat": {
+      "conversations": "conversations",
+      "messages": "messages",
+      "answers": "answers",
+      "choices": "choices"
+    },
+    "pages": [
+      {
+        "ref": "live-chat",
+        "title": {
+          "key": "addon.live-chat.page.chat",
+          "fallback": "Live chat"
+        },
+        "titles": {
+          "en-US": "Live chat",
+          "de-DE": "Live-Chat",
+          "fr-FR": "Discussion en direct",
+          "da-DK": "Livechat",
+          "cs-CZ": "Živý chat",
+          "ar-EG": "المحادثة المباشرة",
+          "zh-CN": "在线聊天",
+          "zh-TW": "線上聊天"
+        },
+        "icon": "message-circle",
+        "client": "dist/pages/live-chat.js",
+        "nav": {
+          "group": "library",
+          "order": 22
+        },
+        "detail": true
+      }
+    ]
+  }
+}

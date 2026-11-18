@@ -91,6 +91,8 @@ describe('release shape: discovery', () => {
       'offers',
       // The first add-on whose pages a stranger fills, drawn and checked by the engine.
       'forms',
+      // The second door a stranger uses: a website chat whose every conversation and message Adminium writes.
+      'live-chat',
       // The first that moves money: a `payment-provider@1` half the engine loads, and no screen of its own.
       'payments-stripe',
       // The second payment provider, and the first server half that imports Node's own modules (webhook certificates).

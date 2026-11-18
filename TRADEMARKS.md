@@ -64,6 +64,7 @@ including the ones that name no company.
 | Inventory | `packages/inventory` | `STK` | *(none)* | — |
 | Offers & gift cards | `packages/offers` | `OFF` | *(none)* | — |
 | Forms & surveys | `packages/forms` | `FRM` | *(none)* | — |
+| Live chat | `packages/live-chat` | `LC` | *(none)* | — |
 | Customiser | `packages/customiser` | `CZ` | *(none)* | — |
 | Card payments | `packages/payments-stripe` | `CP` | **Stripe**, **Link**; ways to pay it names: **PayPal**, **Apple Pay**, **Google Pay**, **Klarna**; card schemes: **Visa**, **Mastercard**, **American Express**, **Interac** | Stripe, Inc.; PayPal, Inc.; Apple Inc.; Google LLC; Klarna Bank AB; Visa Inc.; Mastercard International Incorporated; American Express Company; Interac Corp. |
 | Wallet payments | `packages/payments-paypal` | `WP` | **PayPal** | PayPal, Inc. |
@@ -647,6 +648,43 @@ of this section, and it is empty. The package's `sources.test.ts` checks that
 list, that the manifest declares no connection, and that no source file names
 an address; `dist.test.ts` reads every built byte for the words that may not
 ship. The day a paragraph above stops being true, one of those turns red.
+
+---
+
+# Live chat — references no third-party trademarks
+
+## Why an add-on of website chats references no mark
+
+"Chat", "automatic answer" and "enquiry" are ordinary words for a business
+talking with the visitors of its own website. **Every conversation, message,
+answer and choice here is the operator's own row**, kept in their own
+database and written by their own Adminium. Nothing is sent through, hosted on
+or stored with anybody's chat service.
+
+What this section is about is the marks the PACKAGE ITSELF could have named, in
+its code, its manifest and its sample, and did not:
+
+- **No chat service.** The visitor's window is drawn by the operator's own
+  Adminium on the operator's own address; the add-on names no chat product.
+- **No AI service.** Automatic answers and Milo's drafts use whatever AI
+  service the operator set up in their own Adminium. A page shows that
+  service's name as Adminium gives it; the package never writes one.
+- **No mail service.** A reply mailed to a visitor who left goes through the
+  operator's own mail setup; the add-on names none.
+
+## Affiliation
+
+The add-on is not affiliated with, endorsed by or sponsored by any company,
+because it deals with none: it connects to nothing, holds no credential, names
+no service and reaches no address.
+
+## How the claim is kept true
+
+`COMPANY_MARKS` in `packages/live-chat/src/add-on-facts.ts` is the executable
+half of this section, and it is empty. The package's `sources.test.ts` checks
+that list, that the manifest declares no connection, and that no source file
+names an address; `dist.test.ts` reads every built byte for the words that may
+not ship.
 
 ---
 
