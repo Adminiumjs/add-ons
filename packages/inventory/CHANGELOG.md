@@ -1,5 +1,7 @@
 # @adminium/add-on-inventory
 
+## 1.0.30
+
 ## 1.0.29
 
 ## 1.0.28

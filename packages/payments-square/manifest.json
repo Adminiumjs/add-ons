@@ -3,7 +3,7 @@
   "manifestVersion": 1,
   "key": "payments-square",
   "name": "Card readers",
-  "version": "1.0.29",
+  "version": "1.0.30",
   "publisher": {
     "id": "adminium",
     "name": "Adminium",
