@@ -6,6 +6,7 @@ import { FORM_FILE_KINDS, FORM_PER_HOUR_MAX, FORM_TELL_MAX, FORM_TICK_PURPOSES, 
 import { useId, useState, type ReactNode } from 'react';
 
 import { Button, Checkbox, Combobox, IconButton, Input, RadioCard, RadioGroup, Select, Switch, Textarea, useLocaleTag, type AddOnTranslate } from '../shared/host.ts';
+import { pageOf, useLivePages, type LandingEnding, type LivePage } from '../shared/landing.ts';
 import { isRightToLeft } from '../shared/languages.ts';
 import { useToast } from '../shared/toast.ts';
 import { dayOf, filesOf, freePurposes, numberOf, setTickWords, ticksOf, updateQuestion, wordIn, type Draft, type Question, type QuestionOf, type Tell } from './draft.ts';
@@ -133,15 +134,33 @@ export function TickSection({ t, builder, mayEdit }: { t: AddOnTranslate; builde
 
 /* ── after sending (comp 364-368) ────────────────────────────────────────── */
 
-export const afterSummary = (t: AddOnTranslate, draft: Draft): string => (draft.definition.ending.kind === 'page' ? t('builder.after.page', 'Go to a page') : t('builder.after.thanksShort', 'Thank-you words'));
+export const afterSummary = (t: AddOnTranslate, draft: Draft): string =>
+  draft.definition.ending.kind === 'landing' ? t('builder.after.landing', 'Go to a landing page') : draft.definition.ending.kind === 'page' ? t('builder.after.page', 'Go to a page') : t('builder.after.thanksShort', 'Thank-you words');
 
-export function AfterSection({ t, builder, mayEdit }: { t: AddOnTranslate; builder: Builder; mayEdit: boolean }): ReactNode {
+/** A live page as the picker names it: its name and its address. */
+const pageChoice = (page: LivePage): { value: string; label: string } => ({ value: `${page.addOn}:${page.key}`, label: `${page.name} · /x/pages/${page.slug}` });
+
+/**
+ * Where a visitor goes after sending: thank-you words, any https page, or
+ * (where a landing pages add-on has a live page) one of the business's own
+ * landing pages, named by its key so a new address never breaks it.
+ */
+export function AfterSection({ t, builder, mayEdit, pages: given }: { t: AddOnTranslate; builder: Builder; mayEdit: boolean; pages?: readonly LivePage[] | null }): ReactNode {
+  const read = useLivePages();
+  const pages = given === undefined ? read : given;
   const d = builder.draft.definition;
   const lang = builder.editing;
   const ending = d.ending;
-  // The other choice's words stay while the form is open, so switching back loses nothing.
-  const [kept, setKept] = useState<{ words: Draft['definition']['ending'] | null; page: string }>({ words: ending.kind === 'words' ? ending : null, page: ending.kind === 'page' ? ending.url : '' });
+  // The other choices' values stay while the form is open, so switching back loses nothing.
+  const [kept, setKept] = useState<{ words: Draft['definition']['ending'] | null; page: string; landing: LandingEnding | null }>({ words: ending.kind === 'words' ? ending : null, page: ending.kind === 'page' ? ending.url : '', landing: ending.kind === 'landing' ? ending : null });
   const setEnding = (next: Draft['definition']['ending']): void => builder.change((draft) => ({ ...draft, definition: { ...draft.definition, ending: next } }));
+  const keep = (): void => setKept((was) => ({ words: ending.kind === 'words' ? ending : was.words, page: ending.kind === 'page' ? ending.url : was.page, landing: ending.kind === 'landing' ? ending : was.landing }));
+  const live = pages ?? [];
+  // Offered where there is a live page to go to, and kept on a form that already goes to one.
+  const offersLanding = live.length > 0 || ending.kind === 'landing';
+  const firstLanding = (): LandingEnding | null => kept.landing ?? (live[0] === undefined ? null : { kind: 'landing', page: live[0].key, addOn: live[0].addOn });
+  const picked = ending.kind === 'landing' ? pageOf(live, ending) : undefined;
+  const choices = live.map(pageChoice);
   return (
     <span className="flex flex-col gap-2.5">
       <RadioGroup
@@ -149,17 +168,17 @@ export function AfterSection({ t, builder, mayEdit }: { t: AddOnTranslate; build
         aria-label={t('builder.s.after', 'After sending')}
         onValueChange={(value) => {
           if (value === ending.kind) return;
-          if (value === 'page') {
-            setKept((was) => ({ ...was, words: ending }));
-            setEnding({ kind: 'page', url: kept.page });
-          } else {
-            setKept((was) => ({ ...was, page: ending.kind === 'page' ? ending.url : was.page }));
-            setEnding(kept.words !== null && kept.words.kind === 'words' ? kept.words : { kind: 'words', words: {} });
-          }
+          keep();
+          if (value === 'page') setEnding({ kind: 'page', url: kept.page });
+          else if (value === 'landing') {
+            const next = firstLanding();
+            if (next !== null) setEnding(next);
+          } else setEnding(kept.words !== null && kept.words.kind === 'words' ? kept.words : { kind: 'words', words: {} });
         }}
       >
         <RadioCard value="words" title={t('builder.after.thanks', 'Show thank-you words')} disabled={!mayEdit} />
         <RadioCard value="page" title={t('builder.after.page', 'Go to a page')} disabled={!mayEdit} />
+        {offersLanding ? <RadioCard value="landing" title={t('builder.after.landing', 'Go to a landing page')} disabled={!mayEdit} /> : null}
       </RadioGroup>
       {/* The words' direction is the language's: the kit's text area takes it from around it. */}
       <span dir={isRightToLeft(lang) ? 'rtl' : 'ltr'} className="flex flex-col">
@@ -185,6 +204,18 @@ export function AfterSection({ t, builder, mayEdit }: { t: AddOnTranslate; build
         value={ending.kind === 'page' ? ending.url : kept.page}
         onChange={(event) => setEnding({ kind: 'page', url: event.target.value.trim() })}
       />
+      {offersLanding ? (
+        <Select
+          aria-label={t('builder.after.landingPick', 'Landing page')}
+          disabled={!mayEdit || ending.kind !== 'landing'}
+          value={ending.kind === 'landing' ? `${ending.addOn}:${ending.page}` : (kept.landing === null ? (choices[0]?.value ?? '') : `${kept.landing.addOn}:${kept.landing.page}`)}
+          options={ending.kind === 'landing' && picked === undefined ? [{ value: `${ending.addOn}:${ending.page}`, label: t('builder.after.landingOff', 'A page that is not live'), disabled: true }, ...choices] : choices}
+          onChange={(event) => {
+            const page = live.find((one) => `${one.addOn}:${one.key}` === event.target.value);
+            if (page !== undefined) setEnding({ kind: 'landing', page: page.key, addOn: page.addOn });
+          }}
+        />
+      ) : null}
     </span>
   );
 }

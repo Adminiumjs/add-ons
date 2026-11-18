@@ -29,12 +29,20 @@ import {
   type ShowIf,
 } from '@adminium/add-on-contracts/forms';
 
+import { isLandingEnding, type LandingEnding } from '../shared/landing.ts';
+
 export type Lang = FormLanguage;
 export type Words = Partial<Record<Lang, string>>;
 export type Question = FormDefinitionInput['questions'][number];
 export type QuestionOf<K extends FormQuestionKind> = Extract<Question, { kind: K }>;
 export type Section = NonNullable<FormDefinitionInput['sections']>[number];
-export type Definition = FormDefinitionInput & { sections?: Section[]; questions: Question[] };
+/**
+ * What a visitor meets after sending: the vocabulary's thank-you words or page
+ * address, or one of the business's own landing pages (Adminium 0.3.65), by
+ * its key in its add-on (`shared/landing.ts`).
+ */
+export type Ending = FormDefinitionInput['ending'] | LandingEnding;
+export type Definition = Omit<FormDefinitionInput, 'ending'> & { sections?: Section[]; questions: Question[]; ending: Ending };
 export type Settings = FormSettingsInput;
 export type Becomes = NonNullable<Settings['becomes']>;
 export type Tell = NonNullable<Settings['tell']>[number];
@@ -63,7 +71,12 @@ export function definitionOf(stored: unknown, kind: 'form' | 'survey', fallback:
     (question): question is Question => isRecord(question) && typeof question['id'] === 'string' && (FORM_QUESTION_KINDS as readonly unknown[]).includes(question['kind']),
   );
   const sections = (Array.isArray(d['sections']) ? d['sections'] : []).filter((section): section is Section => isRecord(section) && typeof section['id'] === 'string').map((section) => ({ id: section.id, title: wordsOf(section.title) }));
-  const ending = isRecord(d['ending']) && d['ending']['kind'] === 'page' && typeof d['ending']['url'] === 'string' ? { kind: 'page' as const, url: d['ending']['url'] } : { kind: 'words' as const, words: wordsOf(isRecord(d['ending']) ? d['ending']['words'] : undefined) };
+  const end = d['ending'];
+  const ending: Ending = isLandingEnding(end)
+    ? { kind: 'landing', page: end.page, addOn: end.addOn }
+    : isRecord(end) && end['kind'] === 'page' && typeof end['url'] === 'string'
+      ? { kind: 'page', url: end['url'] }
+      : { kind: 'words', words: wordsOf(isRecord(end) ? end['words'] : undefined) };
   return {
     v: FORMS_VOCABULARY_VERSION,
     kind,

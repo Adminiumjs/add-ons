@@ -23,6 +23,7 @@ import { asJson, type FormRow } from '../shared/row.ts';
 import type { TabProps } from '../shared/slot.ts';
 import { useToast } from '../shared/toast.ts';
 import { languageFor } from '../forms/newForm.ts';
+import { readLivePages } from '../shared/landing.ts';
 import { publishProblems, type Problem } from './checks.ts';
 import { differsFromPublished, wordIn, type Draft } from './draft.ts';
 import { LanguageMenu } from './LanguageMenu.tsx';
@@ -92,7 +93,9 @@ export function HeaderActions({ t, form, settings }: TabProps): ReactNode {
       const wanted = first ? readableSlug(title) : null;
       const clash = wanted !== null && wanted !== form.slug ? (await read.list('forms', { filter: [{ column: 'slug', op: 'eq', value: wanted }], columns: ['id'], pageSize: 2 })).rows.some((row) => String(row['id']) !== form.id) : false;
       const slug = slugAtPublish(form.slug, first, title, () => clash);
-      const found = publishProblems(draft, { notice: status?.notice ?? null, tables: kitTables(tables), slug });
+      // A form that ends on a landing page is held to the page being live: asked only then, so no other form asks.
+      const pages = d.ending.kind === 'landing' ? await readLivePages() : null;
+      const found = publishProblems(draft, { notice: status?.notice ?? null, tables: kitTables(tables), slug, pages });
       if (found.length > 0) {
         setProblems(found);
         return;

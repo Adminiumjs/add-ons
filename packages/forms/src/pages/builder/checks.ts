@@ -10,8 +10,9 @@
  *
  * Pure: no I/O.
  */
-import { FORM_LANGUAGES, parseForm, type FormIssue } from '@adminium/add-on-contracts/forms';
+import { FORM_LANGUAGES, parseForm, type FormDefinitionInput, type FormIssue } from '@adminium/add-on-contracts/forms';
 
+import { isLandingEnding, pageOf, type LivePage } from '../shared/landing.ts';
 import type { Definition, Draft, Lang } from './draft.ts';
 import { fillerOf, fits, mappable, namesTable, offEnum, type KitTable } from './mapping.ts';
 import { isFormSlug } from './slug.ts';
@@ -43,7 +44,7 @@ export interface Problem {
 }
 
 /** The codes this file adds to the vocabulary's. */
-export const BUILDER_CODES = ['notice-unset', 'table-gone', 'column-gone', 'column-link', 'column-required', 'column-values', 'slug'] as const;
+export const BUILDER_CODES = ['notice-unset', 'table-gone', 'column-gone', 'column-link', 'column-required', 'column-values', 'slug', 'ending-landing', 'ending-landing-off'] as const;
 
 const isLang = (part: unknown): part is Lang => typeof part === 'string' && (FORM_LANGUAGES as readonly string[]).includes(part);
 
@@ -79,14 +80,41 @@ export interface PublishFacts {
   tables: readonly KitTable[] | null;
   /** The link name the form goes live with. */
   slug: string;
+  /** The live landing pages; null (or absent) while they are not known. */
+  pages?: readonly LivePage[] | null;
+}
+
+/**
+ * The definition as the vocabulary this builder is built with reads it. A
+ * landing ending is newer than that vocabulary (Adminium 0.3.65): it is held
+ * to its own rule by `landingProblems`, and the rest of the form to
+ * `parseForm` with the ending read as the form's own words for now, so a form
+ * that ends on a page is judged on everything else exactly as one that does
+ * not.
+ */
+export function asParsed(d: Definition): FormDefinitionInput {
+  if (d.ending.kind !== 'landing') return d as FormDefinitionInput;
+  return { ...d, ending: { kind: 'words', words: Object.fromEntries(d.languages.map((lang) => [lang, '—'])) } } as FormDefinitionInput;
+}
+
+/** What is wrong with a landing ending: a page or an add-on named out of shape, or a page that is not live. */
+export function landingProblems(d: Definition, pages: readonly LivePage[] | null): Problem[] {
+  const ending = d.ending;
+  if (ending.kind !== 'landing') return [];
+  const where: Where = { at: 'settings', section: 'after' };
+  if (!isLandingEnding(ending)) return [{ where, code: 'ending-landing', field: 'ending' }];
+  // Only a page Adminium says is not live is a problem: while the list is not known, Adminium judges it when it serves the form.
+  if (pages !== null && pageOf(pages, ending) === undefined) return [{ where, code: 'ending-landing-off', field: 'ending' }];
+  return [];
 }
 
 /** Everything that keeps this draft from going live, in the order it is fixed in. */
 export function publishProblems(draft: Draft, facts: PublishFacts): Problem[] {
   const out: Problem[] = [];
   if (facts.notice === false) out.push({ where: { at: 'form' }, code: 'notice-unset' });
-  const parsed = parseForm(draft.definition, draft.settings);
+  const parsed = parseForm(asParsed(draft.definition), draft.settings);
   if (!parsed.ok) out.push(...parsed.issues.map((issue) => placed(issue, draft.definition)));
+  out.push(...landingProblems(draft.definition, facts.pages ?? null));
   out.push(...mapProblems(draft, facts.tables));
   if (!isFormSlug(facts.slug)) out.push({ where: { at: 'form' }, code: 'slug' });
   return out;

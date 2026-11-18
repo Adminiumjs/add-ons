@@ -73,6 +73,9 @@ export const list: Readonly<Record<string, string>> = {
 export const builder: Readonly<Record<string, string>> = {
   "builder.addQuestion": "أضف سؤالًا",
   "builder.added": "تمت إضافة Q{n}: {kind}.",
+  "builder.after.landing": "الانتقال إلى صفحة هبوط",
+  "builder.after.landingOff": "صفحة غير منشورة",
+  "builder.after.landingPick": "صفحة الهبوط",
   "builder.after.page": "انتقل إلى صفحة",
   "builder.after.thanks": "أظهر كلمات الشكر",
   "builder.after.thanksShort": "كلمات الشكر",
@@ -234,6 +237,8 @@ export const builder: Readonly<Record<string, string>> = {
   "builder.problem.empty": "{what}: فارغ بلغة {language}.",
   "builder.problem.fileKinds": "حدّد نوع ملف واحدًا على الأقل.",
   "builder.problem.https": "يجب أن يبدأ عنوان الصفحة التي يُنتقل إليها بـ https:// ولا شيء غيره.",
+  "builder.problem.landing": "اختر صفحة الهبوط التي يُنتقل إليها.",
+  "builder.problem.landingOff": "صفحة الهبوط التي يُنتقل إليها غير منشورة. اختر صفحة أخرى، أو انشرها أولًا.",
   "builder.problem.long": "{what}: أطول من اللازم بلغة {language}.",
   "builder.problem.map": "عمود يُملأ مرتين، أو يملؤه سؤال لا يمكنه ملؤه.",
   "builder.problem.noQuestions": "أضف سؤالًا واحدًا على الأقل.",

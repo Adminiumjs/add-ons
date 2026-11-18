@@ -73,6 +73,9 @@ export const list: Readonly<Record<string, string>> = {
 export const builder: Readonly<Record<string, string>> = {
   "builder.addQuestion": "Přidat otázku",
   "builder.added": "Přidána otázka Q{n}: {kind}.",
+  "builder.after.landing": "Přejít na vstupní stránku",
+  "builder.after.landingOff": "Stránka, která není zveřejněná",
+  "builder.after.landingPick": "Vstupní stránka",
   "builder.after.page": "Přejít na stránku",
   "builder.after.thanks": "Zobrazit poděkování",
   "builder.after.thanksShort": "Poděkování",
@@ -234,6 +237,8 @@ export const builder: Readonly<Record<string, string>> = {
   "builder.problem.empty": "{what}: chybí text v jazyce {language}.",
   "builder.problem.fileKinds": "Zaškrtněte aspoň jeden typ souboru.",
   "builder.problem.https": "Adresa stránky, na kterou se přejde, musí začínat https:// a ničím jiným.",
+  "builder.problem.landing": "Vyberte vstupní stránku, na kterou se má přejít.",
+  "builder.problem.landingOff": "Vstupní stránka, na kterou se má přejít, není zveřejněná. Vyberte jinou, nebo ji nejdřív zveřejněte.",
   "builder.problem.long": "{what}: text v jazyce {language} je příliš dlouhý.",
   "builder.problem.map": "Některý sloupec se vyplňuje dvakrát nebo otázkou, která ho vyplnit nemůže.",
   "builder.problem.noQuestions": "Přidejte aspoň jednu otázku.",

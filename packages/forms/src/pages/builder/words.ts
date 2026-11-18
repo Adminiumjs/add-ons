@@ -124,6 +124,10 @@ export function problemWords(t: AddOnTranslate, problem: Problem): string {
       return t('builder.problem.bounds', 'Its smallest number is above its largest.');
     case 'ending-https':
       return t('builder.problem.https', 'The page to go to must be an https:// address.');
+    case 'ending-landing':
+      return t('builder.problem.landing', 'Pick the landing page to go to.');
+    case 'ending-landing-off':
+      return t('builder.problem.landingOff', 'The landing page to go to is not live. Pick another, or publish it first.');
     case 'becomes-anonymous':
       return t('builder.problem.becomesAnonymous', 'A survey that keeps no names cannot become a row.');
     case 'becomes-question-unknown':

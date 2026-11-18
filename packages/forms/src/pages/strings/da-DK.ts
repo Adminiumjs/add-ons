@@ -73,6 +73,9 @@ export const list: Readonly<Record<string, string>> = {
 export const builder: Readonly<Record<string, string>> = {
   "builder.addQuestion": "Tilføj et spørgsmål",
   "builder.added": "Q{n} tilføjet: {kind}.",
+  "builder.after.landing": "Gå til en landingsside",
+  "builder.after.landingOff": "En side, der ikke er online",
+  "builder.after.landingPick": "Landingsside",
   "builder.after.page": "Gå til en side",
   "builder.after.thanks": "Vis en takketekst",
   "builder.after.thanksShort": "Takketekst",
@@ -234,6 +237,8 @@ export const builder: Readonly<Record<string, string>> = {
   "builder.problem.empty": "{what} er ikke udfyldt på {language}.",
   "builder.problem.fileKinds": "Sæt flueben ved mindst én filtype.",
   "builder.problem.https": "Adressen på siden, der vises bagefter, skal begynde med https:// og intet andet.",
+  "builder.problem.landing": "Vælg den landingsside, der skal åbnes.",
+  "builder.problem.landingOff": "Landingssiden, der skal åbnes, er ikke online. Vælg en anden, eller udgiv den først.",
   "builder.problem.long": "{what} har for meget tekst på {language}.",
   "builder.problem.map": "En kolonne udfyldes to gange eller af et spørgsmål, der ikke kan udfylde den.",
   "builder.problem.noQuestions": "Tilføj mindst ét spørgsmål.",

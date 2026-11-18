@@ -73,6 +73,9 @@ export const list: Readonly<Record<string, string>> = {
 export const builder: Readonly<Record<string, string>> = {
   "builder.addQuestion": "添加问题",
   "builder.added": "已添加 Q{n}：{kind}。",
+  "builder.after.landing": "前往落地页",
+  "builder.after.landingOff": "未上线的页面",
+  "builder.after.landingPick": "落地页",
   "builder.after.page": "转到某个页面",
   "builder.after.thanks": "显示感谢语",
   "builder.after.thanksShort": "感谢语",
@@ -234,6 +237,8 @@ export const builder: Readonly<Record<string, string>> = {
   "builder.problem.empty": "{what}的{language}内容为空。",
   "builder.problem.fileKinds": "请至少勾选一种文件类型。",
   "builder.problem.https": "要转到的页面必须是 https:// 地址。",
+  "builder.problem.landing": "请选择要前往的落地页。",
+  "builder.problem.landingOff": "要前往的落地页尚未上线。请选择其他页面，或先发布它。",
   "builder.problem.long": "{what}的{language}内容太长。",
   "builder.problem.map": "某一列被填写了两次，或由无法填写它的问题填写。",
   "builder.problem.noQuestions": "请至少添加一个问题。",

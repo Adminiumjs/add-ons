@@ -73,6 +73,9 @@ export const list: Readonly<Record<string, string>> = {
 export const builder: Readonly<Record<string, string>> = {
   "builder.addQuestion": "Ajouter une question",
   "builder.added": "Q{n} ajoutée : {kind}.",
+  "builder.after.landing": "Aller à une page d’atterrissage",
+  "builder.after.landingOff": "Une page qui n’est pas en ligne",
+  "builder.after.landingPick": "Page d’atterrissage",
   "builder.after.page": "Aller à une page",
   "builder.after.thanks": "Afficher un message de remerciement",
   "builder.after.thanksShort": "Message de remerciement",
@@ -234,6 +237,8 @@ export const builder: Readonly<Record<string, string>> = {
   "builder.problem.empty": "{what} est vide en {language}.",
   "builder.problem.fileKinds": "Cochez au moins un type de fichier.",
   "builder.problem.https": "L’adresse de la page de destination doit commencer par https:// et rien d’autre.",
+  "builder.problem.landing": "Choisissez la page d’atterrissage où aller.",
+  "builder.problem.landingOff": "La page d’atterrissage où aller n’est pas en ligne. Choisissez-en une autre, ou publiez-la d’abord.",
   "builder.problem.long": "{what} est trop long en {language}.",
   "builder.problem.map": "Une colonne est remplie deux fois, ou par une question qui ne peut pas la remplir.",
   "builder.problem.noQuestions": "Ajoutez au moins une question.",
