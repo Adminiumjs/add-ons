@@ -97,6 +97,8 @@ export const world = {
   formTables: [] as unknown[],
   /** The clock `formatSince` reads. */
   now: Date.parse('2026-11-03T12:00:00Z'),
+  /** The tables a page follows live, as it asked (a host from 0.3.64). */
+  live: [] as { table: string; enabled: boolean }[],
 };
 
 const listeners = new Set<() => void>();
@@ -131,6 +133,7 @@ export function resetWorld(): void {
   world.summaries = {};
   world.formTables = [];
   world.now = Date.parse('2026-11-03T12:00:00Z');
+  world.live = [];
   changed();
 }
 
@@ -818,6 +821,13 @@ installAddOnRuntime({
           if (formId !== null) world.calls.push({ kind: 'summary', table: 'forms', key: String(formId) });
         }, [formId]);
         return { summary, loading: formId !== null && summary === null, error: null, refetch: () => undefined };
+      },
+      useLiveTable: (table: string, options?: { enabled?: boolean }) => {
+        const enabled = options?.enabled !== false;
+        React.useEffect(() => {
+          world.live.push({ table, enabled });
+        }, [table, enabled]);
+        return { connected: enabled };
       },
       useFormTables: () => {
         useWorld();

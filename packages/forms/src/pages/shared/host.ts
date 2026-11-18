@@ -253,6 +253,17 @@ export const useFormSummary = hooks.useFormSummary as (formId: string | number |
 /** The tables an app opens to forms: what an answer may become a row of. */
 export const useFormTables = hooks.useFormTables as () => UseFormTablesResult;
 
+/** What following a table live answers: whether the line to Adminium is up. */
+export interface UseLiveTableResult {
+  connected: boolean;
+}
+/**
+ * Follow one of the add-on's tables live: each row Adminium writes to it makes
+ * the lists that read it read again. A host before 0.3.64 has no such hook, so
+ * this is undefined there and a page reads its lists as it always did.
+ */
+export const useLiveTable = (data as Readonly<Record<string, unknown>>)['useLiveTable'] as ((table: string, options?: { enabled?: boolean }) => UseLiveTableResult) | undefined;
+
 /**
  * Reads made when something happens — a scan, a post — and not while the
  * screen is drawn: the same routes and the same grants as the lists, answered

@@ -36,6 +36,7 @@ import {
   useExport,
   useFormSummary,
   useFormTables,
+  useLiveTable,
   useLocaleTag,
   useNavigate,
   useRecords,
@@ -52,6 +53,9 @@ import { ExportNotReady, exportReady } from './exportReady.ts';
 import { AnswerSheet } from './AnswerSheet.tsx';
 import { BecameText, FileChips, LanguageChip } from './cells.tsx';
 import { DataTable, Icon, keyValue, useMayDelete, useNarrow, type Column } from './parts.tsx';
+
+/** Nothing to follow on a host before 0.3.64: the list reads as it always did. */
+const useFollow = useLiveTable ?? ((): { connected: boolean } => ({ connected: false }));
 import {
   ANSWER_COLUMNS,
   EXPORT_COLUMNS,
@@ -141,6 +145,8 @@ function AnswersList({ t, form, answer: linked }: TabProps): ReactNode {
   const since = useMemo(() => sinceOf(when, Date.now()), [when]);
   const filters = useMemo(() => filtersOf(form.id, { language, since, search }), [form.id, language, since, search]);
   const columns = ANSWER_COLUMNS.filter((column) => access.canRead('answers', [column]));
+  // A new answer a stranger sends comes into the list as it is written, where the host can follow a table (0.3.64).
+  useFollow('answers', { enabled: access.ready && access.canRead('answers') });
   const read = useRecords('answers', { filter: filters, sort: [{ column: 'submitted_at', direction: 'desc' }], page, pageSize: PAGE_SIZE, columns: [...columns] });
   const answers = useMemo(() => read.rows.map(answerOf), [read.rows]);
   const ids = answers.map((one) => one.id);
