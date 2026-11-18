@@ -226,7 +226,7 @@ export function PublishPanel({ t, state, slug, status, page, changes, busy, mayP
           {head('warn', 'circle-alert', t('editor.publish.notReady', 'Not ready to publish'), t('editor.publish.fixFirst', 'Fix these first. Nothing was published.'))}
           <ul className="m-0 flex list-none flex-col gap-2 p-0" aria-label={t('editor.publish.toFix', 'What to fix')}>
             {problems.map((problem, index) => (
-              <li key={String(index)} className="flex flex-col gap-0.5">
+              <li key={String(index)} className="flex flex-col gap-1">
                 <span className="text-[11.5px] font-bold text-fg-subtle">{whereOf(t, problem, page)}</span>
                 <span className="text-[13px]">{problemWords(t, problem)}</span>
                 <span>

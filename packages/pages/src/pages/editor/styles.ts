@@ -33,8 +33,21 @@ export function useEditorStyles(): void {
 
 const SAFE_ID = /^[A-Za-z0-9_-]{1,40}$/;
 
-/** The rule that draws the selected section's ring; empty when nothing (or nothing drawable) is selected. */
-export function selectionRule(id: string | null): string {
-  if (id === null || !SAFE_ID.test(id)) return '';
-  return `[data-lpe-frame] .lp-block[data-block-id="${id}"]{outline:2px solid var(--accent);outline-offset:-2px;}`;
+/** A text as a CSS string: its quotes and back-slashes escaped, its line breaks spaces. */
+export const cssText = (text: string): string => `"${text.replace(/[\\"]/g, '\\$&').replace(/[\r\n]+/g, ' ')}"`;
+
+const at = (id: string): string => `[data-lpe-frame] .lp-block[data-block-id="${id}"]`;
+
+/**
+ * The canvas's own marks, as rules: the selected section's ring (its "Edit"
+ * button stays in sight), "Milo · check" on each section Milo wrote and nobody
+ * looked at yet, and the line where a new section goes. An id that is not a
+ * section id draws nothing.
+ */
+export function canvasRules(input: { selected: string | null; marked: readonly string[]; gap: string | null; words: { milo: string; gap: string } }): string {
+  const rules: string[] = [];
+  if (input.selected !== null && SAFE_ID.test(input.selected)) rules.push(`${at(input.selected)}{outline:2px solid var(--accent);outline-offset:-2px;}`, `${at(input.selected)} > .lp-edit{opacity:1;}`);
+  for (const id of input.marked.filter((one) => SAFE_ID.test(one))) rules.push(`${at(id)}::after{content:${cssText(input.words.milo)};}`);
+  if (input.gap !== null && SAFE_ID.test(input.gap)) rules.push(`${at(input.gap)}::before{content:${cssText(input.words.gap)};}`);
+  return rules.join('\n');
 }

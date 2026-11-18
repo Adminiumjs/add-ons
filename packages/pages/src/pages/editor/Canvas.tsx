@@ -14,20 +14,21 @@
  *   keeps them empty, so an empty section is never published as a hint.
  * - Preview draws the page as visitors see it: no buttons, no chips, no ring.
  *
- * The chips and the line are put inside each section's own element through a
- * portal, after the renderer has drawn it, so they sit on the section they
- * belong to at any width.
+ * The ring, the chips and the line are drawn by the editor's own rules
+ * (`styles.ts` `canvasRules`), keyed by each section's `data-block-id`, so
+ * they sit on the section they belong to at any width and the renderer stays
+ * the stranger's renderer. The selected section's own "Edit {kind}" button
+ * stays in sight and names its kind.
  */
 import { LandingPageView } from '@adminium/add-on-contracts/landing/render';
-import { useLayoutEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
-import { createPortal } from 'react-dom';
+import type { MouseEvent, ReactNode } from 'react';
 
 import { lucideByName, type AddOnTranslate } from '../shared/host.ts';
 import type { Block, Page } from './doc.ts';
 import { pictureSrc, type LiveForm } from './engine.ts';
 import { kindName } from './kinds.ts';
 import { isRightToLeft } from './row.ts';
-import { selectionRule } from './styles.ts';
+import { canvasRules } from './styles.ts';
 
 export const Icon = ({ name }: { name: string }): ReactNode => {
   const Found = lucideByName(name);
@@ -78,21 +79,18 @@ export interface CanvasProps {
 }
 
 export function Canvas({ t, pageKey, page, language, width, preview, selected, gapAfter, forms, onSelect }: CanvasProps): ReactNode {
-  const frame = useRef<HTMLDivElement>(null);
-  const [anchors, setAnchors] = useState<ReadonlyMap<string, HTMLElement>>(new Map());
-
-  // After each draw, find each section's element, so the chips can be put inside it.
-  useLayoutEffect(() => {
-    const found = new Map<string, HTMLElement>();
-    for (const element of frame.current?.querySelectorAll<HTMLElement>('[data-block-id]') ?? []) found.set(element.dataset['blockId'] ?? '', element);
-    const same = found.size === anchors.size && [...found].every(([id, element]) => anchors.get(id) === element);
-    if (!same) setAnchors(found);
-  });
-
   const hint = (block: Block): string => t('editor.canvas.new', 'New {kind}: fill it in from the inspector.', { kind: kindName(t, block.kind).toLocaleLowerCase() });
   const drawn = preview ? page : canvasCopy(page, hint);
   const last = page.blocks.at(-1)?.id ?? null;
   const gapOn = gapAfter === 'end' ? last : gapAfter;
+  const rules = preview
+    ? ''
+    : canvasRules({
+        selected,
+        marked: page.blocks.filter((block) => block.milo === true).map((block) => block.id),
+        gap: gapOn,
+        words: { milo: t('editor.canvas.milo', 'Milo · check'), gap: t('editor.canvas.gap', 'New section goes here') },
+      });
 
   const select = (event: MouseEvent<HTMLDivElement>): void => {
     if (preview) return;
@@ -104,8 +102,8 @@ export function Canvas({ t, pageKey, page, language, width, preview, selected, g
 
   return (
     <div data-lpe-frame-wrap="" data-lpe-width={width}>
-      <style>{preview ? '' : selectionRule(selected)}</style>
-      <div ref={frame} data-lpe-frame="" data-lpe-width={width} {...(preview ? { 'data-lpe-preview': '' } : {})} onClickCapture={select}>
+      <style>{rules}</style>
+      <div data-lpe-frame="" data-lpe-width={width} {...(preview ? { 'data-lpe-preview': '' } : {})} onClickCapture={select}>
         <LandingPageView
           page={drawn}
           language={language}
@@ -138,26 +136,6 @@ export function Canvas({ t, pageKey, page, language, width, preview, selected, g
           }}
         />
       </div>
-      {preview
-        ? null
-        : page.blocks.map((block) => {
-            const anchor = anchors.get(block.id);
-            if (anchor === undefined) return null;
-            return createPortal(
-              <>
-                {block.id === selected ? <span data-lpe-chip="kind">{kindName(t, block.kind)}</span> : null}
-                {block.milo === true ? (
-                  <span data-lpe-chip="milo">
-                    <Icon name="sparkles" />
-                    {t('editor.canvas.milo', 'Milo · check')}
-                  </span>
-                ) : null}
-                {block.id === gapOn ? <span data-lpe-gap="">{t('editor.canvas.gap', 'New section goes here')}</span> : null}
-              </>,
-              anchor,
-              block.id,
-            );
-          })}
     </div>
   );
 }

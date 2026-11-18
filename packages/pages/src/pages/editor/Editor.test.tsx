@@ -80,6 +80,12 @@ const draftNow = (): { blocks: { id: string; kind: string; milo?: boolean }[] } 
 const toastTitles = (): string[] => world.toasts.map((toast) => String(toast.title));
 const sectionsList = (): HTMLElement => document.querySelector('ol[data-lpe-rows]') as HTMLElement;
 const publishPanel = (): HTMLElement => screen.getByRole('dialog', { name: /Publish|Update/ });
+/** The picker: the one dialog open as a modal (the test host draws a popover's panel always). */
+const pickerDialog = (): HTMLElement => document.querySelector('[data-part="modal"]') as HTMLElement;
+/** The canvas's own rules: its ring, its "Milo · check" chips and the line where a section goes. */
+const canvasRules = (): string => document.querySelector('[data-lpe-frame-wrap] style')?.textContent ?? '';
+const miloChips = (): number => (canvasRules().match(/::after\{content:"Milo · check";\}/g) ?? []).length;
+const wideButton = (name: string): HTMLElement => screen.getAllByRole('button', { name })[0] as HTMLElement;
 
 beforeEach(() => {
   resetWorld();
@@ -129,9 +135,9 @@ describe('the sections', () => {
     await open();
     fireEvent.click(screen.getByRole('button', { name: 'Edit Hero' }));
     fireEvent.click(screen.getByRole('button', { name: 'Add a section after this one' }));
-    const picker = screen.getByRole('dialog', { name: undefined });
+    const picker = pickerDialog();
     expect(within(picker).getByText('Goes after Hero')).toBeTruthy();
-    expect(screen.getByText('New section goes here')).toBeTruthy();
+    expect(canvasRules()).toContain('[data-block-id="h1"]::before{content:"New section goes here";}');
     // No pay link and no footer to pick.
     expect(within(picker).queryByText('Pay link')).toBeNull();
     expect(within(picker).queryByText('Footer')).toBeNull();
@@ -146,8 +152,9 @@ describe('the sections', () => {
     await open();
     fireEvent.click(within(sectionsList().parentElement as HTMLElement).getByRole('button', { name: 'Add a section' }));
     expect(screen.getByText('Goes at the end of the page')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: /^Hero/ }));
+    fireEvent.click(within(pickerDialog()).getByRole('button', { name: /^Hero/ }));
     expect(toastTitles()).toContain('Hero added after Features.');
+    fireEvent.click(screen.getByRole('tab', { name: 'Sections' }));
     expect(within(sectionsList()).getAllByText('Hero')).toHaveLength(2);
   });
 
@@ -170,9 +177,9 @@ describe('the sections', () => {
     seed('pages', [pageRow()]);
     await open();
     fireEvent.click(screen.getByRole('button', { name: 'Move Features up' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    fireEvent.click(wideButton('Undo'));
     expect(within(sectionsList()).getAllByRole('button', { pressed: false }).map((button) => button.textContent)).toEqual(['Hero', 'Text', 'Features']);
-    fireEvent.click(screen.getByRole('button', { name: 'Redo' }));
+    fireEvent.click(wideButton('Redo'));
     expect(within(sectionsList()).getAllByRole('button', { pressed: false }).map((button) => button.textContent)).toEqual(['Hero', 'Features', 'Text']);
   });
 
@@ -233,7 +240,7 @@ describe('publishing', () => {
     serve({ notice: false });
     seed('pages', [pageRow()]);
     await open();
-    await screen.findByText('Set your privacy notice first');
+    await screen.findAllByText(/Set your privacy notice first/);
     expect((screen.getByRole('button', { name: 'Publish' }) as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByRole('link', { name: 'Privacy & public pages' }).getAttribute('href') ?? screen.getByRole('link', { name: 'Privacy & public pages' }).textContent).toBeTruthy();
   });
@@ -242,7 +249,7 @@ describe('publishing', () => {
     seed('pages', [pageRow({ draft: { v: 1, title: 'Spring open day', description: 'd', blocks: [{ ...HERO, milo: true }, TEXT] } })]);
     await open();
     expect(screen.getByRole('region', { name: 'Milo’s draft' })).toBeTruthy();
-    expect(screen.getAllByText('Milo · check')).toHaveLength(1);
+    expect(miloChips()).toBe(1);
     fireEvent.click(screen.getByRole('button', { name: 'Publish' }));
     fireEvent.click(within(publishPanel()).getByRole('button', { name: 'Publish now' }));
     expect(within(publishPanel()).getByText('Not ready to publish')).toBeTruthy();
@@ -250,7 +257,7 @@ describe('publishing', () => {
     expect(moves()).toEqual([]);
     // A person looks: the marks come off, and then it publishes.
     fireEvent.click(screen.getByRole('button', { name: 'Looks right' }));
-    expect(screen.queryByText('Milo · check')).toBeNull();
+    expect(miloChips()).toBe(0);
     fireEvent.click(within(publishPanel()).getByRole('button', { name: 'Publish now' }));
     await waitFor(() => expect(moves()).toHaveLength(1));
     const published = ((moves()[0]?.values as { values: Record<string, unknown> }).values['published'] as { blocks: { milo?: boolean }[] }).blocks;
@@ -325,7 +332,7 @@ describe('Draft with Milo', () => {
     await screen.findByRole('region', { name: 'Milo’s draft' });
     const asked = world.calls.find((call) => call.kind === 'api' && call.table === `post ${DRAFT_PATH}`);
     expect(asked?.values).toEqual({ description: 'A page for our spring showroom open day with a booking form', language: 'en-US', pageKey: '7' });
-    expect(screen.getAllByText('Milo · check')).toHaveLength(2);
+    expect(miloChips()).toBe(2);
     expect(toastTitles()).toContain('Milo drafted the page. Check each section.');
     fireEvent.click(screen.getByRole('button', { name: 'Looks right' }));
     expect(screen.queryByRole('region', { name: 'Milo’s draft' })).toBeNull();
@@ -337,7 +344,7 @@ describe('Draft with Milo', () => {
     await open();
     fireEvent.click(screen.getByRole('button', { name: 'Edit Text' }));
     fireEvent.change(screen.getByLabelText('Text'), { target: { value: 'Talk to the fitters.' } });
-    expect(screen.getAllByText('Milo · check')).toHaveLength(1);
+    expect(miloChips()).toBe(1);
   });
 
   it('puts the page back as it was with "Undo all"', async () => {
