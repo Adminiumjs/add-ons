@@ -27,7 +27,7 @@ interface Column {
   references?: string;
   enum?: string[];
   label?: Record<string, string>;
-  rules?: { personal?: boolean; enumLabels?: { labels: Record<string, Record<string, string>> }; options?: { values: { value: string; label: Record<string, string> }[] } };
+  rules?: { personal?: boolean; secret?: boolean; enumLabels?: { labels: Record<string, Record<string, string>> }; options?: { values: { value: string; label: Record<string, string> }[] } };
 }
 interface Table {
   ref: string;
@@ -129,6 +129,10 @@ describe('the chat tables', () => {
         expect(column.nullable === true || column.default !== undefined, `${part}.${column.ref}`).toBe(true);
       }
     }
+  });
+
+  it('say the token counts are no secret: Adminium takes a name with "token" for one, and the settings page reads and writes the limit', () => {
+    for (const [table, name] of [['settings', 'daily_tokens'], ['choices', 'tokens_in'], ['choices', 'tokens_out']] as const) expect(columnOf(table, name).rules?.secret, `${table}.${name}`).toBe(false);
   });
 
   it('mark as personal what a visitor typed: their name, e-mail, the page and their words', () => {

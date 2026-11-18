@@ -769,6 +769,9 @@
             "ref": "tokens_in",
             "type": "int",
             "default": 0,
+            "rules": {
+              "secret": false
+            },
             "label": {
               "en-US": "Tokens in",
               "de-DE": "Tokens hinein",
@@ -784,6 +787,9 @@
             "ref": "tokens_out",
             "type": "int",
             "default": 0,
+            "rules": {
+              "secret": false
+            },
             "label": {
               "en-US": "Tokens out",
               "de-DE": "Tokens heraus",
@@ -914,6 +920,9 @@
             "ref": "daily_tokens",
             "type": "int",
             "default": 0,
+            "rules": {
+              "secret": false
+            },
             "label": {
               "en-US": "Daily limit",
               "de-DE": "Tageslimit",
