@@ -50,10 +50,12 @@ interface StatusMore {
   notice?: boolean;
   reach?: string;
   blocked?: 'no-public-origin' | 'no-mail-server' | null;
+  /** Adminium 0.3.64's doubt: this request cannot tell whether a proxy is in front of the server. Absent: an older Adminium. */
+  proxyUnchecked?: boolean;
 }
 function answer(status: StatusMore = {}): void {
   world.api = (_method, path) => {
-    if (path === STATUS) return { data: { mail: { sends: (status.blocked ?? null) === null, blocked: status.blocked ?? null }, reach: { state: status.reach ?? 'reachable' }, notice: status.notice ?? true, publicOrigin: 'https://crm.example.test', websites: [], roles: [{ id: 'role-north', name: 'Sales reps — North' }] } };
+    if (path === STATUS) return { data: { mail: { sends: (status.blocked ?? null) === null, blocked: status.blocked ?? null }, reach: { state: status.reach ?? 'reachable', ...(status.proxyUnchecked === undefined ? {} : { proxyUnchecked: status.proxyUnchecked }) }, notice: status.notice ?? true, publicOrigin: 'https://crm.example.test', websites: [], roles: [{ id: 'role-north', name: 'Sales reps — North' }] } };
     if (path === PEOPLE) return { people: [{ id: 'u-dana', name: 'Dana Whitlock' }, { id: 'u-tessa', name: 'Tessa Marlow' }] };
     return {};
   };
@@ -388,6 +390,30 @@ describe('the blocked cards', () => {
     answer({ blocked: 'no-mail-server' });
     await open('forms/form-k3x9qz');
     expect(screen.getByRole('alert').textContent).toBe('No mail goes out yet: no mail server is set.Confirmation mails and the e-mails to staff wait until it is set.');
+  });
+
+  it('say the proxy doubt when Adminium cannot tell from this request whether a proxy is in front of it', async () => {
+    answer({ proxyUnchecked: true });
+    await open('forms/form-k3x9qz');
+    const doubt = document.querySelector('[data-part="alert"][data-tone="info"]') as HTMLElement;
+    expect(doubt.textContent).toBe('If visitors reach this server through a proxy or a load balancer, they will see “not available” until the server is told to trust it. Your host’s guide says how.');
+    expect(screen.queryAllByRole('alert')).toEqual([]);
+  });
+
+  it('say no doubt when Adminium has none, or is older and does not say', async () => {
+    answer({ proxyUnchecked: false });
+    await open('forms/form-k3x9qz');
+    expect(document.querySelector('[data-part="alert"][data-tone="info"]')).toBeNull();
+    cleanup();
+    answer();
+    await open('forms/form-k3x9qz');
+    expect(document.querySelector('[data-part="alert"][data-tone="info"]')).toBeNull();
+  });
+
+  it('say no doubt over a reach card: the card already says what is wrong', async () => {
+    answer({ reach: 'network-off', proxyUnchecked: true });
+    await open('forms/form-k3x9qz');
+    expect(document.querySelector('[data-part="alert"][data-tone="info"]')).toBeNull();
   });
 
   it('show all three at once', async () => {

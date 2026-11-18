@@ -6,7 +6,10 @@
  * - strangers cannot reach the public pages: worded from the reason
  *   Adminium gives, as the Privacy page's reach card words it;
  * - no mail goes out (no public address, or no mail server): the form takes
- *   answers, but confirmation mails and the e-mails to staff wait.
+ *   answers, but confirmation mails and the e-mails to staff wait;
+ * - the pages are reachable, but Adminium cannot tell from this request
+ *   whether strangers come through a proxy it does not trust: a doubt, said
+ *   as the Privacy page's reach card says it (from Adminium 0.3.64).
  */
 import type { ReactNode } from 'react';
 
@@ -52,6 +55,7 @@ export function BlockedCards({ t, status, kind }: { t: AddOnTranslate; status: F
         />
       )}
       {reach === null ? null : <Alert tone="danger" role="alert" title={`${reach.a} ${kind === 'survey' ? t('builder.block.surveyB', 'People can’t open this survey.') : t('builder.block.formB', 'Visitors can’t open this form.')}`} body={reach.note} />}
+      {reach === null && status.reach.proxyUnchecked ? <Alert tone="info" role="status" title={t('builder.block.proxyUnchecked', 'If visitors reach this server through a proxy or a load balancer, they will see “not available” until the server is told to trust it. Your host’s guide says how.')} /> : null}
       {status.mail.blocked === null ? null : (
         <Alert
           tone="warn"

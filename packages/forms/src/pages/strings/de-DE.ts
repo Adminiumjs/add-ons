@@ -106,6 +106,7 @@ export const builder: Readonly<Record<string, string>> = {
   "builder.block.privacyLink": "Datenschutz & öffentliche Seiten",
   "builder.block.proxy": "Dieser Server steht hinter einem Proxy, der die Adressen der Besucher verbirgt. Daher können Begrenzungen für Formulare nicht greifen.",
   "builder.block.proxyFix": "Bitten Sie die Person, die diesen Server betreibt, ADMINIUM_TRUST_PROXY=on zu setzen und ihn neu zu starten.",
+  "builder.block.proxyUnchecked": "Wenn Besucher diesen Server über einen Proxy oder einen Load Balancer erreichen, sehen sie „nicht verfügbar“, bis der Server angewiesen wird, ihm zu vertrauen. Die Anleitung Ihres Hosters erklärt, wie das geht.",
   "builder.block.surveyB": "Niemand kann diese Umfrage öffnen.",
   "builder.block.unreached": "Besucher können die öffentlichen Seiten dieses Servers nicht erreichen.",
   "builder.card.addChoice": "Option hinzufügen",

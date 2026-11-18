@@ -106,6 +106,7 @@ export const builder: Readonly<Record<string, string>> = {
   "builder.block.privacyLink": "Privatliv og offentlige sider",
   "builder.block.proxy": "Denne server står bag en proxy, der skjuler de besøgendes adresser, så grænser for formularer kan ikke virke.",
   "builder.block.proxyFix": "Bed den, der driver serveren, om at sætte ADMINIUM_TRUST_PROXY=on og genstarte.",
+  "builder.block.proxyUnchecked": "Hvis besøgende når denne server gennem en proxy eller en load balancer, ser de “ikke tilgængelig”, indtil serveren får besked på at stole på den. Din udbyders vejledning forklarer hvordan.",
   "builder.block.surveyB": "Folk kan ikke åbne denne undersøgelse.",
   "builder.block.unreached": "Besøgende kan ikke nå serverens offentlige sider.",
   "builder.card.addChoice": "Tilføj en valgmulighed",

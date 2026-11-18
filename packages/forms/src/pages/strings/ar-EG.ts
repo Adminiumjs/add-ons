@@ -106,6 +106,7 @@ export const builder: Readonly<Record<string, string>> = {
   "builder.block.privacyLink": "الخصوصية والصفحات العامة",
   "builder.block.proxy": "هذا الخادم خلف وكيل يُخفي عناوين الزوار، لذا لا يمكن أن تعمل حدود النماذج.",
   "builder.block.proxyFix": "اطلب ممن يدير هذا الخادم تعيين ADMINIUM_TRUST_PROXY=on وإعادة تشغيله.",
+  "builder.block.proxyUnchecked": "إذا وصل الزوار إلى هذا الخادم عبر خادم وكيل أو موازن أحمال، فسيرون «غير متاح» إلى أن يُضبط الخادم ليثق به. يشرح دليل مزوّد الاستضافة لديك كيفية ذلك.",
   "builder.block.surveyB": "لا يستطيع الناس فتح هذا الاستطلاع.",
   "builder.block.unreached": "لا يستطيع الزوار الوصول إلى الصفحات العامة لهذا الخادم.",
   "builder.card.addChoice": "أضف اختيارًا",

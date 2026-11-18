@@ -106,6 +106,7 @@ export const builder: Readonly<Record<string, string>> = {
   "builder.block.privacyLink": "隐私与公开页面",
   "builder.block.proxy": "此服务器位于会隐藏访客地址的代理之后，因此表单的限制无法生效。",
   "builder.block.proxyFix": "请让此服务器的管理人员设置 ADMINIUM_TRUST_PROXY=on 并重启。",
+  "builder.block.proxyUnchecked": "如果访客通过代理或负载均衡器访问此服务器，在服务器被设置为信任它之前，他们会看到“不可用”。你的托管服务商的指南会说明如何设置。",
   "builder.block.surveyB": "其他人无法打开此调查。",
   "builder.block.unreached": "访客无法访问此服务器的公开页面。",
   "builder.card.addChoice": "添加选项",

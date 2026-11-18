@@ -22,7 +22,7 @@ export const PEOPLE = '/api/v1/people?limit=200';
 export interface FormsStatus {
   mail: { sends: boolean; blocked: 'no-public-origin' | 'no-mail-server' | null };
   /** `reachable`, or the reason strangers cannot open the pages (`network-off`, `not-set`, `proxy-hidden`, …). */
-  reach: { state: string };
+  reach: { state: string; proxyUnchecked: boolean };
   notice: boolean;
   publicOrigin: string | null;
   websites: readonly string[];
@@ -39,7 +39,8 @@ export function statusOf(reply: unknown): FormsStatus | null {
   const blocked = mail['blocked'] === 'no-public-origin' || mail['blocked'] === 'no-mail-server' ? mail['blocked'] : null;
   return {
     mail: { sends: blocked === null, blocked },
-    reach: { state: data['reach']['state'] },
+    // From 0.3.64: this request cannot tell whether strangers come through a proxy. An older Adminium does not say.
+    reach: { state: data['reach']['state'], proxyUnchecked: data['reach']['proxyUnchecked'] === true },
     notice: data['notice'],
     publicOrigin: typeof data['publicOrigin'] === 'string' ? data['publicOrigin'] : null,
     websites: Array.isArray(data['websites']) ? data['websites'].filter((one): one is string => typeof one === 'string') : [],

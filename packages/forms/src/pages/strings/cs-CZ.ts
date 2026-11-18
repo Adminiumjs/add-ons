@@ -106,6 +106,7 @@ export const builder: Readonly<Record<string, string>> = {
   "builder.block.privacyLink": "Soukromí a veřejné stránky",
   "builder.block.proxy": "Tento server je za proxy, která skrývá adresy návštěvníků, takže limity formulářů nemohou fungovat.",
   "builder.block.proxyFix": "Požádejte správce tohoto serveru, ať nastaví ADMINIUM_TRUST_PROXY=on a server restartuje.",
+  "builder.block.proxyUnchecked": "Pokud návštěvníci přistupují k tomuto serveru přes proxy nebo nástroj na vyrovnávání zátěže, uvidí „není k dispozici“, dokud serveru neřeknete, aby mu důvěřoval. Návod vašeho poskytovatele hostingu popisuje jak.",
   "builder.block.surveyB": "Lidé tento průzkum nemohou otevřít.",
   "builder.block.unreached": "Návštěvníci se na veřejné stránky tohoto serveru nedostanou.",
   "builder.card.addChoice": "Přidat možnost",
