@@ -99,6 +99,10 @@ export const world = {
   now: Date.parse('2026-11-03T12:00:00Z'),
   /** The tables a page follows live, as it asked. */
   live: [] as { table: string; enabled: boolean }[],
+  /** Milo's panel: `open` opens it, `refuse` is a reader who may not use Milo, `absent` a host before 0.3.64 with no such call. */
+  assistant: 'open' as 'open' | 'refuse' | 'absent',
+  /** Each time a page asked Milo's panel open, with what it asked. */
+  asked: [] as ({ prompt?: string } | undefined)[],
 };
 
 const listeners = new Set<() => void>();
@@ -134,6 +138,8 @@ export function resetWorld(): void {
   world.formTables = [];
   world.now = Date.parse('2026-11-03T12:00:00Z');
   world.live = [];
+  world.assistant = 'open';
+  world.asked = [];
   changed();
 }
 
@@ -821,6 +827,14 @@ installAddOnRuntime({
           if (formId !== null) world.calls.push({ kind: 'summary', table: 'forms', key: String(formId) });
         }, [formId]);
         return { summary, loading: formId !== null && summary === null, error: null, refetch: () => undefined };
+      },
+      // Read when a page asks, so a test can take the call away (a host before 0.3.64).
+      get openAssistant() {
+        if (world.assistant === 'absent') return undefined;
+        return (options?: { prompt?: string }): boolean => {
+          world.asked.push(options);
+          return world.assistant === 'open';
+        };
       },
       useLiveTable: (table: string, options?: { enabled?: boolean }) => {
         const enabled = options?.enabled !== false;

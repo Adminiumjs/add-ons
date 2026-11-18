@@ -213,14 +213,30 @@ describe('Milo, only while the chat’s Milo drafting is on', () => {
     expect((screen.getByRole('textbox', { name: 'Write a message…' }) as HTMLTextAreaElement).value).toBe('My own words');
   });
 
-  it('presses Milo’s own shortcut on the window for "Ask Milo"', async () => {
+  it('opens Milo’s own panel through the host for "Ask Milo", with nothing typed for the person', async () => {
     await draw({ milo: true });
     const pressed: KeyboardEvent[] = [];
     const listen = (event: KeyboardEvent): void => void pressed.push(event);
     window.addEventListener('keydown', listen);
     fireEvent.click(screen.getByRole('button', { name: 'Ask Milo' }));
     window.removeEventListener('keydown', listen);
-    expect(pressed.map((event) => event.key)).toEqual(['.']);
+    expect(world.asked).toEqual([undefined]);
+    expect(pressed).toEqual([]);
+  });
+
+  it('offers no "Ask Milo" on a host that cannot open Milo’s panel for a page, and presses no key', async () => {
+    world.assistant = 'absent';
+    await draw({ milo: true });
+    expect(screen.getByRole('button', { name: 'Draft with Milo' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Ask Milo' })).toBeNull();
+  });
+
+  it('says so when the reader may not use Milo, and the panel stays shut', async () => {
+    world.assistant = 'refuse';
+    await draw({ milo: true });
+    fireEvent.click(screen.getByRole('button', { name: 'Ask Milo' }));
+    expect(world.asked).toHaveLength(1);
+    expect(world.toasts.at(-1)?.title).toBe('You do not have permission to do this.');
   });
 });
 

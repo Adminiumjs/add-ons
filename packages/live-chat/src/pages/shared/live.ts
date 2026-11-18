@@ -4,7 +4,7 @@
  */
 import { useEffect, useState } from 'react';
 
-import { useLiveTable } from './host.ts';
+import { hostAssistant, useLiveTable } from './host.ts';
 
 /** Nothing to follow on a host before 0.3.64: the lists read as they always did. */
 const noLive = (): { connected: boolean } => ({ connected: false });
@@ -46,11 +46,12 @@ export function useNow(every = 60_000): number {
 }
 
 /**
- * "Ask Milo": opens Adminium's own Milo panel, as its keyboard shortcut does
- * (⌘. on a Mac, Ctrl+. elsewhere). The kit has no call for it, so the page
- * presses the shortcut on the window, where the dashboard listens.
+ * "Ask Milo": opens Adminium's own Milo panel through the host's call (from
+ * 0.3.64), or nothing on a host without it, where the page offers no "Ask
+ * Milo" at all. The comp gives Milo no words to start with, so the box opens
+ * empty. False when nothing opened: the reader may not use Milo.
  */
-export function openMilo(): void {
-  const mac = /Mac|iPhone|iPad/.test(typeof navigator === 'undefined' ? '' : navigator.platform);
-  window.dispatchEvent(new KeyboardEvent('keydown', { key: '.', code: 'Period', metaKey: mac, ctrlKey: !mac, bubbles: true }));
+export function miloOpener(): (() => boolean) | undefined {
+  const open = hostAssistant();
+  return open === undefined ? undefined : () => open();
 }

@@ -4,7 +4,8 @@
  *
  * - Take over, Make an enquiry, Close chat / Reopen chat and Ask Milo, each
  *   only for someone who may answer the chat's conversations; Ask Milo, and
- *   Draft with Milo, only while the chat's Milo drafting is on.
+ *   Draft with Milo, only while the chat's Milo drafting is on, and Ask Milo
+ *   only where Adminium can open Milo's panel for a page.
  * - Someone else answering it: Adminium refuses a take with their name, and
  *   the header says "Sam is answering", with "Take over anyway".
  * - The automatic answers' line and "Sending also takes over this chat" show
@@ -18,7 +19,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { Alert, Button, IconButton, Link, useAppToasts, useLocaleTag, useRecords, type AddOnTranslate } from '../shared/host.ts';
 import { chatRoutes, refusalOf, takenByOf, type ChatPerson, type Presence } from '../shared/chat.ts';
-import { openMilo, type Layout } from '../shared/live.ts';
+import { miloOpener, type Layout } from '../shared/live.ts';
 import { Avatar, Icon, Pill, SmallIcon, WebsiteChip, toneOf } from '../shared/parts.tsx';
 import { EMAIL_SETTINGS, PRIVACY } from '../shared/paths.ts';
 import { initialsOf, messageOf, pageOf, versionIn, type Answer, type Conversation, type Message } from '../shared/rows.ts';
@@ -119,6 +120,8 @@ export function Thread({ t, conversation, answers, people, me, mayAnswer, miloOn
   const [drafting, setDrafting] = useState(false);
   const [busy, setBusy] = useState(false);
   const log = useRef<HTMLDivElement | null>(null);
+  // Milo's panel, where the host can open it (0.3.64 and later); none, no "Ask Milo".
+  const askMilo = miloOpener();
 
   // The newest message in view.
   useEffect(() => {
@@ -287,8 +290,10 @@ export function Thread({ t, conversation, answers, people, me, mayAnswer, miloOn
               </Button>
             )
           ) : null}
-          {miloOn ? (
-            <button type="button" title={t('thread.askMiloHint', 'Ask Milo about this conversation')} onClick={openMilo} className="inline-flex h-9 items-center gap-[7px] whitespace-nowrap rounded-[10px] border border-accent bg-accent-soft px-3.5 text-[13px] font-bold text-accent">
+          {miloOn && askMilo !== undefined ? (
+            <button type="button" title={t('thread.askMiloHint', 'Ask Milo about this conversation')} onClick={() => {
+              if (!askMilo()) toast(t('shared.refusal.forbidden', 'You do not have permission to do this.'), 'error');
+            }} className="inline-flex h-9 items-center gap-[7px] whitespace-nowrap rounded-[10px] border border-accent bg-accent-soft px-3.5 text-[13px] font-bold text-accent">
               <Icon name="sparkles" />
               {t('thread.askMilo', 'Ask Milo')}
             </button>

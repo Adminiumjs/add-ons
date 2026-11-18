@@ -261,6 +261,21 @@ export interface UseLiveTableResult {
 export const useLiveTable = (data as Readonly<Record<string, unknown>>)['useLiveTable'] as ((table: string, options?: { enabled?: boolean }) => UseLiveTableResult) | undefined;
 
 /**
+ * Open Adminium's own Milo panel beside the page, with `prompt`, when given,
+ * in its box: the person reads it and sends it themselves, and the call sends
+ * nothing. False, and nothing opens, for someone who may not use Milo.
+ */
+export type OpenAssistant = (options?: { prompt?: string }) => boolean;
+/**
+ * The host's call, read when a page asks: undefined on a host before 0.3.64,
+ * which has no such call, and a page then offers no "Ask Milo".
+ */
+export const hostAssistant = (): OpenAssistant | undefined => {
+  const call = (data as Readonly<Record<string, unknown>>)['openAssistant'];
+  return typeof call === 'function' ? (call as OpenAssistant) : undefined;
+};
+
+/**
  * Reads made when something happens — a scan, a post — and not while the
  * screen is drawn: the same routes and the same grants as the lists, answered
  * as a promise. A scan loop and a run over six hundred lines cannot wait for
