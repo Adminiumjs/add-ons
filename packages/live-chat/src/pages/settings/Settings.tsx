@@ -29,10 +29,14 @@ import { useToast } from '../shared/toast.ts';
 import { Answers, codeOf } from './Answers.tsx';
 import { DAYS, KEEP_MONTHS, opensShown, THEMES, automaticBlocked, clockShown, draftIssues, draftOf, firstLineKind, tokensValue, valuesOf, type Day, type Draft } from './draft.ts';
 import { Section, SectionTitle, Toggle } from './parts.tsx';
-import { readStatus, readWindow, type ChatStatus, type WindowFacts } from './status.ts';
+import { readStatus, type ChatStatus } from './status.ts';
 import { Tell } from './Tell.tsx';
 import { TryQuestion } from './TryQuestion.tsx';
 import { Website } from './Website.tsx';
+
+/** Before the status answers (or when it is refused): no languages beyond the default, no roles to name. */
+const NO_LANGUAGES: readonly string[] = [];
+const NO_ROLES: ChatStatus['roles'] = [];
 
 /** A weekday's name in the reader's language, Monday first. */
 export function dayName(day: Day, locale: string): string {
@@ -211,7 +215,7 @@ function Welcome({ t, draft, change, languages, defaultLanguage, business }: { t
   );
 }
 
-function Automatic({ t, draft, change, answers, ai, business, onBlocked }: { t: AddOnTranslate; draft: Draft; change: (next: (was: Draft) => Draft) => void; answers: number; ai: AiState | null; business: string; onBlocked: (why: string) => void }): ReactNode {
+function Automatic({ t, draft, change, answers, ai, business, roles, onBlocked }: { t: AddOnTranslate; draft: Draft; change: (next: (was: Draft) => Draft) => void; answers: number; ai: AiState | null; business: string; roles: ChatStatus['roles']; onBlocked: (why: string) => void }): ReactNode {
   // Who is told sits where the comp draws its "Tell me when the limit runs out" row.
   const usable = ai === null ? null : ai.usable;
   const blocked = automaticBlocked(answers, draft, usable);
@@ -260,7 +264,7 @@ function Automatic({ t, draft, change, answers, ai, business, onBlocked }: { t: 
           <UsedBar percent={percent} />
         </div>
       ) : null}
-      <Tell t={t} draft={draft} change={change} />
+      <Tell t={t} draft={draft} change={change} roles={roles} />
       <div className="flex items-center gap-3 border-t border-border pt-3.5">
         <span id="chat-milo-title" className="flex-1 text-[13px]">
           {t('settings.milo.title', 'Milo drafts replies in these chats for staff to read and send')}
@@ -345,7 +349,6 @@ export function Settings({ t }: { t: AddOnTranslate }): ReactNode {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<ChatStatus | null>(null);
-  const [facts, setFacts] = useState<WindowFacts>({ business: null, defaultLanguage: null, languages: [], timeZone: null });
   const [ai, setAi] = useState<AiState | null>(null);
   const [pausedUntil, setPausedUntil] = useState<string | null>(null);
 
@@ -358,7 +361,6 @@ export function Settings({ t }: { t: AddOnTranslate }): ReactNode {
     if (!mayRead) return;
     let live = true;
     void readStatus().then((read) => live && setStatus(read));
-    void readWindow().then((read) => live && setFacts(read));
     chatRoutes.ai().then(
       (read) => live && setAi(read),
       () => undefined,
@@ -373,8 +375,9 @@ export function Settings({ t }: { t: AddOnTranslate }): ReactNode {
   }, [mayRead]);
 
   const answers = useMemo(() => answersRead.rows.map(answerOf), [answersRead.rows]);
-  const defaultLanguage = facts.defaultLanguage ?? 'en-US';
-  const business = facts.business ?? t('settings.business', 'your business');
+  const defaultLanguage = status?.defaultLanguage ?? 'en-US';
+  const languages = status?.languages ?? NO_LANGUAGES;
+  const business = status?.business ?? t('settings.business', 'your business');
   const shown = draft;
   const change = (next: (was: Draft) => Draft): void => setDraft((was) => (was === null ? was : next(was)));
 
@@ -426,10 +429,10 @@ export function Settings({ t }: { t: AddOnTranslate }): ReactNode {
         <div className="flex flex-col gap-1 pb-1">
           <p className="m-0 text-[13px] text-fg-muted">{t('settings.lead', 'Live chat add-on. A chat window on your website; its conversations come into the chat inbox.')}</p>
         </div>
-        <Hours t={t} draft={shown} change={change} zone={facts.timeZone} locale={locale} languages={facts.languages} defaultLanguage={defaultLanguage} />
-        <Welcome t={t} draft={shown} change={change} languages={facts.languages} defaultLanguage={defaultLanguage} business={business} />
-        <Automatic t={t} draft={shown} change={change} answers={answers.filter((one) => one.active).length} ai={ai} business={business} onBlocked={(why) => toast(why, 'info')} />
-        <Answers t={t} answers={answers} defaultLanguage={defaultLanguage} languages={facts.languages} mayEdit={mayAnswers} onChanged={() => answersRead.refetch()} />
+        <Hours t={t} draft={shown} change={change} zone={status?.timeZone ?? null} locale={locale} languages={languages} defaultLanguage={defaultLanguage} />
+        <Welcome t={t} draft={shown} change={change} languages={languages} defaultLanguage={defaultLanguage} business={business} />
+        <Automatic t={t} draft={shown} change={change} answers={answers.filter((one) => one.active).length} ai={ai} business={business} roles={status?.roles ?? NO_ROLES} onBlocked={(why) => toast(why, 'info')} />
+        <Answers t={t} answers={answers} defaultLanguage={defaultLanguage} languages={languages} mayEdit={mayAnswers} onChanged={() => answersRead.refetch()} />
         {answers.length === 0 ? null : <TryQuestion t={t} answers={answers} defaultLanguage={defaultLanguage} />}
         <Website t={t} status={status} pausedUntil={pausedUntil} mayResume={mayChange} onResume={resume} locale={locale} />
         <Keep t={t} draft={shown} change={change} />

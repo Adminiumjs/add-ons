@@ -6,9 +6,22 @@ import { Refused, resetWorld, seed, world } from '../testing/host.tsx';
 import { ANSWERS, PEOPLE } from '../testing/chats.ts';
 import { Settings } from './Settings.tsx';
 
-const REACHABLE = { data: { mail: { sends: true, blocked: null }, reach: { state: 'reachable', proxyUnchecked: false }, notice: true, publicOrigin: 'https://crm.meridian.example', websites: ['https://www.meridian.example'], roles: [{ id: 'r-sales', name: 'Sales' }] } };
+const STATUS = '/api/v1/chat/live-chat/status';
+const REACHABLE = {
+  data: {
+    mail: { sends: true, blocked: null },
+    reach: { state: 'reachable', proxyUnchecked: false },
+    notice: true,
+    publicOrigin: 'https://crm.meridian.example',
+    websites: ['https://www.meridian.example'],
+    roles: [{ id: 'r-sales', name: 'Sales' }],
+    languages: ['en-US', 'de-DE', 'ar-EG', 'fr-FR'],
+    defaultLanguage: 'en-US',
+    businessName: 'Meridian',
+    timeZone: 'Europe/London',
+  },
+};
 const AI = (more: Record<string, unknown> = {}) => ({ data: { usable: true, refusal: null, service: { provider: 'anthropic', name: 'Anthropic' }, notice: 'Visitors’ messages are sent to Anthropic to pick an answer.', today: { day: '2026-07-28', spent: 37, reserved: 0, limit: 200 }, ...more } });
-const WINDOW = { state: 'live', business: { name: 'Meridian' }, defaultLanguage: 'en-US', languages: ['en-US', 'de-DE', 'ar-EG', 'fr-FR'], timeZone: 'Europe/London' };
 
 type Answer = (method: string, path: string, payload: unknown) => unknown;
 
@@ -18,13 +31,10 @@ async function draw(more: { row?: Record<string, unknown> | null; answers?: bool
   world.api = (method, path, payload) => {
     const answered = more.answer?.(method, path, payload);
     if (answered !== undefined) return answered;
-    if (path === '/api/v1/forms/status') return more.status ?? REACHABLE;
-    if (path === '/api/v1/forms/mail') return { data: { sends: true, blocked: null } };
-    if (path.startsWith('/x/chat/api/live-chat/config')) return WINDOW;
+    if (path === STATUS) return more.status ?? REACHABLE;
     if (path === '/api/v1/chat/live-chat/ai') return more.ai ?? AI();
     if (path === '/api/v1/chat/live-chat/pause') return { data: { pausedUntil: more.pause ?? null } };
     if (path.startsWith('/api/v1/people')) return { people: PEOPLE };
-    if (path === '/api/v1/roles') return { roles: [{ id: 'r-sales', name: 'Sales' }] };
     return { data: {} };
   };
   const { wordsFor } = await import('../shared/messages.ts');
@@ -211,7 +221,7 @@ describe('putting the chat on a website', () => {
     const t = (_key: string, fallback: string): string => fallback;
     const titles = ['network-off', 'desktop', 'proxy-hidden', 'not-set', 'this-computer', 'private-network', 'dot-local', 'not-https', 'unreachable'].map((state) => reachWords(t, state).title);
     expect(new Set(titles).size).toBe(5);
-    await draw({ status: { data: { ...REACHABLE.data } }, answer: (_method, path) => (path === '/api/v1/forms/mail' ? { data: { sends: false, blocked: 'no-mail-server' } } : undefined) });
+    await draw({ status: { data: { ...REACHABLE.data, mail: { sends: false, blocked: 'no-mail-server' } } } });
     expect(screen.getByRole('alert').querySelector('h3')?.textContent).toBe('No mail goes out yet: no mail server is set.');
   });
 
@@ -220,17 +230,51 @@ describe('putting the chat on a website', () => {
     expect(screen.getByText(/through a proxy or a load balancer/)).toBeTruthy();
   });
 
-  it('asks the privacy reads when the forms status is not the reader’s', async () => {
+  it('asks the chat’s own status read alone: a settings manager with no Forms or privacy rights sees the snippet', async () => {
     await draw({
       answer: (_method, path) => {
-        if (path === '/api/v1/forms/status') throw new Refused('FORBIDDEN');
-        if (path === '/api/v1/privacy/reach') return { data: { state: 'reachable', origin: 'https://chat.meridian.example', checkedAt: 0, proxyUnchecked: false } };
-        if (path === '/api/v1/privacy/notice') return { data: { businessName: 'Meridian', noticeUrl: 'https://www.meridian.example/privacy', ready: true, shownName: 'Meridian' } };
-        if (path === '/api/v1/privacy/websites') return { data: { websites: [{ origin: 'https://www.meridian.example' }], max: 20 } };
+        if (path.startsWith('/api/v1/forms/') || path.startsWith('/api/v1/privacy/') || path === '/api/v1/roles') throw new Refused('FORBIDDEN');
         return undefined;
       },
     });
-    expect(screen.getByText('<script src="https://chat.meridian.example/x/embed.js" data-adminium-chat="live-chat" async></script>')).toBeTruthy();
+    expect(screen.getByText('<script src="https://crm.meridian.example/x/embed.js" data-adminium-chat="live-chat" async></script>')).toBeTruthy();
+    expect(screen.getByText('www.meridian.example')).toBeTruthy();
+    const asked = world.calls.filter((call) => call.kind === 'api').map((call) => call.table);
+    expect(asked).toContain(`get ${STATUS}`);
+    expect(asked.filter((call) => /\/forms\/|\/privacy\/|\/x\/chat\/|\/roles$/.test(call))).toEqual([]);
+  });
+
+  it('shows such a manager the blocked cards from the same read', async () => {
+    await draw({
+      status: { data: { ...REACHABLE.data, notice: false, reach: { state: 'not-https', proxyUnchecked: false }, mail: { sends: false, blocked: 'no-public-origin' } } },
+      answer: (_method, path) => {
+        if (path.startsWith('/api/v1/forms/') || path.startsWith('/api/v1/privacy/')) throw new Refused('FORBIDDEN');
+        return undefined;
+      },
+    });
+    expect(screen.queryByText(/x\/embed\.js/)).toBeNull();
+    expect(screen.getAllByRole('alert').map((alert) => alert.querySelector('h3')?.textContent)).toEqual(['Set your privacy notice first.', 'This server has no public https address.', 'No mail goes out yet: this server has no public address.']);
+  });
+
+  it('takes the business, the languages and the time zone from the status read', async () => {
+    await draw({ status: { data: { ...REACHABLE.data, businessName: 'Hartwell & Co', languages: ['en-US', 'cs-CZ'], timeZone: 'Europe/Prague' } } });
+    expect(within(card('Opening hours')).getByText('Europe/Prague')).toBeTruthy();
+    expect(screen.getByLabelText('Welcome line, Czech')).toBeTruthy();
+    expect(screen.queryByLabelText('Welcome line, German')).toBeNull();
+    expect(screen.getByText('Shown under “Hartwell & Co” at the top of the chat.')).toBeTruthy();
+  });
+
+  it('claims nothing when the status read is refused: no snippet, no card, and the rest of the page stands', async () => {
+    await draw({
+      answer: (_method, path) => {
+        if (path === STATUS) throw new Refused('TABLE_FORBIDDEN', 'Only someone who may read the chat’s settings reads this.', { reason: 'chat-settings-read' });
+        return undefined;
+      },
+    });
+    expect(screen.queryByText(/x\/embed\.js/)).toBeNull();
+    expect(screen.queryAllByRole('alert')).toEqual([]);
+    expect(screen.getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent)).toEqual(['Opening hours', 'Welcome line', 'Automatic answers', 'Answers']);
+    expect(screen.getByRole('button', { name: 'Save changes' })).toBeTruthy();
   });
 
   it('says new chats are paused, until when, and resumes them', async () => {

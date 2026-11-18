@@ -131,7 +131,7 @@ describe('the chat tables', () => {
     }
   });
 
-  it('say the token counts are no secret: Adminium takes a name with "token" for one, and the settings page reads and writes the limit', () => {
+  it('say the token counts are no secret, as Adminium knows of a chat’s own columns: the settings page reads and writes the limit', () => {
     for (const [table, name] of [['settings', 'daily_tokens'], ['choices', 'tokens_in'], ['choices', 'tokens_out']] as const) expect(columnOf(table, name).rules?.secret, `${table}.${name}`).toBe(false);
   });
 

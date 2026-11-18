@@ -5,9 +5,9 @@
  * everyone who may read the chats (and, for the limit, whoever may change
  * these settings), which is what the line under it says.
  */
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 
-import { Combobox, api, type AddOnTranslate } from '../shared/host.ts';
+import { Combobox, type AddOnTranslate } from '../shared/host.ts';
 import { readPeople } from '../shared/chat.ts';
 import { Icon, SmallIcon } from '../shared/parts.tsx';
 import type { Draft, Told } from './draft.ts';
@@ -17,34 +17,13 @@ interface Named {
   label: string;
 }
 
-const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
-
-/** The roles of this server, by name: the roles read, else the forms status's list. */
-async function readRoles(): Promise<Named[]> {
-  const listed = (reply: unknown): Named[] =>
-    (Array.isArray(reply) ? reply : []).filter((one): one is Record<string, unknown> => isRecord(one) && typeof one['id'] === 'string' && typeof one['name'] === 'string').map((one) => ({ value: one['id'] as string, label: one['name'] as string }));
-  try {
-    const reply = await api.get<unknown>('/api/v1/roles');
-    if (isRecord(reply)) return listed(reply['roles']);
-  } catch {
-    // Not the reader's to list: the forms status names them too, for whoever reads forms.
-  }
-  try {
-    const reply = await api.get<unknown>('/api/v1/forms/status');
-    if (isRecord(reply) && isRecord(reply['data'])) return listed(reply['data']['roles']);
-  } catch {
-    // Nobody to name, then.
-  }
-  return [];
-}
-
-export function Tell({ t, draft, change }: { t: AddOnTranslate; draft: Draft; change: (next: (was: Draft) => Draft) => void }): ReactNode {
-  const [roles, setRoles] = useState<Named[]>([]);
+/** `roles`: every role, by its name in the reader's language, as the chat's status read names them. */
+export function Tell({ t, draft, change, roles: listed }: { t: AddOnTranslate; draft: Draft; change: (next: (was: Draft) => Draft) => void; roles: readonly { id: string; name: string }[] }): ReactNode {
+  const roles = useMemo<Named[]>(() => listed.map((role) => ({ value: role.id, label: role.name })), [listed]);
   const [people, setPeople] = useState<Named[]>([]);
 
   useEffect(() => {
     let live = true;
-    void readRoles().then((found) => live && setRoles(found));
     readPeople().then(
       (found) => live && setPeople([...found].map(([value, label]) => ({ value, label }))),
       () => undefined,
