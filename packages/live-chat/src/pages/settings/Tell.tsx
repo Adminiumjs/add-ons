@@ -1,5 +1,6 @@
 /**
- * WHO IS TOLD: the roles and people Adminium tells when a chat waits for a
+ * WHO IS TOLD (the comp's "Tell me when the limit runs out" row, in the
+ * automatic answers card): the roles and people Adminium tells when a chat waits for a
  * person, and when the day's automatic answers run out early. Nobody named:
  * everyone who may read the chats (and, for the limit, whoever may change
  * these settings), which is what the line under it says.
@@ -10,7 +11,6 @@ import { Combobox, api, type AddOnTranslate } from '../shared/host.ts';
 import { readPeople } from '../shared/chat.ts';
 import { Icon, SmallIcon } from '../shared/parts.tsx';
 import type { Draft, Told } from './draft.ts';
-import { Section, SectionTitle } from './parts.tsx';
 
 interface Named {
   value: string;
@@ -61,8 +61,10 @@ export function Tell({ t, draft, change }: { t: AddOnTranslate; draft: Draft; ch
   ];
 
   return (
-    <Section labelledBy="chat-tell-title">
-      <SectionTitle id="chat-tell-title">{t('settings.tell.title', 'Who is told')}</SectionTitle>
+    <div role="group" aria-labelledby="chat-tell-title" className="flex flex-col gap-2 border-t border-border pt-3.5">
+      <span id="chat-tell-title" className="text-[13px]">
+        {t('settings.tell.title', 'Who is told')}
+      </span>
       <p className="m-0 text-[12.5px] leading-normal text-fg-muted">{t('settings.tell.text', 'Told when a chat waits for a person, and when the daily limit runs out early in the day.')}</p>
       <div className="flex flex-wrap gap-1.5">
         {draft.tell.length === 0 ? <span className="text-[12.5px] text-fg-subtle">{t('settings.tell.everyone', 'Nobody chosen: everyone who may read the chats is told.')}</span> : null}
@@ -91,6 +93,6 @@ export function Tell({ t, draft, change }: { t: AddOnTranslate; draft: Draft; ch
           }}
         />
       </div>
-    </Section>
+    </div>
   );
 }

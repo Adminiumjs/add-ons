@@ -49,7 +49,7 @@ describe('Chat settings with automatic answers off, as installed (comp 3a)', () 
   it('draws the cards in the comp’s order, with the time zone, Monday to Friday open and the weekend closed', async () => {
     await draw({ answers: false });
     const titles = screen.getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent);
-    expect(titles).toEqual(['Opening hours', 'Welcome line', 'Automatic answers', 'Who is told', 'Answers', 'Put it on your website']);
+    expect(titles).toEqual(['Opening hours', 'Welcome line', 'Automatic answers', 'Answers', 'Put it on your website']);
     expect(within(card('Opening hours')).getByText('Europe/London')).toBeTruthy();
     expect(screen.getByRole('switch', { name: 'Open on Monday' }).getAttribute('aria-checked')).toBe('true');
     expect(screen.getByRole('switch', { name: 'Open on Sunday' }).getAttribute('aria-checked')).toBe('false');
@@ -276,6 +276,15 @@ describe('saving', () => {
     expect(world.toasts.at(-1)?.title).toBe('Chat settings saved');
   });
 
+  it('keeps the next opening in the outside-hours words as Adminium’s token, shown as the comp writes it, in each language', async () => {
+    await draw({ row: { outside_words: JSON.stringify({ 'en-US': 'We’re closed until {opens}.', 'de-DE': 'Geschlossen bis {opens}.' }) } });
+    expect((screen.getByLabelText('Outside hours') as HTMLTextAreaElement).value).toBe('We’re closed until 9:00 tomorrow.');
+    expect(within(card('Opening hours')).getByText('“9:00 tomorrow” changes to the next opening time. No automatic answers outside hours.')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Outside hours'), { target: { value: 'Back at 9:00 tomorrow. Leave your question.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => expect(saved()?.['outside_words']).toEqual({ 'en-US': 'Back at {opens}. Leave your question.', 'de-DE': 'Geschlossen bis {opens}.' }));
+  });
+
   it('refuses a time that is not one, and saves nothing', async () => {
     await draw();
     fireEvent.change(screen.getByRole('textbox', { name: 'Monday closes' }), { target: { value: '8:00' } });
@@ -287,7 +296,7 @@ describe('saving', () => {
 
   it('tells the roles and people chosen', async () => {
     await draw();
-    const tell = card('Who is told');
+    const tell = screen.getByRole('group', { name: 'Who is told' });
     expect(within(tell).getByText('Nobody chosen: everyone who may read the chats is told.')).toBeTruthy();
     fireEvent.change(within(tell).getByRole('combobox', { name: 'Tell someone else' }), { target: { value: 'role:r-sales' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));

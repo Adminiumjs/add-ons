@@ -27,7 +27,7 @@ import { refusal } from '../shared/refusal.ts';
 import { answerOf } from '../shared/rows.ts';
 import { useToast } from '../shared/toast.ts';
 import { Answers, codeOf } from './Answers.tsx';
-import { DAYS, KEEP_MONTHS, THEMES, automaticBlocked, clockShown, draftIssues, draftOf, firstLineKind, tokensValue, valuesOf, type Day, type Draft } from './draft.ts';
+import { DAYS, KEEP_MONTHS, opensShown, THEMES, automaticBlocked, clockShown, draftIssues, draftOf, firstLineKind, tokensValue, valuesOf, type Day, type Draft } from './draft.ts';
 import { Section, SectionTitle, Toggle } from './parts.tsx';
 import { readStatus, readWindow, type ChatStatus, type WindowFacts } from './status.ts';
 import { Tell } from './Tell.tsx';
@@ -97,11 +97,11 @@ function Hours({ t, draft, change, zone, locale, languages, defaultLanguage }: {
           id="chat-outside"
           rows={2}
           value={draft.outside[defaultLanguage] ?? ''}
-          placeholder={t('settings.outside.stock', 'We’re away until 9:00 tomorrow. Leave your question and e-mail, and we’ll reply by e-mail.')}
+          placeholder={t('settings.outside.stock', 'We’re away until {opens}.', { opens: opensShown(defaultLanguage) })}
           onChange={(event) => change((was) => ({ ...was, outside: { ...was.outside, [defaultLanguage]: event.target.value } }))}
           className="resize-y rounded-[10px] border border-border-strong bg-surface px-3 py-2.5 text-[13px] leading-normal text-fg"
         />
-        <p className="m-0 text-[11.5px] text-fg-subtle">{t('settings.outside.hint', '“9:00 tomorrow” changes to the next opening time. No automatic answers outside hours.')}</p>
+        <p className="m-0 text-[11.5px] text-fg-subtle">{t('settings.outside.hint', '“{opens}” changes to the next opening time. No automatic answers outside hours.', { opens: opensShown(defaultLanguage) })}</p>
       </div>
     </Section>
   );
@@ -212,6 +212,7 @@ function Welcome({ t, draft, change, languages, defaultLanguage, business }: { t
 }
 
 function Automatic({ t, draft, change, answers, ai, business, onBlocked }: { t: AddOnTranslate; draft: Draft; change: (next: (was: Draft) => Draft) => void; answers: number; ai: AiState | null; business: string; onBlocked: (why: string) => void }): ReactNode {
+  // Who is told sits where the comp draws its "Tell me when the limit runs out" row.
   const usable = ai === null ? null : ai.usable;
   const blocked = automaticBlocked(answers, draft, usable);
   const limit = tokensValue(draft.dailyTokens) ?? 0;
@@ -259,6 +260,7 @@ function Automatic({ t, draft, change, answers, ai, business, onBlocked }: { t: 
           <UsedBar percent={percent} />
         </div>
       ) : null}
+      <Tell t={t} draft={draft} change={change} />
       <div className="flex items-center gap-3 border-t border-border pt-3.5">
         <span id="chat-milo-title" className="flex-1 text-[13px]">
           {t('settings.milo.title', 'Milo drafts replies in these chats for staff to read and send')}
@@ -427,7 +429,6 @@ export function Settings({ t }: { t: AddOnTranslate }): ReactNode {
         <Hours t={t} draft={shown} change={change} zone={facts.timeZone} locale={locale} languages={facts.languages} defaultLanguage={defaultLanguage} />
         <Welcome t={t} draft={shown} change={change} languages={facts.languages} defaultLanguage={defaultLanguage} business={business} />
         <Automatic t={t} draft={shown} change={change} answers={answers.filter((one) => one.active).length} ai={ai} business={business} onBlocked={(why) => toast(why, 'info')} />
-        <Tell t={t} draft={shown} change={change} />
         <Answers t={t} answers={answers} defaultLanguage={defaultLanguage} languages={facts.languages} mayEdit={mayAnswers} onChanged={() => answersRead.refetch()} />
         {answers.length === 0 ? null : <TryQuestion t={t} answers={answers} defaultLanguage={defaultLanguage} />}
         <Website t={t} status={status} pausedUntil={pausedUntil} mayResume={mayChange} onResume={resume} locale={locale} />

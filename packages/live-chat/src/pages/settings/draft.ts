@@ -46,6 +46,30 @@ export interface Draft {
   theme: Theme;
 }
 
+/**
+ * THE NEXT OPENING, IN THE OWNER'S OUTSIDE-HOURS WORDS. Adminium keeps the
+ * token `{opens}` in the text and the window fills it with the next opening
+ * time. The editor shows it as the comp writes it, "9:00 tomorrow", in the
+ * language of each variation, and puts the token back when it saves.
+ */
+export const OPENS_TOKEN = '{opens}';
+export const OPENS_SHOWN: Readonly<Record<string, string>> = {
+  'en-US': '9:00 tomorrow',
+  'de-DE': 'morgen um 9:00',
+  'fr-FR': 'demain à 9:00',
+  'da-DK': 'kl. 9:00 i morgen',
+  'cs-CZ': 'zítra v 9:00',
+  'ar-EG': '9:00 غدًا',
+  'zh-CN': '明天 9:00',
+  'zh-TW': '明天 9:00',
+};
+export const opensShown = (language: string): string => OPENS_SHOWN[language] ?? OPENS_SHOWN['en-US']!;
+
+/** Outside-hours words as the editor shows them: the token as its phrase, per language. */
+export const opensToShown = (words: Record<string, string>): Record<string, string> => Object.fromEntries(Object.entries(words).map(([language, text]) => [language, text.replaceAll(OPENS_TOKEN, opensShown(language))]));
+/** Outside-hours words as Adminium keeps them: the phrase as the token, per language. */
+export const shownToOpens = (words: Record<string, string>): Record<string, string> => Object.fromEntries(Object.entries(words).map(([language, text]) => [language, text.replaceAll(opensShown(language), OPENS_TOKEN)]));
+
 /** A new chat's opening hours as the page offers them before any are saved: weekdays 9:00 to 17:30. */
 const SUGGESTED: DayHours = { on: true, from: '09:00', to: '17:30' };
 
@@ -89,7 +113,7 @@ export function draftOf(row: DataRow | undefined): Draft {
     hours: hoursOf(row?.['hours'] ?? null),
     closedUntil: typeof closed === 'string' ? closed.slice(0, 10) : '',
     welcome: wordsOf(row?.['welcome']),
-    outside: wordsOf(row?.['outside_words']),
+    outside: opensToShown(wordsOf(row?.['outside_words'])),
     automatic: yes(row?.['automatic']),
     dailyTokens: Number.isFinite(tokens) && tokens > 0 ? String(Math.trunc(tokens)) : '',
     miloDrafts: yes(row?.['milo_drafts']),
@@ -148,7 +172,7 @@ export function valuesOf(draft: Draft): Record<string, DataValue> {
     hours: hours as unknown as DataValue,
     closed_until: draft.closedUntil === '' ? null : draft.closedUntil,
     welcome: wordsValue(draft.welcome) as unknown as DataValue,
-    outside_words: wordsValue(draft.outside) as unknown as DataValue,
+    outside_words: wordsValue(shownToOpens(draft.outside)) as unknown as DataValue,
     automatic: draft.automatic,
     daily_tokens: tokensValue(draft.dailyTokens) ?? 0,
     milo_drafts: draft.miloDrafts,
