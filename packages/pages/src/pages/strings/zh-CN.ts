@@ -15,7 +15,4 @@ export const funnels: Readonly<Record<string, string>> = {
   "funnels.title": "漏斗"
 };
 
-export const editor: Readonly<Record<string, string>> = {
-  "editor.soon": "编辑器尚未就绪",
-  "editor.title": "页面"
-};
+export { editor } from './editor/zh-CN.ts';

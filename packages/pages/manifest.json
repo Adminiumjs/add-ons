@@ -235,6 +235,33 @@
               "zh-CN": "创建人",
               "zh-TW": "建立者"
             }
+          },
+          {
+            "ref": "picture_upload",
+            "type": "text",
+            "maxLength": 64,
+            "nullable": true,
+            "rules": {
+              "file": {
+                "accept": [
+                  "png",
+                  "jpeg",
+                  "webp",
+                  "gif"
+                ],
+                "maxBytes": 5242880
+              }
+            },
+            "label": {
+              "en-US": "Last picture uploaded",
+              "de-DE": "Zuletzt hochgeladenes Bild",
+              "fr-FR": "Dernière image envoyée",
+              "da-DK": "Senest uploadede billede",
+              "cs-CZ": "Naposledy nahraný obrázek",
+              "ar-EG": "آخر صورة مرفوعة",
+              "zh-CN": "最近上传的图片",
+              "zh-TW": "最近上傳的圖片"
+            }
           }
         ]
       },

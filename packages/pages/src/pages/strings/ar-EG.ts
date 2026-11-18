@@ -15,7 +15,4 @@ export const funnels: Readonly<Record<string, string>> = {
   "funnels.title": "مسارات التحويل"
 };
 
-export const editor: Readonly<Record<string, string>> = {
-  "editor.soon": "المحرر غير متاح بعد",
-  "editor.title": "الصفحة"
-};
+export { editor } from './editor/ar-EG.ts';

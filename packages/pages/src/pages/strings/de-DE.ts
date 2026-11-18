@@ -15,7 +15,4 @@ export const funnels: Readonly<Record<string, string>> = {
   "funnels.title": "Trichter"
 };
 
-export const editor: Readonly<Record<string, string>> = {
-  "editor.soon": "Der Editor ist noch nicht da",
-  "editor.title": "Seite"
-};
+export { editor } from './editor/de-DE.ts';
