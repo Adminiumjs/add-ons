@@ -115,8 +115,10 @@ export function List({ t, tab }: { t: AddOnTranslate; tab: Tab }): ReactNode {
             },
             {
               key: 'open',
-              label: '',
+              // The host's table names every column; the action's own words name this one.
+              label: openWords,
               align: 'end',
+              sortable: false,
               render: (row) => (
                 <Button variant="link" onClick={() => void navigate({ to: pageAt(String(row['id'])) })}>
                   {openWords}

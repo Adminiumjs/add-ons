@@ -498,6 +498,8 @@ const EmptyState = ({ title, body, actions }: Props) => (
 );
 
 function DataTable({ columns, rows, onRowClick, loading, empty, rowKey }: Props) {
+  // As the host's table does: it reads every column through its column rule, and a column with no label throws.
+  for (const column of columns as { key: string; label: unknown }[]) if (typeof column.label !== 'string' || column.label === '') throw new Error(`column "${column.key}" has no label`);
   if (loading === true) return <div role="status">loading</div>;
   const list = (rows ?? []) as Row[];
   if (list.length === 0) return <div data-part="table-empty">{empty}</div>;

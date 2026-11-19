@@ -107,7 +107,7 @@ describe('search, and the list (1a’s list view)', () => {
     await draw();
     fireEvent.click(screen.getByRole('radio', { name: 'List' }));
     const table = screen.getByRole('table');
-    expect(within(table).getAllByRole('columnheader').map((cell) => cell.textContent)).toEqual(['Page', 'Status', 'Address', 'Views this month', '']);
+    expect(within(table).getAllByRole('columnheader').map((cell) => cell.textContent)).toEqual(['Page', 'Status', 'Address', 'Views this month', 'Edit']);
     expect(within(table).getByText('Acoustic booths').closest('tr')?.textContent).toContain('412 views');
     expect(within(table).getByText('Spring open day').closest('tr')?.textContent).toContain('— not live yet');
   });

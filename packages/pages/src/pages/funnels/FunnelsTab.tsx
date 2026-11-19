@@ -90,8 +90,10 @@ export function FunnelsTab({ t, pages, pagesLoading }: { t: AddOnTranslate; page
             { key: 'last', label: t('funnels.col.last', 'Last step'), render: (row) => end(ends.get(String(row['id']))?.last ?? null) },
             {
               key: 'open',
-              label: '',
+              // The host's table names every column; the action's own words name this one.
+              label: t('funnels.open', 'Open'),
               align: 'end',
+              sortable: false,
               render: (row) => (
                 <Button variant="link" onClick={() => void navigate({ to: funnelAt(String(row['id'])) })}>
                   {t('funnels.open', 'Open')}

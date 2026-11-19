@@ -131,6 +131,8 @@ export interface TableColumn {
   key: string;
   label: string;
   align?: 'start' | 'end';
+  /** Whether its header sorts the table; the host's default is yes. */
+  sortable?: boolean;
   render?: (row: DataRow) => ReactNode;
 }
 export const DataTable = part<{ columns: readonly TableColumn[]; rows: readonly DataRow[] | undefined; rowKey?: string; onRowClick?: (row: DataRow) => void; loading?: boolean; empty?: ReactNode; cardsBelow?: number }>(data, 'DataTable');
