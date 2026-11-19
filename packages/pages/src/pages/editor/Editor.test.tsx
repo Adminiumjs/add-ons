@@ -595,12 +595,9 @@ describe('the top bar', () => {
     await waitFor(() => expect(within(document.querySelector('[data-part="modal"]') as HTMLElement).getByRole('radiogroup', { name: 'Language' })).toBeTruthy());
   });
 
-  it('keeps the tip in step with the name, and takes it off when the editor closes', async () => {
+  it('hands the dashboard the whole name for its title', async () => {
     seed('pages', [pageRow({ name: 'A long name for the spring open day at the Leeds showroom' })]);
     await open();
-    const title = within(topbar()).getByRole('heading', { level: 1 });
-    expect(title.getAttribute('title')).toBe('A long name for the spring open day at the Leeds showroom');
-    cleanup();
-    expect(title.hasAttribute('title')).toBe(false);
+    expect(within(topbar()).getByRole('heading', { level: 1 }).getAttribute('title')).toBe('A long name for the spring open day at the Leeds showroom');
   });
 });

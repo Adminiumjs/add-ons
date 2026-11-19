@@ -684,11 +684,11 @@ export function format(message: string, args: Record<string, unknown> = {}, loca
 
 const app = {
   ApiError: Refused,
-  // As the dashboard's top bar draws a page's actions: the title, the page's part beside it, then the actions.
+  // As the dashboard's top bar draws a page's actions: the title (carrying its whole text, as the dashboard's does), the page's part beside it, then the actions.
   PageActions: ({ title, subtitle, titleAdornment, children }: Props) => (
     <header data-part="topbar">
       <div>
-        {title === undefined ? null : <h1>{title}</h1>}
+        {title === undefined ? null : <h1 title={typeof title === 'string' ? title : undefined}>{title}</h1>}
         <span data-part="topbar-title-adornment">{titleAdornment}</span>
       </div>
       {subtitle === undefined ? null : <p>{subtitle}</p>}

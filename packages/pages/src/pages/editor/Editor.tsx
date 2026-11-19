@@ -92,21 +92,6 @@ function useMedia(query: string): boolean {
   return matches;
 }
 
-/**
- * The page's whole name on the dashboard's title, as a tip: the title cuts a
- * long name short with an ellipsis. The dashboard draws the title and puts
- * the page's own part beside it (the state pill), so the title is found from
- * there; with none, nothing is changed. Taken off again when the page closes.
- */
-export function useTitleTip(beside: HTMLElement | null, name: string): void {
-  useEffect(() => {
-    const title = beside?.closest('[data-part="topbar"]')?.querySelector('h1') ?? null;
-    if (title === null) return undefined;
-    title.setAttribute('title', name);
-    return () => title.removeAttribute('title');
-  }, [beside, name]);
-}
-
 /** Wide enough for the inspector beside the canvas (the house's `md`). */
 export const WIDE_QUERY = '(min-width: 768px)';
 /**
@@ -251,8 +236,6 @@ function Workspace({ t, row, refetch, milo }: { t: AddOnTranslate; row: PageRow;
   const taken = useSlugTaken();
   const wide = useMedia(WIDE_QUERY);
   const roomy = useMedia(ROOMY_QUERY);
-  // The page's state pill, drawn by the dashboard beside its title (the title's adornment).
-  const [pill, setPill] = useState<HTMLSpanElement | null>(null);
   const mayEdit = access.ready && access.canUpdate(PAGES_TABLE);
   const mayCreate = access.ready && access.canCreate(PAGES_TABLE);
   const mayGoLive = mayEdit && access.canMove(PAGES_TABLE, 'live', row.state);
@@ -592,7 +575,6 @@ function Workspace({ t, row, refetch, milo }: { t: AddOnTranslate; row: PageRow;
   const primary = row.state === 'draft' ? t('editor.publish', 'Publish') : !mayEdit ? (row.state === 'live' ? t('editor.publish.liveAt', 'Live at') : t('editor.publish.off', 'Off')) : t('editor.update', 'Update');
   const noticeUnset = status?.notice === false;
   const name = copy.name.trim() === '' ? row.name : copy.name;
-  useTitleTip(pill, name);
   const publishButton = (
     <Popover
       open={publishOpen}
@@ -639,7 +621,7 @@ function Workspace({ t, row, refetch, milo }: { t: AddOnTranslate; row: PageRow;
         documentTitle={name}
         backTo={listAt()}
         titleAdornment={
-          <span ref={setPill} className="inline-flex">
+          <span className="inline-flex">
             <StatusPill status={row.state} tone={STATE_TONE[row.state]}>
               {stateName(t, row.state)}
             </StatusPill>
