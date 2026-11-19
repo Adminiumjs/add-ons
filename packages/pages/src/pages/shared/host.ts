@@ -100,7 +100,7 @@ export const Badge = part<{ tone?: Tone; children?: ReactNode }>(ui, 'Badge');
 /** A panel that opens from a button, focus moved into it and back; Escape and a click outside close it. */
 export const Popover = part<{ open?: boolean; onOpenChange?: (open: boolean) => void; children?: ReactNode }>(ui, 'Popover');
 export const PopoverTrigger = part<{ asChild?: boolean; children?: ReactNode }>(ui, 'PopoverTrigger');
-export const PopoverContent = part<{ align?: 'start' | 'center' | 'end'; side?: 'top' | 'bottom' | 'left' | 'right'; 'aria-label'?: string; children?: ReactNode }>(ui, 'PopoverContent');
+export const PopoverContent = part<{ align?: 'start' | 'center' | 'end'; side?: 'top' | 'bottom' | 'left' | 'right'; className?: string; 'aria-label'?: string; children?: ReactNode }>(ui, 'PopoverContent');
 export const Spinner = part<{ label?: string; size?: 'sm' | 'md' | 'lg' }>(ui, 'Spinner');
 export const SegmentedControl = part<{ options: readonly { value: string; label: ReactNode }[]; value: string; onValueChange: (value: string) => void; disabled?: boolean; 'aria-label'?: string }>(ui, 'SegmentedControl');
 export const Tabs = part<{ value: string; onValueChange: (value: string) => void; variant?: 'underline' | 'pill'; className?: string; children?: ReactNode }>(ui, 'Tabs');

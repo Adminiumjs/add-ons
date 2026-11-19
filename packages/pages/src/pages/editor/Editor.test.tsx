@@ -210,6 +210,20 @@ describe('a reader who may not change pages', () => {
     await act(async () => new Promise((resolve) => setTimeout(resolve, SAVE_DELAY_MS * 2)));
     expect(updates()).toEqual([]);
   });
+
+  it('on a live page, is shown where it is live, with no Update and no switch to move', async () => {
+    world.cannot.add('update:pages');
+    world.cannot.add('move:pages:live');
+    world.cannot.add('move:pages:off');
+    seed('pages', [pageRow({ state: 'live', published: JSON.stringify({ v: 1, title: 'x', description: 'd', blocks: [{ id: 'h', kind: 'heading', text: 'Open day' }] }) })]);
+    await open();
+    expect(screen.queryByRole('button', { name: 'Update' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Live at' }));
+    const panel = screen.getByRole('dialog', { name: 'Live at' });
+    expect(within(panel).getByText('https://crm.example.test/x/pages/open-day')).toBeTruthy();
+    expect(within(panel).queryByRole('button', { name: 'Publish the changes' })).toBeNull();
+    expect((within(panel).getByRole('switch', { name: 'Show this page' }) as HTMLButtonElement).disabled).toBe(true);
+  });
 });
 
 describe('publishing', () => {

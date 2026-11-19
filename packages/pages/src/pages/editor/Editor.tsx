@@ -560,7 +560,8 @@ function Workspace({ t, row, refetch, milo }: { t: AddOnTranslate; row: PageRow;
     </Tabs>
   );
 
-  const primary = row.state === 'draft' ? t('editor.publish', 'Publish') : t('editor.update', 'Update');
+  // A reader is shown where the page is live (or that it is off), never a word that changes it.
+  const primary = row.state === 'draft' ? t('editor.publish', 'Publish') : !mayEdit ? (row.state === 'live' ? t('editor.publish.liveAt', 'Live at') : t('editor.publish.off', 'Off')) : t('editor.update', 'Update');
   const noticeUnset = status?.notice === false;
   const name = copy.name.trim() === '' ? row.name : copy.name;
   const publishButton = (
@@ -575,11 +576,12 @@ function Workspace({ t, row, refetch, milo }: { t: AddOnTranslate; row: PageRow;
       }}
     >
       <PopoverTrigger asChild>
-        <Button variant="primary" iconLeft={<Icon name="globe" />} disabled={row.state === 'draft' && noticeUnset}>
+        <Button variant={mayEdit ? 'primary' : 'secondary'} iconLeft={<Icon name="globe" />} disabled={row.state === 'draft' && noticeUnset}>
           {primary}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" aria-label={primary}>
+      {/* The host's panel is 280 px wide; the publish panel sets its own width (`[data-lpe-pop]`, at most 400 px). */}
+      <PopoverContent align="end" className="w-auto" aria-label={primary}>
         <PublishPanel
           t={t}
           state={row.state}
