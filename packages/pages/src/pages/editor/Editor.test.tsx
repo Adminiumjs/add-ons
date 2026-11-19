@@ -89,12 +89,20 @@ const canvasRules = (): string => document.querySelector('[data-lpe-frame-wrap] 
 const miloChips = (): number => (canvasRules().match(/::after\{content:"Milo · check";\}/g) ?? []).length;
 const wideButton = (name: string): HTMLElement => screen.getAllByRole('button', { name })[0] as HTMLElement;
 
+/** The window's width, as the editor's media queries read it. */
+const viewport = (width: number): void => (window as unknown as { happyDOM: { setViewport: (size: { width: number; height: number }) => void } }).happyDOM.setViewport({ width, height: 900 });
+
 beforeEach(() => {
   resetWorld();
   resetEditors();
   serve();
+  // A screen with room for every action of the top bar; the top bar's own tests narrow it.
+  viewport(1800);
 });
-afterEach(() => cleanup());
+afterEach(() => {
+  cleanup();
+  viewport(1024);
+});
 
 describe('the canvas', () => {
   it('draws the page with the shared renderer, one "Edit" button per section and one main heading', async () => {
@@ -555,5 +563,44 @@ describe('a new page', () => {
     const made = world.calls.find((call) => call.kind === 'create')?.values as Record<string, unknown>;
     expect(made).toMatchObject({ name: 'New page', slug: 'new-page-2', language: 'en-US' });
     expect(world.navigated[0]).toMatchObject({ search: { milo: '1' }, replace: true });
+  });
+});
+
+describe('the top bar', () => {
+  const topbar = (): HTMLElement => document.querySelector('[data-part="topbar"]') as HTMLElement;
+  const MIDDLE = ['Undo', 'Redo', 'Draft with Milo', 'Preview'];
+  /** The top bar's own buttons, not the items of its "More" menu. */
+  const onBar = (name: string): HTMLElement[] => within(topbar()).queryAllByRole('button', { name }).filter((one) => one.closest('[role="menu"]') === null);
+
+  it('with room for everything, shows each action beside the page’s name, and the name whole as a tip', async () => {
+    seed('pages', [pageRow()]);
+    await open();
+    for (const name of MIDDLE) expect(onBar(name), name).toHaveLength(1);
+    expect(within(topbar()).getByRole('button', { name: 'Language: English' })).toBeTruthy();
+    expect(within(topbar()).queryByRole('menu', { name: 'More' })).toBeNull();
+    expect(within(topbar()).getByRole('heading', { level: 1 }).getAttribute('title')).toBe('Showroom open day');
+  });
+
+  it('at 1440 px, folds the middle actions into More so the name keeps its room; the save state and Publish stay', async () => {
+    viewport(1440);
+    seed('pages', [pageRow()]);
+    await open();
+    for (const name of MIDDLE) expect(onBar(name), name).toEqual([]);
+    const more = within(topbar()).getByRole('menu', { name: 'More' });
+    for (const name of ['Language: English', 'Undo', 'Redo', 'Draft with Milo', 'Preview', 'Make a copy']) expect(within(more).getByText(name), name).toBeTruthy();
+    expect(within(topbar()).getByRole('button', { name: 'Publish' })).toBeTruthy();
+    expect(within(topbar()).getByRole('heading', { level: 1, name: 'Showroom open day' }).getAttribute('title')).toBe('Showroom open day');
+    // The language is still chosen from More: its list opens as a dialog.
+    fireEvent.click(within(more).getByText('Language: English'));
+    await waitFor(() => expect(within(document.querySelector('[data-part="modal"]') as HTMLElement).getByRole('radiogroup', { name: 'Language' })).toBeTruthy());
+  });
+
+  it('keeps the tip in step with the name, and takes it off when the editor closes', async () => {
+    seed('pages', [pageRow({ name: 'A long name for the spring open day at the Leeds showroom' })]);
+    await open();
+    const title = within(topbar()).getByRole('heading', { level: 1 });
+    expect(title.getAttribute('title')).toBe('A long name for the spring open day at the Leeds showroom');
+    cleanup();
+    expect(title.hasAttribute('title')).toBe(false);
   });
 });

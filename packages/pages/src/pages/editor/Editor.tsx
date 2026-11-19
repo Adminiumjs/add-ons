@@ -78,19 +78,44 @@ import { useEditing, type Copy, type PageRow } from './store.ts';
 import { useEditorStyles } from './styles.ts';
 import { refusalWords } from './words.ts';
 
-/** Whether the screen is wide enough for the inspector beside the canvas (the house's `md`). */
-function useWide(): boolean {
-  const query = '(min-width: 768px)';
-  const [wide, setWide] = useState(() => (typeof window === 'undefined' || typeof window.matchMedia !== 'function' ? true : window.matchMedia(query).matches));
+/** Whether the screen matches a media query, kept up to date; true where nothing can say. */
+function useMedia(query: string): boolean {
+  const [matches, setMatches] = useState(() => (typeof window === 'undefined' || typeof window.matchMedia !== 'function' ? true : window.matchMedia(query).matches));
   useEffect(() => {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
     const list = window.matchMedia(query);
-    const heard = (): void => setWide(list.matches);
+    const heard = (): void => setMatches(list.matches);
+    heard();
     list.addEventListener('change', heard);
     return () => list.removeEventListener('change', heard);
-  }, []);
-  return wide;
+  }, [query]);
+  return matches;
 }
+
+/**
+ * The page's whole name on the dashboard's title, as a tip: the title cuts a
+ * long name short with an ellipsis. The dashboard draws the title and puts
+ * the page's own part beside it (the state pill), so the title is found from
+ * there; with none, nothing is changed. Taken off again when the page closes.
+ */
+export function useTitleTip(beside: HTMLElement | null, name: string): void {
+  useEffect(() => {
+    const title = beside?.closest('[data-part="topbar"]')?.querySelector('h1') ?? null;
+    if (title === null) return undefined;
+    title.setAttribute('title', name);
+    return () => title.removeAttribute('title');
+  }, [beside, name]);
+}
+
+/** Wide enough for the inspector beside the canvas (the house's `md`). */
+export const WIDE_QUERY = '(min-width: 768px)';
+/**
+ * Wide enough for every action of the top bar beside the page's name, with
+ * the sidebar open: the language, Undo, Redo, Draft with Milo and Preview
+ * take some 520 px, and at 1440 px they left the name no room at all. Below
+ * this they fold into "More", as on a phone; the save state and Publish stay.
+ */
+export const ROOMY_QUERY = '(min-width: 1700px)';
 
 /** A section's new id: short, and none the page has. */
 const makeId = (): string => `b${Math.random().toString(36).slice(2, 10)}`;
@@ -224,7 +249,10 @@ function Workspace({ t, row, refetch, milo }: { t: AddOnTranslate; row: PageRow;
   const navigate = useNavigate();
   const toast = useToast();
   const taken = useSlugTaken();
-  const wide = useWide();
+  const wide = useMedia(WIDE_QUERY);
+  const roomy = useMedia(ROOMY_QUERY);
+  // The page's state pill, drawn by the dashboard beside its title (the title's adornment).
+  const [pill, setPill] = useState<HTMLSpanElement | null>(null);
   const mayEdit = access.ready && access.canUpdate(PAGES_TABLE);
   const mayCreate = access.ready && access.canCreate(PAGES_TABLE);
   const mayGoLive = mayEdit && access.canMove(PAGES_TABLE, 'live', row.state);
@@ -564,6 +592,7 @@ function Workspace({ t, row, refetch, milo }: { t: AddOnTranslate; row: PageRow;
   const primary = row.state === 'draft' ? t('editor.publish', 'Publish') : !mayEdit ? (row.state === 'live' ? t('editor.publish.liveAt', 'Live at') : t('editor.publish.off', 'Off')) : t('editor.update', 'Update');
   const noticeUnset = status?.notice === false;
   const name = copy.name.trim() === '' ? row.name : copy.name;
+  useTitleTip(pill, name);
   const publishButton = (
     <Popover
       open={publishOpen}
@@ -610,91 +639,99 @@ function Workspace({ t, row, refetch, milo }: { t: AddOnTranslate; row: PageRow;
         documentTitle={name}
         backTo={listAt()}
         titleAdornment={
-          <StatusPill status={row.state} tone={STATE_TONE[row.state]}>
-            {stateName(t, row.state)}
-          </StatusPill>
+          <span ref={setPill} className="inline-flex">
+            <StatusPill status={row.state} tone={STATE_TONE[row.state]}>
+              {stateName(t, row.state)}
+            </StatusPill>
+          </span>
         }
       >
+        {roomy ? (
+          <span className="flex items-center gap-2">
+            <Popover open={languageOpen} onOpenChange={setLanguageOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="secondary" iconLeft={<Icon name="languages" />} aria-label={t('editor.lang.button', 'Language: {language}', { language: languageName(language) })}>
+                  <span lang={language}>{languageName(language)}</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="start" aria-label={t('editor.lang.title', 'Language')}>
+                <LanguageList
+                  t={t}
+                  current={language}
+                  mayEdit={mayEdit}
+                  onPick={(tag) => {
+                    if (tag !== language) editing.change((current) => ({ ...current, language: tag }));
+                    setLanguageOpen(false);
+                  }}
+                />
+              </PopoverContent>
+            </Popover>
+            {mayEdit ? (
+              <>
+                <IconButton label={t('editor.undo', 'Undo')} variant="bordered" disabled={!editing.canUndo} onClick={() => {
+                  editing.undo();
+                  toast(t('editor.toast.undone', 'Undone.'));
+                }}>
+                  <span className="rtl:-scale-x-100">
+                    <Icon name="undo-2" />
+                  </span>
+                </IconButton>
+                <IconButton label={t('editor.redo', 'Redo')} variant="bordered" disabled={!editing.canRedo} onClick={() => {
+                  editing.redo();
+                  toast(t('editor.toast.redone', 'Done again.'));
+                }}>
+                  <span className="rtl:-scale-x-100">
+                    <Icon name="redo-2" />
+                  </span>
+                </IconButton>
+                <Button variant="secondary" iconLeft={<Icon name="sparkles" />} onClick={() => setMiloOpen(true)}>
+                  {t('editor.milo.button', 'Draft with Milo')}
+                </Button>
+              </>
+            ) : null}
+            <Button variant={preview ? 'secondary' : 'ghost'} iconLeft={<Icon name={preview ? 'pencil' : 'eye'} />} onClick={() => setPreview(!preview)}>
+              {preview ? t('editor.previewClose', 'Close preview') : t('editor.preview', 'Preview')}
+            </Button>
+          </span>
+        ) : null}
         <span className="hidden items-center gap-2 md:flex">
-          <Popover open={languageOpen} onOpenChange={setLanguageOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="secondary" iconLeft={<Icon name="languages" />} aria-label={t('editor.lang.button', 'Language: {language}', { language: languageName(language) })}>
-                <span lang={language}>{languageName(language)}</span>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="start" aria-label={t('editor.lang.title', 'Language')}>
-              <LanguageList
-                t={t}
-                current={language}
-                mayEdit={mayEdit}
-                onPick={(tag) => {
-                  if (tag !== language) editing.change((current) => ({ ...current, language: tag }));
-                  setLanguageOpen(false);
-                }}
-              />
-            </PopoverContent>
-          </Popover>
           <AutosaveIndicator status={editing.save} savingLabel={t('editor.saving', 'Saving')} savedLabel={t('editor.saved', 'All changes saved')} errorLabel={t('editor.saveFailed', 'Not saved')} />
           {editing.save === 'error' ? (
             <Button variant="ghost" size="sm" onClick={() => void editing.flush()}>
               {t('editor.retry', 'Try again')}
             </Button>
           ) : null}
-          {mayEdit ? (
-            <>
-              <IconButton label={t('editor.undo', 'Undo')} variant="bordered" disabled={!editing.canUndo} onClick={() => {
-                editing.undo();
-                toast(t('editor.toast.undone', 'Undone.'));
-              }}>
-                <span className="rtl:-scale-x-100">
-                  <Icon name="undo-2" />
-                </span>
-              </IconButton>
-              <IconButton label={t('editor.redo', 'Redo')} variant="bordered" disabled={!editing.canRedo} onClick={() => {
-                editing.redo();
-                toast(t('editor.toast.redone', 'Done again.'));
-              }}>
-                <span className="rtl:-scale-x-100">
-                  <Icon name="redo-2" />
-                </span>
-              </IconButton>
-              <Button variant="secondary" iconLeft={<Icon name="sparkles" />} onClick={() => setMiloOpen(true)}>
-                {t('editor.milo.button', 'Draft with Milo')}
-              </Button>
-            </>
-          ) : null}
-          <Button variant={preview ? 'secondary' : 'ghost'} iconLeft={<Icon name={preview ? 'pencil' : 'eye'} />} onClick={() => setPreview(!preview)}>
-            {preview ? t('editor.previewClose', 'Close preview') : t('editor.preview', 'Preview')}
-          </Button>
         </span>
-        <span className="md:hidden">
-          <Menu label={t('editor.more', 'More')} align="end">
-            <MenuItem icon={<Icon name="languages" />} onSelect={() => setLanguageOpen(true)}>
-              {t('editor.lang.button', 'Language: {language}', { language: languageName(language) })}
-            </MenuItem>
-            {mayEdit ? (
-              <>
-                <MenuItem icon={<Icon name="undo-2" />} disabled={!editing.canUndo} onSelect={editing.undo}>
-                  {t('editor.undo', 'Undo')}
-                </MenuItem>
-                <MenuItem icon={<Icon name="redo-2" />} disabled={!editing.canRedo} onSelect={editing.redo}>
-                  {t('editor.redo', 'Redo')}
-                </MenuItem>
-                <MenuItem icon={<Icon name="sparkles" />} onSelect={() => setMiloOpen(true)}>
-                  {t('editor.milo.button', 'Draft with Milo')}
-                </MenuItem>
-              </>
-            ) : null}
-            <MenuItem icon={<Icon name="eye" />} onSelect={() => setPreview(!preview)}>
-              {preview ? t('editor.previewClose', 'Close preview') : t('editor.preview', 'Preview')}
-            </MenuItem>
-            {mayCreate ? (
-              <MenuItem icon={<Icon name="copy-plus" />} onSelect={() => void makeCopy()}>
-                {t('editor.copy.make', 'Make a copy')}
+        {roomy ? null : (
+          <span>
+            <Menu label={t('editor.more', 'More')} align="end">
+              <MenuItem icon={<Icon name="languages" />} onSelect={() => setLanguageOpen(true)}>
+                {t('editor.lang.button', 'Language: {language}', { language: languageName(language) })}
               </MenuItem>
-            ) : null}
-          </Menu>
-        </span>
+              {mayEdit ? (
+                <>
+                  <MenuItem icon={<Icon name="undo-2" />} disabled={!editing.canUndo} onSelect={editing.undo}>
+                    {t('editor.undo', 'Undo')}
+                  </MenuItem>
+                  <MenuItem icon={<Icon name="redo-2" />} disabled={!editing.canRedo} onSelect={editing.redo}>
+                    {t('editor.redo', 'Redo')}
+                  </MenuItem>
+                  <MenuItem icon={<Icon name="sparkles" />} onSelect={() => setMiloOpen(true)}>
+                    {t('editor.milo.button', 'Draft with Milo')}
+                  </MenuItem>
+                </>
+              ) : null}
+              <MenuItem icon={<Icon name="eye" />} onSelect={() => setPreview(!preview)}>
+                {preview ? t('editor.previewClose', 'Close preview') : t('editor.preview', 'Preview')}
+              </MenuItem>
+              {mayCreate ? (
+                <MenuItem icon={<Icon name="copy-plus" />} onSelect={() => void makeCopy()}>
+                  {t('editor.copy.make', 'Make a copy')}
+                </MenuItem>
+              ) : null}
+            </Menu>
+          </span>
+        )}
         {mayEdit || row.state !== 'draft' ? publishButton : null}
       </PageActions>
 
@@ -786,7 +823,7 @@ function Workspace({ t, row, refetch, milo }: { t: AddOnTranslate; row: PageRow;
         <SheetBody>{sheet === 'sections' ? outline(true) : design()}</SheetBody>
       </Sheet>
 
-      {!wide ? (
+      {!roomy ? (
         <Dialog open={languageOpen} onOpenChange={setLanguageOpen} size="sm">
           <DialogHeader title={t('editor.lang.title', 'Language')} closeLabel={t('editor.close', 'Close')} />
           <DialogBody>

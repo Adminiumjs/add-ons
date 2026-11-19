@@ -648,8 +648,13 @@ const Menu = ({ label, children }: Props) => (
 
 const registered = new Map<string, string>();
 
-/** `{name}` and `{name, plural, one {…} other {…}}` — what the screens' sentences use. */
-export function format(message: string, args: Record<string, unknown> = {}): string {
+/**
+ * `{name}` and `{name, plural, one {…} few {…} other {…}}`: what the screens'
+ * sentences use. A plural picks its form by the language's own rules
+ * (`Intl.PluralRules`), as the host's message format does: Czech has four
+ * forms, Arabic six.
+ */
+export function format(message: string, args: Record<string, unknown> = {}, locale: string = world.locale): string {
   let out = '';
   for (let i = 0; i < message.length; i += 1) {
     if (message[i] !== '{') {
@@ -668,8 +673,9 @@ export function format(message: string, args: Record<string, unknown> = {}): str
     else {
       const count = Number(args[body.slice(0, comma).trim()]);
       const branches = [...body.matchAll(/(=\d+|\w+)\s*\{((?:[^{}]|\{[^{}]*\})*)\}/g)].map((match) => [match[1], match[2]] as const);
-      const pick = branches.find(([name]) => name === `=${String(count)}`) ?? (count === 1 ? branches.find(([name]) => name === 'one') : undefined) ?? branches.find(([name]) => name === 'other');
-      out += format((pick?.[1] ?? '').replaceAll('#', String(count)), args);
+      const category = new Intl.PluralRules(locale).select(count);
+      const pick = branches.find(([name]) => name === `=${String(count)}`) ?? branches.find(([name]) => name === category) ?? branches.find(([name]) => name === 'other');
+      out += format((pick?.[1] ?? '').replaceAll('#', String(count)), args, locale);
     }
     i = j;
   }
@@ -678,13 +684,16 @@ export function format(message: string, args: Record<string, unknown> = {}): str
 
 const app = {
   ApiError: Refused,
+  // As the dashboard's top bar draws a page's actions: the title, the page's part beside it, then the actions.
   PageActions: ({ title, subtitle, titleAdornment, children }: Props) => (
-    <div data-part="page-actions">
-      {title === undefined ? null : <h1>{title}</h1>}
-      {titleAdornment}
+    <header data-part="topbar">
+      <div>
+        {title === undefined ? null : <h1>{title}</h1>}
+        <span data-part="topbar-title-adornment">{titleAdornment}</span>
+      </div>
       {subtitle === undefined ? null : <p>{subtitle}</p>}
       {children}
-    </div>
+    </header>
   ),
   PageSurface: ({ children, testId }: Props) => <div data-testid={testId ?? 'page-surface'}>{children}</div>,
   api: Object.fromEntries(
