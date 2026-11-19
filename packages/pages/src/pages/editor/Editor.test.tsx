@@ -468,6 +468,8 @@ describe('the page’s settings', () => {
     seed('pages', [pageRow()]);
     await open();
     fireEvent.click(screen.getByRole('button', { name: 'Page settings' }));
+    // Each field is named by its own label, as the host's field names it.
+    for (const label of ['Name', 'Title', 'Description']) expect(screen.getByLabelText(label), label).toBeTruthy();
     const address = screen.getByLabelText('Address') as HTMLInputElement;
     fireEvent.change(address, { target: { value: 'Open Day!' } });
     expect(address.value).toBe('open-day!');
