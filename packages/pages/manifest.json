@@ -317,6 +317,21 @@
               "zh-CN": "关联规则",
               "zh-TW": "關聯規則"
             }
+          },
+          {
+            "ref": "updated_at",
+            "type": "timestamptz",
+            "role": "updated_at",
+            "label": {
+              "en-US": "Updated",
+              "de-DE": "Geändert",
+              "fr-FR": "Modifié",
+              "da-DK": "Ændret",
+              "cs-CZ": "Upraveno",
+              "ar-EG": "آخر تعديل",
+              "zh-CN": "更新时间",
+              "zh-TW": "更新時間"
+            }
           }
         ]
       }

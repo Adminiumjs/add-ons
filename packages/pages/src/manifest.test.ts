@@ -123,6 +123,10 @@ describe('the landing tables', () => {
     }
   });
 
+  it('stamp when a page and a funnel last changed, as Adminium writes it', () => {
+    for (const table of ['pages', 'funnels']) expect(columnOf(table, 'updated_at'), table).toMatchObject({ type: 'timestamptz', role: 'updated_at' });
+  });
+
   it('keep a page’s address unique, and a page starts as a draft that is published, switched off and back on', () => {
     expect(columnOf('pages', 'slug')).toMatchObject({ unique: true, maxLength: 80 });
     expect(columnOf('pages', 'state').default).toBe('draft');
