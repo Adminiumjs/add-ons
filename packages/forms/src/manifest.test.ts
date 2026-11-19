@@ -64,9 +64,9 @@ describe('the manifest', () => {
     expect(manifest.addOn.attaches).toEqual([{ app: '*', range: '*' }]);
     expect(manifest.addOn.connect).toEqual({ kind: 'none' });
     expect(manifest.categories).toEqual(['marketing']);
-    // 0.3.42: the release that judges a survey's consent on the person, not the invitation row
-    // (0.3.41's rules could already send one).
-    expect(manifest.compatibility.minAdminiumVersion).toBe('0.3.42');
+    // 0.3.65: the release whose forms vocabulary takes the `landing` ending the builder offers; an older one
+    // refuses such a form whole (0.3.42 was the first to judge a survey's consent on the person).
+    expect(manifest.compatibility.minAdminiumVersion).toBe('0.3.65');
     expect(manifest.requiredSchema.prefixed).toBe(true);
     // No code of its own runs on a server: Adminium draws, checks and keeps every form.
     expect((manifest.addOn as Record<string, unknown>)['provides']).toBeUndefined();

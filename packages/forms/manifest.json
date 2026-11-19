@@ -18,7 +18,7 @@
     "marketing"
   ],
   "compatibility": {
-    "minAdminiumVersion": "0.3.42",
+    "minAdminiumVersion": "0.3.65",
     "requires": []
   },
   "capabilities": [],
