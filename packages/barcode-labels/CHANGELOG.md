@@ -1,5 +1,7 @@
 # @adminium/add-on-barcode-labels
 
+## 1.0.31
+
 ## 1.0.30
 
 ## 1.0.29

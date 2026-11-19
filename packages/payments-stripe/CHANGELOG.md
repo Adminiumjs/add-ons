@@ -1,5 +1,7 @@
 # @adminium/add-on-payments-stripe
 
+## 1.0.31
+
 ## 1.0.30
 
 ## 1.0.29

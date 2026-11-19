@@ -1,5 +1,7 @@
 # @adminium/add-on-live-chat
 
+## 1.0.31
+
 ## 1.0.30
 
 ### Patch Changes

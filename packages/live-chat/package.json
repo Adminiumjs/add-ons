@@ -1,6 +1,6 @@
 {
   "name": "@adminium/add-on-live-chat",
-  "version": "1.0.30",
+  "version": "1.0.31",
   "type": "module",
   "description": "Live chat: a chat window on your website, answered by your team in Adminium, with automatic answers you write if you want them.",
   "license": "AGPL-3.0-only",
