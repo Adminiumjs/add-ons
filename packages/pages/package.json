@@ -1,0 +1,35 @@
+{
+  "name": "@adminium/add-on-pages",
+  "version": "1.0.30",
+  "type": "module",
+  "description": "Landing pages: pages for offers and events, each at its own address and drawn by Adminium, with funnels that count each step's views.",
+  "license": "AGPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Adminiumjs/add-ons.git",
+    "directory": "packages/pages"
+  },
+  "homepage": "https://adminium.dev/marketplace",
+  "bugs": "https://github.com/Adminiumjs/add-ons/issues",
+  "files": [
+    "dist",
+    "seeds/pages.sample.json",
+    "manifest.json",
+    "TRADEMARKS.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b --force",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@adminium/add-on-contracts": "npm:@adminiumjs/add-on-contracts@0.3.65",
+    "@adminium/add-on-host": "*",
+    "@adminiumjs/manifest": "0.3.65"
+  }
+}
