@@ -1,0 +1,1335 @@
+{
+  "kind": "add-on",
+  "manifestVersion": 1,
+  "key": "lead-finder",
+  "name": "Lead finder",
+  "version": "1.0.31",
+  "publisher": {
+    "id": "adminium",
+    "name": "Adminium",
+    "url": "https://adminium.dev"
+  },
+  "license": "AGPL-3.0-only",
+  "description": {
+    "key": "addon.lead-finder.description",
+    "fallback": "Find companies by what they do and where, fill in a company’s details from its website and public registers, and find the people who work there."
+  },
+  "categories": [
+    "marketing"
+  ],
+  "compatibility": {
+    "minAdminiumVersion": "0.3.66",
+    "requires": [
+      "outbound-http"
+    ]
+  },
+  "capabilities": [
+    "outbound-http"
+  ],
+  "settings": [
+    {
+      "key": "companies_house_key",
+      "type": "string",
+      "secret": true,
+      "label": {
+        "key": "addon.lead-finder.setting.companiesHouseKey",
+        "fallback": "Companies House key"
+      },
+      "help": {
+        "key": "addon.lead-finder.setting.companiesHouseKeyHelp",
+        "fallback": "A REST API key from your Companies House developer account."
+      }
+    },
+    {
+      "key": "opencorporates_key",
+      "type": "string",
+      "secret": true,
+      "label": {
+        "key": "addon.lead-finder.setting.opencorporatesKey",
+        "fallback": "OpenCorporates key"
+      },
+      "help": {
+        "key": "addon.lead-finder.setting.opencorporatesKeyHelp",
+        "fallback": "A business needs a paid OpenCorporates key. Details found with it may need finding again if the subscription ends."
+      }
+    },
+    {
+      "key": "hunter_key",
+      "type": "string",
+      "secret": true,
+      "label": {
+        "key": "addon.lead-finder.setting.hunterKey",
+        "fallback": "Hunter key"
+      },
+      "help": {
+        "key": "addon.lead-finder.setting.hunterKeyHelp",
+        "fallback": "Your Hunter API key. Each look-up counts against your Hunter account."
+      }
+    }
+  ],
+  "requiredSchema": {
+    "prefixed": true,
+    "tables": [
+      {
+        "ref": "found_people",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "person_table",
+            "type": "text",
+            "maxLength": 64,
+            "rules": {
+              "tableRef": true
+            },
+            "label": {
+              "en-US": "Kept in",
+              "de-DE": "Gespeichert in",
+              "fr-FR": "Conservé dans",
+              "da-DK": "Gemt i",
+              "cs-CZ": "Uloženo v",
+              "ar-EG": "محفوظ في",
+              "zh-CN": "保存在",
+              "zh-TW": "保存在"
+            }
+          },
+          {
+            "ref": "person_key",
+            "type": "text",
+            "maxLength": 200,
+            "label": {
+              "en-US": "Person",
+              "de-DE": "Person",
+              "fr-FR": "Personne",
+              "da-DK": "Person",
+              "cs-CZ": "Osoba",
+              "ar-EG": "الشخص",
+              "zh-CN": "人员",
+              "zh-TW": "人員"
+            }
+          },
+          {
+            "ref": "company_table",
+            "type": "text",
+            "maxLength": 64,
+            "nullable": true,
+            "rules": {
+              "tableRef": true
+            },
+            "label": {
+              "en-US": "Company table",
+              "de-DE": "Firmentabelle",
+              "fr-FR": "Table des entreprises",
+              "da-DK": "Virksomhedstabel",
+              "cs-CZ": "Tabulka firem",
+              "ar-EG": "جدول الشركات",
+              "zh-CN": "公司表",
+              "zh-TW": "公司表"
+            }
+          },
+          {
+            "ref": "company_key",
+            "type": "text",
+            "maxLength": 200,
+            "nullable": true,
+            "label": {
+              "en-US": "Company",
+              "de-DE": "Firma",
+              "fr-FR": "Entreprise",
+              "da-DK": "Virksomhed",
+              "cs-CZ": "Firma",
+              "ar-EG": "الشركة",
+              "zh-CN": "公司",
+              "zh-TW": "公司"
+            }
+          },
+          {
+            "ref": "source",
+            "type": "text",
+            "maxLength": 32,
+            "label": {
+              "en-US": "Source",
+              "de-DE": "Quelle",
+              "fr-FR": "Source",
+              "da-DK": "Kilde",
+              "cs-CZ": "Zdroj",
+              "ar-EG": "المصدر",
+              "zh-CN": "来源",
+              "zh-TW": "來源"
+            }
+          },
+          {
+            "ref": "found_at",
+            "type": "timestamptz",
+            "label": {
+              "en-US": "Found",
+              "de-DE": "Gefunden",
+              "fr-FR": "Trouvé le",
+              "da-DK": "Fundet",
+              "cs-CZ": "Nalezeno",
+              "ar-EG": "تاريخ العثور",
+              "zh-CN": "发现时间",
+              "zh-TW": "發現時間"
+            }
+          },
+          {
+            "ref": "purpose",
+            "type": "text",
+            "maxLength": 500,
+            "label": {
+              "en-US": "Why we keep them",
+              "de-DE": "Warum wir sie behalten",
+              "fr-FR": "Pourquoi nous les conservons",
+              "da-DK": "Hvorfor vi gemmer dem",
+              "cs-CZ": "Důvod uchování",
+              "ar-EG": "سبب الاحتفاظ بها",
+              "zh-CN": "保留原因",
+              "zh-TW": "保留原因"
+            }
+          },
+          {
+            "ref": "tell_by",
+            "type": "date",
+            "label": {
+              "en-US": "Tell by",
+              "de-DE": "Informieren bis",
+              "fr-FR": "À informer avant le",
+              "da-DK": "Underret senest",
+              "cs-CZ": "Informovat do",
+              "ar-EG": "الإبلاغ قبل",
+              "zh-CN": "告知截止日期",
+              "zh-TW": "告知截止日期"
+            }
+          },
+          {
+            "ref": "told_at",
+            "type": "timestamptz",
+            "nullable": true,
+            "label": {
+              "en-US": "Told on",
+              "de-DE": "Informiert am",
+              "fr-FR": "Informé le",
+              "da-DK": "Underrettet den",
+              "cs-CZ": "Informováno dne",
+              "ar-EG": "تاريخ الإبلاغ",
+              "zh-CN": "告知时间",
+              "zh-TW": "告知時間"
+            }
+          },
+          {
+            "ref": "outbox_id",
+            "type": "text",
+            "maxLength": 64,
+            "nullable": true,
+            "label": {
+              "en-US": "Mail",
+              "de-DE": "E-Mail",
+              "fr-FR": "E-mail",
+              "da-DK": "E-mail",
+              "cs-CZ": "E-mail",
+              "ar-EG": "الرسالة",
+              "zh-CN": "邮件",
+              "zh-TW": "郵件"
+            }
+          },
+          {
+            "ref": "state",
+            "type": "enum",
+            "enum": [
+              "waiting",
+              "told",
+              "failed",
+              "objected"
+            ],
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "waiting": {
+                    "en-US": "Waiting to be told",
+                    "de-DE": "Wartet auf Benachrichtigung",
+                    "fr-FR": "En attente d’information",
+                    "da-DK": "Venter på underretning",
+                    "cs-CZ": "Čeká na informování",
+                    "ar-EG": "بانتظار الإبلاغ",
+                    "zh-CN": "等待告知",
+                    "zh-TW": "等待告知"
+                  },
+                  "told": {
+                    "en-US": "Told",
+                    "de-DE": "Informiert",
+                    "fr-FR": "Informé",
+                    "da-DK": "Underrettet",
+                    "cs-CZ": "Informováno",
+                    "ar-EG": "تم الإبلاغ",
+                    "zh-CN": "已告知",
+                    "zh-TW": "已告知"
+                  },
+                  "failed": {
+                    "en-US": "Couldn’t tell",
+                    "de-DE": "Nicht zugestellt",
+                    "fr-FR": "Information impossible",
+                    "da-DK": "Kunne ikke underrettes",
+                    "cs-CZ": "Nelze informovat",
+                    "ar-EG": "تعذّر الإبلاغ",
+                    "zh-CN": "无法告知",
+                    "zh-TW": "無法告知"
+                  },
+                  "objected": {
+                    "en-US": "Objected",
+                    "de-DE": "Widersprochen",
+                    "fr-FR": "Opposé",
+                    "da-DK": "Gjort indsigelse",
+                    "cs-CZ": "Vznesena námitka",
+                    "ar-EG": "اعترض",
+                    "zh-CN": "已反对",
+                    "zh-TW": "已反對"
+                  }
+                }
+              }
+            },
+            "label": {
+              "en-US": "Telling them",
+              "de-DE": "Benachrichtigung",
+              "fr-FR": "Information",
+              "da-DK": "Underretning",
+              "cs-CZ": "Informování",
+              "ar-EG": "الإبلاغ",
+              "zh-CN": "告知状态",
+              "zh-TW": "告知狀態"
+            }
+          },
+          {
+            "ref": "source_pages",
+            "type": "text",
+            "nullable": true,
+            "rules": {
+              "personal": true
+            },
+            "label": {
+              "en-US": "Seen on",
+              "de-DE": "Gesehen auf",
+              "fr-FR": "Vu sur",
+              "da-DK": "Set på",
+              "cs-CZ": "Viděno na",
+              "ar-EG": "شوهد في",
+              "zh-CN": "出现页面",
+              "zh-TW": "出現頁面"
+            }
+          },
+          {
+            "ref": "email",
+            "type": "text",
+            "maxLength": 320,
+            "nullable": true,
+            "rules": {
+              "personal": true
+            },
+            "label": {
+              "en-US": "E-mail",
+              "de-DE": "E-Mail",
+              "fr-FR": "E-mail",
+              "da-DK": "E-mail",
+              "cs-CZ": "E-mail",
+              "ar-EG": "البريد الإلكتروني",
+              "zh-CN": "电子邮件",
+              "zh-TW": "電子郵件"
+            }
+          }
+        ]
+      },
+      {
+        "ref": "field_sources",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "table_ref",
+            "type": "text",
+            "maxLength": 64,
+            "rules": {
+              "tableRef": true
+            },
+            "label": {
+              "en-US": "Table",
+              "de-DE": "Tabelle",
+              "fr-FR": "Table",
+              "da-DK": "Tabel",
+              "cs-CZ": "Tabulka",
+              "ar-EG": "الجدول",
+              "zh-CN": "表",
+              "zh-TW": "表"
+            }
+          },
+          {
+            "ref": "row_key",
+            "type": "text",
+            "maxLength": 200,
+            "label": {
+              "en-US": "Record",
+              "de-DE": "Datensatz",
+              "fr-FR": "Fiche",
+              "da-DK": "Post",
+              "cs-CZ": "Záznam",
+              "ar-EG": "السجل",
+              "zh-CN": "记录",
+              "zh-TW": "記錄"
+            }
+          },
+          {
+            "ref": "column_name",
+            "type": "text",
+            "maxLength": 64,
+            "label": {
+              "en-US": "Field",
+              "de-DE": "Feld",
+              "fr-FR": "Champ",
+              "da-DK": "Felt",
+              "cs-CZ": "Pole",
+              "ar-EG": "الحقل",
+              "zh-CN": "字段",
+              "zh-TW": "欄位"
+            }
+          },
+          {
+            "ref": "source",
+            "type": "text",
+            "maxLength": 32,
+            "label": {
+              "en-US": "Source",
+              "de-DE": "Quelle",
+              "fr-FR": "Source",
+              "da-DK": "Kilde",
+              "cs-CZ": "Zdroj",
+              "ar-EG": "المصدر",
+              "zh-CN": "来源",
+              "zh-TW": "來源"
+            }
+          },
+          {
+            "ref": "found_at",
+            "type": "timestamptz",
+            "label": {
+              "en-US": "Found",
+              "de-DE": "Gefunden",
+              "fr-FR": "Trouvé le",
+              "da-DK": "Fundet",
+              "cs-CZ": "Nalezeno",
+              "ar-EG": "تاريخ العثور",
+              "zh-CN": "发现时间",
+              "zh-TW": "發現時間"
+            }
+          },
+          {
+            "ref": "value_hash",
+            "type": "text",
+            "maxLength": 64,
+            "label": {
+              "en-US": "Value fingerprint",
+              "de-DE": "Fingerabdruck des Werts",
+              "fr-FR": "Empreinte de la valeur",
+              "da-DK": "Fingeraftryk af værdien",
+              "cs-CZ": "Otisk hodnoty",
+              "ar-EG": "بصمة القيمة",
+              "zh-CN": "值指纹",
+              "zh-TW": "值指紋"
+            }
+          }
+        ],
+        "unique": [
+          [
+            "table_ref",
+            "row_key",
+            "column_name"
+          ]
+        ]
+      },
+      {
+        "ref": "settings",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "people_on",
+            "type": "bool",
+            "default": false,
+            "label": {
+              "en-US": "Store people, not just companies",
+              "de-DE": "Personen speichern, nicht nur Firmen",
+              "fr-FR": "Conserver aussi des personnes, pas seulement des entreprises",
+              "da-DK": "Gem personer, ikke kun virksomheder",
+              "cs-CZ": "Ukládat i osoby, nejen firmy",
+              "ar-EG": "حفظ الأشخاص، وليس الشركات فقط",
+              "zh-CN": "保存人员，而不仅是公司",
+              "zh-TW": "儲存人員，而不只是公司"
+            }
+          },
+          {
+            "ref": "purpose",
+            "type": "json",
+            "nullable": true,
+            "label": {
+              "en-US": "Why you keep them",
+              "de-DE": "Warum Sie sie behalten",
+              "fr-FR": "Pourquoi vous les conservez",
+              "da-DK": "Hvorfor du gemmer dem",
+              "cs-CZ": "Důvod, kvůli kterému je uchováváte",
+              "ar-EG": "سبب احتفاظك بها",
+              "zh-CN": "保留原因",
+              "zh-TW": "保留原因"
+            }
+          },
+          {
+            "ref": "keep_years",
+            "type": "int",
+            "default": 3,
+            "rules": {
+              "options": {
+                "values": [
+                  {
+                    "value": "1",
+                    "label": {
+                      "en-US": "1 year",
+                      "de-DE": "1 Jahr",
+                      "fr-FR": "1 an",
+                      "da-DK": "1 år",
+                      "cs-CZ": "1 rok",
+                      "ar-EG": "سنة واحدة",
+                      "zh-CN": "1 年",
+                      "zh-TW": "1 年"
+                    }
+                  },
+                  {
+                    "value": "2",
+                    "label": {
+                      "en-US": "2 years",
+                      "de-DE": "2 Jahre",
+                      "fr-FR": "2 ans",
+                      "da-DK": "2 år",
+                      "cs-CZ": "2 roky",
+                      "ar-EG": "سنتان",
+                      "zh-CN": "2 年",
+                      "zh-TW": "2 年"
+                    }
+                  },
+                  {
+                    "value": "3",
+                    "label": {
+                      "en-US": "3 years",
+                      "de-DE": "3 Jahre",
+                      "fr-FR": "3 ans",
+                      "da-DK": "3 år",
+                      "cs-CZ": "3 roky",
+                      "ar-EG": "3 سنوات",
+                      "zh-CN": "3 年",
+                      "zh-TW": "3 年"
+                    }
+                  }
+                ]
+              }
+            },
+            "label": {
+              "en-US": "Keep found people for",
+              "de-DE": "Gefundene Personen behalten für",
+              "fr-FR": "Conserver les personnes trouvées",
+              "da-DK": "Gem fundne personer i",
+              "cs-CZ": "Uchovávat nalezené osoby",
+              "ar-EG": "مدة الاحتفاظ بالأشخاص الذين تم العثور عليهم",
+              "zh-CN": "找到的人员保留时长",
+              "zh-TW": "找到的人員保留時長"
+            }
+          }
+        ]
+      },
+      {
+        "ref": "tell_mails",
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "kind",
+            "type": "enum",
+            "enum": [
+              "tell"
+            ],
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "tell": {
+                    "en-US": "Why we have your details",
+                    "de-DE": "Warum wir Ihre Daten haben",
+                    "fr-FR": "Pourquoi nous avons vos coordonnées",
+                    "da-DK": "Hvorfor vi har dine oplysninger",
+                    "cs-CZ": "Jak jsme získali vaše údaje",
+                    "ar-EG": "لماذا لدينا بياناتك",
+                    "zh-CN": "我们为何拥有您的信息",
+                    "zh-TW": "我們為何擁有您的資料"
+                  }
+                }
+              }
+            },
+            "label": {
+              "en-US": "Kind",
+              "de-DE": "Art",
+              "fr-FR": "Type",
+              "da-DK": "Type",
+              "cs-CZ": "Druh",
+              "ar-EG": "النوع",
+              "zh-CN": "类型",
+              "zh-TW": "類型"
+            }
+          },
+          {
+            "ref": "status",
+            "type": "enum",
+            "enum": [
+              "queued",
+              "sent",
+              "failed",
+              "skipped"
+            ],
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "queued": {
+                    "en-US": "Waiting to go",
+                    "de-DE": "Wartet auf Versand",
+                    "fr-FR": "En attente d’envoi",
+                    "da-DK": "Venter på afsendelse",
+                    "cs-CZ": "Čeká na odeslání",
+                    "ar-EG": "بانتظار الإرسال",
+                    "zh-CN": "等待发送",
+                    "zh-TW": "等待寄送"
+                  },
+                  "sent": {
+                    "en-US": "Sent",
+                    "de-DE": "Gesendet",
+                    "fr-FR": "Envoyé",
+                    "da-DK": "Sendt",
+                    "cs-CZ": "Odesláno",
+                    "ar-EG": "تم الإرسال",
+                    "zh-CN": "已发送",
+                    "zh-TW": "已寄出"
+                  },
+                  "failed": {
+                    "en-US": "Failed",
+                    "de-DE": "Fehlgeschlagen",
+                    "fr-FR": "Échec",
+                    "da-DK": "Mislykkedes",
+                    "cs-CZ": "Selhalo",
+                    "ar-EG": "فشل",
+                    "zh-CN": "失败",
+                    "zh-TW": "失敗"
+                  },
+                  "skipped": {
+                    "en-US": "Not sent",
+                    "de-DE": "Nicht gesendet",
+                    "fr-FR": "Non envoyé",
+                    "da-DK": "Ikke sendt",
+                    "cs-CZ": "Neodesláno",
+                    "ar-EG": "لم يُرسل",
+                    "zh-CN": "未发送",
+                    "zh-TW": "未寄出"
+                  }
+                }
+              }
+            },
+            "label": {
+              "en-US": "Status",
+              "de-DE": "Status",
+              "fr-FR": "État",
+              "da-DK": "Status",
+              "cs-CZ": "Stav",
+              "ar-EG": "الحالة",
+              "zh-CN": "状态",
+              "zh-TW": "狀態"
+            }
+          },
+          {
+            "ref": "to_address",
+            "type": "text",
+            "maxLength": 320,
+            "nullable": true,
+            "rules": {
+              "personal": true
+            },
+            "label": {
+              "en-US": "To",
+              "de-DE": "An",
+              "fr-FR": "À",
+              "da-DK": "Til",
+              "cs-CZ": "Komu",
+              "ar-EG": "إلى",
+              "zh-CN": "收件人",
+              "zh-TW": "收件人"
+            }
+          },
+          {
+            "ref": "language",
+            "type": "text",
+            "maxLength": 10,
+            "nullable": true,
+            "label": {
+              "en-US": "Language",
+              "de-DE": "Sprache",
+              "fr-FR": "Langue",
+              "da-DK": "Sprog",
+              "cs-CZ": "Jazyk",
+              "ar-EG": "اللغة",
+              "zh-CN": "语言",
+              "zh-TW": "語言"
+            }
+          },
+          {
+            "ref": "found_person_id",
+            "type": "fk",
+            "references": "found_people",
+            "nullable": true,
+            "label": {
+              "en-US": "Found person",
+              "de-DE": "Gefundene Person",
+              "fr-FR": "Personne trouvée",
+              "da-DK": "Fundet person",
+              "cs-CZ": "Nalezená osoba",
+              "ar-EG": "الشخص الذي تم العثور عليه",
+              "zh-CN": "找到的人员",
+              "zh-TW": "找到的人員"
+            }
+          },
+          {
+            "ref": "error",
+            "type": "text",
+            "maxLength": 200,
+            "nullable": true,
+            "label": {
+              "en-US": "Why it failed",
+              "de-DE": "Fehlergrund",
+              "fr-FR": "Raison de l’échec",
+              "da-DK": "Årsag til fejl",
+              "cs-CZ": "Důvod selhání",
+              "ar-EG": "سبب الفشل",
+              "zh-CN": "失败原因",
+              "zh-TW": "失敗原因"
+            }
+          },
+          {
+            "ref": "sent_at",
+            "type": "timestamptz",
+            "nullable": true,
+            "label": {
+              "en-US": "Sent",
+              "de-DE": "Gesendet am",
+              "fr-FR": "Envoyé le",
+              "da-DK": "Sendt den",
+              "cs-CZ": "Odesláno dne",
+              "ar-EG": "وقت الإرسال",
+              "zh-CN": "发送时间",
+              "zh-TW": "寄送時間"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "roles": [
+    {
+      "key": "finder",
+      "name": "Company finder",
+      "names": {
+        "en-US": "Company finder",
+        "de-DE": "Firmensuche",
+        "fr-FR": "Recherche d’entreprises",
+        "da-DK": "Virksomhedssøger",
+        "cs-CZ": "Vyhledávání firem",
+        "ar-EG": "باحث عن الشركات",
+        "zh-CN": "公司查找员",
+        "zh-TW": "公司查找員"
+      },
+      "permissions": [
+        "table:@found_people:read",
+        "table:@found_people:read_pii",
+        "table:@field_sources:read",
+        "table:@tell_mails:read",
+        "table:@tell_mails:read_pii",
+        "table:@settings:read",
+        "table:@tell_mails:update",
+        "page:@lead-finder:view"
+      ]
+    },
+    {
+      "key": "settings-manager",
+      "name": "Lead finder settings manager",
+      "names": {
+        "en-US": "Lead finder settings manager",
+        "de-DE": "Lead-finder-Einstellungen verwalten",
+        "fr-FR": "Gestion des réglages de Lead finder",
+        "da-DK": "Ansvarlig for Lead finder-indstillinger",
+        "cs-CZ": "Správce nastavení Lead finder",
+        "ar-EG": "مدير إعدادات Lead finder",
+        "zh-CN": "Lead finder 设置管理员",
+        "zh-TW": "Lead finder 設定管理員"
+      },
+      "permissions": [
+        "table:@settings:read",
+        "table:@settings:update",
+        "page:@lead-finder:view"
+      ]
+    }
+  ],
+  "outbox": {
+    "table": "tell_mails",
+    "columns": {
+      "kind": "kind",
+      "status": "status",
+      "to": "to_address",
+      "language": "language",
+      "error": "error",
+      "sentAt": "sent_at"
+    },
+    "links": {
+      "found_person": "found_person_id"
+    },
+    "recipient": {
+      "via": "found_person_id",
+      "table": "found_people",
+      "email": "email"
+    },
+    "kinds": {
+      "tell": "lead-finder-tell"
+    },
+    "classes": {
+      "tell": "service"
+    }
+  },
+  "emailTemplates": [
+    {
+      "key": "lead-finder-tell",
+      "name": {
+        "en-US": "Why we have your details",
+        "de-DE": "Warum wir Ihre Daten haben",
+        "fr-FR": "Pourquoi nous avons vos coordonnées",
+        "da-DK": "Hvorfor vi har dine oplysninger",
+        "cs-CZ": "Jak jsme získali vaše údaje",
+        "ar-EG": "لماذا لدينا بياناتك",
+        "zh-CN": "我们为何拥有您的信息",
+        "zh-TW": "我們為何擁有您的資料"
+      },
+      "vars": [
+        "first_name",
+        "company"
+      ],
+      "locales": {
+        "en-US": {
+          "subject": "Why we have your details",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Why we have your details"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Hello {{first_name}},",
+                "onlyWith": "first_name"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Hello,",
+                "onlyWithout": "first_name"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "We keep your name, your role and your work e-mail address, as someone at {{company}}."
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "de-DE": {
+          "subject": "Warum wir Ihre Daten haben",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Warum wir Ihre Daten haben"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Hallo {{first_name}},",
+                "onlyWith": "first_name"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Hallo,",
+                "onlyWithout": "first_name"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Wir speichern Ihren Namen, Ihre Funktion und Ihre geschäftliche E-Mail-Adresse als Ansprechperson bei {{company}}."
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "fr-FR": {
+          "subject": "Pourquoi nous avons vos coordonnées",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Pourquoi nous avons vos coordonnées"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Bonjour {{first_name}},",
+                "onlyWith": "first_name"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Bonjour,",
+                "onlyWithout": "first_name"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Nous conservons votre nom, votre fonction et votre adresse e-mail de travail, en tant que personne travaillant chez {{company}}."
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "da-DK": {
+          "subject": "Hvorfor vi har dine oplysninger",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Hvorfor vi har dine oplysninger"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Hej {{first_name}},",
+                "onlyWith": "first_name"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Hej,",
+                "onlyWithout": "first_name"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Vi gemmer dit navn, din rolle og din arbejdsmail som en person hos {{company}}."
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "cs-CZ": {
+          "subject": "Jak jsme získali vaše údaje",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Jak jsme získali vaše údaje"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Dobrý den, {{first_name}},",
+                "onlyWith": "first_name"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Dobrý den,",
+                "onlyWithout": "first_name"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Uchováváme vaše jméno, vaši funkci a vaši pracovní e-mailovou adresu jako kontakt ve firmě {{company}}."
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "ar-EG": {
+          "subject": "لماذا لدينا بياناتك",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "لماذا لدينا بياناتك"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "مرحبًا {{first_name}}،",
+                "onlyWith": "first_name"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "مرحبًا،",
+                "onlyWithout": "first_name"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "نحتفظ باسمك ودورك وعنوان بريدك الإلكتروني للعمل، بصفتك أحد العاملين في {{company}}."
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "zh-CN": {
+          "subject": "我们为何拥有您的信息",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "我们为何拥有您的信息"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "{{first_name}}，您好：",
+                "onlyWith": "first_name"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "您好：",
+                "onlyWithout": "first_name"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "我们保存了您的姓名、职务和工作电子邮件地址，因为您是 {{company}} 的员工。"
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "zh-TW": {
+          "subject": "我們為何擁有您的資料",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "我們為何擁有您的資料"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "{{first_name}}，您好：",
+                "onlyWith": "first_name"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "您好：",
+                "onlyWithout": "first_name"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "我們保存了您的姓名、職務和工作電子郵件地址，因為您是 {{company}} 的員工。"
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        }
+      }
+    }
+  ],
+  "addOn": {
+    "attaches": [
+      {
+        "app": "*",
+        "range": "*"
+      }
+    ],
+    "connect": {
+      "kind": "none"
+    },
+    "provides": [
+      {
+        "contract": "lead-source",
+        "version": 1,
+        "server": "dist/server.js"
+      }
+    ],
+    "network": {
+      "allow": [
+        "api.company-information.service.gov.uk",
+        "recherche-entreprises.api.gouv.fr",
+        "geo.api.gouv.fr",
+        "data.brreg.no",
+        "api.opencorporates.com",
+        "api.hunter.io"
+      ]
+    },
+    "sources": [
+      {
+        "id": "website",
+        "reads": "website",
+        "gives": [
+          "fill"
+        ],
+        "label": {
+          "key": "source.website.name",
+          "fallback": "Website reader"
+        },
+        "labels": {
+          "en-US": "Website reader",
+          "de-DE": "Website-Leser",
+          "fr-FR": "Lecteur de site web",
+          "da-DK": "Hjemmesidelæser",
+          "cs-CZ": "Čtečka webu",
+          "ar-EG": "قارئ المواقع",
+          "zh-CN": "网站读取器",
+          "zh-TW": "網站讀取器"
+        }
+      },
+      {
+        "id": "companies-house",
+        "hosts": [
+          "api.company-information.service.gov.uk"
+        ],
+        "key": "companies_house_key",
+        "gives": [
+          "find",
+          "fill"
+        ],
+        "window": {
+          "calls": 600,
+          "seconds": 300
+        },
+        "paid": false,
+        "label": {
+          "key": "source.companiesHouse.name",
+          "fallback": "Companies House (UK)"
+        },
+        "labels": {
+          "en-US": "Companies House (UK)",
+          "de-DE": "Companies House (Großbritannien)",
+          "fr-FR": "Companies House (Royaume-Uni)",
+          "da-DK": "Companies House (Storbritannien)",
+          "cs-CZ": "Companies House (Spojené království)",
+          "ar-EG": "Companies House (المملكة المتحدة)",
+          "zh-CN": "Companies House（英国）",
+          "zh-TW": "Companies House（英國）"
+        }
+      },
+      {
+        "id": "france",
+        "hosts": [
+          "recherche-entreprises.api.gouv.fr",
+          "geo.api.gouv.fr"
+        ],
+        "gives": [
+          "find",
+          "fill"
+        ],
+        "window": {
+          "calls": 7,
+          "seconds": 1
+        },
+        "label": {
+          "key": "source.france.name",
+          "fallback": "Register of France"
+        },
+        "labels": {
+          "en-US": "Register of France",
+          "de-DE": "Firmenregister Frankreich",
+          "fr-FR": "Registre de France",
+          "da-DK": "Frankrigs virksomhedsregister",
+          "cs-CZ": "Rejstřík Francie",
+          "ar-EG": "سجل الشركات الفرنسي",
+          "zh-CN": "法国企业登记册",
+          "zh-TW": "法國公司登記簿"
+        }
+      },
+      {
+        "id": "norway",
+        "hosts": [
+          "data.brreg.no"
+        ],
+        "gives": [
+          "find",
+          "fill"
+        ],
+        "label": {
+          "key": "source.norway.name",
+          "fallback": "Register of Norway"
+        },
+        "labels": {
+          "en-US": "Register of Norway",
+          "de-DE": "Firmenregister Norwegen",
+          "fr-FR": "Registre de Norvège",
+          "da-DK": "Norges virksomhedsregister",
+          "cs-CZ": "Rejstřík Norska",
+          "ar-EG": "سجل الشركات النرويجي",
+          "zh-CN": "挪威企业登记册",
+          "zh-TW": "挪威公司登記簿"
+        }
+      },
+      {
+        "id": "opencorporates",
+        "hosts": [
+          "api.opencorporates.com"
+        ],
+        "key": "opencorporates_key",
+        "gives": [
+          "fill"
+        ],
+        "paid": true,
+        "label": {
+          "key": "source.opencorporates.name",
+          "fallback": "OpenCorporates"
+        },
+        "labels": {
+          "en-US": "OpenCorporates",
+          "de-DE": "OpenCorporates",
+          "fr-FR": "OpenCorporates",
+          "da-DK": "OpenCorporates",
+          "cs-CZ": "OpenCorporates",
+          "ar-EG": "OpenCorporates",
+          "zh-CN": "OpenCorporates",
+          "zh-TW": "OpenCorporates"
+        }
+      },
+      {
+        "id": "hunter",
+        "hosts": [
+          "api.hunter.io"
+        ],
+        "key": "hunter_key",
+        "gives": [
+          "people"
+        ],
+        "window": {
+          "calls": 15,
+          "seconds": 1
+        },
+        "paid": true,
+        "label": {
+          "key": "source.hunter.name",
+          "fallback": "Hunter"
+        },
+        "labels": {
+          "en-US": "Hunter",
+          "de-DE": "Hunter",
+          "fr-FR": "Hunter",
+          "da-DK": "Hunter",
+          "cs-CZ": "Hunter",
+          "ar-EG": "Hunter",
+          "zh-CN": "Hunter",
+          "zh-TW": "Hunter"
+        }
+      }
+    ],
+    "settingsTable": "settings",
+    "leads": {
+      "foundPeople": "found_people",
+      "fieldSources": "field_sources"
+    },
+    "hostApi": 2,
+    "pages": [
+      {
+        "ref": "lead-finder",
+        "title": {
+          "key": "addon.lead-finder.page.finder",
+          "fallback": "Lead finder"
+        },
+        "titles": {
+          "en-US": "Lead finder",
+          "de-DE": "Lead finder",
+          "fr-FR": "Lead finder",
+          "da-DK": "Lead finder",
+          "cs-CZ": "Lead finder",
+          "ar-EG": "باحث الشركات",
+          "zh-CN": "Lead finder",
+          "zh-TW": "Lead finder"
+        },
+        "icon": "scan-search",
+        "client": "dist/pages/lead-finder.js",
+        "nav": {
+          "group": "library",
+          "order": 24
+        },
+        "detail": true
+      }
+    ],
+    "slots": [
+      {
+        "slot": "record.actions",
+        "client": "dist/client.js",
+        "order": 10,
+        "on": "companies",
+        "label": {
+          "key": "fill.title",
+          "fallback": "Fill in details"
+        },
+        "labels": {
+          "en-US": "Fill in details",
+          "de-DE": "Angaben ausfüllen",
+          "fr-FR": "Remplir les informations",
+          "da-DK": "Udfyld oplysninger",
+          "cs-CZ": "Doplnit údaje",
+          "ar-EG": "أكمل التفاصيل",
+          "zh-CN": "填写详细信息",
+          "zh-TW": "填寫詳細資料"
+        },
+        "icon": "scan-search"
+      }
+    ]
+  }
+}
