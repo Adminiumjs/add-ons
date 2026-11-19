@@ -1,0 +1,5 @@
+---
+"@adminium/add-on-lead-finder": patch
+---
+
+Lead finder's screens. A Lead finder page in the Library with two tabs: Find companies (pick what they do from the register's own list, where, and which source to search; see what is already here, what a colleague keeps, what asked for no sales contact and who is a sole trader; add the ticked ones to your companies table) and People found (who was kept, whether they may be e-mailed, and whether they were told, with Send again for a mail that failed). Its settings hold a card per source (key, check, daily limit, switch; read only without the settings grant) and the People card (the switch, why you keep found people in each language needed, how long, and a preview of the mail). On a company's record, Fill in details reads its website and a register, shows what would change, asks which company when there are several, fills in only what you tick, and finds the people who work there with Hunter. Hunter is asked at most 15 times a second. In eight languages.
