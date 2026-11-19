@@ -41,8 +41,8 @@ export const list: Readonly<Record<string, string>> = {
   "list.tab.funnels": "漏斗",
   "list.tab.pages": "頁面",
   "list.title": "到達頁面",
-  "list.views": "次瀏覽",
-  "list.viewsThisMonth": "本月瀏覽"
+  "list.viewCount": "{count, plural, other {次瀏覽}}",
+  "list.viewCountMonth": "{count, plural, other {本月瀏覽}}"
 };
 
 export const funnels: Readonly<Record<string, string>> = {
@@ -123,14 +123,14 @@ export const funnels: Readonly<Record<string, string>> = {
   "funnels.ruleFailed": "無法讀取關聯的規則。",
   "funnels.ruleRemoved": "關聯的規則已被刪除。",
   "funnels.ruleSteps": "{name} 的步驟",
-  "funnels.sends": "次傳送",
+  "funnels.sendCount": "{count, plural, other {次傳送}}",
   "funnels.started": "計數從 {day} 開始。在此之前的日期沒有資料。",
   "funnels.stepCounted": "第 {n} 步：{title}，{count} {unit}",
   "funnels.stepNamed": "第 {n} 步：{title}",
   "funnels.stepRemoved": "第 {n} 步：{title}，已移除",
   "funnels.steps": "步驟",
   "funnels.title": "漏斗",
-  "funnels.views": "次瀏覽",
+  "funnels.viewCount": "{count, plural, other {次瀏覽}}",
   "funnels.wentOn": "繼續"
 };
 

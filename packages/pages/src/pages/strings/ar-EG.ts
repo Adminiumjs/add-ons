@@ -41,8 +41,8 @@ export const list: Readonly<Record<string, string>> = {
   "list.tab.funnels": "مسارات التحويل",
   "list.tab.pages": "الصفحات",
   "list.title": "صفحات الهبوط",
-  "list.views": "مشاهدة",
-  "list.viewsThisMonth": "مشاهدة هذا الشهر"
+  "list.viewCount": "{count, plural, zero {مشاهدة} one {مشاهدة} two {مشاهدتان} few {مشاهدات} many {مشاهدةً} other {مشاهدة}}",
+  "list.viewCountMonth": "{count, plural, zero {مشاهدة هذا الشهر} one {مشاهدة هذا الشهر} two {مشاهدتان هذا الشهر} few {مشاهدات هذا الشهر} many {مشاهدةً هذا الشهر} other {مشاهدة هذا الشهر}}"
 };
 
 export const funnels: Readonly<Record<string, string>> = {
@@ -123,14 +123,14 @@ export const funnels: Readonly<Record<string, string>> = {
   "funnels.ruleFailed": "تعذّرت قراءة القاعدة المرتبطة.",
   "funnels.ruleRemoved": "حُذفت القاعدة المرتبطة.",
   "funnels.ruleSteps": "خطوات {name}",
-  "funnels.sends": "إرسال",
+  "funnels.sendCount": "{count, plural, zero {إرسال} one {إرسال} two {إرسالان} few {إرسالات} many {إرسالًا} other {إرسال}}",
   "funnels.started": "بدأ العدّ في {day}. لا تُظهر الأيام التي قبله شيئًا.",
   "funnels.stepCounted": "الخطوة {n}: {title}، {count} {unit}",
   "funnels.stepNamed": "الخطوة {n}: {title}",
   "funnels.stepRemoved": "الخطوة {n}: {title}، أُزيلت",
   "funnels.steps": "الخطوات",
   "funnels.title": "مسارات التحويل",
-  "funnels.views": "مشاهدة",
+  "funnels.viewCount": "{count, plural, zero {مشاهدة} one {مشاهدة} two {مشاهدتان} few {مشاهدات} many {مشاهدةً} other {مشاهدة}}",
   "funnels.wentOn": "تابعوا"
 };
 

@@ -53,7 +53,7 @@ import { funnelRowOf, PAGE_LIST_COLUMNS, pageRowOf, type FunnelRow, type PageRow
 import { useToast } from '../shared/toast.ts';
 import { barOf, cardsOf, countCards, percentOf, type Card, type Counted } from './count.ts';
 import { FunnelDialog } from './FunnelDialog.tsx';
-import { kindWords, levelWords } from './words.ts';
+import { kindWords, levelWords, unitWords } from './words.ts';
 
 /** Where the rules are, in Adminium's own screens: one rule opened by its id. */
 export const ruleAt = (id: string): string => `/automations?rule=${encodeURIComponent(id)}`;
@@ -290,7 +290,7 @@ export function FunnelView({ t, funnelKey }: { t: AddOnTranslate; funnelKey: str
 
 /** One step's card, with the arrow from the step before drawn inside the item, so the list counts steps only. */
 function StepItem({ t, card, first, counting, count, percent, largest, number }: { t: AddOnTranslate; card: Card; first: boolean; counting: boolean; count: number | null; percent: string | null; largest: number; number: Intl.NumberFormat }): ReactNode {
-  const unit = card.unit === 'sends' ? t('funnels.sends', 'sends') : t('funnels.views', 'views');
+  const unit = unitWords(t, card.unit, count);
   const title = card.removed ? t('funnels.removed', 'Removed') : card.title;
   const shownCount = count === null ? '—' : number.format(count);
   const label = card.removed

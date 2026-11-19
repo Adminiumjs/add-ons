@@ -41,8 +41,8 @@ export const list: Readonly<Record<string, string>> = {
   "list.tab.funnels": "Trichter",
   "list.tab.pages": "Seiten",
   "list.title": "Landingpages",
-  "list.views": "Aufrufe",
-  "list.viewsThisMonth": "Aufrufe in diesem Monat"
+  "list.viewCount": "{count, plural, one {Aufruf} other {Aufrufe}}",
+  "list.viewCountMonth": "{count, plural, one {Aufruf in diesem Monat} other {Aufrufe in diesem Monat}}"
 };
 
 export const funnels: Readonly<Record<string, string>> = {
@@ -123,14 +123,14 @@ export const funnels: Readonly<Record<string, string>> = {
   "funnels.ruleFailed": "Die verknüpfte Regel konnte nicht gelesen werden.",
   "funnels.ruleRemoved": "Die verknüpfte Regel wurde gelöscht.",
   "funnels.ruleSteps": "Schritte von {name}",
-  "funnels.sends": "Sendungen",
+  "funnels.sendCount": "{count, plural, one {Sendung} other {Sendungen}}",
   "funnels.started": "Die Zählung begann am {day}. Tage davor zeigen nichts.",
   "funnels.stepCounted": "Schritt {n}: {title}, {count} {unit}",
   "funnels.stepNamed": "Schritt {n}: {title}",
   "funnels.stepRemoved": "Schritt {n}: {title}, entfernt",
   "funnels.steps": "Schritte",
   "funnels.title": "Trichter",
-  "funnels.views": "Aufrufe",
+  "funnels.viewCount": "{count, plural, one {Aufruf} other {Aufrufe}}",
   "funnels.wentOn": "gingen weiter"
 };
 

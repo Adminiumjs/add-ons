@@ -62,6 +62,24 @@ describe('the pages as cards (1a)', () => {
     expect(within(card('Spring offer')).getByText('Off')).toBeTruthy();
   });
 
+  it('says one view as one, and many as many, in the card and the list, and in the language read in', async () => {
+    await draw('pages', { counts: { 'page|': { '1': 1, '2': 2, '4': 0 } } });
+    expect(within(card('Showroom open day')).getByText('view this month')).toBeTruthy();
+    expect(within(card('Acoustic booths')).getByText('views this month')).toBeTruthy();
+    expect(within(card('Spring offer')).getByText('views this month')).toBeTruthy();
+    fireEvent.click(screen.getByRole('radio', { name: 'List' }));
+    const table = screen.getByRole('table');
+    expect(within(table).getByText('Showroom open day').closest('tr')?.textContent).toContain('1 view');
+    expect(within(table).getByText('Showroom open day').closest('tr')?.textContent).not.toContain('1 views');
+    expect(within(table).getByText('Acoustic booths').closest('tr')?.textContent).toContain('2 views');
+    cleanup();
+    // Arabic says two with a form of its own.
+    world.locale = 'ar-EG';
+    await draw('pages', { counts: { 'page|': { '1': 1, '2': 2, '4': 3 } } });
+    expect(within(card('Acoustic booths')).getByText('مشاهدتان هذا الشهر')).toBeTruthy();
+    expect(within(card('Spring offer')).getByText('مشاهدات هذا الشهر')).toBeTruthy();
+  });
+
   it('asks the views of this month in the business’s zone, for the pages that were ever live, under the add-on’s install', async () => {
     await draw();
     expect(viewsAsked(world.calls)).toEqual(['page||1,2,4']);

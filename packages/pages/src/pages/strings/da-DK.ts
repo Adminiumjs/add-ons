@@ -41,8 +41,8 @@ export const list: Readonly<Record<string, string>> = {
   "list.tab.funnels": "Tragte",
   "list.tab.pages": "Sider",
   "list.title": "Landingssider",
-  "list.views": "visninger",
-  "list.viewsThisMonth": "visninger denne måned"
+  "list.viewCount": "{count, plural, one {visning} other {visninger}}",
+  "list.viewCountMonth": "{count, plural, one {visning denne måned} other {visninger denne måned}}"
 };
 
 export const funnels: Readonly<Record<string, string>> = {
@@ -123,14 +123,14 @@ export const funnels: Readonly<Record<string, string>> = {
   "funnels.ruleFailed": "Den tilknyttede regel kunne ikke læses.",
   "funnels.ruleRemoved": "Den tilknyttede regel er slettet.",
   "funnels.ruleSteps": "Trin i {name}",
-  "funnels.sends": "afsendelser",
+  "funnels.sendCount": "{count, plural, one {afsendelse} other {afsendelser}}",
   "funnels.started": "Optællingen begyndte {day}. Dage før det viser intet.",
   "funnels.stepCounted": "Trin {n}: {title}, {count} {unit}",
   "funnels.stepNamed": "Trin {n}: {title}",
   "funnels.stepRemoved": "Trin {n}: {title}, fjernet",
   "funnels.steps": "Trin",
   "funnels.title": "Tragte",
-  "funnels.views": "visninger",
+  "funnels.viewCount": "{count, plural, one {visning} other {visninger}}",
   "funnels.wentOn": "gik videre"
 };
 

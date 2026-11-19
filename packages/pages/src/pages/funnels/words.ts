@@ -5,6 +5,7 @@
 import type { CountingLevel, LiveForm } from '../../engine.ts';
 import type { AddOnTranslate } from '../shared/host.ts';
 import type { PageRow, Step } from '../shared/rows.ts';
+import { UNKNOWN_COUNT } from '../shared/days.ts';
 import { formOf, type Card } from './count.ts';
 
 /** A card's kind in small capitals: "Page", "Form · opened", "Form · sent". */
@@ -24,6 +25,16 @@ export function stepNameOf(t: AddOnTranslate, step: Step, pages: readonly PageRo
 }
 
 export const stepNamesOf = (t: AddOnTranslate, steps: readonly Step[], pages: readonly PageRow[], forms: readonly LiveForm[]): string[] => steps.map((step) => stepNameOf(t, step, pages, forms));
+
+/**
+ * What a step counts, as the noun after its number, in the language's own
+ * plural form for that number (Czech and Arabic have more than two; Chinese
+ * one). A count not known yet takes the form for several.
+ */
+export function unitWords(t: AddOnTranslate, unit: Card['unit'], count: number | null): string {
+  const n = count ?? UNKNOWN_COUNT;
+  return unit === 'sends' ? t('funnels.sendCount', '{count, plural, one {send} other {sends}}', { count: n }) : t('funnels.viewCount', '{count, plural, one {view} other {views}}', { count: n });
+}
 
 /** The counting level as the note says it. */
 export function levelWords(t: AddOnTranslate, level: CountingLevel | null): string {

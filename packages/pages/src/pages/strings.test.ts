@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 // @ts-expect-error — a build script, plain JavaScript with no types of its own.
 import { gather, render, SECTIONS, TARGET } from '../../scripts/page-strings.mjs';
 import * as strings from './strings/index.ts';
+import { format } from './testing/host.tsx';
 
 /** Every language's sections, put back together by tag for the checks below. */
 const BY_SECTION: Record<string, strings.InEveryLanguage> = { shared: strings.SHARED, list: strings.LIST, funnels: strings.FUNNELS, editor: strings.EDITOR };
@@ -104,6 +105,19 @@ describe("the screens' words in eight languages", () => {
         }
       }
     }
+  });
+
+  it('count views and sends in each language’s own forms', () => {
+    const say = (tag: string, section: string, key: string, count: number): string => format((LOCALES[tag] as Record<string, Record<string, string>>)[section]?.[key] ?? '', { count }, tag);
+    expect([1, 2, 5].map((n) => say('en-US', 'funnels', 'funnels.viewCount', n))).toEqual(['view', 'views', 'views']);
+    expect([1, 2].map((n) => say('en-US', 'funnels', 'funnels.sendCount', n))).toEqual(['send', 'sends']);
+    expect([0, 1, 2].map((n) => say('fr-FR', 'list', 'list.viewCount', n))).toEqual(['vue', 'vue', 'vues']);
+    expect([1, 2].map((n) => say('de-DE', 'list', 'list.viewCountMonth', n))).toEqual(['Aufruf in diesem Monat', 'Aufrufe in diesem Monat']);
+    expect([1, 2].map((n) => say('da-DK', 'funnels', 'funnels.sendCount', n))).toEqual(['afsendelse', 'afsendelser']);
+    expect([1, 3, 5].map((n) => say('cs-CZ', 'funnels', 'funnels.viewCount', n))).toEqual(['zobrazení', 'zobrazení', 'zobrazení']);
+    expect([0, 1, 2, 3, 11, 100].map((n) => say('ar-EG', 'funnels', 'funnels.viewCount', n))).toEqual(['مشاهدة', 'مشاهدة', 'مشاهدتان', 'مشاهدات', 'مشاهدةً', 'مشاهدة']);
+    expect([2, 3, 11].map((n) => say('ar-EG', 'funnels', 'funnels.sendCount', n))).toEqual(['إرسالان', 'إرسالات', 'إرسالًا']);
+    expect([1, 2].map((n) => say('zh-CN', 'list', 'list.viewCount', n))).toEqual(['次浏览', '次浏览']);
   });
 
   it('are translated: next to nothing reads as the English does, and what does is a name both languages share', () => {

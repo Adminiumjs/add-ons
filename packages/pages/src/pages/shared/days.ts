@@ -73,3 +73,6 @@ export const dayWords = (day: string, locale: string): string => rangeWords({ fr
 
 /** Whether a day falls after the start of a range (and so the range began before it). */
 export const startsInside = (day: string | null, range: DayRange): boolean => day !== null && day > range.from && day <= range.to;
+
+/** The number a count not known yet is worded with: its noun takes the form for several ("— views"), never the one for one. */
+export const UNKNOWN_COUNT = 5;

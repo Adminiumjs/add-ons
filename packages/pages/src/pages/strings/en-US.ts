@@ -41,8 +41,8 @@ export const list: Readonly<Record<string, string>> = {
   "list.tab.funnels": "Funnels",
   "list.tab.pages": "Pages",
   "list.title": "Landing pages",
-  "list.views": "views",
-  "list.viewsThisMonth": "views this month"
+  "list.viewCount": "{count, plural, one {view} other {views}}",
+  "list.viewCountMonth": "{count, plural, one {view this month} other {views this month}}"
 };
 
 export const funnels: Readonly<Record<string, string>> = {
@@ -123,14 +123,14 @@ export const funnels: Readonly<Record<string, string>> = {
   "funnels.ruleFailed": "The linked rule could not be read.",
   "funnels.ruleRemoved": "The linked rule was deleted.",
   "funnels.ruleSteps": "{name} steps",
-  "funnels.sends": "sends",
+  "funnels.sendCount": "{count, plural, one {send} other {sends}}",
   "funnels.started": "Counting started on {day}. Days before that show nothing.",
   "funnels.stepCounted": "Step {n}: {title}, {count} {unit}",
   "funnels.stepNamed": "Step {n}: {title}",
   "funnels.stepRemoved": "Step {n}: {title}, removed",
   "funnels.steps": "Steps",
   "funnels.title": "Funnels",
-  "funnels.views": "views",
+  "funnels.viewCount": "{count, plural, one {view} other {views}}",
   "funnels.wentOn": "went on"
 };
 

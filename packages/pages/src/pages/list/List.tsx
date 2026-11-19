@@ -33,6 +33,7 @@ import {
 import { useLanding } from '../shared/landing.tsx';
 import { Address, Icon, PagePill, SmallIcon } from '../shared/parts.tsx';
 import { FUNNELS_TABLE, listAt, newPageAt, pageAt, PAGES_TABLE } from '../shared/paths.ts';
+import { UNKNOWN_COUNT } from '../shared/days.ts';
 import { PAGE_LIST_COLUMNS, pageAddress, pagePath, pageRowOf, type PageRow } from '../shared/rows.ts';
 import { useToast } from '../shared/toast.ts';
 import { FunnelsTab } from '../funnels/FunnelsTab.tsx';
@@ -70,10 +71,20 @@ export function List({ t, tab }: { t: AddOnTranslate; tab: Tab }): ReactNode {
   };
   const open = (page: PageRow): void => void navigate({ to: pageAt(page.key) });
   const openWords = access.canUpdate(PAGES_TABLE) ? t('list.edit', 'Edit') : t('list.open', 'Open');
-  const viewsOf = (page: PageRow): { count: string; label: string } => {
-    if (page.state === 'draft') return { count: '—', label: t('list.notLive', 'not live yet') };
+  /*
+   * A count and its noun, the noun in the language's own plural form for that
+   * count (Czech and Arabic have more than two). A count not known yet reads
+   * as "—" with the form for several.
+   */
+  const viewsOf = (page: PageRow): { count: string; label: string; unit: string } => {
+    if (page.state === 'draft') return { count: '—', label: t('list.notLive', 'not live yet'), unit: t('list.notLive', 'not live yet') };
     const count = views?.get(page.key);
-    return { count: count === undefined ? '—' : number.format(count), label: t('list.viewsThisMonth', 'views this month') };
+    const n = count ?? UNKNOWN_COUNT;
+    return {
+      count: count === undefined ? '—' : number.format(count),
+      label: t('list.viewCountMonth', '{count, plural, one {view this month} other {views this month}}', { count: n }),
+      unit: t('list.viewCount', '{count, plural, one {view} other {views}}', { count: n }),
+    };
   };
 
   const makers = mayMake ? (
@@ -108,7 +119,7 @@ export function List({ t, tab }: { t: AddOnTranslate; tab: Tab }): ReactNode {
                 const said = page === undefined ? null : viewsOf(page);
                 return (
                   <span className="whitespace-nowrap">
-                    <span className="font-mono font-bold">{said?.count}</span> <span className="text-fg-muted">{page?.state === 'draft' ? said?.label : t('list.views', 'views')}</span>
+                    <span className="font-mono font-bold">{said?.count}</span> <span className="text-fg-muted">{said?.unit}</span>
                   </span>
                 );
               },

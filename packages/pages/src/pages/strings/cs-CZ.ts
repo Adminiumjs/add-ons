@@ -41,8 +41,8 @@ export const list: Readonly<Record<string, string>> = {
   "list.tab.funnels": "Trychtýře",
   "list.tab.pages": "Stránky",
   "list.title": "Vstupní stránky",
-  "list.views": "zobrazení",
-  "list.viewsThisMonth": "zobrazení tento měsíc"
+  "list.viewCount": "{count, plural, one {zobrazení} few {zobrazení} many {zobrazení} other {zobrazení}}",
+  "list.viewCountMonth": "{count, plural, one {zobrazení tento měsíc} few {zobrazení tento měsíc} many {zobrazení tento měsíc} other {zobrazení tento měsíc}}"
 };
 
 export const funnels: Readonly<Record<string, string>> = {
@@ -123,14 +123,14 @@ export const funnels: Readonly<Record<string, string>> = {
   "funnels.ruleFailed": "Propojené pravidlo se nepodařilo načíst.",
   "funnels.ruleRemoved": "Propojené pravidlo bylo smazáno.",
   "funnels.ruleSteps": "Kroky pravidla {name}",
-  "funnels.sends": "odeslání",
+  "funnels.sendCount": "{count, plural, one {odeslání} few {odeslání} many {odeslání} other {odeslání}}",
   "funnels.started": "Počítání začalo {day}. Dny předtím nic neukazují.",
   "funnels.stepCounted": "Krok {n}: {title}, {count} {unit}",
   "funnels.stepNamed": "Krok {n}: {title}",
   "funnels.stepRemoved": "Krok {n}: {title}, odebrán",
   "funnels.steps": "Kroky",
   "funnels.title": "Trychtýře",
-  "funnels.views": "zobrazení",
+  "funnels.viewCount": "{count, plural, one {zobrazení} few {zobrazení} many {zobrazení} other {zobrazení}}",
   "funnels.wentOn": "pokračovalo"
 };
 

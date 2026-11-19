@@ -14,7 +14,7 @@ import { FUNNEL_COLUMNS, funnelRowOf, type FunnelRow, type PageRow } from '../sh
 import { rangeOf, rangeWords } from '../shared/days.ts';
 import { cardsOf, countCards, type Card } from './count.ts';
 import { FunnelDialog } from './FunnelDialog.tsx';
-import { stepNamesOf } from './words.ts';
+import { stepNamesOf, unitWords } from './words.ts';
 
 /** The first and the last card of each funnel, with their counts this month. */
 function useEnds(funnels: readonly FunnelRow[], pages: readonly PageRow[]): ReadonlyMap<string, { first: { card: Card; count: number | null } | null; last: { card: Card; count: number | null } | null }> {
@@ -64,7 +64,7 @@ export function FunnelsTab({ t, pages, pagesLoading }: { t: AddOnTranslate; page
       <span className="text-fg-muted">—</span>
     ) : (
       <span className="whitespace-nowrap">
-        <span className="font-mono font-bold">{one.count === null ? '—' : number.format(one.count)}</span> <span className="text-fg-muted">{one.card.unit === 'sends' ? t('funnels.sends', 'sends') : t('funnels.views', 'views')}</span>
+        <span className="font-mono font-bold">{one.count === null ? '—' : number.format(one.count)}</span> <span className="text-fg-muted">{unitWords(t, one.card.unit, one.count)}</span>
       </span>
     );
 
