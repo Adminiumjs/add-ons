@@ -90,10 +90,9 @@ export function PageSettings(props: PageSettingsProps): ReactNode {
           <span>{t('editor.settings.liveOnce', 'Live once you publish.')}</span>
         </p>
       ) : null}
-      <Input id="lpe-name" label={t('editor.settings.name', 'Name')} hint={t('editor.settings.nameHint', 'Only your team sees it, in the list of pages.')} value={name} maxLength={200} disabled={!mayEdit} onChange={(event) => props.onName(event.target.value)} />
+      <Input label={t('editor.settings.name', 'Name')} hint={t('editor.settings.nameHint', 'Only your team sees it, in the list of pages.')} value={name} maxLength={200} disabled={!mayEdit} onChange={(event) => props.onName(event.target.value)} />
       <div className="flex flex-col gap-1.5">
         <Input
-          id="lpe-slug"
           label={t('editor.settings.address', 'Address')}
           hint={t('editor.settings.addressHint', 'The last part of the page’s address, after /x/pages/.')}
           {...(slugError !== null ? { error: slugError } : wrong ? { error: t('editor.settings.slugRule', 'Use lower-case letters, digits and dashes; not a word the addresses use (api, login, account…).') } : {})}
@@ -166,7 +165,7 @@ export function PageSettings(props: PageSettingsProps): ReactNode {
           ))
         )}
       </div>
-      <Input id="lpe-title" label={t('editor.settings.title', 'Title')} hint={t('editor.settings.titleHint', 'The browser tab and a shared link show it.')} value={title} maxLength={LANDING_TEXT_MAX.title} disabled={!mayEdit} onChange={(event) => props.onTitle(event.target.value)} />
+      <Input label={t('editor.settings.title', 'Title')} hint={t('editor.settings.titleHint', 'The browser tab and a shared link show it.')} value={title} maxLength={LANDING_TEXT_MAX.title} disabled={!mayEdit} onChange={(event) => props.onTitle(event.target.value)} />
       <Field label={t('editor.settings.description', 'Description')} hint={t('editor.settings.descriptionHint', 'A line or two under the title in a shared link and in search results.')}>
         <Textarea value={description} rows={3} maxLength={LANDING_TEXT_MAX.description} disabled={!mayEdit} onChange={(event) => props.onDescription(event.target.value)} />
       </Field>

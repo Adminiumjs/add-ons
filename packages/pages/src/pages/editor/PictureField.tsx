@@ -131,7 +131,6 @@ export function PictureField({ t, pageKey, label, value, mayEdit, id, describe =
       {describe && value !== undefined ? (
         <>
           <Input
-            id={id}
             label={t('editor.picture.alt', 'Describe the picture')}
             hint={t('editor.picture.altHint', 'Read aloud to people who can’t see it.')}
             value={alt}

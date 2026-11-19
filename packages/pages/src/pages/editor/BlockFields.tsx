@@ -49,11 +49,11 @@ export interface BlockFieldsProps {
 }
 
 /** A text field, one line or several. */
-function Words({ id, label, hint, value, max, lines, mayEdit, onChange }: { id: string; label: string; hint?: string; value: string; max: number; lines?: number; mayEdit: boolean; onChange: (value: string) => void }): ReactNode {
-  if (lines === undefined) return <Input id={id} label={label} {...(hint === undefined ? {} : { hint })} value={value} maxLength={max} disabled={!mayEdit} onChange={(event) => onChange(event.target.value)} />;
+function Words({ label, hint, value, max, lines, mayEdit, onChange }: { label: string; hint?: string; value: string; max: number; lines?: number; mayEdit: boolean; onChange: (value: string) => void }): ReactNode {
+  if (lines === undefined) return <Input label={label} {...(hint === undefined ? {} : { hint })} value={value} maxLength={max} disabled={!mayEdit} onChange={(event) => onChange(event.target.value)} />;
   return (
     <Field label={label} {...(hint === undefined ? {} : { hint })}>
-      <Textarea id={id} value={value} rows={lines} maxLength={max} disabled={!mayEdit} onChange={(event) => onChange(event.target.value)} />
+      <Textarea value={value} rows={lines} maxLength={max} disabled={!mayEdit} onChange={(event) => onChange(event.target.value)} />
     </Field>
   );
 }
@@ -65,7 +65,6 @@ function LinkField({ t, id, link, hasForm, pages, mayEdit, onChange }: { t: AddO
   return (
     <div data-lpe-fields="">
       <Select
-        id={`${id}-kind`}
         label={t('editor.link.goes', 'Where it goes')}
         value={link.kind}
         disabled={!mayEdit}
@@ -83,7 +82,6 @@ function LinkField({ t, id, link, hasForm, pages, mayEdit, onChange }: { t: AddO
       />
       {link.kind === 'url' ? (
         <Input
-          id={`${id}-href`}
           label={t('editor.link.address', 'Address')}
           hint={t('editor.link.addressHint', 'The whole address, starting with https.')}
           {...(wrong ? { error: t('editor.link.addressWrong', 'Use a whole address that starts with https.') } : {})}
@@ -96,7 +94,6 @@ function LinkField({ t, id, link, hasForm, pages, mayEdit, onChange }: { t: AddO
       ) : null}
       {link.kind === 'page' ? (
         <Select
-          id={`${id}-page`}
           label={t('editor.link.whichPage', 'Page')}
           value={link.key}
           disabled={!mayEdit}
@@ -127,7 +124,6 @@ function FormFields({ t, block, language, forms, formsRead, pages, mayEdit, onCh
   return (
     <div data-lpe-fields="">
       <Select
-        id={`${block.id}-form`}
         label={t('editor.form.which', 'Form')}
         value={value}
         disabled={!mayEdit}
@@ -163,8 +159,8 @@ export function BlockFields({ t, pageKey, block, language, mayEdit, hasForm, pag
     case 'hero':
       return (
         <div data-lpe-fields="">
-          <Words id={`${id}-heading`} label={t('editor.field.heading', 'Heading')} value={block.heading} max={LANDING_TEXT_MAX.heading} mayEdit={mayEdit} onChange={(value) => set<BlockOf<'hero'>>('heading', (b) => ({ ...b, heading: value }))} />
-          <Words id={`${id}-text`} label={t('editor.field.text', 'Text')} hint={t('editor.field.paragraphs', 'A blank line starts a new paragraph.')} value={block.text} max={LANDING_TEXT_MAX.short} lines={4} mayEdit={mayEdit} onChange={(value) => set<BlockOf<'hero'>>('text', (b) => ({ ...b, text: value }))} />
+          <Words label={t('editor.field.heading', 'Heading')} value={block.heading} max={LANDING_TEXT_MAX.heading} mayEdit={mayEdit} onChange={(value) => set<BlockOf<'hero'>>('heading', (b) => ({ ...b, heading: value }))} />
+          <Words label={t('editor.field.text', 'Text')} hint={t('editor.field.paragraphs', 'A blank line starts a new paragraph.')} value={block.text} max={LANDING_TEXT_MAX.short} lines={4} mayEdit={mayEdit} onChange={(value) => set<BlockOf<'hero'>>('text', (b) => ({ ...b, text: value }))} />
           {block.button === undefined ? (
             mayEdit ? (
               <Button variant="secondary" size="sm" onClick={() => onChange((b) => ({ ...(b as BlockOf<'hero'>), button: { label: '', link: hasForm ? { kind: 'form' } : { kind: 'url', href: '' } } }))}>
@@ -173,7 +169,7 @@ export function BlockFields({ t, pageKey, block, language, mayEdit, hasForm, pag
             ) : null
           ) : (
             <div data-lpe-group="">
-              <Words id={`${id}-label`} label={t('editor.field.label', 'Button words')} value={block.button.label} max={LANDING_TEXT_MAX.label} mayEdit={mayEdit} onChange={(value) => set<BlockOf<'hero'>>('label', (b) => ({ ...b, ...(b.button === undefined ? {} : { button: { ...b.button, label: value } }) }))} />
+              <Words label={t('editor.field.label', 'Button words')} value={block.button.label} max={LANDING_TEXT_MAX.label} mayEdit={mayEdit} onChange={(value) => set<BlockOf<'hero'>>('label', (b) => ({ ...b, ...(b.button === undefined ? {} : { button: { ...b.button, label: value } }) }))} />
               <LinkField t={t} id={`${id}-link`} link={block.button.link} hasForm={hasForm} pages={pages} mayEdit={mayEdit} onChange={(link, group) => onChange((b) => { const hero = b as BlockOf<'hero'>; return hero.button === undefined ? hero : { ...hero, button: { ...hero.button, link } }; }, group)} />
               {mayEdit ? (
                 <Button variant="ghost" size="sm" onClick={() => onChange((b) => { const { button: _button, ...rest } = b as BlockOf<'hero'>; return rest; })}>
@@ -187,15 +183,15 @@ export function BlockFields({ t, pageKey, block, language, mayEdit, hasForm, pag
         </div>
       );
     case 'heading':
-      return <Words id={`${id}-text`} label={t('editor.field.heading', 'Heading')} value={block.text} max={LANDING_TEXT_MAX.heading} mayEdit={mayEdit} onChange={(value) => set<BlockOf<'heading'>>('text', (b) => ({ ...b, text: value }))} />;
+      return <Words label={t('editor.field.heading', 'Heading')} value={block.text} max={LANDING_TEXT_MAX.heading} mayEdit={mayEdit} onChange={(value) => set<BlockOf<'heading'>>('text', (b) => ({ ...b, text: value }))} />;
     case 'text':
-      return <Words id={`${id}-text`} label={t('editor.field.text', 'Text')} hint={t('editor.field.paragraphs', 'A blank line starts a new paragraph.')} value={block.text} max={LANDING_TEXT_MAX.long} lines={8} mayEdit={mayEdit} onChange={(value) => set<BlockOf<'text'>>('text', (b) => ({ ...b, text: value }))} />;
+      return <Words label={t('editor.field.text', 'Text')} hint={t('editor.field.paragraphs', 'A blank line starts a new paragraph.')} value={block.text} max={LANDING_TEXT_MAX.long} lines={8} mayEdit={mayEdit} onChange={(value) => set<BlockOf<'text'>>('text', (b) => ({ ...b, text: value }))} />;
     case 'picture':
       return <PictureField t={t} pageKey={pageKey} id={`${id}-picture`} label={t('editor.field.picture', 'Picture')} value={block.picture} mayEdit={mayEdit} onChange={(next, group) => picture(next, () => ({ ...block, picture: next ?? { file: '', alt: '' } }), group)} />;
     case 'button':
       return (
         <div data-lpe-fields="">
-          <Words id={`${id}-label`} label={t('editor.field.label', 'Button words')} value={block.label} max={LANDING_TEXT_MAX.label} mayEdit={mayEdit} onChange={(value) => set<BlockOf<'button'>>('label', (b) => ({ ...b, label: value }))} />
+          <Words label={t('editor.field.label', 'Button words')} value={block.label} max={LANDING_TEXT_MAX.label} mayEdit={mayEdit} onChange={(value) => set<BlockOf<'button'>>('label', (b) => ({ ...b, label: value }))} />
           <LinkField t={t} id={`${id}-link`} link={block.link} hasForm={hasForm} pages={pages} mayEdit={mayEdit} onChange={(link, group) => onChange((b) => ({ ...(b as BlockOf<'button'>), link }), group)} />
         </div>
       );
@@ -203,7 +199,6 @@ export function BlockFields({ t, pageKey, block, language, mayEdit, hasForm, pag
       return (
         <div data-lpe-fields="">
           <Select
-            id={`${id}-count`}
             label={t('editor.columns.count', 'How many columns')}
             value={String(block.columns.length)}
             disabled={!mayEdit}
@@ -221,7 +216,6 @@ export function BlockFields({ t, pageKey, block, language, mayEdit, hasForm, pag
             <div key={String(index)} data-lpe-group="">
               <span data-lpe-micro="">{t('editor.columns.one', 'Column {n}', { n: index + 1 })}</span>
               <Words
-                id={`${id}-c${String(index)}-heading`}
                 label={t('editor.columns.heading', 'Heading (if you like)')}
                 value={column.heading ?? ''}
                 max={LANDING_TEXT_MAX.heading}
@@ -237,7 +231,7 @@ export function BlockFields({ t, pageKey, block, language, mayEdit, hasForm, pag
                   }))
                 }
               />
-              <Words id={`${id}-c${String(index)}-text`} label={t('editor.field.text', 'Text')} value={column.text} max={LANDING_TEXT_MAX.medium} lines={4} mayEdit={mayEdit} onChange={(value) => set<BlockOf<'columns'>>(`c${String(index)}-text`, (b) => ({ ...b, columns: b.columns.map((one, at) => (at === index ? { ...one, text: value } : one)) }))} />
+              <Words label={t('editor.field.text', 'Text')} value={column.text} max={LANDING_TEXT_MAX.medium} lines={4} mayEdit={mayEdit} onChange={(value) => set<BlockOf<'columns'>>(`c${String(index)}-text`, (b) => ({ ...b, columns: b.columns.map((one, at) => (at === index ? { ...one, text: value } : one)) }))} />
               <PictureField
                 t={t}
                 pageKey={pageKey}
@@ -268,7 +262,6 @@ export function BlockFields({ t, pageKey, block, language, mayEdit, hasForm, pag
       return (
         <div data-lpe-fields="">
           <Words
-            id={`${id}-title`}
             label={t('editor.features.title', 'Title (if you like)')}
             value={block.title ?? ''}
             max={LANDING_TEXT_MAX.heading}
@@ -284,7 +277,6 @@ export function BlockFields({ t, pageKey, block, language, mayEdit, hasForm, pag
             <div key={String(index)} data-lpe-group="">
               <span data-lpe-micro="">{t('editor.features.point', 'Point {n}', { n: index + 1 })}</span>
               <Select
-                id={`${id}-f${String(index)}-icon`}
                 label={t('editor.features.icon', 'Icon')}
                 value={item.icon ?? ''}
                 disabled={!mayEdit}
@@ -301,8 +293,8 @@ export function BlockFields({ t, pageKey, block, language, mayEdit, hasForm, pag
                   }));
                 }}
               />
-              <Words id={`${id}-f${String(index)}-heading`} label={t('editor.field.heading', 'Heading')} value={item.heading} max={LANDING_TEXT_MAX.heading} mayEdit={mayEdit} onChange={(value) => set<BlockOf<'features'>>(`f${String(index)}-heading`, (b) => ({ ...b, items: b.items.map((one, at) => (at === index ? { ...one, heading: value } : one)) }))} />
-              <Words id={`${id}-f${String(index)}-text`} label={t('editor.field.text', 'Text')} value={item.text} max={LANDING_TEXT_MAX.short} lines={2} mayEdit={mayEdit} onChange={(value) => set<BlockOf<'features'>>(`f${String(index)}-text`, (b) => ({ ...b, items: b.items.map((one, at) => (at === index ? { ...one, text: value } : one)) }))} />
+              <Words label={t('editor.field.heading', 'Heading')} value={item.heading} max={LANDING_TEXT_MAX.heading} mayEdit={mayEdit} onChange={(value) => set<BlockOf<'features'>>(`f${String(index)}-heading`, (b) => ({ ...b, items: b.items.map((one, at) => (at === index ? { ...one, heading: value } : one)) }))} />
+              <Words label={t('editor.field.text', 'Text')} value={item.text} max={LANDING_TEXT_MAX.short} lines={2} mayEdit={mayEdit} onChange={(value) => set<BlockOf<'features'>>(`f${String(index)}-text`, (b) => ({ ...b, items: b.items.map((one, at) => (at === index ? { ...one, text: value } : one)) }))} />
               {mayEdit && block.items.length > 1 ? (
                 <Button variant="ghost" size="sm" onClick={() => onChange((b) => ({ ...(b as BlockOf<'features'>), items: (b as BlockOf<'features'>).items.filter((_, at) => at !== index) }))}>
                   {t('editor.features.remove', 'Remove point {n}', { n: index + 1 })}
@@ -320,19 +312,19 @@ export function BlockFields({ t, pageKey, block, language, mayEdit, hasForm, pag
     case 'quote':
       return (
         <div data-lpe-fields="">
-          <Words id={`${id}-text`} label={t('editor.quote.words', 'Words')} value={block.text} max={LANDING_TEXT_MAX.short} lines={4} mayEdit={mayEdit} onChange={(value) => set<BlockOf<'quote'>>('text', (b) => ({ ...b, text: value }))} />
-          <Words id={`${id}-who`} label={t('editor.field.who', 'Who said it')} value={block.who} max={LANDING_TEXT_MAX.heading} mayEdit={mayEdit} onChange={(value) => set<BlockOf<'quote'>>('who', (b) => ({ ...b, who: value }))} />
+          <Words label={t('editor.quote.words', 'Words')} value={block.text} max={LANDING_TEXT_MAX.short} lines={4} mayEdit={mayEdit} onChange={(value) => set<BlockOf<'quote'>>('text', (b) => ({ ...b, text: value }))} />
+          <Words label={t('editor.field.who', 'Who said it')} value={block.who} max={LANDING_TEXT_MAX.heading} mayEdit={mayEdit} onChange={(value) => set<BlockOf<'quote'>>('who', (b) => ({ ...b, who: value }))} />
           <p data-lpe-note="">{t('editor.quote.note', 'Use a customer’s own words, with their leave.')}</p>
         </div>
       );
     case 'questions':
       return (
         <div data-lpe-fields="">
-          <Words id={`${id}-title`} label={t('editor.field.title', 'Title')} value={block.title} max={LANDING_TEXT_MAX.heading} mayEdit={mayEdit} onChange={(value) => set<BlockOf<'questions'>>('title', (b) => ({ ...b, title: value }))} />
+          <Words label={t('editor.field.title', 'Title')} value={block.title} max={LANDING_TEXT_MAX.heading} mayEdit={mayEdit} onChange={(value) => set<BlockOf<'questions'>>('title', (b) => ({ ...b, title: value }))} />
           {block.items.map((item, index) => (
             <div key={String(index)} data-lpe-group="">
-              <Words id={`${id}-q${String(index)}`} label={t('editor.questions.question', 'Question {n}', { n: index + 1 })} value={item.question} max={LANDING_TEXT_MAX.question} mayEdit={mayEdit} onChange={(value) => set<BlockOf<'questions'>>(`q${String(index)}`, (b) => ({ ...b, items: b.items.map((one, at) => (at === index ? { ...one, question: value } : one)) }))} />
-              <Words id={`${id}-a${String(index)}`} label={t('editor.field.answer', 'Answer')} value={item.answer} max={LANDING_TEXT_MAX.medium} lines={3} mayEdit={mayEdit} onChange={(value) => set<BlockOf<'questions'>>(`a${String(index)}`, (b) => ({ ...b, items: b.items.map((one, at) => (at === index ? { ...one, answer: value } : one)) }))} />
+              <Words label={t('editor.questions.question', 'Question {n}', { n: index + 1 })} value={item.question} max={LANDING_TEXT_MAX.question} mayEdit={mayEdit} onChange={(value) => set<BlockOf<'questions'>>(`q${String(index)}`, (b) => ({ ...b, items: b.items.map((one, at) => (at === index ? { ...one, question: value } : one)) }))} />
+              <Words label={t('editor.field.answer', 'Answer')} value={item.answer} max={LANDING_TEXT_MAX.medium} lines={3} mayEdit={mayEdit} onChange={(value) => set<BlockOf<'questions'>>(`a${String(index)}`, (b) => ({ ...b, items: b.items.map((one, at) => (at === index ? { ...one, answer: value } : one)) }))} />
               {mayEdit && block.items.length > 1 ? (
                 <Button variant="ghost" size="sm" onClick={() => onChange((b) => ({ ...(b as BlockOf<'questions'>), items: (b as BlockOf<'questions'>).items.filter((_, at) => at !== index) }))}>
                   {t('editor.questions.remove', 'Remove question {n}', { n: index + 1 })}
@@ -350,7 +342,6 @@ export function BlockFields({ t, pageKey, block, language, mayEdit, hasForm, pag
     case 'spacer':
       return (
         <Select
-          id={`${id}-size`}
           label={t('editor.spacer.size', 'Size')}
           value={block.size}
           disabled={!mayEdit}

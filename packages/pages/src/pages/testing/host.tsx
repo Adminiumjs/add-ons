@@ -380,10 +380,15 @@ function Labelled({ label, hint, error, id, children }: { label?: React.ReactNod
   );
 }
 
+/*
+ * As the host's own field does: its label names the id IT makes, and a
+ * control handed an id of its own keeps it, so a labelled control given an
+ * `id` is left with no name. A page passes no id to a labelled control.
+ */
 function Input({ label, hint, error, id, ...rest }: Props) {
   const made = React.useId();
   return (
-    <Labelled label={label} hint={hint} error={error} id={id ?? made}>
+    <Labelled label={label} hint={hint} error={error} id={made}>
       <input id={id ?? made} {...rest} />
     </Labelled>
   );
@@ -395,7 +400,7 @@ function NumberInput({ label, hint, error, id, value, onChange, unit, disabled, 
   void whole;
   void negative;
   return (
-    <Labelled label={label} hint={hint} error={error} id={id ?? made}>
+    <Labelled label={label} hint={hint} error={error} id={made}>
       <input id={id ?? made} inputMode="decimal" value={value} disabled={disabled} required={required} placeholder={placeholder} onChange={(event) => onChange(event.target.value)} onBlur={() => onBlur?.()} {...aria} />
       {unit === undefined ? null : <span data-slot="unit">{unit}</span>}
     </Labelled>
@@ -405,7 +410,7 @@ function NumberInput({ label, hint, error, id, value, onChange, unit, disabled, 
 function Select({ label, hint, error, id, options, ...rest }: Props) {
   const made = React.useId();
   return (
-    <Labelled label={label} hint={hint} error={error} id={id ?? made}>
+    <Labelled label={label} hint={hint} error={error} id={made}>
       <select id={id ?? made} {...rest}>
         {(options as { value: string; label: string }[]).map((option) => (
           <option key={option.value} value={option.value}>
@@ -421,7 +426,7 @@ function Field({ label, hint, error, children }: Props) {
   const made = React.useId();
   return (
     <Labelled label={label} hint={hint} error={error} id={made}>
-      {React.cloneElement(children as React.ReactElement<{ id?: string }>, { id: made })}
+      {React.cloneElement(children as React.ReactElement<{ id?: string }>, { id: (children as React.ReactElement<{ id?: string }>).props.id ?? made })}
     </Labelled>
   );
 }
