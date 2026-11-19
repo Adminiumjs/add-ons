@@ -10,6 +10,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
 
+import { LANDING_SLUGS_RESERVED } from '@adminium/add-on-contracts/landing';
 import manifest from '../manifest.json' with { type: 'json' };
 import * as GERMAN from './pages/strings/de-DE.ts';
 import { BUILT_FILES } from '../vite.config.ts';
@@ -63,6 +64,10 @@ describe('the page file', () => {
 
   it('keeps nothing in the browser’s storage', () => {
     expect(file()).not.toMatch(/localStorage|sessionStorage|document\.cookie/);
+  });
+
+  it('carries no copy of the words the addresses keep: Adminium judges those, and they spell what the word gate refuses', () => {
+    for (const word of LANDING_SLUGS_RESERVED) expect(file(), word).not.toContain(`"${word}"`);
   });
 
   it('passes the word gate', () => {

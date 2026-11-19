@@ -73,7 +73,7 @@ import { PageSettings } from './PageSettings.tsx';
 import { Picker } from './Picker.tsx';
 import { BlockedCards, PublishPanel, useLandingStatus } from './Publish.tsx';
 import { isRightToLeft, languageName, PAGE_LANGUAGES, pageRowOf, startingLanguage } from './row.ts';
-import { freeSlug, slugOf } from './slug.ts';
+import { addressRefused, freeSlug, slugOf } from './slug.ts';
 import { useEditing, type Copy, type PageRow } from './store.ts';
 import { useEditorStyles } from './styles.ts';
 import { refusalWords } from './words.ts';
@@ -328,7 +328,7 @@ function Workspace({ t, row, refetch, milo }: { t: AddOnTranslate; row: PageRow;
   /** Publish (a draft or a page that is off) or Update (a live page): the working copy, checked, as the published one. */
   const publish = async (): Promise<void> => {
     setRefused(null);
-    const found = problemsOf(page, row.slug);
+    const found = problemsOf(page, row.slug, addressRefused(status, row.slug));
     if (found.length > 0) {
       setProblems(found);
       return;

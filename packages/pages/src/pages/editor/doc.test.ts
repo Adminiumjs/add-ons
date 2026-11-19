@@ -101,9 +101,11 @@ describe('publishing', () => {
     expect(publishable(checkAll(marked))).not.toBeNull();
   });
 
-  it('refuses an address that breaks the slug rule or is a reserved word', () => {
+  it('refuses an address that breaks the slug rule, or one Adminium does not take', () => {
     expect(problemsOf(page([hero]), 'Open Day')).toEqual([{ code: 'slug' }]);
-    expect(problemsOf(page([hero]), 'login')).toEqual([{ code: 'slug' }]);
+    // A word the addresses keep is Adminium's to judge: its status read says so, and the page passes it on.
+    expect(problemsOf(page([hero]), 'login')).toEqual([]);
+    expect(problemsOf(page([hero]), 'login', true)).toEqual([{ code: 'slug' }]);
   });
 
   it('refuses a page with no section', () => {
@@ -132,7 +134,8 @@ describe('a page’s address', () => {
     expect(slugOf('Spring open day')).toBe('spring-open-day');
     expect(slugOf('Café à Paris!')).toBe('cafe-a-paris');
     expect(slugOf('عرض الربيع')).toBe('page');
-    expect(slugOf('Login')).toBe('page');
+    // A word the addresses keep has the shape of one: Adminium judges it once saved (`addressRefused`).
+    expect(slugOf('Login')).toBe('login');
   });
 
   it('is typed in lower case, with spaces as dashes', () => {

@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testi
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { Refused, resetWorld, seed, world, type Call } from '../testing/host.tsx';
-import { DRAFT_PATH, FORMS_PATH, picturesPath, statusPath, SURFACES_PATH, DOMAINS_PATH } from './engine.ts';
+import { draftPath, formsPath, picturesPath, statusPath, SURFACES_PATH, DOMAINS_PATH } from './engine.ts';
 import { resetEditors, SAVE_DELAY_MS } from './store.ts';
 
 const { default: LandingPages } = await import('../landing/index.tsx');
@@ -37,6 +37,8 @@ interface Serve {
   hosts?: { host: string; home: string }[];
   homeOf?: string[];
   forms?: unknown[];
+  /** The page's slug as Adminium takes it: null when it does not take the saved one as a page's address. */
+  pageSlug?: string | null;
   other?: (method: string, path: string, payload: unknown) => unknown;
 }
 function serve(more: Serve = {}): void {
@@ -51,7 +53,7 @@ function serve(more: Serve = {}): void {
           hosts,
           page: {
             key: '7',
-            slug: 'open-day',
+            slug: more.pageSlug === undefined ? 'open-day' : more.pageSlug,
             state: 'live',
             addresses: [...hosts.map((one) => ({ host: one.host, url: `https://${one.host}/x/pages/open-day`, home: (more.homeOf ?? []).includes(one.host) })), { host: 'crm.example.test', url: 'https://crm.example.test/x/pages/open-day', home: false }],
             canonical: 'https://crm.example.test/x/pages/open-day',
@@ -60,7 +62,7 @@ function serve(more: Serve = {}): void {
         },
       };
     }
-    if (method === 'get' && path === FORMS_PATH) return { data: { forms: more.forms ?? [] } };
+    if (method === 'get' && path === formsPath()) return { data: { forms: more.forms ?? [] } };
     return more.other?.(method, path, payload) ?? {};
   };
 }
@@ -324,13 +326,13 @@ describe('publishing', () => {
 describe('Draft with Milo', () => {
   it('drafts the page into the working copy with every section marked, and "Looks right" takes the marks off', async () => {
     seed('pages', [pageRow({ draft: { v: 1, title: 'Spring open day', description: '', blocks: [] } })]);
-    serve({ other: (method, path) => (method === 'post' && path === DRAFT_PATH ? { data: { page: { v: 1, title: 'Spring open day', description: 'Come in.', blocks: [{ ...HERO, milo: true }, { ...TEXT, milo: true }] }, left: [{ what: 'quote', block: 'q' }], tokens: 10 } } : undefined) });
+    serve({ other: (method, path) => (method === 'post' && path === draftPath() ? { data: { page: { v: 1, title: 'Spring open day', description: 'Come in.', blocks: [{ ...HERO, milo: true }, { ...TEXT, milo: true }] }, left: [{ what: 'quote', block: 'q' }], tokens: 10 } } : undefined) });
     await open();
     fireEvent.click(screen.getAllByRole('button', { name: 'Draft with Milo' })[0] as HTMLElement);
     fireEvent.change(screen.getByLabelText('What is the page for?'), { target: { value: 'A page for our spring showroom open day with a booking form' } });
     fireEvent.click(screen.getByRole('button', { name: 'Draft it' }));
     await screen.findByRole('region', { name: 'Milo’s draft' });
-    const asked = world.calls.find((call) => call.kind === 'api' && call.table === `post ${DRAFT_PATH}`);
+    const asked = world.calls.find((call) => call.kind === 'api' && call.table === `post ${draftPath()}`);
     expect(asked?.values).toEqual({ description: 'A page for our spring showroom open day with a booking form', language: 'en-US', pageKey: '7' });
     expect(miloChips()).toBe(2);
     expect(toastTitles()).toContain('Milo drafted the page. Check each section.');
@@ -349,7 +351,7 @@ describe('Draft with Milo', () => {
 
   it('puts the page back as it was with "Undo all"', async () => {
     seed('pages', [pageRow({ draft: { v: 1, title: 'Spring', description: '', blocks: [] } })]);
-    serve({ other: (method, path) => (method === 'post' && path === DRAFT_PATH ? { data: { page: { v: 1, title: 'Spring', description: 'd', blocks: [{ ...TEXT, milo: true }] }, left: [], tokens: 1 } } : undefined) });
+    serve({ other: (method, path) => (method === 'post' && path === draftPath() ? { data: { page: { v: 1, title: 'Spring', description: 'd', blocks: [{ ...TEXT, milo: true }] }, left: [], tokens: 1 } } : undefined) });
     await open();
     fireEvent.click(screen.getAllByRole('button', { name: 'Draft with Milo' })[0] as HTMLElement);
     fireEvent.change(screen.getByLabelText('What is the page for?'), { target: { value: 'An offer' } });
@@ -364,7 +366,7 @@ describe('Draft with Milo', () => {
     seed('pages', [pageRow({ draft: { v: 1, title: 'Spring', description: '', blocks: [] } })]);
     serve({
       other: (method, path) => {
-        if (method === 'post' && path === DRAFT_PATH) throw new Refused('RATE_LIMITED', 'Your Milo allowance for today is used.', { reason: 'allowance' });
+        if (method === 'post' && path === draftPath()) throw new Refused('RATE_LIMITED', 'Your Milo allowance for today is used.', { reason: 'allowance' });
         return undefined;
       },
     });
@@ -453,14 +455,34 @@ describe('the page’s settings', () => {
     await open();
     fireEvent.click(screen.getByRole('button', { name: 'Page settings' }));
     const address = screen.getByLabelText('Address') as HTMLInputElement;
-    fireEvent.change(address, { target: { value: 'Login' } });
-    expect(address.value).toBe('login');
+    fireEvent.change(address, { target: { value: 'Open Day!' } });
+    expect(address.value).toBe('open-day!');
     fireEvent.blur(address);
     expect(screen.getAllByText('Use lower-case letters, digits and dashes; not a word the addresses use (api, login, account…).').length).toBeGreaterThan(0);
     expect(updates()).toEqual([]);
+    serve({ pageSlug: 'spring-open-day' });
     fireEvent.change(address, { target: { value: 'spring open day' } });
     fireEvent.blur(address);
     await waitFor(() => expect(updates().map((call) => call.values)).toContainEqual({ slug: 'spring-open-day' }));
+    expect(screen.queryByText('Use lower-case letters, digits and dashes; not a word the addresses use (api, login, account…).')).toBeNull();
+  });
+
+  it('says so when Adminium does not take a saved address, a word the addresses keep, and Publish lists it', async () => {
+    seed('pages', [pageRow()]);
+    await open();
+    fireEvent.click(screen.getByRole('button', { name: 'Page settings' }));
+    const address = screen.getByLabelText('Address') as HTMLInputElement;
+    // The page carries no list of those words: the shape passes here, and Adminium's status read judges the rest.
+    serve({ pageSlug: null });
+    fireEvent.change(address, { target: { value: 'Login' } });
+    expect(address.value).toBe('login');
+    fireEvent.blur(address);
+    await waitFor(() => expect(updates().map((call) => call.values)).toContainEqual({ slug: 'login' }));
+    await waitFor(() => expect(screen.getAllByText('Use lower-case letters, digits and dashes; not a word the addresses use (api, login, account…).').length).toBeGreaterThan(0));
+    fireEvent.click(screen.getByRole('button', { name: 'Publish' }));
+    fireEvent.click(within(publishPanel()).getByRole('button', { name: 'Publish now' }));
+    expect(within(publishPanel()).getByText('The address may hold only lower-case letters, digits and dashes, and may not be a word the addresses use.')).toBeTruthy();
+    expect(moves()).toEqual([]);
   });
 
   it('lists each pages host with the page’s address on it, and makes it a host’s home for someone who may', async () => {

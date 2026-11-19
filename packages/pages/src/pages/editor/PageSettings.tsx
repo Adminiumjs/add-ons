@@ -16,7 +16,7 @@
  * - "Make a copy": one language per page, so a page in another language is a
  *   copy written in it.
  */
-import { isLandingSlug, LANDING_SLUG_MAX, LANDING_TEXT_MAX } from '@adminium/add-on-contracts/landing';
+import { LANDING_SLUG_MAX, LANDING_TEXT_MAX } from '@adminium/add-on-contracts/landing';
 import { useEffect, useState, type ReactNode } from 'react';
 
 import { Button, Field, Input, Link, Textarea, type AddOnTranslate } from '../shared/host.ts';
@@ -26,7 +26,7 @@ import type { Picture } from './doc.ts';
 import type { LandingStatus } from './engine.ts';
 import { PictureField } from './PictureField.tsx';
 import { ShowSwitch } from './Publish.tsx';
-import { typedSlug } from './slug.ts';
+import { addressRefused, isPageSlug, typedSlug } from './slug.ts';
 
 /** An address's scheme and host: what a visitor types to reach a host's home. */
 export const originOf = (url: string): string => url.split('/x/pages/')[0] ?? url;
@@ -65,10 +65,11 @@ export function PageSettings(props: PageSettingsProps): ReactNode {
   useEffect(() => setTyped(slug), [slug]);
 
   const draft = state === 'draft';
-  const wrong = typed !== '' && !isLandingSlug(typed);
+  // Wrong by its shape as it is typed, or, once saved, by Adminium's own judgement (a word the addresses keep).
+  const wrong = (typed !== '' && !isPageSlug(typed)) || (typed === slug && addressRefused(status, slug));
   const saveSlug = async (): Promise<void> => {
     if (typed === slug) return;
-    if (!isLandingSlug(typed)) {
+    if (!isPageSlug(typed)) {
       setSlugError(t('editor.settings.slugRule', 'Use lower-case letters, digits and dashes; not a word the addresses use (api, login, account…).'));
       return;
     }

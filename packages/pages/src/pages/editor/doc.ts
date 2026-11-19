@@ -22,7 +22,6 @@ import {
   LANDING_SPACER_SIZES,
   LANDING_VOCABULARY_VERSION,
   hasMiloMarks,
-  isLandingSlug,
   landingBlockSchema,
   parseLandingPage,
   type LandingBlock,
@@ -32,6 +31,8 @@ import {
   type LandingPage,
   type PictureRef,
 } from '@adminium/add-on-contracts/landing';
+
+import { isPageSlug } from './slug.ts';
 
 export type Page = LandingPage;
 export type Block = LandingBlock;
@@ -279,14 +280,15 @@ export type Problem =
 
 /**
  * Everything that keeps the page from being published: Milo's marks left,
- * an address that breaks the slug rule, a page with no section, and every
+ * an address that breaks the slug rule (by its shape here, or as Adminium
+ * judged it: `refusedAddress`, `slug.ts`), a page with no section, and every
  * field the vocabulary refuses, each on the section it is in.
  */
-export function problemsOf(page: Page, slug: string): Problem[] {
+export function problemsOf(page: Page, slug: string, refusedAddress = false): Problem[] {
   const found: Problem[] = [];
   const marks = markCount(page);
   if (marks > 0) found.push({ code: 'marked', count: marks });
-  if (!isLandingSlug(slug)) found.push({ code: 'slug' });
+  if (!isPageSlug(slug) || refusedAddress) found.push({ code: 'slug' });
   if (page.blocks.length === 0) found.push({ code: 'empty' });
   const parsed = parseLandingPage(page);
   if (!parsed.ok) {
