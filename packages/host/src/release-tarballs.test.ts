@@ -106,6 +106,7 @@ describe('release tarballs: discovery', () => {
       'import-canva',
       'inventory',
       'invoices',
+      'lead-finder',
       'live-chat',
       'offers',
       'pages',

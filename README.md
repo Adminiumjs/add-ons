@@ -9,6 +9,7 @@ packages/barcode-labels/    Barcode Labels: document-render@1, connects to nothi
 packages/customiser/        Customiser: design-check@1, posting-rows@1, connects to nothing
 packages/forms/             Forms & surveys: no contract, connects to nothing
 packages/live-chat/         Live chat: no contract, connects to nothing
+packages/lead-finder/       Lead finder: lead-source@1, six sources, a key of the owner's per keyed source
 packages/pages/             Landing pages: no contract, connects to nothing
 packages/holiday-calendars/ Holiday Calendars: no contract, no egress, connects to nothing
 packages/inventory/         Inventory: posting-rows@1, connects to nothing

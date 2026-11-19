@@ -70,6 +70,7 @@ including the ones that name no company.
 | Card payments | `packages/payments-stripe` | `CP` | **Stripe**, **Link**; ways to pay it names: **PayPal**, **Apple Pay**, **Google Pay**, **Klarna**; card schemes: **Visa**, **Mastercard**, **American Express**, **Interac** | Stripe, Inc.; PayPal, Inc.; Apple Inc.; Google LLC; Klarna Bank AB; Visa Inc.; Mastercard International Incorporated; American Express Company; Interac Corp. |
 | Wallet payments | `packages/payments-paypal` | `WP` | **PayPal** | PayPal, Inc. |
 | Card readers | `packages/payments-square` | `CR` | **Square**, **Square Terminal**; a card scheme it names: **Interac** | Block, Inc.; Interac Corp. |
+| Lead finder | `packages/lead-finder` | `LF` | **Hunter**, **OpenCorporates**; public registers it names: Companies House, the Register of France (Recherche d’entreprises), the Register of Norway (Brønnøysundregistrene) | Hunter Web Services, Inc.; OpenCorporates Ltd |
 
 Adminium and the Adminium name are marks of the Adminium project. Every add-on
 here is published by the project itself (`publisher.id: adminium`), which in v1
@@ -979,3 +980,56 @@ Adminium's:
 
 This repository ships no credentials. The add-on's sandbox tests run against
 Square's sandbox and its documented test devices, never against a live account.
+
+---
+
+# Lead finder — Hunter and OpenCorporates, and three public registers
+
+## What it names, and why
+
+Lead finder finds companies and the people who work at them through sources
+the owner chooses. It has to say which source a key, a look-up or a found
+detail belongs to, and that cannot be said without the source's name:
+
+- **Hunter** (hunter.io), a service of Hunter Web Services, Inc.: the owner's
+  own Hunter key finds the people at a company's domain. The add-on says
+  "Hunter" and "your Hunter account", never a possessive form.
+- **OpenCorporates**, of OpenCorporates Ltd: the owner's own paid key fills in a
+  company's registered details. Its card shows "Powered by OpenCorporates", as
+  OpenCorporates asks of those who show its data.
+- **Companies House**, the UK's register of companies, the French state's open
+  company search (Recherche d’entreprises, with its town service), and
+  Brønnøysundregistrene, Norway's register. These are public bodies named as the
+  places the details came from; each source card carries the licence its data
+  is published under (Open Government Licence, Licence Ouverte (Etalab), NLOD).
+
+Nothing is sent through, hosted on or stored with any of them on Adminium's
+behalf: each call is made by the owner's own Adminium, with the owner's own key
+where one is needed, and what it finds is kept in the owner's own database.
+
+## Affiliation
+
+Lead finder is not affiliated with, sponsored by or endorsed by Hunter Web
+Services, Inc., OpenCorporates Ltd, Companies House, the French state's
+services or Brønnøysundregistrene. They are named nominatively only, to say
+which source the owner connected.
+
+## No logo, no brand colour
+
+The add-on is represented by a monogram tile, `LF`, in `--fg-muted` on
+`--surface-3`. No Hunter or OpenCorporates logo, no register's crest, no brand
+colour and no brand typeface appears in its code, its README, its manifest or
+its listing.
+
+## The sources' own terms
+
+An owner who saves a key is bound by that service's terms, not by Adminium's:
+
+- Hunter terms of service: <https://hunter.io/terms-of-service>
+- OpenCorporates API terms: <https://opencorporates.com/legal-information/self-service-api-terms-of-service/>
+- Companies House API: <https://developer-specs.company-information.service.gov.uk/>
+- Recherche d’entreprises: <https://recherche-entreprises.api.gouv.fr/docs/>
+- Enhetsregisteret: <https://data.brreg.no/enhetsregisteret/api/dokumentasjon/no/index.html>
+
+This repository ships no keys. The add-on's tests answer from handwritten
+replies about made-up companies; none calls a real service.

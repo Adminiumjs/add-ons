@@ -93,6 +93,8 @@ describe('release shape: discovery', () => {
       'forms',
       // The second door a stranger uses: a website chat whose every conversation and message Adminium writes.
       'live-chat',
+      // The first that provides `lead-source@1`: one server half the engine calls per source, each with only its own key and hosts.
+      'lead-finder',
       // The third door a stranger uses: landing pages Adminium draws, publishes under its own seal and counts the views of.
       'pages',
       // The first that moves money: a `payment-provider@1` half the engine loads, and no screen of its own.
