@@ -14,9 +14,13 @@
  *   GET  /api/v1/files                             the pictures in Files, to choose one from
  *   GET  /api/v1/surfaces, PUT /surfaces/domains   which page a pages host opens on (its home)
  *
+ * Every landing route names the copy of the add-on the page is open for
+ * (`install.ts`): the database its tables are on.
+ *
  * Every reply is read leniently: what is not there is not claimed, and a
  * reply that is not what it should be reads as nothing.
  */
+import { landingPath } from '../../install.ts';
 import { api } from '../shared/host.ts';
 import { ADD_ON } from '../shared/paths.ts';
 
@@ -24,12 +28,12 @@ const isRecord = (value: unknown): value is Record<string, unknown> => typeof va
 const text = (value: unknown): string | null => (typeof value === 'string' ? value : null);
 const dataOf = (reply: unknown): unknown => (isRecord(reply) ? reply['data'] : undefined);
 
-/** The add-on's own routes. */
+/** The add-on's own routes, each naming the copy the page is open for (`install.ts`). */
 export const LANDING = `/api/v1/landing/${ADD_ON}`;
-export const statusPath = (page: string): string => `${LANDING}/status?page=${encodeURIComponent(page)}`;
-export const picturesPath = (page: string): string => `${LANDING}/pictures?page=${encodeURIComponent(page)}`;
-export const DRAFT_PATH = `${LANDING}/draft`;
-export const FORMS_PATH = `${LANDING}/forms`;
+export const statusPath = (page: string): string => landingPath(`${LANDING}/status?page=${encodeURIComponent(page)}`);
+export const picturesPath = (page: string): string => landingPath(`${LANDING}/pictures?page=${encodeURIComponent(page)}`);
+export const draftPath = (): string => landingPath(`${LANDING}/draft`);
+export const formsPath = (): string => landingPath(`${LANDING}/forms`);
 export const SURFACES_PATH = '/api/v1/surfaces';
 export const DOMAINS_PATH = '/api/v1/surfaces/domains';
 /** The kinds of picture a page may show, by the files routes' own words; and the most one may weigh (the public picture rule). */
@@ -39,7 +43,7 @@ export const PICTURE_MAX_BYTES = 5 * 1024 * 1024;
 export const filesPath = (q: string): string => `/api/v1/files?accept=${PICTURE_KINDS.join(',')}&limit=60${q.trim() === '' ? '' : `&q=${encodeURIComponent(q.trim())}`}`;
 
 /** Where the canvas reads one of the page's own pictures. */
-export const pictureSrc = (page: string, file: string): string => `${LANDING}/pictures/${encodeURIComponent(file)}?page=${encodeURIComponent(page)}`;
+export const pictureSrc = (page: string, file: string): string => landingPath(`${LANDING}/pictures/${encodeURIComponent(file)}?page=${encodeURIComponent(page)}`);
 
 /* ── the status ─────────────────────────────────────────────────────────── */
 
@@ -152,7 +156,7 @@ export function draftedOf(reply: unknown): Drafted | null {
 }
 
 export async function askDraft(input: { description: string; language: string; pageKey: string }): Promise<Drafted> {
-  const drafted = draftedOf(await api.post<unknown>(DRAFT_PATH, input));
+  const drafted = draftedOf(await api.post<unknown>(draftPath(), input));
   if (drafted === null) throw new Error('Milo’s draft could not be read.');
   return drafted;
 }
@@ -188,7 +192,7 @@ export function formsOf(reply: unknown): LiveForm[] {
 }
 
 export async function readLiveForms(): Promise<LiveForm[]> {
-  return formsOf(await api.get<unknown>(FORMS_PATH));
+  return formsOf(await api.get<unknown>(formsPath()));
 }
 
 /** Whether a form is written in the page's language: a form with no version in it is left off the page for strangers. */

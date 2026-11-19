@@ -16,12 +16,12 @@ export const PAGES = [
 ];
 
 /** The one live form of the comps, in the Forms add-on. */
-export const FORMS = [{ addOn: 'forms', key: '7', name: 'Book a showroom visit', slug: 'book-a-visit', languages: ['en-US'], ending: { kind: 'landing', page: '5', addOn: 'pages' }, installId: 'install-forms' }];
+export const FORMS = [{ addOn: 'forms', key: '7', name: 'Book a showroom visit', slug: 'book-a-visit', languages: ['en-US'], ending: { kind: 'landing', page: '5', addOn: 'pages', broken: false }, installId: 'install-forms' }];
 
 /** The comp's funnel "Open day": page → form → thanks page. */
 export const FUNNEL = { id: 11, name: 'Open day', steps: [{ kind: 'page', key: '1' }, { kind: 'form', key: '7', addOn: 'forms' }, { kind: 'page', key: '5' }], rule_id: 'rule-brochure' };
 
-export const STATUS = { data: { installId: 'install-pages', notice: true, reach: { state: 'reachable' }, publicOrigin: 'https://crm.meridian.example', timeZone: 'Europe/London', viewCountsMonths: 13, hosts: [] } };
+export const STATUS = { data: { installId: 'install-pages', notice: true, reach: { state: 'reachable', proxyUnchecked: false }, publicOrigin: 'https://crm.meridian.example', timeZone: 'Europe/London', viewCountsMonths: 13, hosts: [] } };
 export const ADD_ONS = { addOns: [{ key: 'pages', installId: 'install-pages' }, { key: 'forms', installId: 'install-forms' }] };
 
 /** The comp's counts (5): 1,240 → 310 → 96 → 94, and 412 for the booths. */
@@ -30,6 +30,26 @@ export const COUNTS: Record<string, Record<string, number>> = {
   'form-opened|1': { '7': 310 },
   'form-sent|1': { '7': 96 },
 };
+
+/** The rule read, as Adminium answers it for someone who manages rules. */
+export const RULE = {
+  data: {
+    state: 'linked',
+    name: 'Brochure follow-up',
+    enabled: true,
+    canOpen: true,
+    ruleId: 'rule-brochure',
+    chips: [
+      { kind: 'trigger', title: 'Form sent', on: 'record', event: 'created' },
+      { kind: 'action', title: 'E-mail the brochure', action: 'email' },
+      { kind: 'wait', title: 'Wait 2 days', amount: 2, unit: 'days' },
+      { kind: 'branch', title: 'If no deal yet, a follow-up for the rep' },
+    ],
+  },
+};
+
+/** The kit's read: the database the add-on's tables are on. */
+export const KIT = { connectionId: 'conn-crm', tables: {}, hosts: [], has: {}, currency: null };
 
 export interface Adminium {
   level?: 'off' | 'counts' | 'visitor';
@@ -49,8 +69,9 @@ export function adminium(said: Adminium = {}): (method: string, path: string) =>
     const url = new URL(path, 'https://crm.example');
     if (url.pathname === '/api/v1/landing/pages/status') return said.status ?? STATUS;
     if (url.pathname === '/api/v1/add-ons') return ADD_ONS;
+    if (url.pathname === '/api/v1/add-ons/pages/kit') return KIT;
     if (url.pathname === '/api/v1/landing/pages/forms') return { data: said.forms ?? FORMS };
-    if (url.pathname.startsWith('/api/v1/landing/pages/funnels/')) return said.rule ?? { data: { name: 'Brochure follow-up', id: 'rule-brochure', canOpen: true, chips: [{ words: 'Form sent', icon: 'file-check' }, { words: 'E-mail the brochure', icon: 'mail' }, { words: 'Wait 2 days', icon: 'hourglass' }, { words: 'If no deal yet, a follow-up for the rep', icon: 'git-branch' }] } };
+    if (url.pathname.startsWith('/api/v1/landing/pages/funnels/')) return said.rule ?? RULE;
     if (url.pathname === '/api/v1/automations') {
       if (said.rules === null) throw Object.assign(new Error('forbidden'), { code: 'FORBIDDEN' });
       return { rules: said.rules ?? [{ id: 'rule-brochure', name: 'Brochure follow-up' }, { id: 'rule-thanks', name: 'Thank the visitor' }] };

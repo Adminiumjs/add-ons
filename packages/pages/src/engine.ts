@@ -18,11 +18,16 @@
  *   someone who manages rules: anyone else is refused, and told so);
  * - `GET /api/v1/add-ons`: an add-on's install id, which the views route takes.
  *
+ * Every landing route names the copy of the add-on the page is open for
+ * (`install.ts`).
+ *
  * Every answer is read leniently: a field that is missing or of another kind
  * is read as "not known", never thrown on, so a screen says less rather than
  * breaking when a route grows. Each reader is a plain function of the `api`
  * it is handed, so the tests hand it a fake.
  */
+
+import { landingPath } from './install.ts';
 
 /** The part of the dashboard's `api` these reads use. */
 export interface EngineApi {
@@ -39,13 +44,10 @@ const keyOf = (value: unknown): string | null => (typeof value === 'number' && N
 
 /* ── the status ─────────────────────────────────────────────────────────── */
 
-/** One pages host and, for the page asked about, its address there. */
+/** A host mapped to the add-on's pages, and the page its `/` opens on (`/x/pages/<slug>`). */
 export interface PagesHost {
   host: string;
-  /** This page's address on the host; null when no page was asked about. */
-  address: string | null;
-  /** Whether the page asked about is the host's home. */
-  home: boolean;
+  home: string;
 }
 
 /** What the status read says. Each part is null while Adminium does not say it. */
@@ -54,8 +56,8 @@ export interface LandingStatus {
   installId: string | null;
   /** Whether the privacy notice is set: publishing waits for it. */
   notice: boolean | null;
-  /** Whether visitors can reach the pages, with the verdict's own code. */
-  reach: { state: string; code: string | null } | null;
+  /** Whether visitors can reach the pages (`reachable`, or the reach words' code), and whether a proxy is unchecked. */
+  reach: { state: string; proxyUnchecked: boolean } | null;
   /** The install's public address, the start of every page's address. */
   publicOrigin: string | null;
   /** The business's time zone: a day of counts is a day there. */
@@ -68,12 +70,8 @@ export interface LandingStatus {
 export function statusOf(answer: unknown): LandingStatus {
   const data = dataOf(answer);
   const d = isRecord(data) ? data : {};
-  const reach = isRecord(d['reach']) && typeof d['reach']['state'] === 'string' ? { state: d['reach']['state'], code: text(d['reach']['code']) } : null;
-  const hosts = (Array.isArray(d['hosts']) ? d['hosts'] : []).flatMap((one): PagesHost[] => {
-    if (typeof one === 'string') return [{ host: one, address: null, home: false }];
-    if (!isRecord(one) || typeof one['host'] !== 'string') return [];
-    return [{ host: one['host'], address: text(one['address']), home: one['home'] === true || one['isHome'] === true }];
-  });
+  const reach = isRecord(d['reach']) && typeof d['reach']['state'] === 'string' ? { state: d['reach']['state'], proxyUnchecked: d['reach']['proxyUnchecked'] === true } : null;
+  const hosts = (Array.isArray(d['hosts']) ? d['hosts'] : []).flatMap((one): PagesHost[] => (isRecord(one) && typeof one['host'] === 'string' && typeof one['home'] === 'string' ? [{ host: one['host'], home: one['home'] }] : []));
   return {
     installId: keyOf(d['installId']),
     notice: flag(d['notice']),
@@ -88,7 +86,7 @@ export function statusOf(answer: unknown): LandingStatus {
 /** The status, and for one page its address on each host. */
 export async function readStatus(api: EngineApi, addOn: string, page?: string): Promise<LandingStatus> {
   const query = page === undefined ? '' : `?page=${encodeURIComponent(page)}`;
-  return statusOf(await api.get(`/api/v1/landing/${encodeURIComponent(addOn)}/status${query}`));
+  return statusOf(await api.get(landingPath(`/api/v1/landing/${encodeURIComponent(addOn)}/status${query}`)));
 }
 
 /* ── view counts ────────────────────────────────────────────────────────── */
@@ -206,7 +204,7 @@ export function liveFormsOf(answer: unknown): LiveForm[] {
 }
 
 export async function readLiveForms(api: EngineApi, addOn: string): Promise<LiveForm[]> {
-  return liveFormsOf(await api.get(`/api/v1/landing/${encodeURIComponent(addOn)}/forms`));
+  return liveFormsOf(await api.get(landingPath(`/api/v1/landing/${encodeURIComponent(addOn)}/forms`)));
 }
 
 /* ── a funnel's rule ────────────────────────────────────────────────────── */
@@ -220,25 +218,52 @@ export interface RuleChip {
 /** The rule linked to a funnel: none, one that was removed, or its name and steps. */
 export type FunnelRule = { state: 'none' } | { state: 'removed' } | { state: 'linked'; id: string | null; name: string; chips: RuleChip[]; canOpen: boolean };
 
+/**
+ * The icon a chip is drawn with, by the step's kind as the rule read names it
+ * (`trigger`, `action`, `condition`, `wait`, `branch`, `stop`) and, for an
+ * action, what it does: an e-mail and a notification have their own.
+ */
+export function chipIconOf(kind: unknown, action: unknown): string | null {
+  switch (kind) {
+    case 'trigger':
+      return 'zap';
+    case 'action':
+      return action === 'email' ? 'mail' : action === 'notification' ? 'bell' : 'play';
+    case 'condition':
+      return 'filter';
+    case 'wait':
+      return 'hourglass';
+    case 'branch':
+      return 'git-branch';
+    case 'stop':
+      return 'circle-stop';
+    default:
+      return null;
+  }
+}
+
+/**
+ * The rule read: `{ state: 'none' }`, `{ state: 'removed' }`, or
+ * `{ state: 'linked', name, enabled, chips: [{ kind, title, … }], canOpen,
+ * ruleId? }`, the id only for someone who may open the rule.
+ */
 export function funnelRuleOf(answer: unknown): FunnelRule {
   const data = dataOf(answer);
   if (!isRecord(data)) return { state: 'none' };
-  if (data['state'] === 'removed' || data['removed'] === true) return { state: 'removed' };
-  const rule = isRecord(data['rule']) ? data['rule'] : data;
-  const name = text(rule['name']);
-  if (name === null || data['state'] === 'none') return { state: 'none' };
-  const steps = Array.isArray(rule['chips']) ? rule['chips'] : Array.isArray(rule['steps']) ? rule['steps'] : [];
-  const chips = steps.flatMap((one): RuleChip[] => {
-    if (typeof one === 'string') return [{ words: one, icon: null }];
+  if (data['state'] === 'removed') return { state: 'removed' };
+  const name = text(data['name']);
+  if (data['state'] !== 'linked' || name === null) return { state: 'none' };
+  const chips = (Array.isArray(data['chips']) ? data['chips'] : []).flatMap((one): RuleChip[] => {
     if (!isRecord(one)) return [];
-    const words = text(one['words']) ?? text(one['label']) ?? text(one['text']);
-    return words === null ? [] : [{ words, icon: text(one['icon']) }];
+    const words = text(one['title']);
+    return words === null || words.trim() === '' ? [] : [{ words, icon: chipIconOf(one['kind'], one['action']) }];
   });
-  return { state: 'linked', id: keyOf(rule['id']), name, chips, canOpen: data['canOpen'] === true || rule['canOpen'] === true };
+  const canOpen = data['canOpen'] === true;
+  return { state: 'linked', id: canOpen ? keyOf(data['ruleId']) : null, name, chips, canOpen };
 }
 
 export async function readFunnelRule(api: EngineApi, addOn: string, funnel: string): Promise<FunnelRule> {
-  return funnelRuleOf(await api.get(`/api/v1/landing/${encodeURIComponent(addOn)}/funnels/${encodeURIComponent(funnel)}/rule`));
+  return funnelRuleOf(await api.get(landingPath(`/api/v1/landing/${encodeURIComponent(addOn)}/funnels/${encodeURIComponent(funnel)}/rule`)));
 }
 
 /* ── the rules, to pick one ─────────────────────────────────────────────── */

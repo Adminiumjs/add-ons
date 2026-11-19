@@ -143,7 +143,7 @@ describe('what happens after (2c, 2g)', () => {
   });
 
   it('shows the name and steps, never Open rule, to someone Adminium does not let open it', async () => {
-    await draw({ rule: { data: { name: 'Brochure follow-up', id: 'rule-brochure', canOpen: false, chips: ['Form sent'] } } });
+    await draw({ rule: { data: { state: 'linked', name: 'Brochure follow-up', enabled: true, canOpen: false, chips: [{ kind: 'trigger', title: 'Form sent', on: 'record', event: 'created' }] } } });
     expect(screen.getByText('Brochure follow-up')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Open rule' })).toBeNull();
   });

@@ -4,10 +4,11 @@
  * Adminium says of the pages (their status, the install ids, the live forms)
  * is read once here, for every screen.
  */
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
-import { EmptyState, Link, PageActions, PageSurface, useParams, useSearch, type AddOnTranslate } from '../shared/host.ts';
-import { listAt } from '../shared/paths.ts';
+import { readScope } from '../../install.ts';
+import { api, EmptyState, Link, PageActions, PageSurface, useParams, useSearch, type AddOnTranslate } from '../shared/host.ts';
+import { ADD_ON, listAt } from '../shared/paths.ts';
 import { Editor } from '../editor/Editor.tsx';
 import { FunnelView } from '../funnels/FunnelView.tsx';
 import { List } from '../list/List.tsx';
@@ -15,6 +16,30 @@ import { LandingProvider, useLandingReads } from '../shared/landing.tsx';
 import { routeOf } from './route.ts';
 
 export function LandingPage({ t }: { t: AddOnTranslate }): ReactNode {
+  const scoped = useScope();
+  // Nothing is drawn for the moment the kit takes to answer: the dashboard's own read of it is as quick.
+  return scoped ? <Scoped t={t} /> : null;
+}
+
+/**
+ * Which copy of the add-on the page is open for, asked of the kit before any
+ * landing route is (`install.ts`): true once the kit has answered, or failed.
+ */
+function useScope(): boolean {
+  const [scoped, setScoped] = useState(false);
+  useEffect(() => {
+    let live = true;
+    void readScope((path) => api.get<unknown>(path), ADD_ON).then(() => {
+      if (live) setScoped(true);
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+  return scoped;
+}
+
+function Scoped({ t }: { t: AddOnTranslate }): ReactNode {
   const landing = useLandingReads();
   return (
     <LandingProvider value={landing}>

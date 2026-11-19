@@ -30,17 +30,28 @@ describe('the status read', () => {
 
   it('reads the install, the notice, the reach, the address, the zone, the keeping and the hosts', () => {
     expect(
-      statusOf({ data: { installId: 'i-1', notice: false, reach: { state: 'unreachable', code: 'proxy' }, publicOrigin: 'https://crm.example', timeZone: 'Europe/Prague', viewCountsMonths: 13, hosts: [{ host: 'events.example', address: 'https://events.example/x/pages/open-day', home: true }, 'offers.example', { nothing: 1 }] } }),
+      statusOf({
+        data: {
+          installId: 'i-1',
+          timeZone: 'Europe/Prague',
+          viewCountsMonths: 13,
+          reach: { state: 'proxy-unknown', proxyUnchecked: true },
+          notice: false,
+          publicOrigin: 'https://crm.example',
+          hosts: [{ host: 'events.example', home: '/x/pages/open-day' }, { host: 'offers.example', home: '' }, 'old.example', { host: 'x', home: true }],
+          page: null,
+        },
+      }),
     ).toEqual({
       installId: 'i-1',
       notice: false,
-      reach: { state: 'unreachable', code: 'proxy' },
+      reach: { state: 'proxy-unknown', proxyUnchecked: true },
       publicOrigin: 'https://crm.example',
       timeZone: 'Europe/Prague',
       viewCountsMonths: 13,
       hosts: [
-        { host: 'events.example', address: 'https://events.example/x/pages/open-day', home: true },
-        { host: 'offers.example', address: null, home: false },
+        { host: 'events.example', home: '/x/pages/open-day' },
+        { host: 'offers.example', home: '' },
       ],
     });
   });
@@ -101,34 +112,63 @@ describe('the live forms read', () => {
 
 describe('a funnel’s rule', () => {
   it('asks the funnel’s own rule read', async () => {
-    const api = fake(() => ({ data: { name: 'Brochure follow-up', chips: [] } }));
+    const api = fake(() => ({ data: { state: 'none' } }));
     await readFunnelRule(api, 'pages', '11');
     expect(api.asked).toEqual(['/api/v1/landing/pages/funnels/11/rule']);
   });
 
-  it('reads the name, the steps as chips and whether the person may open it', () => {
-    expect(funnelRuleOf({ data: { id: 'r1', name: 'Brochure follow-up', canOpen: true, chips: [{ words: 'Form sent', icon: 'file-check' }, 'Wait 2 days', { label: 'E-mail' }, 4] } })).toEqual({
+  it('reads the name, the steps as chips by their titles and kinds, and the rule to open', () => {
+    expect(
+      funnelRuleOf({
+        data: {
+          state: 'linked',
+          name: 'Brochure follow-up',
+          enabled: true,
+          canOpen: true,
+          ruleId: 'r1',
+          chips: [
+            { kind: 'trigger', title: 'Form sent', on: 'record', event: 'created' },
+            { kind: 'action', title: 'E-mail the brochure', action: 'email' },
+            { kind: 'action', title: 'Tell the rep', action: 'notification' },
+            { kind: 'action', title: 'Make a task', action: 'create-row' },
+            { kind: 'condition', title: 'No deal yet' },
+            { kind: 'wait', title: 'Wait 2 days', amount: 2, unit: 'days' },
+            { kind: 'branch', title: 'Hot or cold' },
+            { kind: 'stop', title: 'Stop' },
+            { kind: 'later', title: 'A kind not known yet' },
+            { kind: 'action', title: '  ' },
+            4,
+          ],
+        },
+      }),
+    ).toEqual({
       state: 'linked',
       id: 'r1',
       name: 'Brochure follow-up',
       canOpen: true,
       chips: [
-        { words: 'Form sent', icon: 'file-check' },
-        { words: 'Wait 2 days', icon: null },
-        { words: 'E-mail', icon: null },
+        { words: 'Form sent', icon: 'zap' },
+        { words: 'E-mail the brochure', icon: 'mail' },
+        { words: 'Tell the rep', icon: 'bell' },
+        { words: 'Make a task', icon: 'play' },
+        { words: 'No deal yet', icon: 'filter' },
+        { words: 'Wait 2 days', icon: 'hourglass' },
+        { words: 'Hot or cold', icon: 'git-branch' },
+        { words: 'Stop', icon: 'circle-stop' },
+        { words: 'A kind not known yet', icon: null },
       ],
     });
   });
 
   it('never lets someone open a rule unless Adminium says they may', () => {
-    expect(funnelRuleOf({ data: { name: 'R', chips: [] } })).toMatchObject({ canOpen: false });
-    expect(funnelRuleOf({ data: { name: 'R', canOpen: 'yes' } })).toMatchObject({ canOpen: false });
+    expect(funnelRuleOf({ data: { state: 'linked', name: 'R', chips: [] } })).toMatchObject({ canOpen: false, id: null });
+    expect(funnelRuleOf({ data: { state: 'linked', name: 'R', canOpen: 'yes', ruleId: 'r1' } })).toMatchObject({ canOpen: false, id: null });
   });
 
   it('reads a rule that was deleted, and no rule', () => {
     expect(funnelRuleOf({ data: { state: 'removed' } })).toEqual({ state: 'removed' });
-    expect(funnelRuleOf({ data: { removed: true, name: 'R' } })).toEqual({ state: 'removed' });
     expect(funnelRuleOf({ data: { state: 'none' } })).toEqual({ state: 'none' });
+    expect(funnelRuleOf({ data: { name: 'R' } })).toEqual({ state: 'none' });
     expect(funnelRuleOf(null)).toEqual({ state: 'none' });
   });
 });
