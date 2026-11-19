@@ -9,6 +9,10 @@ preview, serves its pictures and counts its views: no code of this add-on runs
 for a visitor, and nothing is fetched from anywhere else. It needs Adminium
 0.3.65 or newer, on a public https address.
 
+It comes with Adminium from the release after 0.3.65 on, as Forms & surveys
+and Live chat do, so a server without a disk of its own keeps serving its live
+pages after a redeploy; on 0.3.65 itself it is added from Add-ons.
+
 ## What it keeps
 
 - **Pages**: each page's name, its address (`/x/pages/<address>`), its one
