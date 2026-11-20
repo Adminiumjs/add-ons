@@ -8,7 +8,7 @@
  * is mailed for the Surveys purpose with its own link; and that every word a
  * person reads is there in all eight languages.
  */
-import { ANSWER_INVITATION_COLUMN, FORMS_COLUMNS, validateManifest } from '@adminiumjs/manifest';
+import { ANSWER_INVITATION_COLUMN, FORMS_COLUMNS, REVIEW_COLUMNS, REVIEW_TOTALS_COLUMNS, validateManifest } from '@adminiumjs/manifest';
 import { describe, expect, it } from 'vitest';
 
 import manifest from '../manifest.json' with { type: 'json' };
@@ -58,15 +58,15 @@ describe('the manifest', () => {
     for (const page of manifest.addOn.pages) expect(BUILT_FILES).toContain(page.client);
   });
 
-  it('is the forms add-on: every app, no connection, filed under marketing, on the release that sends surveys', () => {
+  it('is the forms add-on: every app, no connection, filed under marketing, on the release that takes reviews', () => {
     expect(manifest.kind).toBe('add-on');
     expect(manifest.key).toBe('forms');
     expect(manifest.addOn.attaches).toEqual([{ app: '*', range: '*' }]);
     expect(manifest.addOn.connect).toEqual({ kind: 'none' });
     expect(manifest.categories).toEqual(['marketing']);
-    // 0.3.65: the release whose forms vocabulary takes the `landing` ending the builder offers; an older one
-    // refuses such a form whole (0.3.42 was the first to judge a survey's consent on the person).
-    expect(manifest.compatibility.minAdminiumVersion).toBe('0.3.65');
+    // 0.3.68: the release that knows `addOn.reviews` and takes a customer's review through the app's own word; an
+    // older one refuses the block whole (0.3.65 took the `landing` ending, 0.3.42 judged a survey's consent on the person).
+    expect(manifest.compatibility.minAdminiumVersion).toBe('0.3.68');
     expect(manifest.requiredSchema.prefixed).toBe(true);
     // No code of its own runs on a server: Adminium draws, checks and keeps every form.
     expect((manifest.addOn as Record<string, unknown>)['provides']).toBeUndefined();
@@ -139,6 +139,60 @@ describe('the forms tables', () => {
     const months = columnOf('settings', 'answers_months');
     expect(months).toMatchObject({ type: 'int', nullable: true, default: 24 });
     expect(months.rules?.options?.values.map((one) => one.value)).toEqual(['3', '6', '12', '24', '36']);
+  });
+});
+
+describe('the reviews', () => {
+  const grants = (table: string) => (tableOf(table) as Table & { appGrants?: { actions: string[]; readable?: string[]; writable?: string[]; appColumn?: string } }).appGrants;
+  const entries = (manifest as unknown as { publicAccess: { table: string; methods: string[]; appColumn?: string; filters?: { column: string; op: string; value: unknown }[]; select: string[]; filterable?: unknown[]; orderable?: string[]; pagination?: { defaultLimit: number; maxLimit: number; order: string } }[] }).publicAccess;
+  const entry = (table: string) => entries.find((one) => one.table === table)!;
+
+  it('are kept in two tables of their own, apart from the four forms tables: no form row, no invitation', () => {
+    expect((manifest.addOn as Record<string, unknown>)['reviews']).toEqual({ reviews: 'reviews', totals: 'review_totals' });
+    expect(Object.values(manifest.addOn.forms)).not.toContain('reviews');
+    for (const column of tableOf('reviews').columns) expect(column.references, column.ref).toBeUndefined();
+  });
+
+  it('carry every column Adminium reads and writes, of its kind, with one review per reviewed row and one total per thing', () => {
+    for (const [table, contract] of [['reviews', REVIEW_COLUMNS], ['review_totals', REVIEW_TOTALS_COLUMNS]] as const) {
+      for (const [name, want] of Object.entries(contract)) {
+        const column = columnOf(table, name);
+        expect(want.types, `${table}.${name}`).toContain(column.type);
+        expect(column.nullable === true, `${table}.${name}`).toBe(want.nullable === true);
+        if (want.values !== undefined) expect([...(column.enum ?? [])].sort(), `${table}.${name}`).toEqual([...want.values].sort());
+        if (want.exactly !== undefined) expect(column.maxLength, `${table}.${name}`).toBe(want.exactly);
+      }
+    }
+    expect((tableOf('reviews') as Table & { unique?: string[][] }).unique).toEqual([['app', 'subject_table', 'subject_key']]);
+    expect((tableOf('review_totals') as Table & { unique?: string[][] }).unique).toEqual([['app', 'about_table', 'about_key']]);
+  });
+
+  it('move from waiting to published or hidden, and between those two, never back to waiting; hidden only with a reason', () => {
+    expect(tableOf('reviews').states).toEqual({ column: 'state', initial: 'waiting', starts: ['published', 'hidden'], moves: { waiting: ['published', 'hidden'], published: ['hidden'], hidden: ['published'] } });
+    expect(columnOf('reviews', 'hide_reason').rules).toMatchObject({ requiredWhen: { column: 'state', in: ['hidden'] } });
+    expect(columnOf('reviews', 'stars').rules).toEqual({ validation: { min: 1, max: 5 } });
+  });
+
+  it('are read and moderated by each app’s own roles, held to that app’s rows: never who wrote one', () => {
+    expect(grants('reviews')).toEqual(expect.objectContaining({ actions: ['read', 'update'], writable: ['state', 'hide_reason', 'reply'], appColumn: 'app' }));
+    expect(grants('reviews')?.readable).not.toContain('person_table');
+    expect(grants('reviews')?.readable).not.toContain('person_key');
+    expect(grants('review_totals')).toEqual({ actions: ['read'], appColumn: 'app' });
+    // The add-on's own roles are held to no app, so they hold nothing of either.
+    for (const one of roles) expect(one.permissions.filter((grant) => /@(reviews|review_totals):/.test(grant)), one.key).toEqual([]);
+  });
+
+  it('are read by a stranger through each app’s own key: the published ones only, without whose or about which row, ten a page, newest first', () => {
+    const reviews = entry('reviews');
+    expect(reviews).toMatchObject({ methods: ['GET'], appColumn: 'app', filters: [{ column: 'state', op: 'eq', value: 'published' }], pagination: { defaultLimit: 10, maxLimit: 50, order: 'submitted_at.desc' } });
+    for (const hidden of ['app', 'subject_table', 'subject_key', 'person_table', 'person_key', 'hide_reason', 'state']) expect(reviews.select, hidden).not.toContain(hidden);
+    expect(reviews.filterable).toContainEqual({ column: 'about_key', ops: ['eq', 'in'] });
+    expect(reviews.orderable).toEqual(['submitted_at', 'stars']);
+  });
+
+  it('give a stranger the totals of the things on a page in one read', () => {
+    expect(entry('review_totals')).toMatchObject({ methods: ['GET'], appColumn: 'app', filterable: [{ column: 'about_table', ops: ['eq'] }, { column: 'about_key', ops: ['eq', 'in'] }] });
+    expect(entries.map((one) => one.table).sort()).toEqual(['review_totals', 'reviews']);
   });
 });
 

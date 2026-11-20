@@ -18,7 +18,7 @@
     "marketing"
   ],
   "compatibility": {
-    "minAdminiumVersion": "0.3.65",
+    "minAdminiumVersion": "0.3.68",
     "requires": []
   },
   "capabilities": [],
@@ -1270,6 +1270,625 @@
         ]
       },
       {
+        "ref": "reviews",
+        "unique": [
+          [
+            "app",
+            "subject_table",
+            "subject_key"
+          ]
+        ],
+        "appGrants": {
+          "actions": [
+            "read",
+            "update"
+          ],
+          "readable": [
+            "id",
+            "app",
+            "subject_table",
+            "subject_key",
+            "about_table",
+            "about_key",
+            "about_name",
+            "about_detail",
+            "stars",
+            "title",
+            "body",
+            "shown_name",
+            "state",
+            "hide_reason",
+            "reply",
+            "replied_at",
+            "submitted_at"
+          ],
+          "writable": [
+            "state",
+            "hide_reason",
+            "reply"
+          ],
+          "appColumn": "app"
+        },
+        "states": {
+          "column": "state",
+          "initial": "waiting",
+          "starts": [
+            "published",
+            "hidden"
+          ],
+          "moves": {
+            "waiting": [
+              "published",
+              "hidden"
+            ],
+            "published": [
+              "hidden"
+            ],
+            "hidden": [
+              "published"
+            ]
+          }
+        },
+        "columns": [
+          {
+            "ref": "id",
+            "type": "id",
+            "role": "pk"
+          },
+          {
+            "ref": "app",
+            "type": "text",
+            "maxLength": 64,
+            "label": {
+              "en-US": "App",
+              "de-DE": "App",
+              "fr-FR": "Application",
+              "da-DK": "App",
+              "cs-CZ": "Aplikace",
+              "ar-EG": "التطبيق",
+              "zh-CN": "应用",
+              "zh-TW": "應用"
+            }
+          },
+          {
+            "ref": "subject_table",
+            "type": "text",
+            "maxLength": 64,
+            "label": {
+              "en-US": "Reviewed in",
+              "de-DE": "Bewertet in",
+              "fr-FR": "Évalué dans",
+              "da-DK": "Anmeldt i",
+              "cs-CZ": "Hodnoceno v",
+              "ar-EG": "تم التقييم في",
+              "zh-CN": "评价所在表",
+              "zh-TW": "評價所在表"
+            }
+          },
+          {
+            "ref": "subject_key",
+            "type": "text",
+            "maxLength": 200,
+            "label": {
+              "en-US": "Row reviewed",
+              "de-DE": "Bewertete Zeile",
+              "fr-FR": "Ligne évaluée",
+              "da-DK": "Anmeldt række",
+              "cs-CZ": "Hodnocený řádek",
+              "ar-EG": "الصف المُقيَّم",
+              "zh-CN": "被评价的行",
+              "zh-TW": "被評價的列"
+            }
+          },
+          {
+            "ref": "about_table",
+            "type": "text",
+            "maxLength": 64,
+            "label": {
+              "en-US": "Item’s table",
+              "de-DE": "Tabelle des Artikels",
+              "fr-FR": "Table de l’article",
+              "da-DK": "Varens tabel",
+              "cs-CZ": "Tabulka položky",
+              "ar-EG": "جدول العنصر",
+              "zh-CN": "项目所在表",
+              "zh-TW": "項目所在表"
+            }
+          },
+          {
+            "ref": "about_key",
+            "type": "text",
+            "maxLength": 200,
+            "label": {
+              "en-US": "Item’s row",
+              "de-DE": "Zeile des Artikels",
+              "fr-FR": "Ligne de l’article",
+              "da-DK": "Varens række",
+              "cs-CZ": "Řádek položky",
+              "ar-EG": "صف العنصر",
+              "zh-CN": "项目所在行",
+              "zh-TW": "項目所在列"
+            }
+          },
+          {
+            "ref": "about_name",
+            "type": "text",
+            "maxLength": 200,
+            "label": {
+              "en-US": "Item",
+              "de-DE": "Artikel",
+              "fr-FR": "Article",
+              "da-DK": "Vare",
+              "cs-CZ": "Položka",
+              "ar-EG": "العنصر",
+              "zh-CN": "项目",
+              "zh-TW": "項目"
+            }
+          },
+          {
+            "ref": "about_detail",
+            "type": "text",
+            "maxLength": 200,
+            "nullable": true,
+            "label": {
+              "en-US": "Item detail",
+              "de-DE": "Artikeldetail",
+              "fr-FR": "Détail de l’article",
+              "da-DK": "Varedetalje",
+              "cs-CZ": "Detail položky",
+              "ar-EG": "تفاصيل العنصر",
+              "zh-CN": "项目详情",
+              "zh-TW": "項目詳情"
+            }
+          },
+          {
+            "ref": "stars",
+            "type": "int",
+            "rules": {
+              "validation": {
+                "min": 1,
+                "max": 5
+              }
+            },
+            "label": {
+              "en-US": "Stars",
+              "de-DE": "Sterne",
+              "fr-FR": "Étoiles",
+              "da-DK": "Stjerner",
+              "cs-CZ": "Hvězdičky",
+              "ar-EG": "النجوم",
+              "zh-CN": "星级",
+              "zh-TW": "星級"
+            }
+          },
+          {
+            "ref": "title",
+            "type": "text",
+            "maxLength": 80,
+            "nullable": true,
+            "label": {
+              "en-US": "Title",
+              "de-DE": "Titel",
+              "fr-FR": "Titre",
+              "da-DK": "Titel",
+              "cs-CZ": "Nadpis",
+              "ar-EG": "العنوان",
+              "zh-CN": "标题",
+              "zh-TW": "標題"
+            }
+          },
+          {
+            "ref": "body",
+            "type": "text",
+            "nullable": true,
+            "label": {
+              "en-US": "Review",
+              "de-DE": "Bewertung",
+              "fr-FR": "Avis",
+              "da-DK": "Anmeldelse",
+              "cs-CZ": "Recenze",
+              "ar-EG": "المراجعة",
+              "zh-CN": "评价内容",
+              "zh-TW": "評價內容"
+            }
+          },
+          {
+            "ref": "shown_name",
+            "type": "text",
+            "maxLength": 80,
+            "default": "",
+            "label": {
+              "en-US": "Shown as",
+              "de-DE": "Angezeigt als",
+              "fr-FR": "Affiché comme",
+              "da-DK": "Vises som",
+              "cs-CZ": "Zobrazeno jako",
+              "ar-EG": "يظهر باسم",
+              "zh-CN": "显示名称",
+              "zh-TW": "顯示名稱"
+            }
+          },
+          {
+            "ref": "state",
+            "type": "enum",
+            "enum": [
+              "waiting",
+              "published",
+              "hidden"
+            ],
+            "default": "waiting",
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "waiting": {
+                    "en-US": "Waiting",
+                    "de-DE": "Wartet",
+                    "fr-FR": "En attente",
+                    "da-DK": "Venter",
+                    "cs-CZ": "Čeká",
+                    "ar-EG": "قيد الانتظار",
+                    "zh-CN": "待审核",
+                    "zh-TW": "待審核"
+                  },
+                  "published": {
+                    "en-US": "Published",
+                    "de-DE": "Veröffentlicht",
+                    "fr-FR": "Publié",
+                    "da-DK": "Offentliggjort",
+                    "cs-CZ": "Zveřejněno",
+                    "ar-EG": "منشور",
+                    "zh-CN": "已发布",
+                    "zh-TW": "已發布"
+                  },
+                  "hidden": {
+                    "en-US": "Hidden",
+                    "de-DE": "Ausgeblendet",
+                    "fr-FR": "Masqué",
+                    "da-DK": "Skjult",
+                    "cs-CZ": "Skryto",
+                    "ar-EG": "مخفي",
+                    "zh-CN": "已隐藏",
+                    "zh-TW": "已隱藏"
+                  }
+                }
+              }
+            },
+            "label": {
+              "en-US": "State",
+              "de-DE": "Status",
+              "fr-FR": "État",
+              "da-DK": "Status",
+              "cs-CZ": "Stav",
+              "ar-EG": "الحالة",
+              "zh-CN": "状态",
+              "zh-TW": "狀態"
+            }
+          },
+          {
+            "ref": "hide_reason",
+            "type": "enum",
+            "enum": [
+              "abusive",
+              "names-someone",
+              "not-about-us",
+              "looks-fake"
+            ],
+            "nullable": true,
+            "rules": {
+              "enumLabels": {
+                "labels": {
+                  "abusive": {
+                    "en-US": "Abusive",
+                    "de-DE": "Beleidigend",
+                    "fr-FR": "Injurieux",
+                    "da-DK": "Krænkende",
+                    "cs-CZ": "Urážlivé",
+                    "ar-EG": "مسيء",
+                    "zh-CN": "辱骂性内容",
+                    "zh-TW": "辱罵性內容"
+                  },
+                  "names-someone": {
+                    "en-US": "Names another person",
+                    "de-DE": "Nennt eine andere Person",
+                    "fr-FR": "Nomme une autre personne",
+                    "da-DK": "Nævner en anden person",
+                    "cs-CZ": "Jmenuje jinou osobu",
+                    "ar-EG": "يذكر شخصًا آخر",
+                    "zh-CN": "提及他人",
+                    "zh-TW": "提及他人"
+                  },
+                  "not-about-us": {
+                    "en-US": "Not about us",
+                    "de-DE": "Betrifft uns nicht",
+                    "fr-FR": "Ne nous concerne pas",
+                    "da-DK": "Handler ikke om os",
+                    "cs-CZ": "Netýká se nás",
+                    "ar-EG": "لا يتعلق بنا",
+                    "zh-CN": "与我们无关",
+                    "zh-TW": "與我們無關"
+                  },
+                  "looks-fake": {
+                    "en-US": "Looks fake",
+                    "de-DE": "Wirkt gefälscht",
+                    "fr-FR": "Semble faux",
+                    "da-DK": "Ser falsk ud",
+                    "cs-CZ": "Vypadá falešně",
+                    "ar-EG": "يبدو مزيفًا",
+                    "zh-CN": "疑似虚假",
+                    "zh-TW": "疑似虛假"
+                  }
+                }
+              },
+              "requiredWhen": {
+                "column": "state",
+                "in": [
+                  "hidden"
+                ]
+              }
+            },
+            "label": {
+              "en-US": "Why it is hidden",
+              "de-DE": "Grund für das Ausblenden",
+              "fr-FR": "Raison du masquage",
+              "da-DK": "Hvorfor den er skjult",
+              "cs-CZ": "Proč je skryto",
+              "ar-EG": "سبب الإخفاء",
+              "zh-CN": "隐藏原因",
+              "zh-TW": "隱藏原因"
+            }
+          },
+          {
+            "ref": "reply",
+            "type": "text",
+            "nullable": true,
+            "label": {
+              "en-US": "Your reply",
+              "de-DE": "Ihre Antwort",
+              "fr-FR": "Votre réponse",
+              "da-DK": "Dit svar",
+              "cs-CZ": "Vaše odpověď",
+              "ar-EG": "ردك",
+              "zh-CN": "您的回复",
+              "zh-TW": "您的回覆"
+            }
+          },
+          {
+            "ref": "replied_at",
+            "type": "timestamptz",
+            "nullable": true,
+            "label": {
+              "en-US": "Replied",
+              "de-DE": "Beantwortet",
+              "fr-FR": "Répondu le",
+              "da-DK": "Besvaret",
+              "cs-CZ": "Odpovězeno",
+              "ar-EG": "وقت الرد",
+              "zh-CN": "回复时间",
+              "zh-TW": "回覆時間"
+            }
+          },
+          {
+            "ref": "submitted_at",
+            "type": "timestamptz",
+            "label": {
+              "en-US": "Sent",
+              "de-DE": "Gesendet",
+              "fr-FR": "Envoyé",
+              "da-DK": "Sendt",
+              "cs-CZ": "Odesláno",
+              "ar-EG": "وقت الإرسال",
+              "zh-CN": "发送时间",
+              "zh-TW": "傳送時間"
+            }
+          },
+          {
+            "ref": "person_table",
+            "type": "text",
+            "maxLength": 64,
+            "nullable": true,
+            "label": {
+              "en-US": "Person’s table",
+              "de-DE": "Tabelle der Person",
+              "fr-FR": "Table de la personne",
+              "da-DK": "Personens tabel",
+              "cs-CZ": "Tabulka osoby",
+              "ar-EG": "جدول الشخص",
+              "zh-CN": "人员所在表",
+              "zh-TW": "人員所在表"
+            }
+          },
+          {
+            "ref": "person_key",
+            "type": "text",
+            "maxLength": 200,
+            "nullable": true,
+            "label": {
+              "en-US": "Person’s row",
+              "de-DE": "Zeile der Person",
+              "fr-FR": "Ligne de la personne",
+              "da-DK": "Personens række",
+              "cs-CZ": "Řádek osoby",
+              "ar-EG": "صف الشخص",
+              "zh-CN": "人员所在行",
+              "zh-TW": "人員所在列"
+            }
+          }
+        ]
+      },
+      {
+        "ref": "review_totals",
+        "unique": [
+          [
+            "app",
+            "about_table",
+            "about_key"
+          ]
+        ],
+        "appGrants": {
+          "actions": [
+            "read"
+          ],
+          "appColumn": "app"
+        },
+        "columns": [
+          {
+            "ref": "id",
+            "type": "id",
+            "role": "pk"
+          },
+          {
+            "ref": "app",
+            "type": "text",
+            "maxLength": 64,
+            "label": {
+              "en-US": "App",
+              "de-DE": "App",
+              "fr-FR": "Application",
+              "da-DK": "App",
+              "cs-CZ": "Aplikace",
+              "ar-EG": "التطبيق",
+              "zh-CN": "应用",
+              "zh-TW": "應用"
+            }
+          },
+          {
+            "ref": "about_table",
+            "type": "text",
+            "maxLength": 64,
+            "label": {
+              "en-US": "Item’s table",
+              "de-DE": "Tabelle des Artikels",
+              "fr-FR": "Table de l’article",
+              "da-DK": "Varens tabel",
+              "cs-CZ": "Tabulka položky",
+              "ar-EG": "جدول العنصر",
+              "zh-CN": "项目所在表",
+              "zh-TW": "項目所在表"
+            }
+          },
+          {
+            "ref": "about_key",
+            "type": "text",
+            "maxLength": 200,
+            "label": {
+              "en-US": "Item’s row",
+              "de-DE": "Zeile des Artikels",
+              "fr-FR": "Ligne de l’article",
+              "da-DK": "Varens række",
+              "cs-CZ": "Řádek položky",
+              "ar-EG": "صف العنصر",
+              "zh-CN": "项目所在行",
+              "zh-TW": "項目所在列"
+            }
+          },
+          {
+            "ref": "count",
+            "type": "int",
+            "default": 0,
+            "label": {
+              "en-US": "Reviews",
+              "de-DE": "Bewertungen",
+              "fr-FR": "Avis",
+              "da-DK": "Anmeldelser",
+              "cs-CZ": "Recenze",
+              "ar-EG": "المراجعات",
+              "zh-CN": "评价数",
+              "zh-TW": "評價數"
+            }
+          },
+          {
+            "ref": "sum",
+            "type": "int",
+            "default": 0,
+            "label": {
+              "en-US": "Stars in all",
+              "de-DE": "Sterne gesamt",
+              "fr-FR": "Total des étoiles",
+              "da-DK": "Stjerner i alt",
+              "cs-CZ": "Hvězdiček celkem",
+              "ar-EG": "إجمالي النجوم",
+              "zh-CN": "星级总和",
+              "zh-TW": "星級總和"
+            }
+          },
+          {
+            "ref": "c1",
+            "type": "int",
+            "default": 0,
+            "label": {
+              "en-US": "1 star",
+              "de-DE": "1 Stern",
+              "fr-FR": "1 étoile",
+              "da-DK": "1 stjerne",
+              "cs-CZ": "1 hvězdička",
+              "ar-EG": "نجمة واحدة",
+              "zh-CN": "1 星",
+              "zh-TW": "1 星"
+            }
+          },
+          {
+            "ref": "c2",
+            "type": "int",
+            "default": 0,
+            "label": {
+              "en-US": "2 stars",
+              "de-DE": "2 Sterne",
+              "fr-FR": "2 étoiles",
+              "da-DK": "2 stjerner",
+              "cs-CZ": "2 hvězdičky",
+              "ar-EG": "نجمتان",
+              "zh-CN": "2 星",
+              "zh-TW": "2 星"
+            }
+          },
+          {
+            "ref": "c3",
+            "type": "int",
+            "default": 0,
+            "label": {
+              "en-US": "3 stars",
+              "de-DE": "3 Sterne",
+              "fr-FR": "3 étoiles",
+              "da-DK": "3 stjerner",
+              "cs-CZ": "3 hvězdičky",
+              "ar-EG": "3 نجوم",
+              "zh-CN": "3 星",
+              "zh-TW": "3 星"
+            }
+          },
+          {
+            "ref": "c4",
+            "type": "int",
+            "default": 0,
+            "label": {
+              "en-US": "4 stars",
+              "de-DE": "4 Sterne",
+              "fr-FR": "4 étoiles",
+              "da-DK": "4 stjerner",
+              "cs-CZ": "4 hvězdičky",
+              "ar-EG": "4 نجوم",
+              "zh-CN": "4 星",
+              "zh-TW": "4 星"
+            }
+          },
+          {
+            "ref": "c5",
+            "type": "int",
+            "default": 0,
+            "label": {
+              "en-US": "5 stars",
+              "de-DE": "5 Sterne",
+              "fr-FR": "5 étoiles",
+              "da-DK": "5 stjerner",
+              "cs-CZ": "5 hvězdiček",
+              "ar-EG": "5 نجوم",
+              "zh-CN": "5 星",
+              "zh-TW": "5 星"
+            }
+          }
+        ]
+      },
+      {
         "ref": "settings",
         "columns": [
           {
@@ -1933,6 +2552,10 @@
       "invitations": "invitations",
       "files": "answer_files"
     },
+    "reviews": {
+      "reviews": "reviews",
+      "totals": "review_totals"
+    },
     "pages": [
       {
         "ref": "forms",
@@ -2196,5 +2819,106 @@
         }
       }
     ]
-  }
+  },
+  "publicAccess": [
+    {
+      "table": "reviews",
+      "methods": [
+        "GET"
+      ],
+      "appColumn": "app",
+      "filters": [
+        {
+          "column": "state",
+          "op": "eq",
+          "value": "published"
+        }
+      ],
+      "select": [
+        "id",
+        "about_table",
+        "about_key",
+        "about_name",
+        "about_detail",
+        "stars",
+        "title",
+        "body",
+        "shown_name",
+        "reply",
+        "replied_at",
+        "submitted_at"
+      ],
+      "filterable": [
+        {
+          "column": "about_table",
+          "ops": [
+            "eq"
+          ]
+        },
+        {
+          "column": "about_key",
+          "ops": [
+            "eq",
+            "in"
+          ]
+        },
+        {
+          "column": "stars",
+          "ops": [
+            "eq",
+            "gte"
+          ]
+        }
+      ],
+      "orderable": [
+        "submitted_at",
+        "stars"
+      ],
+      "count": true,
+      "pagination": {
+        "defaultLimit": 10,
+        "maxLimit": 50,
+        "order": "submitted_at.desc"
+      }
+    },
+    {
+      "table": "review_totals",
+      "methods": [
+        "GET"
+      ],
+      "appColumn": "app",
+      "select": [
+        "id",
+        "about_table",
+        "about_key",
+        "count",
+        "sum",
+        "c1",
+        "c2",
+        "c3",
+        "c4",
+        "c5"
+      ],
+      "filterable": [
+        {
+          "column": "about_table",
+          "ops": [
+            "eq"
+          ]
+        },
+        {
+          "column": "about_key",
+          "ops": [
+            "eq",
+            "in"
+          ]
+        }
+      ],
+      "pagination": {
+        "defaultLimit": 50,
+        "maxLimit": 100,
+        "order": "about_key.asc"
+      }
+    }
+  ]
 }

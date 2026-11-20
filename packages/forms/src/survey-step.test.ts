@@ -87,7 +87,8 @@ describe('the "Send a survey" step', () => {
     expect(step.does['en-US']).toBe('Sends one of your surveys to a person, with their own link');
     inEveryLanguage(step.name, 60, 'name');
     inEveryLanguage(step.does, 160, 'does');
-    expect(manifest.compatibility.minAdminiumVersion).toBe('0.3.65');
+    // The step runs from 0.3.42; the reviews block holds the whole add-on's floor at 0.3.68.
+    expect(manifest.compatibility.minAdminiumVersion).toBe('0.3.68');
   });
 
   it('asks for the survey by its slug, offering live surveys only, then whom to send it to and as which mail', () => {

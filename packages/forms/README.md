@@ -18,6 +18,13 @@ anywhere else.
 - **Invitations** to a survey, each mailed with a link of its own for the
   Surveys purpose, and the mails themselves.
 - **How long answers are kept**: 24 months unless the owner sets another time.
+- **Reviews** customers write of what they bought or booked, in a table of
+  their own: the stars, a title and words, the name shown ("Priya R."), and
+  whether the review waits, is published or is hidden (always with a reason).
+  Staff of the app it was written in publish, hide and reply; nobody edits or
+  deletes one. Beside them, the **review totals** of each thing reviewed and of
+  each app: how many, the stars in all, and how many of each, counted from the
+  published reviews only.
 
 ## How an app uses it
 
@@ -25,6 +32,15 @@ An app opens one of its tables to forms in its own manifest (a public entry
 under the key `forms`), naming the columns an answer may fill. The builder
 lists only those tables. A survey is sent by an automation rule's step, which
 writes an invitation; Adminium mails it.
+
+An app takes reviews with the `review` word on the table of the rows reviewed
+(an order line, a visit), saying what the row is about and when it may be
+reviewed; Adminium checks the row is the visitor's and writes the review
+itself. Its own roles read and moderate the reviews through `roles[].tables`,
+each held to that app's own reviews. A shop's pages read the published reviews
+and the totals through two public reads under the app's own key: a thing's
+reviews ten at a time, newest first, and the totals of every thing on a page in
+one read. Needs Adminium 0.3.68 or later.
 
 ## Its screens
 
