@@ -36,6 +36,18 @@ leaves the usual first pick. The API key and the account number are never in a f
 are `secret` settings, given once when the add-on is connected and kept encrypted by Adminium, and
 only the server half reads them.
 
+**The booking comes back to the host.** A host that passes `onBooked` on `order.dispatch.actions`
+hears of each booking: when the collection is booked, and again when the panel opens on an order
+already booked. It is told the tracking number, the service, and `demo`: whether the demo carrier
+made it. A demo number belongs to no parcel, so a host never stores it as the order's tracking or
+mails it to a customer: it shows it, marked as the demo, and its staff type the real one. A host keeps
+a real number with the order's shipped move, in one write; a booking with no move leaves the order
+where it was. **This round the add-on is the demo carrier only**: nothing connects a DHL account yet,
+so every booking says `demo`.
+
+An address may carry a `region` (a state, a province): it is printed after the city on the label and
+never checked.
+
 **The online shop changes sides on its 0.2 line.** Its 0.1 storefront drew the checkout's rate rows
 and the tracking panel. From 0.2 it prices delivery itself at checkout, from its own shipping prices,
 and mounts neither of those: its staff desk mounts `order.dispatch.actions`, and the shopper's

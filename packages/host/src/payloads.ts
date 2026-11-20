@@ -185,6 +185,12 @@ export interface PostalAddress {
   lines: readonly string[];
   city: string;
   postcode: string;
+  /**
+   * The state, province or region, where the country has them (`OR`, `NSW`):
+   * printed after the city. Display text, never checked; OPTIONAL, because most
+   * countries' addresses have none and a host that keeps none passes nothing.
+   */
+  region?: string;
   /** ISO 3166-1 alpha-2. */
   country: string;
 }
@@ -494,6 +500,33 @@ export interface DispatchPayload extends SlotPayload {
    * picks as it always did. A whole `DeliveryChoice` fits here too.
    */
   chosen?: Pick<DeliveryChoice, 'addOn' | 'code'> | null;
+  /**
+   * THE BOOKING, HANDED BACK TO THE HOST.
+   *
+   * Called when a collection is booked for this order, and again when the
+   * panel opens on an order it finds already booked, so a host that came back
+   * to the order still hears of it. Before this a host could only draw the
+   * fill and give its staff a text box to retype the number into.
+   *
+   * `demo` says the number came from a stand-in carrier and belongs to no
+   * parcel. A host never stores or mails such a number as the order's
+   * tracking: it shows it, marked as the demo, and its staff type the real one.
+   * A host keeps a real number WITH the order's next move (shipped) in one
+   * write; a booking with no move leaves the order where it was.
+   *
+   * OPTIONAL: a host whose staff type the number passes nothing.
+   */
+  onBooked?: (booking: DispatchBooking) => void;
+}
+
+/** What a dispatch fill hands back once a collection is booked (`DispatchPayload.onBooked`). */
+export interface DispatchBooking {
+  /** The carrier's tracking number. */
+  tracking: string;
+  /** The service booked, in the carrier's words (`DHL Express Worldwide`). */
+  service: string;
+  /** Booked with a stand-in carrier: no parcel has this number. */
+  demo: boolean;
 }
 
 /** `settings.add-on.panel` — one add-on's own form inside the manage drawer. */

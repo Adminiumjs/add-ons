@@ -36,6 +36,8 @@ export interface Address {
   lines: string[];
   city: string;
   postcode: string;
+  /** A state, province or region, where the country has them: printed after the city, never checked. */
+  region?: string;
   country: string;
 }
 

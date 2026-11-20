@@ -14,7 +14,7 @@
  * this screen was designed against.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CircleX,
   CornerDownRight,
@@ -199,7 +199,7 @@ export function UnresolvedDestination({
   );
 }
 
-export function DispatchAction({ order, now, chosen }: DispatchPayload) {
+export function DispatchAction({ order, now, chosen, onBooked }: DispatchPayload) {
   const t = useT();
   const { clock: clockOf, money, day, number, timeOfDay, list } = useFormat();
 
@@ -262,6 +262,20 @@ export function DispatchAction({ order, now, chosen }: DispatchPayload) {
   const [failure, setFailure] = useState<CarrierError | null>(null);
   const [busy, setBusy] = useState(false);
 
+  /*
+   * THE HOST HEARS OF A BOOKING, and only of one: when it is made, and when the
+   * panel finds one already made for this order. Held in a ref because a host
+   * hands a fresh function every render, and an effect keyed on it would run
+   * (and tell the host) on every render. `demo` is whether the stand-in carrier
+   * answered, which is the whole of what a host needs to keep the number off
+   * the order: a demo number belongs to no parcel.
+   */
+  const onBookedRef = useRef(onBooked);
+  onBookedRef.current = onBooked;
+  const tellHost = useCallback((shipment: Shipment) => {
+    onBookedRef.current?.({ tracking: shipment.tracking, service: shipment.rate.service, demo: carrierState() === "demo" });
+  }, []);
+
   /**
    * A BOOKING OUTLIVES THE COMPONENT THAT MADE IT.
    *
@@ -310,6 +324,7 @@ export function DispatchAction({ order, now, chosen }: DispatchPayload) {
         if (!live) return;
         setBooked({ shipment: existing, file, events });
         setOpen(true);
+        tellHost(existing);
       },
       () => {
         /* A transport that cannot answer for its own shipment leaves the panel
@@ -319,7 +334,7 @@ export function DispatchAction({ order, now, chosen }: DispatchPayload) {
     return () => {
       live = false;
     };
-  }, [order.ref]);
+  }, [order.ref, tellHost]);
 
   const getRates = useCallback(async () => {
     setBusy(true);
@@ -366,6 +381,7 @@ export function DispatchAction({ order, now, chosen }: DispatchPayload) {
       ]);
       setBooked({ shipment, file, events });
       setFailure(null);
+      tellHost(shipment);
     } catch (err) {
       setFailure(
         err instanceof CarrierError
@@ -375,7 +391,7 @@ export function DispatchAction({ order, now, chosen }: DispatchPayload) {
     } finally {
       setBusy(false);
     }
-  }, [from, order.ref, rates, selected, to]);
+  }, [from, order.ref, rates, selected, tellHost, to]);
 
   const labelBytes = booked === null ? undefined : labels()?.read(booked.file.fileId);
 

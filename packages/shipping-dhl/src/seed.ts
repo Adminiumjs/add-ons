@@ -131,6 +131,7 @@ function asCarrierAddress(address: PostalAddress): Address {
     lines: [...address.lines],
     city: address.city,
     postcode: address.postcode,
+    ...(address.region === undefined || address.region.trim() === "" ? {} : { region: address.region }),
     country: address.country,
   };
 }
