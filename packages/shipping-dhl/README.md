@@ -38,7 +38,8 @@ only the server half reads them.
 
 **The booking comes back to the host.** A host that passes `onBooked` on `order.dispatch.actions`
 hears of each booking: when the collection is booked, and again when the panel opens on an order
-already booked. It is told the tracking number, the service, and `demo`: whether the demo carrier
+whose booking the demo carrier still holds (it holds them for the life of the page, so a host never
+relies on that second call). It is told the tracking number, the service, and `demo`: whether the demo carrier
 made it. A demo number belongs to no parcel, so a host never stores it as the order's tracking or
 mails it to a customer: it shows it, marked as the demo, and its staff type the real one. A host keeps
 a real number with the order's shipped move, in one write; a booking with no move leaves the order

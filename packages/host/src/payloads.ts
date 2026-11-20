@@ -504,8 +504,10 @@ export interface DispatchPayload extends SlotPayload {
    * THE BOOKING, HANDED BACK TO THE HOST.
    *
    * Called when a collection is booked for this order, and again when the
-   * panel opens on an order it finds already booked, so a host that came back
-   * to the order still hears of it. Before this a host could only draw the
+   * panel opens on an order whose booking the add-on can find, so a host that
+   * came back to the order still hears of it. Whether a booking can be found
+   * again is the add-on's: DHL's demo carrier finds its own for the life of
+   * the page, and nothing more, so a host never relies on the second call. Before this a host could only draw the
    * fill and give its staff a text box to retype the number into.
    *
    * `demo` says the number came from a stand-in carrier and belongs to no

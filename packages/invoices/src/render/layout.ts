@@ -573,8 +573,13 @@ function documentBlocks(input: LayoutInput, isVoid: boolean): Block[] {
 
   if (stored) {
     const scale = facts.scale;
-    const subtotal = facts.subtotal ?? facts.total!;
-    // The stored total already holds the delivery, so a tax worked out from it leaves the delivery out.
+    /*
+     * The stored total already holds the delivery. A receipt that maps no
+     * subtotal reads it as the total less the delivery — else a total of
+     * 217.00 with 7.00 of delivery printed a subtotal of 217.00 and a tax of
+     * −7.00 — and a tax worked out from the total leaves the delivery out.
+     */
+    const subtotal = facts.subtotal ?? (delivery === null ? facts.total! : differenceText(facts.total!, delivery, scale));
     const tax = facts.tax ?? differenceText(facts.total!, delivery === null ? subtotal : sumText([subtotal, delivery], scale), scale);
     rows.push({ label: words.subtotal, value: money(subtotal), emphasis: false });
     /*

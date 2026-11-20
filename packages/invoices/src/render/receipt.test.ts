@@ -557,6 +557,20 @@ describe('Northline’s NL-1066: a delivery that adds up', () => {
     expect(text).not.toContain('(Reduction)');
   });
 
+  it('reads a subtotal it is not given as the total less the delivery, never a negative tax', async () => {
+    // A mapping of the total and the delivery alone, which the slot's help invites.
+    const subject = northlineSubject({ subtotal: undefined, tax: undefined });
+    delete (subject.fields as Record<string, unknown>)['subtotal'];
+    delete (subject.fields as Record<string, unknown>)['tax'];
+    const html = page(await draw(subject, 'a4'));
+    expect(ladderOf(html)).toEqual([
+      ['Subtotal', '$210.00'],
+      ['Delivery', '$7.00'],
+      ['Total', '$217.00'],
+    ]);
+    expect(html).not.toContain('−$7.00');
+  });
+
   it('prints the sales tax by its own name and rate when there is one', async () => {
     // 8.25 % of the 210.00 of lines is 17.33; the stored total counts the delivery too.
     const html = page(await draw(northlineSubject({ taxRate: 825, tax: 1_733, total: 23_433 }), 'a4'));
