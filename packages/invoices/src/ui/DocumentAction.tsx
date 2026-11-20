@@ -90,6 +90,7 @@ const KIND_KEYS: Readonly<Record<string, StringKey>> = {
   'purchase-order': 'addon.invoices.record.kind.purchaseOrder',
   'purchase-order-unpriced': 'addon.invoices.record.kind.purchaseOrderUnpriced',
   'signed-copy': 'addon.invoices.record.kind.signedCopy',
+  'packing-slip': 'addon.invoices.record.kind.packingSlip',
 };
 
 export function DocumentAction({ payload }: { payload: RecordActionsPayload }) {

@@ -461,3 +461,209 @@ describe('a ticket office’s receipt', () => {
     expect(documents.map((d) => d.filename)).toEqual(['receipt-WV-8790.html', 'receipt-WV-8790.pdf']);
   });
 });
+
+/*
+ * ── A SHOP'S ORDER SENT TO THE DOOR: DELIVERY, AND THE PAYMENTS MADE ───────
+ *
+ * Northline's order NL-1066: a field tee, two of them, and a canvas tote —
+ * 210.00 of lines, 7.00 of delivery, no sales tax, 217.00 in all, paid with a
+ * 50.00 gift card and 167.00 on a card. The order stores its subtotal, its
+ * delivery, its tax and a total that counts all three. Before the delivery
+ * had a row the receipt printed Subtotal 210.00 and Total 217.00 with nothing
+ * between them, which does not add up on the page a customer is handed.
+ */
+function northlineSubject(fields: Fields = {}, payments?: Fields[]): DocumentSubject {
+  return {
+    now: { iso: '2026-11-20T15:40:00.000Z', timezone: 'America/New_York' },
+    locale: 'en-US',
+    currency: 'USD',
+    business: { name: 'Northline', lines: ['220 Canal Street', 'Portland, ME 04101'] },
+    entity: null,
+    number: 'NL-1066',
+    fields: {
+      issuedAt: '2026-11-20',
+      currency: 'USD',
+      customerName: 'Lena Park',
+      taxName: 'Sales tax',
+      taxRate: 0,
+      subtotal: 21_000,
+      delivery: 700,
+      tax: 0,
+      total: 21_700,
+      ...fields,
+    },
+    collections: {
+      items: [
+        { desc: 'Field tee', qty: 2, rate: 7_000, amount: 14_000 },
+        { desc: 'Canvas tote', qty: 1, rate: 7_000, amount: 7_000 },
+      ],
+      ...(payments === undefined ? {} : { payments }),
+    },
+  };
+}
+
+const GIFT_CARD_AND_CARD = [
+  { number: 'P-1', paidOn: '2026-11-20', method: 'gift_card', amount: 5_000, voided: false },
+  { number: 'P-2', paidOn: '2026-11-20', method: 'card', amount: 16_700, voided: false },
+];
+
+/** The ladder under the lines, label and figure, in the order they are drawn. */
+const ladderOf = (html: string) =>
+  [...html.matchAll(/<div class="row[^"]*"><span class="k">(.*?)<\/span><span class="fig">(.*?)<\/span><\/div>/g)].map((m) => [m[1], m[2]]);
+
+describe('the receipt kind can carry a delivery and the payments made', () => {
+  const slots = outlineOf('receipt').slots;
+  const slot = (id: string) => slots.find((entry) => entry.id === id);
+
+  it('offers a delivery, in money, optional and with no default', () => {
+    expect(slot('delivery')).toMatchObject({ type: 'money', required: false });
+    expect(slot('delivery')!.default).toBeUndefined();
+    expect(slot('delivery')!.label['en-US']).toBe('Delivery');
+    expect(slot('delivery')!.help!['en-US']).toContain('Map a stored total that includes it');
+  });
+
+  it('offers the payments, with a method, an amount and a void for each', () => {
+    expect(slot('payments')).toMatchObject({ type: 'collection', required: false });
+    expect(slot('payments')!.columns!.map((column) => column.id)).toEqual(['number', 'paidOn', 'method', 'amount', 'voided']);
+    // The invoice's payments, explained for a receipt.
+    expect(slot('payments')!.label).toEqual(outlineOf('invoice').slots.find((entry) => entry.id === 'payments')!.label);
+    expect(slot('payments')!.help!['en-US']).toContain('under the total');
+  });
+
+  it('labels and explains both in all eight languages, and prints the delivery’s word in all eight', () => {
+    for (const id of ['delivery', 'payments']) {
+      for (const locale of LOCALES) {
+        expect(slot(id)!.label[locale], `${id} ${locale}`).toMatch(/\S/);
+        expect(slot(id)!.help?.[locale], `${id} help ${locale}`).toMatch(/\S/);
+      }
+    }
+    for (const locale of LOCALES) expect(wordsFor(locale).delivery, locale).toMatch(/\S/);
+  });
+});
+
+describe('Northline’s NL-1066: a delivery that adds up', () => {
+  it('prints Subtotal 210.00, Delivery 7.00 and Total 217.00, and nothing as a reduction', async () => {
+    const documents = await draw(northlineSubject(), 'a4');
+    const html = page(documents);
+    expect(ladderOf(html)).toEqual([
+      ['Subtotal', '$210.00'],
+      ['Delivery', '$7.00'],
+      // A tax of nothing at a rate of nothing is no row, as on every receipt.
+      ['Total', '$217.00'],
+    ]);
+    expect(html).not.toContain('Reduction');
+    const text = pdf(documents);
+    for (const shown of ['(Delivery)', '($7.00)', '($217.00)']) expect(text, shown).toContain(shown);
+    expect(text).not.toContain('(Reduction)');
+  });
+
+  it('prints the sales tax by its own name and rate when there is one', async () => {
+    // 8.25 % of the 210.00 of lines is 17.33; the stored total counts the delivery too.
+    const html = page(await draw(northlineSubject({ taxRate: 825, tax: 1_733, total: 23_433 }), 'a4'));
+    expect(ladderOf(html)).toEqual([
+      ['Subtotal', '$210.00'],
+      ['Delivery', '$7.00'],
+      ['Sales tax 8.25%', '$17.33'],
+      ['Total', '$234.33'],
+    ]);
+  });
+
+  it('works out an unmapped tax without the delivery in it', async () => {
+    const html = page(await draw(northlineSubject({ taxRate: 825, tax: null, total: 23_433 }), 'a4'));
+    expect(ladderOf(html)).toContainEqual(['Sales tax 8.25%', '$17.33']);
+  });
+
+  it('never takes a delivery for a reduction: one taken off with a delivery prints exactly what was taken off', async () => {
+    // A tenth off the lines: 210.00 − 21.00 + 7.00 = 196.00.
+    const html = page(await draw(northlineSubject({ total: 19_600 }), 'a4'));
+    expect(ladderOf(html)).toEqual([
+      ['Subtotal', '$210.00'],
+      ['Reduction', '-$21.00'],
+      ['Delivery', '$7.00'],
+      ['Total', '$196.00'],
+    ]);
+  });
+
+  it('adds the delivery into a total it works out itself, when none is stored', async () => {
+    const html = page(
+      await draw(
+        { ...northlineSubject({ subtotal: null, tax: null, total: null }), collections: { items: [{ desc: 'Field tee', qty: 2, rate: 7_000 }, { desc: 'Canvas tote', qty: 1, rate: 7_000 }] } },
+        'a4',
+      ),
+    );
+    expect(ladderOf(html)).toEqual([
+      ['Subtotal', '$210.00'],
+      ['Delivery', '$7.00'],
+      ['Total', '$217.00'],
+    ]);
+  });
+
+  it('prints no delivery row for a delivery of nothing', async () => {
+    const html = page(await draw(northlineSubject({ delivery: 0, total: 21_000 }), 'a4'));
+    expect(ladderOf(html)).toEqual([
+      ['Subtotal', '$210.00'],
+      ['Total', '$210.00'],
+    ]);
+  });
+});
+
+describe('Northline’s NL-1066: paid with a gift card and a card', () => {
+  it('lists each payment under the total, in the method’s own word, in place of one row for what was received', async () => {
+    const documents = await draw(northlineSubject({ paidWith: 'card', amount: 21_700 }, GIFT_CARD_AND_CARD), 'a4');
+    const html = page(documents);
+    expect(ladderOf(html)).toEqual([
+      ['Subtotal', '$210.00'],
+      ['Delivery', '$7.00'],
+      ['Total', '$217.00'],
+      ['Gift card', '$50.00'],
+      ['Card', '$167.00'],
+    ]);
+    // The foot thanks the customer for what the payments come to.
+    expect(html).toContain('$217.00 received Nov 20, 2026');
+    const text = pdf(documents);
+    for (const shown of ['(Gift card)', '($50.00)', '(Card)', '($167.00)']) expect(text, shown).toContain(shown);
+  });
+
+  it('lists them when the receipt maps no amount received at all', async () => {
+    const html = page(await draw(northlineSubject({}, GIFT_CARD_AND_CARD), 'a4'));
+    expect(ladderOf(html).slice(-2)).toEqual([
+      ['Gift card', '$50.00'],
+      ['Card', '$167.00'],
+    ]);
+    expect(html).toContain('Thank you');
+    expect(html).not.toContain('How to pay');
+  });
+
+  it('leaves a voided payment off, and prints a method it has no word for as the app wrote it', async () => {
+    const payments = [
+      ...GIFT_CARD_AND_CARD,
+      { number: 'P-3', paidOn: '2026-11-20', method: 'card', amount: 2_000, voided: 'true' },
+      { number: 'P-4', paidOn: '2026-11-20', method: 'Store credit', amount: 0, voided: 0 },
+    ];
+    expect(ladderOf(page(await draw(northlineSubject({}, payments), 'a4'))).slice(-3)).toEqual([
+      ['Gift card', '$50.00'],
+      ['Card', '$167.00'],
+      ['Store credit', '$0.00'],
+    ]);
+  });
+});
+
+describe('a receipt that maps neither a delivery nor payments', () => {
+  /** Every drawing of a subject, so a single moved byte shows. */
+  const bytesOf = async (subject: DocumentSubject) =>
+    (await Promise.all((['receipt-80mm', 'a4'] as const).map((paper) => draw(subject, paper)))).flat().map((d) => Array.from(d.bytes));
+
+  it('draws to the same bytes with a delivery of nothing, and with only voided payments', async () => {
+    const before = await bytesOf(saleSubject());
+    expect(await bytesOf(saleSubject({ delivery: 0 }))).toEqual(before);
+    const voided = { ...saleSubject(), collections: { ...saleSubject().collections, payments: [{ method: 'cash', amount: 1_946, voided: true }] } };
+    expect(await bytesOf(voided)).toEqual(before);
+  });
+
+  it('keeps the till’s ladder and its one row for how it was paid', async () => {
+    expect(ladderOf(page(await draw(saleSubject()))).slice(-2)).toEqual([
+      ['Total', '$19.46'],
+      ['Card', '$19.46'],
+    ]);
+  });
+});

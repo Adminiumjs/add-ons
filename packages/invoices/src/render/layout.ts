@@ -21,7 +21,9 @@
  * the lines → the totals → the payments so far and the amount due → a quote's
  * acceptance → the pay box beside the footer → the signature line. An order
  * to a supplier keeps the same sheet with its own middle: where the goods are
- * to arrive, the lines counted in packs and in units, and one total. A void
+ * to arrive, the lines counted in packs and in units, and one total. A signed
+ * copy and a packing slip each have a sheet of their own, and neither holds
+ * a figure (`signedCopyLayout`, `packingSlipLayout`). A void
  * document carries the word across the sheet and the day it was voided —
  * NEVER the reason, which is the business's alone.
  *
@@ -35,10 +37,10 @@
  */
 
 import type { InvoiceBody, LineItem } from '../document.ts';
-import { isPurchaseOrder, PURCHASE_ORDER, PURCHASE_ORDER_UNPRICED, SIGNED_COPY } from '../kinds.ts';
+import { isPurchaseOrder, PACKING_SLIP, PURCHASE_ORDER, PURCHASE_ORDER_UNPRICED, SIGNED_COPY } from '../kinds.ts';
 import { lineMinor, taxBreakdown, totalsOf } from '../money.ts';
 import { differenceText, isPositive, isZero, productText, sumText } from '../shape-money.ts';
-import type { BoundExtras, LineFacts, OrderLine, PayQr, Picture, StoredLine, SubjectFacts } from '../subject.ts';
+import type { BoundExtras, LineFacts, OrderLine, PayQr, Picture, StoredLine, StoredPayment, SubjectFacts } from '../subject.ts';
 import { minorToDecimal, type Formats } from './format.ts';
 import { fill, type LayoutWords } from './words.ts';
 
@@ -311,6 +313,7 @@ function shortPrint(print: string): string {
 
 export function layout(input: LayoutInput): Document {
   if (input.kind === SIGNED_COPY) return signedCopyLayout(input);
+  if (input.kind === PACKING_SLIP) return packingSlipLayout(input);
   const { kind, body, facts, words, formats } = input;
   const isVoid = facts.status === 'void' || (kind === 'receipt' && facts.receipt.voided);
   const voidDay = facts.voidedOn === '' ? '' : formats.day(facts.voidedOn);
@@ -559,11 +562,20 @@ function documentBlocks(input: LayoutInput, isVoid: boolean): Block[] {
   const rows: { label: string; value: string; emphasis: boolean }[] = [];
   const taxWord = facts.taxName !== '' ? facts.taxName : facts.letterhead.taxName !== '' ? facts.letterhead.taxName : words.tax;
   let totalText: string;
+  /*
+   * A receipt's delivery, when it maps one that is not zero: one row under
+   * the subtotal (and under a reduction, when there is one), above the tax.
+   * Only a receipt carries the slot, so every other kind — and a receipt that
+   * maps none — draws exactly as it did.
+   */
+  const delivery = input.kind === 'receipt' && facts.delivery !== null && !isZero(facts.delivery) ? facts.delivery : null;
+  const deliveryRow = (value: string) => ({ label: words.delivery, value: money(value), emphasis: false });
 
   if (stored) {
     const scale = facts.scale;
     const subtotal = facts.subtotal ?? facts.total!;
-    const tax = facts.tax ?? differenceText(facts.total!, subtotal, scale);
+    // The stored total already holds the delivery, so a tax worked out from it leaves the delivery out.
+    const tax = facts.tax ?? differenceText(facts.total!, delivery === null ? subtotal : sumText([subtotal, delivery], scale), scale);
     rows.push({ label: words.subtotal, value: money(subtotal), emphasis: false });
     /*
      * A sale stored with a reduction taken off the whole ticket keeps its
@@ -573,11 +585,19 @@ function documentBlocks(input: LayoutInput, isVoid: boolean): Block[] {
      * three are stored and the total falls short of them. An invoice or a
      * quote on a shape stores its total as its subtotal and tax, and draws as
      * it always has.
+     *
+     * A delivery is part of what the stored total counts, so it is part of
+     * what the total is held against: total − (subtotal + delivery + tax).
+     * Left out, a sale of 210.00 with 7.00 of delivery and a total of 217.00
+     * would look like a total 7.00 OVER its figures — and a reduction taken
+     * alongside a delivery would print 7.00 short of what was taken off.
      */
     if (input.kind === 'receipt' && facts.subtotal !== null && facts.tax !== null) {
-      const off = differenceText(facts.total!, sumText([facts.subtotal, facts.tax], scale), scale);
+      const counted = delivery === null ? [facts.subtotal, facts.tax] : [facts.subtotal, delivery, facts.tax];
+      const off = differenceText(facts.total!, sumText(counted, scale), scale);
       if (!isZero(off) && !isPositive(off)) rows.push({ label: words.reduction, value: money(off), emphasis: false });
     }
+    if (delivery !== null) rows.push(deliveryRow(delivery));
     if (!isZero(tax) || (facts.taxRate !== null && facts.taxRate !== 0)) {
       const rate = facts.taxRate === null ? '' : ` ${formats.percent(facts.taxRate / 100)}`;
       rows.push({ label: `${taxWord}${rate}`, value: money(tax), emphasis: false });
@@ -593,6 +613,7 @@ function documentBlocks(input: LayoutInput, isVoid: boolean): Block[] {
         emphasis: false,
       });
     }
+    if (delivery !== null) rows.push(deliveryRow(delivery));
     /*
      * The breakdown when the document has one, the single line when it does
      * not — and never both. Each component sits on the ladder's own base,
@@ -606,6 +627,10 @@ function documentBlocks(input: LayoutInput, isVoid: boolean): Block[] {
       rows.push({ label: `${taxWord} ${formats.percent(Number(body.taxRate) || 0)}`, value: money(hundredths(totals.tax)), emphasis: false });
     }
     totalText = hundredths(totals.total);
+    // With nothing stored to trust, the delivery is added in here — after the
+    // tax, which is worked out on the lines alone. A shop whose delivery is
+    // taxed stores its totals, and those are printed as stored.
+    if (delivery !== null) totalText = sumText([totalText, delivery], Math.max(facts.scale, 2));
   }
 
   if (extras.tip !== null && !isZero(extras.tip)) {
@@ -616,9 +641,22 @@ function documentBlocks(input: LayoutInput, isVoid: boolean): Block[] {
   // something has been paid.
   rows.push({ label: words.total, value: money(totalText), emphasis: true });
 
-  // A sale's receipt that maps what was received: how it was paid, and what
-  // is still open when the app says so.
-  if (input.kind === 'receipt' && facts.receipt.amount !== null) {
+  /*
+   * A sale's receipt that lists the payments made for it: each live one on a
+   * row of its own, in the method's own word — a gift card, then a card —
+   * in place of the one row for what was received. A voided payment is left
+   * off, as it is on an invoice; a receipt whose payments are all voided, or
+   * that maps none, draws its one row as it always did.
+   */
+  const paidBy = input.kind === 'receipt' ? livePayments(facts.payments) : [];
+  if (paidBy.length > 0) {
+    for (const payment of paidBy) {
+      rows.push({ label: payment.method === '' ? words.received : methodWord(payment.method, words), value: money(payment.amount), emphasis: false });
+    }
+    if (facts.receipt.balanceAfter !== null) rows.push({ label: words.balanceLeft, value: money(facts.receipt.balanceAfter), emphasis: false });
+  } else if (input.kind === 'receipt' && facts.receipt.amount !== null) {
+    // A sale's receipt that maps what was received: how it was paid, and what
+    // is still open when the app says so.
     const how = extras.paidWith === '' ? words.received : methodWord(extras.paidWith, words);
     rows.push({ label: how, value: money(facts.receipt.amount), emphasis: false });
     if (facts.receipt.balanceAfter !== null) rows.push({ label: words.balanceLeft, value: money(facts.receipt.balanceAfter), emphasis: false });
@@ -653,6 +691,11 @@ function documentBlocks(input: LayoutInput, isVoid: boolean): Block[] {
 }
 
 const NO_LINE_FACTS: LineFacts = { date: '', options: [] };
+
+/** The payments that stand: every one not voided, in the order the app listed them. */
+function livePayments(payments: readonly StoredPayment[]): readonly StoredPayment[] {
+  return payments.filter((payment) => !payment.voided);
+}
 
 /**
  * The most names printed under one line; the rest are counted. A line is
@@ -854,11 +897,18 @@ function footBlock(input: LayoutInput, isVoid: boolean, voidDay: string): FootBl
   let payLines: { text: string; strong: boolean }[] = [];
   let footLabel = words.terms;
   let footText = body.terms !== '' ? body.terms : facts.letterhead.footer;
+  /*
+   * What a receipt says was received: the payments it lists, added up, when
+   * it lists any that stand; else the amount it maps. A receipt that maps
+   * neither has nothing to thank anybody for, and is footed as it always was.
+   */
+  const paidBy = kind === 'receipt' ? livePayments(facts.payments) : [];
+  const receivedAmount = paidBy.length > 0 ? sumText(paidBy.map((payment) => payment.amount), facts.scale) : kind === 'receipt' ? facts.receipt.amount : null;
 
-  if (kind === 'receipt' && facts.receipt.amount !== null) {
+  if (kind === 'receipt' && receivedAmount !== null) {
     const received = body.issued === '' ? '' : formats.day(body.issued);
     payLabel = words.thankYou;
-    payLines = [{ text: fill(words.receivedLine, { amount: formats.money(facts.receipt.amount), date: received }).trim(), strong: false }];
+    payLines = [{ text: fill(words.receivedLine, { amount: formats.money(receivedAmount), date: received }).trim(), strong: false }];
     if (facts.receipt.balanceAfter !== null) payLines.push({ text: fill(words.balanceLeftLine, { amount: formats.money(facts.receipt.balanceAfter) }), strong: false });
     footLabel = words.note;
     footText = words.receiptNote;
@@ -882,7 +932,7 @@ function footBlock(input: LayoutInput, isVoid: boolean, voidDay: string): FootBl
     footText = voidDay === '' ? '' : fill(words.voidedFooter, { date: voidDay });
     footLabel = words.voided;
   }
-  if (kind === 'receipt' && facts.receipt.amount === null && input.extras.paidWith !== '' && payLines.length === 0) {
+  if (kind === 'receipt' && receivedAmount === null && input.extras.paidWith !== '' && payLines.length === 0) {
     payLabel = words.settledWith;
     payLines = [{ text: methodWord(input.extras.paidWith, words), strong: false }];
   }
@@ -978,5 +1028,63 @@ function signedCopyLayout(input: LayoutInput): Document {
     name: [words.kindSignedCopy, copy.work].filter((part) => part !== '').join(', '),
     blocks,
     footer: { text: fill(words.signedCopyFooter, { business }).trim(), page: words.pageOf },
+  };
+}
+
+/**
+ * A packing slip: the letterhead; whom the parcel is for, beside the order it
+ * packs, the day and how it goes; the title; every line with its variant, its
+ * SKU and how many; and the note.
+ *
+ * WHAT IT NEVER CARRIES: a price, a total, a currency, a pay box or the
+ * business's footer for invoices — its outline holds no figure to print, and
+ * it is read by a packer and by whoever opens the box. Nor a number of its
+ * own: the number on it is the order's, exactly as mapped (`subject.ts`).
+ */
+function packingSlipLayout(input: LayoutInput): Document {
+  const { body, facts, words, formats } = input;
+  const slip = facts.packingSlip;
+  const toLines = slip.shipToLines.filter((line) => line !== '');
+  const nobody = slip.shipToName === '' && toLines.length === 0;
+
+  const blocks: Block[] = [
+    letterheadBlock(input),
+    {
+      kind: 'parties',
+      toLabel: nobody ? '' : words.shipTo,
+      toName: slip.shipToName,
+      toLines,
+      meta: [
+        row(words.orderNumber, body.number),
+        row(words.date, body.issued === '' ? '' : formats.day(body.issued)),
+        wordsRow(words.deliveryService, slip.deliveryService),
+      ].filter(notEmpty),
+    },
+    { kind: 'title', text: words.kindPackingSlip },
+    {
+      kind: 'items',
+      columns: [
+        { label: words.item, align: 'left' },
+        { label: words.variant, align: 'left' },
+        { label: words.sku, align: 'left' },
+        { label: words.quantity, align: 'right' },
+      ],
+      // A line with no variant has an empty cell, not a missing one: the columns stay in step.
+      rows: slip.lines.map((line) => ({
+        cells: [line.desc, line.variant, line.sku, line.qty === null ? '' : formats.quantity(line.qty)],
+        note: '',
+      })),
+    },
+  ];
+
+  if (body.notes !== '') blocks.push({ kind: 'passage', heading: words.note, lines: [body.notes] });
+
+  return {
+    locale: input.locale,
+    rtl: input.rtl,
+    accent: body.accent,
+    voidMark: null,
+    name: [words.kindPackingSlip, body.number].filter((part) => part !== '').join(' '),
+    blocks,
   };
 }

@@ -17,7 +17,7 @@ import { describe, expect, it } from 'vitest';
 import { emptyBody } from './document.ts';
 import { SAMPLE_DOCUMENT_PICTURE } from '@adminium/add-on-host/testing';
 
-import { isPurchaseOrder, SIGNED_COPY } from './kinds.ts';
+import { isPurchaseOrder, PACKING_SLIP, SIGNED_COPY } from './kinds.ts';
 import provider from './server.ts';
 
 /**
@@ -95,9 +95,19 @@ function subjectFor(kind: string) {
             signature: SAMPLE_DOCUMENT_PICTURE,
           }
         : {}),
+      // A packing slip prints the order's own number, never the register's
+      // `number` above; it names whom the parcel goes to and how.
+      ...(kind === PACKING_SLIP
+        ? { orderNumber: 'NL-1066', shipToName: 'Acme Corporation', shipToLines: ['400 Market Street', 'San Francisco, CA 94105'], deliveryService: 'UPS Ground' }
+        : {}),
     },
     collections: {
-      items: isPurchaseOrder(kind)
+      items: kind === PACKING_SLIP
+        ? [
+            { id: 'li-1', desc: 'Field tee', variant: 'Ember, M', sku: 'NL-TEE-EMB-M', qty: 2 },
+            { id: 'li-2', desc: 'Canvas tote', variant: '', sku: 'NL-TOTE', qty: 1 },
+          ]
+        : isPurchaseOrder(kind)
         ? [
             { id: 'li-1', desc: 'Bread flour', code: 'MG-2210', packs: 4, pack: 'Sack 25 kg', units: 100, unit: 'kg', rate: 4_200, amount: 16_800 },
             { id: 'li-2', desc: 'Olive oil', code: 'MG-0417', packs: 6, pack: 'Case of 12', units: 72, unit: 'bottle', rate: 3_800, amount: 22_800 },
@@ -120,7 +130,8 @@ describeDocumentRenderer(provider, {
    * would test a value an operator never maps and the engine always supplies.
    * An order has no customer: the name it draws is the supplier's.
    */
-  textSlot: (kind) => (isPurchaseOrder(kind.id) ? 'supplierName' : kind.id === SIGNED_COPY ? 'signerName' : 'customerName'),
+  textSlot: (kind) =>
+    isPurchaseOrder(kind.id) ? 'supplierName' : kind.id === SIGNED_COPY ? 'signerName' : kind.id === PACKING_SLIP ? 'shipToName' : 'customerName',
 });
 
 describe('the invoices provider draws what it was asked for', () => {
@@ -364,7 +375,7 @@ describe('the invoices provider draws what it was asked for', () => {
     expect(isDocumentError(outcome)).toBe(false);
   });
 
-  it('gives every kind a filename carrying its number, a statement its day and a signed copy its work', async () => {
+  it('gives every kind a filename carrying its number, a statement its day, a signed copy its work and a packing slip its order', async () => {
     for (const kind of provider.kinds()) {
       const outcome = await provider.render({
         kind: kind.id,
@@ -376,8 +387,10 @@ describe('the invoices provider draws what it was asked for', () => {
       if (isDocumentError(outcome)) throw new Error(`${kind.id}: ${JSON.stringify(outcome)}`);
       for (const document of outcome) {
         // A statement is in no series; it is named by the day it runs to. A
-        // signed copy is in none either, and is named by the work it records.
-        const number = kind.id === 'statement' ? '2026-09-10' : kind.id === SIGNED_COPY ? 'Studio-meeting-tables' : 'INV-1042';
+        // signed copy is in none either, and is named by the work it records;
+        // a packing slip by the order it packs, never the register's number.
+        const number =
+          kind.id === 'statement' ? '2026-09-10' : kind.id === SIGNED_COPY ? 'Studio-meeting-tables' : kind.id === PACKING_SLIP ? 'NL-1066' : 'INV-1042';
         expect(document.filename).toBe(`${kind.id}-${number}.${document.format}`);
       }
     }

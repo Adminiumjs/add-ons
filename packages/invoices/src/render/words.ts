@@ -171,6 +171,18 @@ export interface LayoutWords {
   readonly checkNumber: string;
   /** What a reader that cannot see the picture is told it is. */
   readonly signatureOf: string;
+  /** A receipt's delivery, on its own row under the subtotal. */
+  readonly delivery: string;
+  /** A packing slip: its name, and the heading over whom the parcel is for. */
+  readonly kindPackingSlip: string;
+  readonly shipTo: string;
+  /** Its facts: the order it packs, and how the parcel goes. */
+  readonly orderNumber: string;
+  readonly deliveryService: string;
+  /** Its columns, beside `quantity`: the item, which variant, and the shop's code for it. */
+  readonly item: string;
+  readonly variant: string;
+  readonly sku: string;
 }
 
 const WORDS: Readonly<Record<string, LayoutWords>> = {
@@ -287,6 +299,14 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     pageOf: 'Page {page} of {pages}',
     checkNumber: 'Check {number}',
     signatureOf: 'Signature of {name}',
+    delivery: 'Delivery',
+    kindPackingSlip: 'Packing slip',
+    shipTo: 'Ship to',
+    orderNumber: 'Order',
+    deliveryService: 'Delivery service',
+    item: 'Item',
+    variant: 'Variant',
+    sku: 'SKU',
   },
   'de-DE': {
     from: 'Von',
@@ -401,6 +421,14 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     pageOf: 'Seite {page} von {pages}',
     checkNumber: 'Prüfpunkt {number}',
     signatureOf: 'Unterschrift von {name}',
+    delivery: 'Versand',
+    kindPackingSlip: 'Lieferschein',
+    shipTo: 'Lieferung an',
+    orderNumber: 'Bestellung',
+    deliveryService: 'Versandart',
+    item: 'Artikel',
+    variant: 'Variante',
+    sku: 'Art.-Nr.',
   },
   'fr-FR': {
     from: 'De',
@@ -515,6 +543,14 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     pageOf: 'Page {page} sur {pages}',
     checkNumber: 'Vérification {number}',
     signatureOf: 'Signature de {name}',
+    delivery: 'Livraison',
+    kindPackingSlip: 'Bon de livraison',
+    shipTo: 'Livrer à',
+    orderNumber: 'Commande',
+    deliveryService: 'Mode de livraison',
+    item: 'Article',
+    variant: 'Variante',
+    sku: 'Réf.',
   },
   'cs-CZ': {
     from: 'Od',
@@ -629,6 +665,14 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     pageOf: 'Strana {page} z {pages}',
     checkNumber: 'Kontrola {number}',
     signatureOf: 'Podpis: {name}',
+    delivery: 'Doprava',
+    kindPackingSlip: 'Dodací list',
+    shipTo: 'Příjemce',
+    orderNumber: 'Objednávka',
+    deliveryService: 'Způsob doručení',
+    item: 'Položka',
+    variant: 'Varianta',
+    sku: 'Kód',
   },
   'da-DK': {
     from: 'Fra',
@@ -743,6 +787,14 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     pageOf: 'Side {page} af {pages}',
     checkNumber: 'Kontrol {number}',
     signatureOf: 'Underskrift af {name}',
+    delivery: 'Levering',
+    kindPackingSlip: 'Pakkeseddel',
+    shipTo: 'Leveres til',
+    orderNumber: 'Ordre',
+    deliveryService: 'Forsendelse',
+    item: 'Vare',
+    variant: 'Variant',
+    sku: 'Varenr.',
   },
   'zh-CN': {
     from: '开具方',
@@ -857,6 +909,14 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     pageOf: '第 {page} 页，共 {pages} 页',
     checkNumber: '检查 {number}',
     signatureOf: '{name}的签名',
+    delivery: '运费',
+    kindPackingSlip: '装箱单',
+    shipTo: '收件人',
+    orderNumber: '订单',
+    deliveryService: '配送方式',
+    item: '物品',
+    variant: '规格',
+    sku: '库存编号',
   },
   'zh-TW': {
     from: '開立方',
@@ -971,6 +1031,14 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     pageOf: '第 {page} 頁，共 {pages} 頁',
     checkNumber: '檢查 {number}',
     signatureOf: '{name}的簽名',
+    delivery: '運費',
+    kindPackingSlip: '裝箱單',
+    shipTo: '收件人',
+    orderNumber: '訂單',
+    deliveryService: '配送方式',
+    item: '品項',
+    variant: '規格',
+    sku: '庫存編號',
   },
   'ar-EG': {
     from: 'من',
@@ -1085,6 +1153,14 @@ const WORDS: Readonly<Record<string, LayoutWords>> = {
     pageOf: 'صفحة {page} من {pages}',
     checkNumber: 'فحص {number}',
     signatureOf: 'توقيع {name}',
+    delivery: 'التوصيل',
+    kindPackingSlip: 'قائمة التعبئة',
+    shipTo: 'الشحن إلى',
+    orderNumber: 'الطلب',
+    deliveryService: 'طريقة التوصيل',
+    item: 'الصنف',
+    variant: 'الخيار',
+    sku: 'رمز الصنف',
   },
 };
 

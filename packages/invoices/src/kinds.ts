@@ -1,5 +1,5 @@
 /**
- * The eight kinds this add-on renders, and the outline of each.
+ * The nine kinds this add-on renders, and the outline of each.
  *
  * ── WHAT AN OUTLINE IS, AND WHAT IT IS NOT ─────────────────────────────────
  *
@@ -17,13 +17,13 @@
  * render — a receipt fired by a till, with no authored template behind it —
  * has no body at all and is drawn from the outline's defaults.
  *
- * ── EIGHT KINDS, TWELVE STARTERS, AND WHY THOSE ARE DIFFERENT NUMBERS ──────
+ * ── NINE KINDS, TWELVE STARTERS, AND WHY THOSE ARE DIFFERENT NUMBERS ───────
  *
  * The surface offers twelve starters over eight titles, four of which
  * (PROFORMA, ESTIMATE, DEPOSIT, COMMERCIAL INVOICE) no kind covers. A starter
  * is a TEMPLATE PRESET, not a kind: as a preset it costs nothing, and as a kind
  * each would have cost another `describe()` outline with eight-locale labels on
- * every slot. `kinds()` is eight because that is the number of distinct MAPPING
+ * every slot. `kinds()` is nine because that is the number of distinct MAPPING
  * shapes — money owed, money received, money returned, money offered (a quote),
  * one client's account over a period (a statement, which is not one row but
  * a read of many), and goods ordered from a supplier, which is two: the order
@@ -31,7 +31,10 @@
  * kinds rather than one kind with a switch because the difference is in the
  * OUTLINE — the one without prices has no slot a price could be mapped to.
  * The eighth holds no money at all: what a customer signed on site when the
- * work was handed over (a signed copy).
+ * work was handed over (a signed copy). The ninth holds none either: what goes
+ * in a parcel, printed for whoever packs it (a packing slip) — the order's own
+ * number, where it goes and how, and each line counted, with no slot a price,
+ * a total or a currency could be mapped to.
  *
  * ── WHY THE LABELS ARE HERE AND NOT IN `i18n/strings.ts` ───────────────────
  *
@@ -170,6 +173,16 @@ const KIND_LABELS = {
     'zh-TW': '簽字副本',
     'ar-EG': 'نسخة موقّعة',
   },
+  'packing-slip': {
+    'en-US': 'Packing slip',
+    'de-DE': 'Lieferschein',
+    'fr-FR': 'Bon de livraison',
+    'cs-CZ': 'Dodací list',
+    'da-DK': 'Pakkeseddel',
+    'zh-CN': '装箱单',
+    'zh-TW': '裝箱單',
+    'ar-EG': 'قائمة التعبئة',
+  },
 } as const satisfies Readonly<Record<string, LocalizedText>>;
 
 /** The order to a supplier with its prices, and the same order without them. */
@@ -178,6 +191,9 @@ export const PURCHASE_ORDER_UNPRICED = 'purchase-order-unpriced';
 
 /** What a customer signed on site: the work, the checks, what was still open, and the signature. */
 export const SIGNED_COPY = 'signed-copy';
+
+/** What goes in a parcel, for whoever packs it: the order's number, where it goes, and each line counted. No money. */
+export const PACKING_SLIP = 'packing-slip';
 
 /** Whether a kind is an order to a supplier, with prices or without. */
 export function isPurchaseOrder(kind: string): boolean {
@@ -699,6 +715,45 @@ const TIP: OutlineSlot = {
     'zh-CN': '打印在合计上方并计入合计，因此请映射不含小费的存储合计。',
     'zh-TW': '列印在合計上方並計入合計，因此請對應不含小費的儲存合計。',
     'ar-EG': 'تُطبع فوق الإجمالي وتُضاف إليه، فاربط إجمالياً مخزناً لا يشملها.',
+  },
+  type: 'money',
+  required: false,
+};
+
+/*
+ * A sale sent to the customer's door: what the delivery cost, on its own row
+ * under the subtotal. Unlike the gratuity it is part of what the sale stores
+ * as its total — a shop's order keeps lines, delivery, tax and a total that
+ * already counts all three — so a stored total is printed as stored and the
+ * delivery is never added to it a second time. Only a receipt with no stored
+ * total adds it in.
+ *
+ * The id is a SLOT id. `delivery` is also the name of an authored block in
+ * `document.ts` and `drawn.ts` (the comp's "Delivery" section); the two are
+ * different vocabularies — one names a value a mapping fills, the other a
+ * section a template switches on — and neither is ever looked up in the other.
+ */
+const DELIVERY: OutlineSlot = {
+  id: 'delivery',
+  label: {
+    'en-US': 'Delivery',
+    'de-DE': 'Versand',
+    'fr-FR': 'Livraison',
+    'cs-CZ': 'Doprava',
+    'da-DK': 'Levering',
+    'zh-CN': '运费',
+    'zh-TW': '運費',
+    'ar-EG': 'التوصيل',
+  },
+  help: {
+    'en-US': 'Printed under the subtotal. Map a stored total that includes it; with no stored total, it is added in.',
+    'de-DE': 'Unter der Zwischensumme gedruckt. Ordnen Sie eine gespeicherte Gesamtsumme zu, die ihn enthält; ohne gespeicherte Gesamtsumme wird er addiert.',
+    'fr-FR': 'Imprimée sous le sous-total. Associez un total enregistré qui la comprend ; sans total enregistré, elle y est ajoutée.',
+    'cs-CZ': 'Tiskne se pod mezisoučtem. Přiřaďte uloženou celkovou částku, která ji zahrnuje; bez uložené celkové částky se k ní přičte.',
+    'da-DK': 'Trykkes under subtotalen. Tilknyt en gemt total, der indeholder den; uden en gemt total lægges den til.',
+    'zh-CN': '打印在小计下方。请映射已包含运费的存储合计；没有存储合计时，运费会计入合计。',
+    'zh-TW': '列印在小計下方。請對應已包含運費的儲存合計；沒有儲存合計時，運費會計入合計。',
+    'ar-EG': 'يُطبع تحت المجموع الفرعي. اربط إجمالياً مخزناً يشمله؛ وبدون إجمالي مخزن يُضاف إليه.',
   },
   type: 'money',
   required: false,
@@ -1702,6 +1757,24 @@ const PAYMENTS: OutlineSlot = {
   ],
 };
 
+/**
+ * The same payments on a receipt: the ones made for the sale it is for — a
+ * gift card and a card, say — each printed on its own row under the total.
+ */
+const RECEIPT_PAYMENTS: OutlineSlot = {
+  ...PAYMENTS,
+  help: {
+    'en-US': 'The payments made for this sale, each printed on its own row under the total. Voided ones are left off the page.',
+    'de-DE': 'Die Zahlungen zu diesem Verkauf, jede in einer eigenen Zeile unter der Gesamtsumme. Stornierte stehen nicht auf dem Blatt.',
+    'fr-FR': 'Les règlements de cette vente, chacun sur sa ligne sous le total. Les annulés ne sont pas imprimés.',
+    'cs-CZ': 'Platby k tomuto nákupu, každá na vlastním řádku pod celkovou částkou. Stornované se netisknou.',
+    'da-DK': 'Betalingerne til dette salg, hver på sin egen linje under totalen. Annullerede kommer ikke med på siden.',
+    'zh-CN': '这笔销售的付款，每笔在合计下方单独一行。已作废的不打印。',
+    'zh-TW': '這筆銷售的付款，每筆在合計下方單獨一列。已作廢的不列印。',
+    'ar-EG': 'مدفوعات هذا البيع، كل دفعة في سطر مستقل تحت الإجمالي. الملغاة لا تُطبع.',
+  },
+};
+
 const ENTRIES: OutlineSlot = {
   id: 'entries',
   label: {
@@ -2503,6 +2576,279 @@ const SNAGS: OutlineSlot = {
 /** How many answers a signed copy reads. */
 export const SIGNED_COPY_CHECKS = 5;
 
+/*
+ * ── THE PACKING SLIP: WHAT GOES IN THE PARCEL, AND NOTHING IT COST ─────────
+ *
+ * A shop's order is picked, packed and handed to a carrier, and the sheet in
+ * the box says what should be in it: the order's number, whom it is for and
+ * where, the delivery service, and every line with its variant, its SKU and
+ * how many. It is read by a packer and by the customer opening the box, and
+ * neither is to be shown a figure — the order may be a gift.
+ *
+ * NO MONEY, BY OUTLINE. Like the order sent to a supplier without prices,
+ * nothing here is of a money, percent or currency type, so there is no slot a
+ * price, a total or a currency could be mapped to, and no figure can reach
+ * the page.
+ *
+ * NO NUMBER OF ITS OWN. A packing slip is in no series: it prints the ORDER's
+ * number exactly as the mapping hands it over. So the slot is `orderNumber`
+ * — required, with no default — and never `number`, whose `sequence` default
+ * would have the engine give it the next number in a series, and never the
+ * receipt's series either: no prefix is added, and a number of digits alone
+ * is printed as those digits.
+ *
+ * Its lines are `items`, like every kind's, and their name is `desc`, so a
+ * mapping names a line the same way on every kind.
+ */
+
+const ORDER_NUMBER: OutlineSlot = {
+  id: 'orderNumber',
+  label: {
+    'en-US': 'Order number',
+    'de-DE': 'Bestellnummer',
+    'fr-FR': 'Numéro de commande',
+    'cs-CZ': 'Číslo objednávky',
+    'da-DK': 'Ordrenummer',
+    'zh-CN': '订单号',
+    'zh-TW': '訂單號',
+    'ar-EG': 'رقم الطلب',
+  },
+  help: {
+    'en-US': 'The order’s own number, printed exactly as stored. A packing slip takes no number of its own.',
+    'de-DE': 'Die Nummer der Bestellung, genau wie gespeichert gedruckt. Ein Lieferschein bekommt keine eigene Nummer.',
+    'fr-FR': 'Le numéro de la commande, imprimé tel qu’il est enregistré. Un bon de livraison ne reçoit aucun numéro à lui.',
+    'cs-CZ': 'Číslo objednávky, vytištěné přesně tak, jak je uložené. Dodací list nedostává vlastní číslo.',
+    'da-DK': 'Ordrens eget nummer, trykt præcis som gemt. En pakkeseddel får ikke sit eget nummer.',
+    'zh-CN': '订单自己的编号，按存储值原样打印。装箱单不另取编号。',
+    'zh-TW': '訂單自己的編號，依儲存值原樣列印。裝箱單不另取編號。',
+    'ar-EG': 'رقم الطلب نفسه، يُطبع كما هو مخزن تماماً. قائمة التعبئة لا تأخذ رقماً خاصاً بها.',
+  },
+  type: 'text',
+  required: true,
+};
+
+const SHIP_TO_NAME: OutlineSlot = {
+  id: 'shipToName',
+  label: {
+    'en-US': 'Ship to',
+    'de-DE': 'Lieferung an',
+    'fr-FR': 'Livrer à',
+    'cs-CZ': 'Příjemce',
+    'da-DK': 'Leveres til',
+    'zh-CN': '收件人',
+    'zh-TW': '收件人',
+    'ar-EG': 'الشحن إلى',
+  },
+  help: {
+    'en-US': 'The name on the parcel — the customer, or whoever the order is sent to.',
+    'de-DE': 'Der Name auf dem Paket — der Kunde oder wer die Bestellung erhält.',
+    'fr-FR': 'Le nom sur le colis — le client, ou la personne à qui la commande est envoyée.',
+    'cs-CZ': 'Jméno na balíku — zákazník, nebo ten, komu se objednávka posílá.',
+    'da-DK': 'Navnet på pakken — kunden, eller den ordren sendes til.',
+    'zh-CN': '包裹上的姓名——客户，或订单寄送的对象。',
+    'zh-TW': '包裹上的姓名——客戶，或訂單寄送的對象。',
+    'ar-EG': 'الاسم على الطرد — العميل، أو من يُرسل إليه الطلب.',
+  },
+  type: 'text',
+  required: false,
+};
+
+const SHIP_TO_LINES: OutlineSlot = {
+  id: 'shipToLines',
+  label: {
+    'en-US': 'Ship-to address',
+    'de-DE': 'Lieferanschrift',
+    'fr-FR': 'Adresse de livraison',
+    'cs-CZ': 'Doručovací adresa',
+    'da-DK': 'Leveringsadresse',
+    'zh-CN': '收货地址',
+    'zh-TW': '收貨地址',
+    'ar-EG': 'عنوان الشحن',
+  },
+  help: {
+    'en-US': 'One line each, printed under the name.',
+    'de-DE': 'Je eine Zeile, unter dem Namen gedruckt.',
+    'fr-FR': 'Une ligne chacune, imprimée sous le nom.',
+    'cs-CZ': 'Každá na jednom řádku, vytištěno pod jménem.',
+    'da-DK': 'Én linje hver, trykt under navnet.',
+    'zh-CN': '每行一条，印在姓名下方。',
+    'zh-TW': '每行一條，印在姓名下方。',
+    'ar-EG': 'سطر لكل واحد، يُطبع تحت الاسم.',
+  },
+  type: 'text[]',
+  required: false,
+};
+
+const DELIVERY_SERVICE: OutlineSlot = {
+  id: 'deliveryService',
+  label: {
+    'en-US': 'Delivery service',
+    'de-DE': 'Versandart',
+    'fr-FR': 'Mode de livraison',
+    'cs-CZ': 'Způsob doručení',
+    'da-DK': 'Forsendelse',
+    'zh-CN': '配送方式',
+    'zh-TW': '配送方式',
+    'ar-EG': 'طريقة التوصيل',
+  },
+  help: {
+    'en-US': 'How the parcel goes — a carrier and its service, as the order stores it. Printed beside the order number.',
+    'de-DE': 'Wie das Paket reist — ein Versanddienst und seine Versandart, wie die Bestellung sie speichert. Neben der Bestellnummer gedruckt.',
+    'fr-FR': 'Comment part le colis — un transporteur et son service, tels que la commande les enregistre. Imprimé à côté du numéro de commande.',
+    'cs-CZ': 'Jak balík pojede — dopravce a jeho služba, jak je objednávka ukládá. Tiskne se vedle čísla objednávky.',
+    'da-DK': 'Hvordan pakken sendes — et fragtfirma og dets service, som ordren gemmer dem. Trykkes ved siden af ordrenummeret.',
+    'zh-CN': '包裹如何寄出——承运商及其服务，按订单存储的内容。印在订单号旁边。',
+    'zh-TW': '包裹如何寄出——承運商及其服務，依訂單儲存的內容。印在訂單號旁邊。',
+    'ar-EG': 'كيف يُرسل الطرد — شركة الشحن وخدمتها كما يخزنها الطلب. يُطبع بجانب رقم الطلب.',
+  },
+  type: 'text',
+  required: false,
+};
+
+/** One line of the parcel: what it is, which variant, its SKU and how many. No column holds a price. */
+const PACKING_ITEMS: OutlineSlot = {
+  id: 'items',
+  label: {
+    'en-US': 'Lines',
+    'de-DE': 'Positionen',
+    'fr-FR': 'Lignes',
+    'cs-CZ': 'Položky',
+    'da-DK': 'Linjer',
+    'zh-CN': '明细',
+    'zh-TW': '明細',
+    'ar-EG': 'البنود',
+  },
+  help: {
+    'en-US': 'The child table holding one row per line of the order.',
+    'de-DE': 'Die untergeordnete Tabelle mit einer Zeile je Position der Bestellung.',
+    'fr-FR': 'La table enfant contenant une ligne par poste de la commande.',
+    'cs-CZ': 'Podřízená tabulka s jedním řádkem na položku objednávky.',
+    'da-DK': 'Undertabellen med én række per linje i ordren.',
+    'zh-CN': '订单每行一条记录的子表。',
+    'zh-TW': '訂單每列一筆記錄的子表。',
+    'ar-EG': 'الجدول الفرعي الذي يحمل سطراً لكل بند في الطلب.',
+  },
+  type: 'collection',
+  required: false,
+  columns: [
+    {
+      id: 'desc',
+      label: {
+        'en-US': 'Item',
+        'de-DE': 'Artikel',
+        'fr-FR': 'Article',
+        'cs-CZ': 'Položka',
+        'da-DK': 'Vare',
+        'zh-CN': '物品',
+        'zh-TW': '品項',
+        'ar-EG': 'الصنف',
+      },
+      type: 'text',
+      required: true,
+    },
+    {
+      id: 'variant',
+      label: {
+        'en-US': 'Variant',
+        'de-DE': 'Variante',
+        'fr-FR': 'Variante',
+        'cs-CZ': 'Varianta',
+        'da-DK': 'Variant',
+        'zh-CN': '规格',
+        'zh-TW': '規格',
+        'ar-EG': 'الخيار',
+      },
+      help: {
+        'en-US': 'Which one of the item — a colour and a size, “Ember, M”. Left empty, the cell is blank.',
+        'de-DE': 'Welche Ausführung des Artikels — eine Farbe und eine Größe, „Ember, M“. Leer bleibt die Zelle leer.',
+        'fr-FR': 'Quelle déclinaison de l’article — une couleur et une taille, « Ember, M ». Vide, la case reste vide.',
+        'cs-CZ': 'Která varianta položky — barva a velikost, „Ember, M“. Prázdná nechá buňku prázdnou.',
+        'da-DK': 'Hvilken udgave af varen — en farve og en størrelse, „Ember, M“. Tom forbliver cellen tom.',
+        'zh-CN': '物品的哪一款——颜色和尺码，如“Ember, M”。留空时该格为空。',
+        'zh-TW': '品項的哪一款——顏色和尺寸，如「Ember, M」。留空時該格為空。',
+        'ar-EG': 'أي نسخة من الصنف — لون ومقاس، «Ember, M». إذا تُرك فارغاً تبقى الخانة فارغة.',
+      },
+      type: 'text',
+      required: false,
+    },
+    {
+      id: 'sku',
+      label: {
+        'en-US': 'SKU',
+        'de-DE': 'Artikelnummer',
+        'fr-FR': 'Référence',
+        'cs-CZ': 'Kód zboží',
+        'da-DK': 'Varenummer',
+        'zh-CN': '库存编号',
+        'zh-TW': '庫存編號',
+        'ar-EG': 'رمز الصنف',
+      },
+      help: {
+        'en-US': 'The code the shop keeps the item under, so the packer picks the right one.',
+        'de-DE': 'Der Code, unter dem der Laden den Artikel führt, damit beim Packen der richtige gegriffen wird.',
+        'fr-FR': 'Le code sous lequel la boutique range l’article, pour que l’emballeur prenne le bon.',
+        'cs-CZ': 'Kód, pod kterým obchod položku vede, aby balič vzal tu správnou.',
+        'da-DK': 'Koden, butikken fører varen under, så den, der pakker, tager den rigtige.',
+        'zh-CN': '店铺登记该物品所用的编号，便于打包时拿对。',
+        'zh-TW': '店鋪登記該品項所用的編號，便於打包時拿對。',
+        'ar-EG': 'الرمز الذي يحفظ به المتجر الصنف، ليأخذ من يجهّز الطرد الصنف الصحيح.',
+      },
+      type: 'text',
+      required: false,
+    },
+    {
+      id: 'qty',
+      label: {
+        'en-US': 'Quantity',
+        'de-DE': 'Menge',
+        'fr-FR': 'Quantité',
+        'cs-CZ': 'Množství',
+        'da-DK': 'Antal',
+        'zh-CN': '数量',
+        'zh-TW': '數量',
+        'ar-EG': 'الكمية',
+      },
+      help: {
+        'en-US': 'How many go in the parcel.',
+        'de-DE': 'Wie viele ins Paket kommen.',
+        'fr-FR': 'Combien vont dans le colis.',
+        'cs-CZ': 'Kolik kusů jde do balíku.',
+        'da-DK': 'Hvor mange der skal i pakken.',
+        'zh-CN': '装进包裹的数量。',
+        'zh-TW': '裝進包裹的數量。',
+        'ar-EG': 'كم قطعة تدخل الطرد.',
+      },
+      type: 'number',
+      required: true,
+    },
+  ],
+};
+
+/** A packing slip's note: words for the packer or for whoever opens the box — a gift message. */
+const PACKING_NOTE: OutlineSlot = {
+  ...NOTES,
+  label: {
+    'en-US': 'Note',
+    'de-DE': 'Hinweis',
+    'fr-FR': 'Remarque',
+    'cs-CZ': 'Poznámka',
+    'da-DK': 'Bemærkning',
+    'zh-CN': '备注',
+    'zh-TW': '備註',
+    'ar-EG': 'ملاحظة',
+  },
+  help: {
+    'en-US': 'Words printed under the lines — for the packer, or for whoever opens the box, such as a gift message.',
+    'de-DE': 'Worte unter den Positionen — für die Person, die packt, oder für wen das Paket öffnet, etwa ein Geschenkgruß.',
+    'fr-FR': 'Quelques mots imprimés sous les lignes — pour l’emballeur, ou pour qui ouvre le colis, comme un message cadeau.',
+    'cs-CZ': 'Slova vytištěná pod položkami — k balení, nebo k tomu, kdo balík otevře, třeba vzkaz k dárku.',
+    'da-DK': 'Ord trykt under linjerne — til den, der pakker, eller til den, der åbner pakken, som en gavehilsen.',
+    'zh-CN': '印在明细下方的话——写给打包的人，或打开包裹的人，例如礼物留言。',
+    'zh-TW': '印在明細下方的話——寫給打包的人，或打開包裹的人，例如禮物留言。',
+    'ar-EG': 'كلمات تُطبع تحت البنود — لمن يجهّز الطرد، أو لمن يفتحه، مثل رسالة هدية.',
+  },
+};
+
 /** What both kinds of order carry: whom it is sent to, where the goods go, and when. */
 const ORDER_SHARED: readonly OutlineSlot[] = [
   NUMBER,
@@ -2574,6 +2920,11 @@ const OUTLINES: Readonly<Record<string, DocumentOutline>> = {
    * subtotal, tax and total (the total before the gratuity) and the tip, and
    * may map what was received too; its lines are drawn either way. A visit's
    * receipt adds the day of the visit, who gave it and the payer's reference.
+   *
+   * A shop's order sent to the door adds what the delivery cost, printed under
+   * the subtotal, and may list the payments made for it — a gift card and a
+   * card — each on its own row under the total, in place of the one row for
+   * what was received.
    */
   receipt: {
     slots: [
@@ -2591,6 +2942,7 @@ const OUTLINES: Readonly<Record<string, DocumentOutline>> = {
       TITLE,
       ...PARTY,
       ...STORED_TOTALS,
+      DELIVERY,
       AMOUNT,
       INVOICE_NUMBER,
       INVOICE_TOTAL,
@@ -2601,6 +2953,7 @@ const OUTLINES: Readonly<Record<string, DocumentOutline>> = {
       ATTENDED_BY,
       REFERENCE,
       PREPARED_BY,
+      RECEIPT_PAYMENTS,
     ],
   },
   'credit-note': { slots: [...SHARED, REFERENCES, TITLE, ...PARTY, PREPARED_BY] },
@@ -2677,6 +3030,14 @@ const OUTLINES: Readonly<Record<string, DocumentOutline>> = {
       SNAGS,
     ],
   },
+  /*
+   * No money, no currency and no number of its own (see above): the order's
+   * number as stored, whom the parcel is for and where, how it goes, and each
+   * line counted.
+   */
+  [PACKING_SLIP]: {
+    slots: [ORDER_NUMBER, ISSUED_AT, SHIP_TO_NAME, SHIP_TO_LINES, DELIVERY_SERVICE, PACKING_ITEMS, PACKING_NOTE],
+  },
 };
 
 export const KINDS: readonly DocumentKind[] = [
@@ -2733,6 +3094,13 @@ export const KINDS: readonly DocumentKind[] = [
   {
     id: SIGNED_COPY,
     label: KIND_LABELS[SIGNED_COPY],
+    formats: ['html', 'pdf'],
+    paper: ['a4', 'letter'],
+    coverage: 'winansi',
+  },
+  {
+    id: PACKING_SLIP,
+    label: KIND_LABELS[PACKING_SLIP],
     formats: ['html', 'pdf'],
     paper: ['a4', 'letter'],
     coverage: 'winansi',

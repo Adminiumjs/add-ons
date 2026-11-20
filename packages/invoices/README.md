@@ -63,6 +63,17 @@ own — a practice's payments, a till's tickets — rather than on a shape.
   maps the amount received too. Map the stored `subtotal`, `tax` and `total`
   (the total before the tip) and they print as stored; a total below subtotal
   and tax prints the difference as a reduction.
+- **Delivery.** A sale sent to the door maps `delivery`: printed on its own row
+  under the subtotal (and under a reduction), above the tax. Map a stored total
+  that includes it — the reduction is then what the total falls short of
+  subtotal, delivery and tax together; with no stored total the delivery is
+  added in. A delivery of nothing prints no row.
+- **The payments made.** A receipt can map `payments` (number, day, method,
+  amount, voided), the same list an invoice has. When any is not voided, each
+  prints on its own row under the total in its method's word ("Gift card
+  $50.00", "Card $167.00") in place of the one row for what was received, and
+  the foot thanks the customer for what they come to. A receipt that maps
+  neither draws exactly as before.
 
 ## Lines with a day, lines with choices, and invoices over several days
 
@@ -127,6 +138,22 @@ sign-offs to it:
 Every page of the PDF ends with a line saying what the copy is and the page's
 number. Like every document here, the PDF draws Latin letters only; an Arabic or
 Chinese copy is the web page, for printing.
+
+## A packing slip
+
+The `packing-slip` kind is what goes in a parcel, printed for whoever packs it,
+and like the signed copy it holds no money: its outline has no slot a price, a
+total or a currency could be mapped to. A shop maps an order to it:
+
+- `orderNumber` (required) — the order's own number, printed exactly as stored.
+  A packing slip takes no number of its own: it is in no series, nothing is
+  added in front of a number of digits, and the file is named by the order
+  (`packing-slip-NL-1066.pdf`);
+- `issuedAt`, `shipToName` and `shipToLines` (whom the parcel is for and where),
+  and `deliveryService` (how it goes), printed beside the order number;
+- `items`, one row per line: `desc`, `variant` ("Ember, M"; empty prints an
+  empty cell), `sku` and `qty`, under the headings Item, Variant, SKU and Qty;
+- `notes`, printed under the lines — a gift message, say.
 
 ## What it records, and what it never does
 

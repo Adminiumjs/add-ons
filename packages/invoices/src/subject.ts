@@ -42,7 +42,7 @@
 
 import type { DocumentError, DocumentSubject, OutlineSlot } from '@adminium/add-on-host/contracts';
 
-import { describe, isPurchaseOrder, SIGNED_COPY_CHECKS } from './kinds.ts';
+import { describe, isPurchaseOrder, PACKING_SLIP, SIGNED_COPY_CHECKS } from './kinds.ts';
 import type { InvoiceBody, LineItem } from './document.ts';
 import { emptyBody, normalizeInvoiceBody } from './document.ts';
 import { currencyDigits, dayIn, isCurrencyCode, minorToDecimal } from './render/format.ts';
@@ -211,6 +211,22 @@ function orderLinesFrom(slot: OutlineSlot | undefined, subject: DocumentSubject,
 }
 
 /**
+ * The lines of a packing slip: what each is, which variant, its SKU and how
+ * many. Read by their own reader, like an order's, so nothing that reads a
+ * price off a row — `itemsFrom` makes up a rate of zero — ever sees them.
+ */
+function packingLinesFrom(slot: OutlineSlot | undefined, subject: DocumentSubject): PackingLine[] {
+  if (slot === undefined) return [];
+  const rows = subject.collections[slot.id] ?? [];
+  return rows.map((row) => ({
+    desc: textOf(row.desc),
+    variant: textOf(row.variant).trim(),
+    sku: textOf(row.sku).trim(),
+    qty: countOf(row.qty),
+  }));
+}
+
+/**
  * The bound values that have NO field in the authored body.
  *
  * The slots the design draws no field for, made concrete. Three of this
@@ -348,6 +364,16 @@ export interface OrderLine {
   readonly amount: string | null;
 }
 
+/** One line of a packing slip. No price: the outline has no column one could arrive through. */
+export interface PackingLine {
+  readonly desc: string;
+  /** Which one of the item — "Ember, M" — or `''`. */
+  readonly variant: string;
+  readonly sku: string;
+  /** How many go in the parcel, as decimal text, or `null` when the row carries none. */
+  readonly qty: string | null;
+}
+
 /**
  * A picture the host handed over, as the page may draw it: a PNG or a JPEG
  * data URL and its size in pixels. Anything else is no picture.
@@ -470,6 +496,8 @@ export interface SubjectFacts {
   readonly subtotal: string | null;
   readonly tax: string | null;
   readonly total: string | null;
+  /** A receipt's delivery, printed under the subtotal; `null` when unmapped. */
+  readonly delivery: string | null;
   readonly paid: string | null;
   readonly balance: string | null;
   readonly status: string;
@@ -523,6 +551,13 @@ export interface SubjectFacts {
     /** `YYYY-MM-DD`, or `''`. */
     readonly expectedBy: string;
     readonly lines: readonly OrderLine[];
+  };
+  /** What goes in a parcel: whom it is for, where, how it goes, and its lines. Empty for every other kind. */
+  readonly packingSlip: {
+    readonly shipToName: string;
+    readonly shipToLines: readonly string[];
+    readonly deliveryService: string;
+    readonly lines: readonly PackingLine[];
   };
   /** What a customer signed on site. Empty for every other kind. */
   readonly signedCopy: {
@@ -618,11 +653,23 @@ export function documentFrom(
    * kind.
    */
   const order = isPurchaseOrder(kind);
+  // A packing slip's lines have no price either, and are read by their own reader too.
+  const slip = kind === PACKING_SLIP;
   const itemsSlot = outline.slots.find((slot) => slot.id === 'items');
-  const items = order ? [] : itemsFrom(itemsSlot, subject, scale);
+  const items = order || slip ? [] : itemsFrom(itemsSlot, subject, scale);
 
-  const given = subject.number !== null && subject.number !== '' ? subject.number : has('number') ? textOf(subject.fields.number) : '';
-  if (given !== '') next.number = kind === 'receipt' ? inSeries(given, settings.prefixes.receipt) : given;
+  /*
+   * A packing slip prints the ORDER's number, exactly as mapped, and nothing
+   * else: not the number Adminium's register would give the document (that is
+   * `subject.number`, and a slip is in no series), and never in the receipt
+   * series. Read here, once, from its own slot.
+   */
+  if (slip) {
+    if (has('orderNumber')) next.number = textOf(subject.fields.orderNumber);
+  } else {
+    const given = subject.number !== null && subject.number !== '' ? subject.number : has('number') ? textOf(subject.fields.number) : '';
+    if (given !== '') next.number = kind === 'receipt' ? inSeries(given, settings.prefixes.receipt) : given;
+  }
 
   if (has('issuedAt')) next.issued = dateOf(subject.fields.issuedAt);
   else if (next.issued === '') next.issued = subject.now.iso.slice(0, 10);
@@ -637,10 +684,10 @@ export function documentFrom(
     next.discountRate = basisPointsToText(Number(subject.fields.discountRate));
   }
   if (items.length > 0) next.items = items;
-  // An order's note is the record's, like its number; other kinds map none.
-  if (order && has('notes')) next.notes = textOf(subject.fields.notes);
+  // An order's note is the record's, like its number, and so is a packing slip's; other kinds map none.
+  if ((order || slip) && has('notes')) next.notes = textOf(subject.fields.notes);
 
-  const rows = order ? [] : (subject.collections.items ?? []);
+  const rows = order || slip ? [] : (subject.collections.items ?? []);
   const storedLines: StoredLine[] | null = rows.some((row) => typeof row.amount === 'number' || typeof row.share === 'number')
     ? rows.map((row) => ({
         desc: textOf(row.desc),
@@ -687,6 +734,7 @@ export function documentFrom(
     subtotal: moneyOf(field('subtotal'), scale),
     tax: moneyOf(field('tax'), scale),
     total: moneyOf(field('total'), scale),
+    delivery: moneyOf(field('delivery'), scale),
     paid: moneyOf(field('paid'), scale),
     balance: moneyOf(field('balance'), scale),
     status: textOf(field('status')).toLowerCase(),
@@ -732,6 +780,12 @@ export function documentFrom(
       deliverLines: linesOf(field('deliverLines')),
       expectedBy: dateOf(field('expectedBy')).trim(),
       lines: order ? orderLinesFrom(itemsSlot, subject, scale) : [],
+    },
+    packingSlip: {
+      shipToName: textOf(field('shipToName')),
+      shipToLines: linesOf(field('shipToLines')),
+      deliveryService: textOf(field('deliveryService')).trim(),
+      lines: slip ? packingLinesFrom(itemsSlot, subject) : [],
     },
     signedCopy: {
       work: textOf(field('work')).trim(),

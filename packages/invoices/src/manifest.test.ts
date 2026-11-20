@@ -194,13 +194,13 @@ describe('the manifest’s entry points are the files the build writes', () => {
 });
 
 describe('the manifest and the provider agree about what it draws', () => {
-  it('declares one contract and the provider lists eight kinds under it', () => {
-    // The count that catches a provider quietly losing a kind: eight is what
+  it('declares one contract and the provider lists nine kinds under it', () => {
+    // The count that catches a provider quietly losing a kind: nine is what
     // `kinds.ts` documents as the number of distinct MAPPING shapes — money
     // owed, money received, money returned, money offered, one client's
     // account over a period, an order to a supplier with its prices and
-    // without them, and what a customer signed on site — not the twelve
-    // starters, which are template presets.
+    // without them, what a customer signed on site, and what goes in a
+    // parcel — not the twelve starters, which are template presets.
     expect(kinds().map((kind) => kind.id)).toEqual([
       'invoice',
       'receipt',
@@ -210,6 +210,7 @@ describe('the manifest and the provider agree about what it draws', () => {
       'purchase-order',
       'purchase-order-unpriced',
       'signed-copy',
+      'packing-slip',
     ]);
   });
 
@@ -234,5 +235,6 @@ describe('the manifest and the provider agree about what it draws', () => {
     expect(paper['purchase-order']).toBe('a4');
     expect(paper['purchase-order-unpriced']).toBe('a4');
     expect(paper['signed-copy']).toBe('a4');
+    expect(paper['packing-slip']).toBe('a4');
   });
 });

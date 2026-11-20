@@ -167,6 +167,7 @@ export const strings = {
     'addon.invoices.record.kind.purchaseOrder': 'Purchase order',
     'addon.invoices.record.kind.purchaseOrderUnpriced': 'Purchase order, no prices',
     'addon.invoices.record.kind.signedCopy': 'Signed copy',
+    'addon.invoices.record.kind.packingSlip': 'Packing slip',
     'addon.invoices.record.none':
       'This kind of record has no document button yet. Add it in the add-on’s settings.',
     'addon.invoices.record.drawn': 'Drawn {kind} {number}.',
@@ -273,6 +274,7 @@ export const strings = {
     'addon.invoices.record.kind.purchaseOrder': 'Bestellung',
     'addon.invoices.record.kind.purchaseOrderUnpriced': 'Bestellung, ohne Preise',
     'addon.invoices.record.kind.signedCopy': 'Unterschriebene Kopie',
+    'addon.invoices.record.kind.packingSlip': 'Lieferschein',
     'addon.invoices.record.none':
       'Diese Datensatzart hat noch keine Beleg-Schaltfläche. Fügen Sie sie in den Einstellungen des Add-ons hinzu.',
     'addon.invoices.record.drawn': '{kind} {number} gezeichnet.',
@@ -379,6 +381,7 @@ export const strings = {
     'addon.invoices.record.kind.purchaseOrder': 'Bon de commande',
     'addon.invoices.record.kind.purchaseOrderUnpriced': 'Bon de commande, sans prix',
     'addon.invoices.record.kind.signedCopy': 'Copie signée',
+    'addon.invoices.record.kind.packingSlip': 'Bon de livraison',
     'addon.invoices.record.none':
       'Cette sorte d’enregistrement n’a pas encore de bouton. Ajoutez-la dans les réglages de l’add-on.',
     'addon.invoices.record.drawn': '{kind} {number} établi.',
@@ -485,6 +488,7 @@ export const strings = {
     'addon.invoices.record.kind.purchaseOrder': 'Objednávka',
     'addon.invoices.record.kind.purchaseOrderUnpriced': 'Objednávka, bez cen',
     'addon.invoices.record.kind.signedCopy': 'Podepsaná kopie',
+    'addon.invoices.record.kind.packingSlip': 'Dodací list',
     'addon.invoices.record.none':
       'Tento druh záznamu zatím tlačítko nemá. Přidejte jej v nastavení add-onu.',
     'addon.invoices.record.drawn': 'Nakresleno: {kind} {number}.',
@@ -591,6 +595,7 @@ export const strings = {
     'addon.invoices.record.kind.purchaseOrder': 'Indkøbsordre',
     'addon.invoices.record.kind.purchaseOrderUnpriced': 'Indkøbsordre, uden priser',
     'addon.invoices.record.kind.signedCopy': 'Underskrevet kopi',
+    'addon.invoices.record.kind.packingSlip': 'Pakkeseddel',
     'addon.invoices.record.none':
       'Denne slags række har endnu ingen knap. Tilføj den i add-on’ets indstillinger.',
     'addon.invoices.record.drawn': 'Tegnede {kind} {number}.',
@@ -692,6 +697,7 @@ export const strings = {
     'addon.invoices.record.kind.purchaseOrder': '采购订单',
     'addon.invoices.record.kind.purchaseOrderUnpriced': '采购订单（不含价格）',
     'addon.invoices.record.kind.signedCopy': '签字副本',
+    'addon.invoices.record.kind.packingSlip': '装箱单',
     'addon.invoices.record.none': '这类记录还没有单据按钮。请在插件设置中添加。',
     'addon.invoices.record.drawn': '已绘制{kind} {number}。',
     'addon.invoices.refuse.missing': '没有绘制任何内容：这条记录的 {columns} 没有值。',
@@ -791,6 +797,7 @@ export const strings = {
     'addon.invoices.record.kind.purchaseOrder': '採購單',
     'addon.invoices.record.kind.purchaseOrderUnpriced': '採購單（不含價格）',
     'addon.invoices.record.kind.signedCopy': '簽字副本',
+    'addon.invoices.record.kind.packingSlip': '裝箱單',
     'addon.invoices.record.none': '這類記錄還沒有單據按鈕。請在外掛設定中新增。',
     'addon.invoices.record.drawn': '已繪製{kind} {number}。',
     'addon.invoices.refuse.missing': '沒有繪製任何內容：這筆記錄的 {columns} 沒有值。',
@@ -890,6 +897,7 @@ export const strings = {
     'addon.invoices.record.kind.purchaseOrder': 'أمر شراء',
     'addon.invoices.record.kind.purchaseOrderUnpriced': 'أمر شراء، بدون أسعار',
     'addon.invoices.record.kind.signedCopy': 'نسخة موقّعة',
+    'addon.invoices.record.kind.packingSlip': 'قائمة التعبئة',
     'addon.invoices.record.none': 'هذا النوع من السجلات ليس له زر بعد. أضفه من إعدادات الإضافة.',
     'addon.invoices.record.drawn': 'رُسم {kind} {number}.',
     'addon.invoices.refuse.missing': 'لم يُرسم شيء: {columns} بلا قيمة في هذا السجل.',
