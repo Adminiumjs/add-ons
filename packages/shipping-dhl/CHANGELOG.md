@@ -1,5 +1,12 @@
 # @adminium/add-on-shipping-dhl
 
+## 1.0.33
+
+### Patch Changes
+
+- 3083d12: The dispatch flow hands a booking back to its host: `onBooked` on `order.dispatch.actions` is told the tracking number, the service and whether the demo carrier made it, when a collection is booked and again when the panel opens on an order already booked. A host keeps a real number with the order's shipped move and never stores or mails a demo one. An address may carry a `region`, printed after the city on the label.
+- b4086be: DHL takes the online shop's next line too (`^0.1.0 || ^0.2.0`), so a shop with it attached can update; its notes say the shop's 0.2 desk books collections and its checkout prices delivery itself. Barcode labels attaches to the online shop from 0.2, printing each variant's SKU from a document profile on its variants.
+
 ## 1.0.32
 
 ## 1.0.31

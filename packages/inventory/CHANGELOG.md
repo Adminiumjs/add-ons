@@ -1,5 +1,11 @@
 # @adminium/add-on-inventory
 
+## 1.0.33
+
+### Patch Changes
+
+- d97fd22: Inventory answers stock words for a hold, so a shop told no tells the shopper how many are left; the staff setting now says it is about holds.
+
 ## 1.0.32
 
 ## 1.0.31
