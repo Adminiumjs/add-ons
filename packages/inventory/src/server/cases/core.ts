@@ -299,6 +299,12 @@ export const CORE_CASES: Case[] = [
     },
   },
   {
+    // A shop holds a basket, so its refusal's "left" is read from the hold's own words: the same answer as a use's.
+    name: 'also · words for a hold say what a use would',
+    input: call({ action: 'hold', mode: 'words', origin: 'public', lines: [lineFor('a', { what: what('tote'), ...ONE })], reads: shopReads }),
+    expect: { rows: [], words: [{ line: 'a', state: 'low', left: '4', exact: '4', after: '3', cause: 'stock' }] },
+  },
+  {
     name: 'also · a place the item was never kept in: the stock point is added, naming the place by the key the call handed over',
     input: call({ action: 'use-item', lines: [lineFor('L1', { item: 22, place: PLACE.back, quantity: 2, kind: 'sold' })], reads: { items: [I.pen], points: [], levels: [], batches: [], places: [{ id: PLACE.back, name: 'Back room' }] } }),
     expect: {

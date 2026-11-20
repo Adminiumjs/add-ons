@@ -94,37 +94,37 @@
             ],
             "default": "allow",
             "label": {
-              "en-US": "When staff use more than there is",
-              "de-DE": "Wenn Mitarbeitende mehr verbrauchen, als da ist",
-              "fr-FR": "Quand l’équipe utilise plus que ce qu’il y a",
-              "da-DK": "Når personalet bruger mere, end der er",
-              "cs-CZ": "Když zaměstnanci použijí víc, než je skladem",
-              "ar-EG": "عندما يستخدم الموظفون أكثر من المتاح",
-              "zh-CN": "员工使用量超过库存时",
-              "zh-TW": "員工使用量超過現有數量時"
+              "en-US": "When staff hold more than there is",
+              "de-DE": "Wenn Mitarbeitende mehr reservieren, als da ist",
+              "fr-FR": "Quand l’équipe réserve plus que ce qu’il y a",
+              "da-DK": "Når personalet reserverer mere, end der er",
+              "cs-CZ": "Když zaměstnanci rezervují víc, než je skladem",
+              "ar-EG": "عندما يحجز الموظفون أكثر من المتاح",
+              "zh-CN": "员工预留量超过库存时",
+              "zh-TW": "員工保留量超過現有數量時"
             },
             "rules": {
               "enumLabels": {
                 "labels": {
                   "allow": {
-                    "en-US": "Let it go below zero",
-                    "de-DE": "Unter null erlauben",
-                    "fr-FR": "Laisser passer sous zéro",
-                    "da-DK": "Lad det gå under nul",
-                    "cs-CZ": "Nechat klesnout pod nulu",
-                    "ar-EG": "السماح بالنزول تحت الصفر",
-                    "zh-CN": "允许降到零以下",
-                    "zh-TW": "允許低於零"
+                    "en-US": "Hold it anyway",
+                    "de-DE": "Trotzdem reservieren",
+                    "fr-FR": "Réserver quand même",
+                    "da-DK": "Reserver alligevel",
+                    "cs-CZ": "Přesto rezervovat",
+                    "ar-EG": "الحجز على أي حال",
+                    "zh-CN": "仍然预留",
+                    "zh-TW": "仍然保留"
                   },
                   "stop": {
-                    "en-US": "Stop the save",
-                    "de-DE": "Speichern verhindern",
-                    "fr-FR": "Bloquer l’enregistrement",
-                    "da-DK": "Stop gemningen",
-                    "cs-CZ": "Zastavit uložení",
-                    "ar-EG": "إيقاف الحفظ",
-                    "zh-CN": "阻止保存",
-                    "zh-TW": "停止儲存"
+                    "en-US": "Refuse the hold",
+                    "de-DE": "Reservierung ablehnen",
+                    "fr-FR": "Refuser la réservation",
+                    "da-DK": "Afvis reservationen",
+                    "cs-CZ": "Odmítnout rezervaci",
+                    "ar-EG": "رفض الحجز",
+                    "zh-CN": "拒绝预留",
+                    "zh-TW": "拒絕保留"
                   }
                 }
               }
@@ -17594,6 +17594,15 @@
         "ledger": "stock",
         "action": "use-item",
         "input": "item",
+        "showLeftBelow": {
+          "setting": "show_left_below"
+        }
+      },
+      {
+        "id": "hold",
+        "ledger": "stock",
+        "action": "hold",
+        "input": "what",
         "showLeftBelow": {
           "setting": "show_left_below"
         }

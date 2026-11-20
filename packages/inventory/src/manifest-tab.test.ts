@@ -101,10 +101,12 @@ describe('the stock tab', () => {
 describe('the stock words', () => {
   const [stock] = addOn.ledgers;
 
-  it('are two questions: of a row that is linked to stock, and of a stock item itself', () => {
+  it('are three questions: of a row that is linked to stock, of a stock item itself, and of a row a shop holds', () => {
+    // The hold's own words are what a refused hold's "left" is read from: without them a shop's basket is told nothing.
     expect(addOn.words).toEqual([
       { id: 'stock', ledger: 'stock', action: 'use', input: 'what', showLeftBelow: { setting: 'show_left_below' } },
       { id: 'item', ledger: 'stock', action: 'use-item', input: 'item', showLeftBelow: { setting: 'show_left_below' } },
+      { id: 'hold', ledger: 'stock', action: 'hold', input: 'what', showLeftBelow: { setting: 'show_left_below' } },
     ]);
   });
 

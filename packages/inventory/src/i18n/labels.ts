@@ -108,7 +108,7 @@ export const COLUMNS: Readonly<Record<string, string>> = {
   // ── settings ──
   'settings.default_place_id': 'Default place',
   'settings.default_unit_id': 'Default unit',
-  'settings.when_out_staff': 'When staff use more than there is',
+  'settings.when_out_staff': 'When staff hold more than there is',
   'settings.when_out_public': 'When a customer orders more than there is',
   'settings.show_left_below': 'Show customers what is left below',
   'settings.count_stale_days': 'Days until a count is due',
@@ -255,8 +255,8 @@ export const COLUMNS: Readonly<Record<string, string>> = {
 
 /** A value of a choice, by `<column>.<value>`, or by `<table>.<column>.<value>` where that table says it differently. */
 export const VALUES: Readonly<Record<string, string>> = {
-  'when_out_staff.allow': 'Let it go below zero',
-  'when_out_staff.stop': 'Stop the save',
+  'when_out_staff.allow': 'Hold it anyway',
+  'when_out_staff.stop': 'Refuse the hold',
   'when_out_public.allow': 'Let it go below zero',
   'when_out_public.stop': 'Stop the order',
   'when_out.default': 'As the settings say',
