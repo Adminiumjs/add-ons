@@ -1,25 +1,29 @@
 /**
- * THE FOUR SHAPES, AND THE CHECK THAT HOLDS AN APP TO THEM.
+ * THE FIVE SHAPES, AND THE CHECK THAT HOLDS AN APP TO THEM.
  *
  * An app that wants its orders discounted, its payments taken by card, or its
  * lines to sell a card or a voucher spells a part's columns and rule out on
- * its own table. This suite holds the four shape files equal to what the
- * manifest carries, runs the fit check over a shop that adopts all four under
- * its own column names, and then breaks the shop one way at a time: each
- * difference the check allows passes, and each it must never allow fails.
+ * its own table. This suite holds the five shape files equal to what the
+ * manifest carries, runs the fit check over a shop that adopts the first four
+ * under its own column names and a web shop that adopts the fifth, and then
+ * breaks each one way at a time: each difference the check allows passes, and
+ * each it must never allow fails.
  */
 
+import { postingFitIssues, type Ledger, type Posting } from '@adminiumjs/manifest';
 import { describe, expect, it } from 'vitest';
 
 import manifest from '../manifest.json' with { type: 'json' };
 import cardPayment from './shapes/card-payment.json' with { type: 'json' };
+import cardSaleOnline from './shapes/card-sale-online.json' with { type: 'json' };
 import cardSale from './shapes/card-sale.json' with { type: 'json' };
 import discountable from './shapes/discountable.json' with { type: 'json' };
 import voucherSale from './shapes/voucher-sale.json' with { type: 'json' };
 import { MAY_LEAVE_OUT, ownedOf, shapeFit, type Pairing, type Shape } from './testing/fit.ts';
 import { shop, SHOP_PAIRINGS } from './testing/fixtures/shop.ts';
+import { webshop, WEBSHOP_PAIRINGS } from './testing/fixtures/webshop.ts';
 
-const SHAPES = [discountable, cardPayment, cardSale, voucherSale] as unknown as Shape[];
+const SHAPES = [discountable, cardPayment, cardSale, voucherSale, cardSaleOnline] as unknown as Shape[];
 const PAIRINGS = SHOP_PAIRINGS as unknown as Pairing[];
 
 type Doc = Record<string, unknown>;
@@ -34,13 +38,14 @@ const broken = (change: (app: Shop) => void): string[] => {
 };
 
 describe('the shapes', () => {
-  it('are the four the manifest carries, each in a file an app can copy', () => {
+  it('are the five the manifest carries, each in a file an app can copy', () => {
     expect(manifest.addOn.shapes).toEqual(SHAPES);
     expect(SHAPES.map((shape) => `${shape.name}@${String(shape.version)}: ${Object.keys(shape.parts).join(', ')}`)).toEqual([
       'discountable@1: order, lines, codes',
       'card-payment@1: order, payments',
       'card-sale@1: order, lines',
       'voucher-sale@1: order, lines',
+      'card-sale-online@1: order, lines',
     ]);
   });
 
@@ -347,5 +352,60 @@ describe('the fit check', () => {
   it('a pairing that names a table or a part that is not there says so', () => {
     expect(shapeFit(shop(), [{ table: 'nowhere', shape: 'discountable@1', part: 'order' }], SHAPES).map((issue) => issue.message)).toEqual(['the app has no table "nowhere"']);
     expect(shapeFit(shop(), [{ table: 'tickets', shape: 'discountable@2', part: 'order' }], SHAPES).map((issue) => issue.message)).toEqual(['"discountable@2" has no part "order"']);
+  });
+});
+
+describe('a card a shopper\'s order makes (card-sale-online@1)', () => {
+  const ONLINE = [cardSaleOnline] as unknown as Shape[];
+  const WEB = WEBSHOP_PAIRINGS as unknown as Pairing[];
+  type Web = ReturnType<typeof webshop>;
+  const gifts = (app: Web) => app.requiredSchema.tables.find((table) => table['ref'] === 'gift_lines') as { columns: Doc[]; postings: Doc[] };
+  const breaks = (change: (app: Web) => void): string[] => {
+    const app = webshop();
+    change(app);
+    return shapeFit(app, WEB, ONLINE).map((issue) => `${issue.table} as ${issue.shape}/${issue.part}: ${issue.message}`);
+  };
+
+  it('makes the card when the order is written, loads it when paid, and recalls it when a paid order is cancelled', () => {
+    const [make, recall] = cardSaleOnline.parts.lines.postings;
+    expect(make).toMatchObject({ into: { action: 'issue' }, reserve: { on: { create: true } }, post: { on: { column: 'paid_at', set: true } }, reverse: { on: { column: 'cancelled_at', set: true } } });
+    expect(Object.keys(make!.map)).toEqual(['amount', 'to_name', 'to_email', 'message', 'sender', 'language']);
+    // No link to a card: the card is found by the line that made it, which a host could never fill.
+    expect(cardSaleOnline.parts.lines.columns.some((column) => (column as { rules?: Doc }).rules?.['addOnLink'] !== undefined)).toBe(false);
+    // Named by the line itself, and fired by the same cancel as the reverse: every reverse of a save runs before its posts.
+    expect(recall).toMatchObject({ into: { action: 'recall' }, post: { on: { column: 'cancelled_at', set: true } }, map: { sale: { row: true } } });
+    expect((recall as Doc)['reserve']).toBeUndefined();
+    expect((recall as Doc)['reverse']).toBeUndefined();
+  });
+
+  it('fits the ledger it posts into, as Adminium checks a posting at install', () => {
+    const value = manifest.addOn.ledgers[0] as unknown as Ledger;
+    for (const posting of cardSaleOnline.parts.lines.postings as unknown as Posting[]) expect(postingFitIssues(posting, value, { timed: false }), posting.id).toEqual([]);
+  });
+
+  it('holds a stranger\'s words to what the card keeps of them', () => {
+    const column = (ref: string) => cardSaleOnline.parts.lines.columns.find((one) => one.ref === ref) as Doc;
+    const cards = (manifest.requiredSchema.tables as unknown as { ref: string; columns: Doc[] }[]).find((table) => table.ref === 'gift_cards')!;
+    const card = (ref: string) => cards.columns.find((one) => one['ref'] === ref)!;
+    for (const [line, kept] of [['to_name', 'recipient_name'], ['to_email', 'recipient_email'], ['message', 'message'], ['sender', 'sender_name'], ['language', 'language']] as const) {
+      expect(column(line)['maxLength'], line).toBe(card(kept)['maxLength']);
+      expect((column(line)['rules'] as Doc | undefined)?.['plainText'], line).toEqual((card(kept)['rules'] as Doc | undefined)?.['plainText']);
+    }
+  });
+
+  it('a web shop fits it under its own names, firing each rule when its own status says', () => {
+    expect(breaks(() => undefined)).toEqual([]);
+    // Nobody to send the card to is no gift: the address is not a column a shop may leave out.
+    expect(shapeFit(webshop(), [{ ...WEB[0]!, columns: { ...WEB[0]!.columns, to_email: null } }], ONLINE).map((issue) => issue.message)).toContain('"to_email" is not a column an adopter may leave out');
+    // …and a gift with no message, no name and no sender is still one.
+    expect(shapeFit(webshop(), [{ ...WEB[0]!, columns: { ...WEB[0]!.columns, message: null, to_name: null, sender: null, language: null } }], ONLINE).filter((issue) => /leave out/.test(issue.message))).toEqual([]);
+  });
+
+  it('a web shop that leaves out the recall, or loosens a stranger\'s words, does not fit', () => {
+    expect(breaks((app) => gifts(app).postings.pop())).toEqual(['gift_lines as card-sale-online@1/lines: "gift_lines" has no posting into Offers\' "recall", which the part keeps']);
+    expect(breaks((app) => Object.assign(gifts(app).columns.find((one) => one['ref'] === 'message')!, { rules: { plainText: true } }))).toHaveLength(1);
+    expect(breaks((app) => Object.assign(gifts(app).postings[0]!['map'] as Doc, { to_email: 'to_name' }))).toEqual([
+      'gift_lines as card-sale-online@1/lines: the posting into "issue" maps "to_email" to "to_name", and the part to "to_email"',
+    ]);
   });
 });

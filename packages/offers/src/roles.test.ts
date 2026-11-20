@@ -155,7 +155,7 @@ describe('the three roles', () => {
 describe('desk and viewer', () => {
   it('desk and viewer read no code, no address and no hash', () => {
     for (const role of [desk, viewer]) {
-      expect(columns(role, 'gift_cards', 'read'), role.key).toEqual(['kind', 'label', 'status', 'balance', 'expires_on', 'issued_at', 'send_on', 'resent_at', 'recipient_name', 'sender_name', 'language', 'moved_table']);
+      expect(columns(role, 'gift_cards', 'read'), role.key).toEqual(['kind', 'label', 'status', 'balance', 'expires_on', 'issued_at', 'send_on', 'resent_at', 'recipient_name', 'sender_name', 'language', 'moved_table', 'source_table', 'source_row']);
       const vouchers = columns(role, 'vouchers', 'read');
       for (const kept of ['code', 'holder_email', 'holder_key', 'sale_price']) expect(vouchers, `${role.key}: vouchers.${kept}`).not.toContain(kept);
       // Everything else of a voucher is theirs to read, the last four of its code among it.
@@ -242,7 +242,8 @@ describe('the manager', () => {
       for (const [table, scope] of Object.entries(ledger.writes)) {
         for (const ref of scope.update?.set ?? []) {
           // A state is moved by a person where a move lists them, and a voucher's last day is the manager's to change.
-          if (ref === 'status' || (table === 'vouchers' && ref === 'expires_on')) continue;
+          // Why a card was cancelled goes with that move, whoever makes it: a manager by hand, or a sale undone.
+          if (ref === 'status' || (table === 'vouchers' && ref === 'expires_on') || (table === 'gift_cards' && ref === 'void_reason')) continue;
           expect(columns(role, table, 'update'), `${role.key} changes ${table}.${ref}`).not.toContain(ref);
           // …nor starts a row with one, but for what a voucher made for a sale line says of itself.
           if (!(table === 'vouchers' && ref === 'awaiting_sale')) expect(columns(role, table, 'create'), `${role.key} creates ${table}.${ref}`).not.toContain(ref);

@@ -138,8 +138,7 @@ export class Balances {
  * order — the refund first, or the payment first — the card ends with all the
  * payment took.
  */
-export function reverseCardRows(input: PostingInput, answer: Answer, kind: string): void {
-  const rows = written(input, 'card_ledger');
+export function reverseCardRows(input: PostingInput, answer: Answer, kind: string, rows: readonly Row[] = written(input, 'card_ledger')): void {
   const cards = read(input, 'card');
   const scale = scaleOf(...rows.flatMap((row) => [row['taken'], row['value']]), ...cards.map((card) => card['balance']));
   const balances = new Balances(cards, scale);

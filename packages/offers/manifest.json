@@ -1912,7 +1912,8 @@
             "enum": [
               "card",
               "card_dated",
-              "credit"
+              "credit",
+              "cancelled"
             ],
             "nullable": true
           },
@@ -2058,6 +2059,21 @@
             "ref": "moving",
             "type": "bool",
             "default": false
+          },
+          {
+            "ref": "source_table",
+            "type": "text",
+            "maxLength": 96,
+            "default": "",
+            "rules": {
+              "tableRef": true
+            }
+          },
+          {
+            "ref": "source_row",
+            "type": "text",
+            "maxLength": 64,
+            "default": ""
           },
           {
             "ref": "note",
@@ -2660,6 +2676,7 @@
               "gift_card_dated",
               "gift_card_again",
               "gift_card_expiring",
+              "gift_card_cancelled",
               "credit",
               "voucher",
               "voucher_again"
@@ -2979,7 +2996,9 @@
             "recipient_name",
             "sender_name",
             "language",
-            "moved_table"
+            "moved_table",
+            "source_table",
+            "source_row"
           ],
           "creatable": [
             "kind",
@@ -3137,7 +3156,9 @@
             "recipient_name",
             "sender_name",
             "language",
-            "moved_table"
+            "moved_table",
+            "source_table",
+            "source_row"
           ]
         },
         "vouchers": {
@@ -5455,6 +5476,7 @@
       "gift_card_dated": "offers-gift-card",
       "gift_card_again": "offers-gift-card",
       "gift_card_expiring": "offers-gift-card-expiring",
+      "gift_card_cancelled": "offers-gift-card-cancelled",
       "credit": "offers-credit",
       "voucher": "offers-voucher",
       "voucher_again": "offers-voucher"
@@ -5570,6 +5592,20 @@
         }
       },
       {
+        "kind": "gift_card_cancelled",
+        "link": "card_id",
+        "onChange": {
+          "table": "gift_cards",
+          "column": "notify",
+          "to": "cancelled"
+        },
+        "recipient": {
+          "column": "recipient_email",
+          "name": "recipient_name",
+          "language": "language"
+        }
+      },
+      {
         "kind": "credit",
         "link": "card_id",
         "onChange": {
@@ -5642,7 +5678,8 @@
         "card.code.qr",
         "card.link_token",
         "card.expires_on",
-        "app_url.balance"
+        "app_url.balance",
+        "card.source_row"
       ],
       "locales": {
         "en-US": {
@@ -5697,7 +5734,15 @@
             {
               "block": "email.text",
               "data": {
-                "text": "Show the QR code at the counter, or type the code at checkout."
+                "text": "Show the QR code at the counter, or type the code at checkout.",
+                "onlyWithout": "card.source_row"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Type the code at checkout when you order online.",
+                "onlyWith": "card.source_row"
               }
             },
             {
@@ -5786,7 +5831,15 @@
             {
               "block": "email.text",
               "data": {
-                "text": "Zeigen Sie den QR-Code an der Kasse vor oder geben Sie den Code beim Bezahlen ein."
+                "text": "Zeigen Sie den QR-Code an der Kasse vor oder geben Sie den Code beim Bezahlen ein.",
+                "onlyWithout": "card.source_row"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Geben Sie den Code beim Bezahlen Ihrer Online-Bestellung ein.",
+                "onlyWith": "card.source_row"
               }
             },
             {
@@ -5875,7 +5928,15 @@
             {
               "block": "email.text",
               "data": {
-                "text": "Présentez le QR code en caisse ou saisissez le code au moment de payer."
+                "text": "Présentez le QR code en caisse ou saisissez le code au moment de payer.",
+                "onlyWithout": "card.source_row"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Saisissez le code au moment de payer votre commande en ligne.",
+                "onlyWith": "card.source_row"
               }
             },
             {
@@ -5964,7 +6025,15 @@
             {
               "block": "email.text",
               "data": {
-                "text": "Vis QR-koden ved kassen, eller indtast koden, når du betaler."
+                "text": "Vis QR-koden ved kassen, eller indtast koden, når du betaler.",
+                "onlyWithout": "card.source_row"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Indtast koden, når du betaler for en bestilling online.",
+                "onlyWith": "card.source_row"
               }
             },
             {
@@ -6053,7 +6122,15 @@
             {
               "block": "email.text",
               "data": {
-                "text": "Ukažte QR kód u pokladny, nebo kód zadejte při placení."
+                "text": "Ukažte QR kód u pokladny, nebo kód zadejte při placení.",
+                "onlyWithout": "card.source_row"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Kód zadejte při placení objednávky online.",
+                "onlyWith": "card.source_row"
               }
             },
             {
@@ -6142,7 +6219,15 @@
             {
               "block": "email.text",
               "data": {
-                "text": "اعرض رمز QR عند الكاشير، أو اكتب الرمز عند الدفع."
+                "text": "اعرض رمز QR عند الكاشير، أو اكتب الرمز عند الدفع.",
+                "onlyWithout": "card.source_row"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "اكتب الرمز عند الدفع لطلبك عبر الإنترنت.",
+                "onlyWith": "card.source_row"
               }
             },
             {
@@ -6231,7 +6316,15 @@
             {
               "block": "email.text",
               "data": {
-                "text": "在收银台出示二维码，或在结账时输入代码。"
+                "text": "在收银台出示二维码，或在结账时输入代码。",
+                "onlyWithout": "card.source_row"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "在线下单时，在结账页面输入代码。",
+                "onlyWith": "card.source_row"
               }
             },
             {
@@ -6320,7 +6413,15 @@
             {
               "block": "email.text",
               "data": {
-                "text": "在櫃檯出示 QR 碼，或於結帳時輸入代碼。"
+                "text": "在櫃檯出示 QR 碼，或於結帳時輸入代碼。",
+                "onlyWithout": "card.source_row"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "線上訂購時，於結帳頁面輸入代碼。",
+                "onlyWith": "card.source_row"
               }
             },
             {
@@ -6887,6 +6988,385 @@
               "data": {
                 "text": "可在櫃檯查詢餘額。",
                 "onlyWithout": "app_url.balance"
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        }
+      }
+    },
+    {
+      "key": "offers-gift-card-cancelled",
+      "name": {
+        "en-US": "Gift card cancelled",
+        "de-DE": "Geschenkkarte storniert",
+        "fr-FR": "Carte cadeau annulée",
+        "da-DK": "Gavekort annulleret",
+        "cs-CZ": "Dárková karta zrušena",
+        "ar-EG": "إلغاء بطاقة الهدية",
+        "zh-CN": "礼品卡已作废",
+        "zh-TW": "禮品卡已作廢"
+      },
+      "vars": [
+        "card.sender_name",
+        "card.label"
+      ],
+      "locales": {
+        "en-US": {
+          "subject": "Your gift card from {{appName}} was cancelled",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Your gift card was cancelled"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "The gift card {{card.sender_name}} sent you can no longer be used.",
+                "onlyWith": "card.sender_name"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Your gift card can no longer be used.",
+                "onlyWithout": "card.sender_name"
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "Card ending in",
+                "value": "{{card.label}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "{{appName}} has cancelled this gift card, so its code no longer works."
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "This happens when the order it was bought with is cancelled. You do not need to do anything."
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "de-DE": {
+          "subject": "Ihre Geschenkkarte von {{appName}} wurde storniert",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Ihre Geschenkkarte wurde storniert"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Die Geschenkkarte, die {{card.sender_name}} Ihnen geschickt hat, kann nicht mehr verwendet werden.",
+                "onlyWith": "card.sender_name"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Ihre Geschenkkarte kann nicht mehr verwendet werden.",
+                "onlyWithout": "card.sender_name"
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "Karte mit der Endung",
+                "value": "{{card.label}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "{{appName}} hat diese Geschenkkarte storniert, ihr Code gilt nicht mehr."
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Das geschieht, wenn die Bestellung, mit der sie gekauft wurde, storniert wird. Sie müssen nichts tun."
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "fr-FR": {
+          "subject": "Votre carte cadeau {{appName}} a été annulée",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Votre carte cadeau a été annulée"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "La carte cadeau que {{card.sender_name}} vous a envoyée ne peut plus être utilisée.",
+                "onlyWith": "card.sender_name"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Votre carte cadeau ne peut plus être utilisée.",
+                "onlyWithout": "card.sender_name"
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "Carte se terminant par",
+                "value": "{{card.label}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "{{appName}} a annulé cette carte cadeau : son code n’est plus valable."
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Cela arrive lorsque la commande avec laquelle elle a été achetée est annulée. Vous n’avez rien à faire."
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "da-DK": {
+          "subject": "Dit gavekort fra {{appName}} er annulleret",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Dit gavekort er annulleret"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Gavekortet, som {{card.sender_name}} sendte dig, kan ikke længere bruges.",
+                "onlyWith": "card.sender_name"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Dit gavekort kan ikke længere bruges.",
+                "onlyWithout": "card.sender_name"
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "Kort, der slutter på",
+                "value": "{{card.label}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "{{appName}} har annulleret dette gavekort, så koden virker ikke længere."
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Det sker, når den bestilling, kortet blev købt med, bliver annulleret. Du skal ikke gøre noget."
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "cs-CZ": {
+          "subject": "Vaše dárková karta od {{appName}} byla zrušena",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "Vaše dárková karta byla zrušena"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Dárková karta od {{card.sender_name}} už nejde použít.",
+                "onlyWith": "card.sender_name"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Vaši dárkovou kartu už nelze použít.",
+                "onlyWithout": "card.sender_name"
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "Karta končící na",
+                "value": "{{card.label}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "Kód této dárkové karty u {{appName}} už neplatí, karta byla zrušena."
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "To se stává, když je zrušena objednávka, se kterou byla karta zakoupena. Nemusíte nic dělat."
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "ar-EG": {
+          "subject": "تم إلغاء بطاقة الهدية من {{appName}}",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "تم إلغاء بطاقة الهدية الخاصة بك"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "بطاقة الهدية التي أرسلها لك {{card.sender_name}} لم يعد من الممكن استخدامها.",
+                "onlyWith": "card.sender_name"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "لم يعد من الممكن استخدام بطاقة الهدية الخاصة بك.",
+                "onlyWithout": "card.sender_name"
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "البطاقة المنتهية بـ",
+                "value": "{{card.label}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "ألغت {{appName}} بطاقة الهدية هذه، ولم يعد رمزها يعمل."
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "يحدث هذا عند إلغاء الطلب الذي اشتُريت به البطاقة. لا تحتاج إلى فعل أي شيء."
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "zh-CN": {
+          "subject": "您在 {{appName}} 的礼品卡已作废",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "您的礼品卡已作废"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "{{card.sender_name}} 送给您的礼品卡已无法使用。",
+                "onlyWith": "card.sender_name"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "您的礼品卡已无法使用。",
+                "onlyWithout": "card.sender_name"
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "卡号末四位",
+                "value": "{{card.label}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "{{appName}} 已将此礼品卡作废，其代码不再有效。"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "购买此卡的订单被取消时会出现这种情况。您无需进行任何操作。"
+              }
+            }
+          ],
+          "footer": "{{appName}}"
+        },
+        "zh-TW": {
+          "subject": "您在 {{appName}} 的禮品卡已作廢",
+          "blocks": [
+            {
+              "block": "email.heading",
+              "data": {
+                "text": "您的禮品卡已作廢"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "{{card.sender_name}} 送給您的禮品卡已無法使用。",
+                "onlyWith": "card.sender_name"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "您的禮品卡已無法使用。",
+                "onlyWithout": "card.sender_name"
+              }
+            },
+            {
+              "block": "email.box",
+              "data": {
+                "label": "卡號末四碼",
+                "value": "{{card.label}}"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "{{appName}} 已將此禮品卡作廢，其代碼不再有效。"
+              }
+            },
+            {
+              "block": "email.text",
+              "data": {
+                "text": "購買此卡的訂單遭取消時會發生這種情況。您無須進行任何操作。"
               }
             }
           ],
@@ -7895,7 +8375,14 @@
               "issued_at",
               "moved_from",
               "moved_table",
-              "moving"
+              "moving",
+              "recipient_name",
+              "recipient_email",
+              "sender_name",
+              "message",
+              "language",
+              "source_table",
+              "source_row"
             ],
             "update": {
               "by": [
@@ -7906,7 +8393,8 @@
                 "issued_at",
                 "expires_on",
                 "remind_on",
-                "notify"
+                "notify",
+                "void_reason"
               ]
             }
           },
@@ -8207,9 +8695,15 @@
             "inputs": {
               "card": "link?",
               "amount": "decimal?",
-              "label": "text?"
+              "label": "text?",
+              "to_name": "text?",
+              "to_email": "text?",
+              "message": "text?",
+              "sender": "text?",
+              "language": "text?"
             },
             "phases": [
+              "reserve",
               "post",
               "reverse"
             ],
@@ -8221,6 +8715,84 @@
                   {
                     "column": "id",
                     "from": "input.card"
+                  }
+                ]
+              },
+              {
+                "as": "made",
+                "table": "gift_cards",
+                "by": [
+                  {
+                    "column": "receipt_id",
+                    "from": "receipt.id"
+                  }
+                ]
+              }
+            ],
+            "locks": [
+              {
+                "read": "card",
+                "column": "id",
+                "table": "gift_cards"
+              },
+              {
+                "read": "made",
+                "column": "id",
+                "table": "gift_cards"
+              }
+            ],
+            "writes": [
+              "card_ledger",
+              "gift_cards"
+            ]
+          },
+          "recall": {
+            "inputs": {
+              "sale": "rowRef",
+              "reason": "text?",
+              "label": "text?"
+            },
+            "phases": [
+              "post"
+            ],
+            "reads": [
+              {
+                "as": "sold",
+                "table": "card_ledger",
+                "by": [
+                  {
+                    "column": "source_table",
+                    "from": "input.sale.table"
+                  },
+                  {
+                    "column": "source_row",
+                    "from": "input.sale.row"
+                  }
+                ],
+                "where": [
+                  {
+                    "column": "kind",
+                    "eq": "issue"
+                  }
+                ]
+              },
+              {
+                "as": "card",
+                "table": "gift_cards",
+                "by": [
+                  {
+                    "column": "id",
+                    "from": "sold.card_id"
+                  }
+                ]
+              },
+              {
+                "as": "given",
+                "table": "card_ledger",
+                "by": [
+                  {
+                    "column": "against_id",
+                    "from": "sold.id"
                   }
                 ]
               }
@@ -9140,6 +9712,152 @@
             "inAdjust": {
               "paidBy": "voucher_id"
             }
+          }
+        }
+      },
+      {
+        "name": "card-sale-online",
+        "version": 1,
+        "parts": {
+          "order": {
+            "columns": [
+              {
+                "ref": "id",
+                "type": "int",
+                "role": "pk"
+              },
+              {
+                "ref": "paid_at",
+                "type": "timestamptz",
+                "nullable": true
+              },
+              {
+                "ref": "cancelled_at",
+                "type": "timestamptz",
+                "nullable": true
+              }
+            ]
+          },
+          "lines": {
+            "postings": [
+              {
+                "id": "card-make",
+                "into": {
+                  "addOn": "offers",
+                  "ledger": "value",
+                  "action": "issue"
+                },
+                "via": "order_id",
+                "reserve": {
+                  "on": {
+                    "create": true
+                  }
+                },
+                "post": {
+                  "on": {
+                    "column": "paid_at",
+                    "set": true
+                  }
+                },
+                "reverse": {
+                  "on": {
+                    "column": "cancelled_at",
+                    "set": true
+                  }
+                },
+                "map": {
+                  "amount": "load_amount",
+                  "to_name": "to_name",
+                  "to_email": "to_email",
+                  "message": "message",
+                  "sender": "sender",
+                  "language": "language"
+                }
+              },
+              {
+                "id": "card-recall",
+                "into": {
+                  "addOn": "offers",
+                  "ledger": "value",
+                  "action": "recall"
+                },
+                "via": "order_id",
+                "post": {
+                  "on": {
+                    "column": "cancelled_at",
+                    "set": true
+                  }
+                },
+                "map": {
+                  "sale": {
+                    "row": true
+                  }
+                }
+              }
+            ],
+            "columns": [
+              {
+                "ref": "id",
+                "type": "int",
+                "role": "pk"
+              },
+              {
+                "ref": "order_id",
+                "type": "fk",
+                "references": "order"
+              },
+              {
+                "ref": "load_amount",
+                "type": "money",
+                "scale": "currency"
+              },
+              {
+                "ref": "to_name",
+                "type": "text",
+                "maxLength": 80,
+                "nullable": true,
+                "rules": {
+                  "plainText": true
+                }
+              },
+              {
+                "ref": "to_email",
+                "type": "text",
+                "maxLength": 254,
+                "rules": {
+                  "validation": {
+                    "format": "email"
+                  }
+                }
+              },
+              {
+                "ref": "message",
+                "type": "text",
+                "maxLength": 200,
+                "nullable": true,
+                "rules": {
+                  "plainText": {
+                    "digits": 20,
+                    "max": 200
+                  }
+                }
+              },
+              {
+                "ref": "sender",
+                "type": "text",
+                "maxLength": 80,
+                "nullable": true,
+                "rules": {
+                  "plainText": true
+                }
+              },
+              {
+                "ref": "language",
+                "type": "text",
+                "maxLength": 12,
+                "nullable": true
+              }
+            ]
           }
         }
       }

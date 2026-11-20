@@ -399,10 +399,10 @@ describe('the states', () => {
 });
 
 describe('the ledger', () => {
-  it('is one ledger of eleven actions, and money fails closed', () => {
+  it('is one ledger of twelve actions, and money fails closed', () => {
     expect(ledgers).toHaveLength(1);
     expect(value).toMatchObject({ id: 'value', receipts: 'postings', refusal: 'value' });
-    expect(Object.keys(value.actions).sort()).toEqual(['card-action', 'expire', 'issue', 'make', 'move', 'redeem', 'refund', 'sell', 'spend', 'void', 'voucher-action']);
+    expect(Object.keys(value.actions).sort()).toEqual(['card-action', 'expire', 'issue', 'make', 'move', 'recall', 'redeem', 'refund', 'sell', 'spend', 'void', 'voucher-action']);
     // No action lets a save through while the add-on cannot answer.
     for (const [name, action] of Object.entries(value.actions)) expect(action.unavailable, name).toBeUndefined();
   });
@@ -456,7 +456,22 @@ describe('the ledger', () => {
         locks: cardLock,
         writes: 'card_ledger',
       },
-      issue: { inputs: 'card link?, amount decimal?, label text?', phases: 'post, reverse', reads: [card], locks: cardLock, writes: 'card_ledger, gift_cards' },
+      // A till's line names the card it loads; a shopper's line names none, and the card its sale made is found by the round's own receipts.
+      issue: {
+        inputs: 'card link?, amount decimal?, label text?, to_name text?, to_email text?, message text?, sender text?, language text?',
+        phases: 'reserve, post, reverse',
+        reads: [card, 'made: gift_cards by receipt_id ← receipt.id'],
+        locks: `${cardLock}, made.id of gift_cards`,
+        writes: 'card_ledger, gift_cards',
+      },
+      // Named by the line that sold the card, under the card's own lock: the lock a payment by the card takes.
+      recall: {
+        inputs: 'sale rowRef, reason text?, label text?',
+        phases: 'post',
+        reads: ['sold: card_ledger by source_table ← input.sale.table, source_row ← input.sale.row where kind = issue', 'card: gift_cards by id ← sold.card_id', 'given: card_ledger by against_id ← sold.id'],
+        locks: cardLock,
+        writes: 'card_ledger, gift_cards',
+      },
       'card-action': { inputs: 'card link, action text, amount decimal, reason text', phases: 'post', reads: [card], locks: cardLock, writes: 'card_ledger, gift_cards' },
       'voucher-action': {
         inputs: 'voucher link, action text',
@@ -480,8 +495,12 @@ describe('the ledger', () => {
         insert: ['kind', 'offer_id', 'code_id', 'voucher_id', 'reason_id', 'source_table', 'source_row', 'source_label', 'customer', 'amount', 'uses', 'prepaid', 'state', 'at'],
         update: { by: ['id'], set: ['state', 'at', 'given_back_at'] },
       },
-      // A card is inserted only by the move, for an older card a till brings in under the code it has always had.
-      gift_cards: { insert: ['kind', 'code', 'status', 'issued_at', 'moved_from', 'moved_table', 'moving'], update: { by: ['id'], set: ['status', 'issued_at', 'expires_on', 'remind_on', 'notify'] } },
+      // A card is inserted by the move, for an older card a till brings in under the code it has always had; and by a
+      // shopper's sale, with whom it is for and the line that made it. A card cancelled by its sale says why.
+      gift_cards: {
+        insert: ['kind', 'code', 'status', 'issued_at', 'moved_from', 'moved_table', 'moving', 'recipient_name', 'recipient_email', 'sender_name', 'message', 'language', 'source_table', 'source_row'],
+        update: { by: ['id'], set: ['status', 'issued_at', 'expires_on', 'remind_on', 'notify', 'void_reason'] },
+      },
       vouchers: {
         insert: ['batch_id', 'worth', 'value', 'what', 'source_table', 'source_row', 'units', 'public_name', 'uses_total', 'expires_on', 'note'],
         update: { by: ['id'], set: ['status', 'sold', 'awaiting_sale', 'sale_price', 'tax_later', 'expires_on'] },

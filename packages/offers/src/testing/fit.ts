@@ -1,9 +1,10 @@
 /**
  * DOES AN APP'S TABLE FIT THE PART IT SPELLS OUT?
  *
- * Offers defines four shapes (`src/shapes/*.json`, the same four the manifest
+ * Offers defines five shapes (`src/shapes/*.json`, the same five the manifest
  * carries): an order whose price it lowers, a payment a card makes, a line
- * that loads a card, a line that sells a voucher. An app does not build its
+ * that loads a card, a line that sells a voucher, and a shopper's line whose
+ * sale makes the card it loads. An app does not build its
  * table ON a part — a till's line is a discount line, a card sale and a
  * voucher sale at once, and Offers is only suggested to it. It spells the
  * part's columns and rule out on its own table, under its own column names,
@@ -41,7 +42,7 @@
  * voucher sale an offer could reduce; a card that could pay for a card.
  *
  * It lives in `testing/` because it is a check and never ships: an app vendors
- * the four shape files and runs this same call in its own suite.
+ * the shape files it adopts and runs this same call in its own suite.
  */
 
 import { shapeConformanceIssues } from '@adminiumjs/manifest';
@@ -113,7 +114,7 @@ function stringsIn(value: unknown): string[] {
 }
 
 /** The `order` part of these shapes only stands for "the row a line hangs under": it has no column an app adopts. */
-const STANDS_IN: Readonly<Record<string, readonly string[]>> = { 'card-payment@1': ['order'], 'card-sale@1': ['order'], 'voucher-sale@1': ['order'] };
+const STANDS_IN: Readonly<Record<string, readonly string[]>> = { 'card-payment@1': ['order'], 'card-sale@1': ['order'], 'voucher-sale@1': ['order'], 'card-sale-online@1': ['order'] };
 
 /** The columns of a part an adopter may leave out (`null` in a pairing). Every other column of a part is adopted. */
 export const MAY_LEAVE_OUT: Readonly<Record<string, readonly string[]>> = {
@@ -124,6 +125,8 @@ export const MAY_LEAVE_OUT: Readonly<Record<string, readonly string[]>> = {
   'card-payment@1/payments': ['card_code', 'card_last4', 'card_balance_after', 'voided_at'],
   'card-sale@1/lines': [],
   'voucher-sale@1/lines': ['tax_later'],
+  // A gift with no name, no message and no sender is still a gift; a card with nobody to send it to is not.
+  'card-sale-online@1/lines': ['to_name', 'message', 'sender', 'language'],
 };
 /** The parts beside a part that a pairing must name: the ones its columns and its rule point at. */
 const BESIDE: Readonly<Record<string, readonly string[]>> = {
@@ -133,6 +136,7 @@ const BESIDE: Readonly<Record<string, readonly string[]>> = {
   'card-payment@1/payments': ['order'],
   'card-sale@1/lines': ['order'],
   'voucher-sale@1/lines': ['order'],
+  'card-sale-online@1/lines': ['order'],
 };
 /** The rules through which a part works a column out itself. */
 const WORKED_OUT = ['rollup', 'formula', 'codeLast4', 'stamp'];
@@ -196,7 +200,7 @@ function publiclyWritten(entries: readonly PublicEntry[], table: string): string
 
 /**
  * Every way the app's tables differ from the parts they are paired with.
- * `shapes`: Offers' four (the vendored files). An empty answer is a fit.
+ * `shapes`: Offers' own (the vendored files). An empty answer is a fit.
  */
 export function shapeFit(manifest: { requiredSchema?: { tables: unknown[] }; roles?: unknown[]; publicAccess?: unknown[] }, pairings: readonly Pairing[], shapes: readonly Shape[]): FitIssue[] {
   const out: FitIssue[] = [];

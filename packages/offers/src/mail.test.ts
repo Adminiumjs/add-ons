@@ -1,7 +1,7 @@
 /**
  * THE MAILS, AS THEY ARE DECLARED.
  *
- * Seven kinds of message from four templates. What goes out when, to whom
+ * Eight kinds of message from five templates. What goes out when, to whom
  * and with which code is proved where there is a database and a clock (the
  * engine's suite); here the declaration is held to what a wrong mail would
  * come from: which change a kind hears, whose address it is sent to, which
@@ -49,8 +49,8 @@ describe('the outbox', () => {
     expect(m.outbox.links).toEqual({ card: 'card_id', voucher: 'voucher_id' });
   });
 
-  it('has seven kinds from four templates, and every kind the log can hold is one of them', () => {
-    expect(m.outbox.kinds).toEqual({ gift_card: 'offers-gift-card', gift_card_dated: 'offers-gift-card', gift_card_again: 'offers-gift-card', gift_card_expiring: 'offers-gift-card-expiring', credit: 'offers-credit', voucher: 'offers-voucher', voucher_again: 'offers-voucher' });
+  it('has eight kinds from five templates, and every kind the log can hold is one of them', () => {
+    expect(m.outbox.kinds).toEqual({ gift_card: 'offers-gift-card', gift_card_dated: 'offers-gift-card', gift_card_again: 'offers-gift-card', gift_card_expiring: 'offers-gift-card-expiring', gift_card_cancelled: 'offers-gift-card-cancelled', credit: 'offers-credit', voucher: 'offers-voucher', voucher_again: 'offers-voucher' });
     const kinds = tables.find((table) => table.ref === 'messages')!.columns.find((column) => column.ref === 'kind')!.enum!;
     expect([...kinds].sort()).toEqual(Object.keys(m.outbox.kinds).sort());
     expect(m.outbox.producers.map((producer) => producer.kind).sort()).toEqual(Object.keys(m.outbox.kinds).sort());
@@ -62,12 +62,15 @@ describe('the outbox', () => {
     expect(heard('gift_card').onChange).toEqual({ table: 'gift_cards', column: 'notify', to: 'card' });
     expect(heard('gift_card_dated').onChange).toEqual({ table: 'gift_cards', column: 'notify', to: 'card_dated' });
     expect(heard('credit').onChange).toEqual({ table: 'gift_cards', column: 'notify', to: 'credit' });
+    // And the last word a card's holder hears: the shop cancelled it. Set only for a card whose holder was sent it.
+    expect(heard('gift_card_cancelled').onChange).toEqual({ table: 'gift_cards', column: 'notify', to: 'cancelled' });
+    expect(heard('gift_card_cancelled').due).toBeUndefined();
     // Only the dated one waits; one with no date would wait for ever.
     expect(heard('gift_card').due).toBeUndefined();
     expect(heard('credit').due).toBeUndefined();
     expect(heard('gift_card_dated').due).toEqual({ date: 'send_on', days: 0, at: '09:00' });
     const values = tables.find((table) => table.ref === 'gift_cards')!.columns.find((column) => column.ref === 'notify')!.enum!;
-    expect([...values].sort()).toEqual(['card', 'card_dated', 'credit']);
+    expect([...values].sort()).toEqual(['cancelled', 'card', 'card_dated', 'credit']);
   });
 
   it('"Send again" is its own kind, heard on any change of one column, and sends each time', () => {
@@ -96,7 +99,7 @@ describe('the outbox', () => {
 
   it('every mail is addressed from the row it is about: a card to its recipient, credit to its owner, a voucher to its holder', () => {
     const to = Object.fromEntries(m.outbox.producers.map((producer) => [producer.kind, `${producer.link} → ${producer.recipient.column}`]));
-    expect(to).toEqual({ gift_card: 'card_id → recipient_email', gift_card_dated: 'card_id → recipient_email', gift_card_again: 'card_id → recipient_email', gift_card_expiring: 'card_id → recipient_email', credit: 'card_id → owner_email', voucher: 'voucher_id → holder_email', voucher_again: 'voucher_id → holder_email' });
+    expect(to).toEqual({ gift_card: 'card_id → recipient_email', gift_card_dated: 'card_id → recipient_email', gift_card_again: 'card_id → recipient_email', gift_card_expiring: 'card_id → recipient_email', gift_card_cancelled: 'card_id → recipient_email', credit: 'card_id → owner_email', voucher: 'voucher_id → holder_email', voucher_again: 'voucher_id → holder_email' });
     for (const producer of m.outbox.producers) {
       const table = producer.link === 'card_id' ? 'gift_cards' : 'vouchers';
       for (const column of [producer.recipient.column, producer.recipient.name, producer.recipient.language]) if (column !== undefined) expect(columnsOf(table), `${producer.kind}: ${column}`).toContain(column);
@@ -185,7 +188,9 @@ describe('the templates', () => {
       'email.quote',
       'email.box',
       'email.image',
-      'email.text',
+      // A card a till sold is shown at its counter; a card a shopper's order made is typed at checkout, and no counter is named.
+      'email.text without card.source_row',
+      'email.text with card.source_row',
       'email.button with app_url.balance',
       'email.text without app_url.balance',
       'email.text with card.expires_on',
@@ -196,6 +201,15 @@ describe('the templates', () => {
     expect(english('offers-gift-card').find((block) => block.block === 'email.image')!.data).toEqual({ qr: '{{card.code.qr}}', size: 160 });
     // The figure is always what is on the card when the mail goes: the amount at first, what is left on a re-send.
     expect(english('offers-gift-card').find((block) => block.block === 'email.stats')!.data).toEqual({ stats: [{ value: '{{card.balance.money}}', label: 'Gift card balance' }] });
+  });
+
+  it('a cancelled card is named by its last four, with no code, no QR, no link and no balance', () => {
+    expect(shape(english('offers-gift-card-cancelled'))).toEqual(['email.heading', 'email.text with card.sender_name', 'email.text without card.sender_name', 'email.box', 'email.text', 'email.text']);
+    const cancelled = template('offers-gift-card-cancelled');
+    expect(cancelled.vars).toEqual(['card.sender_name', 'card.label']);
+    const used = new Set(Object.values(cancelled.locales).flatMap((words) => variablesIn(words.blocks)));
+    expect([...used].sort()).toEqual(['appName', 'card.label', 'card.sender_name']);
+    expect(english('offers-gift-card-cancelled').find((block) => block.block === 'email.box')!.data).toEqual({ label: 'Card ending in', value: '{{card.label}}' });
   });
 
   it('a voucher for one person says so, and a voucher with a last day says which', () => {

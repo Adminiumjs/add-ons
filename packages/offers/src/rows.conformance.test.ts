@@ -16,7 +16,7 @@ import type { PostingInput, PostingOutput } from '@adminium/add-on-contracts';
 import { describe, expect, it } from 'vitest';
 
 import manifest from '../manifest.json' with { type: 'json' };
-import { call, card, classes, line, LINES, NOW, PAYMENTS, REFUNDS, ROWS_CASES, SETTINGS } from './cases/rows.cases.ts';
+import { call, card, classes, gift, GIFTS, line, LINES, LOADED, madeCard, NOW, PAYMENTS, REFUNDS, ROWS_CASES, SETTINGS } from './cases/rows.cases.ts';
 import { buildForReal } from './testing/build.ts';
 import { builtProvider, builtServer } from './testing/vm.ts';
 
@@ -49,7 +49,7 @@ describe('what the shared suite does not compare', () => {
     const numbers = new Set(ROWS_CASES.map((one) => /^P(\d+) /.exec(one.name)?.[1]));
     // P18 — a round and its reverse — is the test below this one.
     for (let n = 1; n <= 21; n += 1) if (n !== 18) expect(numbers, `P${String(n)}`).toContain(String(n));
-    expect(new Set(ROWS_CASES.map((one) => one.input.action))).toEqual(new Set(['spend', 'refund', 'issue', 'card-action', 'void', 'expire', 'voucher-action', 'redeem', 'make', 'move']));
+    expect(new Set(ROWS_CASES.map((one) => one.input.action))).toEqual(new Set(['spend', 'refund', 'issue', 'recall', 'card-action', 'void', 'expire', 'voucher-action', 'redeem', 'make', 'move']));
   });
 
   for (const one of ROWS_CASES.filter((candidate) => candidate.also !== undefined)) {
@@ -438,5 +438,74 @@ describe('what the shared suite does not compare', () => {
     expect(() => provider.rows(call({ action: 'make', lines: [line('', { batch: 1, size: 501 })], reads: { batch: [{ id: 1 }] } }))).toThrow();
     expect(() => provider.rows(call({ action: 'move', lines: [line('', { old_card: 'nobody', kind: 'issue', amount: '5.00', at: 'x' })], reads: { card: [] } }))).toThrow();
     expect(() => provider.rows(call({ action: 'voucher-action', lines: [line('1', { voucher: 5, action: 'burn' })], reads: { voucher: [classes(3)], last: [], none: [] } }))).toThrow();
+  });
+});
+
+describe('a card a shopper\'s order makes, and its recall', () => {
+  /** What a row of an answer becomes once Adminium has written it: the row, with the key the database gave it. */
+  const kept = (out: PostingOutput, table: string, from: number): Values[] => inserted(out, table).map((values, at) => ({ id: from + at, ...values }));
+  const later = (made: Values, ...changes: PostingOutput[]): Values => changes.reduce((row, out) => ({ ...row, ...(updates(out, 'gift_cards').find((one) => one['id'] === row['id']) ?? {}) }), made);
+
+  it('a guest\'s paid order makes one card and names its mail once; an unpaid order that times out leaves no live card', () => {
+    // Written by a guest: one card, inactive, for Mira.
+    const written = provider.rows(call({ action: 'issue', phase: 'reserve', lines: [gift('g1')], more: { origin: 'public' } }));
+    const [made] = kept(written, 'gift_cards', 31);
+    expect(inserted(written, 'gift_cards')).toHaveLength(1);
+    expect(made).toMatchObject({ status: 'inactive', recipient_email: 'mira@daybreak.example', source_table: GIFTS, source_row: 'g1' });
+    expect(inserted(written, 'card_ledger')).toEqual([]);
+
+    // Paid: the card is loaded and made active, and its first mail is named — in the one write that makes it active.
+    const round = { gift_cards: [made as Record<string, string | number | null>] };
+    const paid = provider.rows(call({ action: 'issue', lines: [gift('g1')], reads: { card: [], made: [made as Record<string, string | number | null>] }, written: round, more: { origin: 'system' } }));
+    expect(inserted(paid, 'gift_cards')).toEqual([]);
+    expect(inserted(paid, 'card_ledger')).toEqual([expect.objectContaining({ card_id: 31, kind: 'issue', value: '50.00', balance_after: '50.00' })]);
+    expect(updates(paid, 'gift_cards').filter((one) => one['notify'] !== undefined)).toEqual([expect.objectContaining({ id: 31, status: 'active', notify: 'card' })]);
+
+    // Never paid, and its time ran out: the card it made is cancelled. No mail is named: none went.
+    const lapsed = provider.rows(call({ action: 'issue', phase: 'reverse', lines: [gift('g1')], reads: { card: [], made: [made as Record<string, string | number | null>] }, written: round, more: { origin: 'system' } }));
+    expect(later(made!, lapsed)).toMatchObject({ status: 'void' });
+    expect(updates(lapsed, 'gift_cards')[0]).not.toHaveProperty('notify');
+    expect(inserted(lapsed, 'card_ledger')).toEqual([]);
+    expect(lapsed.refusals).toBeUndefined();
+  });
+
+  it('a spend and a recall at once: one wins — they take the same lock, and the second sees the first', () => {
+    // The same lock: a row of gift_cards, named by the card's own key, for a payment by the card and for a recall.
+    const actions = (manifest.addOn.ledgers[0] as unknown as { actions: Record<string, { locks: unknown[] }> }).actions;
+    expect(actions['recall']!.locks).toEqual(actions['spend']!.locks);
+    const active = madeCard(31, { status: 'active', balance: '50.00', notify: 'card' });
+    const pay = (cardRow: Record<string, string | number | boolean | null>) => provider.rows(call({ action: 'spend', lines: [line('p1', { card: 31, due: '20.00' }, PAYMENTS)], reads: { card: [cardRow] }, more: { origin: 'public' } }));
+    const recall = (cardRow: Record<string, string | number | boolean | null>) => provider.rows(call({ action: 'recall', lines: [line('g1', { sale: { table: GIFTS, row: 'g1' } }, GIFTS)], reads: { sold: [LOADED], card: [cardRow], given: [] } }));
+
+    // The recall first: the card is cancelled, and the payment that waited for it is refused.
+    const first = recall(active);
+    expect(first.refusals).toBeUndefined();
+    expect(pay({ ...active, status: 'void', balance: '0.00' }).refusals).toEqual([{ line: 'p1', reason: 'void' }]);
+
+    // The payment first: the card holds less than the sale put on it, so the cancel — and the refund that follows it — is refused.
+    const spent = pay(active);
+    expect(spent.refusals).toBeUndefined();
+    const left = String(inserted(spent, 'card_ledger')[0]!['balance_after']);
+    expect(recall({ ...active, balance: left }).refusals).toEqual([{ line: 'g1', reason: 'used-up', left: '30.00' }]);
+  });
+
+  it('a spent card\'s order cannot be cancelled and refunded: the reverse that runs first takes nothing back, and the recall refuses', () => {
+    // A cancel fires the sale's reverse and the recall in one save; every reverse runs before every post.
+    const spentCard = madeCard(31, { status: 'active', balance: '12.00', notify: 'card' });
+    const reverse = provider.rows(call({ action: 'issue', phase: 'reverse', lines: [gift('g1')], reads: { card: [], made: [spentCard] }, written: { gift_cards: [madeCard(31)], card_ledger: [LOADED] } }));
+    expect(reverse.rows).toEqual([]);
+    const recall = provider.rows(call({ action: 'recall', lines: [line('g1', { sale: { table: GIFTS, row: 'g1' } }, GIFTS)], reads: { sold: [LOADED], card: [spentCard], given: [] } }));
+    expect(recall.refusals).toEqual([{ line: 'g1', reason: 'used-up', left: '12.00' }]);
+  });
+
+  it('a till\'s card is loaded and taken back as it always was: the line names it, and nothing is made', () => {
+    const till = line('l1', { card: 2, amount: '50.00' }, LINES);
+    const loaded = provider.rows(call({ action: 'issue', lines: [till], reads: { card: [card(2, 'Q4XP', '0.00', { status: 'inactive' })], made: [] } }));
+    expect(inserted(loaded, 'gift_cards')).toEqual([]);
+    expect(inserted(loaded, 'card_ledger')).toEqual([expect.objectContaining({ card_id: 2, kind: 'issue', value: '50.00' })]);
+    const issued = { id: 9, card_id: 2, kind: 'issue', taken: '-50.00', value: '50.00', balance_after: '50.00', source_table: LINES, source_row: 'l1' };
+    const back = provider.rows(call({ action: 'issue', phase: 'reverse', lines: [till], reads: { card: [card(2, 'Q4XP', '50.00')], made: [] }, written: { card_ledger: [issued] } }));
+    expect(inserted(back, 'card_ledger')).toEqual([expect.objectContaining({ card_id: 2, kind: 'adjust', taken: '50.00', balance_after: '0.00', against_id: 9 })]);
+    expect(updates(back, 'gift_cards')).toEqual([]);
   });
 });

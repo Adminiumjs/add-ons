@@ -28,13 +28,57 @@ them with the order. The add-on decides; Adminium reads and writes.
 It attaches to no app in particular, and works with none at all: a card can be
 issued, a voucher used and a code made from its own screens.
 
-## The four shapes
+## The five shapes
 
 `src/shapes/*.json` are the parts an app spells out on its own tables, under
 its own column names: `discountable@1` (an order, its lines and its typed
-codes), `card-payment@1`, `card-sale@1` and `voucher-sale@1`. An app copies the
-files it adopts and holds its tables to them with `shapeFit`
-(`src/testing/fit.ts`) in its own suite.
+codes), `card-payment@1`, `card-sale@1`, `voucher-sale@1` and
+`card-sale-online@1`. An app copies the files it adopts and holds its tables to
+them with `shapeFit` (`src/testing/fit.ts`) in its own suite.
+
+## Selling a gift card
+
+A line sells a card in one of two ways.
+
+**At a till** (`card-sale@1`). A cashier makes the card first and the line
+names it (`gift_card_id`). When the order is paid, `issue` loads the card and
+makes it active, and its mail goes out; when the order is cancelled, the
+sale's reverse takes back what is still on the card and tells staff to check
+when some of it was spent.
+
+**Online** (`card-sale-online@1`). Nobody can make a card for a shopper, and a
+host is never handed the key of a row Offers makes, so the sale makes it. The
+line carries what the card needs (`to_name`, `to_email`, `message`, `sender`,
+`language`) and the amount, and two postings:
+
+- `issue`, with three phases. **Reserve**, when the order is written: a card is
+  made, inactive and holding nothing, for the recipient, and it names the line
+  that made it (`gift_cards.source_table`, `source_row`). Cards paused, the
+  least and the most a card is sold for, an address that is none and a message
+  with more than 20 digits are refused here, before anything is paid.
+  **Post**, when the order is paid: the card is loaded, made active and mailed
+  once — what was judged at the reserve is not judged again. **Reverse**, when
+  the order is cancelled: a card whose order was never paid is cancelled
+  (`void`) and nobody is told; a paid order's card is left for the recall.
+- `recall` (post only), named by the line itself (`{"row": true}`), fired by
+  the same cancel. It takes the card's own lock — the one a payment by the
+  card takes — so a spend and a recall take turns. It is refused (`used-up`,
+  with what is left) when the card holds less than the sale put on it: the
+  order's money cannot then go back. Otherwise what is on the card is written
+  off, the card is cancelled with a reason (the host may map its own to
+  `reason`), and a recipient who was sent the card gets the "cancelled" mail.
+
+Every reverse of a save runs before its posts, so the two must fire on the
+same cancel: a host that posts `recall` on a later save, or not at all, leaves
+a paid order's card alive when the order is cancelled. A host that gives a
+card's balance no page (`outbox.pages.app.balance`) still prints the mail's
+"Ask at the counter for your balance."; a shop that sells cards online names
+its balance page.
+
+Offers cannot tell from a payment whether the order it pays holds a gift card:
+`spend` pays what the host maps to `due`. To keep a card from paying for a
+card, map `due` to what is due for goods, or refuse card payments on such an
+order with the posting's own `refuses`.
 
 ## Who reads a code
 
@@ -61,8 +105,11 @@ rewrites the English file from the screens' own source.
 
 ## Mail, print and the balance door
 
-Four emails: a gift card, credit, a voucher with a name on it, and a reminder
-before a card's last day. A card dated for a day is sent that morning. A card
+Five emails: a gift card, credit, a voucher with a name on it, a reminder
+before a card's last day, and a word to a card's recipient when the shop
+cancels it with its sale. A card dated for a day is sent that morning. A card
+sold online is told to be typed at checkout; one sold at a till, shown at the
+counter. A card
 and a voucher are drawn by `dist/documents.js` (`document-render@1`), on a
 page or on receipt paper, with the code in fours and as a QR picture; the code
 is in the print and is kept nowhere else.

@@ -21,6 +21,8 @@ export const NOW = '2026-10-01T10:00:00.000Z';
 export const ORDERS = 'shop:orders';
 export const PAYMENTS = 'shop:payments';
 export const LINES = 'shop:order_lines';
+/** A web shop's lines that each sell a card to somebody: the card is made by the sale. */
+export const GIFTS = 'shop:gift_lines';
 export const REFUNDS = 'shop:refunds';
 
 /** The settings row of a fresh install. */
@@ -97,6 +99,14 @@ const LAUNCH_CODE: Row = { id: 3, offer_id: 5, code: 'LAUNCH20', max_uses: 50, u
 export const classes = (left: number, more: Row = {}): Row => ({ id: 5, worth: 'pack', public_name: '10 classes', uses_total: 10, uses_left: left, status: left === 0 ? 'used' : 'issued', expires_on: null, awaiting_sale: false, sold: true, sale_price: '120.00', ...more });
 const HELD_ROW: Row = { id: 900, kind: 'code', offer_id: 1, code_id: 1, voucher_id: null, amount: '4.95', uses: 1, state: 'held', source_table: ORDERS, source_row: '125' };
 const BATCH: Row = { id: 1, name: 'Leaflet drop, October', count: 200, worth: 'amount', value: '5.000', what: null, source_table: '', source_row: '', units: 1, public_name: 'Leaflet drop, October', uses_total: 1, expires_on: '2026-11-30', note: null };
+/** A shopper's gift line: fifty dollars on a card for Mira, from Jon. */
+export const gift = (key: string, more: PostingLine['inputs'] = {}): PostingLine => line(key, { card: null, amount: '50.00', to_name: 'Mira', to_email: 'mira@daybreak.example', message: 'Happy birthday!', sender: 'Jon', language: 'da-DK', ...more }, GIFTS);
+/** The card the line `g1` made when its order was written, as the round wrote it. */
+export const madeCard = (id: number, more: Row = {}): Row => card(id, 'M1RA', '0.00', { status: 'inactive', issued_at: null, recipient_email: 'mira@daybreak.example', notify: null, source_table: GIFTS, source_row: 'g1', ...more });
+/** The row that loaded it when the order was paid. */
+export const LOADED: Row = { id: 88, card_id: 31, kind: 'issue', taken: '-50.00', value: '50.00', balance_after: '50.00', source_table: GIFTS, source_row: 'g1' };
+/** The line names itself to the recall: its table and its key. */
+const recalled = (key = 'g1') => line(key, { sale: { table: GIFTS, row: key } }, GIFTS);
 /** An old card of the till's, made here before its rows are brought in. */
 const moved = (status: string, balance: string): Row => card(40, '9930', balance, { status, moved_from: '7', moving: true, issued_at: null });
 
@@ -454,6 +464,112 @@ export const ROWS_CASES: readonly RowsCase[] = [
       reads: { spend: [{ id: 71, card_id: 9, kind: 'spend', taken: '29.11', value: '29.11', source_table: PAYMENTS, source_row: 'p11' }], card: [{ ...K4WD, balance: '70.89' }], given: [] },
     }),
     expect: { rows: [insert('card_ledger', { card_id: 9, kind: 'refund', taken: '-10.00', value: '10.00', balance_after: '80.89', against_id: 71 })] },
+  },
+  {
+    name: 'P22 a guest\'s order is written: the line makes a card for its recipient, inactive and holding nothing',
+    input: call({ action: 'issue', phase: 'reserve', lines: [gift('g1')], more: { origin: 'public' } }),
+    expect: {
+      rows: [
+        insert(
+          'gift_cards',
+          { kind: 'card', status: 'inactive', recipient_name: 'Mira', recipient_email: 'mira@daybreak.example', sender_name: 'Jon', message: 'Happy birthday!', language: 'da-DK', source_table: GIFTS, source_row: 'g1' },
+          'g1',
+        ),
+      ],
+    },
+  },
+  {
+    name: 'P22 …and refused before anything is paid: too little, too much, nobody to send it to, an address that is none, a message full of digits',
+    input: call({
+      action: 'issue',
+      phase: 'reserve',
+      lines: [gift('a', { amount: '5.00' }), gift('b', { amount: '600.00' }), gift('c', { to_email: null }), gift('d', { to_email: 'mira at home' }), gift('e', { message: 'Call 0123456789 or 0123456789 0' })],
+      more: { origin: 'public' },
+    }),
+    expect: { rows: [], refusals: ['a', 'b', 'c', 'd', 'e'].map((key) => ({ line: key, reason: 'not-allowed' as const })) },
+  },
+  {
+    name: 'P22 …nor while the owner has paused cards',
+    input: call({ action: 'issue', phase: 'reserve', lines: [gift('g1')], settings: { ...SETTINGS, cards_paused: true }, more: { origin: 'public' } }),
+    expect: { rows: [], refusals: [{ line: 'g1', reason: 'not-allowed' }] },
+  },
+  {
+    name: 'P22 …a till\'s line that names its card loads it when paid and makes none; an ordinary line loads nothing',
+    input: call({ action: 'issue', phase: 'reserve', lines: [line('t1', { card: 2, amount: '50.00' }, LINES), line('t2', { card: null, amount: null }, LINES)] }),
+    expect: { rows: [] },
+    also: { notes: [{ line: 't2', note: 'not-linked' }] },
+  },
+  {
+    name: 'P23 the order is paid: the card the sale made gets its fifty dollars, becomes active, and its one mail is named',
+    input: call({ action: 'issue', lines: [gift('g1')], reads: { card: [], made: [madeCard(31)] }, written: { gift_cards: [madeCard(31)] }, more: { origin: 'system' } }),
+    expect: {
+      rows: [
+        insert('card_ledger', { card_id: 31, kind: 'issue', taken: '-50.00', value: '50.00', balance_after: '50.00', source_table: GIFTS, source_row: 'g1', at: NOW }, 'g1'),
+        update('gift_cards', 31, { status: 'active', issued_at: NOW, notify: 'card' }),
+      ],
+    },
+  },
+  {
+    name: 'P23 …even when cards were paused since the order was written: the shopper has paid for this one',
+    input: call({ action: 'issue', lines: [gift('g1')], reads: { card: [], made: [madeCard(31)] }, written: { gift_cards: [madeCard(31)] }, settings: { ...SETTINGS, cards_paused: true, card_max: '20.00' } }),
+    expect: { rows: [insert('card_ledger', { card_id: 31, kind: 'issue', taken: '-50.00' }), update('gift_cards', 31, { status: 'active', notify: 'card' })] },
+  },
+  {
+    name: 'P23 …and a card a manager cancelled while its order waited is loaded with nothing, and staff are told',
+    input: call({ action: 'issue', lines: [gift('g1')], reads: { card: [], made: [madeCard(31, { status: 'void' })] }, written: { gift_cards: [madeCard(31)] } }),
+    expect: { rows: [] },
+    also: { notes: [{ line: 'g1', note: 'to-check' }] },
+  },
+  {
+    name: 'P24 the order is given up unpaid: the card it made is cancelled, and nobody is told — nobody was sent it',
+    input: call({ action: 'issue', phase: 'reverse', lines: [gift('g1')], reads: { card: [], made: [madeCard(31)] }, written: { gift_cards: [madeCard(31)] }, more: { origin: 'system' } }),
+    expect: { rows: [update('gift_cards', 31, { status: 'void', void_reason: 'Its order was cancelled before it was paid.' })] },
+  },
+  {
+    name: 'P24 …a paid order\'s card is not taken back by the reverse: the recall the same cancel posts runs next, and may refuse',
+    input: call({
+      action: 'issue',
+      phase: 'reverse',
+      lines: [gift('g1')],
+      reads: { card: [], made: [madeCard(31, { status: 'active', balance: '50.00', notify: 'card' })] },
+      written: { gift_cards: [madeCard(31)], card_ledger: [LOADED] },
+    }),
+    expect: { rows: [] },
+  },
+  {
+    name: 'P25 a paid order cancelled with its card unspent: the card is written off and cancelled, and its recipient told',
+    input: call({ action: 'recall', lines: [recalled()], reads: { sold: [LOADED], card: [madeCard(31, { status: 'active', balance: '50.00', notify: 'card' })], given: [] } }),
+    expect: {
+      rows: [
+        insert('card_ledger', { card_id: 31, kind: 'void', taken: '50.00', value: '50.00', balance_after: '0.00', source_table: GIFTS, source_row: 'g1', at: NOW }, 'g1'),
+        update('gift_cards', 31, { status: 'void', void_reason: 'Its order was cancelled after it was paid.', notify: 'cancelled' }),
+      ],
+    },
+  },
+  {
+    name: 'P25 …with some of it spent, the cancel is refused, and says what is left',
+    input: call({ action: 'recall', lines: [recalled()], reads: { sold: [LOADED], card: [madeCard(31, { status: 'active', balance: '31.40', notify: 'card' })], given: [] } }),
+    expect: { rows: [], refusals: [{ line: 'g1', reason: 'used-up', left: '31.40' }] },
+  },
+  {
+    name: 'P25 …a line that loaded no card, a card already cancelled, and a sale already taken back have nothing to recall',
+    input: call({
+      action: 'recall',
+      lines: [recalled('g7'), recalled('g1'), recalled('g2')],
+      reads: {
+        sold: [LOADED, { ...LOADED, id: 90, card_id: 32, source_row: 'g2' }],
+        card: [madeCard(31, { status: 'void', balance: '0.00' }), madeCard(32, { status: 'active', balance: '0.00', source_row: 'g2' })],
+        given: [{ id: 91, card_id: 32, kind: 'adjust', taken: '50.00', value: '50.00', against_id: 90, source_table: GIFTS, source_row: 'g2' }],
+      },
+    }),
+    expect: { rows: [] },
+    also: { notes: [{ line: 'g7', note: 'not-linked' }] },
+  },
+  {
+    name: 'P25 …a card topped up since is cancelled whole, with a word to staff; a reason the host gives is kept',
+    input: call({ action: 'recall', lines: [line('g1', { sale: { table: GIFTS, row: 'g1' }, reason: 'Refunded at the bank' }, GIFTS)], reads: { sold: [LOADED], card: [madeCard(31, { status: 'active', balance: '70.00' })], given: [] } }),
+    expect: { rows: [insert('card_ledger', { card_id: 31, kind: 'void', taken: '70.00', balance_after: '0.00' }), update('gift_cards', 31, { status: 'void', void_reason: 'Refunded at the bank' })] },
+    also: { notes: [{ line: 'g1', note: 'to-check' }] },
   },
   {
     name: 'P21 an expired voucher is cancelled all the same',
