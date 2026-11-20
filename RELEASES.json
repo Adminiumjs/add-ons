@@ -4,155 +4,155 @@
     {
       "name": "@adminiumjs/add-on-barcode-labels",
       "key": "barcode-labels",
-      "version": "1.0.32",
-      "integrity": "sha512-lurpb/H+ch6B4BhzNM1/enG8CTFN2veUyzvzy9vBynU+SRKPyyIcwortsvdG6NAprZmZpXyIyLN+NtULPQfPBg==",
-      "shasum": "0d90592ca2b19cf9fd92ca4277b23546a4087b4a",
+      "version": "1.0.33",
+      "integrity": "sha512-cWKs5LkEnV1x8AWSDyXeP8T09NkO0T9R6+CbTcpJDPmGJLDS9SDx8iWb34iRZE77vCXxmtFzfsFZ+qkUWavdRA==",
+      "shasum": "fd2c3949584383ddfbeb8f98bce77de3c7349c49",
       "fileCount": 7,
-      "publishedAt": "2026-11-20T00:00:59.000Z"
+      "publishedAt": "2026-11-20T23:33:01.000Z"
     },
     {
       "name": "@adminiumjs/add-on-customiser",
       "key": "customiser",
-      "version": "1.0.32",
-      "integrity": "sha512-3jxO8bME3qE7T6kmmQQ0aqgWOskYuRqG/Mvy1/HYgN9eLWngZYPZ/Bx4zRh0wSZ6oivaxXBL5qlkthAxLg6lpg==",
-      "shasum": "37bd58cb8a864030ac9916fc71426244b0f7dd22",
+      "version": "1.0.33",
+      "integrity": "sha512-JIwCvnlPpZvR+o/tgY8ixzdRISRjSkwGXef7eHRhIyu0D52DWqRnHSsR6VN+nD16AMX8aHcAUZkl8PplQhe+8w==",
+      "shasum": "80fd12552d88109d92f228b3eb895c17a8427f96",
       "fileCount": 30,
-      "publishedAt": "2026-11-20T00:01:01.000Z"
+      "publishedAt": "2026-11-20T23:33:03.000Z"
     },
     {
       "name": "@adminiumjs/add-on-design-studio",
       "key": "design-studio",
-      "version": "1.0.32",
-      "integrity": "sha512-rWJolvUz1rP+2NqV3Cm2CmvJUNlKH4/PyHyLppZYIon8Lkag2p6ZRkmm3Ox59zmoJSkTx/Elmch7MroOvNLeiQ==",
-      "shasum": "14ac9fa6d4a90307c9d38cea8e871b52252eecba",
+      "version": "1.0.33",
+      "integrity": "sha512-jqX6UG6AvlkqdfC+Et7g3vk/XTflfPcRGv1fFhWK8zecjvg8W7pTG1d8RiBHPjGr4dcm403HrwCGijvUw2lY+g==",
+      "shasum": "ae85a8d6d6f3ad985b37085a995eb84ddc5e7dc8",
       "fileCount": 8,
-      "publishedAt": "2026-11-20T00:01:02.000Z"
+      "publishedAt": "2026-11-20T23:33:04.000Z"
     },
     {
       "name": "@adminiumjs/add-on-forms",
       "key": "forms",
-      "version": "1.0.32",
-      "integrity": "sha512-KUs0FdFQubF5FQM7hZPw6ewpq+7WHNAP+8uYMHTvOFEGTFO4XuaqO5lJcVYrN82DfXR2San4i1jQdxan7yE4ew==",
-      "shasum": "e17452e9fdfba4c5921854ce2a1f2649d0ad1a8a",
+      "version": "1.0.33",
+      "integrity": "sha512-p2DPST0ldai01Y3Y5AWv0zK9UFoTR0bdaRCSXu5JxiIrgjdY9Yg0WZun/X95ywIQL16Qg4peQ6oyePAqwxTGeA==",
+      "shasum": "c2405ca75d24cffa5f097e42bc9186257ff01e47",
       "fileCount": 7,
-      "publishedAt": "2026-11-20T00:01:04.000Z"
+      "publishedAt": "2026-11-20T23:33:06.000Z"
     },
     {
       "name": "@adminiumjs/add-on-holiday-calendars",
       "key": "holiday-calendars",
-      "version": "1.0.32",
-      "integrity": "sha512-4OVGK0BXibMOBX25b4t/VuUixQNm4XaHVJsTDWdSj7+suwpMQUMBcESHwFtM/Hb6CIGOQBl6ph7AV3cGDFWN3w==",
-      "shasum": "0225959cfed8eced60e9bb125ded9d93cd5b5254",
+      "version": "1.0.33",
+      "integrity": "sha512-ZyZkM46IubDyHprZTUifiBT/+rsXNsJ7WWGdnzMG8w1esU6RANy0oUUSV8itr3jdyNSHEOifAfDD438/Iq6tjw==",
+      "shasum": "fa21cf5570497bd5a98d69f99e7e4384f27d0f14",
       "fileCount": 7,
-      "publishedAt": "2026-11-20T00:01:06.000Z"
+      "publishedAt": "2026-11-20T23:33:07.000Z"
     },
     {
       "name": "@adminiumjs/add-on-import-canva",
       "key": "import-canva",
-      "version": "1.0.32",
-      "integrity": "sha512-B05M4FzyMaX43Cx3epYpN45ziWJfzQaTvITAUcrWXU5+W9xpAfHw7vtHERlfThyALD0xY5X8RNlq4rCYgQJUBg==",
-      "shasum": "91dc3dbfb8b288c3114d9a7255aac18265b6b2b0",
+      "version": "1.0.33",
+      "integrity": "sha512-G46SFIcEAsE17J0ZZPadPcL0D1G8HrBq3XqPlZK7sarpTsHuNN5r2daulzs966Nw8DLxlqsBPQuTDu4t/auzyg==",
+      "shasum": "b7f07d91a4a196d769b88d04824b0193d2b0b7e5",
       "fileCount": 8,
-      "publishedAt": "2026-11-20T00:01:07.000Z"
+      "publishedAt": "2026-11-20T23:33:08.000Z"
     },
     {
       "name": "@adminiumjs/add-on-inventory",
       "key": "inventory",
-      "version": "1.0.32",
-      "integrity": "sha512-dAuYp5zJFVqXYLpzjnl3HX7emCIbL2GH5sfU4rdrGr79g6HIcDTFdMGiUXlQas7KQO/J/dO04qRS89JQmOyF2Q==",
-      "shasum": "41855c31520ec24f804801f4bc3bc74c6276e7a4",
+      "version": "1.0.33",
+      "integrity": "sha512-5GNKKMag75HlOa6H5f/bBTB7MC11ALc+6bvFXgUTzEidRAMIDQlpH6Dx2eH36mgHuUlH9b/kv2930rn9+nVbgw==",
+      "shasum": "41a09d44cb49c9ca22b84fe7e65792c2743f8e25",
       "fileCount": 12,
-      "publishedAt": "2026-11-20T00:01:09.000Z"
+      "publishedAt": "2026-11-20T23:33:10.000Z"
     },
     {
       "name": "@adminiumjs/add-on-invoices",
       "key": "invoices",
-      "version": "1.0.32",
-      "integrity": "sha512-l1Zkp+y6h7AGRIEjdhp+oFzdQnCHYmQRdLCoMqrwFH1Eek5e6IBDj7v2BXrd1Q5uZbJ8azzk8NXx9JZ59+V9Kg==",
-      "shasum": "fad9d8568f47cc3069c020887dae13d48b20a0e8",
+      "version": "1.0.33",
+      "integrity": "sha512-kbiQtkKTv+BaT+E1uQVGBV5H09XVheSR+8NWpkrDNNCYZk57hnjc5o7go2X0S4Gkw+OiW5+Bt2guIBpqJ8CnMg==",
+      "shasum": "2030777ae09285d08938c9cbf484a8f6faf39657",
       "fileCount": 15,
-      "publishedAt": "2026-11-20T00:01:11.000Z"
+      "publishedAt": "2026-11-20T23:33:11.000Z"
     },
     {
       "name": "@adminiumjs/add-on-lead-finder",
       "key": "lead-finder",
-      "version": "1.0.32",
-      "integrity": "sha512-BBaYkKfoMet9bXbiUuNtmypiqgigNpJd7ZSFcU1oi09BbB5cj8Owp/JDQmGvdDzD1+a6V0ag7jkJYIJG9IncSA==",
-      "shasum": "53a968f1a829ccd1ae7fda2142475138ed2a795b",
+      "version": "1.0.33",
+      "integrity": "sha512-Q5DW8YVAfg7x3KZV5t6vfVNi1JEAvH1svIbLolj5EFoCHTEFrbN8NbFCO4GFqkSt3M5RLYP/1wOR2CHrxJd5tA==",
+      "shasum": "306bb88103dca3548309c7d2b956ae7e91b7b3e5",
       "fileCount": 8,
-      "publishedAt": "2026-11-20T00:01:12.000Z"
+      "publishedAt": "2026-11-20T23:33:12.000Z"
     },
     {
       "name": "@adminiumjs/add-on-live-chat",
       "key": "live-chat",
-      "version": "1.0.32",
-      "integrity": "sha512-wurLWWGEIUz6Wr1Fck+zDjkl+sKYoAxpkB1XgzNDLOvd7AlvBhmmeKppBMzljRVurN04lmfE+eEJpeoJJSRzIw==",
-      "shasum": "baf1b96b9a779ad7f7284566979758f22733d82b",
+      "version": "1.0.33",
+      "integrity": "sha512-nW+ecDNbkugx5+Xkp+Nrr6B5Ltd9FhU5sLmsI63iZREIkraJQ1Z9MYBCwYGztQULiCY6vRDWr6ugZbgsn/PoQg==",
+      "shasum": "2e84db0c03fe4460a84bd2cae0efa114468e3ed2",
       "fileCount": 7,
-      "publishedAt": "2026-11-20T00:01:13.000Z"
+      "publishedAt": "2026-11-20T23:33:14.000Z"
     },
     {
       "name": "@adminiumjs/add-on-offers",
       "key": "offers",
-      "version": "1.0.32",
-      "integrity": "sha512-PfWdGKlMoRqlW5kXFGoqsq+k5YgvLV2kq+2GnmaHUPnRYNk2v8OlDh1LYysFu5agodknqv5NbD0QEN3Fw0kf+g==",
-      "shasum": "529cec39aa6ffa14f489dd0d490092a853a9ffac",
+      "version": "1.0.33",
+      "integrity": "sha512-A7kLC8DTd2oWRtHwpz8GSSaCR7PD4pWQz65xcArKbyS+lXjdy3wT5HYnUSnV2tbn1To4fnzElUuBDBDXsb+N6w==",
+      "shasum": "7bc0502082fc6a6130dd99d23b75159edab71e75",
       "fileCount": 12,
-      "publishedAt": "2026-11-20T00:01:15.000Z"
+      "publishedAt": "2026-11-20T23:33:15.000Z"
     },
     {
       "name": "@adminiumjs/add-on-pages",
       "key": "pages",
-      "version": "1.0.32",
-      "integrity": "sha512-z2wyzxGY4dJNinmuLvP95WPJtZ7FpOfCusDLPB0RSGTAoZgvt54H1xiUSnqSHmAfqYoL4Ol7UXEz2VWg+AlFvw==",
-      "shasum": "ad42cddd023db9ee2338563e382ca62cff177e13",
+      "version": "1.0.33",
+      "integrity": "sha512-q04d2KZTwYNQ5GllLshq4Tgo2jWLwz0VbPS1KSIw2ycvbzjXJZ/xFMSEGWtjmoFi15XejOvP8bBLxT8Ta3cP0g==",
+      "shasum": "0db34825b09533866d35683440ef1b43a2eba3c6",
       "fileCount": 7,
-      "publishedAt": "2026-11-20T00:01:16.000Z"
+      "publishedAt": "2026-11-20T23:33:16.000Z"
     },
     {
       "name": "@adminiumjs/add-on-payments-paypal",
       "key": "payments-paypal",
-      "version": "1.0.32",
-      "integrity": "sha512-JXaOzazXKGq8wdqJXqQBcHXpT/dII0ih1nVm0LRfxl76RWyVUyfCf5E04ql2EFrk8ZQjvS1lYsiY9v3/Tc0oOA==",
-      "shasum": "756c290bd540985146ad6f6145656f4898598bfc",
+      "version": "1.0.33",
+      "integrity": "sha512-JXbdwjtcQ62+3UodPO5owiM5OFmUvogqX6oT+rE25E0Zc8ouaWMhFzidqAMX9vZrhbseeqxDyfgGA8BZUOC+1w==",
+      "shasum": "508238aacd84c9fb4ece01118ce90563381f2f34",
       "fileCount": 6,
-      "publishedAt": "2026-11-20T00:01:18.000Z"
+      "publishedAt": "2026-11-20T23:33:18.000Z"
     },
     {
       "name": "@adminiumjs/add-on-payments-square",
       "key": "payments-square",
-      "version": "1.0.32",
-      "integrity": "sha512-5Onivnq43NTccrBsOKRCifIdTICHAluOe+BHgoQqnv4czchJBtn+Wo5oA8yBn2lcNzacdIkdhnoyRg/KtlyQJw==",
-      "shasum": "42948311a9235d17f880217f77d5adead1d7c042",
+      "version": "1.0.33",
+      "integrity": "sha512-aEovYVc/QuiM6e1CYlu5rRC31IP0Is4IKMiyA1mPMHYDNIO76isFsseiAkxgtf+6dxpczonH0hwawRHp3pUz4g==",
+      "shasum": "95a5380d729b7abde27f513fd5856eaafcb0299f",
       "fileCount": 6,
-      "publishedAt": "2026-11-20T00:01:19.000Z"
+      "publishedAt": "2026-11-20T23:33:19.000Z"
     },
     {
       "name": "@adminiumjs/add-on-payments-stripe",
       "key": "payments-stripe",
-      "version": "1.0.32",
-      "integrity": "sha512-T+5igVjOIeVIBiZDeq7oUnjAcc8V0olhXB4929dzLgo0mak/0BzT1bjSIuEmKC3D1IHfS+RYDqu/LHjj8lMnlw==",
-      "shasum": "3825b1fbcc188d71de4f1626015279cf2ded2b9a",
+      "version": "1.0.33",
+      "integrity": "sha512-02NnMyM23M6nhmlRRGO104tq10GFgLf0NPtNHqfP3Pdh6Nonav31EgZ2sYUgSCbkENgzttq7vutjiKQbe6IfeQ==",
+      "shasum": "a22d58fbb4dab8d4e0624ae1105ef5412ea7d223",
       "fileCount": 6,
-      "publishedAt": "2026-11-20T00:01:20.000Z"
+      "publishedAt": "2026-11-20T23:33:20.000Z"
     },
     {
       "name": "@adminiumjs/add-on-personalizer",
       "key": "personalizer",
-      "version": "1.0.32",
-      "integrity": "sha512-sawKPMU8ZEGUhWQXMd/1yJ9hS503Fjf5h78grwpHJukwPlV9fzFaLPb89pAS20Ldb8wrgihGVwOQ8UmxzyNQwQ==",
-      "shasum": "0df056f00e28d3495b4fd0c0826214e20852ee7e",
+      "version": "1.0.33",
+      "integrity": "sha512-wNMaJgGlMtr8hY9LyXkE5mftxS9DQ3kLrGth13VxHFmXVWcm82fMk2NdOLsDjmPboFHvsfd0J7rhbjvFpY19+A==",
+      "shasum": "61c9bae53570b5a4e6b562ad913ed9194acaf2f8",
       "fileCount": 8,
-      "publishedAt": "2026-11-20T00:01:22.000Z"
+      "publishedAt": "2026-11-20T23:33:22.000Z"
     },
     {
       "name": "@adminiumjs/add-on-shipping-dhl",
       "key": "shipping-dhl",
-      "version": "1.0.32",
-      "integrity": "sha512-wAE9h1i5U8juVUCP0s7hcFxPnFhwLix6qITYo7aGdjHH2LsaGi3EQR1kVTMaKqE9iVb3QnzsciKiWNI54F7GRw==",
-      "shasum": "68cd0d297b8a264da0e79b9ced511ed86072278f",
+      "version": "1.0.33",
+      "integrity": "sha512-ZJW8pkfAc9RS/W73ZmQa8H6SPqs5xO7TrjvMyoQauTj69me9DHiTMAZsnS4Qougtgc+Xauy5pL1uQv8IpYFs5A==",
+      "shasum": "8db999f03ae293d1a0953d006c780d8282c4e2fd",
       "fileCount": 7,
-      "publishedAt": "2026-11-20T00:01:23.000Z"
+      "publishedAt": "2026-11-20T23:33:23.000Z"
     }
   ]
 }
