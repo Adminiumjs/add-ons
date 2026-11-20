@@ -16,15 +16,15 @@ here. See [TRADEMARKS.md](TRADEMARKS.md).
 ## What it attaches to
 
 An add-on never stands alone. This one attaches to **five** apps — `printing`, `maker`, `factory`,
-`ecommerce-shop` and `helpdesk`, each at `^0.1.0` (`printing` and `maker` at `^0.1.0 || ^0.2.0`, so
-those shops can update to their next line with it attached) — and fills five slots. Each app mounts the ones
-its surfaces have; a fill with no mount simply never renders there:
+`ecommerce-shop` and `helpdesk`, each at `^0.1.0` (`printing`, `maker` and `ecommerce-shop` at
+`^0.1.0 || ^0.2.0`, so those shops can update to their next line with it attached) — and fills five
+slots. Each app mounts the ones its surfaces have; a fill with no mount simply never renders there:
 
 | Slot | Surface | What appears | Mounted by |
 |---|---|---|---|
-| `order.dispatch.actions` | staff | "Book a collection" and the whole dispatch flow behind it | printing, maker, factory |
-| `checkout.delivery.methods` | customer | selectable rate rows with prices and delivery dates | printing, maker, ecommerce-shop |
-| `order.dispatch.panel` | customer | a read-only tracking view | printing, maker, ecommerce-shop, helpdesk |
+| `order.dispatch.actions` | staff | "Book a collection" and the whole dispatch flow behind it | printing, maker, factory, ecommerce-shop 0.2 |
+| `checkout.delivery.methods` | customer | selectable rate rows with prices and delivery dates | printing, maker, ecommerce-shop 0.1 |
+| `order.dispatch.panel` | customer | a read-only tracking view | printing, maker, ecommerce-shop 0.1, helpdesk |
 | `settings.add-on.panel` | admin | the demo switch, the collection cut-off, and the default parcel weights | all five |
 | `record.actions` | both | a prepaid return label, only on a record the host says is a `return` | maker, factory, helpdesk |
 
@@ -35,6 +35,12 @@ picked instead of the first rate. A code another add-on made, or one this add-on
 leaves the usual first pick. The API key and the account number are never in a form of the app: they
 are `secret` settings, given once when the add-on is connected and kept encrypted by Adminium, and
 only the server half reads them.
+
+**The online shop changes sides on its 0.2 line.** Its 0.1 storefront drew the checkout's rate rows
+and the tracking panel. From 0.2 it prices delivery itself at checkout, from its own shipping prices,
+and mounts neither of those: its staff desk mounts `order.dispatch.actions`, and the shopper's
+"Track it" opens the carrier's own page. The range takes both lines, so a shop with this add-on
+attached can update.
 
 The **default parcel weights belong here**, and that is not a detail. The host
 knows its own catalogue and passes one representative job per product family; it

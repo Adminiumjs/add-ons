@@ -593,6 +593,12 @@ const FORWARD_ATTACHES: readonly { pkg: string; app: string; range: string; why:
     range: '^0.2.0',
     why: 'Print Shop 0.2.0, the line whose closures link to its holidays, is released after this add-on; 0.1.x has none',
   },
+  {
+    pkg: 'barcode-labels',
+    app: 'ecommerce-shop',
+    range: '^0.2.0',
+    why: 'The online shop 0.2.0 (Northline), whose variants print their SKU on a label sheet, is released after this add-on; 0.1.x has no variants',
+  },
 ];
 
 /** Whether a claim is a named forward one the checked-out app has not reached yet. */
@@ -625,10 +631,18 @@ function attachRangeIssue(pkg: string, app: string, range: string, version: stri
 const NEXT_LINES: readonly { app: string; lines: readonly string[] }[] = [
   { app: 'maker', lines: ['0.2.0', '0.2.9'] },
   { app: 'printing', lines: ['0.2.0', '0.2.9'] },
+  { app: 'ecommerce-shop', lines: ['0.2.0', '0.2.9'] },
 ];
 
-/** Add-ons a shop may already have attached on the 0.1 line: they keep taking it too. */
-const ATTACHED_ON_THE_OLD_LINE: readonly string[] = ['barcode-labels', 'design-studio', 'import-canva', 'personalizer', 'shipping-dhl'];
+/**
+ * Add-ons a shop may already have attached on an app's 0.1 line: they keep taking it too. Per app: an add-on
+ * first attached to the next line (Barcode labels on the online shop) never had a shop on the old one.
+ */
+const ATTACHED_ON_THE_OLD_LINE: Readonly<Record<string, readonly string[]>> = {
+  maker: ['barcode-labels', 'personalizer', 'shipping-dhl'],
+  printing: ['design-studio', 'import-canva', 'shipping-dhl'],
+  'ecommerce-shop': ['shipping-dhl'],
+};
 
 describe('an add-on attached to an app never blocks its next line', () => {
   const rows = manifests().flatMap(({ pkg, manifest }) => {
@@ -639,16 +653,17 @@ describe('an add-on attached to an app never blocks its next line', () => {
     });
   });
 
-  it.each(rows)('$pkg takes every line of $app it must ($range)', ({ pkg, range, lines }) => {
-    const must = ATTACHED_ON_THE_OLD_LINE.includes(pkg) ? ['0.1.0', ...lines] : lines;
+  it.each(rows)('$pkg takes every line of $app it must ($range)', ({ pkg, app, range, lines }) => {
+    const must = (ATTACHED_ON_THE_OLD_LINE[app] ?? []).includes(pkg) ? ['0.1.0', ...lines] : lines;
     for (const version of must) expect(satisfiesSemverRange(version, range), version).toBe(true);
   });
 
   it('finds the add-ons that attach to those apps', () => {
-    const pkgs = new Set(rows.map((row) => row.pkg));
-    for (const pkg of [...ATTACHED_ON_THE_OLD_LINE, 'holiday-calendars']) {
-      expect(pkgs.has(pkg), pkg).toBe(true);
+    const pairs = new Set(rows.map((row) => `${row.pkg}@${row.app}`));
+    for (const [app, pkgs] of Object.entries(ATTACHED_ON_THE_OLD_LINE)) {
+      for (const pkg of pkgs) expect(pairs.has(`${pkg}@${app}`), `${pkg}@${app}`).toBe(true);
     }
+    expect([...pairs].some((pair) => pair.startsWith('holiday-calendars@')), 'holiday-calendars').toBe(true);
   });
 
   it('would catch a range that names only the old line', () => {

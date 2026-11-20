@@ -237,12 +237,18 @@ describe('the manifest', () => {
    * (`menu_items.barcode`) and mounts no add-on slot, so it reaches this add-on
    * through a document profile that MAPS that column onto the label sheet's
    * `code` slot — the symbology then read from the number itself.
+   *
+   * THE ONLINE SHOP (`ecommerce-shop`, from its 0.2 line) is the fourth, the same
+   * way: each variant's SKU printed from a document profile on its variants
+   * table. Its 0.1 line has no variants, so the claim names 0.2 alone, and the
+   * host suite lists it as a forward claim until that line is on the app's main.
    */
-  it('attaches to the three apps whose catalogue rows are things a shop labels', () => {
+  it('attaches to the four apps whose catalogue rows are things a shop labels', () => {
     expect(manifest.addOn.attaches).toEqual([
       { app: 'factory', range: '^0.1.0' },
       { app: 'maker', range: '^0.1.0 || ^0.2.0' },
       { app: 'pos', range: '^0.2.0 || ^0.3.0' },
+      { app: 'ecommerce-shop', range: '^0.2.0' },
     ]);
   });
 

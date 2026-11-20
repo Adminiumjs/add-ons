@@ -271,6 +271,10 @@ describe("the manifest", () => {
    * both ends — the same four fills, two disjoint halves of them drawn, no
    * change to a line of this package.
    *
+   * [2026-11-20] From its 0.2 line the online shop swaps halves: its staff desk
+   * mounts `order.dispatch.actions` and its checkout prices delivery itself, so
+   * the range takes `^0.1.0 || ^0.2.0` and a shop with this attached can update.
+   *
    * The pairing is worth keeping in one comment because it is the evidence:
    * one host mounting a subset could be a host that had not finished, and two
    * hosts mounting COMPLEMENTARY subsets is a contract doing its job.
@@ -288,7 +292,7 @@ describe("the manifest", () => {
       { app: "printing", range: "^0.1.0 || ^0.2.0" },
       { app: "maker", range: "^0.1.0 || ^0.2.0" },
       { app: "factory", range: "^0.1.0" },
-      { app: "ecommerce-shop", range: "^0.1.0" },
+      { app: "ecommerce-shop", range: "^0.1.0 || ^0.2.0" },
       { app: "helpdesk", range: "^0.1.0" },
     ]);
   });
