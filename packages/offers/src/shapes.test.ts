@@ -404,6 +404,10 @@ describe('a card a shopper\'s order makes (card-sale-online@1)', () => {
   it('a web shop that leaves out the recall, or loosens a stranger\'s words, does not fit', () => {
     expect(breaks((app) => gifts(app).postings.pop())).toEqual(['gift_lines as card-sale-online@1/lines: "gift_lines" has no posting into Offers\' "recall", which the part keeps']);
     expect(breaks((app) => Object.assign(gifts(app).columns.find((one) => one['ref'] === 'message')!, { rules: { plainText: true } }))).toHaveLength(1);
+    // A card's worth a guest could write is a card of any worth for whatever the order charges.
+    expect(breaks((app) => ((app.publicAccess[0] as { children: Record<string, { writable: string[] }> }).children['gift_lines']!.writable.push('amount')))).toEqual([
+      'gift_lines as card-sale-online@1/lines: a card\'s amount is never a guest\'s to write: a public entry may write "gift_lines.amount"; copy it from the shop\'s own row',
+    ]);
     expect(breaks((app) => Object.assign(gifts(app).postings[0]!['map'] as Doc, { to_email: 'to_name' }))).toEqual([
       'gift_lines as card-sale-online@1/lines: the posting into "issue" maps "to_email" to "to_name", and the part to "to_email"',
     ]);

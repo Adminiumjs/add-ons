@@ -57,20 +57,36 @@ line carries what the card needs (`to_name`, `to_email`, `message`, `sender`,
   least and the most a card is sold for, an address that is none and a message
   with more than 20 digits are refused here, before anything is paid.
   **Post**, when the order is paid: the card is loaded, made active and mailed
-  once — what was judged at the reserve is not judged again. **Reverse**, when
+  once — what was judged at the reserve is not judged again. A post set off by
+  a guest's own save is refused (`not-allowed`): a guest never pays by saving,
+  the money is recorded by the payment's own path or by staff, and a card made
+  active from the public door would be a card nobody paid for. A line that
+  sold a card and finds none made in its round (posted again after a cancel,
+  or a rule with no reserve) loads nothing and tells staff to check. **Reverse**, when
   the order is cancelled: a card whose order was never paid is cancelled
   (`void`) and nobody is told; a paid order's card is left for the recall.
 - `recall` (post only), named by the line itself (`{"row": true}`), fired by
   the same cancel. It takes the card's own lock — the one a payment by the
   card takes — so a spend and a recall take turns. It is refused (`used-up`,
-  with what is left) when the card holds less than the sale put on it: the
-  order's money cannot then go back. Otherwise what is on the card is written
+  with what is left) when the card has paid for anything — read from its
+  payments, not its balance, so a top-up since or a manager cancelling a spent
+  card by hand hides nothing — or, still in use, holds less than the sale put
+  on it: the order's money cannot then go back. A card cancelled or run out by
+  its last day with nothing spent passes and writes nothing. A card spent and
+  then run out is refused like any spent card: staff refund by hand what they
+  judge is owed. Otherwise what is on the card is written
   off, the card is cancelled with a reason (the host may map its own to
   `reason`), and a recipient who was sent the card gets the "cancelled" mail.
 
 Every reverse of a save runs before its posts, so the two must fire on the
-same cancel: a host that posts `recall` on a later save, or not at all, leaves
-a paid order's card alive when the order is cancelled. A host that gives a
+same cancel. **A host that does not post `recall` on that cancel — on a later
+save, or not at all — leaves a paid, cancelled order's card alive**, with its
+money given back.
+
+**A card's amount is never a guest's value.** The line copies it from the
+shop's own row (a price the shopper picks); a public entry that lets a guest
+write it sells a card of any worth for whatever the order charges. The fit
+check says so. A host that gives a
 card's balance no page (`outbox.pages.app.balance`) still prints the mail's
 "Ask at the counter for your balance."; a shop that sells cards online names
 its balance page.

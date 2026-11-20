@@ -468,7 +468,7 @@ describe('the ledger', () => {
       recall: {
         inputs: 'sale rowRef, reason text?, label text?',
         phases: 'post',
-        reads: ['sold: card_ledger by source_table ← input.sale.table, source_row ← input.sale.row where kind = issue', 'card: gift_cards by id ← sold.card_id', 'given: card_ledger by against_id ← sold.id'],
+        reads: ['sold: card_ledger by source_table ← input.sale.table, source_row ← input.sale.row where kind = issue', 'card: gift_cards by id ← sold.card_id', 'given: card_ledger by against_id ← sold.id', 'history: card_ledger by card_id ← card.id'],
         locks: cardLock,
         writes: 'card_ledger, gift_cards',
       },

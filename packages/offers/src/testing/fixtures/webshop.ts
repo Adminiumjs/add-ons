@@ -25,6 +25,8 @@ export function webshop(): { requiredSchema: { tables: Record<string, unknown>[]
             { ref: 'buyer_name', type: 'text', maxLength: 80 },
           ],
         },
+        // What the shop sells a card for: the only place a card's worth comes from.
+        { ref: 'card_amounts', columns: [pk, { ref: 'amount', type: 'money', scale: 'currency' }] },
         {
           ref: 'gift_lines',
           postings: [
@@ -36,7 +38,9 @@ export function webshop(): { requiredSchema: { tables: Record<string, unknown>[]
           columns: [
             pk,
             { ref: 'order_id', type: 'fk', references: 'orders' },
-            { ref: 'amount', type: 'money', scale: 'currency' },
+            // The shopper picks one of the shop's amounts; the line copies its worth, and no guest writes it.
+            { ref: 'card_amount_id', type: 'fk', references: 'card_amounts' },
+            { ref: 'amount', type: 'money', scale: 'currency', rules: { copy: { via: 'card_amount_id', from: 'amount', mode: 'always' } } },
             { ref: 'to_name', type: 'text', maxLength: 80, nullable: true, rules: { plainText: true, personal: true } },
             { ref: 'to_email', type: 'text', maxLength: 254, rules: { validation: { format: 'email' }, personal: true } },
             { ref: 'message', type: 'text', maxLength: 200, nullable: true, rules: { plainText: { digits: 20, max: 200 } } },
@@ -47,7 +51,7 @@ export function webshop(): { requiredSchema: { tables: Record<string, unknown>[]
       ],
     },
     roles: [],
-    publicAccess: [{ table: 'orders', writable: ['buyer_name'], children: { gift_lines: { writable: ['amount', 'to_name', 'to_email', 'message', 'from_name', 'language'] } } }],
+    publicAccess: [{ table: 'orders', writable: ['buyer_name'], children: { gift_lines: { writable: ['card_amount_id', 'to_name', 'to_email', 'message', 'from_name', 'language'] } } }],
   };
 }
 

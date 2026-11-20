@@ -105,6 +105,8 @@ export const gift = (key: string, more: PostingLine['inputs'] = {}): PostingLine
 export const madeCard = (id: number, more: Row = {}): Row => card(id, 'M1RA', '0.00', { status: 'inactive', issued_at: null, recipient_email: 'mira@daybreak.example', notify: null, source_table: GIFTS, source_row: 'g1', ...more });
 /** The row that loaded it when the order was paid. */
 export const LOADED: Row = { id: 88, card_id: 31, kind: 'issue', taken: '-50.00', value: '50.00', balance_after: '50.00', source_table: GIFTS, source_row: 'g1' };
+/** A row of the card `g1` made, after the sale loaded it. */
+const after = (id: number, kind: string, taken: string, more: Row = {}): Row => ({ id, card_id: 31, kind, taken, value: taken.replace('-', ''), source_table: PAYMENTS, source_row: `p${String(id)}`, ...more });
 /** The line names itself to the recall: its table and its key. */
 const recalled = (key = 'g1') => line(key, { sale: { table: GIFTS, row: key } }, GIFTS);
 /** An old card of the till's, made here before its rows are brought in. */
@@ -515,6 +517,22 @@ export const ROWS_CASES: readonly RowsCase[] = [
     expect: { rows: [insert('card_ledger', { card_id: 31, kind: 'issue', taken: '-50.00' }), update('gift_cards', 31, { status: 'active', notify: 'card' })] },
   },
   {
+    name: 'P23 …never by a guest\'s own save: a guest pays nothing by saving, so the card a sale made is not made active, nor mailed',
+    input: call({ action: 'issue', lines: [gift('g1')], reads: { card: [], made: [madeCard(31)] }, written: { gift_cards: [madeCard(31)] }, more: { origin: 'public' } }),
+    expect: { rows: [], refusals: [{ line: 'g1', reason: 'not-allowed' }] },
+  },
+  {
+    name: 'P23 …a sale paid in a round that made no card loads nothing, and staff are told to look',
+    input: call({ action: 'issue', lines: [gift('g1'), line('o1', { card: null, amount: null }, GIFTS)], reads: { card: [], made: [] } }),
+    expect: { rows: [] },
+    also: { notes: [{ line: 'g1', note: 'to-check' }, { line: 'o1', note: 'not-linked' }] },
+  },
+  {
+    name: 'P24 …a guest who cancels an unpaid order cancels the card it made',
+    input: call({ action: 'issue', phase: 'reverse', lines: [gift('g1')], reads: { card: [], made: [madeCard(31)] }, written: { gift_cards: [madeCard(31)] }, more: { origin: 'public' } }),
+    expect: { rows: [update('gift_cards', 31, { status: 'void' })] },
+  },
+  {
     name: 'P23 …and a card a manager cancelled while its order waited is loaded with nothing, and staff are told',
     input: call({ action: 'issue', lines: [gift('g1')], reads: { card: [], made: [madeCard(31, { status: 'void' })] }, written: { gift_cards: [madeCard(31)] } }),
     expect: { rows: [] },
@@ -538,7 +556,7 @@ export const ROWS_CASES: readonly RowsCase[] = [
   },
   {
     name: 'P25 a paid order cancelled with its card unspent: the card is written off and cancelled, and its recipient told',
-    input: call({ action: 'recall', lines: [recalled()], reads: { sold: [LOADED], card: [madeCard(31, { status: 'active', balance: '50.00', notify: 'card' })], given: [] } }),
+    input: call({ action: 'recall', lines: [recalled()], reads: { sold: [LOADED], card: [madeCard(31, { status: 'active', balance: '50.00', notify: 'card' })], given: [], history: [LOADED] } }),
     expect: {
       rows: [
         insert('card_ledger', { card_id: 31, kind: 'void', taken: '50.00', value: '50.00', balance_after: '0.00', source_table: GIFTS, source_row: 'g1', at: NOW }, 'g1'),
@@ -548,8 +566,38 @@ export const ROWS_CASES: readonly RowsCase[] = [
   },
   {
     name: 'P25 …with some of it spent, the cancel is refused, and says what is left',
-    input: call({ action: 'recall', lines: [recalled()], reads: { sold: [LOADED], card: [madeCard(31, { status: 'active', balance: '31.40', notify: 'card' })], given: [] } }),
+    input: call({ action: 'recall', lines: [recalled()], reads: { sold: [LOADED], card: [madeCard(31, { status: 'active', balance: '31.40', notify: 'card' })], given: [], history: [LOADED, after(92, 'spend', '18.60')] } }),
     expect: { rows: [], refusals: [{ line: 'g1', reason: 'used-up', left: '31.40' }] },
+  },
+  {
+    name: 'P25 …spent, then cancelled by a manager\'s hand: the card is dead, and the cancel is still refused — thirty dollars of goods went out on it',
+    input: call({ action: 'recall', lines: [recalled()], reads: { sold: [LOADED], card: [madeCard(31, { status: 'void', balance: '0.00', notify: 'card' })], given: [], history: [LOADED, after(92, 'spend', '30.00'), after(93, 'void', '20.00', { source_table: 'offers:gift_cards', source_row: '31' })] } }),
+    expect: { rows: [], refusals: [{ line: 'g1', reason: 'used-up', left: '0.00' }] },
+  },
+  {
+    name: 'P25 …spent, then topped up at a till to the fifty it began with: the spending is read from the card\'s rows, not its balance',
+    input: call({ action: 'recall', lines: [recalled()], reads: { sold: [LOADED], card: [madeCard(31, { status: 'active', balance: '50.00', notify: 'card' })], given: [], history: [LOADED, after(92, 'spend', '30.00'), after(94, 'top_up', '-30.00', { source_table: LINES, source_row: 'l9' })] } }),
+    expect: { rows: [], refusals: [{ line: 'g1', reason: 'used-up', left: '50.00' }] },
+  },
+  {
+    name: 'P25 …a payment by the card given all its money back is no spending: the card is cancelled',
+    input: call({ action: 'recall', lines: [recalled()], reads: { sold: [LOADED], card: [madeCard(31, { status: 'active', balance: '50.00', notify: 'card' })], given: [], history: [LOADED, after(92, 'spend', '30.00'), after(95, 'refund', '-30.00', { against_id: 92 })] } }),
+    expect: { rows: [insert('card_ledger', { card_id: 31, kind: 'void', taken: '50.00', balance_after: '0.00' }), update('gift_cards', 31, { status: 'void', notify: 'cancelled' })] },
+  },
+  {
+    name: 'P25 …a card a manager took value off by hand, still in use and holding less than the sale put on it, is refused too',
+    input: call({ action: 'recall', lines: [recalled()], reads: { sold: [LOADED], card: [madeCard(31, { status: 'active', balance: '40.00' })], given: [], history: [LOADED, after(96, 'adjust', '10.00', { source_table: 'offers:card_actions', source_row: '4' })] } }),
+    expect: { rows: [], refusals: [{ line: 'g1', reason: 'used-up', left: '40.00' }] },
+  },
+  {
+    name: 'P25 …a card that ran out by its last day without a cent spent is dead already: nothing to recall, and the order\'s money may go back',
+    input: call({ action: 'recall', lines: [recalled()], reads: { sold: [LOADED], card: [madeCard(31, { status: 'expired', balance: '0.00' })], given: [], history: [LOADED, after(97, 'expire', '50.00', { source_table: 'offers:gift_cards', source_row: '31' })] } }),
+    expect: { rows: [] },
+  },
+  {
+    name: 'P25 …but one spent before it ran out is refused, like any spent card',
+    input: call({ action: 'recall', lines: [recalled()], reads: { sold: [LOADED], card: [madeCard(31, { status: 'expired', balance: '0.00' })], given: [], history: [LOADED, after(92, 'spend', '5.00'), after(97, 'expire', '45.00', { source_table: 'offers:gift_cards', source_row: '31' })] } }),
+    expect: { rows: [], refusals: [{ line: 'g1', reason: 'used-up', left: '0.00' }] },
   },
   {
     name: 'P25 …a line that loaded no card, a card already cancelled, and a sale already taken back have nothing to recall',
@@ -560,6 +608,7 @@ export const ROWS_CASES: readonly RowsCase[] = [
         sold: [LOADED, { ...LOADED, id: 90, card_id: 32, source_row: 'g2' }],
         card: [madeCard(31, { status: 'void', balance: '0.00' }), madeCard(32, { status: 'active', balance: '0.00', source_row: 'g2' })],
         given: [{ id: 91, card_id: 32, kind: 'adjust', taken: '50.00', value: '50.00', against_id: 90, source_table: GIFTS, source_row: 'g2' }],
+        history: [LOADED, after(93, 'void', '50.00', { source_table: 'offers:gift_cards', source_row: '31' }), { ...LOADED, id: 90, card_id: 32, source_row: 'g2' }, { id: 91, card_id: 32, kind: 'adjust', taken: '50.00', value: '50.00', against_id: 90, source_table: GIFTS, source_row: 'g2' }],
       },
     }),
     expect: { rows: [] },
@@ -567,7 +616,7 @@ export const ROWS_CASES: readonly RowsCase[] = [
   },
   {
     name: 'P25 …a card topped up since is cancelled whole, with a word to staff; a reason the host gives is kept',
-    input: call({ action: 'recall', lines: [line('g1', { sale: { table: GIFTS, row: 'g1' }, reason: 'Refunded at the bank' }, GIFTS)], reads: { sold: [LOADED], card: [madeCard(31, { status: 'active', balance: '70.00' })], given: [] } }),
+    input: call({ action: 'recall', lines: [line('g1', { sale: { table: GIFTS, row: 'g1' }, reason: 'Refunded at the bank' }, GIFTS)], reads: { sold: [LOADED], card: [madeCard(31, { status: 'active', balance: '70.00' })], given: [], history: [LOADED, after(94, 'top_up', '-20.00', { source_table: LINES, source_row: 'l9' })] } }),
     expect: { rows: [insert('card_ledger', { card_id: 31, kind: 'void', taken: '70.00', balance_after: '0.00' }), update('gift_cards', 31, { status: 'void', void_reason: 'Refunded at the bank' })] },
     also: { notes: [{ line: 'g1', note: 'to-check' }] },
   },

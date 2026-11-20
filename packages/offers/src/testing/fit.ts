@@ -39,7 +39,8 @@
  * column is dropped by Adminium whatever a role holds, so a list that names
  * one promises what cannot happen); a link that is not a link into Offers'
  * table; money at another scale; a card load an offer could reduce; a
- * voucher sale an offer could reduce; a card that could pay for a card.
+ * voucher sale an offer could reduce; a card that could pay for a card; a
+ * card's amount a guest may write.
  *
  * It lives in `testing/` because it is a check and never ships: an app vendors
  * the shape files it adopts and runs this same call in its own suite.
@@ -430,6 +431,13 @@ export function shapeFit(manifest: { requiredSchema?: { tables: unknown[] }; rol
         const refused = ((spend?.['refuses'] ?? []) as Doc[]).some((one) => one['table'] === sale.table && one['column'] === loads && one['set'] === true);
         if (spend !== undefined && !refused) say(`a card may not pay for a card: the posting into "spend" says "refuses": [{"table": "${sale.table}", …, "column": "${String(loads)}", "set": true}]`);
       }
+    }
+
+    // ── a card's worth is the shop's, never a guest's ───────────────────────
+    if (pairing.shape === 'card-sale-online@1' && pairing.part === 'lines') {
+      const amount = hostOf('load_amount');
+      // A guest who writes the amount buys a card of any worth for whatever the order charges: it is copied from the shop's own row.
+      if (amount !== null && open.includes(amount)) say(`a card's amount is never a guest's to write: a public entry may write "${pairing.table}.${amount}"; copy it from the shop's own row`);
     }
 
     // ── the postings ────────────────────────────────────────────────────────

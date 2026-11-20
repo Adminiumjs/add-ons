@@ -8795,6 +8795,16 @@
                     "from": "sold.id"
                   }
                 ]
+              },
+              {
+                "as": "history",
+                "table": "card_ledger",
+                "by": [
+                  {
+                    "column": "card_id",
+                    "from": "card.id"
+                  }
+                ]
               }
             ],
             "locks": [

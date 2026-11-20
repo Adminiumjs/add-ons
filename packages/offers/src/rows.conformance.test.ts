@@ -460,6 +460,10 @@ describe('a card a shopper\'s order makes, and its recall', () => {
     expect(inserted(paid, 'gift_cards')).toEqual([]);
     expect(inserted(paid, 'card_ledger')).toEqual([expect.objectContaining({ card_id: 31, kind: 'issue', value: '50.00', balance_after: '50.00' })]);
     expect(updates(paid, 'gift_cards').filter((one) => one['notify'] !== undefined)).toEqual([expect.objectContaining({ id: 31, status: 'active', notify: 'card' })]);
+    // A guest's own save never pays: the same post from the public door makes nothing active and names no mail.
+    const byGuest = provider.rows(call({ action: 'issue', lines: [gift('g1')], reads: { card: [], made: [made as Record<string, string | number | null>] }, written: round, more: { origin: 'public' } }));
+    expect(byGuest.rows).toEqual([]);
+    expect(byGuest.refusals).toEqual([{ line: 'g1', reason: 'not-allowed' }]);
 
     // Never paid, and its time ran out: the card it made is cancelled. No mail is named: none went.
     const lapsed = provider.rows(call({ action: 'issue', phase: 'reverse', lines: [gift('g1')], reads: { card: [], made: [made as Record<string, string | number | null>] }, written: round, more: { origin: 'system' } }));
@@ -475,7 +479,8 @@ describe('a card a shopper\'s order makes, and its recall', () => {
     expect(actions['recall']!.locks).toEqual(actions['spend']!.locks);
     const active = madeCard(31, { status: 'active', balance: '50.00', notify: 'card' });
     const pay = (cardRow: Record<string, string | number | boolean | null>) => provider.rows(call({ action: 'spend', lines: [line('p1', { card: 31, due: '20.00' }, PAYMENTS)], reads: { card: [cardRow] }, more: { origin: 'public' } }));
-    const recall = (cardRow: Record<string, string | number | boolean | null>) => provider.rows(call({ action: 'recall', lines: [line('g1', { sale: { table: GIFTS, row: 'g1' } }, GIFTS)], reads: { sold: [LOADED], card: [cardRow], given: [] } }));
+    type Scalars = Record<string, string | number | boolean | null>;
+    const recall = (cardRow: Scalars, history: Scalars[] = [LOADED]) => provider.rows(call({ action: 'recall', lines: [line('g1', { sale: { table: GIFTS, row: 'g1' } }, GIFTS)], reads: { sold: [LOADED], card: [cardRow], given: [], history } }));
 
     // The recall first: the card is cancelled, and the payment that waited for it is refused.
     const first = recall(active);
@@ -485,8 +490,8 @@ describe('a card a shopper\'s order makes, and its recall', () => {
     // The payment first: the card holds less than the sale put on it, so the cancel — and the refund that follows it — is refused.
     const spent = pay(active);
     expect(spent.refusals).toBeUndefined();
-    const left = String(inserted(spent, 'card_ledger')[0]!['balance_after']);
-    expect(recall({ ...active, balance: left }).refusals).toEqual([{ line: 'g1', reason: 'used-up', left: '30.00' }]);
+    const [paid] = kept(spent, 'card_ledger', 92) as Scalars[];
+    expect(recall({ ...active, balance: String(paid!['balance_after']) }, [LOADED, paid!]).refusals).toEqual([{ line: 'g1', reason: 'used-up', left: '30.00' }]);
   });
 
   it('a spent card\'s order cannot be cancelled and refunded: the reverse that runs first takes nothing back, and the recall refuses', () => {
@@ -494,7 +499,8 @@ describe('a card a shopper\'s order makes, and its recall', () => {
     const spentCard = madeCard(31, { status: 'active', balance: '12.00', notify: 'card' });
     const reverse = provider.rows(call({ action: 'issue', phase: 'reverse', lines: [gift('g1')], reads: { card: [], made: [spentCard] }, written: { gift_cards: [madeCard(31)], card_ledger: [LOADED] } }));
     expect(reverse.rows).toEqual([]);
-    const recall = provider.rows(call({ action: 'recall', lines: [line('g1', { sale: { table: GIFTS, row: 'g1' } }, GIFTS)], reads: { sold: [LOADED], card: [spentCard], given: [] } }));
+    const spend = { id: 92, card_id: 31, kind: 'spend', taken: '38.00', value: '38.00', source_table: PAYMENTS, source_row: 'p1' };
+    const recall = provider.rows(call({ action: 'recall', lines: [line('g1', { sale: { table: GIFTS, row: 'g1' } }, GIFTS)], reads: { sold: [LOADED], card: [spentCard], given: [], history: [LOADED, spend] } }));
     expect(recall.refusals).toEqual([{ line: 'g1', reason: 'used-up', left: '12.00' }]);
   });
 

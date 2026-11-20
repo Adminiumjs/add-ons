@@ -201,8 +201,17 @@ export function issue(input: PostingInput, answer: Answer): void {
     const amount = toUnits(line.inputs['amount'], balances.scale);
     if (textOf(id) === null) {
       const mine = madeFor(input, line, made);
-      // An ordinary sale line: no card of its own, and none it made.
-      if (mine === undefined) answer.note(line.line, 'not-linked');
+      // An ordinary sale line: no card of its own, and none it made. But a line that carries a card's amount and its
+      // recipient sold a card all the same — paid in a round that never made one (posted again after a cancel, or a rule
+      // with no reserve): nothing is loaded, and staff are told to look rather than that it was not linked.
+      if (mine === undefined) answer.note(line.line, amount !== null && textOf(line.inputs['to_email']) !== null ? 'to-check' : 'not-linked');
+      /*
+       * A guest never pays an order by saving it: the money is recorded by the payment's own path, or by staff. A post
+       * that a guest's own save sets off would make a card a sale made active — and mail its code — for money nobody
+       * took; `move` refuses a guest for the same reason. The contract has no word of its own for "not from here", so
+       * the word is `not-allowed`.
+       */
+      else if (input.origin === 'public') answer.refuse(line.line, 'not-allowed');
       // A card cancelled by hand while its order waited for its money. The money has come all the same: refusing would
       // refuse the payment, so nothing is put on the card and staff are told to look.
       else if (textOf(mine['status']) === 'void') answer.note(line.line, 'to-check');
@@ -352,12 +361,22 @@ export function unissue(input: PostingInput, answer: Answer): void {
  * holder could use — recalls it: a top-up on a card somebody already held is
  * taken back by the sale's own reverse, as it always was.
  *
- * Refused when the card holds less than the sale put on it: some of it has
- * been spent, and giving the order's money back would pay for goods twice.
- * Otherwise what is on the card is written off with one row and the card is
- * cancelled; a recipient who was sent the card is told. A line that loaded
- * no card, a card already cancelled, and a sale already taken back have
- * nothing to recall.
+ * Refused when the card has paid for anything — what its payments took, less
+ * what went back to them — or, while it is still in use, holds less than the
+ * sale put on it: giving the order's money back would then pay for goods
+ * twice. Spending is read from the card's own rows, never from its balance
+ * or its state alone: a top-up since, or a manager cancelling the card by
+ * hand after it was spent, would hide it. Otherwise what is on the card is
+ * written off with one row and the card is cancelled; a recipient who was
+ * sent the card is told, and staff are told to look when anything but the
+ * sale put value on it. A line that loaded no card and a sale already taken
+ * back have nothing to recall; nor has a card cancelled or run out by its
+ * last day without a cent of it spent — it is dead already, and the order's
+ * money may go back.
+ *
+ * A card that ran out by its last day after being spent is refused like any
+ * spent card: its order is not cancelled and refunded through the recall,
+ * and staff refund by hand what they judge is owed.
  *
  * The refusal's word is `used-up`, with what is left: the contract a ledger
  * answers in has no word of its own for "partly spent".
@@ -366,7 +385,9 @@ export function recall(input: PostingInput, answer: Answer): void {
   const sold = read(input, 'sold');
   const cards = read(input, 'card');
   const given = read(input, 'given');
-  const balances = new Balances(cards, scaleFor(input, [], cards, [...sold, ...given].flatMap((row) => [row['value'], row['taken']])));
+  /** Every row of each card the sales loaded: what was spent from it is read here. */
+  const history = read(input, 'history');
+  const balances = new Balances(cards, scaleFor(input, [], cards, [...sold, ...given, ...history].flatMap((row) => [row['value'], row['taken']])));
   const scale = balances.scale;
   const cancelled = new Set<string>();
   for (const line of input.lines) {
@@ -385,21 +406,24 @@ export function recall(input: PostingInput, answer: Answer): void {
     for (const [id, loaded] of put) {
       const card = balances.card(id);
       if (card === undefined) throw new Error('a sale names a card that was not read');
+      if (cancelled.has(id) || loaded <= 0n) continue;
+      const rows = history.filter((row) => same(row['card_id'], id));
+      const isLoad = (ref: unknown): boolean => loads.some((row) => same(row['id'], ref));
+      const spends = new Set(rows.filter((row) => textOf(row['kind']) === 'spend').map((row) => String(row['id'])));
+      // What the card's payments took, less what went back to them, plus what was taken again: the whole of each payment's chain.
+      const spent = rows.filter((row) => spends.has(String(row['id'])) || spends.has(String(row['against_id']))).reduce((total, row) => total + (toUnits(row['taken'], scale) ?? 0n), 0n);
       const status = textOf(card['status']);
-      if (cancelled.has(id) || status === 'void' || loaded <= 0n) continue;
-      const lastDay = textOf(card['expires_on']);
-      if (status === 'expired' || (lastDay !== null && lastDay < input.today)) {
-        answer.refuse(line.line, 'expired');
-        continue;
-      }
-      const balance = balances.of(id);
-      if (balance < loaded) {
+      const dead = status === 'void' || status === 'expired';
+      const balance = dead ? 0n : balances.of(id);
+      if (spent > 0n || (!dead && balance < loaded)) {
         answer.refuse(line.line, 'used-up', balances.text(balance < 0n ? 0n : balance));
         continue;
       }
+      if (dead) continue;
       cancelled.add(id);
-      // Topped up since by somebody else: what they put on goes with the card, and staff are told to look.
-      if (balance > loaded) answer.note(line.line, 'to-check');
+      // Value put on by somebody else — a top-up, a correction by hand — goes with the card, and staff are told to look.
+      const others = rows.some((row) => !isLoad(row['id']) && !isLoad(row['against_id']) && !spends.has(String(row['id'])) && !spends.has(String(row['against_id'])));
+      if (others || balance > loaded) answer.note(line.line, 'to-check');
       answer.insert('card_ledger', line.line, { card_id: card['id'] ?? null, kind: 'void', taken: balances.text(balance), value: balances.text(balance), balance_after: balances.text(balances.move(id, balance)), ...actedBy(input, line) });
       answer.update('gift_cards', line.line, card['id'] ?? null, { status: 'void', void_reason: textOf(line.inputs['reason']) ?? RECALL_REASON, ...(wasSent(card, input.today) ? { notify: 'cancelled' } : {}) });
     }
