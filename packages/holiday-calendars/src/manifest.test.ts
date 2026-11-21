@@ -202,8 +202,11 @@ describe("the manifest", () => {
    * "Add as a closure" is their own action: a closure row that links to one of
    * this add-on's `holidays` rows. Both ranges are `^0.2.0`, the line that
    * first has a closures table, for the same reason as ordering's.
+   *
+   * THE SEVENTH LINKS THE SAME WAY. Bookings (`bookings`, Lumen Studio) adds a
+   * closure from a holiday row by its own action, from its 0.2.0 line.
    */
-  it("attaches to the six apps that use its days", () => {
+  it("attaches to the seven apps that use its days", () => {
     expect(manifest.addOn.attaches).toEqual([
       { app: "hr", range: "^0.1.0" },
       { app: "clinic", range: "^0.2.0 || ^0.3.0" },
@@ -211,6 +214,7 @@ describe("the manifest", () => {
       { app: "ordering", range: "^0.2.0 || ^0.3.0" },
       { app: "maker", range: "^0.2.0" },
       { app: "printing", range: "^0.2.0" },
+      { app: "bookings", range: "^0.2.0" },
     ]);
     // The portal reads the days through the public setting, so it must stay public.
     expect(manifest.addOn.publicSettings).toContain(STORAGE_KEY);

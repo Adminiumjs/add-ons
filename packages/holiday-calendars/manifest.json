@@ -113,7 +113,8 @@
       { "app": "clients", "range": "^0.2.0" },
       { "app": "ordering", "range": "^0.2.0 || ^0.3.0" },
       { "app": "maker", "range": "^0.2.0" },
-      { "app": "printing", "range": "^0.2.0" }
+      { "app": "printing", "range": "^0.2.0" },
+      { "app": "bookings", "range": "^0.2.0" }
     ],
     "provides": [],
     "consumes": [],
