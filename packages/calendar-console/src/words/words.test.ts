@@ -42,6 +42,11 @@ describe('the words', () => {
     expect(JSON.stringify(EN)).not.toContain('Copy both again');
   });
 
+  it('offers no paid grade in English, and names the one permission that spells the word', () => {
+    const text = Object.values(EN).join(' ').replaceAll('calendar.events.freebusy', '');
+    expect(text).not.toMatch(/pricing|\bplans?\b|\btier|billing|upgrade|premium|\bfree\b/i);
+  });
+
   it('falls back by language, then to English, and fills slots', () => {
     expect(wordsFor('de-AT')).toBe(WORDS['de-DE']);
     expect(wordsFor('xx-XX')).toBe(EN);

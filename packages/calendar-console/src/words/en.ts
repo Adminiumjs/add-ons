@@ -158,7 +158,7 @@ export const EN = {
   m1Short: 'Register the app',
   m1Title: 'Register an app in Microsoft Entra',
   m1Body: 'In the Microsoft Entra admin center, open App registrations → New registration. Name it:',
-  m1Note: 'If your team only has Outlook.com accounts, create a free directory first: a personal account can’t register an app outside one.',
+  m1Note: 'If your team only has Outlook.com accounts, create a directory first: a personal account can’t register an app outside one.',
   m2Short: 'Account types',
   m2Title: 'Choose who can sign in',
   m2Body: 'Under Supported account types, which describes your team?',

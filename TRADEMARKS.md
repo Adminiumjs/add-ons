@@ -221,6 +221,48 @@ is never translated.
 The add-on ships no Google logo and draws in no Google colour. The credit is
 plain text. The business brings its own key, under Google's own terms.
 
+# Google Calendar — Google, Google Calendar, Google Workspace, Gmail, Google Cloud
+
+**Google**, **Google Calendar**, **Google Workspace**, **Gmail** and **Google
+Cloud** are trademarks of Google LLC. They are referenced **nominatively only**:
+to say which calendar service the add-on connects to, which kind of account a
+team uses, and where in Google's own console a setting is found. That is the
+whole of the use.
+
+## Not affiliated
+
+Adminium is not affiliated with, endorsed by, sponsored by, certified by or in
+partnership with Google LLC. The add-on's page says so in all eight locales. Each
+business registers its own app with Google, in its own account, and connects to
+Google under Google's own terms.
+
+## No logo, no brand colour
+
+The add-on ships no Google logo and draws in no Google colour. Its icon is a
+plain calendar glyph, and the labels of Google's console are quoted as plain text
+so a person can find them.
+
+# Outlook Calendar — Microsoft, Outlook, Outlook.com, Hotmail, Microsoft 365, Microsoft Entra, Microsoft Graph
+
+**Microsoft**, **Outlook**, **Outlook.com**, **Hotmail**, **Microsoft 365**,
+**Microsoft Entra** and **Microsoft Graph** are trademarks of Microsoft
+Corporation. They are referenced **nominatively only**: to say which calendar
+service the add-on connects to, which kind of account a team uses, and where in
+Microsoft's own admin center a setting is found. That is the whole of the use.
+
+## Not affiliated
+
+Adminium is not affiliated with, endorsed by, sponsored by, certified by or in
+partnership with Microsoft Corporation. The add-on's page says so in all eight
+locales. Each business registers its own app in Microsoft Entra, in its own
+directory, and connects to Microsoft under Microsoft's own terms.
+
+## No logo, no brand colour
+
+The add-on ships no Microsoft logo and draws in no Microsoft colour. Its icon is
+a plain calendar glyph, and the labels of Microsoft's admin center are quoted as
+plain text so a person can find them.
+
 # Canva Import — Canva
 
 **Canva** is a trademark of its owner. It is used **nominatively only** — that

@@ -14,9 +14,8 @@ minutes:
 2. Set up Google Auth platform. Choose **Internal** if everyone is on your
    Workspace; otherwise **External**, then press **Publish app**. An app left in
    **Testing** loses every connection after 7 days.
-3. Under **Data Access**, add `openid`, `email`,
-   `https://www.googleapis.com/auth/calendar.app.created` and
-   `https://www.googleapis.com/auth/calendar.events.freebusy`.
+3. Under **Data Access**, add the four permissions the guide lists: `openid`,
+   `email`, `calendar.app.created` and the events busy-times permission.
 4. Create a **Web application** client and paste the redirect address the guide
    shows.
 5. Paste the client ID and secret, and press **Check my setup**.
@@ -29,7 +28,7 @@ own calendar to finish it: that proves the redirect address and the permissions.
 | | |
 |---|---|
 | `calendar.app.created` | Makes and edits only the calendar this add-on keeps |
-| `calendar.events.freebusy` | Lists when someone is busy, and watches for changes |
+| The events busy-times permission | Lists when someone is busy, and watches for changes |
 | `openid`, `email` | The address the person signed in with |
 
 Every busy read names the fields it wants (`start`, `end`, `status`,
