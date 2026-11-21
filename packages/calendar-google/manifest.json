@@ -1,0 +1,52 @@
+{
+  "kind": "add-on",
+  "manifestVersion": 1,
+  "key": "calendar-google",
+  "name": "Google Calendar",
+  "version": "1.0.33",
+  "publisher": {
+    "id": "adminium",
+    "name": "Adminium",
+    "url": "https://adminium.dev"
+  },
+  "license": "AGPL-3.0-only",
+  "description": {
+    "key": "addon.calendar-google.line",
+    "fallback": "Puts each booking into a calendar in the person's own Google account, and their busy times block their slots. Only “busy” is read, never what an event is called."
+  },
+  "categories": ["scheduling"],
+  "compatibility": {
+    "minAdminiumVersion": "0.3.71",
+    "requires": ["outbound-http"]
+  },
+  "capabilities": ["outbound-http"],
+  "addOn": {
+    "attaches": [{ "app": "*" }],
+    "scope": "server",
+    "provides": [
+      { "contract": "calendar-provider", "version": 1, "server": "dist/server.js" }
+    ],
+    "connect": {
+      "kind": "oauth2",
+      "accounts": "row",
+      "authorizeUrl": "https://accounts.google.com/o/oauth2/v2/auth",
+      "tokenUrl": "https://oauth2.googleapis.com/token",
+      "revokeUrl": "https://oauth2.googleapis.com/revoke",
+      "scopes": [
+        "openid",
+        "email",
+        "https://www.googleapis.com/auth/calendar.app.created",
+        "https://www.googleapis.com/auth/calendar.events.freebusy"
+      ],
+      "requiredScopes": [
+        "https://www.googleapis.com/auth/calendar.app.created",
+        "https://www.googleapis.com/auth/calendar.events.freebusy"
+      ],
+      "authorizeParams": { "access_type": "offline", "prompt": "consent" },
+      "identity": { "subject": "sub", "address": ["email"] }
+    },
+    "network": { "allow": ["accounts.google.com", "oauth2.googleapis.com", "www.googleapis.com"] },
+    "publicSettings": []
+  },
+  "settings": []
+}
