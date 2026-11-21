@@ -1,11 +1,12 @@
 /**
- * THE FIVE SHAPES, AND THE CHECK THAT HOLDS AN APP TO THEM.
+ * THE SIX SHAPES, AND THE CHECK THAT HOLDS AN APP TO THEM.
  *
  * An app that wants its orders discounted, its payments taken by card, or its
  * lines to sell a card or a voucher spells a part's columns and rule out on
  * its own table. This suite holds the five shape files equal to what the
  * manifest carries, runs the fit check over a shop that adopts the first four
- * under its own column names and a web shop that adopts the fifth, and then
+ * under its own column names, a web shop that adopts the fifth and a studio
+ * that adopts the sixth, and then
  * breaks each one way at a time: each difference the check allows passes, and
  * each it must never allow fails.
  */
@@ -18,12 +19,14 @@ import cardPayment from './shapes/card-payment.json' with { type: 'json' };
 import cardSaleOnline from './shapes/card-sale-online.json' with { type: 'json' };
 import cardSale from './shapes/card-sale.json' with { type: 'json' };
 import discountable from './shapes/discountable.json' with { type: 'json' };
+import voucherSaleOnline from './shapes/voucher-sale-online.json' with { type: 'json' };
 import voucherSale from './shapes/voucher-sale.json' with { type: 'json' };
 import { MAY_LEAVE_OUT, ownedOf, shapeFit, type Pairing, type Shape } from './testing/fit.ts';
 import { shop, SHOP_PAIRINGS } from './testing/fixtures/shop.ts';
+import { PACK_PAIRINGS, packStudio } from './testing/fixtures/pack-studio.ts';
 import { webshop, WEBSHOP_PAIRINGS } from './testing/fixtures/webshop.ts';
 
-const SHAPES = [discountable, cardPayment, cardSale, voucherSale, cardSaleOnline] as unknown as Shape[];
+const SHAPES = [discountable, cardPayment, cardSale, voucherSale, cardSaleOnline, voucherSaleOnline] as unknown as Shape[];
 const PAIRINGS = SHOP_PAIRINGS as unknown as Pairing[];
 
 type Doc = Record<string, unknown>;
@@ -38,7 +41,7 @@ const broken = (change: (app: Shop) => void): string[] => {
 };
 
 describe('the shapes', () => {
-  it('are the five the manifest carries, each in a file an app can copy', () => {
+  it('are the six the manifest carries, each in a file an app can copy', () => {
     expect(manifest.addOn.shapes).toEqual(SHAPES);
     expect(SHAPES.map((shape) => `${shape.name}@${String(shape.version)}: ${Object.keys(shape.parts).join(', ')}`)).toEqual([
       'discountable@1: order, lines, codes',
@@ -46,6 +49,7 @@ describe('the shapes', () => {
       'card-sale@1: order, lines',
       'voucher-sale@1: order, lines',
       'card-sale-online@1: order, lines',
+      'voucher-sale-online@1: order, lines',
     ]);
   });
 
@@ -369,7 +373,7 @@ describe('a card a shopper\'s order makes (card-sale-online@1)', () => {
   it('makes the card when the order is written, loads it when paid, and recalls it when a paid order is cancelled', () => {
     const [make, recall] = cardSaleOnline.parts.lines.postings;
     expect(make).toMatchObject({ into: { action: 'issue' }, reserve: { on: { create: true } }, post: { on: { column: 'paid_at', set: true } }, reverse: { on: { column: 'cancelled_at', set: true } } });
-    expect(Object.keys(make!.map)).toEqual(['amount', 'to_name', 'to_email', 'message', 'sender', 'language']);
+    expect(Object.keys(make!.map)).toEqual(['amount', 'to_name', 'to_email', 'message', 'sender', 'language', 'send_on']);
     // No link to a card: the card is found by the line that made it, which a host could never fill.
     expect(cardSaleOnline.parts.lines.columns.some((column) => (column as { rules?: Doc }).rules?.['addOnLink'] !== undefined)).toBe(false);
     // Named by the line itself, and fired by the same cancel as the reverse: every reverse of a save runs before its posts.
@@ -398,7 +402,7 @@ describe('a card a shopper\'s order makes (card-sale-online@1)', () => {
     // Nobody to send the card to is no gift: the address is not a column a shop may leave out.
     expect(shapeFit(webshop(), [{ ...WEB[0]!, columns: { ...WEB[0]!.columns, to_email: null } }], ONLINE).map((issue) => issue.message)).toContain('"to_email" is not a column an adopter may leave out');
     // …and a gift with no message, no name and no sender is still one.
-    expect(shapeFit(webshop(), [{ ...WEB[0]!, columns: { ...WEB[0]!.columns, message: null, to_name: null, sender: null, language: null } }], ONLINE).filter((issue) => /leave out/.test(issue.message))).toEqual([]);
+    expect(shapeFit(webshop(), [{ ...WEB[0]!, columns: { ...WEB[0]!.columns, message: null, to_name: null, sender: null, language: null, send_on: null } }], ONLINE).filter((issue) => /leave out/.test(issue.message))).toEqual([]);
   });
 
   it('a web shop that leaves out the recall, or loosens a stranger\'s words, does not fit', () => {
@@ -411,5 +415,66 @@ describe('a card a shopper\'s order makes (card-sale-online@1)', () => {
     expect(breaks((app) => Object.assign(gifts(app).postings[0]!['map'] as Doc, { to_email: 'to_name' }))).toEqual([
       'gift_lines as card-sale-online@1/lines: the posting into "issue" maps "to_email" to "to_name", and the part to "to_email"',
     ]);
+  });
+});
+
+describe('a pack a shopper\'s order makes (voucher-sale-online@1)', () => {
+  const ONLINE = [voucherSaleOnline] as unknown as Shape[];
+  const PAIRS = PACK_PAIRINGS as unknown as Pairing[];
+  type Studio = ReturnType<typeof packStudio>;
+  const lines = (app: Studio) => app.requiredSchema.tables.find((table) => table['ref'] === 'purchase_lines') as { columns: Doc[]; postings: Doc[] };
+  const entry = (app: Studio) => app.publicAccess[0] as Doc & { defaults: Doc; children: Record<string, { writable: string[] }> };
+  const breaks = (change: (app: Studio) => void): string[] => {
+    const app = packStudio();
+    change(app);
+    return shapeFit(app, PAIRS, ONLINE).map((issue) => issue.message);
+  };
+
+  it('is judged when the order is written, made when it is paid, and recalled when a paid order is cancelled', () => {
+    const [make, recall] = voucherSaleOnline.parts.lines.postings;
+    expect(make).toMatchObject({ into: { action: 'sell-pack' }, reserve: { on: { create: true } }, post: { on: { column: 'paid_at', set: true } }, reverse: { on: { column: 'cancelled_at', set: true } } });
+    // Each payment re-arms it, so a second cancel recalls what the second payment made.
+    expect(recall).toMatchObject({ into: { action: 'recall-pack' }, post: { on: { column: 'cancelled_at', set: true } }, reverse: { on: { column: 'paid_at', set: true } }, map: { sale: { row: true } } });
+  });
+
+  it('fits the ledger it posts into, as Adminium checks a posting at install', () => {
+    const value = manifest.addOn.ledgers[0] as unknown as Ledger;
+    for (const posting of voucherSaleOnline.parts.lines.postings as unknown as Posting[]) expect(postingFitIssues(posting, value, { timed: false }), posting.id).toEqual([]);
+  });
+
+  it('a studio fits it under its own names, with a holder only a verified sign-in can set', () => {
+    expect(breaks(() => undefined)).toEqual([]);
+  });
+
+  it('never lets a guest write a pack\'s terms or its holder', () => {
+    for (const column of ['amount', 'pack_name', 'uses', 'what', 'category_id', 'buyer_email']) {
+      expect(breaks((app) => entry(app).children['purchase_lines']!.writable.push(column)).join(), column).toMatch(/never a guest's to write/);
+    }
+  });
+
+  it('does not take a recall that only ever fires once', () => {
+    expect(breaks((app) => delete lines(app).postings[1]!['reverse']).join()).toMatch(/second cancel recalls nothing/);
+  });
+
+  it('does not take a "proved" a guest could set', () => {
+    const refused = /a pack needs a proved holder/;
+    // Written by the browser.
+    expect(breaks((app) => ((entry(app) as Doc)['writable'] as string[]).push('proved')).join()).toMatch(refused);
+    // Filled in for anyone, with no sign-in.
+    expect(breaks((app) => delete (entry(app) as Doc)['claimedBy']).join()).toMatch(refused);
+    expect(breaks((app) => Object.assign(entry(app), { claimedBy: { table: 'customers', column: 'customer_id', optional: true } })).join()).toMatch(refused);
+    expect(breaks((app) => Object.assign(entry(app), { level: 'lookup' })).join()).toMatch(refused);
+    // Mapped to a fixed yes, or not mapped at all.
+    expect(breaks((app) => Object.assign(lines(app).postings[0]!['map'] as Doc, { proved: { value: true } })).join()).toMatch(refused);
+    expect(breaks((app) => delete (lines(app).postings[0]!['map'] as Doc)['proved']).join()).toMatch(refused);
+  });
+
+  it('takes a "proved" Adminium attests through the price rule', () => {
+    expect(breaks((app) => {
+      const order = app.requiredSchema.tables.find((table) => table['ref'] === 'purchases') as Doc;
+      order['adjust'] = { order: { discount: 'discount', customer: { link: 'customer_id', address: 'buyer_email', proved: 'proved' } } };
+      delete (entry(app) as Doc)['claimedBy'];
+      entry(app).defaults = {};
+    }).filter((message) => /proved holder/.test(message))).toEqual([]);
   });
 });

@@ -1,10 +1,10 @@
 /**
  * DOES AN APP'S TABLE FIT THE PART IT SPELLS OUT?
  *
- * Offers defines five shapes (`src/shapes/*.json`, the same five the manifest
+ * Offers defines six shapes (`src/shapes/*.json`, the same six the manifest
  * carries): an order whose price it lowers, a payment a card makes, a line
- * that loads a card, a line that sells a voucher, and a shopper's line whose
- * sale makes the card it loads. An app does not build its
+ * that loads a card, a line that sells a voucher, a shopper's line whose
+ * sale makes the card it loads, and one whose sale makes the pack it sells. An app does not build its
  * table ON a part — a till's line is a discount line, a card sale and a
  * voucher sale at once, and Offers is only suggested to it. It spells the
  * part's columns and rule out on its own table, under its own column names,
@@ -115,7 +115,7 @@ function stringsIn(value: unknown): string[] {
 }
 
 /** The `order` part of these shapes only stands for "the row a line hangs under": it has no column an app adopts. */
-const STANDS_IN: Readonly<Record<string, readonly string[]>> = { 'card-payment@1': ['order'], 'card-sale@1': ['order'], 'voucher-sale@1': ['order'], 'card-sale-online@1': ['order'] };
+const STANDS_IN: Readonly<Record<string, readonly string[]>> = { 'card-payment@1': ['order'], 'card-sale@1': ['order'], 'voucher-sale@1': ['order'], 'card-sale-online@1': ['order'], 'voucher-sale-online@1': ['order'] };
 
 /** The columns of a part an adopter may leave out (`null` in a pairing). Every other column of a part is adopted. */
 export const MAY_LEAVE_OUT: Readonly<Record<string, readonly string[]>> = {
@@ -127,7 +127,9 @@ export const MAY_LEAVE_OUT: Readonly<Record<string, readonly string[]>> = {
   'card-sale@1/lines': [],
   'voucher-sale@1/lines': ['tax_later'],
   // A gift with no name, no message and no sender is still a gift; a card with nobody to send it to is not.
-  'card-sale-online@1/lines': ['to_name', 'message', 'sender', 'language'],
+  'card-sale-online@1/lines': ['to_name', 'message', 'sender', 'language', 'send_on'],
+  // A pack with nobody's name on it still has an address to belong to.
+  'voucher-sale-online@1/lines': ['holder_name', 'language', 'tax_later'],
 };
 /** The parts beside a part that a pairing must name: the ones its columns and its rule point at. */
 const BESIDE: Readonly<Record<string, readonly string[]>> = {
@@ -138,6 +140,7 @@ const BESIDE: Readonly<Record<string, readonly string[]>> = {
   'card-sale@1/lines': ['order'],
   'voucher-sale@1/lines': ['order'],
   'card-sale-online@1/lines': ['order'],
+  'voucher-sale-online@1/lines': ['order'],
 };
 /** The rules through which a part works a column out itself. */
 const WORKED_OUT = ['rollup', 'formula', 'codeLast4', 'stamp'];
@@ -185,7 +188,7 @@ const HOSTS_IN_ORDER = ['customer', 'currency'];
 const HOSTS_IN_LINE = ['via', 'price', 'quantity', 'what', 'only', 'unlessSet', 'excludes', 'paidBy', 'nights'];
 const HOSTS_IN_POSTING = ['id', 'reserve', 'post', 'reverse', 'via', 'heldUntil', 'refuses', 'only', 'needs'];
 /** Inputs a host maps its own way: what is still due is a balance of its own. */
-const HOSTS_IN_MAP = ['due', 'label'];
+const HOSTS_IN_MAP = ['due', 'label', 'proved'];
 const less = (doc: Doc | undefined, keys: readonly string[]): Doc => Object.fromEntries(Object.entries(doc ?? {}).filter(([key]) => !keys.includes(key)));
 
 /** Every column a public entry may write on a table: its own list, what it fills, and the same of each table it writes under it. */
@@ -197,6 +200,20 @@ function publiclyWritten(entries: readonly PublicEntry[], table: string): string
   };
   for (const entry of entries) read(entry, entry.table);
   return out;
+}
+
+/**
+ * Whether a yes in this column of the order can only mean the buyer proved who
+ * they are: Adminium attests it (the price rule's `customer.proved`), or the
+ * only public entries that set it are creates claimed by a verified session.
+ */
+function provedByAdminium(manifest: { publicAccess?: unknown[] }, order: Table | undefined, column: string): boolean {
+  if (order === undefined) return false;
+  if ((order.adjust?.['order'] as { customer?: { proved?: string } } | undefined)?.customer?.proved === column) return true;
+  const entries = ((manifest.publicAccess ?? []) as (PublicEntry & { claimedBy?: { optional?: boolean }; level?: string })[]).filter((entry) => entry.table === order.ref);
+  const setting = entries.filter((entry) => Object.prototype.hasOwnProperty.call(entry.defaults ?? {}, column));
+  if (entries.some((entry) => (entry.writable ?? []).includes(column) || Object.prototype.hasOwnProperty.call(entry.writableValues ?? {}, column))) return false;
+  return setting.length > 0 && setting.every((entry) => entry.defaults?.[column] === true && entry.claimedBy !== undefined && entry.claimedBy.optional !== true && entry.level === 'verified');
 }
 
 /**
@@ -438,6 +455,21 @@ export function shapeFit(manifest: { requiredSchema?: { tables: unknown[] }; rol
       const amount = hostOf('load_amount');
       // A guest who writes the amount buys a card of any worth for whatever the order charges: it is copied from the shop's own row.
       if (amount !== null && open.includes(amount)) say(`a card's amount is never a guest's to write: a public entry may write "${pairing.table}.${amount}"; copy it from the shop's own row`);
+    }
+
+    // ── a pack's terms are the shop's, and its holder is proved ─────────────
+    if (pairing.shape === 'voucher-sale-online@1' && pairing.part === 'lines') {
+      for (const ref of ['sale_amount', 'pack_name', 'pack_uses', 'pack_what', 'target_id', 'holder_email']) {
+        const host = hostOf(ref);
+        if (host !== null && open.includes(host)) say(`a pack's terms and its holder are never a guest's to write: a public entry may write "${pairing.table}.${host}"; copy it from the shop's own row or the signed-in customer`);
+      }
+      const recall = (table.postings ?? []).find((posting) => (posting['into'] as { action?: string }).action === 'recall-pack');
+      if (recall !== undefined && recall['reverse'] === undefined) say('the posting into "recall-pack" says "reverse", on the order being paid: without it a second cancel recalls nothing');
+      const sale = (table.postings ?? []).find((posting) => (posting['into'] as { action?: string }).action === 'sell-pack');
+      const proved = sale === undefined ? undefined : ((sale['map'] as Doc)['proved'] as { parent?: string } | undefined)?.parent;
+      if (sale !== undefined && (proved === undefined || !provedByAdminium(manifest, order, proved))) {
+        say('a pack needs a proved holder: map "proved" to a column of the order that Adminium attests (the price rule\'s customer.proved), or that only a verified, claimed create sets to true');
+      }
     }
 
     // ── the postings ────────────────────────────────────────────────────────

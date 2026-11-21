@@ -28,12 +28,12 @@ them with the order. The add-on decides; Adminium reads and writes.
 It attaches to no app in particular, and works with none at all: a card can be
 issued, a voucher used and a code made from its own screens.
 
-## The five shapes
+## The six shapes
 
 `src/shapes/*.json` are the parts an app spells out on its own tables, under
 its own column names: `discountable@1` (an order, its lines and its typed
-codes), `card-payment@1`, `card-sale@1`, `voucher-sale@1` and
-`card-sale-online@1`. An app copies the files it adopts and holds its tables to
+codes), `card-payment@1`, `card-sale@1`, `voucher-sale@1`,
+`card-sale-online@1` and `voucher-sale-online@1`. An app copies the files it adopts and holds its tables to
 them with `shapeFit` (`src/testing/fit.ts`) in its own suite.
 
 ## Selling a gift card
@@ -91,10 +91,48 @@ card's balance no page (`outbox.pages.app.balance`) still prints the mail's
 "Ask at the counter for your balance."; a shop that sells cards online names
 its balance page.
 
+A shopper's line may carry `send_on`, the day the card is to be sent. It is
+judged when the order is written: not a past day, not over a year ahead, and not
+after the last day a card sold today would have.
+
 Offers cannot tell from a payment whether the order it pays holds a gift card:
 `spend` pays what the host maps to `due`. To keep a card from paying for a
 card, map `due` to what is due for goods, or refuse card payments on such an
 order with the posting's own `refuses`.
+
+## Selling a pack online
+
+`voucher-sale-online@1`. The line carries what the pack is (`sale_amount`,
+`pack_name`, `pack_uses`, `pack_what`, a link to what it covers), all copied from
+the shop's own row, and who holds it, from the signed-in customer. A guest
+writes none of them; the fit check says so.
+
+- `sell-pack`. **Reserve**, when the order is written: nothing is made, and
+  everything is judged. A guest's order must have proved who is buying
+  (`proved`: a column Adminium attests, or that only a verified, claimed create
+  sets). **Post**, when it is paid: the pack is made, sold, in the holder's name,
+  and its mail goes once. An unpaid order that is cancelled has made nothing.
+- `recall-pack`, fired by the same cancel, under the pack's lock. It is refused
+  (`used-up`) once any use stands, held or counted. A use given back no longer
+  counts. Otherwise the pack is cancelled. Its `reverse` fires when the order is
+  paid, so a cancel, a new payment and a second cancel each recall their pack.
+
+**A pack's money goes back through the cancel, and no other way.** A refund row
+that does not cancel the order runs no recall, so the pack would stay usable. A
+host keeps the refund of a pack sale behind the cancel.
+
+## What a signed-in customer holds
+
+Two reads on the app's key, for a verified session: the packs and vouchers held
+in the address it proved, and the gift cards sent to it. Each shows a name, what
+is left, the last day and the code's last four characters, and never a code. A
+card dated for a later day is neither listed nor spent online before that day.
+
+To spend one, the page sends `held:<id>` where a code goes. Adminium finds a
+voucher only if it has a holder, and Offers then holds it to the proved customer.
+It finds a card only if the host's `lookup` names `held: "recipient_email"` and
+that column holds the address the session proved. Anybody else is answered as
+for a code nobody knows.
 
 ## Who reads a code
 

@@ -10,10 +10,10 @@
  * hundred for a leaflet goes through here too.
  */
 
-import type { PostingInput, PostingUse } from '@adminium/add-on-contracts';
+import type { PostingInput, PostingLine, PostingUse } from '@adminium/add-on-contracts';
 
 import { toUnits } from '../units.ts';
-import { addDays } from './dates.ts';
+import { addDays, addMonths } from './dates.ts';
 import { actedBy, amountText, Answer, read, same, scaleOf, textOf, wholeOf, written, yes, type Row } from './ledger.ts';
 
 /** Why a voucher or a pack cannot be used; null when it can. `units`: how many uses are asked of it. */
@@ -267,6 +267,112 @@ export function sell(input: PostingInput, answer: Answer): void {
       continue;
     }
     answer.update('vouchers', line.line, voucher['id'] ?? null, { sold: true, awaiting_sale: false, sale_price: amountText(amount, scale), tax_later: yes(line.inputs['tax_later']) });
+  }
+}
+
+/** The most uses a pack holds, and the most a pack's words may hold: what the voucher's own columns take. */
+const PACK_USES_MAX = 50;
+const PACK_WORDS_MAX: Readonly<Record<string, number>> = { name: 120, holder_email: 254, holder_name: 80, language: 12 };
+const PACK_TARGETS: readonly string[] = ['item', 'category', 'type', 'tag'];
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** The line a row stands for, as a pack a sale made names it. */
+const saleOf = (input: PostingInput, line: PostingLine): { table: string; row: string } => ({ table: line.lineTable === '' ? input.source.table : line.lineTable, row: line.line === '' ? input.source.row : line.line });
+
+/**
+ * A PACK MADE BY A SALE.
+ *
+ * **Reserve**, when the order is written: nothing is made, and everything is
+ * judged, so the buyer hears a refusal before paying. A guest's order must
+ * have proved who is buying (`proved`), because a pack belongs to one person.
+ * **Post**, when the order is paid: the pack is made, sold, with its holder,
+ * what it covers, its uses and its last day. Its mail is the one a named
+ * voucher gets when it is made, so it goes once and only for a paid pack, and
+ * until then nobody can list or spend what does not exist. **Reverse**: a
+ * cancel of an unpaid order has nothing to undo, and a paid pack is left for
+ * `recallPack`, which the same cancel posts and which can refuse.
+ */
+export function sellPack(input: PostingInput, answer: Answer): void {
+  if (input.phase === 'reverse') return;
+  const scale = scaleOf(...input.lines.map((line) => line.inputs['amount']));
+  for (const line of input.lines) {
+    const amount = toUnits(line.inputs['amount'], scale);
+    const uses = wholeOf(line.inputs['uses']);
+    const what = textOf(line.inputs['what']);
+    const target = line.inputs['target'] as { table?: unknown; row?: unknown } | null | undefined;
+    const words = Object.fromEntries(Object.keys(PACK_WORDS_MAX).map((name) => [name, textOf(line.inputs[name])]));
+    const email = words['holder_email']?.trim() ?? null;
+    const name = words['name']?.trim() ?? '';
+    const tooLong = Object.entries(words).some(([key, value]) => value !== null && [...value].length > (PACK_WORDS_MAX[key] ?? 0));
+    if (amount === null || amount <= 0n || uses === null || uses < 1 || uses > PACK_USES_MAX || what === null || !PACK_TARGETS.includes(what) || textOf(target?.table) === null || textOf(target?.row) === null || name === '' || email === null || !EMAIL.test(email) || tooLong) {
+      answer.refuse(line.line, 'not-allowed');
+      continue;
+    }
+    if (input.phase === 'reserve') {
+      if (input.origin === 'public' && !yes(line.inputs['proved'])) answer.refuse(line.line, 'needs-customer');
+      continue;
+    }
+    // A guest never pays by saving: the money is recorded by the payment's own path, or by staff.
+    if (input.origin === 'public') {
+      answer.refuse(line.line, 'not-allowed');
+      continue;
+    }
+    const sale = saleOf(input, line);
+    // Posted again in the same round: the pack this line made is the one it has.
+    if (written(input, 'vouchers').some((row) => same(row['sale_table'], sale.table) && same(row['sale_row'], sale.row))) continue;
+    const months = wholeOf(input.settings['pack_expiry_months']);
+    answer.insert('vouchers', line.line, {
+      worth: 'pack',
+      what,
+      source_table: String(target!.table),
+      source_row: String(target!.row),
+      units: 1,
+      public_name: name,
+      uses_total: uses,
+      holder_email: email,
+      holder_name: textOf(line.inputs['holder_name']),
+      language: textOf(line.inputs['language']),
+      sold: true,
+      sale_price: amountText(amount, scale),
+      tax_later: yes(line.inputs['tax_later']),
+      sale_table: sale.table,
+      sale_row: sale.row,
+      ...(months === null || months < 1 ? {} : { expires_on: addMonths(input.today, months) }),
+    });
+  }
+}
+
+/**
+ * A paid pack, cancelled with its sale, under the pack's own lock, the lock a
+ * use takes, so a use and a recall take turns. Refused (`used-up`, with the
+ * uses left) once any use stands, held or counted: the order's money cannot
+ * then go back. A use given back no longer counts. A pack already cancelled
+ * or past its last day with nothing used passes and writes nothing. The
+ * posting's reverse fires when the order is paid, so a cancel, a new payment
+ * and a second cancel each recall what that payment made.
+ */
+export function recallPack(input: PostingInput, answer: Answer): void {
+  // The order paid (again): nothing to give back, and the next cancel is a recall of its own.
+  if (input.phase === 'reverse') return;
+  const packs = read(input, 'pack');
+  const spent = read(input, 'spent');
+  for (const line of input.lines) {
+    const sale = line.inputs['sale'] as { table?: unknown; row?: unknown } | null | undefined;
+    const mine = packs.filter((pack) => same(pack['sale_table'], sale?.table) && same(pack['sale_row'], sale?.row));
+    if (mine.length === 0) {
+      answer.note(line.line, 'not-linked');
+      continue;
+    }
+    for (const pack of mine) {
+      const stands = spent.some((row) => same(row['voucher_id'], pack['id']) && textOf(row['state']) !== 'given_back');
+      if (stands) {
+        answer.refuse(line.line, 'used-up', String(Math.max(0, usesLeft(pack))));
+        continue;
+      }
+      const status = textOf(pack['status']);
+      if (status === 'voided' || status === 'expired') continue;
+      answer.update('vouchers', line.line, pack['id'] ?? null, { status: 'voided' });
+    }
   }
 }
 

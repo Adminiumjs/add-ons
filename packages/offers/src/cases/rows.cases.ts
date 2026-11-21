@@ -23,6 +23,9 @@ export const PAYMENTS = 'shop:payments';
 export const LINES = 'shop:order_lines';
 /** A web shop's lines that each sell a card to somebody: the card is made by the sale. */
 export const GIFTS = 'shop:gift_lines';
+/** A studio's order lines that each sell a pack, and the table a pack's uses are for. */
+export const PACK_LINES = 'studio:purchase_lines';
+const CATEGORIES = 'studio:categories';
 export const REFUNDS = 'shop:refunds';
 
 /** The settings row of a fresh install. */
@@ -109,6 +112,12 @@ export const LOADED: Row = { id: 88, card_id: 31, kind: 'issue', taken: '-50.00'
 const after = (id: number, kind: string, taken: string, more: Row = {}): Row => ({ id, card_id: 31, kind, taken, value: taken.replace('-', ''), source_table: PAYMENTS, source_row: `p${String(id)}`, ...more });
 /** The line names itself to the recall: its table and its key. */
 const recalled = (key = 'g1') => line(key, { sale: { table: GIFTS, row: key } }, GIFTS);
+/** A studio's line selling Movement Ten: ten uses of a category, for $360.00, to Ava. */
+export const packLine = (key: string, more: PostingLine['inputs'] = {}): PostingLine => line(key, { amount: '360.00', name: 'Movement Ten', uses: 10, what: 'category', target: { table: CATEGORIES, row: '4' }, holder_email: 'ava@lumen.example', holder_name: 'Ava Reyes', language: 'en-US', proved: true, tax_later: false, ...more }, PACK_LINES);
+/** The pack line `b1` made once its order was paid. */
+export const soldPack = (more: Row = {}): Row => classes(10, { id: 70, public_name: 'Movement Ten', sale_price: '360.00', sale_table: PACK_LINES, sale_row: 'b1', holder_email: 'ava@lumen.example', ...more });
+const recalledPack = (key = 'b1') => line(key, { sale: { table: PACK_LINES, row: key } }, PACK_LINES);
+const standingUse = (state: string): Row => ({ id: 400, voucher_id: 70, uses: 1, state });
 /** An old card of the till's, made here before its rows are brought in. */
 const moved = (status: string, balance: string): Row => card(40, '9930', balance, { status, moved_from: '7', moving: true, issued_at: null });
 
@@ -624,5 +633,106 @@ export const ROWS_CASES: readonly RowsCase[] = [
     name: 'P21 an expired voucher is cancelled all the same',
     input: call({ action: 'voucher-action', lines: [line('30', { voucher: 5, action: 'void' }, 'offers:voucher_actions')], reads: { voucher: [classes(3, { status: 'expired', expires_on: '2026-09-15' })], last: [], none: [] } }),
     expect: { rows: [update('vouchers', 5, { status: 'voided' })] },
+  },
+  {
+    name: 'P26 a card can be dated: the day goes on the card the sale makes',
+    input: call({ action: 'issue', phase: 'reserve', lines: [gift('g1', { send_on: '2026-10-20' })], reads: { card: [], made: [] } }),
+    expect: { rows: [insert('gift_cards', { kind: 'card', status: 'inactive', recipient_email: 'mira@daybreak.example', send_on: '2026-10-20', source_table: GIFTS, source_row: 'g1' })] },
+  },
+  {
+    name: 'P26 …today is a day it can go, and no day at all is "now"',
+    input: call({ action: 'issue', phase: 'reserve', lines: [gift('g1', { send_on: '2026-10-01' }), gift('g2')], reads: { card: [], made: [] } }),
+    expect: { rows: [insert('gift_cards', { send_on: '2026-10-01' }), insert('gift_cards', { source_row: 'g2' })] },
+  },
+  {
+    name: 'P26 …a day past, a day that does not exist, and a day over a year ahead are refused before anything is paid',
+    input: call({ action: 'issue', phase: 'reserve', lines: [gift('g1', { send_on: '2026-09-30' }), gift('g2', { send_on: '2026-02-30' }), gift('g3', { send_on: '2027-10-03' })], reads: { card: [], made: [] } }),
+    expect: { rows: [], refusals: [{ line: 'g1', reason: 'not-allowed' }, { line: 'g2', reason: 'not-allowed' }, { line: 'g3', reason: 'not-allowed' }] },
+  },
+  {
+    name: 'P26 …and so is a day after the last day a card sold today would have: its mail would be dropped unsent',
+    input: call({ action: 'issue', phase: 'reserve', lines: [gift('g1', { send_on: '2026-11-02' }), gift('g2', { send_on: '2026-11-01' })], reads: { card: [], made: [] }, settings: { ...SETTINGS, card_expiry_months: 1 } }),
+    expect: { rows: [insert('gift_cards', { send_on: '2026-11-01', source_row: 'g2' })], refusals: [{ line: 'g1', reason: 'not-allowed' }] },
+  },
+  {
+    name: 'P26 …and until its day a dated card is not spent online',
+    input: call({ action: 'spend', lines: [payment('p1', 2, '20.00')], reads: { card: [card(2, 'Q4XP', '50.00', { notify: 'card_dated', send_on: '2026-10-20' })] }, more: { origin: 'public' } }),
+    expect: { rows: [], refusals: [{ line: 'p1', reason: 'inactive' }] },
+  },
+  {
+    name: 'P26 …from its day it is, and at a desk it always was',
+    input: call({ action: 'spend', lines: [payment('p1', 2, '20.00'), payment('p2', 3, '20.00')], reads: { card: [card(2, 'Q4XP', '50.00', { notify: 'card_dated', send_on: '2026-10-01' }), card(3, 'K4WD', '50.00', { notify: 'card_dated', send_on: '2026-10-20' })] } }),
+    expect: { rows: [insert('card_ledger', { card_id: 2, kind: 'spend', taken: '20.00' }), insert('card_ledger', { card_id: 3, kind: 'spend', taken: '20.00' })] },
+  },
+  {
+    name: 'P27 a pack is judged when its order is written, and nothing is made until it is paid',
+    input: call({ action: 'sell-pack', phase: 'reserve', lines: [packLine('b1')], reads: { made: [] }, more: { origin: 'public' } }),
+    expect: { rows: [] },
+  },
+  {
+    name: 'P27 …a guest who has not proved who they are cannot buy one',
+    input: call({ action: 'sell-pack', phase: 'reserve', lines: [packLine('b1', { proved: false }), packLine('b2', { proved: null })], reads: { made: [] }, more: { origin: 'public' } }),
+    expect: { rows: [], refusals: [{ line: 'b1', reason: 'needs-customer' }, { line: 'b2', reason: 'needs-customer' }] },
+  },
+  {
+    name: 'P27 …a pack with no price, no uses, too many uses, an unknown target or no real address is refused before anything is paid',
+    input: call({ action: 'sell-pack', phase: 'reserve', lines: [packLine('b1', { amount: '0.00' }), packLine('b2', { uses: 0 }), packLine('b3', { uses: 51 }), packLine('b4', { what: 'everything' }), packLine('b5', { holder_email: 'ava' }), packLine('b6', { name: '   ' })], reads: { made: [] } }),
+    expect: { rows: [], refusals: ['b1', 'b2', 'b3', 'b4', 'b5', 'b6'].map((key) => ({ line: key, reason: 'not-allowed' as const })) },
+  },
+  {
+    name: 'P28 paid: the pack is made, sold, with its holder, what it covers, its uses and the line that sold it',
+    input: call({ action: 'sell-pack', lines: [packLine('b1')], reads: { made: [] } }),
+    expect: { rows: [insert('vouchers', { worth: 'pack', what: 'category', source_table: CATEGORIES, source_row: '4', units: 1, public_name: 'Movement Ten', uses_total: 10, holder_email: 'ava@lumen.example', holder_name: 'Ava Reyes', language: 'en-US', sold: true, sale_price: '360.00', tax_later: false, sale_table: PACK_LINES, sale_row: 'b1' })] },
+  },
+  {
+    name: 'P28 …its last day is so many months from the day it is paid, where the place sets one',
+    input: call({ action: 'sell-pack', lines: [packLine('b1')], reads: { made: [] }, settings: { ...SETTINGS, pack_expiry_months: 6 } }),
+    expect: { rows: [insert('vouchers', { public_name: 'Movement Ten', expires_on: '2027-04-01' })] },
+  },
+  {
+    name: 'P28 …a guest\'s own save never pays for one',
+    input: call({ action: 'sell-pack', lines: [packLine('b1')], reads: { made: [] }, more: { origin: 'public' } }),
+    expect: { rows: [], refusals: [{ line: 'b1', reason: 'not-allowed' }] },
+  },
+  {
+    name: 'P28 …and a line posted again in the same round does not make a second pack',
+    input: call({ action: 'sell-pack', lines: [packLine('b1')], reads: { made: [soldPack()] }, written: { vouchers: [soldPack()] } }),
+    expect: { rows: [] },
+  },
+  {
+    name: 'P29 a cancel undoes nothing by itself: an unpaid order made no pack, and a paid one is the recall\'s',
+    input: call({ action: 'sell-pack', phase: 'reverse', lines: [packLine('b1')], reads: { made: [soldPack()] }, written: { vouchers: [soldPack()] } }),
+    expect: { rows: [] },
+  },
+  {
+    name: 'P30 a paid pack with no use taken is cancelled with its sale',
+    input: call({ action: 'recall-pack', lines: [recalledPack()], reads: { pack: [soldPack()], spent: [] } }),
+    expect: { rows: [update('vouchers', 70, { status: 'voided' })] },
+  },
+  {
+    name: 'P30 …a use that was given back no longer stands in the way',
+    input: call({ action: 'recall-pack', lines: [recalledPack()], reads: { pack: [soldPack()], spent: [standingUse('given_back')] } }),
+    expect: { rows: [update('vouchers', 70, { status: 'voided' })] },
+  },
+  {
+    name: 'P30 …the order paid again re-arms the recall, and writes nothing',
+    input: call({ action: 'recall-pack', phase: 'reverse', lines: [recalledPack()], reads: { pack: [soldPack()], spent: [] } }),
+    expect: { rows: [] },
+  },
+  {
+    name: 'P30 …one use counted refuses the refund, and says what is left',
+    input: call({ action: 'recall-pack', lines: [recalledPack()], reads: { pack: [soldPack({ uses_left: 9 })], spent: [standingUse('counted')] } }),
+    expect: { rows: [], refusals: [{ line: 'b1', reason: 'used-up', left: '9' }] },
+  },
+  {
+    name: 'P30 …so does a use only held by a booking still waiting to be paid',
+    input: call({ action: 'recall-pack', lines: [recalledPack()], reads: { pack: [soldPack({ uses_left: 9 })], spent: [standingUse('held')] } }),
+    expect: { rows: [], refusals: [{ line: 'b1', reason: 'used-up', left: '9' }] },
+  },
+  {
+    name: 'P30 …a pack already cancelled, or past its last day unused, has nothing to recall; a line that sold none is told',
+    input: call({ action: 'recall-pack', lines: [recalledPack('b9'), recalledPack('b1'), recalledPack('b2')], reads: { pack: [soldPack({ status: 'voided' }), soldPack({ id: 71, sale_row: 'b2', status: 'expired' })], spent: [] } }),
+    expect: { rows: [] },
+    also: { notes: [{ line: 'b9', note: 'not-linked' }] },
   },
 ];

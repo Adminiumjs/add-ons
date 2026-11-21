@@ -54,7 +54,8 @@
             "to_email": "to_email",
             "message": "message",
             "sender": "sender",
-            "language": "language"
+            "language": "language",
+            "send_on": "send_on"
           }
         },
         {
@@ -138,6 +139,11 @@
           "ref": "language",
           "type": "text",
           "maxLength": 12,
+          "nullable": true
+        },
+        {
+          "ref": "send_on",
+          "type": "date",
           "nullable": true
         }
       ]

@@ -129,7 +129,7 @@ describe('the manifest', () => {
   });
 
   it('asks for the server that runs a price rule, and for no app', () => {
-    expect(manifest.compatibility).toEqual({ minAdminiumVersion: '0.3.22', requires: [] });
+    expect(manifest.compatibility).toEqual({ minAdminiumVersion: '0.3.71', requires: [] });
     expect(manifest.addOns.suggests.map((one) => one.key)).toEqual(['invoices']);
   });
 });
@@ -262,7 +262,7 @@ describe('codes', () => {
     // published on a leaflet, so its column is plain text kept as codes are compared; one is made on request, before the save.
     expect(columnOf('codes', 'code')).toEqual({ ref: 'code', type: 'text', maxLength: 24, unique: true, rules: { normalize: 'code' } });
     expect(manifest.addOn.adjuster.codes).toMatchObject({ table: 'codes', column: 'code', reserved: ['GC', 'VC', 'PK'] });
-    expect(manifest.addOn.adjuster.vouchers).toEqual({ table: 'vouchers', column: 'code', prefixes: ['VC-', 'PK-'] });
+    expect(manifest.addOn.adjuster.vouchers).toEqual({ table: 'vouchers', column: 'code', prefixes: ['VC-', 'PK-'], held: 'holder_key' });
   });
 
   it('a list shows the last four of a code it never shows', () => {
@@ -320,6 +320,7 @@ describe('the limits', () => {
       ['customer', 'offer_id'],
     ]);
     expect(tableOf('applied').indexes).toEqual([['source_table', 'source_row']]);
+    expect(tableOf('vouchers').indexes).toEqual([['sale_table', 'sale_row']]);
     expect(tableOf('messages').indexes).toEqual([['card_id'], ['voucher_id']]);
   });
 });
@@ -399,10 +400,10 @@ describe('the states', () => {
 });
 
 describe('the ledger', () => {
-  it('is one ledger of twelve actions, and money fails closed', () => {
+  it('is one ledger of fourteen actions, and money fails closed', () => {
     expect(ledgers).toHaveLength(1);
     expect(value).toMatchObject({ id: 'value', receipts: 'postings', refusal: 'value' });
-    expect(Object.keys(value.actions).sort()).toEqual(['card-action', 'expire', 'issue', 'make', 'move', 'recall', 'redeem', 'refund', 'sell', 'spend', 'void', 'voucher-action']);
+    expect(Object.keys(value.actions).sort()).toEqual(['card-action', 'expire', 'issue', 'make', 'move', 'recall', 'recall-pack', 'redeem', 'refund', 'sell', 'sell-pack', 'spend', 'void', 'voucher-action']);
     // No action lets a save through while the add-on cannot answer.
     for (const [name, action] of Object.entries(value.actions)) expect(action.unavailable, name).toBeUndefined();
   });
@@ -458,7 +459,7 @@ describe('the ledger', () => {
       },
       // A till's line names the card it loads; a shopper's line names none, and the card its sale made is found by the round's own receipts.
       issue: {
-        inputs: 'card link?, amount decimal?, label text?, to_name text?, to_email text?, message text?, sender text?, language text?',
+        inputs: 'card link?, amount decimal?, label text?, to_name text?, to_email text?, message text?, sender text?, language text?, send_on date?',
         phases: 'reserve, post, reverse',
         reads: [card, 'made: gift_cards by receipt_id ← receipt.id'],
         locks: `${cardLock}, made.id of gift_cards`,
@@ -481,6 +482,22 @@ describe('the ledger', () => {
         writes: 'redemptions, vouchers',
       },
       sell: { inputs: 'voucher link?, amount decimal?, tax_later bool?', phases: 'post, reverse', reads: ['voucher: vouchers by id ← input.voucher'], locks: 'voucher.id of vouchers', writes: 'vouchers' },
+      // A pack a shopper's order sells: judged when the order is written, made when it is paid.
+      'sell-pack': {
+        inputs: 'amount decimal, name text, uses number, what text, target rowRef, holder_email text, holder_name text?, language text?, proved bool?, tax_later bool?',
+        phases: 'reserve, post, reverse',
+        reads: ['made: vouchers by receipt_id ← receipt.id'],
+        locks: 'made.id of vouchers',
+        writes: 'vouchers',
+      },
+      // Named by the line that sold the pack, under the pack's own lock: the lock a use takes.
+      'recall-pack': {
+        inputs: 'sale rowRef',
+        phases: 'post, reverse',
+        reads: ['pack: vouchers by sale_table ← input.sale.table, sale_row ← input.sale.row', 'spent: redemptions by voucher_id ← pack.id'],
+        locks: 'pack.id of vouchers',
+        writes: 'vouchers',
+      },
       expire: { inputs: 'card rowRef', phases: 'post', reads: ['card: gift_cards by id ← input.card.row'], locks: cardLock, writes: 'card_ledger' },
       void: { inputs: 'card rowRef', phases: 'post', reads: ['card: gift_cards by id ← input.card.row'], locks: cardLock, writes: 'card_ledger' },
       make: { inputs: 'batch link, size number', phases: 'post', reads: ['batch: voucher_batches by id ← input.batch'], locks: 'batch.id of voucher_batches', writes: 'vouchers' },
@@ -498,11 +515,11 @@ describe('the ledger', () => {
       // A card is inserted by the move, for an older card a till brings in under the code it has always had; and by a
       // shopper's sale, with whom it is for and the line that made it. A card cancelled by its sale says why.
       gift_cards: {
-        insert: ['kind', 'code', 'status', 'issued_at', 'moved_from', 'moved_table', 'moving', 'recipient_name', 'recipient_email', 'sender_name', 'message', 'language', 'source_table', 'source_row'],
+        insert: ['kind', 'code', 'status', 'issued_at', 'moved_from', 'moved_table', 'moving', 'recipient_name', 'recipient_email', 'sender_name', 'message', 'language', 'source_table', 'source_row', 'send_on'],
         update: { by: ['id'], set: ['status', 'issued_at', 'expires_on', 'remind_on', 'notify', 'void_reason'] },
       },
       vouchers: {
-        insert: ['batch_id', 'worth', 'value', 'what', 'source_table', 'source_row', 'units', 'public_name', 'uses_total', 'expires_on', 'note'],
+        insert: ['batch_id', 'worth', 'value', 'what', 'source_table', 'source_row', 'units', 'public_name', 'uses_total', 'expires_on', 'note', 'holder_email', 'holder_name', 'language', 'sold', 'sale_price', 'tax_later', 'sale_table', 'sale_row'],
         update: { by: ['id'], set: ['status', 'sold', 'awaiting_sale', 'sale_price', 'tax_later', 'expires_on'] },
       },
       offers: { update: { by: ['id'], set: ['used_up'] } },
