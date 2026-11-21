@@ -88,7 +88,7 @@ describe('the "Send a survey" step', () => {
     inEveryLanguage(step.name, 60, 'name');
     inEveryLanguage(step.does, 160, 'does');
     // The step runs from 0.3.42; the reviews block holds the whole add-on's floor at 0.3.68.
-    expect(manifest.compatibility.minAdminiumVersion).toBe('0.3.68');
+    expect(manifest.compatibility.minAdminiumVersion).toBe('0.3.71');
   });
 
   it('asks for the survey by its slug, offering live surveys only, then whom to send it to and as which mail', () => {
