@@ -10,6 +10,7 @@ const person = (over: Partial<Person> & { state?: NonNullable<Person['account']>
     row: '1',
     name: 'Elin Sund',
     address: 'elin@example.test',
+    canEmail: true,
     account: state === null ? null : { id: 'a', state, since: 0, address: 'elin@example.test', addressDiffers: false, grantEndsAt: null },
     lastSyncedAt: null,
     elsewhere: false,

@@ -43,10 +43,10 @@ an event marked public.
   as a clash.
 - **Other calendars.** These permissions cannot list a person's calendars. The
   main one counts, and others are added by their calendar ID.
-- **Reconnecting after a disconnect.** Google's list of calendars is outside
-  these permissions, so a person who disconnects and connects again may get a
-  second calendar with the same name. The first stays in their account, and they
-  can delete it.
+- **Reconnecting after a disconnect.** The calendar stays in the person's
+  account, and Adminium remembers it, so connecting again uses the same one.
+  These permissions cannot list calendars, so if that memory is ever lost, a
+  second calendar of the same name is made.
 
 ## How it is built
 

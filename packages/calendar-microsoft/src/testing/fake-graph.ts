@@ -8,7 +8,7 @@
  */
 import type { CalendarConformanceDriver } from '@adminium/add-on-contracts/testing/calendar-provider';
 
-import { KEY_PROPERTY } from '../wire.ts';
+import { KEY_PROPERTY, OWN_CALENDAR_PROPERTY } from '../wire.ts';
 
 export interface FakeEvent {
   id: string;
@@ -32,6 +32,7 @@ interface FakeCalendar {
   name: string;
   canEdit: boolean;
   isDefaultCalendar: boolean;
+  marked?: boolean;
   events: Map<string, FakeEvent>;
 }
 
@@ -52,6 +53,8 @@ export interface FakeGraph {
   addCalendar(id: string, name: string): void;
   failNext(match: (request: FakeRequest) => boolean, status: number, body?: unknown, headers?: Record<string, string>): void;
   pageSize: number;
+  /** Events a delta reports as removed although they exist: they changed outside its dates. */
+  outOfWindow: Set<string>;
 }
 
 const json = (status: number, body?: unknown, headers: Record<string, string> = {}) =>
@@ -84,6 +87,7 @@ export function createFakeGraph(): FakeGraph {
     calendars,
     subscriptions,
     pageSize: 1000,
+    outOfWindow: new Set(),
     addCalendar(id, name) {
       calendars.set(id, { id, name, canEdit: true, isDefaultCalendar: false, events: new Map() });
     },
@@ -145,10 +149,12 @@ export function createFakeGraph(): FakeGraph {
         const name = String(body?.['name']);
         if ([...calendars.values()].some((one) => one.name.toLowerCase() === name.toLowerCase())) return problem(409, 'ErrorFolderExists');
         const id = `AAMk-made-${String(++made)}`;
-        calendars.set(id, { id, name, canEdit: true, isDefaultCalendar: false, events: new Map() });
+        const marked = (body?.['singleValueExtendedProperties'] as { id: string; value: string }[] | undefined)?.some((one) => one.id === OWN_CALENDAR_PROPERTY && one.value === '1') === true;
+        calendars.set(id, { id, name, canEdit: true, isDefaultCalendar: false, marked, events: new Map() });
         return json(201, { id, name });
       }
-      return json(200, { value: [...calendars.values()].map(({ id, name, canEdit, isDefaultCalendar }) => ({ id, name, canEdit, isDefaultCalendar })) });
+      const onlyMarked = (url.searchParams.get('$filter') ?? '').includes(OWN_CALENDAR_PROPERTY);
+      return json(200, { value: [...calendars.values()].filter((one) => !onlyMarked || one.marked === true).map(({ id, name, canEdit, isDefaultCalendar }) => ({ id, name, canEdit, isDefaultCalendar })) });
     }
     const calendar = calendars.get(path[2] ?? '');
     if (calendar === undefined) return problem(404, 'ErrorItemNotFound');
@@ -174,6 +180,7 @@ export function createFakeGraph(): FakeGraph {
     }
     const event = calendar.events.get(path[4] ?? '');
     if (event === undefined || event.removed === true) return problem(404, 'ErrorItemNotFound');
+    if (method === 'GET') return json(200, selected(event, url.searchParams.get('$select')));
     if (method === 'DELETE') {
       Object.assign(event, { removed: true, serial: ++serial });
       return new Response(null, { status: 204 });
@@ -208,7 +215,7 @@ export function createFakeGraph(): FakeGraph {
     const since = token === null ? 0 : deltas.get(token)!.at;
     const value = [...calendar.events.values()]
       .filter((one) => one.serial > since && (token !== null || !one.removed))
-      .map((one) => (one.removed ? { id: one.id, '@removed': { reason: 'deleted' } } : selected(one, null)));
+      .map((one) => (one.removed || fake.outOfWindow.has(one.id) ? { id: one.id, '@removed': { reason: 'deleted' } } : selected(one, null)));
     const next = `dt${String(++made)}`;
     deltas.set(next, { calendarId: calendar.id, at: serial });
     const link = new URL(url);

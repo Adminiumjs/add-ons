@@ -116,12 +116,38 @@ describe('a busy read', () => {
 });
 
 describe('the calendar it keeps', () => {
-  it('reuses one of the same name, whatever its case, and never the main calendar', async () => {
+  it('never takes a person\u2019s own calendar of the same name, and reuses only the one it marked', async () => {
     const { graph, provider } = setup();
-    graph.addCalendar('existing', 'lumen studio');
-    expect(await provider.ensureCalendar({ name: 'Lumen Studio', knownId: null })).toEqual({ calendarId: 'existing' });
-    const main = await provider.ensureCalendar({ name: 'Calendar', knownId: null });
-    expect(main).toEqual({ calendarError: 'CONFLICT' });
+    graph.addCalendar('persons-own', 'lumen studio');
+    const made = (await provider.ensureCalendar({ name: 'Lumen Studio', knownId: null })) as { calendarId: string };
+    expect(made.calendarId).not.toBe('persons-own');
+    expect(graph.calendars.get(made.calendarId)?.name).toBe('Lumen Studio bookings');
+    expect(graph.calendars.get('persons-own')?.events.size).toBe(0);
+    expect(await provider.ensureCalendar({ name: 'Lumen Studio', knownId: null })).toEqual({ calendarId: made.calendarId });
+    expect(await provider.ensureCalendar({ name: 'Calendar', knownId: null })).not.toEqual({ calendarId: 'AAMk-default' });
+  });
+
+  it('keeps its calendar when a rename would take a name the person already uses', async () => {
+    const { graph, provider } = setup();
+    const { calendarId } = (await provider.ensureCalendar({ name: 'Old', knownId: null })) as { calendarId: string };
+    graph.addCalendar('persons-own', 'New');
+    graph.failNext((one) => one.method === 'PATCH' && one.url.pathname.endsWith(calendarId), 409);
+    expect(await provider.ensureCalendar({ name: 'New', knownId: calendarId })).toEqual({ calendarId });
+  });
+
+  it('does not read an event outside the delta\u2019s dates as deleted', async () => {
+    const { graph, provider } = setup();
+    const { calendarId } = (await provider.ensureCalendar({ name: 'Lumen Studio', knownId: null })) as { calendarId: string };
+    const first = (await provider.listOwnEvents({ calendarId, cursor: null })) as { cursor: string };
+    const old = (await provider.upsertEvent(visit(calendarId, 'old-key'))) as { remoteId: string };
+    const gone = (await provider.upsertEvent(visit(calendarId, 'gone-key'))) as { remoteId: string };
+    graph.outOfWindow.add(old.remoteId);
+    await graph.driver.deleteEventOutside(gone.remoteId);
+    const answer = (await provider.listOwnEvents({ calendarId, cursor: first.cursor })) as { events: { remoteId: string; deleted: boolean }[] };
+    expect(answer.events.find((one) => one.remoteId === old.remoteId)).toBeUndefined();
+    expect(answer.events.find((one) => one.remoteId === gone.remoteId)?.deleted).toBe(true);
+    const looked = graph.requests.filter((one) => one.method === 'GET' && one.url.pathname.includes('/events/'));
+    for (const request of looked) expect(request.url.searchParams.get('$select')).toBe('id');
   });
 
   it('renames in place, and finds or makes one when the known one is gone', async () => {

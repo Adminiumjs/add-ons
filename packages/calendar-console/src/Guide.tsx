@@ -98,7 +98,7 @@ function outcomeWords(outcome: Outcome, screen: CalendarProviderScreen, w: Words
     case 'good':
       return { good: true, title: w.goodTitle, body: w.goodBody };
     case 'unproved':
-      return { good: true, title: w.unprovedTitle, body: w.unprovedBody };
+      return { good: true, title: w.unprovedTitle, body: fill(w.unprovedBody, { company: screen.company }) };
     case 'refused':
       return bad(w[screen.refusedError]);
     case 'expired':
@@ -113,6 +113,8 @@ function Keys({ screen, w, info, choice, onSaved, onConnectMine }: { screen: Cal
   const [secret, setSecret] = useState('');
   const [tenant, setTenant] = useState(info.tenant ?? '');
   const [endsOn, setEndsOn] = useState(info.secretEndsOn ?? '');
+  // The date belongs to the saved secret: a new secret starts with none, unless one is written.
+  const [dateTouched, setDateTouched] = useState(false);
   const [checking, setChecking] = useState(false);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const edited = (set: (value: string) => void) => (event: { target: { value: string } }) => {
@@ -127,6 +129,12 @@ function Keys({ screen, w, info, choice, onSaved, onConnectMine }: { screen: Cal
   const dateBad = problemField === 'date-shape';
   const said = outcome === null ? null : outcomeWords(outcome, screen, w);
 
+  const typeSecret = (event: { target: { value: string } }): void => {
+    setSecret(event.target.value);
+    setOutcome(null);
+    if (!dateTouched) setEndsOn(event.target.value.trim() === '' ? (info.secretEndsOn ?? '') : '');
+  };
+
   const press = async (): Promise<void> => {
     const draft = { clientId, secret, hasSavedSecret: info.registered, tenant: screen.hasTenant ? tenant : null, singleTenant: screen.hasTenant && single, endsOn };
     const problem = localProblem(draft, screen.clientOk);
@@ -136,24 +144,28 @@ function Keys({ screen, w, info, choice, onSaved, onConnectMine }: { screen: Cal
     }
     setChecking(true);
     setOutcome(null);
+    const typed = single ? tenant.trim() : '';
+    const pair = {
+      clientId: clientId.trim(),
+      ...(secret.trim() === '' ? {} : { clientSecret: secret.trim() }),
+      ...(screen.hasTenant ? { tenant: typed === '' ? null : typed } : {}),
+    };
     try {
-      const directory = screen.hasTenant && single ? tenant.trim() : null;
-      await api.put(`/api/v1/add-ons/${screen.key}/connect/app`, {
-        clientId: clientId.trim(),
-        ...(secret.trim() === '' ? {} : { clientSecret: secret.trim() }),
-        ...(screen.hasTenant ? { tenant: directory === '' ? null : directory, secretEndsOn: endsOn.trim() === '' ? null : endsOn.trim() } : {}),
-      });
-      setSecret('');
-      onSaved();
-    } catch {
-      setChecking(false);
-      setOutcome({ kind: 'save-failed' });
-      return;
-    }
-    try {
-      const { result } = await api.post<{ result: CheckAnswer }>(`/api/v1/add-ons/${screen.key}/connect/check`, screen.check);
-      setOutcome({ kind: 'check', result: checkResult(result) });
-      onSaved();
+      // Asked first: a mistyped secret must never replace one that works.
+      const { result } = await api.post<{ result: CheckAnswer }>(`/api/v1/add-ons/${screen.key}/connect/check`, { ...screen.check, ...pair });
+      const judged = checkResult(result);
+      if (judged === 'good' || judged === 'unproved') {
+        try {
+          await api.put(`/api/v1/add-ons/${screen.key}/connect/app`, { ...pair, ...(screen.hasTenant ? { secretEndsOn: endsOn.trim() === '' ? null : endsOn.trim() } : {}) });
+        } catch {
+          setOutcome({ kind: 'save-failed' });
+          return;
+        }
+        setSecret('');
+        setDateTouched(false);
+        onSaved();
+      }
+      setOutcome({ kind: 'check', result: judged });
     } catch {
       setOutcome({ kind: 'check', result: 'unreachable' });
     } finally {
@@ -174,8 +186,9 @@ function Keys({ screen, w, info, choice, onSaved, onConnectMine }: { screen: Cal
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {field('guide-client', w.clientId, <Input id="guide-client" dir="ltr" autoComplete="off" value={clientId} placeholder={screen.clientPlaceholder} aria-invalid={clientBad} aria-describedby={describedBy(clientBad, 'guide-client')} onChange={edited(setClientId)} />)}
       {screen.hasTenant && single ? field('guide-tenant', w.tenantId, <Input id="guide-tenant" dir="ltr" autoComplete="off" value={tenant} placeholder="00000000-0000-0000-0000-000000000000" aria-invalid={tenantBad} aria-describedby={describedBy(tenantBad, 'guide-tenant', true)} onChange={edited(setTenant)} />, w.tenantHelp) : null}
-      {field('guide-secret', w.clientSecret, <Input id="guide-secret" dir="ltr" type="password" autoComplete="new-password" value={secret} aria-invalid={secretBad} aria-describedby={describedBy(secretBad, 'guide-secret', info.registered)} onChange={edited(setSecret)} />, info.registered ? w.secretKept : undefined)}
-      {screen.hasTenant ? field('guide-ends', w.secretEnds, <Input id="guide-ends" dir="ltr" type="date" value={endsOn} aria-invalid={dateBad} aria-describedby={describedBy(dateBad, 'guide-ends', true)} onChange={edited(setEndsOn)} />, w.secretEndsHelp) : null}
+      {field('guide-secret', w.clientSecret, <Input id="guide-secret" dir="ltr" type="password" autoComplete="new-password" value={secret} aria-invalid={secretBad} aria-describedby={describedBy(secretBad, 'guide-secret', info.registered)} onChange={typeSecret} />, info.registered ? w.secretKept : undefined)}
+      {screen.hasTenant ? field('guide-ends', w.secretEnds, <Input id="guide-ends" dir="ltr" type="date" value={endsOn} aria-invalid={dateBad} aria-describedby={describedBy(dateBad, 'guide-ends', true)} onChange={(event: { target: { value: string } }) => { setDateTouched(true); setEndsOn(event.target.value); setOutcome(null); }} />, w.secretEndsHelp) : null}
+      {screen.hasTenant && info.accounts > 0 && (single ? tenant.trim() : '') !== (info.tenant ?? '') ? <Alert tone="warn" title={fill(w.warnTenant, { company: screen.company })} /> : null}
       <div>
         <Button disabled={checking} onClick={() => void press()}>{checking ? w.checking : w.check}</Button>
       </div>

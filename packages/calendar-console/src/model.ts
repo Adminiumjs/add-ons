@@ -42,6 +42,8 @@ export interface Person {
   row: string;
   name: string | null;
   address: string | null;
+  /** The record has an address a link can go to, whether or not this reader may see it. */
+  canEmail: boolean;
   account: PersonAccount | null;
   lastSyncedAt: number | null;
   elsewhere: boolean;

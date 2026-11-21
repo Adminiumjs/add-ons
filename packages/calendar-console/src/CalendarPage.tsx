@@ -18,6 +18,7 @@ import { fill, wordsFor, type WordKey, type Words } from './words/index.ts';
 interface RowState {
   state: string;
   lastSyncedAt: number | null;
+  calendarId: string | null;
   readCalendars: string[] | null;
   countAllDay: boolean;
   traits: { listsCalendars: boolean; allDayKnown: boolean; busyPush: boolean } | null;
@@ -80,12 +81,14 @@ function errorCode(error: unknown): string | null {
 function usePage(screen: CalendarProviderScreen) {
   const [info, setInfo] = useState<InstallInfo | null>(null);
   const [people, setPeople] = useState<Person[]>([]);
+  const [more, setMore] = useState(false);
   const [failed, setFailed] = useState<'load' | 'forbidden' | null>(null);
   const load = useCallback(async () => {
     try {
-      const [install, list] = await Promise.all([api.get<InstallInfo>(pathOf(screen.key, 'accounts')), api.get<{ people: Person[] }>(pathOf(screen.key, 'people'))]);
+      const [install, list] = await Promise.all([api.get<InstallInfo>(pathOf(screen.key, 'accounts')), api.get<{ people: Person[]; more: boolean }>(pathOf(screen.key, 'people'))]);
       setInfo(install);
       setPeople(list.people);
+      setMore(list.more);
       setFailed(null);
     } catch (error) {
       setFailed((error as { status?: number }).status === 403 ? 'forbidden' : 'load');
@@ -94,13 +97,13 @@ function usePage(screen: CalendarProviderScreen) {
   useEffect(() => {
     void load();
   }, [load]);
-  return { info, people, failed, load };
+  return { info, people, more, failed, load };
 }
 
 export function CalendarPage({ screen }: { screen: CalendarProviderScreen }): ReactNode {
   const locale = useLocaleTag();
   const w = wordsFor(locale);
-  const { info, people, failed, load } = usePage(screen);
+  const { info, people, more, failed, load } = usePage(screen);
   const [guide, setGuide] = useState(() => window.location.hash === '#guide');
   const [said, setSaid] = useState<string | null>(null);
   const [invite, setInvite] = useState(false);
@@ -233,6 +236,7 @@ export function CalendarPage({ screen }: { screen: CalendarProviderScreen }): Re
               ))}
             </ul>
           )}
+          {more ? <p style={{ ...subtle, padding: '10px 20px', borderTop: '1px solid var(--border)' }}>{w.morePeople}</p> : null}
         </section>
       </div>
     </PageSurface>
@@ -257,7 +261,7 @@ function Avatar({ person }: { person: Person }): ReactNode {
 function SendLink({ w, person, primary = true }: { w: Words; person: Person; primary?: boolean }): ReactNode {
   const [state, setState] = useState<'idle' | 'busy' | 'sent' | 'copied'>('idle');
   const [error, setError] = useState<string | null>(null);
-  const copy = person.address === null;
+  const copy = !person.canEmail;
   const press = async (): Promise<void> => {
     setState('busy');
     setError(null);
@@ -301,7 +305,7 @@ function InvitePanel({ screen, w, people }: { screen: CalendarProviderScreen; w:
       {people.map((person) => (
         <div key={`${person.table}:${person.row}`} style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <Avatar person={person} />
-          <span style={{ flex: 1, minWidth: 120, fontSize: 13, fontWeight: 700 }}>{person.name ?? person.address}</span>
+          <span style={{ flex: 1, minWidth: 120, fontSize: 13, fontWeight: 700 }}>{person.name ?? person.address ?? w.unnamed}</span>
           <Button variant="ghost" size="sm" onClick={() => void here(person)}>{w.connectHere}</Button>
           <SendLink w={w} person={person} />
         </div>
@@ -314,8 +318,8 @@ function InvitePanel({ screen, w, people }: { screen: CalendarProviderScreen; w:
 function AccountRow({ screen, w, locale, person, onChanged, onSaid }: { screen: CalendarProviderScreen; w: Words; locale: string; person: Person; onChanged: () => void; onSaid: (text: string) => void }): ReactNode {
   const [open, setOpen] = useState(false);
   const account = person.account!;
-  const name = person.name ?? person.address ?? '';
-  const first = firstNameOf(person);
+  const name = person.name ?? person.address ?? w.unnamed;
+  const first = person.name === null && person.address === null ? w.unnamed : firstNameOf(person);
   const company = screen.company;
   const since = formatStamp(account.since, locale);
   const needs = account.state === 'reconnect' || account.state === 'partial';
@@ -393,7 +397,7 @@ function AccountDetail({ screen, w, person, first, name, needs, since, company, 
   const listed = state?.traits?.listsCalendars === true;
   // A calendar the service lists by name; otherwise the main one, plus ids typed by hand.
   const rows = listed
-    ? (state?.calendars ?? []).filter((one) => one.writable || reading.includes(one.id)).map((one) => ({ id: one.primary ? 'primary' : one.id, name: one.primary ? w.mainCalendar : one.name, sub: one.primary ? (account.address ?? '') : '' }))
+    ? (state?.calendars ?? []).filter((one) => one.id !== state?.calendarId).map((one) => ({ id: one.primary ? 'primary' : one.id, name: one.primary ? w.mainCalendar : one.name, sub: one.primary ? (account.address ?? '') : '' }))
     : [...new Set(['primary', ...reading])].map((id) => ({ id, name: id === 'primary' ? w.mainCalendar : w.addedCalendar, sub: id === 'primary' ? (account.address ?? '') : id }));
 
   const toggle = async (id: string, on: boolean): Promise<void> => {

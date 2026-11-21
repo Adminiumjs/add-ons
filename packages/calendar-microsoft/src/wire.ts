@@ -12,7 +12,9 @@
  *   3. No single event of a person's calendar is ever fetched.
  *
  * The one delta read is of the calendar Adminium itself made, to find an event
- * someone deleted there. Only its id, times and version are copied from it.
+ * someone deleted there. Only its id, times and version are copied from it. A
+ * delta also says "removed" of an event that merely lies outside its dates, so
+ * each one is looked up by id, asking for the id alone, before it counts.
  */
 import type { CalendarError, CalendarProvider, OwnEvent } from '@adminium/add-on-contracts';
 
@@ -32,6 +34,11 @@ export const PREFER = 'outlook.timezone="UTC", IdType="ImmutableId"';
 
 /** The key the core gave an event, kept on the event so a retry finds it. */
 export const KEY_PROPERTY = 'String {6f1d2c84-3b7a-4e59-9a41-7c2e5d8b1f30} Name adminiumEventKey';
+
+/** Marks the calendar Adminium made, so a person's own calendar of the same name is never taken for it. */
+export const OWN_CALENDAR_PROPERTY = 'String {6f1d2c84-3b7a-4e59-9a41-7c2e5d8b1f31} Name adminiumOwnCalendar';
+/** Outlook keeps names unique: what the calendar is called when the person already has one of that name. */
+export const fallbackName = (name: string): string => `${name} bookings`;
 
 export const PAGE_SIZE = 200;
 /** The contract's limit on one busy answer. */

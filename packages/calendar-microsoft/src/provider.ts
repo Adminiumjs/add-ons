@@ -30,6 +30,7 @@ import {
   KEY_PROPERTY,
   MICROSOFT_CALENDAR_KEY,
   MOST_INTERVALS,
+  OWN_CALENDAR_PROPERTY,
   OWN_CURSOR_DAYS,
   OWN_WINDOW_AHEAD_DAYS,
   OWN_WINDOW_BACK_DAYS,
@@ -38,6 +39,7 @@ import {
   SUBSCRIPTION_MINUTES,
   busyLink,
   busyOf,
+  fallbackName,
   graphTime,
   isGraphLink,
   ownEventOf,
@@ -150,12 +152,21 @@ export function createOutlookProvider({ http, now = () => Date.now() }: OutlookP
     return refuse('UNAVAILABLE');
   }
 
-  async function findByName(name: string): Promise<CalendarAnswer<string | null>> {
-    const calendars = await allCalendars();
-    if (refused(calendars)) return calendars;
-    const wanted = name.toLowerCase();
-    const found = calendars.find((one) => one.id !== undefined && one.name?.toLowerCase() === wanted && one.canEdit !== false && one.isDefaultCalendar !== true);
-    return found?.id ?? null;
+  /** The calendar Adminium made here before, whatever else the person keeps. */
+  async function findMarked(name: string): Promise<CalendarAnswer<string | null>> {
+    const filter = `singleValueExtendedProperties/Any(ep: ep/id eq '${OWN_CALENDAR_PROPERTY}' and ep/value eq '1')`;
+    const query = new URLSearchParams({ $filter: filter, $select: 'id,name' });
+    const response = await send(`${GRAPH_API}/me/calendars?${query.toString()}`);
+    if (refused(response)) return response;
+    if (!response.ok) return failure(response, 'UNAVAILABLE');
+    const body = await json<GraphPage<GraphCalendar>>(response);
+    if (refused(body)) return body;
+    const names = new Set([name.toLowerCase(), fallbackName(name).toLowerCase()]);
+    return body.value?.find((one) => one.id !== undefined && names.has((one.name ?? '').toLowerCase()))?.id ?? null;
+  }
+
+  async function makeCalendar(name: string): Promise<Response | CalendarError> {
+    return send(`${GRAPH_API}/me/calendars?$select=id`, 'POST', { name, singleValueExtendedProperties: [{ id: OWN_CALENDAR_PROPERTY, value: '1' }] });
   }
 
   const eventBody = (input: UpsertEventInput) => ({
@@ -217,20 +228,23 @@ export function createOutlookProvider({ http, now = () => Date.now() }: OutlookP
           if (known.name === name) return { calendarId: knownId };
           const renamed = await send(`${calendarPath(knownId)}?$select=id`, 'PATCH', { name });
           if (refused(renamed)) return renamed;
-          return renamed.ok ? { calendarId: knownId } : failure(renamed, 'CALENDAR_MISSING');
+          // The person already has a calendar of the new name: this one keeps the name it has.
+          return renamed.ok || renamed.status === 409 ? { calendarId: knownId } : failure(renamed, 'CALENDAR_MISSING');
         }
         if (response.status !== 404) return failure(response, 'UNAVAILABLE');
       }
-      const found = await findByName(name);
+      const found = await findMarked(name);
       if (refused(found)) return found;
       if (found !== null) return { calendarId: found };
-      const response = await send(`${GRAPH_API}/me/calendars?$select=id`, 'POST', { name });
+      let response = await makeCalendar(name);
       if (refused(response)) return response;
-      // Outlook keeps names unique: another job made it a moment ago.
       if (response.status === 409) {
-        const raced = await findByName(name);
+        // Taken: by another job a moment ago, or by a calendar of the person's own, which is left alone.
+        const raced = await findMarked(name);
         if (refused(raced)) return raced;
-        return raced === null ? refuse('CONFLICT') : { calendarId: raced };
+        if (raced !== null) return { calendarId: raced };
+        response = await makeCalendar(fallbackName(name));
+        if (refused(response)) return response;
       }
       if (!response.ok) return failure(response, 'UNAVAILABLE');
       const made = await json<GraphCalendar>(response);
@@ -281,10 +295,19 @@ export function createOutlookProvider({ http, now = () => Date.now() }: OutlookP
       if (!response.ok) return failure(response, 'UNAVAILABLE');
       const page = await json<GraphPage<GraphEvent>>(response);
       if (refused(page)) return page;
-      const events = (page.value ?? []).flatMap((event) => {
+      const events: ListOwnEventsAnswer['events'] = [];
+      for (const event of page.value ?? []) {
         const own = ownEventOf(event);
-        return own === null ? [] : [own];
-      });
+        if (own === null) continue;
+        if (own.deleted) {
+          const still = await send(`${eventPath(calendarId, own.remoteId)}?$select=id`);
+          if (refused(still)) return still;
+          // Still there, outside the dates this read covers: nothing happened to it.
+          if (still.ok) continue;
+          if (still.status !== 404) return failure(still, 'UNAVAILABLE');
+        }
+        events.push(own);
+      }
       const next = page['@odata.nextLink'];
       if (next !== undefined) return isGraphLink(next) ? { events, cursor: packCursor({ day, link: next }), more: true } : refuse('UNAVAILABLE');
       const delta = page['@odata.deltaLink'];
