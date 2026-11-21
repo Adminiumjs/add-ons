@@ -1,0 +1,22 @@
+{
+  "name": "@adminium/add-on-calendar-console",
+  "private": true,
+  "version": "1.0.33",
+  "type": "module",
+  "description": "The console screens the Google Calendar and Outlook Calendar add-ons share: the add-on page and the setup guide. Bundled into each, never published.",
+  "license": "AGPL-3.0-only",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@adminium/add-on-contracts": "npm:@adminiumjs/add-on-contracts@0.3.43",
+    "@adminium/add-on-host": "*"
+  }
+}

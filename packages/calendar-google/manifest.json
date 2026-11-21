@@ -14,17 +14,33 @@
     "key": "addon.calendar-google.line",
     "fallback": "Puts each booking into a calendar in the person's own Google account, and their busy times block their slots. Only “busy” is read, never what an event is called."
   },
-  "categories": ["scheduling"],
+  "categories": [
+    "data"
+  ],
   "compatibility": {
     "minAdminiumVersion": "0.3.71",
-    "requires": ["outbound-http"]
+    "requires": [
+      "oauth-connect",
+      "outbound-http"
+    ]
   },
-  "capabilities": ["outbound-http"],
+  "capabilities": [
+    "oauth-connect",
+    "outbound-http"
+  ],
   "addOn": {
-    "attaches": [{ "app": "*" }],
+    "attaches": [
+      {
+        "app": "*"
+      }
+    ],
     "scope": "server",
     "provides": [
-      { "contract": "calendar-provider", "version": 1, "server": "dist/server.js" }
+      {
+        "contract": "calendar-provider",
+        "version": 1,
+        "server": "dist/server.js"
+      }
     ],
     "connect": {
       "kind": "oauth2",
@@ -42,11 +58,71 @@
         "https://www.googleapis.com/auth/calendar.app.created",
         "https://www.googleapis.com/auth/calendar.events.freebusy"
       ],
-      "authorizeParams": { "access_type": "offline", "prompt": "consent" },
-      "identity": { "subject": "sub", "address": ["email"] }
+      "authorizeParams": {
+        "access_type": "offline",
+        "prompt": "consent"
+      },
+      "identity": {
+        "subject": "sub",
+        "address": [
+          "email"
+        ]
+      }
     },
-    "network": { "allow": ["accounts.google.com", "oauth2.googleapis.com", "www.googleapis.com"] },
-    "publicSettings": []
+    "network": {
+      "allow": [
+        "accounts.google.com",
+        "oauth2.googleapis.com",
+        "www.googleapis.com"
+      ]
+    },
+    "publicSettings": [],
+    "hostApi": 2,
+    "navGroups": [
+      {
+        "key": "calendar-google",
+        "label": {
+          "key": "addon.calendar-google.nav",
+          "fallback": "Google Calendar"
+        },
+        "labels": {
+          "en-US": "Google Calendar",
+          "de-DE": "Google Kalender",
+          "fr-FR": "Google Agenda",
+          "da-DK": "Google Kalender",
+          "cs-CZ": "Kalendář Google",
+          "ar-EG": "تقويم Google",
+          "zh-CN": "Google 日历",
+          "zh-TW": "Google 日曆"
+        },
+        "order": 47
+      }
+    ],
+    "pages": [
+      {
+        "ref": "calendar-google-settings",
+        "title": {
+          "key": "addon.calendar-google.page.settings",
+          "fallback": "Google Calendar"
+        },
+        "titles": {
+          "en-US": "Google Calendar",
+          "de-DE": "Google Kalender",
+          "fr-FR": "Google Agenda",
+          "da-DK": "Google Kalender",
+          "cs-CZ": "Kalendář Google",
+          "ar-EG": "تقويم Google",
+          "zh-CN": "Google 日历",
+          "zh-TW": "Google 日曆"
+        },
+        "icon": "calendar",
+        "client": "dist/pages/settings.js",
+        "nav": {
+          "group": "calendar-google",
+          "order": 10
+        }
+      }
+    ]
   },
   "settings": []
 }

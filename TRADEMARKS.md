@@ -57,6 +57,8 @@ including the ones that name no company.
 | Design Studio | `packages/design-studio` | `DS` | *(none)* | — |
 | DHL Shipping | `packages/shipping-dhl` | `DHL` | **DHL** | Deutsche Post AG |
 | Google reviews | `packages/google-reviews` | `GR` | **Google**, **Google Maps** | Google LLC |
+| Google Calendar | `packages/calendar-google` | `GC` | **Google**, **Google Calendar**, **Google Workspace**, **Gmail**, **Google Cloud** | Google LLC |
+| Outlook Calendar | `packages/calendar-microsoft` | `OC` | **Microsoft**, **Outlook**, **Outlook.com**, **Hotmail**, **Microsoft 365**, **Microsoft Entra**, **Microsoft Graph** | Microsoft Corporation |
 | Canva Import | `packages/import-canva` | `CNV` | **Canva** | its owner |
 | Live Personalizer | `packages/personalizer` | `LP` | *(none)* | — |
 | Holiday Calendars | `packages/holiday-calendars` | `CAL` | *(none)* | — |

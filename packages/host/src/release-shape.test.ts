@@ -42,7 +42,7 @@ const FILES_FIELD = ['dist', 'manifest.json', 'TRADEMARKS.md', 'README.md', 'LIC
  * Packages that are deliberately never published: TypeScript sources the
  * add-ons build against, never something an add-on ships.
  */
-const NEVER_PUBLISHED = ['host', 'host-kit'];
+const NEVER_PUBLISHED = ['calendar-console', 'host', 'host-kit'];
 
 interface AddOn {
   dir: string;
@@ -76,6 +76,9 @@ describe('release shape: discovery', () => {
     expect(found.length).toBeGreaterThan(3);
     expect(found.map((a) => a.name)).toEqual([
       'barcode-labels',
+      // The first two that keep one sign-in per person (`connect.accounts`), and the only `calendar-provider@1` implementers.
+      'calendar-google',
+      'calendar-microsoft',
       // The add-on that keeps customers' designs and the shop's ready-made designs, and the first with an entry shop apps import into their own pages.
       'customiser',
       'design-studio',
