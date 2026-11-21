@@ -1,5 +1,5 @@
 /**
- * T08's `calendar-provider@1` kit, run against this provider and the stand-in.
+ * The `calendar-provider@1` kit, run against this provider and the stand-in.
  * Under the two ruled permissions a lost calendar id cannot be found again, and
  * the kit is told so; `provider.test.ts` proves what happens then.
  */

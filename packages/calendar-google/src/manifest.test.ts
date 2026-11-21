@@ -45,7 +45,7 @@ describe('the manifest', () => {
     expect(manifest.settings).toEqual([]);
   });
 
-  it('asks for the ruled permissions and no others (R7, branch B)', () => {
+  it('asks for the narrow permissions and no others', () => {
     expect(connect['scopes']).toEqual(['openid', 'email', 'https://www.googleapis.com/auth/calendar.app.created', 'https://www.googleapis.com/auth/calendar.events.freebusy']);
     expect(connect['requiredScopes']).toEqual(['https://www.googleapis.com/auth/calendar.app.created', 'https://www.googleapis.com/auth/calendar.events.freebusy']);
     expect(JSON.stringify(connect)).not.toMatch(/calendar\.events\.readonly|calendar\.readonly|auth\/calendar"/);

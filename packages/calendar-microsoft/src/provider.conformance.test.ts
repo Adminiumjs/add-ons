@@ -1,4 +1,4 @@
-/** T08's `calendar-provider@1` kit, run against this provider and the stand-in for Graph. */
+/** The `calendar-provider@1` kit, run against this provider and the stand-in for Graph. */
 import { calendarProviderConformance } from '@adminium/add-on-contracts/testing/calendar-provider';
 
 import { createCalendarProvider } from './provider.ts';

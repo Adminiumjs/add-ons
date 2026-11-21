@@ -5,7 +5,7 @@
  *
  * Google's and Microsoft's own labels stay in English in every language, because
  * they are what the person sees on those pages. Their labels were read on
- * 2026-11-21 (the plan's PRV-12); a renamed button is a one-line change here.
+ * 2026-11-21; a renamed button is a one-line change here.
  */
 export const EN = {
   // The page

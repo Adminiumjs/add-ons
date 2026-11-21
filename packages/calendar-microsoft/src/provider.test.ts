@@ -1,6 +1,6 @@
 /**
- * WHAT THE KIT CANNOT SAY ABOUT MICROSOFT: the three rules that keep titles out
- * (PRV-7), all-day days, paging, refusals, the subscription and its handshake.
+ * WHAT THE KIT CANNOT SAY ABOUT MICROSOFT: the three rules that keep titles out,
+ * all-day days, paging, refusals, the subscription and its handshake.
  */
 import { describe, expect, it } from 'vitest';
 

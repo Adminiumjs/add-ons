@@ -50,7 +50,7 @@ describe('the manifest', () => {
     expect(connect['requiredScopes']).toEqual(['Calendars.ReadWrite']);
   });
 
-  it('signs in on the business\u2019s own directory, or common for work and personal accounts (PRV-5)', () => {
+  it('signs in on the business\u2019s own directory, or common for work and personal accounts', () => {
     expect(connect['authorizeUrl']).toBe('https://login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize');
     expect(connect['tokenUrl']).toBe('https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token');
     expect(connect['tenant']).toEqual({ default: 'common' });
