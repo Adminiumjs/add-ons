@@ -56,6 +56,7 @@ including the ones that name no company.
 |---|---|---|---|---|
 | Design Studio | `packages/design-studio` | `DS` | *(none)* | — |
 | DHL Shipping | `packages/shipping-dhl` | `DHL` | **DHL** | Deutsche Post AG |
+| Google reviews | `packages/google-reviews` | `GR` | **Google**, **Google Maps** | Google LLC |
 | Canva Import | `packages/import-canva` | `CNV` | **Canva** | its owner |
 | Live Personalizer | `packages/personalizer` | `LP` | *(none)* | — |
 | Holiday Calendars | `packages/holiday-calendars` | `CAL` | *(none)* | — |
@@ -199,6 +200,24 @@ connected to, never draw the mark, always carry the disclaimer, and link the
 vendor's own terms.
 
 ---
+
+# Google reviews — Google, Google Maps
+
+**Google** and **Google Maps** are trademarks of Google LLC. They are referenced
+**nominatively only**: to say whose reviews the box shows, and to give the credit
+Google requires beside them. That is the whole of the use.
+
+## Not affiliated
+
+Adminium is not affiliated with, endorsed by, sponsored by, certified by or in
+partnership with Google LLC. The add-on's settings screen says so in all eight
+locales. The box a visitor sees carries Google's own credit, "Google Maps", which
+is never translated.
+
+## No logo, no brand colour
+
+The add-on ships no Google logo and draws in no Google colour. The credit is
+plain text. The business brings its own key, under Google's own terms.
 
 # Canva Import — Canva
 

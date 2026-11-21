@@ -490,6 +490,17 @@ const HOST_ROOTS: readonly { name: string; root: string }[] = [
       process.env.ADMINIUM_HOTEL_RESERVATIONS ??
       fileURLToPath(new URL('../../../../hotel-reservations', import.meta.url)),
   },
+  /*
+   * Bookings (`bookings`, Lumen Studio) links its closures to Holiday
+   * Calendars' rows from its 0.2.0 line: a forward claim until that line is on
+   * its `main` (see `FORWARD_ATTACHES`).
+   */
+  {
+    name: 'booking-scheduler',
+    root:
+      process.env.ADMINIUM_BOOKING_SCHEDULER ??
+      fileURLToPath(new URL('../../../../booking-scheduler', import.meta.url)),
+  },
 ];
 
 /** The checked-out directory a host name stands for. */
@@ -592,6 +603,18 @@ const FORWARD_ATTACHES: readonly { pkg: string; app: string; range: string; why:
     app: 'printing',
     range: '^0.2.0',
     why: 'Print Shop 0.2.0, the line whose closures link to its holidays, is released after this add-on; 0.1.x has none',
+  },
+  {
+    pkg: 'holiday-calendars',
+    app: 'bookings',
+    range: '^0.2.0',
+    why: 'Bookings 0.2.0 (Lumen Studio), the line whose closures link to its holidays, is released after this add-on; 0.1.x has none',
+  },
+  {
+    pkg: 'google-reviews',
+    app: 'bookings',
+    range: '^0.2.0',
+    why: 'Bookings 0.2.0 (Lumen Studio), the first app to show the box, is released after this add-on',
   },
   {
     pkg: 'barcode-labels',

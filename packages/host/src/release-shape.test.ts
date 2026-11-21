@@ -79,6 +79,8 @@ describe('release shape: discovery', () => {
       // The add-on that keeps customers' designs and the shop's ready-made designs, and the first with an entry shop apps import into their own pages.
       'customiser',
       'design-studio',
+      // The first with a page of its own in a sandbox: an outside script that must never run in an app's page.
+      'google-reviews',
       'holiday-calendars',
       // The seventh, added 2026-09-10. It is the first add-on here that
       // attaches to `*` rather than to a named host app, and the first to
