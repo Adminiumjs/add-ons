@@ -1,0 +1,80 @@
+{
+  "kind": "add-on",
+  "manifestVersion": 1,
+  "key": "calendar-microsoft",
+  "name": "Outlook Calendar",
+  "version": "1.0.33",
+  "publisher": {
+    "id": "adminium",
+    "name": "Adminium",
+    "url": "https://adminium.dev"
+  },
+  "license": "AGPL-3.0-only",
+  "description": {
+    "key": "addon.calendar-microsoft.line",
+    "fallback": "Puts each booking into a calendar in the person's own Microsoft account, and their busy times block their slots. Only “busy” is read, never what an event is called."
+  },
+  "categories": [
+    "scheduling"
+  ],
+  "compatibility": {
+    "minAdminiumVersion": "0.3.71",
+    "requires": [
+      "outbound-http"
+    ]
+  },
+  "capabilities": [
+    "outbound-http"
+  ],
+  "addOn": {
+    "attaches": [
+      {
+        "app": "*"
+      }
+    ],
+    "scope": "server",
+    "provides": [
+      {
+        "contract": "calendar-provider",
+        "version": 1,
+        "server": "dist/server.js"
+      }
+    ],
+    "connect": {
+      "kind": "oauth2",
+      "accounts": "row",
+      "authorizeUrl": "https://login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize",
+      "tokenUrl": "https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token",
+      "tenant": {
+        "default": "common"
+      },
+      "scopes": [
+        "openid",
+        "email",
+        "offline_access",
+        "Calendars.ReadWrite"
+      ],
+      "requiredScopes": [
+        "Calendars.ReadWrite"
+      ],
+      "authorizeParams": {
+        "prompt": "select_account"
+      },
+      "identity": {
+        "subject": "sub",
+        "address": [
+          "email",
+          "preferred_username"
+        ]
+      }
+    },
+    "network": {
+      "allow": [
+        "login.microsoftonline.com",
+        "graph.microsoft.com"
+      ]
+    },
+    "publicSettings": []
+  },
+  "settings": []
+}
