@@ -134,7 +134,7 @@ export const editor: Readonly<Record<string, string>> = {
   "editor.milo.drafting": "جارٍ كتابة المسودة…",
   "editor.milo.failed": "لم يستطع Milo كتابة صفحة من ذلك. حاول مرة أخرى، أو صِف الصفحة بكلمات أخرى.",
   "editor.milo.failedAgain": "لم يستطع Milo كتابة مسودة. حاول مرة أخرى.",
-  "editor.milo.hint": "يستخدم Milo عنوان نشاطك التجاري ونماذجك المنشورة. ويترك اقتباسات العملاء.",
+  "editor.milo.hint": "يستخدم Milo اسم نشاطك التجاري وبريده الإلكتروني ونماذجك المنشورة. ويترك اقتباسات العملاء.",
   "editor.milo.label": "ما الغرض من الصفحة؟",
   "editor.milo.left": "ترك Milo الاقتباسات والروابط إلى مواقع أخرى وكل ما لم يستطع تسميته بيقين. أضفها بنفسك إن أردتها.",
   "editor.milo.looksRight": "يبدو صحيحًا",

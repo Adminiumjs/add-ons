@@ -134,7 +134,7 @@ export const editor: Readonly<Record<string, string>> = {
   "editor.milo.drafting": "Připravuje se…",
   "editor.milo.failed": "Milo z toho nedokázal napsat stránku. Zkuste to znovu, nebo stránku popište jinak.",
   "editor.milo.failedAgain": "Milo nedokázal napsat koncept. Zkuste to znovu.",
-  "editor.milo.hint": "Milo použije adresu vaší firmy a vaše zveřejněné formuláře. Citáty zákazníků vynechá.",
+  "editor.milo.hint": "Milo použije název a e-mail vaší firmy a vaše zveřejněné formuláře. Citáty zákazníků vynechá.",
   "editor.milo.label": "K čemu stránka slouží?",
   "editor.milo.left": "Milo vynechal citáty, odkazy na jiné weby a vše, co nedokázal jistě pojmenovat. Chcete-li je, přidejte je ručně.",
   "editor.milo.looksRight": "Vypadá to dobře",

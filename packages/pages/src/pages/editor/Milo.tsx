@@ -70,7 +70,7 @@ export function MiloDialog({ t, open, pageKey, language, title, onOpenChange, on
       <DialogHeader title={t('editor.milo.title', 'Describe the page')} subtitle={t('editor.milo.subtitle', 'Milo drafts the sections. You check each one before you publish.')} closeLabel={t('editor.close', 'Close')} tone="accent" />
       <DialogBody>
         <div data-lpe-fields="">
-          <Field label={t('editor.milo.label', 'What is the page for?')} hint={t('editor.milo.hint', 'Milo uses your business’s address and your live forms. It leaves out quotes from customers.')}>
+          <Field label={t('editor.milo.label', 'What is the page for?')} hint={t('editor.milo.hint', 'Milo uses your business’s name and email and your live forms. It leaves out quotes from customers.')}>
             <Textarea value={description} rows={4} maxLength={DESCRIPTION_MAX} onChange={(event) => setDescription(event.target.value)} />
           </Field>
           {refused === null ? null : (

@@ -134,7 +134,7 @@ export const editor: Readonly<Record<string, string>> = {
   "editor.milo.drafting": "Laver udkast…",
   "editor.milo.failed": "Milo kunne ikke skrive en side ud fra det. Prøv igen, eller beskriv siden med andre ord.",
   "editor.milo.failedAgain": "Milo kunne ikke skrive et udkast. Prøv igen.",
-  "editor.milo.hint": "Milo bruger din virksomheds adresse og dine udgivne formularer. Citater fra kunder udelader Milo.",
+  "editor.milo.hint": "Milo bruger din virksomheds navn og e-mail og dine udgivne formularer. Citater fra kunder udelader Milo.",
   "editor.milo.label": "Hvad skal siden bruges til?",
   "editor.milo.left": "Milo har udeladt citater, links til andre websteder og alt, den ikke kunne navngive sikkert. Tilføj dem selv, hvis du vil have dem.",
   "editor.milo.looksRight": "Ser rigtig ud",
