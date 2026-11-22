@@ -145,7 +145,7 @@ function eventsFor(record: Booked): TrackEvent[] {
       description: "Processed at the sorting depot",
     },
     {
-      at: isoDateTime(record.shipment.rate.estimatedDelivery, "08:05"),
+      at: isoDateTime(record.shipment.rate.estimatedDelivery ?? record.collected, "08:05"),
       place: record.to.city,
       status: "out-for-delivery",
       description: "With the delivery driver",
@@ -238,7 +238,7 @@ export function createDemoCarrier(options: DemoCarrierOptions): DemoCarrier {
           service: rate.service,
           reference: order.reference,
           collection: `${day} ${COLLECTION_WINDOW.from}-${COLLECTION_WINDOW.to}`,
-          delivery: rate.estimatedDelivery,
+          delivery: rate.estimatedDelivery ?? "",
           to,
           // THE QUOTED ROUTE'S SENDER, not the address this transport was
           // constructed with. `eventsFor` had this exact repair (see its

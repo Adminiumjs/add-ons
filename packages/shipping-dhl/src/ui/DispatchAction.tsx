@@ -792,14 +792,16 @@ export function DispatchAction({ order, now, chosen, onBooked }: DispatchPayload
                   <Code style={{ fontSize: 19, fontWeight: 700 }}>{booked.shipment.tracking}</Code>
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 18 }}>
-                  <div>
-                    <div style={{ fontSize: 11.5, color: "var(--fg-subtle)", marginBlockEnd: 3 }}>
-                      {t("addon.shipping-dhl.booked.window")}
+                  {booked.shipment.collectionFrom !== undefined && (
+                    <div>
+                      <div style={{ fontSize: 11.5, color: "var(--fg-subtle)", marginBlockEnd: 3 }}>
+                        {t("addon.shipping-dhl.booked.window")}
+                      </div>
+                      <Mono style={{ fontSize: 12.5, fontWeight: 600 }}>
+                        {`${day(booked.shipment.collectionFrom.slice(0, 10))} ${clockOf(COLLECTION_WINDOW.from)}–${clockOf(COLLECTION_WINDOW.to)}`}
+                      </Mono>
                     </div>
-                    <Mono style={{ fontSize: 12.5, fontWeight: 600 }}>
-                      {`${day(booked.shipment.collectionFrom.slice(0, 10))} ${clockOf(COLLECTION_WINDOW.from)}–${clockOf(COLLECTION_WINDOW.to)}`}
-                    </Mono>
-                  </div>
+                  )}
                   <div>
                     <div style={{ fontSize: 11.5, color: "var(--fg-subtle)", marginBlockEnd: 3 }}>
                       {t("addon.shipping-dhl.booked.service")}

@@ -242,7 +242,7 @@ describe("real transport — the plumbing that is actually finished", () => {
   it("cuts a carrier datetime back to the contract's ISO date", async () => {
     const { impl } = build();
     const rates = await impl.quote(parcel, DEMO_ORIGIN, TO);
-    expect(rates.every((r) => /^\d{4}-\d{2}-\d{2}$/.test(r.estimatedDelivery))).toBe(true);
+    expect(rates.every((r) => /^\d{4}-\d{2}-\d{2}$/.test(r.estimatedDelivery ?? ""))).toBe(true);
   });
 
   it("lifts a refusal into a CarrierError with the carrier's own words", async () => {

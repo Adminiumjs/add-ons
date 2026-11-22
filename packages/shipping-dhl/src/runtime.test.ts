@@ -187,7 +187,7 @@ describe("the runtime seam", () => {
 
     // The collection cannot be BEFORE the shop's today. It was, by a day, in
     // every host but the one this add-on was born in.
-    expect(shipment.collectionFrom.slice(0, 10) >= BIRCH_ROW.iso).toBe(true);
+    expect(shipment.collectionFrom!.slice(0, 10) >= BIRCH_ROW.iso).toBe(true);
     // And the first scan is on or after the day the shop is standing in.
     const events = await impl.track(shipment.tracking);
     expect(events[0]!.at.slice(0, 10) >= BIRCH_ROW.iso).toBe(true);

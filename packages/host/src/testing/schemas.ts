@@ -18,6 +18,13 @@
 import { z } from 'zod';
 
 import { DOCUMENT_LOCALE_IDS, type DocumentLocaleId } from '../contracts/document-render.ts';
+import {
+  CANCEL_STATES,
+  CUSTOMS_CONTENTS,
+  HANDOVER_KINDS,
+  SHIPMENT_DOCUMENT_KINDS,
+  SHIPMENT_PURPOSES,
+} from '../contracts/shipping-carrier.ts';
 
 // ── artwork-source@1 ────────────────────────────────────────────────────────
 
@@ -48,37 +55,9 @@ export const artworkRefSchema = z
 
 // ── shipping-carrier@1 ──────────────────────────────────────────────────────
 
-export const rateSchema = z
-  .object({
-    code: z.string().min(1),
-    service: z.string().min(1),
-    amount: z.number().nonnegative(),
-    currency: z.string().length(3),
-    estimatedDelivery: z
-      .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/, 'estimatedDelivery must be an ISO date'),
-  })
-  .strict();
-
-export const shipmentSchema = z
-  .object({
-    id: z.string().min(1),
-    tracking: z.string().min(1),
-    labelFileId: z.string().min(1),
-    collectionFrom: z.string().min(1),
-    collectionTo: z.string().min(1),
-    rate: rateSchema,
-  })
-  .strict();
-
-export const trackEventSchema = z
-  .object({
-    at: z.string().min(1),
-    place: z.string().min(1),
-    status: z.string().min(1),
-    description: z.string().min(1),
-  })
-  .strict();
+const isoDate = /^\d{4}-\d{2}-\d{2}$/;
+const decimalSchema = z.string().regex(/^\d+(\.\d+)?$/, 'must be an exact decimal string');
+const countrySchema = z.string().regex(/^[A-Z]{2}$/, 'must be an ISO 3166-1 alpha-2 code');
 
 export const parcelSchema = z
   .object({
@@ -96,9 +75,137 @@ export const addressSchema = z
     lines: z.array(z.string().min(1)).min(1),
     city: z.string().min(1),
     postcode: z.string().min(1),
+    region: z.string().min(1).optional(),
     country: z.string().min(1),
+    company: z.string().min(1).optional(),
+    phone: z.string().min(1).optional(),
+    email: z.string().min(1).optional(),
   })
   .strict();
+
+export const rateSchema = z
+  .object({
+    code: z.string().min(1),
+    service: z.string().min(1),
+    amount: z.number().nonnegative(),
+    amountDecimal: decimalSchema.optional(),
+    currency: z.string().length(3),
+    estimatedDelivery: z.string().regex(isoDate, 'estimatedDelivery must be an ISO date').optional(),
+    estimatedDays: z.number().int().nonnegative().optional(),
+    ref: z.string().min(1).optional(),
+    expiresAt: z.string().min(1).optional(),
+    carrier: z.string().min(1).optional(),
+    carrierToken: z.string().min(1).optional(),
+    handover: z.enum(HANDOVER_KINDS).optional(),
+    tracked: z.boolean().optional(),
+  })
+  .strict();
+
+export const orderRefSchema = z
+  .object({
+    reference: z.string().min(1),
+    purpose: z.enum(SHIPMENT_PURPOSES).optional(),
+    parcel: z.number().int().positive().optional(),
+  })
+  .strict();
+
+export const customsItemSchema = z
+  .object({
+    description: z.string().min(1),
+    quantity: z.number().int().positive(),
+    unitValue: decimalSchema,
+    currency: z.string().length(3),
+    unitWeightKg: z.number().positive(),
+    originCountry: countrySchema,
+    hsCode: z.string().min(1).optional(),
+    skuCode: z.string().min(1).optional(),
+    manufacturerCode: z.string().min(1).optional(),
+  })
+  .strict();
+
+export const customsDeclarationSchema = z
+  .object({
+    contents: z.enum(CUSTOMS_CONTENTS),
+    signer: z.string().min(1),
+    certified: z.literal(true),
+    nonDelivery: z.enum(['return', 'abandon']),
+    items: z.array(customsItemSchema).min(1),
+  })
+  .strict();
+
+export const shipmentDocumentSchema = z
+  .object({
+    kind: z.enum(SHIPMENT_DOCUMENT_KINDS),
+    mediaType: z.string().min(1).optional(),
+  })
+  .strict();
+
+export const shipmentDocumentFileSchema = z
+  .object({
+    kind: z.enum(SHIPMENT_DOCUMENT_KINDS),
+    mediaType: z.string().min(1),
+    filename: z.string().min(1).optional(),
+    bytes: z.instanceof(Uint8Array).refine((b) => b.byteLength > 0, 'a document has bytes'),
+  })
+  .strict();
+
+export const shipmentSchema = z
+  .object({
+    id: z.string().min(1),
+    tracking: z.string().min(1),
+    labelFileId: z.string().min(1),
+    collectionFrom: z.string().min(1).optional(),
+    collectionTo: z.string().min(1).optional(),
+    rate: rateSchema,
+    carrier: z.string().min(1).optional(),
+    carrierToken: z.string().min(1).optional(),
+    trackingUrl: z.string().regex(/^https:\/\/\S+$/, 'trackingUrl must be https').optional(),
+    test: z.boolean().optional(),
+    documents: z.array(shipmentDocumentSchema).optional(),
+  })
+  .strict()
+  .refine((s) => (s.collectionFrom === undefined) === (s.collectionTo === undefined), {
+    message: 'a collection window has both ends or neither',
+    path: ['collectionTo'],
+  });
+
+export const trackEventSchema = z
+  .object({
+    at: z.string().min(1),
+    place: z.string().min(1).optional(),
+    status: z.string().min(1),
+    description: z.string().min(1),
+  })
+  .strict();
+
+export const cancelResultSchema = z
+  .object({
+    state: z.enum(CANCEL_STATES),
+    reference: z.string().min(1).optional(),
+    carrierMessage: z.string().min(1).optional(),
+    amountDecimal: decimalSchema.optional(),
+    currency: z.string().length(3).optional(),
+  })
+  .strict();
+
+export const carrierCredentialCheckSchema = z.discriminatedUnion('outcome', [
+  z
+    .object({
+      outcome: z.literal('ok'),
+      mode: z.enum(['live', 'test']),
+      accountFingerprint: z.string().min(1).optional(),
+      carriers: z.array(z.string().min(1)),
+    })
+    .strict(),
+  z.object({ outcome: z.literal('refused'), carrierMessage: z.string().min(1).optional() }).strict(),
+  z.object({ outcome: z.literal('unreachable') }).strict(),
+]);
+
+export const recoveryResultSchema = z.discriminatedUnion('outcome', [
+  z.object({ outcome: z.literal('found'), shipment: shipmentSchema }).strict(),
+  z.object({ outcome: z.literal('not-bought'), carrierMessage: z.string().min(1).optional() }).strict(),
+  z.object({ outcome: z.literal('no-match') }).strict(),
+]);
 
 // ── product-personalizer@1 ──────────────────────────────────────────────────
 

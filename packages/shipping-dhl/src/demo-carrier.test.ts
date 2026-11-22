@@ -110,7 +110,7 @@ describe("demo carrier — the seeded figures", () => {
     const [rate] = await late.quote(parcel(), DEMO_ORIGIN, TO);
     const shipment = await late.book(rate!, { reference: "MP-4126" });
     // Friday after 15:00 — the next working day is Monday, not Saturday.
-    expect(shipment.collectionFrom.slice(0, 10)).toBe("2026-08-10");
+    expect(shipment.collectionFrom?.slice(0, 10)).toBe("2026-08-10");
   });
 
   it("scans the SHOP'S OWN towns, not the transport's default ones", async () => {

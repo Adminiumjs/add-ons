@@ -103,14 +103,16 @@ export function TrackingPanel({ order }: DispatchPayload) {
           </div>
           <span style={{ fontSize: 13, fontWeight: 700 }}>{serviceName(t, shipment.rate, timeOfDay)}</span>
         </div>
-        <div>
-          <div style={{ fontSize: 11.5, color: "var(--fg-subtle)" }}>
-            {t("addon.shipping-dhl.panel.due")}
+        {shipment.rate.estimatedDelivery !== undefined && (
+          <div>
+            <div style={{ fontSize: 11.5, color: "var(--fg-subtle)" }}>
+              {t("addon.shipping-dhl.panel.due")}
+            </div>
+            <Mono style={{ fontSize: 12.5, fontWeight: 600 }}>
+              {day(shipment.rate.estimatedDelivery)}
+            </Mono>
           </div>
-          <Mono style={{ fontSize: 12.5, fontWeight: 600 }}>
-            {day(shipment.rate.estimatedDelivery)}
-          </Mono>
-        </div>
+        )}
       </div>
 
       <div style={{ display: "flex", flexDirection: "column" }}>

@@ -21,6 +21,7 @@ export {
 export {
   describeShippingCarrier,
   type ShippingCarrierFixtures,
+  type ShippingCarrierTraits,
 } from './shipping-carrier.ts';
 export {
   describeNumerals,
@@ -65,11 +66,19 @@ export {
 export {
   addressSchema,
   artworkRefSchema,
+  cancelResultSchema,
+  carrierCredentialCheckSchema,
+  customsDeclarationSchema,
+  customsItemSchema,
   documentPictureValueSchema,
   jobSpecSchema,
+  orderRefSchema,
   parcelSchema,
   personalizationSchema,
   rateSchema,
+  recoveryResultSchema,
+  shipmentDocumentFileSchema,
+  shipmentDocumentSchema,
   shipmentSchema,
   templateSchema,
   trackEventSchema,
