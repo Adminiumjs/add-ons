@@ -15,6 +15,8 @@
  * A survey that keeps no names says that a person answered, and never when.
  * Adminium stamps such an invitation with the time it was SENT, so that its
  * answer cannot be matched to it by time: that date is not an answering date.
+ * A survey whose names were switched on later still holds such rows, so a date
+ * is shown only where the row's own answering time differs from its sending.
  */
 import { useEffect, useState, type ReactNode } from 'react';
 
@@ -44,6 +46,8 @@ function Figure3({ label, n, positive }: { label: string; n: number; positive?: 
     </span>
   );
 }
+
+const instantOf = (value: unknown): number => (typeof value === 'string' || value instanceof Date ? new Date(value).getTime() : Number.NaN);
 
 /** The kind of mail an invitation went as, as the table and the line say it. */
 function mailWords(t: AddOnTranslate, kind: MailKind | null, inSentence: boolean): string {
@@ -175,7 +179,7 @@ export function Invitations({ t, form }: TabProps): ReactNode {
             render: (row: DataRow) =>
               dateOf(row['answered_at'], locale) === '' ? (
                 <span className="text-body-sm text-fg-subtle">{t('surveys.invites.notYet', 'Not yet')}</span>
-              ) : keepsWhen ? (
+              ) : keepsWhen && instantOf(row['answered_at']) !== instantOf(row['invited_at']) ? (
                 <span className="font-mono text-body-sm font-bold text-pos">{dateOf(row['answered_at'], locale)}</span>
               ) : (
                 <span className="text-body-sm font-bold text-pos">{t('surveys.invites.answered', 'Answered')}</span>

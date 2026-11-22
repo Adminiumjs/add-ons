@@ -105,6 +105,16 @@ describe('a survey’s invitations', () => {
     for (const row of rows) expect(within(row).getAllByRole('cell')[3]?.textContent).toMatch(/^(Answered|Not yet)$/);
   });
 
+  it('say no date for a row kept while names were off, after names are switched on', () => {
+    // Ruth answered a day after she was invited; Tomas's row is as it was stamped while names were off.
+    const tomas = (world.tables['invitations'] ?? []).find((one) => one['name'] === 'Tomas Reidy')!;
+    tomas['answered_at'] = tomas['invited_at'];
+    show(named);
+    const cells = screen.getAllByRole('row').slice(1).map((one) => within(one).getAllByRole('cell'));
+    expect(cells.find((one) => one[0]?.textContent === 'Tomas Reidy')?.[3]?.textContent).toBe('Answered');
+    expect(cells.find((one) => one[0]?.textContent === 'Ruth Adeyemi')?.[3]?.textContent).toBe('Jul 22, 2026');
+  });
+
   it('write nothing: invitations are a rule’s to make', async () => {
     show(named);
     await sentBy();
