@@ -96,6 +96,25 @@ describe('a survey’s invitations', () => {
     expect(document.body.textContent).not.toContain('Someone Else');
   });
 
+  it('say a person answered, and never when, on a survey that keeps no names', () => {
+    show({ ...named, survey: { mode: 'named', linkNames: false, stopAfterDays: 30 } });
+    const rows = screen.getAllByRole('row').slice(1);
+    // Such an invitation holds the day it was sent, so that its answer cannot be matched to it by time.
+    expect(within(rows[2]!).getAllByRole('cell')[3]?.textContent).toBe('Answered');
+    expect(within(rows[0]!).getAllByRole('cell')[3]?.textContent).toBe('Not yet');
+    for (const row of rows) expect(within(row).getAllByRole('cell')[3]?.textContent).toMatch(/^(Answered|Not yet)$/);
+  });
+
+  it('say no date for a row kept while names were off, after names are switched on', () => {
+    // Ruth answered a day after she was invited; Tomas's row is as it was stamped while names were off.
+    const tomas = (world.tables['invitations'] ?? []).find((one) => one['name'] === 'Tomas Reidy')!;
+    tomas['answered_at'] = tomas['invited_at'];
+    show(named);
+    const cells = screen.getAllByRole('row').slice(1).map((one) => within(one).getAllByRole('cell'));
+    expect(cells.find((one) => one[0]?.textContent === 'Tomas Reidy')?.[3]?.textContent).toBe('Answered');
+    expect(cells.find((one) => one[0]?.textContent === 'Ruth Adeyemi')?.[3]?.textContent).toBe('Jul 22, 2026');
+  });
+
   it('write nothing: invitations are a rule’s to make', async () => {
     show(named);
     await sentBy();

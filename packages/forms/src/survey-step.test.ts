@@ -174,6 +174,12 @@ describe('the "Survey" record tab', () => {
     expect(tabs.map((one) => one.id)).toEqual(['survey']);
     expect(tab).toMatchObject({ table: 'invitations', match: { table: 'record_table', row: 'record_key' }, on: 'linked', columns: ['form_id', 'invited_at', 'answered_at', 'class'] });
     for (const column of tab.columns) expect(columnOf('invitations', column), column).toBeDefined();
+    // Whether it was answered, never when: an unlinked survey's invitation holds the day it was sent.
+    expect((tab as unknown as { presence: { column: string; yes: { fallback: string }; yesLabels: Record<string, string>; no: { fallback: string }; noLabels: Record<string, string> }[] }).presence).toMatchObject([{ column: 'answered_at', yes: { fallback: 'Answered' }, no: { fallback: 'Not yet' } }]);
+    for (const one of (tab as unknown as { presence: { yesLabels: Record<string, string>; noLabels: Record<string, string> }[] }).presence) {
+      expect(Object.keys(one.yesLabels).sort()).toEqual(['ar-EG', 'cs-CZ', 'da-DK', 'de-DE', 'en-US', 'fr-FR', 'zh-CN', 'zh-TW']);
+      expect(Object.keys(one.noLabels).sort()).toEqual(['ar-EG', 'cs-CZ', 'da-DK', 'de-DE', 'en-US', 'fr-FR', 'zh-CN', 'zh-TW']);
+    }
     // Nobody's address or name shows on another table's record.
     for (const column of tab.columns) expect(columnOf('invitations', column)?.rules?.['personal'], column).not.toBe(true);
     expect(tab).not.toHaveProperty('edit');
