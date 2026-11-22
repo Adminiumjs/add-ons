@@ -22,9 +22,9 @@ import {
   setHostClock,
   setHostCurrency,
   shopClock,
-} from "./runtime.ts";
-import { PINNED_NOW } from "./clock.ts";
-import { DEMO_ORIGIN, FIRST_TRACKING } from "./seed.ts";
+} from "@adminium/add-on-shipping-kit/runtime.ts";
+import { PINNED_NOW } from "@adminium/add-on-shipping-kit/clock.ts";
+import { DEMO_ORIGIN, FIRST_TRACKING } from "@adminium/add-on-shipping-kit/seed.ts";
 
 /** Somewhere to quote to. Supplied by the suite; the host supplies it in life. */
 const TO = {
@@ -34,8 +34,8 @@ const TO = {
   postcode: "NW3 6BD",
   country: "GB",
 };
-import { applySettings, DEFAULT_SETTINGS, publicSettings } from "./settings.ts";
-import { useConnectedCarrier } from "./runtime.ts";
+import { applySettings, DEFAULT_SETTINGS, publicSettings } from "@adminium/add-on-shipping-kit/settings.ts";
+import { useConnectedCarrier } from "@adminium/add-on-shipping-kit/runtime.ts";
 
 const parcel = {
   weightKg: 1.8,

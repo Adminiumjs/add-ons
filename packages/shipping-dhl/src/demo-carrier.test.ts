@@ -10,11 +10,11 @@
 
 import { describe, expect, it } from "vitest";
 
-import { PINNED_NOW } from "./clock.ts";
+import { PINNED_NOW } from "@adminium/add-on-shipping-kit/clock.ts";
 import { CarrierError, type Address } from "@adminium/add-on-host/contracts";
 import { createDemoCarrier, POSTCODE_REFUSAL, postcodeFits } from "./demo-carrier.ts";
-import { parcelFor } from "./parcel.ts";
-import { DEMO_ORIGIN, FIRST_TRACKING, SAMPLE_ORDER } from "./seed.ts";
+import { parcelFor } from "@adminium/add-on-shipping-kit/parcel.ts";
+import { DEMO_ORIGIN, FIRST_TRACKING, SAMPLE_ORDER } from "@adminium/add-on-shipping-kit/seed.ts";
 import { describeShippingCarrier } from "@adminium/add-on-host/testing";
 
 const CUTOFF = "15:00";

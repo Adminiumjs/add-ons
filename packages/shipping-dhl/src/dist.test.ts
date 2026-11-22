@@ -40,7 +40,7 @@ import { OUTPUT } from "../vite.config.ts";
 import { foreignImportsIn, offendingAddresses, sendersIn } from "@adminium/add-on-host/testing";
 
 import { buildForReal, DIST, ROOT } from "./testing/build.ts";
-import { bannedHitsIn, tieringHitsIn } from "./testing/lexicon.ts";
+import { bannedHitsIn, tieringHitsIn } from "@adminium/add-on-shipping-kit/testing/lexicon.ts";
 
 beforeAll(() => {
   buildForReal();

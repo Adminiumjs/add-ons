@@ -40,9 +40,9 @@ import {
   originOf,
   resolveDestination,
   SAMPLE_ORDER,
-} from "./seed.ts";
-import { UnresolvedDestination } from "./ui/DispatchAction.tsx";
-import { strings } from "./i18n/strings.ts";
+} from "@adminium/add-on-shipping-kit/seed.ts";
+import { UnresolvedDestination } from "@adminium/add-on-shipping-kit/ui/DispatchAction.tsx";
+import { strings } from "./testing/named-strings.ts";
 
 /** Somebody else's parcel, whose address must never stand in for this one's. */
 const OTHER: PostalAddress = {
@@ -160,11 +160,11 @@ describe("an order nobody can place", () => {
       .replace(/&amp;/g, "&");
 
     const en = strings["en-US"];
-    expect(markup).toContain(en["addon.shipping-dhl.dest.unknownTitle"]);
+    expect(markup).toContain(en["addon.shipping-kit.dest.unknownTitle"]);
     expect(markup).toContain(STRANGER);
     // The sentence names the customer that could not be placed.
     expect(markup).toContain(
-      en["addon.shipping-dhl.dest.unknownBody"].replace("{customer}", STRANGER),
+      en["addon.shipping-kit.dest.unknownBody"].replace("{customer}", STRANGER),
     );
     // And not one character of another parcel's address is on the screen.
     expect(markup).not.toContain(OTHER.postcode);

@@ -14,5 +14,5 @@ import { translate } from "./t.ts";
 describeNumerals({
   name: "shipping-dhl",
   arabic: strings["ar-EG"],
-  substitute: (value) => translate("ar-EG", "addon.shipping-dhl.set.weightKg", { kg: value }),
+  substitute: (value) => translate("ar-EG", "addon.shipping-kit.set.weightKg", { kg: value }),
 });

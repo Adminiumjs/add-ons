@@ -24,7 +24,7 @@ import { describe, expect, it } from "vitest";
 import { createDhlCarrier, WIRE, wireIsPinned } from "./carrier.ts";
 import { CarrierError } from "@adminium/add-on-host/contracts";
 import type { HttpClient, HttpRequest, HttpResponse } from "./http.ts";
-import { DEMO_ORIGIN } from "./seed.ts";
+import { DEMO_ORIGIN } from "@adminium/add-on-shipping-kit/seed.ts";
 
 /**
  * A destination, supplied here rather than looked up: the address book this

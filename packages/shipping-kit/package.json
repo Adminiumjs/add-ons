@@ -1,0 +1,24 @@
+{
+  "name": "@adminium/add-on-shipping-kit",
+  "private": true,
+  "version": "1.0.33",
+  "type": "module",
+  "description": "The screens, copy and demo every carrier add-on shares, with the carrier named by a parameter. Bundled into each add-on, never published.",
+  "license": "AGPL-3.0-only",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  },
+  "scripts": {
+    "build": "echo 'packages/shipping-kit is bundled into each carrier add-on; there is nothing to build' >&2",
+    "typecheck": "tsc -b --force",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@adminium/add-on-host": "*",
+    "lucide-react": "^0.462.0"
+  }
+}

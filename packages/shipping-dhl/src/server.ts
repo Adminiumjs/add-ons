@@ -20,7 +20,7 @@
 export { createDhlCarrier, WIRE, wireIsPinned, type DhlCarrierOptions } from "./carrier.ts";
 export { createDemoCarrier, postcodeFits, POSTCODE_REFUSAL, type DemoCarrier } from "./demo-carrier.ts";
 export type { CarrierCredentials, HttpClient, HttpRequest, HttpResponse } from "./http.ts";
-export { PINNED_NOW, type Clock } from "./clock.ts";
+export { PINNED_NOW, type Clock } from "@adminium/add-on-shipping-kit/clock.ts";
 export type {
   Address,
   FileRef,

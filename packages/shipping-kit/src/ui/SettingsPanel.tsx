@@ -3,7 +3,7 @@
  *
  * TWO THINGS MOVED HERE FROM THE HOST, and both were the same defect wearing
  * different clothes. The manage drawer used to write this form inline behind
- * `addOn.key === "shipping-dhl"`, and it used to compute the default parcel
+ * a check of one add-on's key, and it used to compute the default parcel
  * weights by importing `parcel.ts` from this repo — host chrome calling one
  * carrier's weight engine, in an app whose central claim is that the second
  * delivery company is the same app with one file replaced.
@@ -96,16 +96,16 @@ export function SettingsPanel({ payload }: { payload: SettingsPanelPayload }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <SettingsSwitch
         on={values.demo_transport}
-        label={t("addon.shipping-dhl.set.demo")}
+        label={t("addon.shipping-kit.set.demo")}
         note={t(
           values.demo_transport
-            ? "addon.shipping-dhl.set.demoOn"
-            : "addon.shipping-dhl.set.demoOff",
+            ? "addon.shipping-kit.set.demoOn"
+            : "addon.shipping-kit.set.demoOff",
         )}
         onChange={(next) => payload.patch({ demo_transport: next })}
       />
 
-      <Field label={t("addon.shipping-dhl.set.cutoffLabel")}>
+      <Field label={t("addon.shipping-kit.set.cutoffLabel")}>
         <input
           type="time"
           value={values.collection_cutoff}
@@ -114,7 +114,7 @@ export function SettingsPanel({ payload }: { payload: SettingsPanelPayload }) {
         />
       </Field>
       <div style={{ fontSize: 11.5, color: "var(--fg-subtle)", marginBlockStart: -8 }}>
-        {t("addon.shipping-dhl.set.cutoffNote")}
+        {t("addon.shipping-kit.set.cutoffNote")}
       </div>
 
       {/*
@@ -133,17 +133,17 @@ export function SettingsPanel({ payload }: { payload: SettingsPanelPayload }) {
             marginBlockEnd: 8,
           }}
         >
-          {t("addon.shipping-dhl.set.returns")}
+          {t("addon.shipping-kit.set.returns")}
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
-          <Field label={t("addon.shipping-dhl.set.returnsName")}>
+          <Field label={t("addon.shipping-kit.set.returnsName")}>
             <input
               value={values.returns_name}
               onChange={(e) => payload.patch({ returns_name: e.target.value })}
               style={inputStyle}
             />
           </Field>
-          <Field label={t("addon.shipping-dhl.dest.street")}>
+          <Field label={t("addon.shipping-kit.dest.street")}>
             <input
               value={values.returns_lines}
               onChange={(e) => payload.patch({ returns_lines: e.target.value })}
@@ -157,21 +157,21 @@ export function SettingsPanel({ payload }: { payload: SettingsPanelPayload }) {
               gap: 12,
             }}
           >
-            <Field label={t("addon.shipping-dhl.dest.city")}>
+            <Field label={t("addon.shipping-kit.dest.city")}>
               <input
                 value={values.returns_city}
                 onChange={(e) => payload.patch({ returns_city: e.target.value })}
                 style={inputStyle}
               />
             </Field>
-            <Field label={t("addon.shipping-dhl.error.postcode")}>
+            <Field label={t("addon.shipping-kit.error.postcode")}>
               <input
                 value={values.returns_postcode}
                 onChange={(e) => payload.patch({ returns_postcode: e.target.value })}
                 style={inputStyle}
               />
             </Field>
-            <Field label={t("addon.shipping-dhl.error.country")}>
+            <Field label={t("addon.shipping-kit.error.country")}>
               <input
                 value={values.returns_country}
                 onChange={(e) => payload.patch({ returns_country: e.target.value })}
@@ -181,7 +181,7 @@ export function SettingsPanel({ payload }: { payload: SettingsPanelPayload }) {
           </div>
         </div>
         <div style={{ fontSize: 11.5, color: "var(--fg-subtle)", marginBlockStart: 8 }}>
-          {t("addon.shipping-dhl.set.returnsNote")}
+          {t("addon.shipping-kit.set.returnsNote")}
         </div>
       </div>
 
@@ -194,7 +194,7 @@ export function SettingsPanel({ payload }: { payload: SettingsPanelPayload }) {
             marginBlockEnd: 8,
           }}
         >
-          {t("addon.shipping-dhl.set.weights")}
+          {t("addon.shipping-kit.set.weights")}
         </div>
         <div
           style={{ border: "1px solid var(--border)", borderRadius: 11, overflow: "hidden" }}
@@ -221,14 +221,14 @@ export function SettingsPanel({ payload }: { payload: SettingsPanelPayload }) {
                 }}
               >
                 {row.assumed
-                  ? t("addon.shipping-dhl.set.weightAssumed", { kg: row.weightKg })
-                  : t("addon.shipping-dhl.set.weightKg", { kg: row.weightKg })}
+                  ? t("addon.shipping-kit.set.weightAssumed", { kg: row.weightKg })
+                  : t("addon.shipping-kit.set.weightKg", { kg: row.weightKg })}
               </Mono>
             </div>
           ))}
         </div>
         <div style={{ fontSize: 11.5, color: "var(--fg-subtle)", marginBlockStart: 8 }}>
-          {t("addon.shipping-dhl.set.weightsNote")}
+          {t("addon.shipping-kit.set.weightsNote")}
         </div>
       </div>
     </div>

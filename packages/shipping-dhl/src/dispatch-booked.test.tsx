@@ -14,13 +14,13 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import type { DispatchBooking, DispatchPayload } from "@adminium/add-on-host";
 
-import { PINNED_NOW } from "./clock.ts";
-import { strings } from "./i18n/strings.ts";
-import { renderLabelPdf } from "./label.ts";
-import { resetRuntime } from "./runtime.ts";
-import { DEMO_ORIGIN, resolveDestination } from "./seed.ts";
-import { applySettings, DEFAULT_SETTINGS } from "./settings.ts";
-import { DispatchAction } from "./ui/DispatchAction.tsx";
+import { PINNED_NOW } from "@adminium/add-on-shipping-kit/clock.ts";
+import { strings } from "./testing/named-strings.ts";
+import { renderLabelPdf } from "@adminium/add-on-shipping-kit/label.ts";
+import { resetRuntime } from "@adminium/add-on-shipping-kit/runtime.ts";
+import { DEMO_ORIGIN, resolveDestination } from "@adminium/add-on-shipping-kit/seed.ts";
+import { applySettings, DEFAULT_SETTINGS } from "@adminium/add-on-shipping-kit/settings.ts";
+import { DispatchAction } from "@adminium/add-on-shipping-kit/ui/DispatchAction.tsx";
 
 const EN = strings["en-US"];
 
@@ -42,10 +42,10 @@ const settle = async (): Promise<void> => {
 
 async function book(heard: DispatchBooking[]): Promise<void> {
   render(<DispatchAction order={ORDER} now={PINNED_NOW} chosen={null} onBooked={(booking) => heard.push(booking)} />);
-  fireEvent.click(screen.getByRole("button", { name: EN["addon.shipping-dhl.action.book"] }));
-  fireEvent.click(screen.getByRole("button", { name: EN["addon.shipping-dhl.rates.get"] }));
+  fireEvent.click(screen.getByRole("button", { name: EN["addon.shipping-kit.action.book"] }));
+  fireEvent.click(screen.getByRole("button", { name: EN["addon.shipping-kit.rates.get"] }));
   await settle();
-  fireEvent.click(screen.getByRole("button", { name: EN["addon.shipping-dhl.rates.book"] }));
+  fireEvent.click(screen.getByRole("button", { name: EN["addon.shipping-kit.rates.book"] }));
   await settle();
 }
 
@@ -65,7 +65,7 @@ describe("a booking, handed back", () => {
     expect(heard[0]!.tracking).toMatch(/\d/);
     expect(heard[0]!.service.length).toBeGreaterThan(0);
     // The screen still says no real shipment was booked.
-    expect(screen.getByText(EN["addon.shipping-dhl.demoChip"])).toBeTruthy();
+    expect(screen.getByText(EN["addon.shipping-kit.demoChip"])).toBeTruthy();
   });
 
   it("tells the host again when the panel opens on an order already booked, with the same number", async () => {
@@ -80,21 +80,21 @@ describe("a booking, handed back", () => {
 
   it("never tells a host that passes nothing, and books all the same", async () => {
     render(<DispatchAction order={ORDER} now={PINNED_NOW} chosen={null} />);
-    fireEvent.click(screen.getByRole("button", { name: EN["addon.shipping-dhl.action.book"] }));
-    fireEvent.click(screen.getByRole("button", { name: EN["addon.shipping-dhl.rates.get"] }));
+    fireEvent.click(screen.getByRole("button", { name: EN["addon.shipping-kit.action.book"] }));
+    fireEvent.click(screen.getByRole("button", { name: EN["addon.shipping-kit.rates.get"] }));
     await settle();
-    fireEvent.click(screen.getByRole("button", { name: EN["addon.shipping-dhl.rates.book"] }));
+    fireEvent.click(screen.getByRole("button", { name: EN["addon.shipping-kit.rates.book"] }));
     await settle();
-    expect(screen.getByText(EN["addon.shipping-dhl.demoChip"])).toBeTruthy();
+    expect(screen.getByText(EN["addon.shipping-kit.demoChip"])).toBeTruthy();
   });
 
   it("does not tell the host again on a re-render with a fresh function", async () => {
     const heard: DispatchBooking[] = [];
     const { rerender } = render(<DispatchAction order={ORDER} now={PINNED_NOW} chosen={null} onBooked={(booking) => heard.push(booking)} />);
-    fireEvent.click(screen.getByRole("button", { name: EN["addon.shipping-dhl.action.book"] }));
-    fireEvent.click(screen.getByRole("button", { name: EN["addon.shipping-dhl.rates.get"] }));
+    fireEvent.click(screen.getByRole("button", { name: EN["addon.shipping-kit.action.book"] }));
+    fireEvent.click(screen.getByRole("button", { name: EN["addon.shipping-kit.rates.get"] }));
     await settle();
-    fireEvent.click(screen.getByRole("button", { name: EN["addon.shipping-dhl.rates.book"] }));
+    fireEvent.click(screen.getByRole("button", { name: EN["addon.shipping-kit.rates.book"] }));
     await settle();
     for (let i = 0; i < 3; i += 1) rerender(<DispatchAction order={ORDER} now={PINNED_NOW} chosen={null} onBooked={(booking) => heard.push(booking)} />);
     await settle();
@@ -107,7 +107,7 @@ describe("a region on the address", () => {
     const to = resolveDestination(ORDER);
     if (to.status !== "resolved") throw new Error("the address is whole");
     expect(to.address).toMatchObject({ city: "Eugene", region: "OR", postcode: "97401" });
-    const pdf = renderLabelPdf({ tracking: "1", service: "S", reference: "NL-1061", collection: "c", delivery: "d", to: to.address, from: { name: "Northline", city: "Portland", postcode: "97214", country: "US" } });
+    const pdf = renderLabelPdf({ carrier: "DHL", tracking: "1", service: "S", reference: "NL-1061", collection: "c", delivery: "d", to: to.address, from: { name: "Northline", city: "Portland", postcode: "97214", country: "US" } });
     expect(pdf).toContain("Eugene, OR");
   });
 

@@ -13,10 +13,10 @@ import { beforeEach, describe, expect, it } from "vitest";
 import type { DeliveryChoice, DispatchPayload } from "@adminium/add-on-host";
 import manifest from "../manifest.json";
 import { ADD_ON_KEY } from "./add-on-key.ts";
-import { PINNED_NOW } from "./clock.ts";
-import { preselectedCode, type QuotedRate } from "./rates.ts";
-import { carrier, resetRuntime, setHostClock } from "./runtime.ts";
-import { DEMO_ORIGIN } from "./seed.ts";
+import { PINNED_NOW } from "@adminium/add-on-shipping-kit/clock.ts";
+import { preselectedCode, type QuotedRate } from "@adminium/add-on-shipping-kit/rates.ts";
+import { carrier, resetRuntime, setHostClock } from "@adminium/add-on-shipping-kit/runtime.ts";
+import { DEMO_ORIGIN } from "@adminium/add-on-shipping-kit/seed.ts";
 
 const TO = {
   name: "Kestrel Joinery",

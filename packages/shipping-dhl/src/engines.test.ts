@@ -21,9 +21,9 @@ import {
   parseTime,
   PINNED_NOW,
   workingDaysBetween,
-} from "./clock.ts";
+} from "@adminium/add-on-shipping-kit/clock.ts";
 import type { CatalogueSample, SlotItem } from "@adminium/add-on-host";
-import { ASSUMED_UNIT_GRAMS, parcelFor, parcelForSample } from "./parcel.ts";
+import { ASSUMED_UNIT_GRAMS, parcelFor, parcelForSample } from "@adminium/add-on-shipping-kit/parcel.ts";
 import {
   chargeableKg,
   cheapestCode,
@@ -32,7 +32,7 @@ import {
   quoteAll,
   SERVICES,
   zoneFor,
-} from "./rates.ts";
+} from "@adminium/add-on-shipping-kit/rates.ts";
 
 describe("the clock", () => {
   it("is pinned to the works' own Wednesday", () => {

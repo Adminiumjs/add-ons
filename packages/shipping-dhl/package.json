@@ -28,6 +28,7 @@
   },
   "devDependencies": {
     "@adminium/add-on-host": "*",
+    "@adminium/add-on-shipping-kit": "*",
     "lucide-react": "^0.462.0"
   }
 }

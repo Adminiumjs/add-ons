@@ -32,11 +32,11 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { PINNED_NOW } from "./clock.ts";
-import { resetRuntime } from "./runtime.ts";
-import { SAMPLE_ORDER } from "./seed.ts";
-import { strings } from "./i18n/strings.ts";
-import { TrackingPanel } from "./ui/TrackingPanel.tsx";
+import { PINNED_NOW } from "@adminium/add-on-shipping-kit/clock.ts";
+import { resetRuntime } from "@adminium/add-on-shipping-kit/runtime.ts";
+import { SAMPLE_ORDER } from "@adminium/add-on-shipping-kit/seed.ts";
+import { strings } from "./testing/named-strings.ts";
+import { TrackingPanel } from "@adminium/add-on-shipping-kit/ui/TrackingPanel.tsx";
 
 const en = strings["en-US"];
 /** The three letters the neutral monogram tile carries. Never a drawn or traced logo. */
@@ -57,14 +57,14 @@ describe("the customer's order page names the company honestly", () => {
     const markup = panel();
 
     // This IS the un-dispatched state — the one the defect was in.
-    expect(markup).toContain(en["addon.shipping-dhl.panel.notSent"]);
+    expect(markup).toContain(en["addon.shipping-kit.panel.notSent"]);
     // The company is named here, by the monogram if by nothing else.
     expect(markup).toContain(COMPANY);
     // And so is the fact that naming it is not a relationship.
     expect(
       markup,
       "the company is named with no not-affiliated line anywhere on the card",
-    ).toContain(en["addon.shipping-dhl.notAffiliated"]);
+    ).toContain(en["addon.shipping-kit.notAffiliated"]);
   });
 
   it("says it in every language, on that same state", () => {
@@ -75,7 +75,7 @@ describe("the customer's order page names the company honestly", () => {
      * to render, so that is what is checked here.
      */
     for (const [locale, table] of Object.entries(strings)) {
-      const line = table["addon.shipping-dhl.notAffiliated"];
+      const line = table["addon.shipping-kit.notAffiliated"];
       expect(line, `${locale} has no not-affiliated line`).toBeDefined();
       expect(line.length, `${locale}'s not-affiliated line is empty`).toBeGreaterThan(10);
     }
@@ -89,7 +89,7 @@ describe("the customer's order page names the company honestly", () => {
      */
     const markup = panel();
     const namesIt = markup.includes(COMPANY);
-    const disclaims = markup.includes(en["addon.shipping-dhl.notAffiliated"]);
+    const disclaims = markup.includes(en["addon.shipping-kit.notAffiliated"]);
     expect({ namesIt, disclaims }).toEqual({ namesIt: true, disclaims: true });
   });
 });

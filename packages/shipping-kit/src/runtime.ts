@@ -15,7 +15,9 @@
  * on the customer's order view.
  */
 
+import { kitBrand } from "./brand.ts";
 import { PINNED_NOW, type Clock } from "./clock.ts";
+import type { EngineCarrier } from "@adminium/add-on-host/engine-carrier";
 import type { Shipment, ShippingCarrier } from "@adminium/add-on-host/contracts";
 import type { LabelStore } from "./label-store.ts";
 import { createDemoCarrier, type DemoCarrier } from "./demo-carrier.ts";
@@ -80,6 +82,7 @@ export function setHostCurrency(currency: string | undefined | null): void {
 
 function demoCarrier(): DemoCarrier {
   demo ??= createDemoCarrier({
+    brand: kitBrand(),
     clock: hostClock,
     cutoff: publicSettings().collection_cutoff,
     ...(hostCurrency === null ? {} : { currency: hostCurrency }),
@@ -95,6 +98,26 @@ let injected: ShippingCarrier | null = null;
  */
 export function useConnectedCarrier(carrier: ShippingCarrier): void {
   injected = carrier;
+}
+
+let engine: EngineCarrier | null = null;
+
+/**
+ * THE APP HANDS IN ITS CLIENT FOR ADMINIUM'S SHIPPING ROUTES (plan 79, W1 and W2).
+ *
+ * An add-on never activates itself, and a bundle without this export is simply
+ * never handed one, which is what an older add-on gets. Holding the client
+ * changes nothing on screen yet: `carrierState()` still reads the old seam, so
+ * with the demo off the screens keep saying "not connected" until T12a draws
+ * the real flow on this client. A client meant for another carrier is ignored.
+ */
+export function connectEngineCarrier(client: EngineCarrier): void {
+  if (client.addOnKey === kitBrand().addOnKey) engine = client;
+}
+
+/** The app's client for the engine's routes, once it has handed one in. */
+export function engineCarrier(): EngineCarrier | null {
+  return engine;
 }
 
 /**
@@ -139,7 +162,7 @@ function usingDemo(): boolean {
  *  - `not-connected`: the demo is off and nothing real is behind it. This used
  *    to fall through to the demo carrier, silently: a shop that had switched
  *    the demo off was quoted and booked by it anyway, with nothing on screen
- *    to say no DHL account was answering. Now nothing is quoted or booked, and
+ *    to say no carrier account was answering. Now nothing is quoted or booked, and
  *    the screens say the account is not connected.
  */
 export type CarrierState = "demo" | "connected" | "not-connected";
@@ -152,7 +175,7 @@ export function carrierState(): CarrierState {
 /** Asked of a carrier that is not there: what the screens never do, refused in words a works can act on. */
 export class CarrierNotConnected extends Error {
   constructor() {
-    super("No DHL account is connected, and the demo carrier is switched off.");
+    super(`No ${kitBrand().name} account is connected, and the demo carrier is switched off.`);
   }
 }
 
@@ -213,6 +236,7 @@ export function findShipment(reference: string): Shipment | undefined {
 export function resetRuntime(): void {
   demo = null;
   injected = null;
+  engine = null;
   hostCurrency = null;
   // The clock goes back to this repo's own pin, not to the last host's. A suite
   // that inherited the previous case's Thursday would pass for the wrong

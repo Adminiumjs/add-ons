@@ -17,7 +17,7 @@ import { addWorkingDays, workingDaysBetween, type Clock } from "./clock.ts";
 
 export interface Service {
   code: string;
-  /** i18n key under `addon.shipping-dhl.service.*` for the display name. */
+  /** i18n key under `addon.shipping-kit.service.*` for the display name. */
   nameKey: string;
   /** English fallback, and what the wire adapter matches a carrier product to. */
   name: string;
@@ -36,7 +36,7 @@ export interface Service {
 export const SERVICES: readonly Service[] = [
   {
     code: "EXP-1200",
-    nameKey: "addon.shipping-dhl.service.exp1200",
+    nameKey: "addon.shipping-kit.service.exp1200",
     name: "Express by 12:00",
     baseCents: 1290,
     centsPerKg: 240,
@@ -44,7 +44,7 @@ export const SERVICES: readonly Service[] = [
   },
   {
     code: "EXP-NWD",
-    nameKey: "addon.shipping-dhl.service.expNwd",
+    nameKey: "addon.shipping-kit.service.expNwd",
     name: "Express, next working day",
     baseCents: 780,
     centsPerKg: 145,
@@ -52,7 +52,7 @@ export const SERVICES: readonly Service[] = [
   },
   {
     code: "ECO-2WD",
-    nameKey: "addon.shipping-dhl.service.eco2wd",
+    nameKey: "addon.shipping-kit.service.eco2wd",
     name: "Economy, second working day",
     baseCents: 450,
     centsPerKg: 85,

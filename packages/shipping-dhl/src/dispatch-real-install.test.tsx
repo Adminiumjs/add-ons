@@ -20,15 +20,15 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import type { DispatchPayload } from "@adminium/add-on-host";
 
-import { PINNED_NOW } from "./clock.ts";
-import { strings } from "./i18n/strings.ts";
-import { parcelFor } from "./parcel.ts";
-import { resetRuntime } from "./runtime.ts";
-import { DEMO_ORIGIN } from "./seed.ts";
-import { applySettings, DEFAULT_SETTINGS } from "./settings.ts";
-import { contentsLine } from "./ui/labels.ts";
-import { DeliveryMethods } from "./ui/DeliveryMethods.tsx";
-import { DispatchAction } from "./ui/DispatchAction.tsx";
+import { PINNED_NOW } from "@adminium/add-on-shipping-kit/clock.ts";
+import { strings } from "./testing/named-strings.ts";
+import { parcelFor } from "@adminium/add-on-shipping-kit/parcel.ts";
+import { resetRuntime } from "@adminium/add-on-shipping-kit/runtime.ts";
+import { DEMO_ORIGIN } from "@adminium/add-on-shipping-kit/seed.ts";
+import { applySettings, DEFAULT_SETTINGS } from "@adminium/add-on-shipping-kit/settings.ts";
+import { contentsLine } from "@adminium/add-on-shipping-kit/ui/labels.ts";
+import { DeliveryMethods } from "@adminium/add-on-shipping-kit/ui/DeliveryMethods.tsx";
+import { DispatchAction } from "@adminium/add-on-shipping-kit/ui/DispatchAction.tsx";
 
 const EN = strings["en-US"];
 
@@ -56,7 +56,7 @@ const settle = async (): Promise<void> => {
 
 /** Open the flow, as the works does, and return the parcel's three fields. */
 function opened(): { contents: HTMLInputElement; weight: HTMLInputElement } {
-  fireEvent.click(screen.getByRole("button", { name: EN["addon.shipping-dhl.action.book"] }));
+  fireEvent.click(screen.getByRole("button", { name: EN["addon.shipping-kit.action.book"] }));
   const inputs = [...document.querySelectorAll("input")] as HTMLInputElement[];
   return { contents: inputs[0]!, weight: inputs[1]! };
 }
@@ -101,8 +101,8 @@ describe("the rates, and who answers for them", () => {
   it("prices the demo carrier's rates in the shop's currency, and says before quoting that nothing reaches DHL", async () => {
     render(<DispatchAction {...payload()} />);
     opened();
-    expect(screen.getByTestId("dhl-demo-notice").textContent).toBe(EN["addon.shipping-dhl.account.demoNotice"]);
-    fireEvent.click(screen.getByRole("button", { name: EN["addon.shipping-dhl.rates.get"] }));
+    expect(screen.getByTestId("carrier-demo-notice").textContent).toBe(EN["addon.shipping-kit.account.demoNotice"]);
+    fireEvent.click(screen.getByRole("button", { name: EN["addon.shipping-kit.rates.get"] }));
     await settle();
     const prices = [...document.querySelectorAll("button[aria-pressed]")].map((row) => row.textContent ?? "");
     expect(prices.length).toBe(3);
@@ -116,11 +116,11 @@ describe("the rates, and who answers for them", () => {
     applySettings({ ...DEFAULT_SETTINGS, demo_transport: false });
     render(<DispatchAction {...payload()} />);
     opened();
-    const card = screen.getByTestId("dhl-not-connected");
-    expect(card.textContent).toContain(EN["addon.shipping-dhl.account.notConnectedTitle"]);
-    expect(card.textContent).toContain(EN["addon.shipping-dhl.account.notConnectedBody"]);
-    expect(screen.queryByRole("button", { name: EN["addon.shipping-dhl.rates.get"] })).toBeNull();
-    expect(screen.queryByTestId("dhl-demo-notice")).toBeNull();
+    const card = screen.getByTestId("carrier-not-connected");
+    expect(card.textContent).toContain(EN["addon.shipping-kit.account.notConnectedTitle"]);
+    expect(card.textContent).toContain(EN["addon.shipping-kit.account.notConnectedBody"]);
+    expect(screen.queryByRole("button", { name: EN["addon.shipping-kit.rates.get"] })).toBeNull();
+    expect(screen.queryByTestId("carrier-demo-notice")).toBeNull();
     await settle();
     expect(document.querySelectorAll("button[aria-pressed]").length).toBe(0);
   });

@@ -22,13 +22,16 @@ import {
   rawControlOffences,
 } from "@adminium/add-on-host/testing";
 
-import { strings } from "./i18n/strings.ts";
-import { renderLabelPdf } from "./label.ts";
-import { bannedSubstringsIn, TIERING_WORDS } from "./testing/lexicon.ts";
+import { strings } from "@adminium/add-on-shipping-kit/i18n/strings.ts";
+import { strings as ownStrings } from "./i18n/strings.ts";
+import { renderLabelPdf } from "@adminium/add-on-shipping-kit/label.ts";
+import { bannedSubstringsIn, TIERING_WORDS } from "@adminium/add-on-shipping-kit/testing/lexicon.ts";
 
 import { INERT_ORIGINS } from "./add-on-facts.ts";
 
 const SRC = new URL(".", import.meta.url).pathname;
+/** The screens DHL ships live in the shared kit, and are bundled into this add-on, so every rule here reads them too. */
+const KIT_SRC = new URL("../../shipping-kit/src/", import.meta.url).pathname;
 
 function walk(dir: string): string[] {
   return readdirSync(dir).flatMap((entry) => {
@@ -37,7 +40,7 @@ function walk(dir: string): string[] {
   });
 }
 
-const ALL = walk(SRC).filter((f) => /\.(ts|tsx)$/.test(f));
+const ALL = [...walk(SRC), ...walk(KIT_SRC)].filter((f) => /\.(ts|tsx)$/.test(f));
 /** The shipped half: everything that is not itself a test or a test helper. */
 const SHIPPED = ALL.filter((f) => !f.includes(".test.") && !f.includes(`${"testing"}/`));
 const UI = SHIPPED.filter((f) => f.includes(`${"ui"}/`));
@@ -56,7 +59,7 @@ const codeOf = (file: string) =>
   read(file)
     .replace(/\/\*[\s\S]*?\*\//g, " ")
     .replace(/(^|[^:])\/\/.*$/gm, "$1");
-const relative = (file: string) => file.slice(SRC.length);
+const relative = (file: string) => (file.startsWith(KIT_SRC) ? `kit/${file.slice(KIT_SRC.length)}` : file.slice(SRC.length));
 
 /**
  * Addresses this add-on is allowed to name. There are none, and that is right:
@@ -141,7 +144,10 @@ describe("secrets are server-only", () => {
       if (seen.has(file)) return;
       seen.add(file);
       for (const [, spec] of codeOf(file).matchAll(/from "(\.[^"]+)"/g)) {
-        walkImports(join(file, "..", spec));
+        walkImports(join(file, "..", spec!));
+      }
+      for (const [, path] of codeOf(file).matchAll(/from "@adminium\/add-on-shipping-kit(?:\/([^"]+))?"/g)) {
+        walkImports(join(KIT_SRC, path ?? "index.ts"));
       }
     };
     walkImports(join(SRC, "index.ts"));
@@ -152,7 +158,7 @@ describe("secrets are server-only", () => {
     expect(reachable).not.toContain("server.ts");
     // The demo transport IS reachable, and has to be: in demo mode there is no
     // server for it to run on. It holds no credential and makes no call.
-    expect(reachable).toContain("demo-carrier.ts");
+    expect(reachable).toContain("kit/demo-carrier.ts");
   });
 });
 
@@ -217,6 +223,7 @@ describe("the vocabulary ban, in all eight locales", () => {
     // The label is user-visible: it gets downloaded, printed and pinned to a
     // parcel, so it is copy like any other.
     const pdf = renderLabelPdf({
+      carrier: "DHL",
       tracking: "00 3400 1234 5678 9012",
       service: "Economy, second working day",
       reference: "MP-4126",
@@ -264,16 +271,16 @@ describe("the vocabulary ban, in all eight locales", () => {
 describe("every simulated result is labelled as one", () => {
   const LABELLED: Readonly<Record<string, readonly [string, string][]>> = {
     "DispatchAction.tsx": [
-      ["addon.shipping-dhl.rates.title", "addon.shipping-dhl.rates.simulated"],
-      ["addon.shipping-dhl.error.title", "addon.shipping-dhl.error.simulated"],
-      ["addon.shipping-dhl.booked.title", "addon.shipping-dhl.demoChip"],
-      ["addon.shipping-dhl.tracking.title", "addon.shipping-dhl.tracking.simulated"],
+      ["addon.shipping-kit.rates.title", "addon.shipping-kit.rates.simulated"],
+      ["addon.shipping-kit.error.title", "addon.shipping-kit.error.simulated"],
+      ["addon.shipping-kit.booked.title", "addon.shipping-kit.demoChip"],
+      ["addon.shipping-kit.tracking.title", "addon.shipping-kit.tracking.simulated"],
     ],
     "DeliveryMethods.tsx": [
-      ["addon.shipping-dhl.checkout.title", "addon.shipping-dhl.checkout.simulated"],
+      ["addon.shipping-kit.checkout.title", "addon.shipping-kit.checkout.simulated"],
     ],
     "TrackingPanel.tsx": [
-      ["addon.shipping-dhl.booked.tracking", "addon.shipping-dhl.demoChip"],
+      ["addon.shipping-kit.booked.tracking", "addon.shipping-kit.demoChip"],
     ],
   };
 
@@ -353,7 +360,7 @@ describe("every simulated result is labelled as one", () => {
   it("never says the demo still answers in the note shown when the switch is OFF", () => {
     expect(Object.keys(DEMO_WORD).sort()).toEqual(Object.keys(strings).sort());
     for (const [locale, bundle] of Object.entries(strings)) {
-      const note = bundle["addon.shipping-dhl.set.demoOff"]!;
+      const note = bundle["addon.shipping-kit.set.demoOff"]!;
       expect(note, `${locale}'s switch-off note names the stand-in, which no longer answers with the switch off`).not.toContain(DEMO_WORD[locale]!);
     }
   });
@@ -371,15 +378,15 @@ describe("all eight locales carry all the keys", () => {
   });
 
   it("namespaces every key under the add-on's own key", () => {
-    const stray = Object.keys(strings["en-US"]).filter((k) => !k.startsWith("addon.shipping-dhl."));
-    expect(stray).toEqual([]);
+    expect(Object.keys(ownStrings["en-US"]).filter((k) => !k.startsWith("addon.shipping-dhl."))).toEqual([]);
+    expect(Object.keys(strings["en-US"]).filter((k) => !k.startsWith("addon.shipping-kit."))).toEqual([]);
   });
 
   it("leaves no English behind in the other seven", () => {
     // A translated bundle that is byte-identical to English for a real sentence
     // is an untranslated bundle. Short shared tokens are exempt — "Service",
     // "DHL" and "API" are the same word in more than one of these languages.
-    const exempt = new Set(["addon.shipping-dhl.booked.service"]);
+    const exempt = new Set(["addon.shipping-kit.booked.service"]);
 
     /*
      * AND SO IS A STRING THAT IS NOTHING BUT PLACEHOLDERS. `"{quantity} × {what}"`
@@ -416,7 +423,7 @@ describe("all eight locales carry all the keys", () => {
 describe("every source file is text a tool will read", () => {
   it("writes control characters as escapes, never as raw bytes", () => {
     const offenders = ALL.flatMap((path) =>
-      rawControlOffences(path.slice(SRC.length), readFileSync(path, "utf8")),
+      rawControlOffences(relative(path), readFileSync(path, "utf8")),
     );
     expect(offenders, `\n${RAW_CONTROL_EXPLANATION}\n${offenders.join("\n")}\n`).toEqual([]);
   });

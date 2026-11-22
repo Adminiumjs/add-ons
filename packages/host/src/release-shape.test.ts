@@ -42,7 +42,7 @@ const FILES_FIELD = ['dist', 'manifest.json', 'TRADEMARKS.md', 'README.md', 'LIC
  * Packages that are deliberately never published: TypeScript sources the
  * add-ons build against, never something an add-on ships.
  */
-const NEVER_PUBLISHED = ['host', 'host-kit'];
+const NEVER_PUBLISHED = ['host', 'host-kit', 'shipping-kit'];
 
 interface AddOn {
   dir: string;

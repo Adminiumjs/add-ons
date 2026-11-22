@@ -32,8 +32,8 @@
  * from nothing a shopper loads.
  */
 
-import { resetRuntime } from "./runtime.ts";
-import { applySettings, DEFAULT_SETTINGS } from "./settings.ts";
+import { resetRuntime } from "@adminium/add-on-shipping-kit/runtime.ts";
+import { applySettings, DEFAULT_SETTINGS } from "@adminium/add-on-shipping-kit/settings.ts";
 
 /**
  * Drop the memoized transport, the connected-mode injection and the settings a

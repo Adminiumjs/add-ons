@@ -17,7 +17,7 @@ import manifest from "../manifest.json" with { type: "json" };
 import { OUTPUT } from "../vite.config.ts";
 import { WIRE } from "./carrier.ts";
 import { buildForReal, ROOT } from "./testing/build.ts";
-import { DEFAULT_SETTINGS } from "./settings.ts";
+import { DEFAULT_SETTINGS } from "@adminium/add-on-shipping-kit/settings.ts";
 import { FILLED_SLOTS } from "./slots.ts";
 
 import { INERT_ORIGINS, NEVER_IN_A_BROWSER } from "./add-on-facts.ts";

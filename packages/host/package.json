@@ -8,6 +8,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./contracts": "./src/contracts/index.ts",
+    "./engine-carrier": "./src/engine-carrier.ts",
     "./testing": "./src/testing/index.ts",
     "./runtime": "./src/runtime/index.ts",
     "./runtime/react": "./src/runtime/react.ts",

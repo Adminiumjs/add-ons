@@ -5,6 +5,7 @@ One repository, one shared host contract, and every add-on written against it.
 ```
 packages/host/              the ONE mirror of the host seam + the contracts
 packages/host-kit/          the AddOnHost seam and its guards, for a host app to adopt (never published)
+packages/shipping-kit/      the screens, copy and demo every carrier add-on shares (bundled, never published)
 packages/barcode-labels/    Barcode Labels: document-render@1, connects to nothing
 packages/customiser/        Customiser: design-check@1, posting-rows@1, connects to nothing
 packages/forms/             Forms & surveys: no contract, connects to nothing

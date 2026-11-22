@@ -30,11 +30,11 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { RecordActionsPayload } from "@adminium/add-on-host";
 import type { Address } from "@adminium/add-on-host/contracts";
 
-import { PINNED_NOW } from "./clock.ts";
+import { PINNED_NOW } from "@adminium/add-on-shipping-kit/clock.ts";
 import { createDemoCarrier, SENDER_POSTCODE_REFUSAL } from "./demo-carrier.ts";
-import { strings } from "./i18n/strings.ts";
-import { carrier, rememberRoute, resetRuntime, setHostClock } from "./runtime.ts";
-import { depotFrom, ReturnLabel } from "./ui/ReturnLabel.tsx";
+import { strings } from "./testing/named-strings.ts";
+import { carrier, rememberRoute, resetRuntime, setHostClock } from "@adminium/add-on-shipping-kit/runtime.ts";
+import { depotFrom, ReturnLabel } from "@adminium/add-on-shipping-kit/ui/ReturnLabel.tsx";
 
 const EN = strings["en-US"];
 
@@ -109,28 +109,28 @@ describe("the entity gate", () => {
   });
 
   it("draws the surface on a return", () => {
-    expect(render()).toContain(EN["addon.shipping-dhl.returns.title"]);
+    expect(render()).toContain(EN["addon.shipping-kit.returns.title"]);
   });
 });
 
 describe("a shop that has not set a returns address", () => {
   it("says so in words and offers no form", () => {
     const markup = render({ settings: {} });
-    expect(markup).toContain(EN["addon.shipping-dhl.returns.notSetUp"]);
-    expect(markup).not.toContain(EN["addon.shipping-dhl.rates.get"]);
+    expect(markup).toContain(EN["addon.shipping-kit.returns.notSetUp"]);
+    expect(markup).not.toContain(EN["addon.shipping-kit.rates.get"]);
     // The disclosure still ships: the monogram names the company, so the
     // not-affiliated line belongs on THIS card too.
-    expect(markup).toContain(EN["addon.shipping-dhl.notAffiliated"]);
+    expect(markup).toContain(EN["addon.shipping-kit.notAffiliated"]);
   });
 });
 
 describe("the configured surface", () => {
   it("shows the sender form, names the depot, and admits the assumed parcel", () => {
     const markup = render();
-    expect(markup).toContain(EN["addon.shipping-dhl.returns.sender"]);
-    expect(markup).toContain(EN["addon.shipping-dhl.returns.senderName"]);
+    expect(markup).toContain(EN["addon.shipping-kit.returns.sender"]);
+    expect(markup).toContain(EN["addon.shipping-kit.returns.senderName"]);
     expect(markup).toContain("Hearth Returns");
-    expect(markup).toContain(EN["addon.shipping-dhl.notAffiliated"]);
+    expect(markup).toContain(EN["addon.shipping-kit.notAffiliated"]);
   });
 });
 
@@ -172,8 +172,8 @@ describe("a label made earlier", () => {
     const shipment = await carrier().book(rate!, { reference: "RMA-4419137" });
 
     const markup = render();
-    expect(markup).toContain(EN["addon.shipping-dhl.returns.made"]);
+    expect(markup).toContain(EN["addon.shipping-kit.returns.made"]);
     expect(markup).toContain(shipment.tracking);
-    expect(markup).toContain(EN["addon.shipping-dhl.demoChip"]);
+    expect(markup).toContain(EN["addon.shipping-kit.demoChip"]);
   });
 });

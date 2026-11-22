@@ -58,22 +58,22 @@ const SHARED_WITH_ENGLISH: readonly {
   why: string;
 }[] = [
   {
-    key: "addon.shipping-dhl.parcel.contentsValue",
+    key: "addon.shipping-kit.parcel.contentsValue",
     locales: ["de-DE", "fr-FR", "cs-CZ", "da-DK", "zh-CN", "zh-TW", "ar-EG"],
     why: "Two placeholders and a multiplication sign. There is no word in it to translate, and the count substituted into it is formatted in the reader's own numerals at render time, which is where that belongs.",
   },
   {
-    key: "addon.shipping-dhl.set.weightKg",
+    key: "addon.shipping-kit.set.weightKg",
     locales: ["de-DE", "fr-FR", "cs-CZ", "da-DK"],
     why: "`kg` is the SI symbol for the kilogram, identical in every language that uses the metric system; translating a unit symbol makes it wrong rather than local. Chinese and Arabic spell the unit out and are not on this list.",
   },
   {
-    key: "addon.shipping-dhl.parcel.dims",
+    key: "addon.shipping-kit.parcel.dims",
     locales: ["fr-FR"],
     why: "French `Dimensions` is the ordinary plural noun, spelt exactly as English spells it — English borrowed the word from French. German writes `Maße` and Danish `Mål`, so neither is on this list.",
   },
   {
-    key: "addon.shipping-dhl.booked.service",
+    key: "addon.shipping-kit.booked.service",
     locales: ["fr-FR", "da-DK"],
     why: "French and Danish both write `Service` for the level of carriage bought, spelt as English spells it. German writes `Leistung` and Czech `Služba`, so neither is on this list.",
   },
@@ -109,7 +109,7 @@ describe("all eight locales, complete", () => {
   });
 
   it("namespaces every key under this add-on, so nothing shadows the host", () => {
-    expect(EN_KEYS.filter((key) => !key.startsWith("addon.shipping-dhl."))).toEqual([]);
+    expect(EN_KEYS.filter((key) => !key.startsWith("addon.shipping-kit."))).toEqual([]);
   });
 
   /**
