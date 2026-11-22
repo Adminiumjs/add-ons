@@ -87,8 +87,12 @@ export function CustomerEditorPreview({ base, data, rows, design, shop, roleName
   useEditorStyles();
   const locale = useLocaleTag();
   const catalogue = useMemo(() => previewRows(base, data, rows, design, roleNames), [base, data, rows, design, roleNames]);
-  // A new design drawn in the editor is a new preview: the editor reads its catalogue once.
-  const api = useMemo(() => previewApi(catalogue), [catalogue]);
+  // A new design drawn in the editor is a new preview: the editor reads its catalogue once, and a new
+  // `api` starts it over with the customer's words gone. The page redraws with new objects holding the
+  // same words, and a re-read brings equal rows, so only what the preview shows decides.
+  const shown = JSON.stringify(catalogue);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const api = useMemo(() => previewApi(catalogue), [shown]);
   const sides = Number(base['sides'] ?? 1) >= 2 ? 2 : 1;
   return (
     <CustomiserEditor
