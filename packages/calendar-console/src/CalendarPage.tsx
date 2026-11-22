@@ -7,7 +7,7 @@
  * Every figure is read: nothing here is typed in. Each action goes through the
  * engine's own route, which asks this person's grants again.
  */
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { Guide } from './Guide.tsx';
 import { Alert, Button, Checkbox, Input, Modal, ModalBody, ModalFooter, ModalHeader, PageActions, PageSurface, Skeleton, Switch, api, card, dotStyle, lucideByName, mono, muted, pillStyle, subtle, useLocaleTag, well, type Tone } from './kit.ts';
@@ -368,6 +368,20 @@ function AccountDetail({ screen, w, person, first, name, needs, since, company, 
   const [asking, setAsking] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [failed, setFailed] = useState(false);
+  const askAt = useRef<HTMLSpanElement>(null);
+  const wasAsking = useRef(false);
+
+  // Focus goes back to the button that opened the question, once the dialog has let go of it.
+  useEffect(() => {
+    if (asking) {
+      wasAsking.current = true;
+      return undefined;
+    }
+    if (!wasAsking.current) return undefined;
+    wasAsking.current = false;
+    const timer = window.setTimeout(() => askAt.current?.querySelector('button')?.focus(), 30);
+    return () => window.clearTimeout(timer);
+  }, [asking]);
 
   const read = useCallback(async () => {
     const now = Date.now();
@@ -523,7 +537,9 @@ function AccountDetail({ screen, w, person, first, name, needs, since, company, 
           <Glyph name="refresh-cw" size={14} />
           {synced === 'done' ? w.syncedNow : w.syncNow}
         </Button>
-        <Button variant="destructiveSoft" size="sm" onClick={() => setAsking(true)}>{w.disconnect}</Button>
+        <span ref={askAt}>
+          <Button variant="destructiveSoft" size="sm" onClick={() => setAsking(true)}>{w.disconnect}</Button>
+        </span>
         {synced === 'failed' ? <span role="alert" style={{ fontSize: 12, fontWeight: 700, color: 'var(--danger)' }}>{w.syncFailed}</span> : null}
       </div>
       <Modal open={asking} onOpenChange={(next: boolean) => { if (!leaving) setAsking(next); }}>
