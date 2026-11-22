@@ -11,6 +11,10 @@
  *
  * An open-link survey a rule mails has invitations with no link of their own:
  * whoever answers is not matched to one, so it shows no "Answered".
+ *
+ * A survey that keeps no names says that a person answered, and never when.
+ * Adminium stamps such an invitation with the time it was SENT, so that its
+ * answer cannot be matched to it by time: that date is not an answering date.
  */
 import { useEffect, useState, type ReactNode } from 'react';
 
@@ -18,7 +22,7 @@ import { Card, DataTable, EmptyState, Link, Pagination, Stack, useAccess, useFor
 import type { TabProps } from '../shared/slot.ts';
 import { Figures, Icon } from './parts.tsx';
 import { dateOf, shownOf } from './Results.tsx';
-import { surveyOf } from './survey.ts';
+import { keepsNamesOf, surveyOf } from './survey.ts';
 
 /** How many invitations a page shows. */
 export const INVITATIONS_PAGE = 25;
@@ -139,6 +143,7 @@ export function Invitations({ t, form }: TabProps): ReactNode {
   const live = form.state !== 'draft';
   const { summary } = useFormSummary(live ? form.id : null);
   const open = surveyOf(shownOf(form).settings).mode === 'anonymous';
+  const keepsWhen = keepsNamesOf(shownOf(form).settings);
   const [page, setPage] = useState(1);
   const named = access.canRead('invitations', ['name', 'company']);
   const read = useRecords('invitations', {
@@ -165,8 +170,16 @@ export function Invitations({ t, form }: TabProps): ReactNode {
       : [
           {
             key: 'answered_at',
-            label: t('surveys.invites.column.answered', 'Answered'),
-            render: (row: DataRow) => (dateOf(row['answered_at'], locale) === '' ? <span className="text-body-sm text-fg-subtle">{t('surveys.invites.notYet', 'Not yet')}</span> : <span className="font-mono text-body-sm font-bold text-pos">{dateOf(row['answered_at'], locale)}</span>),
+            // "Answered on", in the languages that say so, is for a column of dates.
+            label: keepsWhen ? t('surveys.invites.column.answered', 'Answered') : t('surveys.invites.answered', 'Answered'),
+            render: (row: DataRow) =>
+              dateOf(row['answered_at'], locale) === '' ? (
+                <span className="text-body-sm text-fg-subtle">{t('surveys.invites.notYet', 'Not yet')}</span>
+              ) : keepsWhen ? (
+                <span className="font-mono text-body-sm font-bold text-pos">{dateOf(row['answered_at'], locale)}</span>
+              ) : (
+                <span className="text-body-sm font-bold text-pos">{t('surveys.invites.answered', 'Answered')}</span>
+              ),
           },
         ]),
     { key: 'class', label: t('surveys.invites.column.kind', 'Kind of mail'), render: (row) => <span className="text-body-sm text-fg-muted">{mailWords(t, kindOf(row['class']), false)}</span> },

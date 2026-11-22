@@ -534,12 +534,12 @@
             "label": {
               "en-US": "Answered",
               "de-DE": "Beantwortet",
-              "fr-FR": "Répondu le",
+              "fr-FR": "Réponse",
               "da-DK": "Besvaret",
               "cs-CZ": "Odpovězeno",
-              "ar-EG": "تاريخ الرد",
-              "zh-CN": "回答时间",
-              "zh-TW": "回答時間"
+              "ar-EG": "الرد",
+              "zh-CN": "回答",
+              "zh-TW": "回答"
             }
           },
           {
@@ -2813,6 +2813,39 @@
           "invited_at",
           "answered_at",
           "class"
+        ],
+        "presence": [
+          {
+            "column": "answered_at",
+            "yes": {
+              "key": "addon.forms.tab.survey.answered",
+              "fallback": "Answered"
+            },
+            "yesLabels": {
+              "en-US": "Answered",
+              "de-DE": "Beantwortet",
+              "fr-FR": "Répondu",
+              "da-DK": "Besvaret",
+              "cs-CZ": "Odpovězeno",
+              "ar-EG": "أجاب",
+              "zh-CN": "已回答",
+              "zh-TW": "已回答"
+            },
+            "no": {
+              "key": "addon.forms.tab.survey.notYet",
+              "fallback": "Not yet"
+            },
+            "noLabels": {
+              "en-US": "Not yet",
+              "de-DE": "Noch nicht",
+              "fr-FR": "Pas encore",
+              "da-DK": "Ikke endnu",
+              "cs-CZ": "Zatím ne",
+              "ar-EG": "ليس بعد",
+              "zh-CN": "尚未回答",
+              "zh-TW": "尚未回答"
+            }
+          }
         ],
         "empty": {
           "key": "addon.forms.tab.survey.empty",

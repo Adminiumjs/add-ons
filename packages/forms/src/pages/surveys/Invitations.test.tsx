@@ -96,6 +96,15 @@ describe('a survey’s invitations', () => {
     expect(document.body.textContent).not.toContain('Someone Else');
   });
 
+  it('say a person answered, and never when, on a survey that keeps no names', () => {
+    show({ ...named, survey: { mode: 'named', linkNames: false, stopAfterDays: 30 } });
+    const rows = screen.getAllByRole('row').slice(1);
+    // Such an invitation holds the day it was sent, so that its answer cannot be matched to it by time.
+    expect(within(rows[2]!).getAllByRole('cell')[3]?.textContent).toBe('Answered');
+    expect(within(rows[0]!).getAllByRole('cell')[3]?.textContent).toBe('Not yet');
+    for (const row of rows) expect(within(row).getAllByRole('cell')[3]?.textContent).toMatch(/^(Answered|Not yet)$/);
+  });
+
   it('write nothing: invitations are a rule’s to make', async () => {
     show(named);
     await sentBy();
