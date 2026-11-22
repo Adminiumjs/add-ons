@@ -92,7 +92,8 @@ describe('the outbox', () => {
     // Heard when the day to remind on is first set or moves — at the sale, or at a top-up after the owner gave cards a last day.
     expect(reminder.onChange).toEqual({ table: 'gift_cards', columns: ['remind_on'], changed: true, where: { column: 'status', eq: 'active' } });
     expect(reminder.due).toEqual({ date: 'remind_on', days: 0, at: '09:00' });
-    expect(reminder.dropWhen).toEqual([{ column: 'status', in: ['void', 'expired'], reason: 'void' }, { column: 'balance', lte: 0, reason: 'no-longer-needed' }]);
+    // Nor for a recipient who asked to be forgotten: they were told they would not hear from us again.
+    expect(reminder.dropWhen).toEqual([{ column: 'status', in: ['void', 'expired'], reason: 'void' }, { column: 'balance', lte: 0, reason: 'no-longer-needed' }, { column: 'recipient_forgotten', in: [true], reason: 'no-longer-needed' }]);
     // A card dated for a later day whose sale was undone holds nothing: it is not sent.
     expect(m.outbox.producers.find((one) => one.kind === 'gift_card_dated')!.dropWhen).toEqual([{ column: 'status', in: ['void', 'expired'], reason: 'void' }, { column: 'balance', lte: 0, reason: 'no-longer-needed' }]);
   });

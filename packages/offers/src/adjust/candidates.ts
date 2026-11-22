@@ -91,7 +91,10 @@ export function typedOf(input: AdjustInput, offers: Offer[]): { vouchers: TypedV
                   input.origin === 'staff'
                   ? 'needs-customer'
                   : 'unknown'
-                : null;
+                : // Its holder asked to be forgotten and it was emptied: given back later, it is still nobody's to take online.
+                  holder === null && yes(row['holder_forgotten']) && input.origin !== 'staff'
+                  ? 'unknown'
+                  : null;
     if (reason === null) vouchers.push({ typed: code.typed, id, row });
     else refused.push({ typed: code.typed, reason });
   }

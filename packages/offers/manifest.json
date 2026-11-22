@@ -1425,6 +1425,11 @@
             }
           },
           {
+            "ref": "holder_forgotten",
+            "type": "bool",
+            "default": false
+          },
+          {
             "ref": "language",
             "type": "text",
             "maxLength": 12,
@@ -1535,7 +1540,25 @@
             "sale_table",
             "sale_row"
           ]
-        ]
+        ],
+        "holders": {
+          "live": {
+            "status": "status",
+            "open": [
+              "issued"
+            ],
+            "left": "uses_left",
+            "until": "expires_on"
+          },
+          "people": [
+            {
+              "email": "holder_email",
+              "name": "holder_name",
+              "key": "holder_key",
+              "forgotten": "holder_forgotten"
+            }
+          ]
+        }
       },
       {
         "ref": "voucher_actions",
@@ -1917,6 +1940,11 @@
             }
           },
           {
+            "ref": "owner_forgotten",
+            "type": "bool",
+            "default": false
+          },
+          {
             "ref": "status",
             "type": "enum",
             "enum": [
@@ -2014,6 +2042,11 @@
             }
           },
           {
+            "ref": "recipient_forgotten",
+            "type": "bool",
+            "default": false
+          },
+          {
             "ref": "message",
             "type": "text",
             "maxLength": 200,
@@ -2108,7 +2141,37 @@
             "references": "postings",
             "nullable": true
           }
-        ]
+        ],
+        "holders": {
+          "live": {
+            "status": "status",
+            "open": [
+              "inactive",
+              "active"
+            ],
+            "waiting": [
+              "inactive"
+            ],
+            "left": "balance",
+            "until": "expires_on"
+          },
+          "people": [
+            {
+              "email": "owner_email",
+              "key": "owner_key",
+              "forgotten": "owner_forgotten"
+            },
+            {
+              "email": "recipient_email",
+              "name": "recipient_name",
+              "sale": {
+                "table": "source_table",
+                "row": "source_row"
+              },
+              "forgotten": "recipient_forgotten"
+            }
+          ]
+        }
       },
       {
         "ref": "card_ledger",
@@ -5667,6 +5730,13 @@
           {
             "column": "balance",
             "lte": 0,
+            "reason": "no-longer-needed"
+          },
+          {
+            "column": "recipient_forgotten",
+            "in": [
+              true
+            ],
             "reason": "no-longer-needed"
           }
         ],
