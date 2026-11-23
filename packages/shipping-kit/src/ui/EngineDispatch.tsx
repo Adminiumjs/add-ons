@@ -16,6 +16,14 @@
  * or unknown parcel back to a live Book for that parcel: "Add another parcel"
  * opens a NEW parcel number, with its own read of `bookable`.
  *
+ * THE KEY CAN CHANGE WHILE THIS SCREEN IS OPEN. An owner can replace a test key
+ * with a live one while a packer has an order up, so the first `access` read is
+ * only a starting point. A quote, a purchase and a list each carry the mode the
+ * engine really used. When one disagrees with the screen, `access` is read again
+ * before anything is filtered by mode, the banner is redrawn, and rates are
+ * fetched afresh. "Nothing was bought" is only ever said after that read, and
+ * never while a live booking stands on the parcel under either key.
+ *
  * THE HOST IS NOT TOLD OF A BOOKING. `onBooked` is the demo's hand-off, and a
  * host may move its order on it. Buying a real label moves no order (D4): the
  * engine records the number, and the order moves when staff press "Handed over".
@@ -25,11 +33,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { CircleCheck, CircleSlash, CircleX, LoaderCircle, Lock, Plus, RefreshCw, Truck } from "lucide-react";
 import type { DispatchPayload } from "@adminium/add-on-host";
 import type { HandoverKind } from "@adminium/add-on-host/contracts";
-import type { EngineAccess, EngineBooking, EngineBookings, EngineCarrier, EngineLookUpOutcome } from "@adminium/add-on-host/engine-carrier";
+import type { EngineAccess, EngineBooking, EngineBookings, EngineCarrier, EngineLookUpOutcome, EngineMode } from "@adminium/add-on-host/engine-carrier";
 
+import { kitBrand } from "../brand.ts";
 import { useT } from "../i18n/t.ts";
 import { NotAffiliated } from "./atoms.tsx";
-import { holderOf, holdersIn, latestOf, nextParcel, outboundIn, type EngineRate } from "./engine/flow.ts";
+import { holderOf, holdersIn, latestOf, mergedBooking, nextParcel, outboundIn, standingOn, type EngineRate } from "./engine/flow.ts";
 import { LabelCard } from "./engine/LabelCard.tsx";
 import { AddressBlock, ParcelBooking } from "./engine/ParcelBooking.tsx";
 import { FlowButton, LiveRegion, StatusCard, TestBanner, useSay } from "./engine/parts.tsx";
@@ -38,13 +47,17 @@ import { UnknownCard } from "./engine/UnknownCard.tsx";
 /** What a purchase with no clear answer turned out to be, once the list was read. */
 type Aftermath = "checking" | "found" | "safe" | "no-record" | "read-failed" | null;
 
+/** With no key of this add-on in use, live is the mode whose labels could be real, so live ones stay in view. */
+const modeIn = (access: EngineAccess): EngineMode => (access.carrier === kitBrand().addOnKey ? (access.mode ?? "live") : "live");
+
 export function EngineDispatch({
   client,
-  access,
+  access: firstAccess,
   payload,
   source,
 }: {
   client: EngineCarrier;
+  /** The gate's read. This screen re-reads it whenever the engine's replies disagree with it. */
   access: EngineAccess;
   payload: DispatchPayload;
   source: { table: string; id: string };
@@ -52,8 +65,10 @@ export function EngineDispatch({
   const t = useT();
   const { order, chosen } = payload;
   const { said, say } = useSay();
-  const mode = access.mode ?? "live";
+  const [access, setAccess] = useState(firstAccess);
+  const mode = modeIn(access);
   const test = mode === "test";
+  const carrierHere = access.carrier === kitBrand().addOnKey && access.mode !== null;
 
   const [all, setAll] = useState<EngineBooking[]>([]);
   const [slot, setSlot] = useState<Pick<EngineBookings, "bookable" | "blockedBy"> | null>(null);
@@ -64,21 +79,56 @@ export function EngineDispatch({
   const [opened, setOpened] = useState(false);
   const [aftermath, setAftermath] = useState<Aftermath>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
+  const [keyChanged, setKeyChanged] = useState(false);
+  /** Live bookings under another key that were found on a parcel in question: a possible paid label stays drawn. */
+  const [kept, setKept] = useState<readonly string[]>([]);
   /** How each service leaves, as the rate said. A booking does not record it, so it lasts as long as this page. */
   const handovers = useRef(new Map<string, HandoverKind>());
   /** The one read whose answer still counts: a slower, older reply must not overwrite a newer one. */
   const readCount = useRef(0);
+  /** The mode on screen, for replies that land between renders. */
+  const modeNow = useRef(modeIn(firstAccess));
+  const askCount = useRef(0);
+  const askLanded = useRef(0);
+
+  /** Asks which key is in use. An older reply never overwrites a newer one. */
+  const askMode = useCallback(async (): Promise<EngineMode> => {
+    const mine = ++askCount.current;
+    const fresh = await client.access();
+    if (mine > askLanded.current) {
+      askLanded.current = mine;
+      const next = modeIn(fresh);
+      if (next !== modeNow.current) setKeyChanged(true);
+      modeNow.current = next;
+      setAccess(fresh);
+    }
+    return modeNow.current;
+  }, [client]);
+
+  /** The engine itself just said which mode it worked in. Believed at once; any `access` read already in flight is older. */
+  const takeMode = useCallback((seen: EngineMode) => {
+    askLanded.current = askCount.current;
+    if (seen === modeNow.current) return;
+    modeNow.current = seen;
+    setKeyChanged(true);
+    setAccess((before) => ({ ...before, mode: seen }));
+  }, []);
 
   const read = useCallback(
     async (number: number): Promise<EngineBookings | null> => {
       const mine = ++readCount.current;
       const answer = await client.bookings({ table: source.table, id: source.id, parcelNumber: number });
       if (readCount.current !== mine) return null;
+      // A row under the other key may mean the key moved: ask before anything is filtered by mode.
+      if (answer.bookings.some((one) => one.purpose === "outbound" && one.test !== (modeNow.current === "test"))) {
+        await askMode();
+        if (readCount.current !== mine) return null;
+      }
       setAll(answer.bookings);
       setSlot({ bookable: answer.bookable, blockedBy: answer.blockedBy });
       return answer;
     },
-    [client, source.table, source.id],
+    [client, source.table, source.id, askMode],
   );
 
   const load = useCallback(
@@ -100,10 +150,19 @@ export function EngineDispatch({
   }, [load]);
 
   const merge = useCallback((fresh: EngineBooking) => {
-    setAll((before) => (before.some((one) => one.id === fresh.id) ? before.map((one) => (one.id === fresh.id ? fresh : one)) : [...before, fresh]));
+    setAll((before) => (before.some((one) => one.id === fresh.id) ? before.map((one) => (one.id === fresh.id ? mergedBooking(one, fresh) : one)) : [...before, fresh]));
   }, []);
 
-  const mine = outboundIn(all, mode);
+  useEffect(() => {
+    if (keyChanged) say(t("addon.shipping-kit.engine.keyChanged"));
+  }, [keyChanged, say, t]);
+
+  const keep = (booking: EngineBooking) => {
+    if (booking.test !== (modeNow.current === "test")) setKept((before) => (before.includes(booking.id) ? before : [...before, booking.id]));
+  };
+
+  const inMode = outboundIn(all, mode);
+  const mine = [...inMode, ...all.filter((one) => kept.includes(one.id) && !inMode.includes(one))];
   const holders = holdersIn(mine);
   const booked = holders.filter((one) => one.state === "booked");
   const unknown = holders.filter((one) => one.state === "unknown");
@@ -112,22 +171,24 @@ export function EngineDispatch({
   const unsettled = unknown.length > 0 || underWay.length > 0;
   const many = holders.length > 1 || parcelNumber > 1;
   /* A label bought under the other key is real to someone, and it has no bearing on this parcel. */
-  const otherKeyLabel = outboundIn(all, test ? "live" : "test").some((one) => one.state === "booked");
+  const otherKeyLabel = outboundIn(all, test ? "live" : "test").some((one) => one.state === "booked" && !kept.includes(one.id));
 
   /** No clear answer to a purchase: say so, then read what really happened. */
-  const settle = async (number: number, rate?: EngineRate) => {
-    const before = latestOf(mine, number)?.id ?? null;
+  const settle = async (number: number, { rate, lookedUp = false }: { rate?: EngineRate; lookedUp?: boolean } = {}) => {
+    const seen = new Set(all.map((one) => one.id));
     setAftermath("checking");
     say(t("addon.shipping-kit.engine.checking.title"));
     try {
-      const answer = await read(number);
+      await askMode();
+      const answer = await read(parcelNumber);
       // A newer read overtook this one, so this answer says nothing. Never guess: offer to read again.
       if (answer === null) {
         setAftermath("read-failed");
         return;
       }
-      const list = outboundIn(answer.bookings, mode);
-      const holder = holderOf(list, number);
+      const current = modeNow.current;
+      const holder = standingOn(answer.bookings, current, number);
+      if (holder !== null) keep(holder);
       if (holder !== null && rate?.handover !== undefined) handovers.current.set(holder.id, rate.handover);
       if (holder?.state === "booked") {
         setAftermath("found");
@@ -138,10 +199,10 @@ export function EngineDispatch({
         setFocusId(holder.id);
         say(t("addon.shipping-kit.engine.unknown.title"));
       } else {
-        const latest = latestOf(list, number);
-        const settled = latest !== null && latest.id !== before && latest.state === "refused";
+        const latest = latestOf(outboundIn(answer.bookings, current), number);
+        const settled = lookedUp || (latest !== null && !seen.has(latest.id) && latest.state === "refused");
         setAftermath(settled ? "safe" : "no-record");
-        say(t(settled ? (test ? "addon.shipping-kit.engine.safe.titleTest" : "addon.shipping-kit.engine.safe.title") : "addon.shipping-kit.engine.noRecord.title"));
+        say(t(settled ? (current === "test" ? "addon.shipping-kit.engine.safe.titleTest" : "addon.shipping-kit.engine.safe.title") : "addon.shipping-kit.engine.noRecord.title"));
       }
     } catch {
       setAftermath("read-failed");
@@ -152,10 +213,18 @@ export function EngineDispatch({
   const onAnswered = (booking: EngineBooking, rate: EngineRate) => {
     if (rate.handover !== undefined) handovers.current.set(booking.id, rate.handover);
     if (booking.state !== "booked") {
-      void settle(booking.parcelNumber, rate);
+      void settle(booking.parcelNumber, { rate });
       return;
     }
     merge(booking);
+    if (booking.test !== (modeNow.current === "test")) {
+      // Bought under a key this screen was not showing. A live label stays drawn whatever the next read says.
+      if (!booking.test) setKept((before) => (before.includes(booking.id) ? before : [...before, booking.id]));
+      takeMode(booking.test ? "test" : "live");
+      void askMode()
+        .catch(() => undefined)
+        .then(() => load(parcelNumber));
+    }
     setAdding(false);
     setFocusId(booking.id);
     say(t("addon.shipping-kit.engine.label.title"));
@@ -167,7 +236,32 @@ export function EngineDispatch({
       setAftermath("found");
       setFocusId(fresh.id);
     } else if (outcome === "not-bought") {
-      setAftermath("safe");
+      void settle(fresh.parcelNumber, { lookedUp: true });
+    }
+  };
+
+  /** A quote came back in another mode: its rates are gone, and the key and the list are read again. */
+  const onModeMoved = (seen: EngineMode) => {
+    takeMode(seen);
+    setKeyChanged(true);
+    void askMode()
+      .catch(() => undefined)
+      .then(() => load(parcelNumber));
+  };
+
+  /** After a clear refusal. True only when the list, read under the current key, has nothing on this parcel. */
+  const afterRefusal = async (): Promise<boolean> => {
+    try {
+      await askMode();
+      const answer = await read(parcelNumber);
+      if (answer === null) return false;
+      const holder = standingOn(answer.bookings, modeNow.current, parcelNumber);
+      if (holder === null) return true;
+      keep(holder);
+      setFocusId(holder.id);
+      return false;
+    } catch {
+      return false;
     }
   };
 
@@ -185,6 +279,7 @@ export function EngineDispatch({
     setAdding(true);
     setOpened(true);
     setAftermath(null);
+    setKeyChanged(false);
     void load(next);
   };
 
@@ -197,6 +292,7 @@ export function EngineDispatch({
 
   const canAdd = access.mayBook && booked.length > 0 && !unsettled && !adding && aftermath !== "checking" && nextParcel(mine) !== null;
   const showForm =
+    carrierHere &&
     loaded &&
     !loadFailed &&
     (aftermath === null || aftermath === "found") &&
@@ -437,6 +533,10 @@ export function EngineDispatch({
         </div>
       )}
 
+      {keyChanged && showForm && !showOpener && (
+        <StatusCard tone="warn" icon={<RefreshCw size={20} />} testId="engine-key-changed" takeFocus title={t("addon.shipping-kit.engine.keyChanged")} />
+      )}
+
       {showForm && !showOpener && (
         <ParcelBooking
           key={parcelNumber}
@@ -448,10 +548,10 @@ export function EngineDispatch({
           parcelNumber={parcelNumber}
           say={say}
           onAnswered={onAnswered}
-          onUnknown={(rate) => void settle(parcelNumber, rate)}
-          onRefused={() => {
-            void read(parcelNumber).catch(() => undefined);
-          }}
+          onUnknown={(rate) => void settle(parcelNumber, { rate })}
+          onRefused={afterRefusal}
+          onModeMoved={onModeMoved}
+          onQuoted={() => setKeyChanged(false)}
           onClose={adding ? closeParcel : undefined}
         />
       )}

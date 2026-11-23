@@ -139,6 +139,22 @@ export const holderOf = (list: readonly EngineBooking[], parcelNumber: number): 
 export const latestOf = (list: readonly EngineBooking[], parcelNumber: number): EngineBooking | null =>
   newest(list.filter((one) => one.parcelNumber === parcelNumber));
 
+/**
+ * What stands on this parcel for someone deciding whether anything was bought:
+ * the holder under the key in use, or failing that a live one under the other
+ * key. A test booking under a live key is left out, because it cannot be a
+ * real label.
+ */
+export const standingOn = (list: readonly EngineBooking[], mode: EngineMode, parcelNumber: number): EngineBooking | null =>
+  holderOf(outboundIn(list, mode), parcelNumber) ?? (mode === "test" ? holderOf(outboundIn(list, "live"), parcelNumber) : null);
+
+/**
+ * A booking's newer copy. Not every route's reply carries `track`: absent means
+ * "this reply does not say", so what is held stays. A null or a value is an answer.
+ */
+export const mergedBooking = (held: EngineBooking, fresh: EngineBooking): EngineBooking =>
+  fresh.track === undefined && held.track !== undefined ? { ...fresh, track: held.track } : fresh;
+
 /** Every booking standing on a parcel of this order, in parcel order. */
 export function holdersIn(list: readonly EngineBooking[]): EngineBooking[] {
   const numbers = [...new Set(list.map((one) => one.parcelNumber))].sort((a, b) => a - b);

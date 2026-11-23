@@ -8,6 +8,10 @@
  * An answer that never came is NOT a "no": the demo switch is on by default, so
  * falling back to it during an outage would show a real shop a pretend booking.
  * It says it could not check, and offers to try again.
+ *
+ * A 403 IS A "NO" FROM THE ENGINE, about this person and this shop. The demo's
+ * Book button on a real order would tell them they can do what they cannot, so
+ * a 403 draws the no-access card whatever the demo switch says.
  */
 
 import { useCallback, useEffect, useState, type ReactNode } from "react";
@@ -23,7 +27,7 @@ import { EngineDispatch } from "../EngineDispatch.tsx";
 import { readFailure } from "./flow.ts";
 import { FlowButton, StatusCard } from "./parts.tsx";
 
-type GateState = { kind: "asking" } | { kind: "denied" } | { kind: "failed" } | { kind: "answered"; access: EngineAccess };
+type GateState = { kind: "asking" } | { kind: "signed-out" } | { kind: "no-right" } | { kind: "failed" } | { kind: "answered"; access: EngineAccess };
 
 export function EngineGate({ client, payload, demo }: { client: EngineCarrier; payload: DispatchPayload; demo: ReactNode }) {
   const t = useT();
@@ -39,7 +43,7 @@ export function EngineGate({ client, payload, demo }: { client: EngineCarrier; p
       (err: unknown) => {
         if (!live) return;
         const { status } = readFailure(err);
-        setState({ kind: status === 401 || status === 403 ? "denied" : "failed" });
+        setState({ kind: status === 403 ? "no-right" : status === 401 ? "signed-out" : "failed" });
       },
     );
     return () => {
@@ -76,8 +80,9 @@ export function EngineGate({ client, payload, demo }: { client: EngineCarrier; p
     );
   }
 
-  if (state.kind === "denied") {
-    if (isDemo()) return <>{demo}</>;
+  if (state.kind === "signed-out" && isDemo()) return <>{demo}</>;
+
+  if (state.kind === "signed-out" || state.kind === "no-right") {
     return (
       <StatusCard
         tone="neutral"

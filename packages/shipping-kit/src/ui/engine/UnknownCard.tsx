@@ -86,7 +86,8 @@ export function UnknownCard({
       const answer = await client.checkBooking(booking.id);
       setOutcome(answer.outcome);
       setCheckBroke(false);
-      say(t(answer.outcome === "not-bought" && test ? "addon.shipping-kit.engine.safe.titleTest" : OUTCOME[answer.outcome]));
+      // "Nothing was bought" is said by the parent, once it has read the list again.
+      if (answer.outcome !== "not-bought") say(t(OUTCOME[answer.outcome]));
       onLookUp(answer.outcome, answer.booking);
     } catch (err) {
       const code = readFailure(err).code;

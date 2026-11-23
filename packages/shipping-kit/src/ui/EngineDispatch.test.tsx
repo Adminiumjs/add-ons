@@ -196,9 +196,20 @@ describe("the gate", () => {
     expect(await screen.findByTestId("carrier-not-connected")).toBeTruthy();
   });
 
-  it("on a 403 keeps the demo when it is on, and says no right when it is off", async () => {
-    const denied = () => new EngineCarrierError({ code: "FORBIDDEN", message: "no", status: 403, retryable: false, outcome: "refused" });
-    fake({ access: vi.fn(async () => Promise.reject(denied())) });
+  it.each([false, true])("on a 403 says no access and offers no booking, with the demo switch %s", async (demo_transport) => {
+    applySettings({ ...DEFAULT_SETTINGS, demo_transport });
+    const denied = new EngineCarrierError({ code: "FORBIDDEN", message: "no", status: 403, retryable: false, outcome: "refused" });
+    const client = fake({ access: vi.fn(async () => Promise.reject(denied)) });
+    draw();
+    expect(await screen.findByTestId("engine-gate-no-right")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: words("addon.shipping-kit.action.book") })).toBeNull();
+    expect(screen.queryByTestId("engine-book")).toBeNull();
+    expect(client.bookings).not.toHaveBeenCalled();
+  });
+
+  it("on a 401 keeps the demo when it is on, and says no right when it is off", async () => {
+    const signedOut = () => new EngineCarrierError({ code: "UNAUTHENTICATED", message: "no", status: 401, retryable: false, outcome: "refused" });
+    fake({ access: vi.fn(async () => Promise.reject(signedOut())) });
     draw();
     expect(await screen.findByTestId("engine-gate-no-right")).toBeTruthy();
     cleanup();
@@ -652,11 +663,26 @@ describe("the unknown card", () => {
     expect(screen.queryByTestId("engine-unknown")).toBeNull();
   });
 
-  it("says safe on not-bought", async () => {
-    fake({ bookings: vi.fn(async () => held(unknown())), checkBooking: vi.fn(async () => ({ outcome: "not-bought", booking: booking({ state: "refused", tracking: null }) })) });
+  it("says safe on not-bought, once the list agrees", async () => {
+    const refused = booking({ state: "refused", tracking: null });
+    const list = vi.fn<() => Promise<EngineBookings>>().mockResolvedValueOnce(held(unknown())).mockResolvedValue({ bookings: [refused], bookable: true, blockedBy: null });
+    fake({ bookings: list, checkBooking: vi.fn(async () => ({ outcome: "not-bought", booking: refused })) });
     draw();
     await press("engine-check");
     expect(await screen.findByTestId("engine-safe")).toBeTruthy();
+    expect(list).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not say safe on not-bought while the list shows another booking on the parcel", async () => {
+    const refused = booking({ state: "refused", tracking: null });
+    const other = booking({ id: "b2", createdAt: 2_000 });
+    const list = vi.fn<() => Promise<EngineBookings>>().mockResolvedValueOnce(held(unknown())).mockResolvedValue(held(refused, other));
+    fake({ bookings: list, checkBooking: vi.fn(async () => ({ outcome: "not-bought", booking: refused })) });
+    draw();
+    await press("engine-check");
+    expect(await screen.findByTestId("engine-found")).toBeTruthy();
+    expect(screen.queryByTestId("engine-safe")).toBeNull();
+    expect(screen.getByTestId("engine-label-card-1")).toBeTruthy();
   });
 
   it("offers no release to someone who does not manage shipping", async () => {
@@ -792,6 +818,26 @@ describe("the label", () => {
     expect(await screen.findByTestId("engine-label-download")).toBeTruthy();
   });
 
+  it("keeps the tracking when a retried file's reply carries none", async () => {
+    const track = { status: "TRANSIT" as const, statusAt: 2_000, checkedAt: 3_000, flag: null, newNumber: false };
+    fake({ bookings: vi.fn(async () => held(withLabel({ state: "owed" }, { track }))), fetchDocument: vi.fn(async () => withLabel({})) });
+    draw();
+    expect((await screen.findByTestId("engine-tracking")).textContent).toContain(words("addon.shipping-kit.engine.track.moving"));
+    await press("engine-label-retry");
+    await screen.findByTestId("engine-label-download");
+    expect(screen.getByTestId("engine-tracking").textContent).toContain(words("addon.shipping-kit.engine.track.moving"));
+  });
+
+  it("lets a fresh null clear the tracking", async () => {
+    const track = { status: "TRANSIT" as const, statusAt: 2_000, checkedAt: 3_000, flag: null, newNumber: false };
+    fake({ bookings: vi.fn(async () => held(withLabel({ state: "owed" }, { track }))), fetchDocument: vi.fn(async () => withLabel({}, { track: null })) });
+    draw();
+    await screen.findByTestId("engine-tracking");
+    await press("engine-label-retry");
+    await screen.findByTestId("engine-label-download");
+    expect(screen.getByTestId("engine-tracking").textContent).not.toContain(words("addon.shipping-kit.engine.track.moving"));
+  });
+
   it("says asked for one size, got another", async () => {
     fake({ bookings: vi.fn(async () => held(withLabel({ size: "a4", sizeGot: "a6", sizeDiffers: true }))) });
     draw();
@@ -862,6 +908,165 @@ describe("test mode", () => {
     expect(await screen.findByTestId("engine-open")).toBeTruthy();
     expect(screen.queryByTestId("engine-label-card-1")).toBeNull();
     expect(screen.getByTestId("engine-other-key")).toBeTruthy();
+  });
+});
+
+describe("the shop's key changes while the order is open", () => {
+  const TEST_ACCESS: EngineAccess = { ...ACCESS, mode: "test" };
+  const TEST_QUOTE: EngineQuote = { ...PRICED, mode: "test" };
+  const keyWords = () => words(engineKey("keyChanged"));
+  const swapped = () => vi.fn<() => Promise<EngineAccess>>().mockResolvedValueOnce(TEST_ACCESS).mockResolvedValue(ACCESS);
+
+  it("test to live before Get rates: draws no rate, redraws the banner and says to fetch again", async () => {
+    const access = swapped();
+    const client = fake({ access, quote: vi.fn(async () => PRICED) });
+    draw();
+    expect(await screen.findByTestId("engine-test-banner")).toBeTruthy();
+    await press("engine-open");
+    await press("engine-get-rates");
+    expect((await screen.findByTestId("engine-key-changed")).textContent).toContain(keyWords());
+    expect(screen.queryByTestId("engine-test-banner")).toBeNull();
+    expect(screen.queryByTestId("engine-rates")).toBeNull();
+    expect(screen.queryByTestId("engine-book")).toBeNull();
+    expect(access).toHaveBeenCalledTimes(2);
+    expect(client.bookings).toHaveBeenCalledTimes(2);
+    expect(client.book).not.toHaveBeenCalled();
+
+    await press("engine-get-rates");
+    await screen.findByTestId("engine-rates");
+    expect(screen.queryByTestId("engine-key-changed")).toBeNull();
+    expect(screen.getByTestId("engine-book").textContent).toContain(words("addon.shipping-kit.engine.book.live"));
+    expect(screen.getByTestId("engine-rates").textContent).toContain(words("addon.shipping-kit.engine.book.charges"));
+  });
+
+  it("does the same for someone who may not see prices", async () => {
+    const hidden = { ...ACCESS, manages: false, pricesHidden: true };
+    const access = vi.fn<() => Promise<EngineAccess>>().mockResolvedValueOnce({ ...hidden, mode: "test" }).mockResolvedValue(hidden);
+    fake({ access, quote: vi.fn(async () => PRICELESS) });
+    const { container } = draw();
+    await screen.findByTestId("engine-test-banner");
+    await press("engine-open");
+    await press("engine-get-rates");
+    await screen.findByTestId("engine-key-changed");
+    expect(screen.queryByTestId("engine-test-banner")).toBeNull();
+    expect(screen.queryByTestId("engine-book")).toBeNull();
+    expect(container.textContent).not.toMatch(/£|4\.20/);
+  });
+
+  it("test to live between Get rates and Book: QUOTE_STALE clears the rates and says why", async () => {
+    const access = vi.fn<() => Promise<EngineAccess>>().mockResolvedValueOnce(TEST_ACCESS).mockResolvedValue(ACCESS);
+    const client = fake({
+      access,
+      quote: vi.fn<() => Promise<EngineQuote>>().mockResolvedValueOnce(TEST_QUOTE).mockResolvedValue(PRICED),
+      book: vi.fn(async () => Promise.reject(refusal("QUOTE_STALE", { reason: "rate-expired" }))),
+    });
+    const { container } = draw();
+    await toRates();
+    expect(screen.getByTestId("engine-book").textContent).toContain(words("addon.shipping-kit.engine.book.test"));
+    await press("engine-book");
+    expect(await screen.findByTestId("engine-key-changed")).toBeTruthy();
+    expect(screen.queryByTestId("engine-test-banner")).toBeNull();
+    expect(screen.queryByTestId("engine-book")).toBeNull();
+    expect(screen.queryByTestId("engine-refused-rate-old")).toBeNull();
+    expect(container.textContent).not.toContain(words("addon.shipping-kit.engine.refused.eyebrow"));
+    expect(client.book).toHaveBeenCalledTimes(1);
+    await press("engine-get-rates");
+    expect(screen.getByTestId("engine-book").textContent).toContain(words("addon.shipping-kit.engine.book.live"));
+  });
+
+  it("keeps the rate-old card when QUOTE_STALE was not the key", async () => {
+    fake({ book: vi.fn(async () => Promise.reject(refusal("QUOTE_STALE", { reason: "rate-expired" }))) });
+    draw();
+    await toRates();
+    await press("engine-book");
+    const card = await screen.findByTestId("engine-refused-rate-old");
+    expect(card.textContent).toContain(words("addon.shipping-kit.engine.refused.eyebrow"));
+    expect(screen.queryByTestId("engine-key-changed")).toBeNull();
+  });
+
+  it("shows a live label the engine returned to a screen still reading test", async () => {
+    const live = booking();
+    const list = vi.fn<() => Promise<EngineBookings>>().mockResolvedValueOnce(OPEN).mockResolvedValue(held(live));
+    fake({ access: swapped(), quote: vi.fn(async () => TEST_QUOTE), bookings: list, book: vi.fn(async () => live) });
+    draw();
+    await toRates();
+    await press("engine-book");
+    expect(await screen.findByTestId("engine-label-card-1")).toBeTruthy();
+    await waitFor(() => expect(screen.queryByTestId("engine-test-banner")).toBeNull());
+    expect(screen.queryByTestId("engine-book")).toBeNull();
+    expect(screen.queryByTestId("engine-get-rates")).toBeNull();
+    expect(screen.getByTestId("engine-label-number").textContent).toBe("TRK-778899");
+  });
+
+  it("keeps a returned live label on screen even if the key reads test again", async () => {
+    const live = booking();
+    const list = vi.fn<() => Promise<EngineBookings>>().mockResolvedValueOnce(OPEN).mockResolvedValue({ bookings: [live], bookable: true, blockedBy: null });
+    fake({ access: vi.fn(async () => TEST_ACCESS), quote: vi.fn(async () => TEST_QUOTE), bookings: list, book: vi.fn(async () => live) });
+    draw();
+    await toRates();
+    await press("engine-book");
+    await waitFor(() => expect(list).toHaveBeenCalledTimes(2));
+    expect(await screen.findByTestId("engine-label-card-1")).toBeTruthy();
+    expect(screen.getByTestId("engine-test-banner")).toBeTruthy();
+    expect(screen.queryByTestId("engine-book")).toBeNull();
+    expect(screen.queryByTestId("engine-get-rates")).toBeNull();
+  });
+
+  it("after an unclear purchase, finds the live label instead of saying nothing was recorded", async () => {
+    const list = vi.fn<() => Promise<EngineBookings>>().mockResolvedValueOnce(OPEN).mockResolvedValue(held(booking()));
+    fake({ access: swapped(), quote: vi.fn(async () => TEST_QUOTE), bookings: list, book: vi.fn(async () => Promise.reject(noAnswer())) });
+    draw();
+    await toRates();
+    await press("engine-book");
+    expect(await screen.findByTestId("engine-found")).toBeTruthy();
+    expect(screen.queryByTestId("engine-no-record")).toBeNull();
+    expect(screen.queryByTestId("engine-test-banner")).toBeNull();
+    expect(screen.getByTestId("engine-label-card-1")).toBeTruthy();
+  });
+
+  it.each(["booked", "unknown"] as const)("never says no booking while a live %s one stands on the parcel under a test key", async (state) => {
+    const live = booking({ state, tracking: state === "booked" ? "TRK-778899" : null, releaseAfter: state === "unknown" ? 5_000 : null });
+    const list = vi.fn<() => Promise<EngineBookings>>().mockResolvedValueOnce(OPEN).mockResolvedValue({ bookings: [live], bookable: true, blockedBy: null });
+    fake({ access: vi.fn(async () => TEST_ACCESS), quote: vi.fn(async () => TEST_QUOTE), bookings: list, book: vi.fn(async () => Promise.reject(noAnswer())) });
+    draw();
+    await toRates();
+    await press("engine-book");
+    await screen.findByTestId(state === "booked" ? "engine-found" : "engine-unknown");
+    expect(screen.queryByTestId("engine-no-record")).toBeNull();
+    expect(screen.queryByTestId("engine-safe")).toBeNull();
+    expect(screen.queryByTestId("engine-book")).toBeNull();
+  });
+
+  it("still says no booking when only a test booking stands under a live key", async () => {
+    const sample = booking({ test: true, state: "booked" });
+    const list = vi.fn<() => Promise<EngineBookings>>().mockResolvedValueOnce(OPEN).mockResolvedValue({ bookings: [sample], bookable: true, blockedBy: null });
+    fake({ bookings: list, book: vi.fn(async () => Promise.reject(noAnswer())) });
+    draw();
+    await toRates();
+    await press("engine-book");
+    expect(await screen.findByTestId("engine-no-record")).toBeTruthy();
+  });
+
+  it("offers no verdict when the key cannot be re-read after an unclear purchase", async () => {
+    const access = vi.fn<() => Promise<EngineAccess>>().mockResolvedValueOnce(TEST_ACCESS).mockRejectedValue(noAnswer());
+    fake({ access, quote: vi.fn(async () => TEST_QUOTE), book: vi.fn(async () => Promise.reject(noAnswer())) });
+    draw();
+    await toRates();
+    await press("engine-book");
+    expect(await screen.findByTestId("engine-read-failed")).toBeTruthy();
+    expect(screen.queryByTestId("engine-no-record")).toBeNull();
+    expect(screen.queryByTestId("engine-book")).toBeNull();
+  });
+
+  it("holds 'nothing was charged' back when the list cannot be read after a refusal", async () => {
+    const list = vi.fn<() => Promise<EngineBookings>>().mockResolvedValueOnce(OPEN).mockRejectedValue(noAnswer());
+    fake({ bookings: list, book: vi.fn(async () => Promise.reject(refusal("CARRIER_REFUSED", { reason: "payment" }))) });
+    draw();
+    await toRates();
+    await press("engine-book");
+    const card = await screen.findByTestId("engine-refused-payment");
+    await waitFor(() => expect(list).toHaveBeenCalledTimes(2));
+    expect(card.textContent).not.toContain(words("addon.shipping-kit.engine.refused.eyebrow"));
   });
 });
 

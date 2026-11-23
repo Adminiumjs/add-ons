@@ -9,6 +9,10 @@
  * screen still showing a price for yesterday's weight is the thing that makes
  * someone press Book. A reply that arrives after an edit is dropped too.
  *
+ * A RATE IS ONLY DRAWN UNDER THE KEY ON SCREEN. A quote names the mode it was
+ * priced in. One that differs is never drawn as bookable: the parent re-reads
+ * the shop's key and says the rates must be fetched again.
+ *
  * BOOK IS ASKED ONCE. A ref holds it, because two presses can land before React
  * has drawn the busy state. Only a clear refusal stays on this screen: anything
  * else goes to the parent, which reads what really happened.
@@ -18,7 +22,7 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { CircleX, MapPin, RefreshCw, Search } from "lucide-react";
 import { classifyBookFailure } from "@adminium/add-on-host/contracts";
 import type { DispatchPayload } from "@adminium/add-on-host";
-import type { EngineAccess, EngineBooking, EngineCarrier, EngineQuote } from "@adminium/add-on-host/engine-carrier";
+import type { EngineAccess, EngineBooking, EngineCarrier, EngineMode, EngineQuote } from "@adminium/add-on-host/engine-carrier";
 
 import { kitBrand } from "../../brand.ts";
 import type { StringKey } from "../../i18n/strings.ts";
@@ -228,6 +232,8 @@ export function ParcelBooking({
   onAnswered,
   onUnknown,
   onRefused,
+  onModeMoved,
+  onQuoted,
   onClose,
 }: {
   client: EngineCarrier;
@@ -241,8 +247,12 @@ export function ParcelBooking({
   onAnswered: (booking: EngineBooking, rate: EngineRate) => void;
   /** No clear answer: a label may have been paid for. */
   onUnknown: (rate: EngineRate) => void;
-  /** A clear no. The parent re-reads whether this parcel can still be booked. */
-  onRefused: () => void;
+  /** A clear no. The parent re-reads the key and the list, and says whether nothing stands on this parcel. */
+  onRefused: () => Promise<boolean>;
+  /** A quote came back in a mode this screen is not showing. Its rates are not drawn. */
+  onModeMoved: (mode: EngineMode) => void;
+  /** A quote in the mode on screen is being drawn. */
+  onQuoted: () => void;
   /** Leaves an added parcel's form. Absent on the first parcel. */
   onClose?: (() => void) | undefined;
 }) {
@@ -268,7 +278,7 @@ export function ParcelBooking({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [cleared, setCleared] = useState(false);
   const [booking, setBooking] = useState(false);
-  const [failure, setFailure] = useState<{ card: RefusalCard; info: EngineFailure; company: string; afterBook: boolean; wordsHidden: boolean } | null>(null);
+  const [failure, setFailure] = useState<{ card: RefusalCard; info: EngineFailure; company: string; afterBook: boolean; wordsHidden: boolean; nothingStands: boolean } | null>(null);
   const [ownerBlock, setOwnerBlock] = useState<OwnerBlock | null>(
     access.booking === "no-limit" ? "no-limit" : access.booking === "daily-limit" ? "daily-limit" : null,
   );
@@ -280,6 +290,8 @@ export function ParcelBooking({
   const edition = useRef(0);
   const bookingNow = useRef(false);
 
+  /** Held in state for one render at most after the key moves, and never drawn or bought from in that render. */
+  const shownQuote = quote !== null && quote.mode === access.mode ? quote : null;
   const hidesMoney = access.pricesHidden || quote?.pricesHidden === true;
 
   const clearRates = () => {
@@ -303,6 +315,20 @@ export function ParcelBooking({
     clearRates();
   }, [addressKey]);
 
+  /* The shop's key moved: nothing priced or refused under the old one still applies. */
+  const seenMode = useRef(access.mode);
+  useEffect(() => {
+    if (seenMode.current === access.mode) return;
+    seenMode.current = access.mode;
+    edition.current += 1;
+    setQuote(null);
+    setSelectedId(null);
+    setFailure(null);
+    setRebuy(null);
+    setRebuyAsking(false);
+    setCleared(false);
+  }, [access.mode]);
+
   const showFailure = (err: unknown, afterBook: boolean, company: string) => {
     const info = readFailure(err);
     if (info.code === "OWNER_BOOKS" && (info.detail === "daily-limit" || info.detail === "no-limit")) {
@@ -313,7 +339,7 @@ export function ParcelBooking({
       return;
     }
     const card: RefusalCard = info.code === "OWNER_BOOKS" ? (info.detail === "abroad" ? "abroad" : "over-limit") : refusalCardOf(info.code, info.reason);
-    setFailure({ card, info, company, afterBook, wordsHidden: hidesMoney });
+    setFailure({ card, info, company, afterBook, wordsHidden: hidesMoney, nothingStands: false });
     setQuote(null);
     setSelectedId(null);
     say(t(REFUSAL[card].title, { company }));
@@ -341,6 +367,11 @@ export function ParcelBooking({
         parcelNumber,
       });
       if (edition.current !== asked) return;
+      if (answer.mode !== access.mode) {
+        onModeMoved(answer.mode);
+        return;
+      }
+      onQuoted();
       const wantedCode = chosen !== undefined && chosen !== null && chosen.addOn === kitBrand().addOnKey ? chosen.code : null;
       setQuote(answer);
       setSelectedId(firstPick(answer.rates, speed, wantedCode));
@@ -353,13 +384,13 @@ export function ParcelBooking({
   };
 
   const book = async (confirmEarlier: boolean, rateOverride?: EngineRate) => {
-    const rate = rateOverride ?? (quote?.rates as readonly EngineRate[] | undefined)?.find((one) => one.rateId === selectedId);
-    if (bookingNow.current || quote === null || rate === undefined) return;
+    const rate = rateOverride ?? (shownQuote?.rates as readonly EngineRate[] | undefined)?.find((one) => one.rateId === selectedId);
+    if (bookingNow.current || shownQuote === null || rate === undefined) return;
     bookingNow.current = true;
     setBooking(true);
     say(t("addon.shipping-kit.engine.say.booking"));
     try {
-      const answer = await client.book({ quoteId: quote.quoteId, rateId: rate.rateId, ...(confirmEarlier ? { confirmEarlier: true } : {}) });
+      const answer = await client.book({ quoteId: shownQuote.quoteId, rateId: rate.rateId, ...(confirmEarlier ? { confirmEarlier: true } : {}) });
       onAnswered(answer, rate);
     } catch (err) {
       if (classifyBookFailure(err).outcome !== "refused") {
@@ -373,7 +404,10 @@ export function ParcelBooking({
         return;
       }
       showFailure(err, true, rate.carrier ?? brandName);
-      if (info.code !== "CSRF_FAILED") onRefused();
+      // "Nothing was charged" waits for the list. A stale token reads nothing, so it never says so.
+      if (info.code !== "CSRF_FAILED" && (await onRefused())) {
+        setFailure((held) => (held === null ? null : { ...held, nothingStands: true }));
+      }
     } finally {
       bookingNow.current = false;
       setBooking(false);
@@ -475,9 +509,9 @@ export function ParcelBooking({
           icon={<CircleX size={20} />}
           testId={`engine-refused-${failure.card}`}
           takeFocus
-          {...(failure.afterBook
+          {...(failure.afterBook && failure.nothingStands
             ? { eyebrow: test ? t("addon.shipping-kit.engine.refused.eyebrowTest") : t("addon.shipping-kit.engine.refused.eyebrow") }
-            : failure.card === "ship-from" || failure.card === "address-gap" || failure.card === "country"
+            : !failure.afterBook && (failure.card === "ship-from" || failure.card === "address-gap" || failure.card === "country")
               ? { eyebrow: t("addon.shipping-kit.engine.refused.before") }
               : {})}
           title={t(refusal.title, { company: failure.company })}
@@ -542,9 +576,9 @@ export function ParcelBooking({
         </Dialog>
       )}
 
-      {ownerBlock === null && quote !== null && rebuy === null && (
+      {ownerBlock === null && shownQuote !== null && rebuy === null && (
         <RatesPanel
-          quote={quote}
+          quote={shownQuote}
           speed={speed}
           customer={order.recipient.name}
           selectedId={selectedId}
@@ -557,7 +591,7 @@ export function ParcelBooking({
         />
       )}
 
-      {ownerBlock === null && quote === null && failure === null && rebuy === null && (
+      {ownerBlock === null && shownQuote === null && failure === null && rebuy === null && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
           <FlowButton variant="accent" busy={booking} onClick={() => void getRates()} testId="engine-get-rates">
             <Search size={15} aria-hidden="true" />
