@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { kitBrand } from "../brand.ts";
 import { connectEngineCarrier, resetRuntime } from "../runtime.ts";
-import { isPaidLabelStopped, PaidLabelHost, readPaidLabelRefusal, withPaidLabel } from "./PaidLabelDialog.tsx";
+import { clearPaidLabel, isPaidLabelStopped, PaidLabelHost, readPaidLabelRefusal, withPaidLabel } from "./PaidLabelDialog.tsx";
 
 const SOURCE = { table: "orders", id: "7" };
 const DAY = 24 * 60 * 60_000;
@@ -41,6 +41,45 @@ describe("readPaidLabelRefusal", () => {
     expect(readPaidLabelRefusal(refused())?.labels[0]?.booking).toBe("b1");
     expect(readPaidLabelRefusal(Object.assign(new Error("x"), { code: "ORDER_HAS_PAID_LABEL", params: {} }))).toBeNull();
     expect(readPaidLabelRefusal(Object.assign(new Error("x"), { code: "ROW_CHANGED", params: { to: "cancelled", labels: [label()] } }))).toBeNull();
+  });
+});
+
+describe("clearPaidLabel", () => {
+  const live = (bookings: unknown[]) =>
+    connectEngineCarrier({ addOnKey: kitBrand().addOnKey, requestRefund: vi.fn(), bookings: vi.fn(async () => ({ bookings })) } as unknown as EngineCarrier);
+
+  it("sends nothing when the order holds no live label", async () => {
+    live([{ id: "b1", state: "booked", test: true }, { id: "b2", state: "voiding", test: false }]);
+    const attempt = vi.fn(async () => undefined);
+    await expect(clearPaidLabel(SOURCE, attempt)).resolves.toEqual({ keep: [], moved: false });
+    expect(attempt).not.toHaveBeenCalled();
+  });
+
+  it("asks first, and hands back the answer without moving the order", async () => {
+    live([{ id: "b1", state: "booked", test: false }]);
+    render(<PaidLabelHost />);
+    const attempt = vi.fn(async () => {
+      throw refused();
+    });
+    const result = clearPaidLabel(SOURCE, attempt);
+    fireEvent.click(await screen.findByTestId("paid-label-keep"));
+    await expect(result).resolves.toEqual({ keep: ["b1"], moved: false });
+    expect(attempt).toHaveBeenCalledTimes(1);
+  });
+
+  it("stops when the person goes back", async () => {
+    live([{ id: "b1", state: "booked", test: false }]);
+    render(<PaidLabelHost />);
+    const result = clearPaidLabel(SOURCE, async () => {
+      throw refused();
+    }).catch((error: unknown) => error);
+    fireEvent.click(await screen.findByTestId("paid-label-back"));
+    expect(isPaidLabelStopped(await result)).toBe(true);
+  });
+
+  it("says so when the label had gone and the move simply went", async () => {
+    live([{ id: "b1", state: "booked", test: false }]);
+    await expect(clearPaidLabel(SOURCE, async () => undefined)).resolves.toEqual({ keep: [], moved: true });
   });
 });
 
