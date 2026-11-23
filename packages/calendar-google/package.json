@@ -30,6 +30,6 @@
     "@adminium/add-on-calendar-console": "*",
     "@adminium/add-on-contracts": "npm:@adminiumjs/add-on-contracts@0.3.71",
     "@adminium/add-on-host": "*",
-    "@adminiumjs/manifest": "0.3.71"
+    "@adminiumjs/manifest": "0.3.72"
   }
 }

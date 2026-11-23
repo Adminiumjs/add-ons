@@ -20,7 +20,7 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@adminiumjs/manifest": "0.3.71"
+    "@adminiumjs/manifest": "0.3.72"
   },
   "peerDependencies": {
     "react": "^19.0.0"
