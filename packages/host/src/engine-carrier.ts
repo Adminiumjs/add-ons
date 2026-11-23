@@ -215,6 +215,26 @@ export interface EngineLookUp {
   booking: EngineBooking;
 }
 
+export const ENGINE_ATTENTION_REASONS = ['unknown', 'duplicates', 'label-owed', 'new-number', 'tracking-failed', 'returned', 'ambiguous', 'quiet'] as const;
+export type EngineAttentionReason = (typeof ENGINE_ATTENTION_REASONS)[number];
+
+/** A label that needs a person, on an order this person reaches. */
+export interface EngineAttentionItem {
+  /** Most pressing first. A reason this build has no word for is left out, so the list can be empty. */
+  reasons: EngineAttentionReason[];
+  reference: string;
+  source: { table: string; id: string };
+  /** The order was deleted, so there is none to open. Only ever true for someone who manages shipping. */
+  orderGone: boolean;
+  booking: EngineBooking;
+}
+
+export interface EngineAttention {
+  items: EngineAttentionItem[];
+  /** The engine stopped looking, so more may be waiting. */
+  more: boolean;
+}
+
 export interface EngineQuoteRequest {
   source: { table: string; id: string };
   parcel: { weightKg: number; lengthCm: number; widthCm: number; heightCm: number; contents: string };
@@ -253,6 +273,8 @@ export interface EngineCarrier {
   downloadDocument(id: string, kind: ShipmentDocumentKind): Promise<Blob>;
   refreshBooking(id: string): Promise<EngineRefresh>;
   refreshOpenParcels(): Promise<EngineRefreshOpen>;
+  /** The labels that need a person. Reads what is stored: no carrier is asked. */
+  attention(): Promise<EngineAttention>;
 }
 
 // ── failures ────────────────────────────────────────────────────────────────
@@ -480,6 +502,19 @@ function readBooking(read: Reader, value: unknown): EngineBooking {
     ...optional('currency', read.maybe(raw, 'currency', read.text)),
     ...optional('chargeDiffers', read.maybe(raw, 'chargeDiffers', read.flag)),
     ...(raw.track === undefined ? {} : { track: raw.track === null ? null : readTrack(read, raw.track) }),
+  };
+}
+
+function readAttentionItem(read: Reader, value: unknown): EngineAttentionItem {
+  const raw = read.object(value);
+  const source = read.object(raw.source);
+  return {
+    // An engine newer than this build can name a reason it has no word for. The row still shows.
+    reasons: read.list(raw.reasons).filter((reason): reason is EngineAttentionReason => (ENGINE_ATTENTION_REASONS as readonly unknown[]).includes(reason)),
+    reference: read.text(raw, 'reference'),
+    source: { table: read.text(source, 'table'), id: read.text(source, 'id') },
+    orderGone: read.flag(raw, 'orderGone'),
+    booking: readBooking(read, raw.booking),
   };
 }
 
@@ -747,6 +782,15 @@ export function createEngineCarrier(options: EngineCarrierOptions): EngineCarrie
         oldestCheckedAt: read.orNull(raw, 'oldestCheckedAt', read.number),
         neverChecked: read.number(raw, 'neverChecked'),
         retryAt: read.orNull(raw, 'retryAt', read.number),
+      };
+    },
+
+    async attention() {
+      const read = reader(false);
+      const raw = read.object(await ask('GET', '/attention', undefined, false));
+      return {
+        items: read.list(raw.items).map((item) => readAttentionItem(read, item)),
+        more: read.flag(raw, 'more'),
       };
     },
   };

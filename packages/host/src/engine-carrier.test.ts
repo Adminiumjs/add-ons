@@ -121,6 +121,75 @@ describe('the routes it asks', () => {
   });
 });
 
+describe('the labels that need a person', () => {
+  const ITEM = { reasons: ['unknown', 'duplicates'], reference: 'NL-1049', source: { table: 'orders', id: '42' }, orderGone: false, booking: { ...BOOKING, state: 'unknown', tracking: null } };
+
+  it('asks once, by GET, with no body', async () => {
+    const { calls, engine } = client(200, { data: { items: [ITEM], more: true } });
+    const read = await engine.attention();
+    expect(calls).toHaveLength(1);
+    expect(calls[0]!.path).toBe('/api/v1/apps/maker-shop/shipping/attention');
+    expect(calls[0]!.init.method).toBe('GET');
+    expect(calls[0]!.init.body).toBeUndefined();
+    expect(read.more).toBe(true);
+    expect(read.items[0]).toMatchObject({ reasons: ['unknown', 'duplicates'], reference: 'NL-1049', source: { table: 'orders', id: '42' }, booking: { id: 'b1', state: 'unknown', tracking: null } });
+  });
+
+  it('reads an item field by field, so nothing else of it reaches a screen', async () => {
+    const reply = { ...ITEM, token: KEY, source: { ...ITEM.source, url: KEY }, booking: { ...ITEM.booking, carrierToken: KEY, label: { ...BOOKING.label, url: KEY } } };
+    const { engine } = client(200, { data: { items: [reply], more: false, key: KEY } });
+    const read = await engine.attention();
+    expect(JSON.stringify(read)).not.toContain(KEY);
+    expect(Object.keys(read.items[0]!).sort()).toEqual(['booking', 'orderGone', 'reasons', 'reference', 'source']);
+    expect(read.items[0]!.source).toEqual({ table: 'orders', id: '42' });
+  });
+
+  it('says when a row\'s order was deleted', async () => {
+    const { engine } = client(200, { data: { items: [{ ...ITEM, orderGone: true }, ITEM], more: false } });
+    expect((await engine.attention()).items.map((item) => item.orderGone)).toEqual([true, false]);
+  });
+
+  it('keeps a row whose reason this build has no word for', async () => {
+    const { engine } = client(200, { data: { items: [{ ...ITEM, reasons: ['some-later-reason', 'quiet', 7] }, { ...ITEM, reasons: ['some-later-reason'] }], more: false } });
+    const read = await engine.attention();
+    expect(read.items.map((item) => item.reasons)).toEqual([['quiet'], []]);
+  });
+
+  it('gives someone who may not see money no amount when the engine sends none', async () => {
+    const { amount: _amount, currency: _currency, ...priceless } = BOOKING;
+    const { engine } = client(200, { data: { items: [{ ...ITEM, booking: priceless }], more: false } });
+    const [item] = (await engine.attention()).items;
+    expect(item!.booking).not.toHaveProperty('amount');
+    expect(item!.booking).not.toHaveProperty('currency');
+  });
+
+  it.each([
+    ['no items', { more: false }],
+    ['no more', { items: [] }],
+    ['a row with no source', { items: [{ ...ITEM, source: null }], more: false }],
+    ['a row with no reasons list', { items: [{ ...ITEM, reasons: 'unknown' }], more: false }],
+    ['a row that does not say whether its order is there', { items: [{ reasons: ITEM.reasons, reference: ITEM.reference, source: ITEM.source, booking: ITEM.booking }], more: false }],
+    ['a row whose order flag is not a yes or no', { items: [{ ...ITEM, orderGone: 'yes' }], more: false }],
+    ['a broken booking', { items: [{ ...ITEM, booking: { id: 'b1' } }], more: false }],
+  ])('calls %s a bad answer', async (_name, data) => {
+    const error = await caught(() => client(200, { data }).engine.attention());
+    expect(error.code).toBe(ENGINE_BAD_ANSWER);
+    expect(error.retryable).toBe(true);
+  });
+
+  it('passes a refusal on, and says when nobody answered', async () => {
+    const refused = await caught(() => client(403, { error: { code: 'FORBIDDEN', message: 'No.' } }).engine.attention());
+    expect(refused.code).toBe('FORBIDDEN');
+    expect(refused.status).toBe(403);
+    const send: EngineSend = async () => {
+      throw new Error(`failed with ${KEY}`);
+    };
+    const silent = await caught(() => createEngineCarrier({ send, appKey: 'maker-shop', addOnKey: 'shipping-shippo' }).attention());
+    expect(silent.code).toBe(ENGINE_NO_ANSWER);
+    expect(silent.message).not.toContain(KEY);
+  });
+});
+
 describe('labels and tracking', () => {
   const TRACK = { status: 'TRANSIT', statusAt: 5, checkedAt: 6, flag: null, newNumber: true };
 
