@@ -114,7 +114,9 @@ describe("the runtime seam", () => {
     useConnectedCarrier(tripwire);
     expect(carrierState()).toBe("demo");
     applySettings({ ...DEFAULT_SETTINGS, demo_transport: false });
-    expect(carrierState()).toBe("connected");
+    // A page carrier answers `carrier()`, but "connected" means the app's client for the engine's routes.
+    expect(carrierState()).toBe("not-connected");
+    expect(carrier()).toBe(tripwire);
   });
 
   /**
