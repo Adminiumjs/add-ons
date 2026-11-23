@@ -1,5 +1,5 @@
 ---
-"@adminium/add-on-shipping-shippo": minor
+"@adminium/add-on-shipping-shippo": patch
 "@adminium/add-on-host": patch
 ---
 
