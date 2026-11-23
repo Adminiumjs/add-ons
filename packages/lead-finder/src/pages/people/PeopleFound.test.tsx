@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Refused, resetWorld, seed, world } from '../testing/host.tsx';
 import { KIT, KIT_REPLY, answer } from '../testing/fixtures.ts';
@@ -74,8 +74,14 @@ const rowOf = (name: string): HTMLElement => within(table()).getByText(name).clo
 beforeEach(() => {
   resetWorld();
   world.now = Date.parse('2026-11-19T10:00:00Z');
+  // The screen reads the real clock, so hold it to the day the fixtures' deadlines are written for.
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(world.now);
 });
-afterEach(() => cleanup());
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 describe('People found (3f)', () => {
   it('lists only the people this reader may read, with role · company, and links each to their record', async () => {
