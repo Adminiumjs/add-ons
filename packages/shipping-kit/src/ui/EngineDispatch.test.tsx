@@ -733,11 +733,36 @@ describe("the label", () => {
     vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) {
       opened.push({ href: this.href, target: this.target, rel: this.rel, download: this.download });
     });
-    fake({ bookings: vi.fn(async () => held(withLabel({}))) });
-    draw();
-    await press("engine-label-print");
-    await waitFor(() => expect(opened).toEqual([{ href: "blob:label", target: "_blank", rel: "noopener noreferrer", download: "" }]));
-    expect(document.querySelector("iframe")).toBeNull();
+    Object.defineProperty(navigator, "userActivation", { value: { isActive: true }, configurable: true });
+    try {
+      fake({ bookings: vi.fn(async () => held(withLabel({}))) });
+      draw();
+      await press("engine-label-print");
+      await waitFor(() => expect(opened).toEqual([{ href: "blob:label", target: "_blank", rel: "noopener noreferrer", download: "" }]));
+      expect(document.querySelector("iframe")).toBeNull();
+      expect(screen.queryByTestId("engine-label-print-open")).toBeNull();
+    } finally {
+      delete (navigator as unknown as Record<string, unknown>).userActivation;
+    }
+  });
+
+  it.each([["has run out", { value: { isActive: false }, configurable: true }], ["cannot be read", null]] as const)("asks for one more press when the press %s, and opens nothing until then", async (_name, activation) => {
+    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:label");
+    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);
+    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
+    if (activation !== null) Object.defineProperty(navigator, "userActivation", activation);
+    try {
+      fake({ bookings: vi.fn(async () => held(withLabel({}))) });
+      draw();
+      await press("engine-label-print");
+      expect(await screen.findByTestId("engine-label-print-open")).toBeTruthy();
+      expect(click).not.toHaveBeenCalled();
+      await press("engine-label-print-open");
+      expect(click).toHaveBeenCalledTimes(1);
+      expect(screen.queryByTestId("engine-label-print-open")).toBeNull();
+    } finally {
+      delete (navigator as unknown as Record<string, unknown>).userActivation;
+    }
   });
 
   it("opens nothing when the file cannot be fetched", async () => {

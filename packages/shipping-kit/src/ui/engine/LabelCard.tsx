@@ -87,6 +87,26 @@ function withBlob(blob: Blob, use: (url: string) => void): void {
   window.setTimeout(() => URL.revokeObjectURL(url), 30_000);
 }
 
+/**
+ * WHETHER THE PERSON'S PRESS STILL COUNTS. A browser opens a new tab only for a
+ * recent press, and blocks it silently once a slow file has used that up. A
+ * browser that cannot say is treated as having used it up.
+ */
+function pressStillCounts(): boolean {
+  return (navigator as Navigator & { userActivation?: { isActive: boolean } }).userActivation?.isActive === true;
+}
+
+/** Its own tab, because Adminium's page policy refuses a framed blob, so a hidden frame never reaches the printer. */
+function openInTab(blob: Blob): void {
+  withBlob(blob, (url) => {
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.target = "_blank";
+    anchor.rel = "noopener noreferrer";
+    anchor.click();
+  });
+}
+
 function LabelActions({
   booking,
   client,
@@ -106,6 +126,8 @@ function LabelActions({
   const [working, setWorking] = useState<"download" | "print" | "fetch" | null>(null);
   const [fault, setFault] = useState<StringKey | null>(null);
   const [downloaded, setDownloaded] = useState(false);
+  // A file that arrived after the press stopped counting: one more press opens it.
+  const [printable, setPrintable] = useState<Blob | null>(null);
   const { state, sizeDiffers, size, sizeGot } = booking.label;
   const company = booking.carrierName ?? kitBrand().name;
 
@@ -122,22 +144,24 @@ function LabelActions({
     if (working !== null) return;
     setWorking(kind);
     setFault(null);
+    setPrintable(null);
     try {
       const blob = await client.downloadDocument(booking.id, "label");
-      withBlob(blob, (url) => {
-        const anchor = document.createElement("a");
-        anchor.href = url;
-        if (kind === "download") {
-          anchor.download = labelFileName(orderRef, booking.parcelNumber, blob.type);
+      if (kind === "print") {
+        if (pressStillCounts()) {
+          openInTab(blob);
+          say(t("addon.shipping-kit.engine.say.printing"));
         } else {
-          // Its own tab, because Adminium's page policy refuses a framed blob, so a hidden frame never reaches the printer.
-          anchor.target = "_blank";
-          anchor.rel = "noopener noreferrer";
+          setPrintable(blob);
+          say(t("addon.shipping-kit.engine.label.printReady"));
         }
-        anchor.click();
-      });
-      if (kind === "print") say(t("addon.shipping-kit.engine.say.printing"));
-      if (kind === "download") {
+      } else {
+        withBlob(blob, (url) => {
+          const anchor = document.createElement("a");
+          anchor.href = url;
+          anchor.download = labelFileName(orderRef, booking.parcelNumber, blob.type);
+          anchor.click();
+        });
         setDownloaded(true);
         say(t("addon.shipping-kit.engine.say.saved"));
       }
@@ -218,6 +242,24 @@ function LabelActions({
         )}
       </div>
       {status}
+      {state === "ready" && printable !== null && (
+        <div data-testid="engine-label-print-ready" style={{ display: "flex", flexWrap: "wrap", gap: "8px 12px", alignItems: "center", border: "1px solid var(--border-strong)", background: "var(--info-soft)", borderRadius: 11, padding: "9px 12px" }}>
+          <span style={{ flex: "1 1 180px", minInlineSize: 0, fontSize: 12.5, fontWeight: 600 }}>{t("addon.shipping-kit.engine.label.printReady")}</span>
+          <FlowButton
+            variant="ghost"
+            onClick={() => {
+              openInTab(printable);
+              setPrintable(null);
+              say(t("addon.shipping-kit.engine.say.printing"));
+            }}
+            testId="engine-label-print-open"
+            style={{ fontSize: 12.5, fontWeight: 700, padding: "8px 12px" }}
+          >
+            <Printer size={14} aria-hidden="true" />
+            {t("addon.shipping-kit.engine.label.printOpen")}
+          </FlowButton>
+        </div>
+      )}
       {sizeDiffers && size !== null && sizeGot !== null && (
         <div data-testid="engine-label-size" style={{ display: "flex", gap: 6, alignItems: "flex-start", fontSize: 12.5, color: "var(--fg-muted)" }}>
           <TriangleAlert size={13} aria-hidden="true" style={{ color: "var(--warn)", flex: "0 0 auto", marginBlockStart: 2 }} />
