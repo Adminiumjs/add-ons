@@ -150,7 +150,8 @@ export function UnknownCard({
     >
       <Detail label={t("addon.shipping-kit.engine.unknown.order")} value={orderRef} mono />
       {many && <Detail label={t("addon.shipping-kit.engine.unknown.parcel")} value={number(booking.parcelNumber)} mono />}
-      <Detail label={t("addon.shipping-kit.engine.unknown.carrier")} value={<span dir="auto">{company}</span>} />
+      {/* The delivery company is known only once a label is bought. The account's own name is not an answer to it. */}
+      {booking.carrierName !== null && <Detail label={t("addon.shipping-kit.engine.unknown.carrier")} value={<span dir="auto">{booking.carrierName}</span>} />}
       <Detail label={t("addon.shipping-kit.engine.unknown.service")} value={<span dir="auto">{booking.service}</span>} />
       {booking.calledAt !== null && <Detail label={t("addon.shipping-kit.engine.unknown.asked")} value={stampOf(booking.calledAt, locale)} mono />}
     </dl>

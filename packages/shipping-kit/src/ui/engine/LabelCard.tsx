@@ -125,21 +125,22 @@ function LabelActions({
     try {
       const blob = await client.downloadDocument(booking.id, "label");
       withBlob(blob, (url) => {
+        const anchor = document.createElement("a");
+        anchor.href = url;
         if (kind === "download") {
-          const anchor = document.createElement("a");
-          anchor.href = url;
           anchor.download = labelFileName(orderRef, booking.parcelNumber, blob.type);
-          anchor.click();
         } else {
-          const frame = document.createElement("iframe");
-          frame.style.display = "none";
-          frame.src = url;
-          frame.onload = () => frame.contentWindow?.print();
-          document.body.appendChild(frame);
+          // Its own tab, because Adminium's page policy refuses a framed blob, so a hidden frame never reaches the printer.
+          anchor.target = "_blank";
+          anchor.rel = "noopener noreferrer";
         }
+        anchor.click();
       });
-      if (kind === "download") setDownloaded(true);
-      say(t(kind === "download" ? "addon.shipping-kit.engine.say.saved" : "addon.shipping-kit.engine.say.printing"));
+      if (kind === "print") say(t("addon.shipping-kit.engine.say.printing"));
+      if (kind === "download") {
+        setDownloaded(true);
+        say(t("addon.shipping-kit.engine.say.saved"));
+      }
     } catch (err) {
       failed(err);
     } finally {

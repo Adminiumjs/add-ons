@@ -96,6 +96,9 @@ const OWNER_BLOCK_BODY: Readonly<Record<OwnerBlock, StringKey>> = {
   "daily-limit": "addon.shipping-kit.engine.limit.daily",
 };
 
+/** A figure stays left-to-right inside its field, so `start` would pin it to the wrong side of an Arabic page. */
+const pageIsRtl = () => typeof document !== "undefined" && document.documentElement.getAttribute("dir") === "rtl";
+
 function FigureField({
   label,
   unit,
@@ -146,7 +149,7 @@ function FigureField({
           aria-invalid={fault !== null}
           aria-describedby={describedBy === "" ? undefined : describedBy}
           {...(inputMode === undefined ? {} : { inputMode })}
-          style={{ ...monoInputStyle, fontWeight: 500, border: 0, background: "transparent", minBlockSize: TOUCH }}
+          style={{ ...monoInputStyle, textAlign: pageIsRtl() ? "right" : "left", fontWeight: 500, border: 0, background: "transparent", minBlockSize: TOUCH }}
         />
         <Mono style={{ fontSize: 11, fontWeight: 500, color: "var(--fg-subtle)" }}>{unit}</Mono>
       </span>
@@ -164,11 +167,22 @@ function FigureField({
   );
 }
 
+/** The country in the reader's language. An order holds its ISO code; anything else is shown as it is. */
+function countryName(code: string, locale: string): string {
+  if (!/^[A-Z]{2}$/.test(code)) return code;
+  try {
+    return new Intl.DisplayNames([locale], { type: "region" }).of(code) ?? code;
+  } catch {
+    return code;
+  }
+}
+
 /** Where it is going. Read-only here: an address change is the order's own audited write. */
 export function AddressBlock({ order, locked }: { order: DispatchPayload["order"]; locked: boolean }) {
   const t = useT();
+  const locale = useLocale();
   const to = order.destination;
-  const lines = to === undefined ? [] : [to.name, ...to.lines, [to.city, to.region, to.postcode].filter(Boolean).join(" "), to.country];
+  const lines = to === undefined ? [] : [to.name, ...to.lines, [to.city, to.region, to.postcode].filter(Boolean).join(" "), countryName(to.country, locale)];
   return (
     <div>
       <div style={{ fontSize: 12, fontWeight: 700, color: "var(--fg-muted)", marginBlockEnd: 6 }}>{t("addon.shipping-kit.parcel.goingTo")}</div>
@@ -180,7 +194,7 @@ export function AddressBlock({ order, locked }: { order: DispatchPayload["order"
           <span style={{ fontSize: 13 }}>{order.recipient.name}</span>
         ) : (
           lines.map((line, index) => (
-            <Typed key={`${line}-${index}`} style={{ fontSize: 13, fontFamily: "inherit", color: "var(--fg)" }}>
+            <Typed key={`${line}-${index}`} style={{ alignSelf: "flex-start", fontSize: 13, fontFamily: "inherit", fontWeight: to !== undefined && index === lines.length - 1 ? 700 : undefined, color: "var(--fg)" }}>
               {line}
             </Typed>
           ))
@@ -397,7 +411,7 @@ export function ParcelBooking({
         <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: "var(--fg-muted)" }}>{t("addon.shipping-kit.parcel.contents")}</span>
-            <span dir="auto" style={{ fontSize: 13.5, overflowWrap: "anywhere" }}>{contents}</span>
+            <span dir="auto" style={{ alignSelf: "flex-start", fontSize: 13.5, overflowWrap: "anywhere" }}>{contents}</span>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(190px, 100%), 1fr))", gap: 12 }}>
             <FigureField

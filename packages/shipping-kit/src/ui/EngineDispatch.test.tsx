@@ -726,6 +726,30 @@ describe("the label", () => {
     expect(screen.getByTestId("engine-label-download").textContent).toContain(words("addon.shipping-kit.engine.label.again"));
   });
 
+  it("prints by opening the file in its own tab, cut off from this page", async () => {
+    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:label");
+    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);
+    const opened: { href: string; target: string; rel: string; download: string }[] = [];
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) {
+      opened.push({ href: this.href, target: this.target, rel: this.rel, download: this.download });
+    });
+    fake({ bookings: vi.fn(async () => held(withLabel({}))) });
+    draw();
+    await press("engine-label-print");
+    await waitFor(() => expect(opened).toEqual([{ href: "blob:label", target: "_blank", rel: "noopener noreferrer", download: "" }]));
+    expect(document.querySelector("iframe")).toBeNull();
+  });
+
+  it("opens nothing when the file cannot be fetched", async () => {
+    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
+    const downloadDocument = vi.fn(async () => Promise.reject(new Error("no")));
+    fake({ bookings: vi.fn(async () => held(withLabel({}))), downloadDocument });
+    draw();
+    await press("engine-label-print");
+    await waitFor(() => expect(downloadDocument).toHaveBeenCalledTimes(1));
+    expect(click).not.toHaveBeenCalled();
+  });
+
   it.each(["owed", "gone", "none"] as const)("offers no file on %s", async (state) => {
     fake({ bookings: vi.fn(async () => held(withLabel({ state }))) });
     draw();

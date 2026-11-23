@@ -245,7 +245,7 @@ export function RatesPanel({
                   <span style={{ inlineSize: 9, blockSize: 9, borderRadius: 99, background: on ? "var(--accent)" : "transparent" }} />
                 </span>
                 <span style={{ flex: 1, minInlineSize: 0, display: "flex", flexDirection: "column", gap: 3 }}>
-                  <span dir="auto" style={{ fontSize: 13.5, fontWeight: 700, overflowWrap: "anywhere" }}>{name(rate)}</span>
+                  <span dir="auto" style={{ alignSelf: "flex-start", fontSize: 13.5, fontWeight: 700, overflowWrap: "anywhere" }}>{name(rate)}</span>
                   <span style={{ fontSize: 12, color: "var(--fg-muted)" }}>
                     <Arrival rate={rate} />
                   </span>
