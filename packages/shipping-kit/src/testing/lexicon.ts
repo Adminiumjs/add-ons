@@ -80,6 +80,10 @@ export const ALLOWED_TOKENS: readonly string[] = [
   "processed",
   /** `Promise` — the JavaScript built-in, in the booked-and-tracked await. */
   "promise",
+  /** `order.deliveryPromise` — the host payload's field name, which survives minifying. Never shown. */
+  "deliveryPromise",
+  /** `event.stopPropagation()` — a DOM method, so Escape in a dialog does not also close a host's drawer. */
+  "stopPropagation",
 
   // ── French ────────────────────────────────────────────────────────────────
   /**
