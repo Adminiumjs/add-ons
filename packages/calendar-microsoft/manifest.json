@@ -1,0 +1,128 @@
+{
+  "kind": "add-on",
+  "manifestVersion": 1,
+  "key": "calendar-microsoft",
+  "name": "Outlook Calendar",
+  "version": "1.0.34",
+  "publisher": {
+    "id": "adminium",
+    "name": "Adminium",
+    "url": "https://adminium.dev"
+  },
+  "license": "AGPL-3.0-only",
+  "description": {
+    "key": "addon.calendar-microsoft.line",
+    "fallback": "Puts each booking into a calendar in the person's own Microsoft account, and their busy times block their slots. Only “busy” is read, never what an event is called."
+  },
+  "categories": [
+    "data"
+  ],
+  "compatibility": {
+    "minAdminiumVersion": "0.3.71",
+    "requires": [
+      "oauth-connect",
+      "outbound-http"
+    ]
+  },
+  "capabilities": [
+    "oauth-connect",
+    "outbound-http"
+  ],
+  "addOn": {
+    "attaches": [
+      {
+        "app": "*"
+      }
+    ],
+    "scope": "server",
+    "provides": [
+      {
+        "contract": "calendar-provider",
+        "version": 1,
+        "server": "dist/server.js"
+      }
+    ],
+    "connect": {
+      "kind": "oauth2",
+      "accounts": "row",
+      "authorizeUrl": "https://login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize",
+      "tokenUrl": "https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token",
+      "tenant": {
+        "default": "common"
+      },
+      "scopes": [
+        "openid",
+        "email",
+        "offline_access",
+        "Calendars.ReadWrite"
+      ],
+      "requiredScopes": [
+        "Calendars.ReadWrite"
+      ],
+      "authorizeParams": {
+        "prompt": "select_account"
+      },
+      "identity": {
+        "subject": "sub",
+        "address": [
+          "email",
+          "preferred_username"
+        ]
+      }
+    },
+    "network": {
+      "allow": [
+        "login.microsoftonline.com",
+        "graph.microsoft.com"
+      ]
+    },
+    "publicSettings": [],
+    "hostApi": 2,
+    "navGroups": [
+      {
+        "key": "calendar-microsoft",
+        "label": {
+          "key": "addon.calendar-microsoft.nav",
+          "fallback": "Outlook Calendar"
+        },
+        "labels": {
+          "en-US": "Outlook Calendar",
+          "de-DE": "Outlook-Kalender",
+          "fr-FR": "Calendrier Outlook",
+          "da-DK": "Outlook-kalender",
+          "cs-CZ": "Kalendář Outlook",
+          "ar-EG": "تقويم Outlook",
+          "zh-CN": "Outlook 日历",
+          "zh-TW": "Outlook 行事曆"
+        },
+        "order": 48
+      }
+    ],
+    "pages": [
+      {
+        "ref": "calendar-microsoft-settings",
+        "title": {
+          "key": "addon.calendar-microsoft.page.settings",
+          "fallback": "Outlook Calendar"
+        },
+        "titles": {
+          "en-US": "Outlook Calendar",
+          "de-DE": "Outlook-Kalender",
+          "fr-FR": "Calendrier Outlook",
+          "da-DK": "Outlook-kalender",
+          "cs-CZ": "Kalendář Outlook",
+          "ar-EG": "تقويم Outlook",
+          "zh-CN": "Outlook 日历",
+          "zh-TW": "Outlook 行事曆"
+        },
+        "icon": "calendar-days",
+        "client": "dist/pages/settings.js",
+        "nav": {
+          "group": "calendar-microsoft",
+          "order": 10
+        }
+      }
+    ]
+  },
+  "settings": []
+}

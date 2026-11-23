@@ -1,6 +1,6 @@
 {
   "name": "@adminium/add-on-payments-square",
-  "version": "1.0.33",
+  "version": "1.0.34",
   "type": "module",
   "description": "Card readers — puts the amount on a Square Terminal at the counter, with the shop's own Square account and access token.",
   "license": "AGPL-3.0-only",

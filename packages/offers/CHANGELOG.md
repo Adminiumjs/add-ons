@@ -1,5 +1,12 @@
 # @adminium/add-on-offers
 
+## 1.0.34
+
+### Patch Changes
+
+- e2b7270: Google reviews, a new add-on: a business's own Google reviews, loaded in the visitor's browser in a sandboxed page, never stored. Offers sells packs online (`voucher-sale-online@1`), sends a gift card on a date, and lets a signed-in customer read and spend what they hold without a code in the browser. Forms has a fifth hide reason, "The author asked", and the fourth now reads "Names someone who isn't on our team". Holiday Calendars attaches to Bookings.
+- 0f10fb4: "Delete my details" now reaches packs, gift cards and store credit. One with no balance left loses its holder's name and email. One with a balance keeps them so its holder can still use it, and loses them once it is used up or expires. Reminders stop for a kept gift card.
+
 ## 1.0.33
 
 ### Patch Changes

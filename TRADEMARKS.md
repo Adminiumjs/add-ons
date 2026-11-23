@@ -57,6 +57,9 @@ including the ones that name no company.
 | Design Studio | `packages/design-studio` | `DS` | *(none)* | — |
 | DHL Shipping | `packages/shipping-dhl` | `DHL` | **DHL** | Deutsche Post AG |
 | Shipping labels | `packages/shipping-shippo` | `SL` | **Shippo**; carriers it names as Shippo reports them | Popout, Inc. (d/b/a Shippo) |
+| Google reviews | `packages/google-reviews` | `GR` | **Google**, **Google Maps** | Google LLC |
+| Google Calendar | `packages/calendar-google` | `GC` | **Google**, **Google Calendar**, **Google Workspace**, **Gmail**, **Google Cloud** | Google LLC |
+| Outlook Calendar | `packages/calendar-microsoft` | `OC` | **Microsoft**, **Outlook**, **Outlook.com**, **Hotmail**, **Microsoft 365**, **Microsoft Entra**, **Microsoft Graph** | Microsoft Corporation |
 | Canva Import | `packages/import-canva` | `CNV` | **Canva** | its owner |
 | Live Personalizer | `packages/personalizer` | `LP` | *(none)* | — |
 | Holiday Calendars | `packages/holiday-calendars` | `CAL` | *(none)* | — |
@@ -244,6 +247,66 @@ This repository ships no credentials and does not grant anyone the right to use
 the mark above.
 
 ---
+
+# Google reviews — Google, Google Maps
+
+**Google** and **Google Maps** are trademarks of Google LLC. They are referenced
+**nominatively only**: to say whose reviews the box shows, and to give the credit
+Google requires beside them. That is the whole of the use.
+
+## Not affiliated
+
+Adminium is not affiliated with, endorsed by, sponsored by, certified by or in
+partnership with Google LLC. The add-on's settings screen says so in all eight
+locales. The box a visitor sees carries Google's own credit, "Google Maps", which
+is never translated.
+
+## No logo, no brand colour
+
+The add-on ships no Google logo and draws in no Google colour. The credit is
+plain text. The business brings its own key, under Google's own terms.
+
+# Google Calendar — Google, Google Calendar, Google Workspace, Gmail, Google Cloud
+
+**Google**, **Google Calendar**, **Google Workspace**, **Gmail** and **Google
+Cloud** are trademarks of Google LLC. They are referenced **nominatively only**:
+to say which calendar service the add-on connects to, which kind of account a
+team uses, and where in Google's own console a setting is found. That is the
+whole of the use.
+
+## Not affiliated
+
+Adminium is not affiliated with, endorsed by, sponsored by, certified by or in
+partnership with Google LLC. The add-on's page says so in all eight locales. Each
+business registers its own app with Google, in its own account, and connects to
+Google under Google's own terms.
+
+## No logo, no brand colour
+
+The add-on ships no Google logo and draws in no Google colour. Its icon is a
+plain calendar glyph, and the labels of Google's console are quoted as plain text
+so a person can find them.
+
+# Outlook Calendar — Microsoft, Outlook, Outlook.com, Hotmail, Microsoft 365, Microsoft Entra, Microsoft Graph
+
+**Microsoft**, **Outlook**, **Outlook.com**, **Hotmail**, **Microsoft 365**,
+**Microsoft Entra** and **Microsoft Graph** are trademarks of Microsoft
+Corporation. They are referenced **nominatively only**: to say which calendar
+service the add-on connects to, which kind of account a team uses, and where in
+Microsoft's own admin center a setting is found. That is the whole of the use.
+
+## Not affiliated
+
+Adminium is not affiliated with, endorsed by, sponsored by, certified by or in
+partnership with Microsoft Corporation. The add-on's page says so in all eight
+locales. Each business registers its own app in Microsoft Entra, in its own
+directory, and connects to Microsoft under Microsoft's own terms.
+
+## No logo, no brand colour
+
+The add-on ships no Microsoft logo and draws in no Microsoft colour. Its icon is
+a plain calendar glyph, and the labels of Microsoft's admin center are quoted as
+plain text so a person can find them.
 
 # Canva Import — Canva
 

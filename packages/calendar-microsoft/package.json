@@ -1,0 +1,35 @@
+{
+  "name": "@adminium/add-on-calendar-microsoft",
+  "version": "1.0.34",
+  "type": "module",
+  "description": "Outlook Calendar — puts each booking into a calendar in the person's own Microsoft account and blocks their slots when they are busy. Reads times only, never what an event is called.",
+  "license": "AGPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Adminiumjs/add-ons.git",
+    "directory": "packages/calendar-microsoft"
+  },
+  "homepage": "https://adminium.dev/marketplace",
+  "bugs": "https://github.com/Adminiumjs/add-ons/issues",
+  "files": [
+    "dist",
+    "manifest.json",
+    "TRADEMARKS.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b --force",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@adminium/add-on-calendar-console": "*",
+    "@adminium/add-on-contracts": "npm:@adminiumjs/add-on-contracts@0.3.71",
+    "@adminium/add-on-host": "*",
+    "@adminiumjs/manifest": "0.3.71"
+  }
+}

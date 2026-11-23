@@ -134,7 +134,7 @@ export const editor: Readonly<Record<string, string>> = {
   "editor.milo.drafting": "Drafting…",
   "editor.milo.failed": "Milo could not write a page from that. Try again, or describe the page in other words.",
   "editor.milo.failedAgain": "Milo could not write a draft. Try again.",
-  "editor.milo.hint": "Milo uses your business’s address and your live forms. It leaves out quotes from customers.",
+  "editor.milo.hint": "Milo uses your business’s name and email and your live forms. It leaves out quotes from customers.",
   "editor.milo.label": "What is the page for?",
   "editor.milo.left": "Milo left out quotes, links to other sites and anything it could not name for sure. Add them by hand if you want them.",
   "editor.milo.looksRight": "Looks right",

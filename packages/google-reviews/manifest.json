@@ -1,0 +1,324 @@
+{
+  "kind": "add-on",
+  "manifestVersion": 1,
+  "key": "google-reviews",
+  "name": "Google reviews",
+  "version": "1.0.34",
+  "publisher": {
+    "id": "adminium",
+    "name": "Adminium",
+    "url": "https://adminium.dev"
+  },
+  "license": "AGPL-3.0-only",
+  "description": {
+    "key": "addon.google-reviews.line",
+    "fallback": "Up to five of your Google reviews, loaded from Google in the visitor’s browser when they ask. Nothing is fetched by or stored in Adminium."
+  },
+  "categories": [
+    "marketing"
+  ],
+  "compatibility": {
+    "minAdminiumVersion": "0.3.71",
+    "requires": []
+  },
+  "requiredSchema": {
+    "prefixed": true,
+    "tables": [
+      {
+        "ref": "places",
+        "keyField": "place_id",
+        "label": {
+          "en-US": "Google place",
+          "de-DE": "Google-Standort",
+          "fr-FR": "Lieu Google",
+          "da-DK": "Google-sted",
+          "cs-CZ": "Místo Google",
+          "ar-EG": "مكان Google",
+          "zh-CN": "Google 地点",
+          "zh-TW": "Google 地點"
+        },
+        "labelPlural": {
+          "en-US": "Google places",
+          "de-DE": "Google-Standorte",
+          "fr-FR": "Lieux Google",
+          "da-DK": "Google-steder",
+          "cs-CZ": "Místa Google",
+          "ar-EG": "أماكن Google",
+          "zh-CN": "Google 地点",
+          "zh-TW": "Google 地點"
+        },
+        "columns": [
+          {
+            "ref": "id",
+            "type": "int",
+            "role": "pk"
+          },
+          {
+            "ref": "app",
+            "type": "text",
+            "maxLength": 40,
+            "label": {
+              "en-US": "App",
+              "de-DE": "App",
+              "fr-FR": "Application",
+              "da-DK": "App",
+              "cs-CZ": "Aplikace",
+              "ar-EG": "التطبيق",
+              "zh-CN": "应用",
+              "zh-TW": "應用程式"
+            },
+            "unique": true
+          },
+          {
+            "ref": "place_id",
+            "type": "text",
+            "maxLength": 300,
+            "label": {
+              "en-US": "Place ID",
+              "de-DE": "Place ID",
+              "fr-FR": "Place ID",
+              "da-DK": "Place ID",
+              "cs-CZ": "Place ID",
+              "ar-EG": "معرّف المكان",
+              "zh-CN": "Place ID",
+              "zh-TW": "Place ID"
+            }
+          },
+          {
+            "ref": "browser_key",
+            "type": "text",
+            "maxLength": 120,
+            "label": {
+              "en-US": "Browser key",
+              "de-DE": "Browserschlüssel",
+              "fr-FR": "Clé de navigateur",
+              "da-DK": "Browsernøgle",
+              "cs-CZ": "Prohlížečový klíč",
+              "ar-EG": "مفتاح المتصفح",
+              "zh-CN": "浏览器密钥",
+              "zh-TW": "瀏覽器金鑰"
+            }
+          },
+          {
+            "ref": "restricted",
+            "type": "bool",
+            "default": false,
+            "label": {
+              "en-US": "Key restricted",
+              "de-DE": "Schlüssel beschränkt",
+              "fr-FR": "Clé limitée",
+              "da-DK": "Nøgle begrænset",
+              "cs-CZ": "Klíč omezen",
+              "ar-EG": "المفتاح مقيّد",
+              "zh-CN": "密钥已限制",
+              "zh-TW": "金鑰已限制"
+            }
+          },
+          {
+            "ref": "on_booking",
+            "type": "bool",
+            "default": true,
+            "label": {
+              "en-US": "On the booking page",
+              "de-DE": "Auf der Buchungsseite",
+              "fr-FR": "Sur la page de réservation",
+              "da-DK": "På bookingsiden",
+              "cs-CZ": "Na rezervační stránce",
+              "ar-EG": "في صفحة الحجز",
+              "zh-CN": "在预约页面",
+              "zh-TW": "在預約頁面"
+            }
+          },
+          {
+            "ref": "on_reviews",
+            "type": "bool",
+            "default": true,
+            "label": {
+              "en-US": "On the reviews page",
+              "de-DE": "Auf der Bewertungsseite",
+              "fr-FR": "Sur la page des avis",
+              "da-DK": "På anmeldelsessiden",
+              "cs-CZ": "Na stránce recenzí",
+              "ar-EG": "في صفحة التقييمات",
+              "zh-CN": "在评价页面",
+              "zh-TW": "在評論頁面"
+            }
+          },
+          {
+            "ref": "on_site",
+            "type": "bool",
+            "default": false,
+            "label": {
+              "en-US": "On your website",
+              "de-DE": "Auf Ihrer Website",
+              "fr-FR": "Sur votre site web",
+              "da-DK": "På jeres website",
+              "cs-CZ": "Na vašem webu",
+              "ar-EG": "على موقعك",
+              "zh-CN": "在您的网站",
+              "zh-TW": "在您的網站"
+            }
+          }
+        ],
+        "appGrants": {
+          "actions": [
+            "read",
+            "update"
+          ],
+          "readable": [
+            "id",
+            "app",
+            "restricted",
+            "on_booking",
+            "on_reviews",
+            "on_site"
+          ],
+          "writable": [
+            "on_booking",
+            "on_reviews",
+            "on_site"
+          ],
+          "appColumn": "app"
+        }
+      }
+    ]
+  },
+  "roles": [
+    {
+      "key": "manager",
+      "name": "Google reviews manager",
+      "permissions": [
+        "table:@places:read",
+        "table:@places:create",
+        "table:@places:update",
+        "page:@google-reviews-settings:view"
+      ]
+    }
+  ],
+  "navGroups": [
+    {
+      "key": "google-reviews",
+      "label": {
+        "en-US": "Google reviews",
+        "de-DE": "Google-Bewertungen",
+        "fr-FR": "Avis Google",
+        "da-DK": "Google-anmeldelser",
+        "cs-CZ": "Recenze Google",
+        "ar-EG": "تقييمات Google",
+        "zh-CN": "Google 评价",
+        "zh-TW": "Google 評論"
+      },
+      "order": 46
+    }
+  ],
+  "publicAccess": [
+    {
+      "table": "places",
+      "methods": [
+        "GET"
+      ],
+      "select": [
+        "place_id",
+        "browser_key",
+        "on_booking",
+        "on_reviews",
+        "on_site"
+      ],
+      "appColumn": "app",
+      "filters": [
+        {
+          "column": "restricted",
+          "op": "eq",
+          "value": true
+        }
+      ]
+    }
+  ],
+  "addOn": {
+    "attaches": [
+      {
+        "app": "bookings",
+        "range": "^0.2.0"
+      }
+    ],
+    "connect": {
+      "kind": "none"
+    },
+    "hostApi": 2,
+    "navGroups": [
+      {
+        "key": "google-reviews",
+        "label": {
+          "key": "addon.google-reviews.nav",
+          "fallback": "Google reviews"
+        },
+        "labels": {
+          "en-US": "Google reviews",
+          "de-DE": "Google-Bewertungen",
+          "fr-FR": "Avis Google",
+          "da-DK": "Google-anmeldelser",
+          "cs-CZ": "Recenze Google",
+          "ar-EG": "تقييمات Google",
+          "zh-CN": "Google 评价",
+          "zh-TW": "Google 評論"
+        },
+        "order": 46
+      }
+    ],
+    "pages": [
+      {
+        "ref": "google-reviews-settings",
+        "title": {
+          "key": "addon.google-reviews.page.settings",
+          "fallback": "Google reviews"
+        },
+        "titles": {
+          "en-US": "Google reviews",
+          "de-DE": "Google-Bewertungen",
+          "fr-FR": "Avis Google",
+          "da-DK": "Google-anmeldelser",
+          "cs-CZ": "Recenze Google",
+          "ar-EG": "تقييمات Google",
+          "zh-CN": "Google 评价",
+          "zh-TW": "Google 評論"
+        },
+        "icon": "star",
+        "client": "dist/pages/settings.js",
+        "nav": {
+          "group": "google-reviews",
+          "order": 10
+        }
+      }
+    ],
+    "framedPage": {
+      "script": "dist/frame.js",
+      "title": "Google reviews",
+      "evalScripts": true,
+      "hosts": {
+        "script": [
+          "https://maps.googleapis.com",
+          "https://*.googleapis.com",
+          "https://*.gstatic.com"
+        ],
+        "style": [
+          "https://fonts.googleapis.com"
+        ],
+        "img": [
+          "https://*.googleapis.com",
+          "https://*.gstatic.com",
+          "https://*.googleusercontent.com",
+          "https://*.ggpht.com",
+          "https://*.google.com"
+        ],
+        "font": [
+          "https://fonts.gstatic.com"
+        ],
+        "connect": [
+          "https://*.googleapis.com",
+          "https://*.google.com",
+          "https://*.gstatic.com"
+        ]
+      }
+    }
+  }
+}

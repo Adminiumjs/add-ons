@@ -1,5 +1,7 @@
 # @adminium/add-on-personalizer
 
+## 1.0.34
+
 ## 1.0.33
 
 ## 1.0.32

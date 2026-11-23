@@ -157,9 +157,9 @@ describe('desk and viewer', () => {
     for (const role of [desk, viewer]) {
       expect(columns(role, 'gift_cards', 'read'), role.key).toEqual(['kind', 'label', 'status', 'balance', 'expires_on', 'issued_at', 'send_on', 'resent_at', 'recipient_name', 'sender_name', 'language', 'moved_table', 'source_table', 'source_row']);
       const vouchers = columns(role, 'vouchers', 'read');
-      for (const kept of ['code', 'holder_email', 'holder_key', 'sale_price']) expect(vouchers, `${role.key}: vouchers.${kept}`).not.toContain(kept);
+      for (const kept of ['code', 'holder_email', 'holder_key', 'holder_forgotten', 'sale_price']) expect(vouchers, `${role.key}: vouchers.${kept}`).not.toContain(kept);
       // Everything else of a voucher is theirs to read, the last four of its code among it.
-      expect(vouchers.slice().sort(), role.key).toEqual(columnsOf('vouchers').filter((ref) => !['code', 'holder_email', 'holder_key', 'sale_price'].includes(ref)).sort());
+      expect(vouchers.slice().sort(), role.key).toEqual(columnsOf('vouchers').filter((ref) => !['code', 'holder_email', 'holder_key', 'holder_forgotten', 'sale_price'].includes(ref)).sort());
       expect(vouchers).toContain('code_last4');
       expect(columns(role, 'redemptions', 'read'), role.key).not.toContain('customer');
       expect(columns(role, 'card_ledger', 'read'), role.key).not.toContain('note');

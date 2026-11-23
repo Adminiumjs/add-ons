@@ -66,7 +66,7 @@ describe('the manifest', () => {
     expect(manifest.categories).toEqual(['marketing']);
     // 0.3.68: the release that knows `addOn.reviews` and takes a customer's review through the app's own word; an
     // older one refuses the block whole (0.3.65 took the `landing` ending, 0.3.42 judged a survey's consent on the person).
-    expect(manifest.compatibility.minAdminiumVersion).toBe('0.3.68');
+    expect(manifest.compatibility.minAdminiumVersion).toBe('0.3.71');
     expect(manifest.requiredSchema.prefixed).toBe(true);
     // No code of its own runs on a server: Adminium draws, checks and keeps every form.
     expect((manifest.addOn as Record<string, unknown>)['provides']).toBeUndefined();
@@ -153,13 +153,30 @@ describe('the reviews', () => {
     for (const column of tableOf('reviews').columns) expect(column.references, column.ref).toBeUndefined();
   });
 
+  it('are hidden for one of five reasons, the same words in all eight languages', () => {
+    const column = columnOf('reviews', 'hide_reason') as unknown as { enum: string[]; rules: { enumLabels: { labels: Record<string, Record<string, string>> } } };
+    expect(column.enum).toEqual(['abusive', 'names-someone', 'not-about-us', 'looks-fake', 'author-asked']);
+    const { labels } = column.rules.enumLabels;
+    const LOCALES = ['en-US', 'de-DE', 'fr-FR', 'da-DK', 'cs-CZ', 'ar-EG', 'zh-CN', 'zh-TW'];
+    for (const reason of column.enum) expect(Object.keys(labels[reason]!).sort(), reason).toEqual([...LOCALES].sort());
+    // A review that names one of the team cannot be hidden under this reason, good or bad.
+    expect(labels['names-someone']!['en-US']).toBe('Names someone who isn\u2019t on our team');
+    expect(labels['author-asked']!['en-US']).toBe('The author asked');
+    // Each language says each reason in words of its own.
+    for (const locale of LOCALES) expect(new Set(column.enum.map((reason) => labels[reason]![locale])).size, locale).toBe(column.enum.length);
+    for (const locale of LOCALES.filter((one) => one !== 'en-US')) {
+      expect(labels['names-someone']![locale], locale).not.toBe(labels['names-someone']!['en-US']);
+      expect(labels['author-asked']![locale], locale).not.toBe(labels['author-asked']!['en-US']);
+    }
+  });
+
   it('carry every column Adminium reads and writes, of its kind, with one review per reviewed row and one total per thing', () => {
     for (const [table, contract] of [['reviews', REVIEW_COLUMNS], ['review_totals', REVIEW_TOTALS_COLUMNS]] as const) {
       for (const [name, want] of Object.entries(contract)) {
         const column = columnOf(table, name);
         expect(want.types, `${table}.${name}`).toContain(column.type);
         expect(column.nullable === true, `${table}.${name}`).toBe(want.nullable === true);
-        if (want.values !== undefined) expect([...(column.enum ?? [])].sort(), `${table}.${name}`).toEqual([...want.values].sort());
+        if (want.values !== undefined) expect([...(column.enum ?? [])].sort(), `${table}.${name}`).toEqual([...want.values, ...(want.mayAlso ?? [])].sort());
         if (want.exactly !== undefined) expect(column.maxLength, `${table}.${name}`).toBe(want.exactly);
       }
     }

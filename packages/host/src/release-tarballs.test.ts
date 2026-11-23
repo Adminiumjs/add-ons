@@ -96,12 +96,15 @@ function packAsReleased(addOn: AddOn): Map<string, number> {
 }
 
 describe('release tarballs: discovery', () => {
-  it('packs all seventeen add-ons, and refuses to pass over none', () => {
+  it('packs all twenty-one add-ons, and refuses to pass over none', () => {
     expect(found.map((addOn) => addOn.name)).toEqual([
       'barcode-labels',
+      'calendar-google',
+      'calendar-microsoft',
       'customiser',
       'design-studio',
       'forms',
+      'google-reviews',
       'holiday-calendars',
       'import-canva',
       'inventory',

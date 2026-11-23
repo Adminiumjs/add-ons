@@ -3,7 +3,7 @@
   "manifestVersion": 1,
   "key": "forms",
   "name": "Forms & surveys",
-  "version": "1.0.33",
+  "version": "1.0.34",
   "publisher": {
     "id": "adminium",
     "name": "Adminium",
@@ -18,7 +18,7 @@
     "marketing"
   ],
   "compatibility": {
-    "minAdminiumVersion": "0.3.68",
+    "minAdminiumVersion": "0.3.71",
     "requires": []
   },
   "capabilities": [],
@@ -534,12 +534,12 @@
             "label": {
               "en-US": "Answered",
               "de-DE": "Beantwortet",
-              "fr-FR": "Répondu le",
+              "fr-FR": "Réponse",
               "da-DK": "Besvaret",
               "cs-CZ": "Odpovězeno",
-              "ar-EG": "تاريخ الرد",
-              "zh-CN": "回答时间",
-              "zh-TW": "回答時間"
+              "ar-EG": "الرد",
+              "zh-CN": "回答",
+              "zh-TW": "回答"
             }
           },
           {
@@ -1571,7 +1571,8 @@
               "abusive",
               "names-someone",
               "not-about-us",
-              "looks-fake"
+              "looks-fake",
+              "author-asked"
             ],
             "nullable": true,
             "rules": {
@@ -1588,14 +1589,14 @@
                     "zh-TW": "辱罵性內容"
                   },
                   "names-someone": {
-                    "en-US": "Names another person",
-                    "de-DE": "Nennt eine andere Person",
-                    "fr-FR": "Nomme une autre personne",
-                    "da-DK": "Nævner en anden person",
-                    "cs-CZ": "Jmenuje jinou osobu",
-                    "ar-EG": "يذكر شخصًا آخر",
-                    "zh-CN": "提及他人",
-                    "zh-TW": "提及他人"
+                    "en-US": "Names someone who isn’t on our team",
+                    "de-DE": "Nennt jemanden, der nicht zu unserem Team gehört",
+                    "fr-FR": "Nomme une personne extérieure à notre équipe",
+                    "da-DK": "Nævner en person, der ikke er en del af vores team",
+                    "cs-CZ": "Jmenuje někoho, kdo není z našeho týmu",
+                    "ar-EG": "يذكر شخصًا ليس من فريقنا",
+                    "zh-CN": "提及非本团队人员",
+                    "zh-TW": "提及非本團隊人員"
                   },
                   "not-about-us": {
                     "en-US": "Not about us",
@@ -1616,6 +1617,16 @@
                     "ar-EG": "يبدو مزيفًا",
                     "zh-CN": "疑似虚假",
                     "zh-TW": "疑似虛假"
+                  },
+                  "author-asked": {
+                    "en-US": "The author asked",
+                    "de-DE": "Auf Wunsch der Person, die sie verfasst hat",
+                    "fr-FR": "À la demande de la personne qui l’a écrit",
+                    "da-DK": "Forfatteren har bedt om det",
+                    "cs-CZ": "Na žádost autora či autorky",
+                    "ar-EG": "بطلب من كاتب التقييم",
+                    "zh-CN": "应作者要求",
+                    "zh-TW": "應作者要求"
                   }
                 }
               },
@@ -2802,6 +2813,39 @@
           "invited_at",
           "answered_at",
           "class"
+        ],
+        "presence": [
+          {
+            "column": "answered_at",
+            "yes": {
+              "key": "addon.forms.tab.survey.answered",
+              "fallback": "Answered"
+            },
+            "yesLabels": {
+              "en-US": "Answered",
+              "de-DE": "Beantwortet",
+              "fr-FR": "Répondu",
+              "da-DK": "Besvaret",
+              "cs-CZ": "Odpovězeno",
+              "ar-EG": "أجاب",
+              "zh-CN": "已回答",
+              "zh-TW": "已回答"
+            },
+            "no": {
+              "key": "addon.forms.tab.survey.notYet",
+              "fallback": "Not yet"
+            },
+            "noLabels": {
+              "en-US": "Not yet",
+              "de-DE": "Noch nicht",
+              "fr-FR": "Pas encore",
+              "da-DK": "Ikke endnu",
+              "cs-CZ": "Zatím ne",
+              "ar-EG": "ليس بعد",
+              "zh-CN": "尚未回答",
+              "zh-TW": "尚未回答"
+            }
+          }
         ],
         "empty": {
           "key": "addon.forms.tab.survey.empty",

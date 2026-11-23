@@ -31,7 +31,7 @@ export function webshop(): { requiredSchema: { tables: Record<string, unknown>[]
           ref: 'gift_lines',
           postings: [
             // Made with the order, loaded when it is paid, cancelled with it while unpaid.
-            { id: 'card-make', into: into('issue'), via: 'order_id', reserve: { on: { create: true } }, post: { on: { to: ['paid'] } }, reverse: { on: { to: ['cancelled'] } }, map: { amount: 'amount', to_name: 'to_name', to_email: 'to_email', message: 'message', sender: 'from_name', language: 'language' } },
+            { id: 'card-make', into: into('issue'), via: 'order_id', reserve: { on: { create: true } }, post: { on: { to: ['paid'] } }, reverse: { on: { to: ['cancelled'] } }, map: { amount: 'amount', to_name: 'to_name', to_email: 'to_email', message: 'message', sender: 'from_name', language: 'language', send_on: 'send_on' } },
             // Recalled when a paid order is cancelled: the cancel is refused while the card is spent.
             { id: 'card-recall', into: into('recall'), via: 'order_id', post: { on: { to: ['cancelled'] } }, map: { sale: { row: true } } },
           ],
@@ -46,12 +46,13 @@ export function webshop(): { requiredSchema: { tables: Record<string, unknown>[]
             { ref: 'message', type: 'text', maxLength: 200, nullable: true, rules: { plainText: { digits: 20, max: 200 } } },
             { ref: 'from_name', type: 'text', maxLength: 80, nullable: true, rules: { plainText: true } },
             { ref: 'language', type: 'text', maxLength: 12, nullable: true },
+            { ref: 'send_on', type: 'date', nullable: true },
           ],
         },
       ],
     },
     roles: [],
-    publicAccess: [{ table: 'orders', writable: ['buyer_name'], children: { gift_lines: { writable: ['card_amount_id', 'to_name', 'to_email', 'message', 'from_name', 'language'] } } }],
+    publicAccess: [{ table: 'orders', writable: ['buyer_name'], children: { gift_lines: { writable: ['card_amount_id', 'to_name', 'to_email', 'message', 'from_name', 'language', 'send_on'] } } }],
   };
 }
 

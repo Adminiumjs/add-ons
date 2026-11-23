@@ -59,6 +59,12 @@ export function spend(input: PostingInput, answer: Answer): void {
       answer.refuse(line.line, 'not-valid');
       continue;
     }
+    // A card dated for a later day has not reached its holder: nobody spends it online before then.
+    const sendOn = textOf(card['send_on'])?.slice(0, 10) ?? null;
+    if (input.origin === 'public' && textOf(card['notify']) === 'card_dated' && sendOn !== null && sendOn > input.today) {
+      answer.refuse(line.line, 'inactive');
+      continue;
+    }
     const due = toUnits(line.inputs['due'], scale);
     if (due === null || due <= 0n) {
       answer.refuse(line.line, 'not-allowed');
@@ -289,6 +295,11 @@ function makeCards(input: PostingInput, answer: Answer): void {
       answer.refuse(line.line, 'not-allowed');
       continue;
     }
+    const sendOn = sendDay(input, line.inputs['send_on']);
+    if (sendOn === false) {
+      answer.refuse(line.line, 'not-allowed');
+      continue;
+    }
     const own = lineOf(input, line);
     answer.insert('gift_cards', line.line, {
       kind: 'card',
@@ -298,10 +309,28 @@ function makeCards(input: PostingInput, answer: Answer): void {
       sender_name: words['sender'] ?? null,
       message: words['message'] ?? null,
       language: words['language'] ?? null,
+      ...(sendOn === null ? {} : { send_on: sendOn }),
       source_table: own.table,
       source_row: own.row,
     });
   }
+}
+
+/** The furthest ahead a card may be dated. */
+const SEND_DAYS_MOST = 366;
+
+/**
+ * The day a shopper asked for a card to be sent: null for "now", false for a
+ * day it cannot go. Not in the past, not over a year ahead, and not after the
+ * last day a card sold today would have, or its mail would be dropped unsent.
+ */
+function sendDay(input: PostingInput, given: unknown): string | null | false {
+  const day = textOf(given)?.slice(0, 10) ?? null;
+  if (day === null) return null;
+  // A date that does not exist comes back as nothing from the calendar sum.
+  if (addDays(day, 0) !== day || day < input.today || day > addDays(input.today, SEND_DAYS_MOST)!) return false;
+  const last = lastDays(input)?.expires_on;
+  return last !== undefined && day > last ? false : day;
 }
 
 /** The words a card cancelled by a sale's own undoing keeps, for staff. Rows hold no language, so they are plain English. */

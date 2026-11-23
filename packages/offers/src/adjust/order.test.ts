@@ -280,6 +280,12 @@ describe('vouchers and packs', () => {
     expect(reasons({ ...ONE_CANDLE, holder_key: 'k-ada' }, { origin: 'public', guest: true })).toEqual(['unknown']);
     expect(reasons({ ...ONE_CANDLE, holder_key: 'k-ada' }, {}, { ...NEW_CUSTOMER, key: 'k-ben' })).toEqual(['needs-customer']);
     expect(reasons({ ...ONE_CANDLE, holder_key: 'k-ada' }, {}, NEW_CUSTOMER)).toEqual([]);
+    // Emptied for a holder who asked to be forgotten, then given back: nobody's to take online, and still the desk's to honour.
+    expect(reasons({ ...ONE_CANDLE, holder_key: null, holder_forgotten: true }, { origin: 'public', guest: true })).toEqual(['unknown']);
+    expect(reasons({ ...ONE_CANDLE, holder_key: null, holder_forgotten: true }, { origin: 'public' }, { ...NEW_CUSTOMER, key: 'k-ben' })).toEqual(['unknown']);
+    expect(reasons({ ...ONE_CANDLE, holder_key: null, holder_forgotten: true })).toEqual([]);
+    // A row nobody asked about stays a bearer voucher.
+    expect(reasons({ ...ONE_CANDLE, holder_key: null, holder_forgotten: false }, { origin: 'public', guest: true })).toEqual([]);
   });
 
   it('a voucher a batch made, with no balance worked out yet, has every use it was made with', () => {

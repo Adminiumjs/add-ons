@@ -49,7 +49,7 @@ describe('what the shared suite does not compare', () => {
     const numbers = new Set(ROWS_CASES.map((one) => /^P(\d+) /.exec(one.name)?.[1]));
     // P18 — a round and its reverse — is the test below this one.
     for (let n = 1; n <= 21; n += 1) if (n !== 18) expect(numbers, `P${String(n)}`).toContain(String(n));
-    expect(new Set(ROWS_CASES.map((one) => one.input.action))).toEqual(new Set(['spend', 'refund', 'issue', 'recall', 'card-action', 'void', 'expire', 'voucher-action', 'redeem', 'make', 'move']));
+    expect(new Set(ROWS_CASES.map((one) => one.input.action))).toEqual(new Set(['spend', 'refund', 'issue', 'recall', 'card-action', 'void', 'expire', 'voucher-action', 'redeem', 'make', 'move', 'sell-pack', 'recall-pack']));
   });
 
   for (const one of ROWS_CASES.filter((candidate) => candidate.also !== undefined)) {

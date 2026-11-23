@@ -59,6 +59,11 @@ are businesses in England, so the rows they want are the England and Wales set's
 apps' manifests are on that line (0.2.0) and suggest this add-on; an app's 0.3.0 would be refused
 until its range here is widened. The table needs Adminium 0.3.28.
 
+**Bookings (`bookings`) links to its rows the same way**, on `^0.2.0`, the line that first has this
+link. Staff pick the days and the app writes its own closure for each. The United States set is the
+11 federal days of 2026 and 2027, each on its own date with no day in lieu, so a studio adds any
+observed Monday itself. Adding a closure moves no booking already on that day.
+
 A seed file holds at most 200 rows. Two reviewed years are 150 rows; a third would be 225, so adding
 a year means dropping a past one from the seed (the panel and the read surface are not limited). Starting rows are written into an empty table only, so an install that
 already has the table keeps its rows when a later release adds a year.

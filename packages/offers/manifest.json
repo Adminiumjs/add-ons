@@ -3,7 +3,7 @@
   "manifestVersion": 1,
   "key": "offers",
   "name": "Offers & gift cards",
-  "version": "1.0.33",
+  "version": "1.0.34",
   "publisher": {
     "id": "adminium",
     "name": "Adminium",
@@ -18,7 +18,7 @@
     "data"
   ],
   "compatibility": {
-    "minAdminiumVersion": "0.3.22",
+    "minAdminiumVersion": "0.3.71",
     "requires": []
   },
   "capabilities": [],
@@ -1425,6 +1425,11 @@
             }
           },
           {
+            "ref": "holder_forgotten",
+            "type": "bool",
+            "default": false
+          },
+          {
             "ref": "language",
             "type": "text",
             "maxLength": 12,
@@ -1509,12 +1514,51 @@
             }
           },
           {
+            "ref": "sale_table",
+            "type": "text",
+            "maxLength": 96,
+            "default": "",
+            "rules": {
+              "tableRef": true
+            }
+          },
+          {
+            "ref": "sale_row",
+            "type": "text",
+            "maxLength": 64,
+            "default": ""
+          },
+          {
             "ref": "receipt_id",
             "type": "fk",
             "references": "postings",
             "nullable": true
           }
-        ]
+        ],
+        "indexes": [
+          [
+            "sale_table",
+            "sale_row"
+          ]
+        ],
+        "holders": {
+          "live": {
+            "status": "status",
+            "open": [
+              "issued"
+            ],
+            "left": "uses_left",
+            "until": "expires_on"
+          },
+          "people": [
+            {
+              "email": "holder_email",
+              "name": "holder_name",
+              "key": "holder_key",
+              "forgotten": "holder_forgotten"
+            }
+          ]
+        }
       },
       {
         "ref": "voucher_actions",
@@ -1896,6 +1940,11 @@
             }
           },
           {
+            "ref": "owner_forgotten",
+            "type": "bool",
+            "default": false
+          },
+          {
             "ref": "status",
             "type": "enum",
             "enum": [
@@ -1993,6 +2042,11 @@
             }
           },
           {
+            "ref": "recipient_forgotten",
+            "type": "bool",
+            "default": false
+          },
+          {
             "ref": "message",
             "type": "text",
             "maxLength": 200,
@@ -2087,7 +2141,37 @@
             "references": "postings",
             "nullable": true
           }
-        ]
+        ],
+        "holders": {
+          "live": {
+            "status": "status",
+            "open": [
+              "inactive",
+              "active"
+            ],
+            "waiting": [
+              "inactive"
+            ],
+            "left": "balance",
+            "until": "expires_on"
+          },
+          "people": [
+            {
+              "email": "owner_email",
+              "key": "owner_key",
+              "forgotten": "owner_forgotten"
+            },
+            {
+              "email": "recipient_email",
+              "name": "recipient_name",
+              "sale": {
+                "table": "source_table",
+                "row": "source_row"
+              },
+              "forgotten": "recipient_forgotten"
+            }
+          ]
+        }
       },
       {
         "ref": "card_ledger",
@@ -3022,6 +3106,8 @@
             "what",
             "source_table",
             "source_row",
+            "sale_table",
+            "sale_row",
             "units",
             "public_name",
             "uses_total",
@@ -3169,6 +3255,8 @@
             "what",
             "source_table",
             "source_row",
+            "sale_table",
+            "sale_row",
             "units",
             "public_name",
             "uses_total",
@@ -5434,6 +5522,66 @@
         "column": "link_token",
         "expires": "expires_on"
       }
+    },
+    {
+      "table": "vouchers",
+      "methods": [
+        "GET"
+      ],
+      "level": "verified",
+      "heldBy": {
+        "address": "holder_email"
+      },
+      "select": [
+        "id",
+        "worth",
+        "public_name",
+        "uses_total",
+        "uses_left",
+        "expires_on",
+        "code_last4"
+      ],
+      "filters": [
+        {
+          "column": "status",
+          "op": "eq",
+          "value": "issued"
+        },
+        {
+          "column": "awaiting_sale",
+          "op": "eq",
+          "value": false
+        }
+      ]
+    },
+    {
+      "table": "gift_cards",
+      "methods": [
+        "GET"
+      ],
+      "level": "verified",
+      "heldBy": {
+        "address": "recipient_email",
+        "from": "send_on"
+      },
+      "select": [
+        "id",
+        "label",
+        "balance",
+        "expires_on"
+      ],
+      "filters": [
+        {
+          "column": "kind",
+          "op": "eq",
+          "value": "card"
+        },
+        {
+          "column": "status",
+          "op": "eq",
+          "value": "active"
+        }
+      ]
     }
   ],
   "outbox": {
@@ -5583,6 +5731,13 @@
             "column": "balance",
             "lte": 0,
             "reason": "no-longer-needed"
+          },
+          {
+            "column": "recipient_forgotten",
+            "in": [
+              true
+            ],
+            "reason": "no-longer-needed"
           }
         ],
         "recipient": {
@@ -5655,7 +5810,17 @@
           "language": "language"
         }
       }
-    ]
+    ],
+    "classes": {
+      "gift_card": "service",
+      "gift_card_dated": "service",
+      "gift_card_again": "service",
+      "gift_card_expiring": "service",
+      "gift_card_cancelled": "service",
+      "credit": "service",
+      "voucher": "service",
+      "voucher_again": "service"
+    }
   },
   "emailTemplates": [
     {
@@ -8382,7 +8547,8 @@
               "message",
               "language",
               "source_table",
-              "source_row"
+              "source_row",
+              "send_on"
             ],
             "update": {
               "by": [
@@ -8410,7 +8576,15 @@
               "public_name",
               "uses_total",
               "expires_on",
-              "note"
+              "note",
+              "holder_email",
+              "holder_name",
+              "language",
+              "sold",
+              "sale_price",
+              "tax_later",
+              "sale_table",
+              "sale_row"
             ],
             "update": {
               "by": [
@@ -8700,7 +8874,8 @@
               "to_email": "text?",
               "message": "text?",
               "sender": "text?",
-              "language": "text?"
+              "language": "text?",
+              "send_on": "date?"
             },
             "phases": [
               "reserve",
@@ -8959,6 +9134,92 @@
               "vouchers"
             ]
           },
+          "sell-pack": {
+            "inputs": {
+              "amount": "decimal",
+              "name": "text",
+              "uses": "number",
+              "what": "text",
+              "target": "rowRef",
+              "holder_email": "text",
+              "holder_name": "text?",
+              "language": "text?",
+              "proved": "bool?",
+              "tax_later": "bool?"
+            },
+            "phases": [
+              "reserve",
+              "post",
+              "reverse"
+            ],
+            "reads": [
+              {
+                "as": "made",
+                "table": "vouchers",
+                "by": [
+                  {
+                    "column": "receipt_id",
+                    "from": "receipt.id"
+                  }
+                ]
+              }
+            ],
+            "writes": [
+              "vouchers"
+            ],
+            "locks": [
+              {
+                "read": "made",
+                "column": "id",
+                "table": "vouchers"
+              }
+            ]
+          },
+          "recall-pack": {
+            "inputs": {
+              "sale": "rowRef"
+            },
+            "phases": [
+              "post",
+              "reverse"
+            ],
+            "reads": [
+              {
+                "as": "pack",
+                "table": "vouchers",
+                "by": [
+                  {
+                    "column": "sale_table",
+                    "from": "input.sale.table"
+                  },
+                  {
+                    "column": "sale_row",
+                    "from": "input.sale.row"
+                  }
+                ]
+              },
+              {
+                "as": "spent",
+                "table": "redemptions",
+                "by": [
+                  {
+                    "column": "voucher_id",
+                    "from": "pack.id"
+                  }
+                ]
+              }
+            ],
+            "locks": [
+              {
+                "read": "pack",
+                "column": "id",
+                "table": "vouchers"
+              }
+            ],
+            "writes": [
+              "vouchers"
+            ]
+          },
           "expire": {
             "inputs": {
               "card": "rowRef"
@@ -9146,7 +9407,8 @@
         "prefixes": [
           "VC-",
           "PK-"
-        ]
+        ],
+        "held": "holder_key"
       },
       "applied": {
         "table": "applied",
@@ -9781,7 +10043,8 @@
                   "to_email": "to_email",
                   "message": "message",
                   "sender": "sender",
-                  "language": "language"
+                  "language": "language",
+                  "send_on": "send_on"
                 }
               },
               {
@@ -9865,6 +10128,184 @@
                 "ref": "language",
                 "type": "text",
                 "maxLength": 12,
+                "nullable": true
+              },
+              {
+                "ref": "send_on",
+                "type": "date",
+                "nullable": true
+              }
+            ]
+          }
+        }
+      },
+      {
+        "name": "voucher-sale-online",
+        "version": 1,
+        "parts": {
+          "order": {
+            "columns": [
+              {
+                "ref": "id",
+                "type": "int",
+                "role": "pk"
+              },
+              {
+                "ref": "paid_at",
+                "type": "timestamptz",
+                "nullable": true
+              },
+              {
+                "ref": "cancelled_at",
+                "type": "timestamptz",
+                "nullable": true
+              },
+              {
+                "ref": "customer_proved",
+                "type": "bool",
+                "default": false
+              }
+            ]
+          },
+          "lines": {
+            "postings": [
+              {
+                "id": "pack-make",
+                "into": {
+                  "addOn": "offers",
+                  "ledger": "value",
+                  "action": "sell-pack"
+                },
+                "via": "order_id",
+                "reserve": {
+                  "on": {
+                    "create": true
+                  }
+                },
+                "post": {
+                  "on": {
+                    "column": "paid_at",
+                    "set": true
+                  }
+                },
+                "reverse": {
+                  "on": {
+                    "column": "cancelled_at",
+                    "set": true
+                  }
+                },
+                "map": {
+                  "amount": "sale_amount",
+                  "name": "pack_name",
+                  "uses": "pack_uses",
+                  "what": "pack_what",
+                  "target": "target_id",
+                  "holder_email": "holder_email",
+                  "holder_name": "holder_name",
+                  "language": "language",
+                  "proved": {
+                    "parent": "customer_proved"
+                  },
+                  "tax_later": "tax_later"
+                }
+              },
+              {
+                "id": "pack-recall",
+                "into": {
+                  "addOn": "offers",
+                  "ledger": "value",
+                  "action": "recall-pack"
+                },
+                "via": "order_id",
+                "post": {
+                  "on": {
+                    "column": "cancelled_at",
+                    "set": true
+                  }
+                },
+                "reverse": {
+                  "on": {
+                    "column": "paid_at",
+                    "set": true
+                  }
+                },
+                "map": {
+                  "sale": {
+                    "row": true
+                  }
+                }
+              }
+            ],
+            "columns": [
+              {
+                "ref": "id",
+                "type": "int",
+                "role": "pk"
+              },
+              {
+                "ref": "order_id",
+                "type": "fk",
+                "references": "order"
+              },
+              {
+                "ref": "sale_amount",
+                "type": "money",
+                "scale": "currency"
+              },
+              {
+                "ref": "pack_name",
+                "type": "text",
+                "maxLength": 120
+              },
+              {
+                "ref": "pack_uses",
+                "type": "int",
+                "rules": {
+                  "validation": {
+                    "min": 1,
+                    "max": 50
+                  }
+                }
+              },
+              {
+                "ref": "pack_what",
+                "type": "enum",
+                "enum": [
+                  "item",
+                  "category",
+                  "type",
+                  "tag"
+                ]
+              },
+              {
+                "ref": "holder_email",
+                "type": "text",
+                "maxLength": 254,
+                "rules": {
+                  "validation": {
+                    "format": "email"
+                  }
+                }
+              },
+              {
+                "ref": "holder_name",
+                "type": "text",
+                "maxLength": 80,
+                "nullable": true,
+                "rules": {
+                  "plainText": true
+                }
+              },
+              {
+                "ref": "language",
+                "type": "text",
+                "maxLength": 12,
+                "nullable": true
+              },
+              {
+                "ref": "tax_later",
+                "type": "bool",
+                "default": false,
                 "nullable": true
               }
             ]

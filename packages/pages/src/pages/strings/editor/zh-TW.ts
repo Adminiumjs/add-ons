@@ -134,7 +134,7 @@ export const editor: Readonly<Record<string, string>> = {
   "editor.milo.drafting": "正在起草…",
   "editor.milo.failed": "Milo 無法據此寫出頁面。請再試一次，或換個說法描述頁面。",
   "editor.milo.failedAgain": "Milo 無法寫出草稿。請再試一次。",
-  "editor.milo.hint": "Milo 會使用你公司的地址和已上線的表單。它不會寫入客戶引言。",
+  "editor.milo.hint": "Milo 會使用你公司的名稱和電子郵件，以及已上線的表單。它不會寫入客戶引言。",
   "editor.milo.label": "這個頁面的用途是什麼？",
   "editor.milo.left": "Milo 省略了引言、連到其他網站的連結，以及它無法確定名稱的內容。如有需要，請自行新增。",
   "editor.milo.looksRight": "看起來沒問題",

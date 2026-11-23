@@ -134,7 +134,7 @@ export const editor: Readonly<Record<string, string>> = {
   "editor.milo.drafting": "Wird entworfen…",
   "editor.milo.failed": "Milo konnte daraus keine Seite schreiben. Versuchen Sie es erneut oder beschreiben Sie die Seite anders.",
   "editor.milo.failedAgain": "Milo konnte keinen Entwurf schreiben. Versuchen Sie es erneut.",
-  "editor.milo.hint": "Milo nutzt die Adresse Ihres Unternehmens und Ihre veröffentlichten Formulare. Kundenzitate lässt Milo weg.",
+  "editor.milo.hint": "Milo nutzt den Namen und die E-Mail-Adresse Ihres Unternehmens und Ihre veröffentlichten Formulare. Kundenzitate lässt Milo weg.",
   "editor.milo.label": "Wofür ist die Seite?",
   "editor.milo.left": "Milo hat Zitate, Links zu anderen Websites und alles, was es nicht sicher benennen konnte, weggelassen. Fügen Sie sie bei Bedarf von Hand hinzu.",
   "editor.milo.looksRight": "Sieht richtig aus",

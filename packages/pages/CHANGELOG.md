@@ -1,5 +1,11 @@
 # @adminium/add-on-pages
 
+## 1.0.34
+
+### Patch Changes
+
+- a8d2272: The Pages editor's Milo dialog now says what Milo actually uses: your business's name and email and your live forms. It said "address", which Milo is never sent.
+
 ## 1.0.33
 
 ## 1.0.32

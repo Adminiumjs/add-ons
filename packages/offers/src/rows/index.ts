@@ -17,7 +17,7 @@ import type { PostingInput, PostingOutput } from '@adminium/add-on-contracts';
 
 import { cardAction, close, issue, move, recall, refund, spend, unissue } from './cards.ts';
 import { Answer, reverseCardRows } from './ledger.ts';
-import { make, redeem, sell, voucherAction } from './uses.ts';
+import { make, recallPack, redeem, sell, sellPack, voucherAction } from './uses.ts';
 
 /** What a row that takes back another is called, by the action whose row it takes back. */
 const TAKEN_BACK: Readonly<Record<string, string>> = { spend: 'refund', refund: 'adjust', issue: 'adjust', recall: 'adjust', 'card-action': 'adjust', void: 'adjust', expire: 'adjust', move: 'adjust' };
@@ -27,6 +27,8 @@ export function rows(input: PostingInput): PostingOutput {
   const action = input.action;
   if (action === 'redeem') redeem(input, answer);
   else if (action === 'sell') sell(input, answer);
+  else if (action === 'sell-pack') sellPack(input, answer);
+  else if (action === 'recall-pack') recallPack(input, answer);
   // A sale undone gives back what it put on a till's card, and cancels a card it made whose order was never paid.
   else if (action === 'issue' && input.phase === 'reverse') unissue(input, answer);
   else if (input.phase === 'reverse') {

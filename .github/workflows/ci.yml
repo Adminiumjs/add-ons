@@ -194,6 +194,14 @@ jobs:
           repository: Adminiumjs/hotel-reservations
           path: .hosts/hotel-reservations
 
+      # Bookings links its closures to Holiday Calendars' rows: registered in
+      # `HOST_ROOTS` and here in one change, as the apps above are.
+      - name: Check out the booking-scheduler app
+        uses: actions/checkout@v4
+        with:
+          repository: Adminiumjs/booking-scheduler
+          path: .hosts/booking-scheduler
+
       # The mock answers in well under a second, but a service container is
       # not waited for: ask until it answers, for 60 seconds at most.
       - name: Wait for stripe-mock
@@ -220,6 +228,7 @@ jobs:
           ADMINIUM_POINT_OF_SALE: ${{ github.workspace }}/.hosts/point-of-sale
           ADMINIUM_ONLINE_ORDERING: ${{ github.workspace }}/.hosts/online-ordering
           ADMINIUM_HOTEL_RESERVATIONS: ${{ github.workspace }}/.hosts/hotel-reservations
+          ADMINIUM_BOOKING_SCHEDULER: ${{ github.workspace }}/.hosts/booking-scheduler
           # Only the two add-on HOSTS are required: `host-mirror.test.ts` is the
           # guard this covers, and it compares vendored files that only those two
           # carry. The two target apps above are read by a different suite, which

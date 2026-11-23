@@ -3,7 +3,7 @@
   "manifestVersion": 1,
   "key": "holiday-calendars",
   "name": "Holiday Calendars",
-  "version": "1.0.33",
+  "version": "1.0.34",
   "publisher": { "id": "adminium", "name": "Adminium", "url": "https://adminium.dev" },
   "license": "AGPL-3.0-only",
   "description": {
@@ -113,7 +113,8 @@
       { "app": "clients", "range": "^0.2.0" },
       { "app": "ordering", "range": "^0.2.0 || ^0.3.0" },
       { "app": "maker", "range": "^0.2.0" },
-      { "app": "printing", "range": "^0.2.0" }
+      { "app": "printing", "range": "^0.2.0" },
+      { "app": "bookings", "range": "^0.2.0" }
     ],
     "provides": [],
     "consumes": [],
