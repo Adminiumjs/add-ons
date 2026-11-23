@@ -2,8 +2,9 @@
 
 One delivery company, implemented so that the second one is a copy.
 
-The works fills a parcel from the job, fetches rates, books a collection, and gets back a tracking
-reference and a label. That is the whole of it.
+**This is a demo carrier. It books no real parcel.** The works fills a parcel from the job, fetches
+sample rates, practises a collection, and gets back a sample tracking reference and label. Real DHL
+stays locked off until it has been proved against DHL's test environment with real keys.
 
 **Scope boundary, and it is a hard line.** This books parcel collections with a carrier. It is
 **not** job dispatch, **not** field-service routing and **not** driver management, and it gains none

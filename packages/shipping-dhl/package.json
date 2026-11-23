@@ -2,7 +2,7 @@
   "name": "@adminium/add-on-shipping-dhl",
   "version": "1.0.33",
   "type": "module",
-  "description": "DHL Shipping — a delivery-carrier add-on for Adminium example apps. Books parcel collections, nothing else.",
+  "description": "DHL Shipping — a demo carrier add-on for Adminium example apps. Practises a parcel collection and books no real parcel.",
   "license": "AGPL-3.0-only",
   "repository": {
     "type": "git",

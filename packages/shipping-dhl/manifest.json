@@ -12,7 +12,7 @@
   "license": "AGPL-3.0-only",
   "description": {
     "key": "addon.shipping-dhl.line",
-    "fallback": "Books a parcel collection from a job that is ready, and brings back a label and a tracking reference."
+    "fallback": "A demo carrier: practise booking a collection, with a sample label and tracking reference. It books no real parcel."
   },
   "categories": ["delivery"],
   "compatibility": {
