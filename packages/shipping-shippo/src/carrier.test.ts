@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { classifyBookFailure, CarrierError, type Address, type BookingDetails, type Parcel, type Rate } from "@adminium/add-on-host/contracts";
+import { classifyBookFailure, CarrierError, type Address, type BookingDetails, type CustomsDeclaration, type Parcel, type Rate } from "@adminium/add-on-host/contracts";
 import { describeShippingCarrier } from "@adminium/add-on-host/testing";
 
-import { createShippingCarrier, createShippoCarrier } from "./carrier.ts";
+import { createShippingCarrier, createShippoCarrier, lineValue } from "./carrier.ts";
 import { FAKE_KEY, fakeShippo, PDF, type FakeShippo } from "./testing/fake-shippo.ts";
 
 const parcel: Parcel = { weightKg: 1, lengthCm: 20, widthCm: 15, heightCm: 10, contents: "Sample goods" };
@@ -80,13 +80,6 @@ describe("quoting", () => {
     expect(body.address_to).toMatchObject({ phone: from.phone });
   });
 
-  it("refuses a customs parcel rather than quietly dropping the declaration", async () => {
-    const fake = fakeShippo();
-    const customs = { contents: "merchandise", signer: "A", certified: true, nonDelivery: "return", items: [] } as const;
-    await expect(carrierOn(fake).quote(parcel, from, to, { customs: customs as never })).rejects.toMatchObject({ reason: "customs" });
-    expect(fake.sent).toHaveLength(0);
-  });
-
   it("gives the address reason when no carrier will take it, not the accounts' noise", async () => {
     const failure = await failureOf(() => carrierOn(fakeShippo()).quote(parcel, from, { ...to, postcode: "00000" }));
     expect(failure.outcome).toBe("refused");
@@ -101,6 +94,102 @@ describe("quoting", () => {
       const failure = await failureOf(() => carrierOn(fake).quote(parcel, from, to));
       expect(failure.error).not.toBeInstanceOf(CarrierError);
     }
+  });
+});
+
+describe("a parcel going abroad", () => {
+  const abroad: Address = { name: "Kund", lines: ["Hauptstr. 1"], city: "Berlin", postcode: "10115", country: "DE", phone: "+49301234567" };
+  const customs: CustomsDeclaration = {
+    contents: "merchandise",
+    signer: "Ada Quill",
+    certified: true,
+    nonDelivery: "return",
+    items: [
+      { description: "Printed cards", quantity: 3, unitValue: "19.99", currency: "gbp", unitWeightKg: 0.1, originCountry: "GB", hsCode: "49090000", skuCode: "CARD-1", manufacturerCode: "MFR-7" },
+      { description: "Envelopes", quantity: 2, unitValue: "0.05", currency: "GBP", unitWeightKg: 0.25, originCountry: "CN" },
+    ],
+  };
+
+  it("multiplies exactly, with no float in a declared value", () => {
+    expect(lineValue("19.99", 3)).toBe("59.97");
+    expect(lineValue("0.05", 2)).toBe("0.10");
+    expect(lineValue("0.1", 3)).toBe("0.3");
+    expect(lineValue("7", 4)).toBe("28");
+    expect(lineValue("1234567890.123456", 1000)).toBe("1234567890123.456000");
+  });
+
+  it("declares each line's TOTAL value and weight, which is what Shippo's item holds", async () => {
+    const fake = fakeShippo();
+    await carrierOn(fake).quote(parcel, from, abroad, { customs });
+    const sent = fake.sent[0]!;
+    expect(sent.url).toContain("/customs/declarations/");
+    expect(sent.body).toMatchObject({ contents_type: "MERCHANDISE", non_delivery_option: "RETURN", certify: true, certify_signer: "Ada Quill", incoterm: "DDU" });
+    expect(sent.body!.items).toEqual([
+      { description: "Printed cards", quantity: 3, net_weight: "0.3", mass_unit: "kg", value_amount: "59.97", value_currency: "GBP", origin_country: "GB", tariff_number: "49090000", sku_code: "CARD-1", manufacturer_code: "MFR-7" },
+      { description: "Envelopes", quantity: 2, net_weight: "0.5", mass_unit: "kg", value_amount: "0.10", value_currency: "GBP", origin_country: "CN" },
+    ]);
+  });
+
+  it("names the declaration on the shipment and sends the recipient's phone, and no e-mail", async () => {
+    const fake = fakeShippo();
+    await carrierOn(fake).quote(parcel, from, { ...abroad, email: "kund@example.com" }, { customs });
+    const shipment = fake.sent.find((request) => request.url.endsWith("/shipments/"))!;
+    expect(shipment.body!.customs_declaration).toBe("decl_1");
+    expect(shipment.body!.address_to).toMatchObject({ phone: abroad.phone });
+    expect(shipment.body!.address_to).not.toHaveProperty("email");
+    expect(fake.declarations).toHaveLength(1);
+  });
+
+  it("makes no declaration for a parcel inside one country", async () => {
+    const fake = fakeShippo();
+    await carrierOn(fake).quote(parcel, from, to);
+    expect(fake.sent.some((request) => request.url.includes("/customs/"))).toBe(false);
+    expect(fake.sent[0]!.body).not.toHaveProperty("customs_declaration");
+  });
+
+  it("explains an `other` parcel, because Shippo asks for the words", async () => {
+    const fake = fakeShippo();
+    await carrierOn(fake).quote(parcel, from, abroad, { customs: { ...customs, contents: "other" } });
+    expect(fake.sent[0]!.body).toMatchObject({ contents_type: "OTHER", contents_explanation: "Printed cards" });
+  });
+
+  it("refuses an empty declaration before calling anyone", async () => {
+    const fake = fakeShippo();
+    await expect(carrierOn(fake).quote(parcel, from, abroad, { customs: { ...customs, items: [] } })).rejects.toMatchObject({ reason: "customs", outcome: "refused" });
+    expect(fake.sent).toHaveLength(0);
+  });
+
+  it("reads Shippo's no as a customs refusal and rates nothing", async () => {
+    const fake = fakeShippo();
+    fake.override = (request) => (request.url.includes("/customs/declarations/") ? { status: 400, body: { items: ["Each item needs a valid origin country."] } } : null);
+    const failure = await failureOf(() => carrierOn(fake).quote(parcel, from, abroad, { customs }));
+    expect(failure).toMatchObject({ outcome: "refused", reason: "customs" });
+    expect(failure.carrierMessage).toContain("origin country");
+    expect(fake.sent.some((request) => request.url.endsWith("/shipments/"))).toBe(false);
+  });
+
+  it("reads an INVALID declaration as a refusal, though it came back 201", async () => {
+    const fake = fakeShippo();
+    fake.override = (request) => (request.url.includes("/customs/declarations/") ? { status: 201, body: { object_id: "decl_x", object_state: "INVALID", messages: [{ text: "Customs item value is missing." }] } } : null);
+    await expect(carrierOn(fake).quote(parcel, from, abroad, { customs })).rejects.toMatchObject({ reason: "customs", outcome: "refused" });
+    expect(fake.sent.some((request) => request.url.endsWith("/shipments/"))).toBe(false);
+  });
+
+  it("reads a 5xx on the declaration as Shippo not answering", async () => {
+    const fake = fakeShippo();
+    fake.override = (request) => (request.url.includes("/customs/declarations/") ? { status: 503, body: { detail: "busy" } } : null);
+    const failure = await failureOf(() => carrierOn(fake).quote(parcel, from, abroad, { customs }));
+    expect(failure.error).not.toBeInstanceOf(CarrierError);
+  });
+
+  it("lists and fetches the customs invoice of a bought label", async () => {
+    const fake = fakeShippo();
+    const carrier = carrierOn(fake);
+    const [rate] = await carrier.quote(parcel, from, abroad, { customs });
+    const shipment = await carrier.book(rate!, { reference: "MP-4120" }, { parcel, from, to: abroad, customs });
+    expect(shipment.documents?.map((document) => document.kind)).toEqual(["label", "customs-invoice"]);
+    const file = await carrier.fetchDocument!(shipment.id, "customs-invoice");
+    expect(file).toMatchObject({ kind: "customs-invoice", mediaType: "application/pdf" });
   });
 });
 

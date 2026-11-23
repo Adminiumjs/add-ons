@@ -26,6 +26,8 @@ import {
   type CarrierCredentialCheck,
   type CarrierRefusal,
   type CredentialCheckQuery,
+  type CustomsContents,
+  type CustomsDeclaration,
   type FileRef,
   type HandoverKind,
   type LabelSize,
@@ -214,7 +216,8 @@ function failedLabel(tx: Wire, details: BookingDetails | undefined): CarrierErro
 /**
  * One address on the wire. `contact` is false for the customer's side: USPS,
  * Evri and DPD UK all issued test labels with no recipient phone or e-mail, so
- * neither leaves this server inside one country (D14).
+ * neither leaves this server inside one country. A parcel going abroad is the
+ * one case that sends the phone.
  */
 function wireAddress(address: Address, contact: boolean): Wire {
   const [street1, street2, ...rest] = address.lines;
@@ -230,6 +233,57 @@ function wireAddress(address: Address, contact: boolean): Wire {
     country: address.country.toUpperCase(),
     ...(contact && address.phone !== undefined ? { phone: address.phone } : {}),
     ...(contact && address.email !== undefined ? { email: address.email } : {}),
+  };
+}
+
+const CONTENTS_TYPES: Readonly<Record<CustomsContents, string>> = {
+  merchandise: "MERCHANDISE",
+  gift: "GIFT",
+  sample: "SAMPLE",
+  documents: "DOCUMENTS",
+  return: "RETURN_MERCHANDISE",
+  other: "OTHER",
+};
+
+/** The longest code Shippo takes as a tariff number. A longer one goes in its HS field. */
+const TARIFF_WIDTH = 12;
+
+/** `quantity × unit` as an exact decimal: a customs value is never rounded through a float. */
+export function lineValue(unit: string, quantity: number): string {
+  const [whole = "0", fraction = ""] = unit.split(".");
+  const digits = (BigInt(`${whole}${fraction}`) * BigInt(quantity)).toString().padStart(fraction.length + 1, "0");
+  if (fraction.length === 0) return digits;
+  const point = digits.length - fraction.length;
+  return `${digits.slice(0, point)}.${digits.slice(point)}`;
+}
+
+/**
+ * The declaration on the wire. Shippo's item takes the LINE's total value and
+ * total weight, where the contract holds one unit's.
+ *
+ * Duties are left to the recipient (`DDU`), which is what the shop's checkout
+ * tells them. Whether every carrier accepts that term is on the live walk.
+ */
+function wireCustoms(customs: CustomsDeclaration): Wire {
+  return {
+    contents_type: CONTENTS_TYPES[customs.contents],
+    ...(customs.contents === "other" ? { contents_explanation: customs.items[0]!.description.slice(0, 200) } : {}),
+    non_delivery_option: customs.nonDelivery === "abandon" ? "ABANDON" : "RETURN",
+    certify: true,
+    certify_signer: customs.signer,
+    incoterm: "DDU",
+    items: customs.items.map((item) => ({
+      description: item.description,
+      quantity: item.quantity,
+      net_weight: String(Number((item.unitWeightKg * item.quantity).toFixed(6))),
+      mass_unit: "kg",
+      value_amount: lineValue(item.unitValue, item.quantity),
+      value_currency: item.currency.toUpperCase(),
+      origin_country: item.originCountry,
+      ...(item.hsCode === undefined ? {} : item.hsCode.length <= TARIFF_WIDTH ? { tariff_number: item.hsCode } : { hs_code: item.hsCode }),
+      ...(item.skuCode === undefined ? {} : { sku_code: item.skuCode }),
+      ...(item.manufacturerCode === undefined ? {} : { manufacturer_code: item.manufacturerCode }),
+    })),
   };
 }
 
@@ -477,19 +531,44 @@ export function createShippoCarrier({ http, apiKey, signal }: ShippoCarrierOptio
     throw httpFailure(reply, "Shippo did not answer this refund request.");
   }
 
+  /**
+   * Makes the declaration a shipment will name. A plain error reads as "could
+   * not be reached", and a clear no from Shippo is about the customs details.
+   */
+  async function declare(customs: CustomsDeclaration): Promise<string> {
+    if (customs.certified !== true || customs.items.length === 0) {
+      throw refused("shippo_customs_incomplete", "This customs declaration is not complete.", "customs");
+    }
+    let reply: Reply;
+    try {
+      reply = await call("POST", "/customs/declarations/", wireCustoms(customs));
+    } catch {
+      throw new Error("Shippo did not answer.");
+    }
+    if (reply.status >= 500 || reply.status === 429) throw new Error("Shippo did not answer.");
+    if (!isOk(reply.status) || !isRecord(reply.json) || textOf(reply.json.object_state) === "INVALID") {
+      const said = saidIn(reply.json) ?? "Shippo refused this customs declaration.";
+      throw refused(`shippo_${reply.status}`, said, reply.status === 401 || reply.status === 403 ? "credentials" : "customs");
+    }
+    const id = textOf(reply.json.object_id);
+    if (id === undefined) throw new Error("Shippo did not answer.");
+    return id;
+  }
+
   return {
     key: ADD_ON_KEY,
 
     async quote(parcel: Parcel, from: Address, to: Address, options?: QuoteOptions): Promise<Rate[]> {
-      if (options?.customs !== undefined) {
-        throw refused("shippo_customs_not_built", "Parcels that need a customs declaration are not available yet.", "customs");
-      }
+      const declaration = options?.customs === undefined ? undefined : await declare(options.customs);
       const customerIsSender = options?.purpose === "return";
+      const { email: _email, ...toWithoutEmail } = to;
       let reply: Reply;
       try {
         reply = await call("POST", "/shipments/", {
           address_from: wireAddress(from, !customerIsSender),
-          address_to: wireAddress(to, customerIsSender),
+          // A parcel crossing a border needs the recipient's number, and never their e-mail.
+          address_to: declaration !== undefined && !customerIsSender ? wireAddress(toWithoutEmail, true) : wireAddress(to, customerIsSender),
+          ...(declaration === undefined ? {} : { customs_declaration: declaration }),
           parcels: [
             {
               length: String(parcel.lengthCm),

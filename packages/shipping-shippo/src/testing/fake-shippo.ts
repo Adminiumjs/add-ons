@@ -23,6 +23,8 @@ export interface FakeShippo {
   http: ShippingHttpClient;
   sent: SentRequest[];
   transactions: Json[];
+  /** The customs declarations made, in order. */
+  declarations: Json[];
   /** Answers the next purchase with this instead of a label. */
   nextPurchase: { status: number; body?: unknown; raw?: string } | "throw" | null;
   /** Overrides one route: return null to fall through. */
@@ -103,6 +105,7 @@ export function fakeShippo(): FakeShippo {
   const fake: FakeShippo = {
     sent: [],
     transactions: [],
+    declarations: [],
     nextPurchase: null,
     override: null,
     http: async (url, init) => {
@@ -126,6 +129,11 @@ export function fakeShippo(): FakeShippo {
       if (forced !== null) return reply(forced.status, forced.body, forced.raw);
       const path = parsed.pathname;
 
+      if (request.method === "POST" && path === "/customs/declarations/") {
+        const declaration: Json = { object_id: `decl_${fake.declarations.length + 1}`, object_state: "VALID", test: true, ...request.body };
+        fake.declarations.push(declaration);
+        return reply(201, declaration);
+      }
       if (request.method === "POST" && path === "/shipments/") {
         const zips = [request.body?.address_from, request.body?.address_to].map((a) => (a as Json).zip);
         if (zips.includes("00000")) {
@@ -164,7 +172,8 @@ export function fakeShippo(): FakeShippo {
           eta: null,
           tracking_url_provider: "https://tools.usps.com/go/TrackConfirmAction_input?origTrackNum=1",
           label_url: `https://deliver.goshippo.com/signed-${fake.transactions.length + 1}.pdf?Signature=abc`,
-          commercial_invoice_url: null,
+          // Only a parcel with a declaration has one.
+          commercial_invoice_url: fake.declarations.length > 0 ? `https://deliver.goshippo.com/invoice-${fake.transactions.length + 1}.pdf?Signature=abc` : null,
           messages: [],
           metadata: request.body?.metadata,
         };
