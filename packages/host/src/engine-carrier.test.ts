@@ -13,6 +13,7 @@ import {
   createEngineCarrier,
   ENGINE_BAD_ANSWER,
   ENGINE_NO_ANSWER,
+  ENGINE_NO_DOWNLOAD,
   ENGINE_OTHER_CARRIER,
   EngineCarrierError,
   scrubCredentials,
@@ -40,6 +41,7 @@ const BOOKING = {
   checkedAt: null,
   releaseAfter: null,
   applied: true,
+  label: { state: 'ready', size: 'a4', sizeGot: 'a6', sizeDiffers: true, customsInvoice: false },
   amount: '7.25',
   currency: 'USD',
 };
@@ -116,6 +118,85 @@ describe('the routes it asks', () => {
     const { engine } = client(200, { data: { ...QUOTE, carrier: 'shipping-dhl' } });
     const error = await caught(() => engine.quote(QUOTE_REQUEST));
     expect(error.code).toBe(ENGINE_OTHER_CARRIER);
+  });
+});
+
+describe('labels and tracking', () => {
+  const TRACK = { status: 'TRANSIT', statusAt: 5, checkedAt: 6, flag: null, newNumber: true };
+
+  it('reads a booking\'s label and track, and nothing else of them', async () => {
+    const reply = { ...BOOKING, label: { ...BOOKING.label, url: KEY }, track: { ...TRACK, token: KEY } };
+    const { engine } = client(200, { data: { bookings: [reply], bookable: false, blockedBy: 'booking' } });
+    const [booking] = (await engine.bookings({ table: 'orders', id: '42' })).bookings;
+    expect(booking!.label).toEqual(BOOKING.label);
+    expect(booking!.track).toEqual(TRACK);
+    expect(JSON.stringify(booking)).not.toContain(KEY);
+  });
+
+  it('keeps a booking with no tracking record readable', async () => {
+    const { engine } = client(200, { data: { bookings: [{ ...BOOKING, track: null }, BOOKING], bookable: false, blockedBy: 'booking' } });
+    const { bookings } = await engine.bookings({ table: 'orders', id: '42' });
+    expect(bookings[0]!.track).toBeNull();
+    expect('track' in bookings[1]!).toBe(false);
+  });
+
+  it('treats a booking with no label field as a bad answer', async () => {
+    const { label: _label, ...old } = BOOKING;
+    const { engine } = client(200, { data: old });
+    const error = await caught(() => engine.book({ quoteId: 'q1', rateId: 'r1' }));
+    expect(error.code).toBe(ENGINE_BAD_ANSWER);
+    expect(classifyBookFailure(error).outcome).toBe('unknown');
+  });
+
+  it('retries an owed label with a bodyless POST', async () => {
+    const { engine, calls } = client(200, { data: BOOKING });
+    await engine.fetchDocument('b/1', 'label');
+    expect(calls[0]!.path).toBe('/api/v1/apps/maker-shop/shipping/bookings/b%2F1/documents/label');
+    expect(calls[0]!.init.method).toBe('POST');
+    expect(calls[0]!.init.body).toBeUndefined();
+    expect(calls[0]!.init.headers['content-type']).toBeUndefined();
+  });
+
+  it('downloads through the app\'s sender, so the install header rides along', async () => {
+    const file = new Blob(['%PDF'], { type: 'application/pdf' });
+    const calls: Call[] = [];
+    const send: EngineSend = async (path, init) => {
+      calls.push({ path, init });
+      return { status: 200, text: async () => '', blob: async () => file };
+    };
+    const engine = createEngineCarrier({ send, appKey: 'maker-shop', addOnKey: 'shipping-shippo' });
+    expect(await engine.downloadDocument('b1', 'label')).toBe(file);
+    expect(calls[0]!.init.method).toBe('GET');
+    expect(calls[0]!.path).toBe('/api/v1/apps/maker-shop/shipping/bookings/b1/documents/label');
+  });
+
+  it('says so when the app\'s sender cannot hand back a file', async () => {
+    const { engine } = client(200, 'bytes');
+    expect((await caught(() => engine.downloadDocument('b1', 'label'))).code).toBe(ENGINE_NO_DOWNLOAD);
+  });
+
+  it('reads a refused download as the engine\'s own code', async () => {
+    const { engine } = client(410, { error: { code: 'LABEL_GONE', message: 'Deleted.' } });
+    expect((await caught(() => engine.downloadDocument('b1', 'label'))).code).toBe('LABEL_GONE');
+  });
+
+  it('reads one parcel\'s refresh and the open-parcels refresh', async () => {
+    const one = client(200, { data: { outcome: 'updated', track: TRACK } });
+    expect(await one.engine.refreshBooking('b1')).toEqual({ outcome: 'updated', track: TRACK });
+    expect(one.calls[0]!.path).toBe('/api/v1/apps/maker-shop/shipping/bookings/b1/refresh');
+
+    const summary = { outcome: 'done', checked: 25, updated: 3, failed: 1, remaining: 4, more: true, oldestCheckedAt: 9, neverChecked: 2, retryAt: null };
+    const open = client(200, { data: { ...summary, token: KEY } });
+    expect(await open.engine.refreshOpenParcels()).toEqual(summary);
+    expect(open.calls[0]!.path).toBe('/api/v1/apps/maker-shop/shipping/tracking/refresh');
+  });
+});
+
+describe('a refusal that can only come before a purchase', () => {
+  it.each(['SESSION_EXPIRED', 'TABLE_FORBIDDEN', 'APP_SCREENS_ONLY', 'READ_ONLY_MODE', 'APP_INSTALL_AMBIGUOUS', 'CSRF_FAILED'])('reads %s as a clear no', async (code) => {
+    const { engine } = client(code === 'SESSION_EXPIRED' ? 401 : code === 'APP_INSTALL_AMBIGUOUS' ? 409 : 403, { error: { code, message: 'No.' } });
+    const error = await caught(() => engine.book({ quoteId: 'q1', rateId: 'r1' }));
+    expect(classifyBookFailure(error).outcome).toBe('refused');
   });
 });
 

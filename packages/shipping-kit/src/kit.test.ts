@@ -24,7 +24,7 @@ import { LOCALE_TAGS, strings, type StringKey } from "./i18n/strings.ts";
 import { kitMessages } from "./index.ts";
 import { PINNED_NOW } from "./clock.ts";
 import { renderLabelPdf } from "./label.ts";
-import { carrierState, connectEngineCarrier, engineCarrier, resetRuntime } from "./runtime.ts";
+import { carrier, CarrierNotConnected, carrierState, connectEngineCarrier, engineCarrier, hasPageCarrier, resetRuntime } from "./runtime.ts";
 import { applySettings, DEFAULT_SETTINGS } from "./settings.ts";
 import { TEST_BRAND } from "./testing/kit-brand.ts";
 
@@ -125,10 +125,15 @@ describe("handing in the app's client", () => {
     expect(engineCarrier()).toBe(mine);
   });
 
-  it("does not switch anything on: with the demo off the screens still say not connected", () => {
+  it("reads as connected only with that client, and never hands the contract seam a carrier it lacks", () => {
     applySettings({ demo_transport: false });
-    connectEngineCarrier(client("shipping-test"));
     expect(carrierState()).toBe("not-connected");
+    connectEngineCarrier(client("shipping-other"));
+    expect(carrierState()).toBe("not-connected");
+    connectEngineCarrier(client("shipping-test"));
+    expect(carrierState()).toBe("connected");
+    expect(hasPageCarrier()).toBe(false);
+    expect(() => carrier()).toThrow(CarrierNotConnected);
   });
 });
 
