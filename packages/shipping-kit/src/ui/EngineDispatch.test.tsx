@@ -1158,7 +1158,8 @@ describe("announcements", () => {
 
 describe("the copy", () => {
   it("names no status the purchase did not cause", () => {
-    const english = Object.entries(strings["en-US"]).filter(([key]) => key.startsWith("addon.shipping-kit.engine."));
+    // The refund screens are about a refund, and only they may say the word (S27 to S33).
+    const english = Object.entries(strings["en-US"]).filter(([key]) => key.startsWith("addon.shipping-kit.engine.") && !key.startsWith("addon.shipping-kit.engine.refund."));
     expect(english.length).toBeGreaterThan(200);
     expect(english.filter(([, value]) => /shipped|refund|\blater\b tag/i.test(value))).toEqual([]);
   });

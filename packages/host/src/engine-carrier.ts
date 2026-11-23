@@ -79,7 +79,7 @@ export interface EngineCarrierOptions {
 // ── what the engine answers ─────────────────────────────────────────────────
 
 export type EngineMode = 'live' | 'test';
-export type EngineBookingState = 'reserved' | 'calling' | 'booked' | 'refused' | 'unknown' | 'released';
+export type EngineBookingState = 'reserved' | 'calling' | 'booked' | 'refused' | 'unknown' | 'released' | 'voiding' | 'voided';
 export type EngineBookingBlock = 'booking' | 'label-on-order' | 'no-carrier';
 export type EngineLookUpOutcome = 'found' | 'not-bought' | 'no-match' | 'no-answer' | 'cannot-check' | 'other-account' | 'other-rate';
 
@@ -178,6 +178,31 @@ export interface EngineRefreshOpen {
   retryAt: number | null;
 }
 
+/** How a label's refund stands. The dates are the server's. An amount appears only if the carrier reported one. */
+export interface EngineRefund {
+  state: 'requested' | 'pending' | 'refunded' | 'refused' | null;
+  askedAt: number | null;
+  settledAt: number | null;
+  heardAt: number | null;
+  /** Asked for, and the carrier has not confirmed hearing it. */
+  unconfirmed: boolean;
+  expectedBy: number | null;
+  claimBy: number;
+  tooLate: boolean;
+  scanned: boolean;
+  canRequest: boolean;
+  message: string | null;
+  amount?: string;
+  currency?: string;
+}
+
+export type EngineRefundOutcome = 'requested' | 'pending' | 'refunded' | 'refused' | 'no-answer' | 'other-account' | 'cannot-check' | 'not-open';
+
+export interface EngineRefundAnswer {
+  outcome: EngineRefundOutcome;
+  booking: EngineBooking;
+}
+
 export interface EngineBooking {
   id: string;
   state: EngineBookingState;
@@ -196,6 +221,8 @@ export interface EngineBooking {
   releaseAfter: number | null;
   applied: boolean;
   label: EngineLabel;
+  /** Null for an attempt that never became a label. Absent from an engine older than the refund routes. */
+  refund?: EngineRefund | null;
   amount?: string;
   currency?: string;
   chargeDiffers?: boolean;
@@ -215,7 +242,7 @@ export interface EngineLookUp {
   booking: EngineBooking;
 }
 
-export const ENGINE_ATTENTION_REASONS = ['unknown', 'duplicates', 'label-owed', 'new-number', 'tracking-failed', 'returned', 'ambiguous', 'quiet'] as const;
+export const ENGINE_ATTENTION_REASONS = ['unknown', 'duplicates', 'refund-refused', 'refund-pending', 'label-owed', 'new-number', 'tracking-failed', 'returned', 'ambiguous', 'quiet'] as const;
 export type EngineAttentionReason = (typeof ENGINE_ATTENTION_REASONS)[number];
 
 /** A label that needs a person, on an order this person reaches. */
@@ -255,6 +282,8 @@ export interface EngineBookRequest {
   rateId: string;
   /** Someone who manages shipping saw an earlier attempt cannot be looked up, and means to buy anyway. */
   confirmEarlier?: boolean;
+  /** Someone who may cancel was told both labels stay paid until the refund lands, and means to book another. */
+  replaceRefunding?: boolean;
 }
 
 export interface EngineCarrier {
@@ -267,6 +296,10 @@ export interface EngineCarrier {
   checkBooking(id: string): Promise<EngineLookUp>;
   /** The person's own declaration that no label exists. */
   releaseBooking(id: string): Promise<EngineBooking>;
+  /** The person's own declaration that this label was not used. A second press reports the first. */
+  requestRefund(id: string): Promise<EngineRefundAnswer>;
+  /** Asks the carrier where a pending refund stands. */
+  checkRefund(id: string): Promise<EngineRefundAnswer>;
   /** Asks the carrier for a file that is owed. The booking comes back with its new `label`. */
   fetchDocument(id: string, kind: ShipmentDocumentKind): Promise<EngineBooking>;
   /** The stored file. Only for a label whose `state` is `ready`. */
@@ -444,7 +477,7 @@ type Reader = ReturnType<typeof reader>;
 const optional = <K extends string, V>(key: K, value: V | undefined): { [P in K]?: V } =>
   (value === undefined ? {} : { [key]: value }) as { [P in K]?: V };
 
-const BOOKING_STATES = ['reserved', 'calling', 'booked', 'refused', 'unknown', 'released'] as const;
+const BOOKING_STATES = ['reserved', 'calling', 'booked', 'refused', 'unknown', 'released', 'voiding', 'voided'] as const;
 const BOOKING_BLOCKS = ['booking', 'label-on-order', 'no-carrier'] as const;
 const LOOK_UP_OUTCOMES = ['found', 'not-bought', 'no-match', 'no-answer', 'cannot-check', 'other-account', 'other-rate'] as const;
 const MODES = ['live', 'test'] as const;
@@ -476,6 +509,29 @@ function readTrack(read: Reader, value: unknown): EngineTrack {
   };
 }
 
+const REFUND_STATES = ['requested', 'pending', 'refunded', 'refused'] as const;
+const REFUND_OUTCOMES = ['requested', 'pending', 'refunded', 'refused', 'no-answer', 'other-account', 'cannot-check', 'not-open'] as const;
+
+function readRefund(read: Reader, value: unknown): EngineRefund {
+  const raw = read.object(value);
+  const message = read.orNull(raw, 'message', read.text);
+  return {
+    state: read.orNull(raw, 'state', (from, key) => read.oneOf(from, key, REFUND_STATES)),
+    askedAt: read.orNull(raw, 'askedAt', read.number),
+    settledAt: read.orNull(raw, 'settledAt', read.number),
+    heardAt: read.orNull(raw, 'heardAt', read.number),
+    unconfirmed: read.flag(raw, 'unconfirmed'),
+    expectedBy: read.orNull(raw, 'expectedBy', read.number),
+    claimBy: read.number(raw, 'claimBy'),
+    tooLate: read.flag(raw, 'tooLate'),
+    scanned: read.flag(raw, 'scanned'),
+    canRequest: read.flag(raw, 'canRequest'),
+    message: message === null ? null : scrubCredentials(message),
+    ...optional('amount', read.maybe(raw, 'amount', read.text)),
+    ...optional('currency', read.maybe(raw, 'currency', read.text)),
+  };
+}
+
 function readBooking(read: Reader, value: unknown): EngineBooking {
   const raw = read.object(value);
   const carrierName = read.orNull(raw, 'carrierName', read.text);
@@ -498,6 +554,7 @@ function readBooking(read: Reader, value: unknown): EngineBooking {
     releaseAfter: read.orNull(raw, 'releaseAfter', read.number),
     applied: read.flag(raw, 'applied'),
     label: readLabel(read, raw.label),
+    ...(raw.refund === undefined ? {} : { refund: raw.refund === null ? null : readRefund(read, raw.refund) }),
     ...optional('amount', read.maybe(raw, 'amount', read.text)),
     ...optional('currency', read.maybe(raw, 'currency', read.text)),
     ...optional('chargeDiffers', read.maybe(raw, 'chargeDiffers', read.flag)),
@@ -717,6 +774,7 @@ export function createEngineCarrier(options: EngineCarrierOptions): EngineCarrie
         quoteId: request.quoteId,
         rateId: request.rateId,
         ...optional('confirmEarlier', request.confirmEarlier),
+        ...optional('replaceRefunding', request.replaceRefunding),
       };
       return readBooking(reader(true), await ask('POST', '/bookings', body, true));
     },
@@ -730,6 +788,18 @@ export function createEngineCarrier(options: EngineCarrierOptions): EngineCarrie
     async releaseBooking(id) {
       const body = { declaration: 'no-label-exists' };
       return readBooking(reader(false), await ask('POST', `/bookings/${encodeURIComponent(id)}/release`, body, false));
+    },
+
+    async requestRefund(id) {
+      const read = reader(false);
+      const raw = read.object(await ask('POST', `/bookings/${encodeURIComponent(id)}/refund`, { declaration: 'label-not-used' }, false));
+      return { outcome: read.oneOf(raw, 'outcome', REFUND_OUTCOMES), booking: readBooking(read, raw.booking) };
+    },
+
+    async checkRefund(id) {
+      const read = reader(false);
+      const raw = read.object(await ask('POST', `/bookings/${encodeURIComponent(id)}/refund/check`, undefined, false));
+      return { outcome: read.oneOf(raw, 'outcome', REFUND_OUTCOMES), booking: readBooking(read, raw.booking) };
     },
 
     async fetchDocument(id, kind) {
