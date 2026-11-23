@@ -212,6 +212,9 @@ export function register(): AddOn {
 export {
   applySettings,
   connectEngineCarrier,
+  isPaidLabelStopped,
+  PaidLabelHost,
+  withPaidLabel,
   DEFAULT_SETTINGS,
   useConnectedCarrier,
   type PublicSettings,
