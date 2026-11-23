@@ -78,6 +78,8 @@ export const ALLOWED_TOKENS: readonly string[] = [
   "produced",
   /** "Processed at the sorting depot" — a seeded scan line from the demo. */
   "processed",
+  /** `problems` — the engine's field naming what stops a customs declaration. */
+  "problems",
   /** `Promise` — the JavaScript built-in, in the booked-and-tracked await. */
   "promise",
   /** `order.deliveryPromise` — the host payload's field name, which survives minifying. Never shown. */

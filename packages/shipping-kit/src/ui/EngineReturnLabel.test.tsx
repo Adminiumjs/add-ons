@@ -2,14 +2,14 @@
 /** The return label: for the owner, on a return, from real figures, and never bought twice by an unclear answer. */
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { RecordActionsPayload } from "@adminium/add-on-host";
-import type { EngineAccess, EngineBooking, EngineCarrier } from "@adminium/add-on-host/engine-carrier";
+import { EngineCarrierError, type EngineAccess, type EngineBooking, type EngineCarrier } from "@adminium/add-on-host/engine-carrier";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { connectEngineCarrier, resetRuntime } from "../runtime.ts";
 import { kitBrand } from "../brand.ts";
 import { EngineReturnLabel } from "./EngineReturnLabel.tsx";
 
-const ACCESS = { appUpdated: true, carrier: "shipping-shippo", activeHere: true, mode: "live", manages: true, mayBook: true, mayCancel: true, mayCustoms: true, pricesHidden: false, booking: "open" } as EngineAccess;
+const ACCESS = { appUpdated: true, carrier: "shipping-shippo", activeHere: true, mode: "live", manages: true, mayBook: true, mayCancel: true, mayCustoms: true, mayShipAbroad: true, shipsAbroad: false, pricesHidden: false, booking: "open" } as EngineAccess;
 const RATE = { rateId: "r1", code: "evri", service: "Evri 48", priced: true, amountDecimal: "3.10", currency: "GBP", withinLimit: true };
 const payload = (over: Partial<RecordActionsPayload> = {}) => ({ entity: "return", recordId: "7", record: { number: "RT-7" }, order: { table: "orders", id: "42" }, ...over }) as unknown as RecordActionsPayload;
 
@@ -56,6 +56,16 @@ describe("a return label", () => {
     fireEvent.click(screen.getByTestId("engine-return-rates"));
     await screen.findByTestId("engine-return-buy");
     expect(fake.quote).toHaveBeenCalledWith(expect.objectContaining({ purpose: "return", returnId: "7", source: { table: "orders", id: "42" } }));
+  });
+
+  it("says in plain words that a return from abroad cannot be booked yet", async () => {
+    client({ quote: vi.fn(async () => { throw new EngineCarrierError({ code: "CUSTOMS_ONE_PARCEL", message: "engine words", status: 422, retryable: false, outcome: "refused" }); }) } as never);
+    render(<EngineReturnLabel payload={payload()} />);
+    await screen.findByTestId("engine-return");
+    fireEvent.change(screen.getByTestId("engine-return-weight"), { target: { value: "1.2" } });
+    fireEvent.change(screen.getByTestId("engine-return-size"), { target: { value: "30x20x10" } });
+    fireEvent.click(screen.getByTestId("engine-return-rates"));
+    expect((await screen.findByTestId("engine-return-fault")).textContent).toContain("from abroad");
   });
 
   it("treats a lost answer as unclear and offers no second purchase", async () => {

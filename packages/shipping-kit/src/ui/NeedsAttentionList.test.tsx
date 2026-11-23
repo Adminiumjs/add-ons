@@ -30,7 +30,7 @@ const BOOKING: EngineBooking = {
   checkedAt: null,
   releaseAfter: null,
   applied: true,
-  label: { state: "ready", size: "a4", sizeGot: "a4", sizeDiffers: false, customsInvoice: false },
+  label: { state: "ready", size: "a4", sizeGot: "a4", sizeDiffers: false, customsInvoice: false, customsInvoiceOwed: false },
 };
 
 const item = (reasons: EngineAttentionReason[], booking: Partial<EngineBooking> = {}): EngineAttentionItem => ({
@@ -227,7 +227,7 @@ describe("an unknown booking whose order was deleted", () => {
   const RELEASE_AFTER = AT + 900_000;
   const GONE: EngineAttentionItem = { ...item(["unknown"], { state: "unknown", tracking: null, releaseAfter: RELEASE_AFTER }), orderGone: true };
   const OTHER: EngineAttentionItem = { ...item(["quiet"], { id: "b2" }), reference: "NL-1050" };
-  const MANAGER: EngineAccess = { appUpdated: true, carrier: "shipping-test", activeHere: true, mode: "live", manages: true, mayBook: true, mayCancel: true, mayCustoms: true, pricesHidden: false, booking: "open" };
+  const MANAGER: EngineAccess = { appUpdated: true, carrier: "shipping-test", activeHere: true, mode: "live", manages: true, mayBook: true, mayCancel: true, mayCustoms: true, mayShipAbroad: true, shipsAbroad: false, pricesHidden: false, booking: "open" };
   const list = (...items: EngineAttentionItem[]): EngineAttention => ({ items, more: false });
 
   function client(lists: EngineAttention[], over: { access?: () => Promise<EngineAccess>; check?: () => Promise<EngineLookUp>; release?: () => Promise<EngineBooking> } = {}) {

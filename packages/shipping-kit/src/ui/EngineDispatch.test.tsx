@@ -52,7 +52,7 @@ const ACCESS: EngineAccess = {
   manages: true,
   mayBook: true,
   mayCancel: true,
-  mayCustoms: true,
+  mayCustoms: true, mayShipAbroad: true, shipsAbroad: false,
   pricesHidden: false,
   booking: "open",
 };
@@ -100,7 +100,7 @@ const booking = (over: Partial<EngineBooking> = {}): EngineBooking => ({
   checkedAt: null,
   releaseAfter: null,
   applied: false,
-  label: { state: "ready", size: "a6", sizeGot: "a6", sizeDiffers: false, customsInvoice: false },
+  label: { state: "ready", size: "a6", sizeGot: "a6", sizeDiffers: false, customsInvoice: false, customsInvoiceOwed: false },
   amount: "4.20",
   currency: "GBP",
   ...over,
@@ -737,7 +737,7 @@ describe("the unknown card", () => {
 
 describe("the label", () => {
   const withLabel = (label: Partial<EngineBooking["label"]>, over: Partial<EngineBooking> = {}) =>
-    booking({ label: { state: "ready", size: "a6", sizeGot: "a6", sizeDiffers: false, customsInvoice: false, ...label }, ...over });
+    booking({ label: { state: "ready", size: "a6", sizeGot: "a6", sizeDiffers: false, customsInvoice: false, customsInvoiceOwed: false, ...label }, ...over });
 
   it("offers Download and Print only on ready", async () => {
     vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:label");

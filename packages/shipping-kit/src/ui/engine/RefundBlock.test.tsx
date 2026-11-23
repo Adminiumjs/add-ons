@@ -6,10 +6,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { RefundBlock, RefundedCard } from "./RefundBlock.tsx";
 
-const ACCESS = { appUpdated: true, carrier: "shipping-shippo", activeHere: true, mode: "live", manages: true, mayBook: true, mayCancel: true, mayCustoms: true, pricesHidden: false, booking: "open" } as EngineAccess;
+const ACCESS = { appUpdated: true, carrier: "shipping-shippo", activeHere: true, mode: "live", manages: true, mayBook: true, mayCancel: true, mayCustoms: true, mayShipAbroad: true, shipsAbroad: false, pricesHidden: false, booking: "open" } as EngineAccess;
 const REFUND: EngineRefund = { state: null, askedAt: null, settledAt: null, heardAt: null, unconfirmed: false, expectedBy: null, claimBy: Date.UTC(2026, 8, 16, 23, 59), tooLate: false, scanned: false, canRequest: true, message: null };
 const booking = (refund: Partial<EngineRefund>, over: Partial<EngineBooking> = {}): EngineBooking =>
-  ({ id: "b1", state: "booked", test: false, purpose: "outbound", parcelNumber: 1, carrier: "shipping-shippo", service: "Evri 48", tracking: "T1", carrierName: "Evri", reason: null, duplicates: 0, createdAt: 1, calledAt: 1, checkedAt: null, releaseAfter: null, applied: true, label: { state: "ready", size: null, sizeGot: null, sizeDiffers: false, customsInvoice: false }, amount: "3.10", currency: "GBP", refund: { ...REFUND, ...refund }, ...over }) as EngineBooking;
+  ({ id: "b1", state: "booked", test: false, purpose: "outbound", parcelNumber: 1, carrier: "shipping-shippo", service: "Evri 48", tracking: "T1", carrierName: "Evri", reason: null, duplicates: 0, createdAt: 1, calledAt: 1, checkedAt: null, releaseAfter: null, applied: true, label: { state: "ready", size: null, sizeGot: null, sizeDiffers: false, customsInvoice: false, customsInvoiceOwed: false }, amount: "3.10", currency: "GBP", refund: { ...REFUND, ...refund }, ...over }) as EngineBooking;
 
 function draw(shown: EngineBooking, client: Partial<EngineCarrier> = {}, access = ACCESS, onReplace?: () => void) {
   const onChange = vi.fn();

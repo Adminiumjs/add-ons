@@ -176,7 +176,17 @@ describe("CSS logical properties only", () => {
     // The pricing-word sweep: no href may contain "/mo". No anchors here — the
     // one place a link was tempting says in words why there is nothing to link
     // to (`panel.noPage`), which is a stronger answer than a dead link.
-    const offenders = UI.filter((file) => /href=/.test(codeOf(file)));
+    // The one exception: the customs screens link to a government code list. The
+    // address is the engine's, read as https only, so no path is written here.
+    const CODE_LIST_LINKS: Readonly<Record<string, string>> = {
+      "kit/ui/CustomsDefaultsPanel.tsx": "href={view.codeListUrl}",
+      "kit/ui/engine/CustomsForm.tsx": "href={form.codeListUrl}",
+    };
+    const offenders = UI.filter((file) => {
+      const hrefs = codeOf(file).match(/href=\S*/g) ?? [];
+      const allowed = CODE_LIST_LINKS[relative(file)];
+      return hrefs.some((href) => href !== allowed);
+    });
     expect(offenders.map(relative)).toEqual([]);
   });
 });
