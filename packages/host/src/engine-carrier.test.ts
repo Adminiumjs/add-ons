@@ -41,7 +41,7 @@ const BOOKING = {
   checkedAt: null,
   releaseAfter: null,
   applied: true,
-  label: { state: 'ready', size: 'a4', sizeGot: 'a6', sizeDiffers: true, customsInvoice: false },
+  label: { state: 'ready', size: 'a4', sizeGot: 'a6', sizeDiffers: true, customsInvoice: false, customsInvoiceOwed: false },
   amount: '7.25',
   currency: 'USD',
 };
@@ -266,6 +266,60 @@ describe('a refusal that can only come before a purchase', () => {
     const { engine } = client(code === 'SESSION_EXPIRED' ? 401 : code === 'APP_INSTALL_AMBIGUOUS' ? 409 : 403, { error: { code, message: 'No.' } });
     const error = await caught(() => engine.book({ quoteId: 'q1', rateId: 'r1' }));
     expect(classifyBookFailure(error).outcome).toBe('refused');
+  });
+});
+
+describe('a parcel going abroad', () => {
+  const FORM = {
+    abroad: true,
+    offered: true,
+    ownCountry: 'GB',
+    to: 'DE',
+    codeListUrl: 'https://tariff.example/find',
+    signer: 'Ada',
+    currency: 'GBP',
+    lines: [{ line: '1', description: 'Bag', quantity: 2, unitValue: '32.00', originCountry: 'GB', unitWeightKg: null, secretField: 'x' }],
+    problems: [{ line: '1', field: 'unitValue' }],
+    warnings: [{ line: '1', field: 'manufacturerCode' }],
+  };
+
+  it('reads an older engine as one with no abroad at all', async () => {
+    const { engine } = client(200, { data: ACCESS });
+    expect(await engine.access()).toMatchObject({ mayShipAbroad: false, shipsAbroad: false });
+  });
+
+  it('reads the form field by field, and takes only an https tariff link', async () => {
+    const { calls, engine } = client(200, { data: { ...FORM, codeListUrl: 'javascript:alert(1)' } });
+    const form = await engine.customsForm({ table: 'orders', id: '42' });
+    expect(calls[0]!.path).toBe('/api/v1/apps/maker-shop/shipping/customs?table=orders&id=42');
+    expect(form).toMatchObject({ offered: true, codeListUrl: null, faults: [{ line: '1', field: 'unitValue' }] });
+    expect((form as { lines: object[] }).lines[0]).not.toHaveProperty('secretField');
+  });
+
+  it('sends the tick and named corrections, and nothing a caller added', async () => {
+    const { calls, engine } = client(200, { data: QUOTE });
+    await engine.quote({ ...QUOTE_REQUEST, customs: { certified: true, lines: [{ line: '1', hsCode: '420292', unitValue: '1.00' } as never] } });
+    expect(JSON.parse(calls[0]!.init.body!).customs).toEqual({ certified: true, lines: [{ line: '1', hsCode: '420292' }] });
+  });
+
+  it('saves with PUT, and reads none of the keys or limits in the reply', async () => {
+    const reply = { international: true, codeListUrl: null, shipFrom: { country: 'GB', phone: '+44' }, carriers: [{ key: 'x' }], customs: { countries: ['DE'], currency: 'GBP', originCountry: 'GB', signerId: 'u1', signerName: 'Ada', products: [], exporter: { eori: 'GB123456789000' } } };
+    const { calls, engine } = client(200, { data: reply });
+    const view = await engine.saveInternational({ countries: ['DE'], currency: 'GBP', originCountry: 'GB' });
+    expect(calls[0]!.init.method).toBe('PUT');
+    expect(calls[0]!.path).toBe('/api/v1/apps/maker-shop/shipping/international');
+    expect(view).toEqual({ ownCountry: 'GB', codeListUrl: null, shipsAbroad: true, settings: { countries: ['DE'], currency: 'GBP', originCountry: 'GB', signerId: 'u1', signerName: 'Ada', products: [], exporter: { eori: 'GB123456789000' } } });
+  });
+
+  it.each(['COUNTRY_NOT_OFFERED', 'CUSTOMS_NOT_DECLARED', 'CUSTOMS_NOT_CONFIRMED', 'CUSTOMS_NOT_NEEDED', 'CUSTOMS_INCOMPLETE', 'CUSTOMS_ONE_PARCEL', 'CUSTOMS_SIGNER', 'ORDER_CANCELLED'])('reads %s at purchase as a clear no, never as a label that may be paid for', async (code) => {
+    const { engine } = client(422, { error: { code, message: 'no' } });
+    const error = await caught(() => engine.book({ quoteId: 'q1', rateId: 'r1' }));
+    expect(classifyBookFailure(error).outcome).toBe('refused');
+  });
+
+  it('names the fields a refusal is about', async () => {
+    const { engine } = client(422, { error: { code: 'CUSTOMS_INCOMPLETE', message: 'no', details: { problems: [{ field: 'weight' }] } } });
+    expect(await caught(() => engine.quote(QUOTE_REQUEST))).toMatchObject({ refusalFields: ['weight'] });
   });
 });
 

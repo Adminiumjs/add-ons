@@ -265,6 +265,10 @@ export function lineValue(unit: string, quantity: number): string {
  * tells them. Whether every carrier accepts that term is on the live walk.
  */
 function wireCustoms(customs: CustomsDeclaration): Wire {
+  const { eori, ioss, taxId } = customs.exporter ?? {};
+  // Shippo holds one tax number. An IOSS number is what clears a parcel into the EU, so it goes first.
+  const taxNumber = ioss !== undefined ? { number: ioss, type: "IOSS" } : taxId;
+  const identified = eori !== undefined || taxNumber !== undefined;
   return {
     contents_type: CONTENTS_TYPES[customs.contents],
     ...(customs.contents === "other" ? { contents_explanation: customs.items[0]!.description.slice(0, 200) } : {}),
@@ -272,6 +276,8 @@ function wireCustoms(customs: CustomsDeclaration): Wire {
     certify: true,
     certify_signer: customs.signer,
     incoterm: "DDU",
+    ...(identified ? { exporter_identification: { ...(eori === undefined ? {} : { eori_number: eori }), ...(taxNumber === undefined ? {} : { tax_id: taxNumber }) } } : {}),
+    ...(customs.filingCode === undefined ? {} : { eel_pfc: customs.filingCode }),
     items: customs.items.map((item) => ({
       description: item.description,
       quantity: item.quantity,

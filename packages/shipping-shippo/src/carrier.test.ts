@@ -159,6 +159,34 @@ describe("a parcel going abroad", () => {
     expect(fake.sent).toHaveLength(0);
   });
 
+  describe("the shop's export numbers", () => {
+    const declared = async (extra: Partial<CustomsDeclaration>) => {
+      const fake = fakeShippo();
+      await carrierOn(fake).quote(parcel, from, abroad, { customs: { ...customs, ...extra } });
+      return fake.sent.find((request) => request.url.includes("/customs/declarations/"))!.body!;
+    };
+
+    it("sends none, and no filing code, for a shop that has none", async () => {
+      const body = await declared({});
+      expect(body).not.toHaveProperty("exporter_identification");
+      expect(body).not.toHaveProperty("eel_pfc");
+    });
+
+    it("sends an EORI number and a tax number", async () => {
+      const body = await declared({ exporter: { eori: "GB123456789000", taxId: { type: "VAT", number: "GB123456789" } } });
+      expect(body.exporter_identification).toEqual({ eori_number: "GB123456789000", tax_id: { number: "GB123456789", type: "VAT" } });
+    });
+
+    it("sends an IOSS number in Shippo's one tax slot, ahead of another tax number", async () => {
+      const body = await declared({ exporter: { ioss: "IM3720000224", taxId: { type: "VAT", number: "GB123456789" } } });
+      expect(body.exporter_identification).toEqual({ tax_id: { number: "IM3720000224", type: "IOSS" } });
+    });
+
+    it("sends a filing code only when one was chosen", async () => {
+      expect((await declared({ filingCode: "NOEEI_30_37_a" })).eel_pfc).toBe("NOEEI_30_37_a");
+    });
+  });
+
   it("reads Shippo's no as a customs refusal and rates nothing", async () => {
     const fake = fakeShippo();
     fake.override = (request) => (request.url.includes("/customs/declarations/") ? { status: 400, body: { items: ["Each item needs a valid origin country."] } } : null);
