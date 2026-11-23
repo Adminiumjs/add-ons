@@ -77,6 +77,31 @@ describe("clearPaidLabel", () => {
     expect(isPaidLabelStopped(await result)).toBe(true);
   });
 
+  describe("for someone who may not read the labels", () => {
+    const refusedRead = () =>
+      connectEngineCarrier({ addOnKey: kitBrand().addOnKey, requestRefund: vi.fn(), bookings: vi.fn(async () => Promise.reject(new Error("403"))) } as unknown as EngineCarrier);
+
+    it("lets the move go when the engine has no objection", async () => {
+      refusedRead();
+      const attempt = vi.fn(async () => undefined);
+      await expect(clearPaidLabel(SOURCE, attempt)).resolves.toEqual({ keep: [], moved: true });
+      expect(attempt).toHaveBeenCalledTimes(1);
+    });
+
+    it("still asks when the engine refuses over a paid label, with only Go back", async () => {
+      refusedRead();
+      render(<PaidLabelHost />);
+      const result = clearPaidLabel(SOURCE, async () => {
+        throw refused({ mayKeep: false });
+      }).catch((error: unknown) => error);
+      const back = await screen.findByTestId("paid-label-back");
+      expect(screen.queryByTestId("paid-label-keep")).toBeNull();
+      expect(screen.queryByTestId("paid-label-refund")).toBeNull();
+      fireEvent.click(back);
+      expect(isPaidLabelStopped(await result)).toBe(true);
+    });
+  });
+
   it("says so when the label had gone and the move simply went", async () => {
     live([{ id: "b1", state: "booked", test: false }]);
     await expect(clearPaidLabel(SOURCE, async () => undefined)).resolves.toEqual({ keep: [], moved: true });
