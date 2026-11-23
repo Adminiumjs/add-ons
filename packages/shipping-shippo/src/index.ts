@@ -82,3 +82,4 @@ export function register(): AddOn {
 
 export { connectEngineCarrier, useConnectedCarrier } from "@adminium/add-on-shipping-kit";
 export { clearPaidLabel, isPaidLabelStopped, PaidLabelHost, withPaidLabel } from "@adminium/add-on-shipping-kit";
+export { CountriesPanel, CustomsDefaultsPanel } from "@adminium/add-on-shipping-kit";
