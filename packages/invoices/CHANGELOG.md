@@ -1,5 +1,7 @@
 # @adminium/add-on-invoices
 
+## 1.0.35
+
 ## 1.0.34
 
 ## 1.0.33

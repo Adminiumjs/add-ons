@@ -1,7 +1,7 @@
 {
   "name": "@adminium/add-on-shipping-kit",
   "private": true,
-  "version": "1.0.33",
+  "version": "1.0.35",
   "type": "module",
   "description": "The screens, copy and demo every carrier add-on shares, with the carrier named by a parameter. Bundled into each add-on, never published.",
   "license": "AGPL-3.0-only",

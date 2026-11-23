@@ -1,6 +1,6 @@
 {
   "name": "@adminium/add-on-calendar-microsoft",
-  "version": "1.0.34",
+  "version": "1.0.35",
   "type": "module",
   "description": "Outlook Calendar — puts each booking into a calendar in the person's own Microsoft account and blocks their slots when they are busy. Reads times only, never what an event is called.",
   "license": "AGPL-3.0-only",
