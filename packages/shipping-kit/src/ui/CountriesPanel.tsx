@@ -113,7 +113,9 @@ export function CountriesPanel({
     try {
       await prices.save(chosen, amount);
       try {
-        const fresh = await client.saveInternational(savedBody(view, { currency, originCountry: own }, { countries: [...listed, chosen] }));
+        const now = await client.international();
+        const held = now.settings?.countries ?? [];
+        const fresh = await client.saveInternational(savedBody(now, { currency, originCountry: own }, { countries: [...held.filter((one) => one !== chosen), chosen] }));
         setView(fresh);
         setPriceOf((held) => ({ ...held, [chosen]: amount }));
       } catch (err) {
@@ -137,7 +139,8 @@ export function CountriesPanel({
     setFault(null);
     try {
       // The list first: a price left behind sells nothing, and a country left behind would.
-      const fresh = await client.saveInternational(savedBody(view, { currency, originCountry: own }, { countries: listed.filter((one) => one !== code) }));
+      const now = await client.international();
+      const fresh = await client.saveInternational(savedBody(now, { currency, originCountry: own }, { countries: (now.settings?.countries ?? []).filter((one) => one !== code) }));
       setView(fresh);
       await prices.remove(code).catch(() => undefined);
       setPriceOf(({ [code]: _gone, ...rest }) => rest);

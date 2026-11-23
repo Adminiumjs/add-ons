@@ -14,6 +14,7 @@ import {
   type EngineCarrier,
   type EngineCustomsForm,
   type EngineInternational,
+  type EngineInternationalBody,
   type EngineQuote,
 } from "@adminium/add-on-host/engine-carrier";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -406,6 +407,69 @@ const VIEW: EngineInternational = {
   settings: null,
 };
 const SAVED: NonNullable<EngineInternational["settings"]> = { countries: ["DE"], currency: "GBP", originCountry: "GB", signerId: "u1", signerName: "Ada Owner", products: [] };
+
+describe("the two settings panels, open together", () => {
+  /** An engine that keeps one record, and replaces all of it on a save, as the real one does. */
+  const keeper = (start: NonNullable<EngineInternational["settings"]>) => {
+    let settings = start;
+    const read = (): EngineInternational => ({ ...VIEW, shipsAbroad: settings.countries.length > 0, settings });
+    return {
+      held: () => settings,
+      engine: {
+        international: vi.fn(async () => read()),
+        customsSigners: vi.fn(async () => [{ id: "u1", name: "Ada Owner" }]),
+        saveInternational: vi.fn(async (body: EngineInternationalBody) => {
+          settings = { ...settings, ...body, description: body.description, hsCode: body.hsCode, products: body.products ?? [] } as typeof settings;
+          return read();
+        }),
+      } as unknown as EngineCarrier,
+    };
+  };
+  const prices = (): CountryPrices => ({ read: vi.fn(async () => ({})), save: vi.fn(async () => undefined), remove: vi.fn(async () => undefined) });
+  const both = async (engine: EngineCarrier) => {
+    render(
+      <>
+        <CountriesPanel client={engine} prices={prices()} currency="GBP" />
+        <CustomsDefaultsPanel client={engine} currency="GBP" />
+      </>,
+    );
+    await screen.findByTestId("countries-open");
+    await screen.findByTestId("defaults-save");
+  };
+  const addCountry = async (code: string) => {
+    await press("countries-open");
+    await screen.findByTestId("countries-pick");
+    await type("countries-pick", code);
+    await type("countries-price", "14.50");
+    await press("countries-save");
+    await screen.findByTestId(`countries-row-${code}`);
+  };
+
+  it("keeps a country added after the defaults opened when the defaults are saved", async () => {
+    const { engine, held } = keeper({ ...SAVED, countries: [] });
+    await both(engine);
+    await addCountry("DE");
+    expect(held().countries).toEqual(["DE"]);
+    await type("defaults-hs", "4911.10");
+    await press("defaults-save");
+    await screen.findByTestId("defaults-saved");
+    expect(held().countries).toEqual(["DE"]);
+    expect(held().hsCode).toBe("4911.10");
+  });
+
+  it("keeps defaults saved after the countries opened when a country is added or removed", async () => {
+    const { engine, held } = keeper({ ...SAVED, countries: ["FR"] });
+    await both(engine);
+    await type("defaults-hs", "4911.10");
+    await press("defaults-save");
+    await screen.findByTestId("defaults-saved");
+    await addCountry("DE");
+    expect(held()).toMatchObject({ countries: ["FR", "DE"], hsCode: "4911.10" });
+    await press("countries-remove-FR");
+    await waitFor(() => expect(held().countries).toEqual(["DE"]));
+    expect(held().hsCode).toBe("4911.10");
+  });
+});
 
 describe("countries we deliver to", () => {
   const store = (over: Partial<CountryPrices> = {}): CountryPrices => ({

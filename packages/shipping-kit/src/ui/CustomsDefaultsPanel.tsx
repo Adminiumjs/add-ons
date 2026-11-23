@@ -218,7 +218,7 @@ export function CustomsDefaultsPanel({ client, currency }: { client: EngineCarri
     try {
       const exporter: EngineExporter = { eori: bare(eori), ioss: bare(ioss), taxId: { type: taxType, number: bare(taxNumber) } };
       const fresh = await client.saveInternational(
-        savedBody(view, { currency, originCountry: origin }, {
+        savedBody(await client.international(), { currency, originCountry: origin }, {
           ...(change.products === undefined ? {} : { products: change.products }),
           ...(change.form === true
             ? { originCountry: origin, description: description.trim(), hsCode: hs.trim(), exporter, ...(signer === "" ? {} : { signerId: signer }) }

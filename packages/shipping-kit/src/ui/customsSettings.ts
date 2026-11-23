@@ -8,6 +8,8 @@ import type { StringKey } from "../i18n/strings.ts";
 
 /**
  * The whole setup as the engine keeps it, with this panel's changes on top.
+ * The engine replaces the record on a save, so `view` must be read just before
+ * saving: a copy from when a panel opened would undo what the other panel saved.
  * `first` is used only while nothing is saved, so adding a country never moves
  * a currency or origin the owner chose. Export numbers left out stay as they are.
  */
