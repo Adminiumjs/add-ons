@@ -8,11 +8,15 @@
  *
  * THE EXPORT NUMBERS ARE OPTIONAL, and each goes to the carrier only when it is
  * here. An IOSS number goes only on a parcel into the EU.
+ *
+ * THE US FILING STATEMENT IS A LEGAL ONE, so it starts on "none" and is asked
+ * only of a shop that ships from the US. The engine states it only on a parcel
+ * it is true of.
  */
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { ExternalLink, LoaderCircle, Plus, Trash2 } from "lucide-react";
-import type { EngineCarrier, EngineCustomsProduct, EngineExporter, EngineInternational } from "@adminium/add-on-host/engine-carrier";
+import type { EngineCarrier, EngineCustomsProduct, EngineExporter, EngineFilingCode, EngineInternational } from "@adminium/add-on-host/engine-carrier";
 
 import { useLocale, useT } from "../i18n/t.ts";
 import { inputStyle, Mono, monoInputStyle } from "./atoms.tsx";
@@ -128,6 +132,7 @@ export function CustomsDefaultsPanel({ client, currency }: { client: EngineCarri
   const [ioss, setIoss] = useState("");
   const [taxType, setTaxType] = useState<TaxType>("VAT");
   const [taxNumber, setTaxNumber] = useState("");
+  const [filing, setFiling] = useState<EngineFilingCode | "">("");
   const [faults, setFaults] = useState<Faults>({});
 
   const [adding, setAdding] = useState(false);
@@ -149,6 +154,7 @@ export function CustomsDefaultsPanel({ client, currency }: { client: EngineCarri
     setIoss(held?.exporter?.ioss ?? "");
     setTaxType(held?.exporter?.taxId?.type ?? "VAT");
     setTaxNumber(held?.exporter?.taxId?.number ?? "");
+    setFiling(held?.filingCode ?? "");
   }, []);
 
   const load = useCallback(async () => {
@@ -221,7 +227,7 @@ export function CustomsDefaultsPanel({ client, currency }: { client: EngineCarri
         savedBody(view, { currency, originCountry: origin }, {
           ...(change.products === undefined ? {} : { products: change.products }),
           ...(change.form === true
-            ? { originCountry: origin, description: description.trim(), hsCode: hs.trim(), exporter, ...(signer === "" ? {} : { signerId: signer }) }
+            ? { originCountry: origin, description: description.trim(), hsCode: hs.trim(), exporter, ...(own === "US" ? { filingCode: filing === "" ? null : filing } : {}), ...(signer === "" ? {} : { signerId: signer }) }
             : {}),
         }),
       );
@@ -324,6 +330,21 @@ export function CustomsDefaultsPanel({ client, currency }: { client: EngineCarri
             <TextField mono label={t("addon.shipping-kit.defaults.ioss")} value={ioss} onChange={(next) => { setIoss(next); setFaults(({ ioss: _gone, ...rest }) => rest); }} fault={faults.ioss} help={t("addon.shipping-kit.defaults.iossHelp")} disabled={busy} testId="defaults-ioss" />
             <PickField label={t("addon.shipping-kit.defaults.taxType")} value={taxType} onChange={(next) => setTaxType(next as TaxType)} options={TAX_TYPES.map((one) => ({ value: one, label: one }))} disabled={busy} testId="defaults-tax-type" />
             <TextField mono label={t("addon.shipping-kit.defaults.taxNumber")} value={taxNumber} onChange={(next) => { setTaxNumber(next); setFaults(({ tax: _gone, ...rest }) => rest); }} fault={faults.tax} disabled={busy} testId="defaults-tax" />
+            {own === "US" && (
+              <PickField
+                label={t("addon.shipping-kit.defaults.filing")}
+                value={filing}
+                onChange={(next) => setFiling(next as EngineFilingCode | "")}
+                options={[
+                  { value: "", label: t("addon.shipping-kit.defaults.filingNone") },
+                  { value: "NOEEI_30_37_a", label: t("addon.shipping-kit.defaults.filingLow", { code: "NOEEI 30.37(a)" }) },
+                  { value: "NOEEI_30_36", label: t("addon.shipping-kit.defaults.filingCanada", { code: "NOEEI 30.36" }) },
+                ]}
+                help={t("addon.shipping-kit.defaults.filingHelp")}
+                disabled={busy}
+                testId="defaults-filing"
+              />
+            )}
           </div>
         </div>
 

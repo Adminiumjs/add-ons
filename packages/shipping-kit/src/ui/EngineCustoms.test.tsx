@@ -503,6 +503,40 @@ describe("customs defaults", () => {
     expect((screen.getByTestId("defaults-eori") as HTMLInputElement).value).toBe("");
   });
 
+  it("asks for a US filing statement only of a shop in the US, and starts on none", async () => {
+    const { unmount } = render(<CustomsDefaultsPanel client={engineWith()} currency="GBP" />);
+    await screen.findByTestId("defaults-hs");
+    expect(screen.queryByTestId("defaults-filing")).toBeNull();
+    unmount();
+    render(<CustomsDefaultsPanel client={engineWith({ ...VIEW, ownCountry: "US" })} currency="USD" />);
+    const filing = (await screen.findByTestId("defaults-filing")) as HTMLSelectElement;
+    expect(filing.value).toBe("");
+    expect([...filing.options].map((one) => one.value)).toEqual(["", "NOEEI_30_37_a", "NOEEI_30_36"]);
+  });
+
+  it("saves a chosen statement, and sends null to take one back", async () => {
+    const engine = engineWith({ ...VIEW, ownCountry: "US", settings: { ...SAVED, filingCode: "NOEEI_30_36" } });
+    render(<CustomsDefaultsPanel client={engine} currency="USD" />);
+    expect(((await screen.findByTestId("defaults-filing")) as HTMLSelectElement).value).toBe("NOEEI_30_36");
+    await type("defaults-filing", "NOEEI_30_37_a");
+    await press("defaults-save");
+    await waitFor(() => expect(engine.saveInternational).toHaveBeenCalledTimes(1));
+    expect(engine.saveInternational.mock.calls[0]![0]).toMatchObject({ filingCode: "NOEEI_30_37_a" });
+    await waitFor(() => expect((screen.getByTestId("defaults-save") as HTMLButtonElement).getAttribute("aria-busy")).not.toBe("true"));
+    await type("defaults-filing", "");
+    await press("defaults-save");
+    await waitFor(() => expect(engine.saveInternational).toHaveBeenCalledTimes(2));
+    expect(engine.saveInternational.mock.calls[1]![0]).toMatchObject({ filingCode: null });
+  });
+
+  it("leaves the statement alone for a shop outside the US", async () => {
+    const engine = engineWith({ ...VIEW, settings: { ...SAVED, filingCode: "NOEEI_30_36" } });
+    render(<CustomsDefaultsPanel client={engine} currency="GBP" />);
+    await press("defaults-save");
+    await waitFor(() => expect(engine.saveInternational).toHaveBeenCalledTimes(1));
+    expect(engine.saveInternational.mock.calls[0]![0]).not.toHaveProperty("filingCode");
+  });
+
   it("lists only the people who may sign", async () => {
     render(<CustomsDefaultsPanel client={engineWith()} currency="GBP" />);
     const signer = (await screen.findByTestId("defaults-signer")) as HTMLSelectElement;

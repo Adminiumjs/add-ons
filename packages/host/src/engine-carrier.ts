@@ -344,6 +344,10 @@ export interface EngineExporter {
   taxId?: { type: CustomsTaxIdType; number: string };
 }
 
+/** The US export filing statements a shop may choose: both are true of a sale of goods, on the parcels they fit. */
+export const ENGINE_FILING_CODES = ["NOEEI_30_37_a", "NOEEI_30_36"] as const;
+export type EngineFilingCode = (typeof ENGINE_FILING_CODES)[number];
+
 /** A shop's countries and customs defaults, for someone who manages shipping. */
 export interface EngineInternational {
   /** The shop's own country, once Ship from has one. */
@@ -364,6 +368,8 @@ export interface EngineInternational {
     signerName: string | null;
     products: EngineCustomsProduct[];
     exporter?: EngineExporter;
+    /** The US export filing statement the shop chose. Absent means none is ever stated. */
+    filingCode?: EngineFilingCode;
   } | null;
 }
 
@@ -376,6 +382,8 @@ export interface EngineInternationalBody {
   signerId?: string;
   products?: EngineCustomsProduct[];
   exporter?: EngineExporter;
+  /** Left out, it stays as it was. Null removes it. */
+  filingCode?: EngineFilingCode | null;
 }
 
 export interface EngineBookingsQuery {
@@ -865,6 +873,7 @@ function readInternational(read: Reader, value: unknown): EngineInternational {
             signerName: read.orNull(customs, 'signerName', read.text),
             products: read.list(customs.products).map((one) => readCustomsProduct(read, one)),
             ...(customs.exporter === undefined ? {} : { exporter: readExporter(read, customs.exporter) }),
+            ...(customs.filingCode === undefined ? {} : { filingCode: read.oneOf(customs, "filingCode", ENGINE_FILING_CODES) }),
           },
   };
 }
@@ -1157,6 +1166,7 @@ export function createEngineCarrier(options: EngineCarrierOptions): EngineCarrie
                 ...(body.exporter.taxId === undefined ? {} : { taxId: { type: body.exporter.taxId.type, number: body.exporter.taxId.number } }),
               },
             }),
+        ...(body.filingCode === undefined ? {} : { filingCode: body.filingCode }),
       };
       return readInternational(reader(false), await ask('PUT', '/international', sent, false));
     },
