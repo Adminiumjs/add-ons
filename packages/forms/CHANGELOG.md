@@ -1,5 +1,7 @@
 # @adminium/add-on-forms
 
+## 1.0.35
+
 ## 1.0.34
 
 ### Patch Changes

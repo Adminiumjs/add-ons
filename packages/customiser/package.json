@@ -1,6 +1,6 @@
 {
   "name": "@adminium/add-on-customiser",
-  "version": "1.0.34",
+  "version": "1.0.35",
   "type": "module",
   "description": "Customiser — things your customers make their own: ready-made designs to fill in with their words, logos and colours, checked and kept as data the shop makes them from.",
   "license": "AGPL-3.0-only",
@@ -36,7 +36,7 @@
     "@adminium/add-on-contracts": "npm:@adminiumjs/add-on-contracts@0.3.43",
     "@adminium/add-on-host": "*",
     "@adminium/tokens": "npm:@adminiumjs/tokens@0.3.43",
-    "@adminiumjs/manifest": "0.3.71",
+    "@adminiumjs/manifest": "0.3.72",
     "@types/three": "0.186.0",
     "axe-core": "^4.13.0",
     "manifold-3d": "3.2.1"
