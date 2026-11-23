@@ -720,5 +720,17 @@
     "addon.shipping-kit.setting.returnsPostcode": "0a64bb9218df0b1d",
     "addon.shipping-kit.tracking.simulated": "94ff09d69e922e1c",
     "addon.shipping-kit.tracking.title": "89fd5b2f8ae1e2f4"
+  },
+  "shipping-shippo": {
+    "addon.shipping-shippo.disconnect.goes": "de3a57bb8ba35070",
+    "addon.shipping-shippo.disconnect.stays": "cd97f2726c793c2e",
+    "addon.shipping-shippo.line": "a694ede288c8cd51",
+    "addon.shipping-shippo.notAffiliated": "6f97ce7d9dbad5eb",
+    "addon.shipping-shippo.perm.labels": "7327eafddef76960",
+    "addon.shipping-shippo.perm.rates": "998c2a9121a95b9d",
+    "addon.shipping-shippo.perm.shipments": "027d1a98a21094ce",
+    "addon.shipping-shippo.setting.apiKey": "37082c4d5479a0e9",
+    "addon.shipping-shippo.setting.apiKeyHelp": "fc01d5ab9b330e60",
+    "addon.shipping-shippo.what": "abb9b4cf7322fc4e"
   }
 }

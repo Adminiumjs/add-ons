@@ -56,6 +56,7 @@ including the ones that name no company.
 |---|---|---|---|---|
 | Design Studio | `packages/design-studio` | `DS` | *(none)* | — |
 | DHL Shipping | `packages/shipping-dhl` | `DHL` | **DHL** | Deutsche Post AG |
+| Shipping labels | `packages/shipping-shippo` | `SL` | **Shippo**; carriers it names as Shippo reports them | Popout, Inc. (d/b/a Shippo) |
 | Canva Import | `packages/import-canva` | `CNV` | **Canva** | its owner |
 | Live Personalizer | `packages/personalizer` | `LP` | *(none)* | — |
 | Holiday Calendars | `packages/holiday-calendars` | `CAL` | *(none)* | — |
@@ -197,6 +198,50 @@ Copy this section, change the mark and the links, and keep every other line. The
 rule is the same for every carrier: name the company only to say what is being
 connected to, never draw the mark, always carry the disclaimer, and link the
 vendor's own terms.
+
+---
+
+# Shipping labels — Shippo
+
+**Shippo** is a trademark of Popout, Inc. (d/b/a Shippo). It is referenced
+**nominatively only**: to say which shipping service this add-on connects to.
+That is the whole of the use. The add-on is named for what it does, "Shipping
+labels", and says "Connects to Shippo" in plain text.
+
+## Not affiliated
+
+Adminium is not affiliated with, endorsed by, sponsored by, certified by or in
+partnership with Popout, Inc. or Shippo. Nothing in this repository, in the
+add-on's screens, or in the marketplace listing states or implies otherwise, and
+no wording that could be read as implying it may be added.
+
+That line, *"Adminium is not affiliated with this company."*, is carried in all
+eight locales for every surface of the add-on that names the company.
+
+Adminium takes no part in a purchase. Each shop connects its own Shippo account
+with its own key and pays Shippo itself. This repository holds no account, no
+key and no money of anyone's.
+
+## No logo
+
+The add-on is represented by the monogram tile `SL`, the first letters of its
+own name, in `--fg-muted` on `--surface-3`, using no brand colour of any kind.
+
+## The carriers it names
+
+A rate names the company that moves the parcel, as Shippo reports it, in plain
+text with no logo. Those names are the marks of their owners, and none of them
+has a relationship with Adminium. Shippo reports Evri under its former name
+"Hermes UK", and the add-on shows "Evri", the name the company trades under.
+
+## The vendor's own terms
+
+Anyone connecting an account is bound by the vendor's terms, not by Adminium's:
+
+- Terms of use: <https://goshippo.com/terms>
+
+This repository ships no credentials and does not grant anyone the right to use
+the mark above.
 
 ---
 

@@ -529,7 +529,7 @@ describe('no add-on copy changes in any language without a reviewer looking at i
 
   it('reads all eight locales of a real bundle, package by package', () => {
     // A carrier's screens are worded in the shared kit, so its own bundle is short and the two count together.
-    const WORDED_IN: Readonly<Record<string, string>> = { 'shipping-dhl': 'shipping-kit' };
+    const WORDED_IN: Readonly<Record<string, string>> = { 'shipping-dhl': 'shipping-kit', 'shipping-shippo': 'shipping-kit' };
     for (const [pkg, keys] of Object.entries(current)) {
       const shared = WORDED_IN[pkg];
       const count = Object.keys(keys).length + (shared === undefined ? 0 : Object.keys(current[shared] ?? {}).length);

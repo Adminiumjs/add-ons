@@ -106,6 +106,7 @@ export const orderRefSchema = z
     reference: z.string().min(1),
     purpose: z.enum(SHIPMENT_PURPOSES).optional(),
     parcel: z.number().int().positive().optional(),
+    rateRefs: z.array(z.string().min(1)).optional(),
   })
   .strict();
 
@@ -202,7 +203,7 @@ export const carrierCredentialCheckSchema = z.discriminatedUnion('outcome', [
 ]);
 
 export const recoveryResultSchema = z.discriminatedUnion('outcome', [
-  z.object({ outcome: z.literal('found'), shipment: shipmentSchema }).strict(),
+  z.object({ outcome: z.literal('found'), shipment: shipmentSchema, duplicates: z.array(shipmentSchema).max(50).optional() }).strict(),
   z.object({ outcome: z.literal('not-bought'), carrierMessage: z.string().min(1).optional() }).strict(),
   z.object({ outcome: z.literal('no-match') }).strict(),
 ]);

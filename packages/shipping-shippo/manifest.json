@@ -1,0 +1,81 @@
+{
+  "kind": "add-on",
+  "manifestVersion": 1,
+  "key": "shipping-shippo",
+  "name": "Shipping labels",
+  "version": "1.0.33",
+  "publisher": {
+    "id": "adminium",
+    "name": "Adminium",
+    "url": "https://adminium.dev"
+  },
+  "license": "AGPL-3.0-only",
+  "description": {
+    "key": "addon.shipping-shippo.line",
+    "fallback": "Connects to Shippo. Buys shipping labels on your own account, and brings back each label and tracking number."
+  },
+  "categories": ["delivery"],
+  "compatibility": {
+    "minAdminiumVersion": "0.3.72",
+    "requires": ["outbound-http"]
+  },
+  "capabilities": ["outbound-http"],
+  "addOn": {
+    "attaches": [
+      { "app": "printing", "range": "^0.2.0" },
+      { "app": "maker", "range": "^0.2.0" },
+      { "app": "ecommerce-shop", "range": "^0.2.0" }
+    ],
+    "provides": [
+      { "contract": "shipping-carrier", "version": 1, "server": "dist/server.js" }
+    ],
+    "consumes": [],
+    "slots": [
+      { "slot": "order.dispatch.actions", "client": "dist/client.js", "order": 20 },
+      { "slot": "order.dispatch.panel", "client": "dist/client.js", "order": 20 }
+    ],
+    "events": [],
+    "connect": { "kind": "api-key" },
+    "scopes": ["records:shipments:write"],
+    "network": { "allow": ["api.goshippo.com", "deliver.goshippo.com"] },
+    "publicSettings": []
+  },
+  "requiredSchema": {
+    "tables": [
+      {
+        "ref": "shipments",
+        "columns": [
+          { "ref": "id", "type": "id", "role": "pk" },
+          { "ref": "order_reference", "type": "text" },
+          { "ref": "carrier", "type": "text" },
+          { "ref": "service", "type": "text" },
+          { "ref": "tracking", "type": "text" },
+          { "ref": "amount", "type": "money", "semantic": "money" },
+          { "ref": "currency", "type": "text" },
+          {
+            "ref": "status",
+            "type": "enum",
+            "enum": ["booked", "collected", "in-transit", "delivered", "cancelled", "refused"]
+          },
+          { "ref": "created_at", "type": "timestamptz", "role": "created_at" }
+        ]
+      }
+    ]
+  },
+  "settings": [
+    {
+      "key": "api_key",
+      "type": "string",
+      "secret": true,
+      "required": true,
+      "label": {
+        "key": "addon.shipping-shippo.setting.apiKey",
+        "fallback": "API key"
+      },
+      "help": {
+        "key": "addon.shipping-shippo.setting.apiKeyHelp",
+        "fallback": "Paste the API key from your Shippo account. A test key makes sample labels, and a live key buys real ones."
+      }
+    }
+  ]
+}

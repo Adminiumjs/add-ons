@@ -105,6 +105,8 @@ describe('release shape: discovery', () => {
       'payments-square',
       'personalizer',
       'shipping-dhl',
+      // The second carrier: a real one, on the shop's own account, with no demo.
+      'shipping-shippo',
     ].sort());
   });
 
