@@ -1,5 +1,12 @@
 # @adminium/add-on-forms
 
+## 1.0.34
+
+### Patch Changes
+
+- 7660736: On a survey with "Link answers to names" off, the Invitations screen says that a person answered and shows no date. Adminium keeps no answering time for these invitations, so that an answer cannot be matched to the person it came from. A record's Survey tab now says Answered or Not yet for every survey, with no date; a named survey's exact date stays on its Invitations screen.
+- e2b7270: Google reviews, a new add-on: a business's own Google reviews, loaded in the visitor's browser in a sandboxed page, never stored. Offers sells packs online (`voucher-sale-online@1`), sends a gift card on a date, and lets a signed-in customer read and spend what they hold without a code in the browser. Forms has a fifth hide reason, "The author asked", and the fourth now reads "Names someone who isn't on our team". Holiday Calendars attaches to Bookings.
+
 ## 1.0.33
 
 ### Patch Changes

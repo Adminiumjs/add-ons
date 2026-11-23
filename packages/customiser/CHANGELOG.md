@@ -1,5 +1,11 @@
 # @adminium/add-on-customiser
 
+## 1.0.34
+
+### Patch Changes
+
+- d583854: Previewing a design as a shopper stays on that design and keeps what was typed when the page around it redraws.
+
 ## 1.0.33
 
 ## 1.0.32

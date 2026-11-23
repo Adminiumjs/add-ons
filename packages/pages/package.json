@@ -1,6 +1,6 @@
 {
   "name": "@adminium/add-on-pages",
-  "version": "1.0.33",
+  "version": "1.0.34",
   "type": "module",
   "description": "Landing pages: pages for offers and events, each at its own address and drawn by Adminium, with funnels that count each step's views.",
   "license": "AGPL-3.0-only",
