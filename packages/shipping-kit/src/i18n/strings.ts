@@ -32,6 +32,15 @@
 
 export const strings = {
   "en-US": {
+    "addon.shipping-kit.engine.return.title": "Send a return label",
+    "addon.shipping-kit.engine.return.charged": "This label is charged when it is made, whether or not the customer uses it.",
+    "addon.shipping-kit.engine.return.weight": "Weight of the parcel coming back (kg)",
+    "addon.shipping-kit.engine.return.size": "Its size in cm (length × width × height)",
+    "addon.shipping-kit.engine.return.rates": "Get rates",
+    "addon.shipping-kit.engine.return.buy": "Buy this return label",
+    "addon.shipping-kit.engine.return.badFigures": "Enter the weight and all three sides as numbers.",
+    "addon.shipping-kit.engine.return.failed": "That did not work, and no return label was bought. Try again.",
+    "addon.shipping-kit.engine.return.unclear": "We could not tell whether this label was bought. Check the labels that need a person before buying again.",
     "addon.shipping-kit.engine.refund.request": "Request a refund",
     "addon.shipping-kit.engine.refund.confirmTitle": "Request a refund for this label?",
     "addon.shipping-kit.engine.refund.destroy": "Destroy the old label. Do not put it on any parcel.",
@@ -476,6 +485,15 @@ export const strings = {
   },
 
   "de-DE": {
+    "addon.shipping-kit.engine.return.title": "Rücksendeetikett senden",
+    "addon.shipping-kit.engine.return.charged": "Dieses Etikett wird beim Erstellen berechnet, auch wenn die Kundschaft es nicht verwendet.",
+    "addon.shipping-kit.engine.return.weight": "Gewicht des Rückpakets (kg)",
+    "addon.shipping-kit.engine.return.size": "Maße in cm (Länge × Breite × Höhe)",
+    "addon.shipping-kit.engine.return.rates": "Preise abrufen",
+    "addon.shipping-kit.engine.return.buy": "Dieses Rücksendeetikett kaufen",
+    "addon.shipping-kit.engine.return.badFigures": "Geben Sie Gewicht und alle drei Seiten als Zahlen ein.",
+    "addon.shipping-kit.engine.return.failed": "Das hat nicht geklappt, es wurde kein Rücksendeetikett gekauft. Versuchen Sie es erneut.",
+    "addon.shipping-kit.engine.return.unclear": "Wir konnten nicht feststellen, ob dieses Etikett gekauft wurde. Prüfen Sie die Etiketten mit offenen Punkten, bevor Sie erneut kaufen.",
     "addon.shipping-kit.engine.refund.request": "Erstattung beantragen",
     "addon.shipping-kit.engine.refund.confirmTitle": "Erstattung für dieses Etikett beantragen?",
     "addon.shipping-kit.engine.refund.destroy": "Vernichten Sie das alte Etikett. Kleben Sie es auf kein Paket.",
@@ -903,6 +921,15 @@ export const strings = {
   },
 
   "fr-FR": {
+    "addon.shipping-kit.engine.return.title": "Envoyer une étiquette de retour",
+    "addon.shipping-kit.engine.return.charged": "Cette étiquette est facturée à sa création, que le client l'utilise ou non.",
+    "addon.shipping-kit.engine.return.weight": "Poids du colis retourné (kg)",
+    "addon.shipping-kit.engine.return.size": "Dimensions en cm (longueur × largeur × hauteur)",
+    "addon.shipping-kit.engine.return.rates": "Voir les tarifs",
+    "addon.shipping-kit.engine.return.buy": "Acheter cette étiquette de retour",
+    "addon.shipping-kit.engine.return.badFigures": "Saisissez le poids et les trois côtés en chiffres.",
+    "addon.shipping-kit.engine.return.failed": "Cela n'a pas abouti et aucune étiquette de retour n'a été achetée. Réessayez.",
+    "addon.shipping-kit.engine.return.unclear": "Impossible de savoir si cette étiquette a été achetée. Vérifiez les étiquettes à traiter avant d'en acheter une autre.",
     "addon.shipping-kit.engine.refund.request": "Demander un remboursement",
     "addon.shipping-kit.engine.refund.confirmTitle": "Demander le remboursement de cette étiquette ?",
     "addon.shipping-kit.engine.refund.destroy": "Détruisez l'ancienne étiquette. Ne la collez sur aucun colis.",
@@ -1330,6 +1357,15 @@ export const strings = {
   },
 
   "cs-CZ": {
+    "addon.shipping-kit.engine.return.title": "Poslat štítek na vrácení",
+    "addon.shipping-kit.engine.return.charged": "Štítek se účtuje při vytvoření, ať ho zákazník použije, nebo ne.",
+    "addon.shipping-kit.engine.return.weight": "Hmotnost vraceného balíku (kg)",
+    "addon.shipping-kit.engine.return.size": "Rozměry v cm (délka × šířka × výška)",
+    "addon.shipping-kit.engine.return.rates": "Zobrazit ceny",
+    "addon.shipping-kit.engine.return.buy": "Koupit tento štítek na vrácení",
+    "addon.shipping-kit.engine.return.badFigures": "Zadejte hmotnost a všechny tři strany jako čísla.",
+    "addon.shipping-kit.engine.return.failed": "Nepodařilo se to a žádný štítek na vrácení nebyl koupen. Zkuste to znovu.",
+    "addon.shipping-kit.engine.return.unclear": "Nepodařilo se zjistit, zda byl štítek koupen. Než koupíte další, zkontrolujte štítky čekající na kontrolu.",
     "addon.shipping-kit.engine.refund.request": "Požádat o vrácení peněz",
     "addon.shipping-kit.engine.refund.confirmTitle": "Požádat o vrácení peněz za tento štítek?",
     "addon.shipping-kit.engine.refund.destroy": "Starý štítek zničte. Nedávejte ho na žádný balík.",
@@ -1757,6 +1793,15 @@ export const strings = {
   },
 
   "da-DK": {
+    "addon.shipping-kit.engine.return.title": "Send en returetiket",
+    "addon.shipping-kit.engine.return.charged": "Etiketten koster fra den oprettes, uanset om kunden bruger den.",
+    "addon.shipping-kit.engine.return.weight": "Vægt af returpakken (kg)",
+    "addon.shipping-kit.engine.return.size": "Mål i cm (længde × bredde × højde)",
+    "addon.shipping-kit.engine.return.rates": "Hent priser",
+    "addon.shipping-kit.engine.return.buy": "Køb denne returetiket",
+    "addon.shipping-kit.engine.return.badFigures": "Angiv vægt og alle tre sider som tal.",
+    "addon.shipping-kit.engine.return.failed": "Det lykkedes ikke, og der blev ikke købt en returetiket. Prøv igen.",
+    "addon.shipping-kit.engine.return.unclear": "Vi kunne ikke se, om etiketten blev købt. Tjek de etiketter, der kræver handling, før du køber igen.",
     "addon.shipping-kit.engine.refund.request": "Anmod om refusion",
     "addon.shipping-kit.engine.refund.confirmTitle": "Anmod om refusion for denne etiket?",
     "addon.shipping-kit.engine.refund.destroy": "Destruér den gamle etiket. Sæt den ikke på en pakke.",
@@ -2184,6 +2229,15 @@ export const strings = {
   },
 
   "zh-CN": {
+    "addon.shipping-kit.engine.return.title": "发送退货面单",
+    "addon.shipping-kit.engine.return.charged": "面单生成时即收取费用，无论顾客是否使用。",
+    "addon.shipping-kit.engine.return.weight": "退回包裹的重量（千克）",
+    "addon.shipping-kit.engine.return.size": "尺寸，厘米（长 × 宽 × 高）",
+    "addon.shipping-kit.engine.return.rates": "获取运价",
+    "addon.shipping-kit.engine.return.buy": "购买此退货面单",
+    "addon.shipping-kit.engine.return.badFigures": "请以数字填写重量和三边尺寸。",
+    "addon.shipping-kit.engine.return.failed": "操作未成功，未购买退货面单。请重试。",
+    "addon.shipping-kit.engine.return.unclear": "无法确定此面单是否已购买。再次购买前，请查看待处理的面单。",
     "addon.shipping-kit.engine.refund.request": "申请退款",
     "addon.shipping-kit.engine.refund.confirmTitle": "要为这张面单申请退款吗？",
     "addon.shipping-kit.engine.refund.destroy": "请销毁旧面单，不要贴在任何包裹上。",
@@ -2604,6 +2658,15 @@ export const strings = {
   },
 
   "zh-TW": {
+    "addon.shipping-kit.engine.return.title": "傳送退貨標籤",
+    "addon.shipping-kit.engine.return.charged": "標籤建立時即收取費用，無論顧客是否使用。",
+    "addon.shipping-kit.engine.return.weight": "退回包裹的重量（公斤）",
+    "addon.shipping-kit.engine.return.size": "尺寸，公分（長 × 寬 × 高）",
+    "addon.shipping-kit.engine.return.rates": "取得運價",
+    "addon.shipping-kit.engine.return.buy": "購買此退貨標籤",
+    "addon.shipping-kit.engine.return.badFigures": "請以數字填寫重量和三邊尺寸。",
+    "addon.shipping-kit.engine.return.failed": "操作未成功，未購買退貨標籤。請重試。",
+    "addon.shipping-kit.engine.return.unclear": "無法確定此標籤是否已購買。再次購買前，請查看待處理的標籤。",
     "addon.shipping-kit.engine.refund.request": "申請退款",
     "addon.shipping-kit.engine.refund.confirmTitle": "要為這張標籤申請退款嗎？",
     "addon.shipping-kit.engine.refund.destroy": "請銷毀舊標籤，不要貼在任何包裹上。",
@@ -3024,6 +3087,15 @@ export const strings = {
   },
 
   "ar-EG": {
+    "addon.shipping-kit.engine.return.title": "إرسال ملصق إرجاع",
+    "addon.shipping-kit.engine.return.charged": "يُحتسب ثمن هذا الملصق عند إنشائه، سواء استخدمه العميل أم لا.",
+    "addon.shipping-kit.engine.return.weight": "وزن الطرد المرتجع (كجم)",
+    "addon.shipping-kit.engine.return.size": "المقاس بالسنتيمتر (الطول × العرض × الارتفاع)",
+    "addon.shipping-kit.engine.return.rates": "عرض الأسعار",
+    "addon.shipping-kit.engine.return.buy": "شراء ملصق الإرجاع هذا",
+    "addon.shipping-kit.engine.return.badFigures": "أدخل الوزن والأضلاع الثلاثة بالأرقام.",
+    "addon.shipping-kit.engine.return.failed": "لم ينجح ذلك ولم يُشترَ ملصق إرجاع. حاول مرة أخرى.",
+    "addon.shipping-kit.engine.return.unclear": "تعذر معرفة ما إذا كان هذا الملصق قد اشتُري. راجع الملصقات التي تحتاج إلى متابعة قبل الشراء مرة أخرى.",
     "addon.shipping-kit.engine.refund.request": "طلب استرداد",
     "addon.shipping-kit.engine.refund.confirmTitle": "هل تطلب استرداد ثمن هذا الملصق؟",
     "addon.shipping-kit.engine.refund.destroy": "أتلف الملصق القديم. لا تضعه على أي طرد.",

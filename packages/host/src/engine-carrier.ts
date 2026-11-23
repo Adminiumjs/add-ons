@@ -235,6 +235,8 @@ export interface EngineBookings {
   /** True only on a positive "no booking": anything unsure is false, and `blockedBy` says why. */
   bookable: boolean;
   blockedBy: EngineBookingBlock | null;
+  /** The parcel the answer is about: a return's place, worked out by the engine. */
+  parcelNumber?: number;
 }
 
 export interface EngineLookUp {
@@ -267,6 +269,8 @@ export interface EngineQuoteRequest {
   parcel: { weightKg: number; lengthCm: number; widthCm: number; heightCm: number; contents: string };
   purpose?: ShipmentPurpose;
   parcelNumber?: number;
+  /** The approved return a return label is for. The engine works out its place. */
+  returnId?: string;
 }
 
 export interface EngineBookingsQuery {
@@ -275,6 +279,7 @@ export interface EngineBookingsQuery {
   connectionId?: string;
   purpose?: ShipmentPurpose;
   parcelNumber?: number;
+  returnId?: string;
 }
 
 export interface EngineBookRequest {
@@ -284,6 +289,8 @@ export interface EngineBookRequest {
   confirmEarlier?: boolean;
   /** Someone who may cancel was told both labels stay paid until the refund lands, and means to book another. */
   replaceRefunding?: boolean;
+  /** The approved return this label is for, asked again at purchase. */
+  returnId?: string;
 }
 
 export interface EngineCarrier {
@@ -740,6 +747,7 @@ export function createEngineCarrier(options: EngineCarrierOptions): EngineCarrie
           contents: parcel.contents,
         },
         ...optional('purpose', request.purpose),
+        ...optional('returnId', request.returnId),
         ...optional('parcelNumber', request.parcelNumber),
       };
       const quote = readQuote(reader(false), await ask('POST', '/quotes', body, false));
@@ -760,12 +768,14 @@ export function createEngineCarrier(options: EngineCarrierOptions): EngineCarrie
       if (query.connectionId !== undefined) params.set('connectionId', query.connectionId);
       if (query.purpose !== undefined) params.set('purpose', query.purpose);
       if (query.parcelNumber !== undefined) params.set('parcelNumber', String(query.parcelNumber));
+      if (query.returnId !== undefined) params.set('returnId', query.returnId);
       const read = reader(false);
       const raw = read.object(await ask('GET', `/bookings?${params.toString()}`, undefined, false));
       return {
         bookings: read.list(raw.bookings).map((booking) => readBooking(read, booking)),
         bookable: read.flag(raw, 'bookable'),
         blockedBy: read.orNull(raw, 'blockedBy', (from, key) => read.oneOf(from, key, BOOKING_BLOCKS)),
+        ...optional('parcelNumber', read.maybe(raw, 'parcelNumber', read.number)),
       };
     },
 
@@ -775,6 +785,7 @@ export function createEngineCarrier(options: EngineCarrierOptions): EngineCarrie
         rateId: request.rateId,
         ...optional('confirmEarlier', request.confirmEarlier),
         ...optional('replaceRefunding', request.replaceRefunding),
+        ...optional('returnId', request.returnId),
       };
       return readBooking(reader(true), await ask('POST', '/bookings', body, true));
     },

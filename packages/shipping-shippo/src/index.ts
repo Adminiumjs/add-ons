@@ -17,6 +17,7 @@ import {
   DispatchAction,
   kitMessages,
   TrackingPanel,
+  EngineReturnLabel,
 } from "@adminium/add-on-shipping-kit";
 import { SHIPPO_BRAND } from "./brand.ts";
 import { strings as ownStrings, type LocaleTag } from "./i18n/strings.ts";
@@ -68,6 +69,12 @@ export function register(): AddOn {
         slot: "order.dispatch.panel",
         order: 20,
         render: (payload) => createElement(TrackingPanel, payload),
+      },
+      {
+        // A return label, on Online Shop's approved returns, for the owner (D12).
+        slot: "record.actions",
+        order: 20,
+        render: (payload) => createElement(EngineReturnLabel, { payload }),
       },
     ],
   };

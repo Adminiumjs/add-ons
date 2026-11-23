@@ -32,7 +32,8 @@
     "consumes": [],
     "slots": [
       { "slot": "order.dispatch.actions", "client": "dist/client.js", "order": 20 },
-      { "slot": "order.dispatch.panel", "client": "dist/client.js", "order": 20 }
+      { "slot": "order.dispatch.panel", "client": "dist/client.js", "order": 20 },
+      { "slot": "record.actions", "client": "dist/client.js", "order": 20 }
     ],
     "events": [],
     "connect": { "kind": "api-key" },

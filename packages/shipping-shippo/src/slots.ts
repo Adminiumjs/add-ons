@@ -6,6 +6,6 @@
 
 import type { SlotId } from "@adminium/add-on-host";
 
-export const FILLED_SLOTS = ["order.dispatch.panel", "order.dispatch.actions"] as const satisfies readonly SlotId[];
+export const FILLED_SLOTS = ["order.dispatch.panel", "order.dispatch.actions", "record.actions"] as const satisfies readonly SlotId[];
 
 export type FilledSlot = (typeof FILLED_SLOTS)[number];

@@ -455,7 +455,7 @@ export function LabelCard({
         <LabelActions booking={booking} client={client} orderRef={orderRef} say={say} onChange={onChange} onStale={onStale} />
       )}
 
-      {!voiding && (
+      {!voiding && booking.purpose !== "return" && (
         <div style={{ border: "1px solid var(--border-strong)", background: "var(--surface-2)", borderRadius: 11, padding: "12px 14px", display: "flex", flexDirection: "column", gap: 6 }}>
           <div style={{ fontSize: 13, fontWeight: 800 }}>{t("addon.shipping-kit.engine.label.nextTitle")}</div>
           <div style={{ fontSize: 12.5, lineHeight: 1.5, color: "var(--fg-muted)" }}>
