@@ -1103,6 +1103,20 @@ describe("tracking on the card", () => {
 });
 
 describe("another parcel", () => {
+  it("re-reads the key, so a test banner does not outlive a swap to live", async () => {
+    const sample = booking({ test: true });
+    const list = vi.fn(async (query: { parcelNumber?: number }) =>
+      query.parcelNumber === 2 ? { bookings: [sample], bookable: true, blockedBy: null } : held(sample),
+    );
+    const access = vi.fn<() => Promise<EngineAccess>>().mockResolvedValue({ ...ACCESS, mode: "test" });
+    fake({ access, bookings: list });
+    draw();
+    expect(await screen.findByTestId("engine-test-banner")).toBeTruthy();
+    access.mockResolvedValue(ACCESS);
+    await press("engine-add-parcel");
+    await waitFor(() => expect(screen.queryByTestId("engine-test-banner")).toBeNull());
+  });
+
   it("goes through its own read, form, rates and Book", async () => {
     const first = booking();
     const second = booking({ id: "b2", parcelNumber: 2, tracking: "TRK-2" });
