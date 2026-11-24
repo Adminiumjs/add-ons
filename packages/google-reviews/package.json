@@ -1,6 +1,6 @@
 {
   "name": "@adminium/add-on-google-reviews",
-  "version": "1.0.36",
+  "version": "1.0.37",
   "type": "module",
   "description": "Google reviews — up to five of a business's Google reviews, loaded from Google in the visitor's browser when they ask, in a sandboxed page. Nothing is fetched by or stored in Adminium.",
   "license": "AGPL-3.0-only",

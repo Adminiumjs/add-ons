@@ -1,6 +1,6 @@
 {
   "name": "@adminium/add-on-lead-finder",
-  "version": "1.0.36",
+  "version": "1.0.37",
   "type": "module",
   "description": "Lead finder: find companies in public registers by what they do and where, fill in a company's details, and find the people who work there, with your own keys.",
   "license": "AGPL-3.0-only",

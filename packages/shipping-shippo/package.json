@@ -1,6 +1,6 @@
 {
   "name": "@adminium/add-on-shipping-shippo",
-  "version": "1.0.36",
+  "version": "1.0.37",
   "type": "module",
   "description": "Shippo Shipping: buys parcel labels on the shop's own Shippo account, for Adminium example apps.",
   "license": "AGPL-3.0-only",
