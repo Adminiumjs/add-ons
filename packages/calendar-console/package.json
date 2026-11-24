@@ -1,7 +1,7 @@
 {
   "name": "@adminium/add-on-calendar-console",
   "private": true,
-  "version": "1.0.35",
+  "version": "1.0.36",
   "type": "module",
   "description": "The console screens the Google Calendar and Outlook Calendar add-ons share: the add-on page and the setup guide. Bundled into each, never published.",
   "license": "AGPL-3.0-only",

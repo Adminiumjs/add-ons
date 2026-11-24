@@ -1,5 +1,7 @@
 # @adminium/add-on-live-chat
 
+## 1.0.36
+
 ## 1.0.35
 
 ## 1.0.34

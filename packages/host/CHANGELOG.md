@@ -1,5 +1,7 @@
 # @adminium/add-on-host
 
+## 1.0.36
+
 ## 1.0.35
 
 ### Patch Changes
