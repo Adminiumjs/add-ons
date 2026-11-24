@@ -311,6 +311,26 @@ describe('a parcel going abroad', () => {
     expect(view).toEqual({ ownCountry: 'GB', codeListUrl: null, shipsAbroad: true, settings: { countries: ['DE'], currency: 'GBP', originCountry: 'GB', signerId: 'u1', signerName: 'Ada', products: [], exporter: { eori: 'GB123456789000' } } });
   });
 
+  it('carries a shop\'s filing statement both ways, keeps null as "take it back", and refuses an unknown one', async () => {
+    const customs = { countries: ['DE'], currency: 'USD', originCountry: 'US', signerId: 'u1', signerName: 'Ada', products: [] };
+    const reply = (filingCode?: string) => ({ international: true, codeListUrl: null, shipFrom: { country: 'US' }, customs: { ...customs, ...(filingCode === undefined ? {} : { filingCode }) } });
+    const body = { countries: ['DE'], currency: 'USD', originCountry: 'US' };
+
+    const chosen = client(200, { data: reply('NOEEI_30_37_a') });
+    expect((await chosen.engine.saveInternational({ ...body, filingCode: 'NOEEI_30_37_a' })).settings?.filingCode).toBe('NOEEI_30_37_a');
+    expect(JSON.parse(chosen.calls[0]!.init.body!).filingCode).toBe('NOEEI_30_37_a');
+
+    const cleared = client(200, { data: reply() });
+    expect((await cleared.engine.saveInternational({ ...body, filingCode: null })).settings).not.toHaveProperty('filingCode');
+    expect(JSON.parse(cleared.calls[0]!.init.body!).filingCode).toBeNull();
+
+    const untouched = client(200, { data: reply() });
+    await untouched.engine.saveInternational(body);
+    expect(JSON.parse(untouched.calls[0]!.init.body!)).not.toHaveProperty('filingCode');
+
+    await expect(client(200, { data: reply('NOEEI_30_37_h') }).engine.international()).rejects.toBeDefined();
+  });
+
   it.each(['COUNTRY_NOT_OFFERED', 'CUSTOMS_NOT_DECLARED', 'CUSTOMS_NOT_CONFIRMED', 'CUSTOMS_NOT_NEEDED', 'CUSTOMS_INCOMPLETE', 'CUSTOMS_ONE_PARCEL', 'CUSTOMS_SIGNER', 'ORDER_CANCELLED'])('reads %s at purchase as a clear no, never as a label that may be paid for', async (code) => {
     const { engine } = client(422, { error: { code, message: 'no' } });
     const error = await caught(() => engine.book({ quoteId: 'q1', rateId: 'r1' }));
