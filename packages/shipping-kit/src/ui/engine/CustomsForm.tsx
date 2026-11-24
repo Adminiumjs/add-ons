@@ -253,7 +253,9 @@ export function CustomsForm({
         ? manages
           ? "addon.shipping-kit.customs.fault.shopCurrency.manage"
           : "addon.shipping-kit.customs.fault.shopCurrency.ask"
-        : one.field === "currency"
+        : one.reason === "order-currency"
+          ? "addon.shipping-kit.customs.fault.orderCurrency"
+          : one.field === "currency"
           ? "addon.shipping-kit.customs.fault.currency"
           : "addon.shipping-kit.customs.fault.noLines";
   return (

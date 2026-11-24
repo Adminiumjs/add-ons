@@ -501,6 +501,12 @@ describe("what cannot be declared", () => {
     expect((screen.getByTestId("customs-save") as HTMLButtonElement).disabled).toBe(true);
   });
 
+  it("says an order from before a currency change must be booked with the carrier", async () => {
+    await drawn([{ field: "currency", reason: "order-currency" }]);
+    expect(screen.getByRole("alert").textContent).toBe(words("customs.fault.orderCurrency"));
+    expect((screen.getByTestId("customs-save") as HTMLButtonElement).disabled).toBe(true);
+  });
+
   it("shows every reason that stops the whole order", async () => {
     await drawn([{ field: "currency", reason: "shop-currency" }, { field: "unitValue", reason: "refunded" }]);
     expect(screen.getAllByTestId("customs-order-fault")).toHaveLength(2);
