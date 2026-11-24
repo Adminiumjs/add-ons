@@ -311,6 +311,21 @@
               "closed"
             ]
           }
+        },
+        "appGrants": {
+          "actions": [
+            "read"
+          ],
+          "readable": [
+            "id",
+            "name",
+            "slug",
+            "kind",
+            "state",
+            "published_at",
+            "closed_at",
+            "updated_at"
+          ]
         }
       },
       {
@@ -608,7 +623,22 @@
               "zh-TW": "發送規則"
             }
           }
-        ]
+        ],
+        "appGrants": {
+          "actions": [
+            "read"
+          ],
+          "readable": [
+            "id",
+            "form_id",
+            "record_table",
+            "record_key",
+            "class",
+            "invited_at",
+            "answered_at",
+            "expires_at"
+          ]
+        }
       },
       {
         "ref": "answers",
@@ -945,7 +975,21 @@
               "zh-TW": "提交來源"
             }
           }
-        ]
+        ],
+        "appGrants": {
+          "actions": [
+            "read"
+          ],
+          "readable": [
+            "id",
+            "form_id",
+            "submitted_at",
+            "language",
+            "became_table",
+            "became_key",
+            "invitation_id"
+          ]
+        }
       },
       {
         "ref": "answer_files",

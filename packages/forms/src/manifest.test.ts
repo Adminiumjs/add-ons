@@ -142,8 +142,42 @@ describe('the forms tables', () => {
   });
 });
 
+/*
+ * Once one table of an add-on carries `appGrants`, the engine opens every table WITHOUT them to no app role
+ * (`roleTableHold`: skipped 'not-offered'). 1.0.33 put them on the two review tables and so closed the forms, their
+ * invitations and their answers to the Sales CRM's survey readers and to Pages' view counts. These three say again,
+ * by name, what an app's role may read of each: what a form is and where it stands, who was asked about which row
+ * and when, and when an answer came and what it became. Never who: no address, name, person, token or answer.
+ */
+describe('the forms, invitations and answers an app reads', () => {
+  const grants = (table: string) => (tableOf(table) as Table & { appGrants?: { actions: string[]; readable?: string[]; writable?: string[]; creatable?: string[]; appColumn?: string } }).appGrants;
+  const OPEN = {
+    forms: ['id', 'name', 'slug', 'kind', 'state', 'published_at', 'closed_at', 'updated_at'],
+    invitations: ['id', 'form_id', 'record_table', 'record_key', 'class', 'invited_at', 'answered_at', 'expires_at'],
+    answers: ['id', 'form_id', 'submitted_at', 'language', 'became_table', 'became_key', 'invitation_id'],
+  } as const;
+
+  it('are open to an app’s roles for reading, these columns exactly', () => {
+    for (const [table, readable] of Object.entries(OPEN)) expect(grants(table), table).toEqual({ actions: ['read'], readable: [...readable] });
+  });
+
+  it('show an app no personal column: no address, name, person, token or answer', () => {
+    for (const table of ['invitations', 'answers']) {
+      const readable = grants(table)?.readable ?? [];
+      for (const column of tableOf(table).columns.filter((one) => one.rules?.personal === true)) expect(readable, `${table}.${column.ref}`).not.toContain(column.ref);
+      for (const never of ['email', 'name', 'person_table', 'person_key', 'token_hash', 'values', 'company', 'ip', 'user_agent', 'sent_from', 'consent_wording']) expect(readable, `${table}.${never}`).not.toContain(never);
+    }
+    for (const never of ['definition', 'settings', 'published', 'created_by_id']) expect(grants('forms')?.readable, `forms.${never}`).not.toContain(never);
+  });
+
+  it('leave no table an app is meant to read closed by the reviews’ grants', () => {
+    const open = tables.filter((table) => (table as Table & { appGrants?: unknown }).appGrants !== undefined).map((table) => table.ref);
+    expect(open.sort()).toEqual(['answers', 'forms', 'invitations', 'review_totals', 'reviews']);
+  });
+});
+
 describe('the reviews', () => {
-  const grants = (table: string) => (tableOf(table) as Table & { appGrants?: { actions: string[]; readable?: string[]; writable?: string[]; appColumn?: string } }).appGrants;
+  const grants =(table: string) => (tableOf(table) as Table & { appGrants?: { actions: string[]; readable?: string[]; writable?: string[]; appColumn?: string } }).appGrants;
   const entries = (manifest as unknown as { publicAccess: { table: string; methods: string[]; appColumn?: string; filters?: { column: string; op: string; value: unknown }[]; select: string[]; filterable?: unknown[]; orderable?: string[]; pagination?: { defaultLimit: number; maxLimit: number; order: string } }[] }).publicAccess;
   const entry = (table: string) => entries.find((one) => one.table === table)!;
 
