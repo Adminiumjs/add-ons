@@ -11,17 +11,22 @@ import type { StringKey } from "../i18n/strings.ts";
  * The engine replaces the record on a save, so `view` must be read just before
  * saving: a copy from when a panel opened would undo what the other panel saved.
  * `first` is used only while nothing is saved, so adding a country never moves
- * a currency or origin the owner chose. Export numbers left out stay as they are.
+ * an origin the owner chose. Export numbers left out stay as they are.
+ *
+ * The currency is always the shop's own as the engine reads it now, never a
+ * remembered or assumed one: a declaration in the wrong currency is a false one.
  */
 export function savedBody(
   view: EngineInternational,
-  first: Pick<EngineInternationalBody, "currency" | "originCountry">,
+  first: Pick<EngineInternationalBody, "originCountry">,
   change: Partial<EngineInternationalBody> = {},
 ): EngineInternationalBody {
   const held = view.settings;
+  // The panels stop before this for a shop with none. Should it go in between, nothing is saved.
+  if (view.shopCurrency === null) throw new Error("This shop has no currency set.");
   return {
     countries: held?.countries ?? [],
-    currency: held?.currency ?? first.currency,
+    currency: view.shopCurrency,
     originCountry: held?.originCountry ?? first.originCountry,
     ...(held?.description === undefined ? {} : { description: held.description }),
     ...(held?.hsCode === undefined ? {} : { hsCode: held.hsCode }),

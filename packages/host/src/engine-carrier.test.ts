@@ -303,12 +303,25 @@ describe('a parcel going abroad', () => {
   });
 
   it('saves with PUT, and reads none of the keys or limits in the reply', async () => {
-    const reply = { international: true, codeListUrl: null, shipFrom: { country: 'GB', phone: '+44' }, carriers: [{ key: 'x' }], customs: { countries: ['DE'], currency: 'GBP', originCountry: 'GB', signerId: 'u1', signerName: 'Ada', products: [], exporter: { eori: 'GB123456789000' } } };
+    const reply = { international: true, codeListUrl: null, shopCurrency: 'GBP', shipFrom: { country: 'GB', phone: '+44' }, carriers: [{ key: 'x' }], customs: { countries: ['DE'], currency: 'GBP', originCountry: 'GB', signerId: 'u1', signerName: 'Ada', products: [], exporter: { eori: 'GB123456789000' } } };
     const { calls, engine } = client(200, { data: reply });
     const view = await engine.saveInternational({ countries: ['DE'], currency: 'GBP', originCountry: 'GB' });
     expect(calls[0]!.init.method).toBe('PUT');
     expect(calls[0]!.path).toBe('/api/v1/apps/maker-shop/shipping/international');
-    expect(view).toEqual({ ownCountry: 'GB', codeListUrl: null, shipsAbroad: true, settings: { countries: ['DE'], currency: 'GBP', originCountry: 'GB', signerId: 'u1', signerName: 'Ada', products: [], exporter: { eori: 'GB123456789000' } } });
+    expect(view).toEqual({ ownCountry: 'GB', codeListUrl: null, shopCurrency: 'GBP', shipsAbroad: true, settings: { countries: ['DE'], currency: 'GBP', originCountry: 'GB', signerId: 'u1', signerName: 'Ada', products: [], exporter: { eori: 'GB123456789000' } } });
+  });
+
+  it('reads no shop currency as none, and keeps why a form stopped', async () => {
+    const { engine } = client(200, { data: { international: false, codeListUrl: null, shipFrom: { country: 'GB' }, customs: null } });
+    expect((await engine.international()).shopCurrency).toBeNull();
+    const form = { abroad: true, offered: true, ownCountry: 'GB', to: 'DE', codeListUrl: null, signer: 'Ada', currency: null, lines: [], warnings: [], problems: [{ field: 'unitValue', reason: 'refunded' }, { field: 'currency', reason: 'shop-currency' }, { line: '2', field: 'weight', reason: 'no-line-weight' }, { field: 'lines', reason: 'something-new' }] };
+    const read = await client(200, { data: form }).engine.customsForm({ table: 'orders', id: '1' });
+    expect(read.abroad && read.offered && read.faults).toEqual([{ field: 'unitValue', reason: 'refunded' }, { field: 'currency', reason: 'shop-currency' }, { line: '2', field: 'weight', reason: 'no-line-weight' }, { field: 'lines' }]);
+  });
+
+  it('names a refusal by its reason, where it has one', async () => {
+    const { engine } = client(422, { error: { code: 'CUSTOMS_INCOMPLETE', message: 'no', details: { problems: [{ line: '2', field: 'weight', reason: 'no-line-weight' }, { field: 'quantity' }] } } });
+    await expect(engine.quote({ source: { table: 'orders', id: '1' }, parcel: { weightKg: 1, lengthCm: 1, widthCm: 1, heightCm: 1, contents: 'x' } } as never)).rejects.toMatchObject({ refusalFields: ['no-line-weight', 'quantity'] });
   });
 
   it('carries a shop\'s filing statement both ways, keeps null as "take it back", and refuses an unknown one', async () => {

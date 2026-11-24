@@ -79,6 +79,7 @@ export function CountriesPanel({
   }, [load]);
 
   const own = view?.ownCountry ?? null;
+  const shown = view?.shopCurrency ?? currency;
   const listed = view?.settings?.countries ?? [];
   const options = useMemo(
     () =>
@@ -115,7 +116,7 @@ export function CountriesPanel({
       try {
         const now = await client.international();
         const held = now.settings?.countries ?? [];
-        const fresh = await client.saveInternational(savedBody(now, { currency, originCountry: own }, { countries: [...held.filter((one) => one !== chosen), chosen] }));
+        const fresh = await client.saveInternational(savedBody(now, { originCountry: own }, { countries: [...held.filter((one) => one !== chosen), chosen] }));
         setView(fresh);
         setPriceOf((held) => ({ ...held, [chosen]: amount }));
       } catch (err) {
@@ -140,7 +141,7 @@ export function CountriesPanel({
     try {
       // The list first: a price left behind sells nothing, and a country left behind would.
       const now = await client.international();
-      const fresh = await client.saveInternational(savedBody(now, { currency, originCountry: own }, { countries: (now.settings?.countries ?? []).filter((one) => one !== code) }));
+      const fresh = await client.saveInternational(savedBody(now, { originCountry: own }, { countries: (now.settings?.countries ?? []).filter((one) => one !== code) }));
       setView(fresh);
       await prices.remove(code).catch(() => undefined);
       setPriceOf(({ [code]: _gone, ...rest }) => rest);
@@ -187,6 +188,8 @@ export function CountriesPanel({
       </div>
       {own === null ? (
         <p role="note" data-testid="countries-no-home" style={{ margin: 0, fontSize: 13, color: "var(--fg-muted)" }}>{t("addon.shipping-kit.countries.noHome")}</p>
+      ) : view.shopCurrency === null ? (
+        <p role="note" data-testid="countries-no-currency" style={{ margin: 0, fontSize: 13, color: "var(--fg-muted)" }}>{t("addon.shipping-kit.countries.noCurrency")}</p>
       ) : (
         <>
           <ul aria-label={t("addon.shipping-kit.countries.list")} style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", border: "1px solid var(--border)", borderRadius: 12, overflow: "hidden" }}>
@@ -201,7 +204,7 @@ export function CountriesPanel({
                 <span style={{ fontSize: 13.5, fontWeight: 700 }}>{name(code)}</span>
                 <span style={{ flex: 1 }} />
                 <span style={{ fontSize: 12, color: "var(--fg-muted)" }}>{t("addon.shipping-kit.countries.delivery")}</span>
-                <Mono style={{ fontSize: 13, fontWeight: 600 }}>{priceOf[code] === undefined ? "—" : moneyText(priceOf[code]!, currency, locale)}</Mono>
+                <Mono style={{ fontSize: 13, fontWeight: 600 }}>{priceOf[code] === undefined ? "—" : moneyText(priceOf[code]!, shown, locale)}</Mono>
                 <button
                   type="button"
                   aria-label={t("addon.shipping-kit.countries.remove", { c: name(code) })}
@@ -231,7 +234,7 @@ export function CountriesPanel({
                 <div style={fieldStyle}>
                   <label htmlFor={`${ids}-price`} style={labelStyle}>{t("addon.shipping-kit.countries.price", { c: name(chosen) })}</label>
                   <span style={{ display: "flex", alignItems: "center", gap: 6, border: `1.5px solid ${priceFault ? "var(--danger)" : "var(--border-strong)"}`, borderRadius: 10, background: "var(--surface)", paddingInline: 12 }}>
-                    <Mono style={{ fontSize: 13, fontWeight: 500, color: "var(--fg-subtle)" }}>{currency}</Mono>
+                    <Mono style={{ fontSize: 13, fontWeight: 500, color: "var(--fg-subtle)" }}>{shown}</Mono>
                     <input
                       id={`${ids}-price`}
                       ref={priceInput}
@@ -248,7 +251,7 @@ export function CountriesPanel({
                       style={{ ...monoInputStyle, fontWeight: 500, border: 0, background: "transparent", paddingInline: 0, minBlockSize: 42, textAlign: "start" }}
                     />
                   </span>
-                  {priceFault && <span id={`${ids}-price-err`} style={{ fontSize: 12, fontWeight: 600, color: "var(--danger)" }}>{t("addon.shipping-kit.countries.priceFault", { cur: currency })}</span>}
+                  {priceFault && <span id={`${ids}-price-err`} style={{ fontSize: 12, fontWeight: 600, color: "var(--danger)" }}>{t("addon.shipping-kit.countries.priceFault", { cur: shown })}</span>}
                 </div>
               </div>
               <p style={{ margin: 0, fontSize: 12.5, color: "var(--fg-muted)" }}>{t("addon.shipping-kit.countries.abroadNote", { c: name(chosen), own: name(own) })}</p>

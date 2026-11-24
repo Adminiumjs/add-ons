@@ -394,6 +394,8 @@ export function ParcelBooking({
     }
     const card: RefusalCard = info.code === "OWNER_BOOKS" ? (info.detail === "abroad" ? "abroad-owner" : "over-limit") : refusalCardOf(info.code, info.reason, info.fields);
     setFailure({ card, info, company, afterBook, wordsHidden: hidesMoney, nothingStands: false });
+    // The order may have changed since the form was read: what it marks must be why this stopped.
+    if (info.code === "CUSTOMS_INCOMPLETE") void loadCustoms();
     setQuote(null);
     setSelectedId(null);
     say(t(REFUSAL[card].title, { company }));

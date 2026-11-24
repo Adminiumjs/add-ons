@@ -7,7 +7,8 @@
  * right, and from nobody else.
  *
  * THE EXPORT NUMBERS ARE OPTIONAL, and each goes to the carrier only when it is
- * here. An IOSS number goes only on a parcel into the EU.
+ * here. An IOSS number goes only on a parcel into the EU, in euros, within its
+ * ceiling.
  *
  * THE US FILING STATEMENT IS A LEGAL ONE, so it starts on "none" and is asked
  * only of a shop that ships from the US. The engine states it only on a parcel
@@ -112,7 +113,7 @@ interface Faults {
   tax?: string;
 }
 
-export function CustomsDefaultsPanel({ client, currency }: { client: EngineCarrier; currency: string }) {
+export function CustomsDefaultsPanel({ client }: { client: EngineCarrier }) {
   const t = useT();
   const locale = useLocale();
   const ids = useId();
@@ -207,6 +208,15 @@ export function CustomsDefaultsPanel({ client, currency }: { client: EngineCarri
     );
   }
 
+  if (view.shopCurrency === null) {
+    return (
+      <section data-testid="defaults-panel" style={sectionStyle}>
+        <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800 }}>{t("addon.shipping-kit.defaults.title")}</h2>
+        <p role="note" data-testid="defaults-no-currency" style={{ margin: 0, fontSize: 13, color: "var(--fg-muted)" }}>{t("addon.shipping-kit.countries.noCurrency")}</p>
+      </section>
+    );
+  }
+
   const signerGone = view.settings !== null && view.settings.signerName === null;
   const hsFaultWords = t("addon.shipping-kit.customs.fault.hs");
   const products = view.settings?.products ?? [];
@@ -224,7 +234,7 @@ export function CustomsDefaultsPanel({ client, currency }: { client: EngineCarri
     try {
       const exporter: EngineExporter = { eori: bare(eori), ioss: bare(ioss), taxId: { type: taxType, number: bare(taxNumber) } };
       const fresh = await client.saveInternational(
-        savedBody(await client.international(), { currency, originCountry: origin }, {
+        savedBody(await client.international(), { originCountry: origin }, {
           ...(change.products === undefined ? {} : { products: change.products }),
           ...(change.form === true
             ? { originCountry: origin, description: description.trim(), hsCode: hs.trim(), exporter, ...(own === "US" ? { filingCode: filing === "" ? null : filing } : {}), ...(signer === "" ? {} : { signerId: signer }) }

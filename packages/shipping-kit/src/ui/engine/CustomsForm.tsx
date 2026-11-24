@@ -146,7 +146,7 @@ function LineFields({
   const money = (amount: string | null) => (amount === null ? t("addon.shipping-kit.customs.notRecorded") : form.currency === null ? amount : moneyText(amount, form.currency, locale));
   const hs = draft.hsCode ?? line.hsCode ?? "";
   const maker = draft.manufacturerCode ?? line.manufacturerCode ?? "";
-  const stopped = form.faults.filter((one) => one.line === line.line && (one.field === "quantity" || one.field === "unitValue"));
+  const stopped = form.faults.filter((one) => one.line === line.line && (one.field === "quantity" || one.field === "unitValue" || one.field === "weight"));
   return (
     <div data-testid={`customs-line-${index + 1}`} style={{ display: "grid", gridTemplateColumns: FORM_COLUMNS, gap: "12px 14px" }}>
       {form.lines.length > 1 && <div style={{ gridColumn: "1 / -1", fontSize: 13, fontWeight: 800 }}>{t("addon.shipping-kit.customs.item", { n: index + 1 })}</div>}
@@ -208,7 +208,7 @@ function LineFields({
       />
       {stopped.map((one) => (
         <div key={one.field} role="alert" style={{ gridColumn: "1 / -1", fontSize: 12, fontWeight: 600, color: "var(--danger)" }}>
-          {t(one.field === "quantity" ? "addon.shipping-kit.customs.fault.quantity" : "addon.shipping-kit.customs.fault.value")}
+          {t(one.field === "quantity" ? "addon.shipping-kit.customs.fault.quantity" : one.field === "weight" ? "addon.shipping-kit.customs.fault.weight" : "addon.shipping-kit.customs.fault.value")}
         </div>
       ))}
     </div>
@@ -243,20 +243,30 @@ export function CustomsForm({
   const t = useT();
   const heading = useId();
   const tickError = useId();
-  const orderFault = form.faults.find((one) => one.line === undefined);
-  const lineStops = form.faults.some((one) => one.line !== undefined && (one.field === "quantity" || one.field === "unitValue"));
-  const stopped = orderFault !== undefined || lineStops || form.signer === null;
+  const orderFaults = form.faults.filter((one) => one.line === undefined);
+  const lineStops = form.faults.some((one) => one.line !== undefined && (one.field === "quantity" || one.field === "unitValue" || one.field === "weight"));
+  const stopped = orderFaults.length > 0 || lineStops || form.signer === null;
+  const orderWords = (one: (typeof orderFaults)[number]) =>
+    one.reason === "refunded"
+      ? "addon.shipping-kit.customs.fault.refunded"
+      : one.reason === "shop-currency"
+        ? manages
+          ? "addon.shipping-kit.customs.fault.shopCurrency.manage"
+          : "addon.shipping-kit.customs.fault.shopCurrency.ask"
+        : one.field === "currency"
+          ? "addon.shipping-kit.customs.fault.currency"
+          : "addon.shipping-kit.customs.fault.noLines";
   return (
     <section aria-labelledby={heading} data-testid="customs-form" style={{ border: "1px solid var(--border)", background: "var(--surface)", borderRadius: 14, padding: "16px 17px", minInlineSize: 0 }}>
       <h2 id={heading} style={{ margin: "0 0 4px" }}>
         <PanelTitle>{t("addon.shipping-kit.customs.title")}</PanelTitle>
       </h2>
       <div style={{ fontSize: 12.5, color: "var(--fg-subtle)", marginBlockEnd: 14 }}>{t("addon.shipping-kit.customs.sub")}</div>
-      {orderFault !== undefined && (
-        <div role="alert" style={{ marginBlockEnd: 12, fontSize: 12.5, fontWeight: 600, color: "var(--danger)" }}>
-          {t(orderFault.field === "currency" ? "addon.shipping-kit.customs.fault.currency" : "addon.shipping-kit.customs.fault.noLines")}
+      {[...new Set(orderFaults.map(orderWords))].map((words) => (
+        <div key={words} role="alert" data-testid="customs-order-fault" style={{ marginBlockEnd: 12, fontSize: 12.5, fontWeight: 600, color: "var(--danger)" }}>
+          {t(words)}
         </div>
-      )}
+      ))}
       <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
         {form.lines.map((line, index) => (
           <LineFields

@@ -27,6 +27,7 @@ import { DEMO_ORIGIN } from "../seed.ts";
 import { applySettings, DEFAULT_SETTINGS } from "../settings.ts";
 import { cleanPrice, CountriesPanel, type CountryPrices } from "./CountriesPanel.tsx";
 import { CustomsDefaultsPanel } from "./CustomsDefaultsPanel.tsx";
+import { savedBody } from "./customsSettings.ts";
 import { DispatchAction } from "./DispatchAction.tsx";
 import { customsEdits, lineTotal, refusalCardOf } from "./engine/flow.ts";
 
@@ -403,6 +404,7 @@ describe("the rules", () => {
 const VIEW: EngineInternational = {
   ownCountry: "GB",
   codeListUrl: "https://tariff.example/find",
+  shopCurrency: "GBP",
   shipsAbroad: false,
   settings: null,
 };
@@ -430,7 +432,7 @@ describe("the two settings panels, open together", () => {
     render(
       <>
         <CountriesPanel client={engine} prices={prices()} currency="GBP" />
-        <CustomsDefaultsPanel client={engine} currency="GBP" />
+        <CustomsDefaultsPanel client={engine} />
       </>,
     );
     await screen.findByTestId("countries-open");
@@ -471,6 +473,88 @@ describe("the two settings panels, open together", () => {
   });
 });
 
+describe("what cannot be declared", () => {
+  const drawn = async (faults: Extract<EngineCustomsForm, { offered: true }>["faults"], over: Partial<Record<keyof EngineCarrier, unknown>> = {}) => {
+    fake({ customsForm: vi.fn(async () => ({ ...FORM, faults })), ...over });
+    draw();
+    await press("engine-open");
+    return screen.findByTestId("customs-form");
+  };
+
+  it("says a refund stops it, and offers no rates", async () => {
+    await drawn([{ field: "unitValue", reason: "refunded" }]);
+    expect(screen.getByRole("alert").textContent).toBe(words("customs.fault.refunded"));
+    expect((screen.getByTestId("customs-save") as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("tells whoever can fix a shop currency to fix it, and anyone else to ask", async () => {
+    await drawn([{ field: "currency", reason: "shop-currency" }], { access: vi.fn(async () => ({ ...ACCESS, manages: false })) });
+    expect(screen.getByRole("alert").textContent).toBe(words("customs.fault.shopCurrency.ask"));
+    cleanup();
+    await drawn([{ field: "currency", reason: "shop-currency" }], { access: vi.fn(async () => ({ ...ACCESS, manages: true })) });
+    expect(screen.getByRole("alert").textContent).toBe(words("customs.fault.shopCurrency.manage"));
+  });
+
+  it("names the line with no weight, and offers no rates", async () => {
+    await drawn([{ line: "11", field: "weight", reason: "no-line-weight" }]);
+    expect(screen.getByRole("alert").textContent).toBe(words("customs.fault.weight"));
+    expect((screen.getByTestId("customs-save") as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("shows every reason that stops the whole order", async () => {
+    await drawn([{ field: "currency", reason: "shop-currency" }, { field: "unitValue", reason: "refunded" }]);
+    expect(screen.getAllByTestId("customs-order-fault")).toHaveLength(2);
+  });
+
+  it("reads the form again when a quote is refused for a change on the order", async () => {
+    const customsForm = vi.fn(async () => FORM as EngineCustomsForm);
+    customsForm.mockResolvedValueOnce(FORM).mockResolvedValue({ ...FORM, faults: [{ field: "unitValue", reason: "refunded" }] });
+    fake({ customsForm, quote: vi.fn(async () => { throw refused("CUSTOMS_INCOMPLETE", { refusalFields: ["refunded"] }); }) });
+    draw();
+    await press("engine-open");
+    await screen.findByTestId("customs-form");
+    await press("customs-declare");
+    await press("customs-save");
+    await waitFor(() => expect(customsForm).toHaveBeenCalledTimes(2));
+  });
+
+  it("does not read a line with no weight as a parcel lighter than its goods", () => {
+    expect(refusalCardOf("CUSTOMS_INCOMPLETE", undefined, ["no-line-weight"])).toBe("customs-lines");
+    expect(refusalCardOf("CUSTOMS_INCOMPLETE", undefined, ["weight"])).toBe("customs-weight");
+  });
+});
+
+describe("the currency a shop's customs are saved in", () => {
+  const held = { ...VIEW, shipsAbroad: true, settings: { ...SAVED, currency: "GBP" } };
+
+  it("is the shop's own as the engine reads it now, not the one saved first", () => {
+    expect(savedBody({ ...held, shopCurrency: "USD" }, { originCountry: "GB" }).currency).toBe("USD");
+  });
+
+  it("is never assumed: with none set, nothing can be saved", () => {
+    expect(() => savedBody({ ...VIEW, shopCurrency: null }, { originCountry: "GB" })).toThrow();
+  });
+
+  it("stops both panels for a shop with no currency", async () => {
+    const engine = {
+      international: vi.fn(async () => ({ ...VIEW, shopCurrency: null })),
+      customsSigners: vi.fn(async () => []),
+      saveInternational: vi.fn(),
+    } as unknown as EngineCarrier & { saveInternational: Spy };
+    render(
+      <>
+        <CountriesPanel client={engine} prices={{ read: vi.fn(async () => ({})), save: vi.fn(), remove: vi.fn() }} currency="GBP" />
+        <CustomsDefaultsPanel client={engine} />
+      </>,
+    );
+    expect((await screen.findByTestId("countries-no-currency")).textContent).toBe(words("countries.noCurrency"));
+    expect((await screen.findByTestId("defaults-no-currency")).textContent).toBe(words("countries.noCurrency"));
+    expect(screen.queryByTestId("countries-open")).toBeNull();
+    expect(screen.queryByTestId("defaults-save")).toBeNull();
+    expect(engine.saveInternational).not.toHaveBeenCalled();
+  });
+});
+
 describe("countries we deliver to", () => {
   const store = (over: Partial<CountryPrices> = {}): CountryPrices => ({
     read: vi.fn(async () => ({})),
@@ -507,8 +591,8 @@ describe("countries we deliver to", () => {
     expect(engine.saveInternational.mock.calls[0]![0]).toMatchObject({ countries: ["DE"], currency: "GBP", originCountry: "GB" });
   });
 
-  it("leaves an origin and currency the owner chose where they are", async () => {
-    const held = { ...VIEW, shipsAbroad: true, settings: { ...SAVED, originCountry: "CN", currency: "EUR" } };
+  it("leaves an origin the owner chose where it is, and saves the shop's real currency", async () => {
+    const held = { ...VIEW, shopCurrency: "USD", shipsAbroad: true, settings: { ...SAVED, originCountry: "CN", currency: "EUR" } };
     const engine = client({ international: vi.fn(async () => held), saveInternational: vi.fn(async () => held) });
     render(<CountriesPanel client={engine} prices={store()} currency="GBP" />);
     await press("countries-open");
@@ -516,7 +600,7 @@ describe("countries we deliver to", () => {
     await type("countries-price", "9");
     await press("countries-save");
     await waitFor(() => expect(engine.saveInternational).toHaveBeenCalledTimes(1));
-    expect(engine.saveInternational.mock.calls[0]![0]).toMatchObject({ originCountry: "CN", currency: "EUR", countries: ["DE", "FR"], signerId: "u1" });
+    expect(engine.saveInternational.mock.calls[0]![0]).toMatchObject({ originCountry: "CN", currency: "USD", countries: ["DE", "FR"], signerId: "u1" });
   });
 
   it("takes the price back when the country is refused", async () => {
@@ -562,17 +646,17 @@ describe("customs defaults", () => {
     }) as unknown as EngineCarrier & { saveInternational: ReturnType<typeof vi.fn> };
 
   it("starts every code empty", async () => {
-    render(<CustomsDefaultsPanel client={engineWith()} currency="GBP" />);
+    render(<CustomsDefaultsPanel client={engineWith()} />);
     expect(((await screen.findByTestId("defaults-hs")) as HTMLInputElement).value).toBe("");
     expect((screen.getByTestId("defaults-eori") as HTMLInputElement).value).toBe("");
   });
 
   it("asks for a US filing statement only of a shop in the US, and starts on none", async () => {
-    const { unmount } = render(<CustomsDefaultsPanel client={engineWith()} currency="GBP" />);
+    const { unmount } = render(<CustomsDefaultsPanel client={engineWith()} />);
     await screen.findByTestId("defaults-hs");
     expect(screen.queryByTestId("defaults-filing")).toBeNull();
     unmount();
-    render(<CustomsDefaultsPanel client={engineWith({ ...VIEW, ownCountry: "US" })} currency="USD" />);
+    render(<CustomsDefaultsPanel client={engineWith({ ...VIEW, ownCountry: "US" })} />);
     const filing = (await screen.findByTestId("defaults-filing")) as HTMLSelectElement;
     expect(filing.value).toBe("");
     expect([...filing.options].map((one) => one.value)).toEqual(["", "NOEEI_30_37_a", "NOEEI_30_36"]);
@@ -580,7 +664,7 @@ describe("customs defaults", () => {
 
   it("saves a chosen statement, and sends null to take one back", async () => {
     const engine = engineWith({ ...VIEW, ownCountry: "US", settings: { ...SAVED, filingCode: "NOEEI_30_36" } });
-    render(<CustomsDefaultsPanel client={engine} currency="USD" />);
+    render(<CustomsDefaultsPanel client={engine} />);
     expect(((await screen.findByTestId("defaults-filing")) as HTMLSelectElement).value).toBe("NOEEI_30_36");
     await type("defaults-filing", "NOEEI_30_37_a");
     await press("defaults-save");
@@ -595,21 +679,21 @@ describe("customs defaults", () => {
 
   it("leaves the statement alone for a shop outside the US", async () => {
     const engine = engineWith({ ...VIEW, settings: { ...SAVED, filingCode: "NOEEI_30_36" } });
-    render(<CustomsDefaultsPanel client={engine} currency="GBP" />);
+    render(<CustomsDefaultsPanel client={engine} />);
     await press("defaults-save");
     await waitFor(() => expect(engine.saveInternational).toHaveBeenCalledTimes(1));
     expect(engine.saveInternational.mock.calls[0]![0]).not.toHaveProperty("filingCode");
   });
 
   it("lists only the people who may sign", async () => {
-    render(<CustomsDefaultsPanel client={engineWith()} currency="GBP" />);
+    render(<CustomsDefaultsPanel client={engineWith()} />);
     const signer = (await screen.findByTestId("defaults-signer")) as HTMLSelectElement;
     expect([...signer.options].map((one) => one.text)).toEqual([words("defaults.signerYou"), "Ada Owner"]);
   });
 
   it("names nobody on a first save unless a person chose, so the engine names whoever saved it", async () => {
     const engine = engineWith();
-    render(<CustomsDefaultsPanel client={engine} currency="GBP" />);
+    render(<CustomsDefaultsPanel client={engine} />);
     await press("defaults-save");
     await waitFor(() => expect(engine.saveInternational).toHaveBeenCalledTimes(1));
     expect(engine.saveInternational.mock.calls[0]![0]).not.toHaveProperty("signerId");
@@ -617,7 +701,7 @@ describe("customs defaults", () => {
 
   it("saves the export numbers cleaned, and refuses one that cannot be right", async () => {
     const engine = engineWith();
-    render(<CustomsDefaultsPanel client={engine} currency="GBP" />);
+    render(<CustomsDefaultsPanel client={engine} />);
     await type("defaults-ioss", "not-a-number");
     await press("defaults-save");
     expect(engine.saveInternational).not.toHaveBeenCalled();
@@ -632,7 +716,7 @@ describe("customs defaults", () => {
 
   it("gives a product its own code, and refuses a bad one", async () => {
     const engine = engineWith();
-    render(<CustomsDefaultsPanel client={engine} currency="GBP" />);
+    render(<CustomsDefaultsPanel client={engine} />);
     await press("defaults-own-open");
     await type("defaults-own-sku", "BAG-1");
     await type("defaults-own-hs", "12");
