@@ -662,6 +662,7 @@
     "addon.shipping-kit.customs.fault.hs": "65ff831a721e60be",
     "addon.shipping-kit.customs.fault.hsKept": "50a27fbaa372abe4",
     "addon.shipping-kit.customs.fault.noLines": "30e84d92cc978127",
+    "addon.shipping-kit.customs.fault.orderCurrency": "65cf8accd4b3361b",
     "addon.shipping-kit.customs.fault.quantity": "c54d5130337c8999",
     "addon.shipping-kit.customs.fault.refunded": "8df99a116be6c2b3",
     "addon.shipping-kit.customs.fault.shopCurrency.ask": "1767c31f7206b878",
